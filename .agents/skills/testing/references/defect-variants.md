@@ -1,22 +1,22 @@
 # Search for variants of a confirmed defect
 
-Use after a root cause is established and related occurrences could affect the
-current regression scope. This is a bounded search method, not an initial audit
-or a requirement to repair every similar expression. Before Rust source exists,
-record the future search obligation rather than inventing a scan result.
+Use after established root cause when related occurrences could affect current
+regression scope. Bounded search; no initial audit or every-similar-expression
+repair mandate. Before Rust source exists, record future search obligation;
+invent no scan result.
 
 ## Establish the search contract
 
-Record the known witness, violated invariant, relevant inputs/state, reachable
-operation, existing guards and healthy control. Freeze candidate/configuration
-identity. Define allowed source areas, semantic axes, query/match/time budgets and
-the next decision; related owners may be outside the original module while still
-inside the task's scope. Note excluded or unavailable areas explicitly.
+Record known witness, violated invariant, relevant inputs/state, reachable
+operation, existing guards, healthy control. Freeze candidate/configuration
+identity. Define allowed source areas, semantic axes, query/match/time budgets,
+next decision; related owners outside original module may remain in scope.
+Explicitly note excluded/unavailable areas.
 
-Start with a search that actually finds the known faulty location. A zero-hit
-baseline means the pattern or search setup is unqualified; do not generalize it
-and report no variants. Use existing Rust search/symbol tools; text matching
-locates candidates and does not prove Rust types, data flow or reachability.
+First search must find known faulty location. Zero-hit baseline leaves
+pattern/setup unqualified; do not generalize or report no variants. Use existing
+Rust search/symbol tools; text matching locates candidates, proves no Rust types,
+data flow or reachability.
 
 ## Expand one dimension at a time
 
@@ -35,10 +35,10 @@ method.
 
 ## Try to refute each candidate
 
-Read its owner, types, callers, feature/target configuration and protection path.
-Look for prior validation, private construction, current-state checks, different
-units, unreachable values or an operation with different semantics. Similar text
-behind an effective guard is not a confirmed variant.
+Read owner/types/callers/feature/target configuration/protection path. Check prior
+validation, private construction, current-state checks, different units,
+unreachable values, different operation semantics. Similar text behind effective
+guard is no confirmed variant.
 
 Classify each inspected match as confirmed in the declared configuration, refuted
 with its actual protection/reason, or unresolved with the missing observation.
@@ -47,10 +47,10 @@ reachable defect; name what would enable it. A search match alone is no behavior
 RED. For confirmed candidates, select independent failure and healthy controls
 through the applicable entrypoint, preserving host/native evidence distinctions.
 
-Finish with queries/axes attempted, inspected and pending matches, evidence or
-refutation per candidate, selected regression checks, scope exclusions and budget
-consumption. Exhausting a budget yields a partial search, not a clean repository.
-Return repair decisions to the current owner and authorized change scope.
+Finish: attempted queries/axes, inspected/pending matches, candidate
+evidence/refutation, selected regression checks, scope exclusions, budget
+consumption. Exhausted budget means partial search; no clean-repository claim.
+Return repair decisions to current owner/authorized scope.
 
 ## Attribution and adaptation
 

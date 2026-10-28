@@ -7,12 +7,12 @@ description: "Choose the smallest justified NevroTick regression set while accou
 
 Read [the testing contract](../CONTRACT.md).
 
-Inspect the actual patch and producer → state → consumer paths, including serializers, constructors, OS adapters, generated code, fixtures, features/dependencies and installer/UI consumers. Existing test names alone are not an impact map.
+Inspect actual patch/producer → state → consumer paths: serializers, constructors, OS adapters, generated code, fixtures, features/dependencies, installer/UI consumers. Test names alone are no impact map.
 
-Map each changed guarantee and plausible regression to an existing check or a specific new case. Retain the original failure and valid earlier controls; include failure/recovery seams and cross-worker interactions. Select host/core checks separately from required Windows configurations.
+Map each changed guarantee/plausible regression to existing check/specific new case. Retain original failure/valid earlier controls; include failure/recovery seams/cross-worker interactions. Separate host/core checks/required Windows configurations.
 
-After confirming a root cause, use [the bounded variant-search method](../references/defect-variants.md) when related occurrences could affect this regression scope. Calibrate on the known defect, inspect each candidate and record unsearched areas rather than treating pattern matches as findings.
+After root-cause confirmation, use [the bounded variant-search method](../references/defect-variants.md) for potentially relevant related occurrences. Calibrate on known defect; inspect each candidate; record unsearched areas. Pattern matches are not findings.
 
-Record why excluded checks are unaffected, relying on current source/configuration rather than history or convenience. Unknown impact needs a broader applicable selection or an explicit unresolved gap; no invented all-features or whole-suite mandate.
+Justify unaffected excluded checks from current source/configuration; history/convenience insufficient. Unknown impact needs broader applicable selection/explicit unresolved gap; no invented all-features/whole-suite mandate.
 
 Verify discovery and actual execution for the selected tests, preserve doctests where in scope and invalidate prior evidence only for relevant changed state. Use [Rust techniques](../references/rust-techniques.md) for target/feature/runner selection.

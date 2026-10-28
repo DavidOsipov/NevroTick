@@ -9,7 +9,7 @@ Checked 28 October 2026. The canonical owner is `docs/windows-time-architecture.
 | `plan-independent-review` | `plan-independent-review` | Fresh source review, stage-scoped verdicts, independent oracles, material findings, explicit uncertainty. |
 | `plan-threat-model` | `plan-threat-model` | Concrete attacker path, actual control owner, pinned ASVS applicability, valid/hostile checks and residual-risk owner. |
 
-Useful source decisions were consolidated into shared conditional references instead of copying website-only paths, TypeScript examples, web-security policy, source evidence archives or the full design-pattern catalogue. Plan files use an existing location or `.agents/plans/` to preserve the checksummed architecture bundle.
+Useful source decisions consolidated into shared conditional references; website-only paths, TypeScript examples, web-security policy, source evidence archives, full design-pattern catalogue not copied. Plan files use existing location or `.agents/plans/` to preserve checksummed architecture bundle.
 
 | Primary source inspected | Finding used in adaptation | Limit |
 | --- | --- | --- |

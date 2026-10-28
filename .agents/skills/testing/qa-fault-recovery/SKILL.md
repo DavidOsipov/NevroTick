@@ -7,10 +7,10 @@ description: "Test NevroTick controlled failures for bounded recovery, preserved
 
 Read [the testing contract](../CONTRACT.md).
 
-Select the actual failure seam and expected phase-specific state before injection. Trace policy/journal writes, network associations, broker effects, SCM transitions and installer compensation where relevant.
+Before injection select actual failure seam/expected phase-specific state. Trace relevant policy/journal writes, network associations, broker effects, SCM transitions, installer compensation.
 
-Inject disk-full/interrupted replacement, corrupt/old state, process death, lost acknowledgements, delayed native calls, source outage and managed/competing clock ownership. Verify prior valid policy survives failed updates, invalid mandatory authority blocks effects, optional cache corruption triggers documented reacquisition, and budgets are not reset.
+Inject disk-full/interrupted replacement, corrupt/old state, process death, lost acknowledgements, delayed native calls, source outage, managed/competing clock ownership. Verify prior valid policy survives failed updates; invalid mandatory authority blocks effects; optional cache corruption triggers documented reacquisition; budgets do not reset.
 
-For clock/installer faults use an isolated Windows machine and external cleanup/restoration owner. Test interruption in the middle of system changes; MSI rollback cannot be assumed to reverse every custom action. Recovery must respect successor ownership rather than blindly resetting a rate.
+Clock/installer faults: isolated Windows machine/external cleanup/restoration owner. Test mid-system-change interruption; assume no universal MSI custom-action reversal. Recovery must respect successor ownership; no blind rate reset.
 
-Include normal successful operation and recovery controls. Observe bounded retries, state/status after failure and actual resources before teardown. Use [Windows evidence](../references/windows-evidence.md) and the selected CHECK cases; classify harness/reset failures separately.
+Include normal-operation/recovery success controls. Observe bounded retries, failure state/status, actual resources before teardown. Use [Windows evidence](../references/windows-evidence.md)/selected CHECK cases; classify harness/reset failures separately.

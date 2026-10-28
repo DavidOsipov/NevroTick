@@ -35,7 +35,7 @@ Substantive local edits:
   size optimization and preserved cleanup ownership in the guard example.
 - Replaced absent named-skill routes with available project owners. Installed
   companion references remain optional and do not trigger further installation.
-  `references/dyn-compatibility.md` and `LICENSE` remain unchanged.
+  `references/dyn-compatibility.md` and `LICENSE` remained unchanged during initial adaptation.
 
 Primary references for the corrections:
 
@@ -52,3 +52,6 @@ Primary references for the corrections:
 - [Renaming Cargo dependencies](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#renaming-dependencies-in-cargotoml)
 
 No upstream examples or downloaded executable code were run for this adaptation.
+
+Later local change: compressed instructional prose; preserved code, metadata,
+headings, links, technical conditions and licence texts. Upstream sources/pins unchanged.

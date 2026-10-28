@@ -1,6 +1,6 @@
 # Selecting Rust verification techniques
 
-Current authority is the repository manifest, pinned toolchain and chosen target/feature matrix. Tools below are options unless the project has adopted them. This reference does not install tools or create a Cargo project.
+Current authority: repository manifest/pinned toolchain/chosen target/feature matrix. Tools optional unless adopted. Reference installs no tools/creates no Cargo project.
 
 ## Cargo, compiler and discovery
 
@@ -8,9 +8,9 @@ Once a workspace exists, [TOOLING.md](../../../../TOOLING.md) provides the basel
 
 `cargo test --workspace` normally includes enabled unit, integration and documentation tests. `--all-targets` expands to lib/bin/test/bench/example selection and does not include doctests; run a separate `--doc` invocation when that scope matters. Inspect `required-features`, `cfg`, harness settings and ignored tests. A name filter can select zero tests. `cargo check` does not link or execute the application; Clippy does not prove contextual authorization.
 
-Use a real compile-fail external-consumer case for private-field, unit/newtype or trait guarantees. Verify the expected diagnostic cause, plus a valid construction case, so an unrelated unresolved import cannot supply a false pass. Rustdoc `compile_fail` cases need this same care; add a dedicated harness only when the existing one cannot express the requirement.
+Use real compile-fail external consumer for private-field/unit/newtype/trait guarantees. Verify expected diagnostic cause/valid construction control; unrelated unresolved import must not pass. Same care for Rustdoc `compile_fail`; dedicated harness only if existing one cannot express requirement.
 
-Inspect proc-macro/build-script and native prerequisites before invoking Cargo on unfamiliar dependencies. Formatting and pack checks are sufficient for a documentation-only change when no product behavior is affected.
+Inspect proc-macro/build-script/native prerequisites before Cargo on unfamiliar dependencies. Documentation-only change without product-behavior impact: formatting/pack checks suffice.
 
 `--locked` prevents resolution changes but may fetch; `--offline` constrains Cargo retrieval, not arbitrary I/O performed by build scripts, proc macros or children. Cargo `-j` bounds build jobs, not libtest threads or application workers. Inspect and bound each resource separately. Optional nextest uses separate test processes, which may hide process-global interference seen under libtest; preserve the original-runner regression when relevant and run doctests separately. No dependency/toolchain installation follows from selecting a technique.
 
@@ -18,7 +18,7 @@ For feature/MSRV or public API claims, record an explicit package/target/compile
 
 ## Time and asynchronous execution
 
-Inject explicit sources for UTC, monotonic and active-awake time; advancing one must not implicitly advance the others. Use controllable transport and actuation ports around the production core rather than replacing the production algorithm. Drive completion with notifications/conditions and a bounded deadline, not a sleep chosen to hide a race.
+Inject explicit UTC/monotonic/active-awake sources; advancing one must not implicitly advance others. Controllable transport/actuation ports around production core; preserve production algorithm. Drive completion with notifications/conditions/bounded deadline; no race-hiding sleeps.
 
 If Tokio is selected, paused time requires its `time`/`test-util` capabilities and a current-thread runtime. It affects Tokio's clock, not `std::time::Instant` or Windows/QPC. Idle runtimes may auto-advance. `advance` jumps time and does not prove that all expired timers have been processed; await the actual completion condition. This runtime helper cannot simulate Windows sleep/resume or clock actuation by itself.
 
@@ -33,7 +33,7 @@ For generated cases, reset model and owned resources for every case/shrink/repla
 
 ## Coverage and mutation
 
-Use the selected coverage/mutation tool's native data and effective target filters. cargo-llvm-cov and cargo-mutants are candidates, not installed requirements. Coverage measures reached code, not the correctness of assertions. Publish uninstrumented native/FFI paths and platform exclusions; missing Windows instrumentation cannot make a critical path noncritical.
+Use selected coverage/mutation tool native data/effective target filters. cargo-llvm-cov/cargo-mutants: candidates, no installed requirement. Coverage measures reached code, not assertion correctness. Publish uninstrumented native/FFI paths/platform exclusions; missing Windows instrumentation cannot make critical path noncritical.
 
 For mutation, establish an unmodified passing baseline; isolate the candidate and bound workers/time. For the architecture's 95% per-file gate, identify generated, viable, killed, survived, timed-out, unviable and excluded mutants separately. Compile failures are unviable, not killed. Diagnose timeouts; justify equivalence/exclusions independently. A targeted trial cannot claim an unrun full-manifest score. Select focused campaigns for a local change; full campaigns follow the declared qualification scope.
 

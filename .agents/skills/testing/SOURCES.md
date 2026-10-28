@@ -1,10 +1,10 @@
 # Testing adaptation and source evidence
 
-Research checked on **28 October 2026**. This is provenance and selection reasoning, not executed product verification. The canonical [architecture](../../../docs/windows-time-architecture.md), especially sections 6, 16, 18 and 20, controls product requirements. Its CHECK-1–27 catalog is planned, not a retained passing run. Tools below remain candidates unless the current project has adopted them.
+Research checked **28 October 2026**. Provenance/selection reasoning; no executed product verification. Canonical [architecture](../../../docs/windows-time-architecture.md), especially sections 6, 16, 18 and 20, controls requirements. CHECK-1–27 catalog planned; no retained passing run. Tools remain candidates unless adopted.
 
 ## Donor skills and adaptations
 
-Original user-owned source: `/home/david_osipov/personal-website-templated-1/.agents/skills/testing/`. All 36 entrypoints are accounted for below. The central testing contract, independent expectations/controls, causal repair, evidence custody, finite stabilization and proportional qualification workflows were retained. Website browser/DOM/Vitest/Cloudflare details were replaced with Rust and native Windows evidence. Per-leaf duplicated shared trees, website command wrappers and website fixture data were not imported. Shared guidance now has one canonical owner under this group's `references/`.
+Original user-owned source: `/home/david_osipov/personal-website-templated-1/.agents/skills/testing/`. All 36 entrypoints accounted for below. Retained central testing contract, independent expectations/controls, causal repair, evidence custody, finite stabilization, proportional qualification. Rust/native Windows evidence replaces website browser/DOM/Vitest/Cloudflare details. No imported per-leaf duplicate shared trees/website command wrappers/website fixture data. Shared guidance has one canonical owner under `references/`.
 
 | Website skill | NevroTick skill |
 | --- | --- |
@@ -45,7 +45,7 @@ Original user-owned source: `/home/david_osipov/personal-website-templated-1/.ag
 | `qa-unit-tests` | [qa-unit-tests](qa-unit-tests/SKILL.md) |
 | `qa-visual-responsive` | [qa-visual-dpi](qa-visual-dpi/SKILL.md) |
 
-The website's English/Russian baseline was adapted to the architecture's English-first scope; Russian is conditional. Artifact/content metadata now means emitted PE/MSI/payload/provenance inspection, and responsive visual checks now cover native DPI/text scaling/multiple monitors. The architecture's 90% security-module executable-line and 95% per-critical-file mutation obligations are preserved as implementation/release gates, not fabricated application checks for these instruction files.
+Website English/Russian baseline adapted to architecture English-first scope; Russian conditional. Artifact/content metadata: emitted PE/MSI/payload/provenance inspection. Responsive visual checks: native DPI/text scaling/multiple monitors. Preserve architecture 90% security-module executable-line/95% per-critical-file mutation implementation/release gates; no fabricated application checks for instruction files.
 
 ## Earlier user-owned Rust adaptation
 

@@ -39,3 +39,6 @@ Primary references:
 - [Cargo feature selection](https://doc.rust-lang.org/cargo/reference/features.html#command-line-feature-options)
 
 No upstream examples or downloaded executable code were run for this adaptation.
+
+Later local change: compressed instructional prose; preserved code, metadata,
+headings, links, technical conditions and licence texts. Upstream sources/pins unchanged.

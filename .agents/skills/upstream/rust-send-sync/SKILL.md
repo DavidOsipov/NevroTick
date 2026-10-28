@@ -8,30 +8,13 @@ license: "BSD-3-Clause"
 
 ## NevroTick scope and precedence
 
-Repository instructions and the [canonical architecture](../../../../docs/windows-time-architecture.md)
-control ownership, privileges, runtime and dependency choices. Use
-[implement-rust](../../implementation/implement-rust/SKILL.md) for the changed owner and callers;
-this skill supplies the auto-trait mechanics. Identify the API that requires `Send` or `Sync`
-before changing a type. The current-thread engine experiment permits local `!Send` futures
-where their actual APIs allow them; `tokio::spawn` still requires `Send` on that runtime.
-Do not add a runtime, move work between owners, replace `Arc` with `Rc`, add locking or write
-an `unsafe impl` merely to remove a diagnostic. Windows thread/apartment and handle contracts
-remain separate obligations.
+Repository instructions and [canonical architecture](../../../../docs/windows-time-architecture.md) control ownership, privileges, runtime and dependencies. Use [implement-rust](../../implementation/implement-rust/SKILL.md) for changed owner/callers; this skill supplies auto-trait mechanics. Identify API requiring `Send` or `Sync` before changing type. Current-thread engine experiment permits local `!Send` futures where actual APIs allow; `tokio::spawn` still requires `Send` there. Do not add runtime, move work between owners, replace `Arc` with `Rc`, add locking or write `unsafe impl` merely to remove diagnostic. Windows thread/apartment and handle contracts remain separate obligations.
 
-Upstream examples report rustc 1.98.1, edition 2024, on aarch64-apple-darwin. They are historical
-illustrations, not locally executed probes or qualified Windows/compiler support. Check the
-selected compiler, target, features and actual consumer before relying on a diagnostic or bound.
+Upstream examples report rustc 1.98.1, edition 2024, aarch64-apple-darwin: historical illustrations, not local probes or qualified Windows/compiler support. Check selected compiler, target, features and actual consumer before relying on diagnostic/bound.
 
-Use the [QA contract](../../testing/CONTRACT.md) and
-[contract tests](../../testing/qa-contract-tests/SKILL.md) for positive and compile-fail probes:
-include a valid control and confirm that rejection comes from the intended auto-trait
-obligation, rather than an import, fixture or unrelated error. Lints and optional tools are
-selected through [static checks](../../testing/qa-static-checks/SKILL.md); this skill does not
-install tools, change dependencies, or globally enable `future_not_send`.
+Use [QA contract](../../testing/CONTRACT.md) and [contract tests](../../testing/qa-contract-tests/SKILL.md) for positive/compile-fail probes: include valid control; confirm rejection comes from intended auto-trait obligation, not import, fixture or unrelated error. Select lints/optional tools through [static checks](../../testing/qa-static-checks/SKILL.md); this skill installs no tools, changes no dependencies, globally enables no `future_not_send`.
 
-Related upstream skills are optional. When one is absent, use `implement-rust` and the QA
-references above with the relevant Rust/Tokio documentation; installation is not a prerequisite.
-Local adaptations and sources are recorded in [LOCAL-CHANGES.md](LOCAL-CHANGES.md).
+Related upstream skills optional. If absent, use `implement-rust`, QA references above and relevant Rust/Tokio documentation; installation not prerequisite. Local adaptations/sources: [LOCAL-CHANGES.md](LOCAL-CHANGES.md).
 
 ## Route the symptom to a section
 
@@ -51,12 +34,9 @@ Local adaptations and sources are recorded in [LOCAL-CHANGES.md](LOCAL-CHANGES.m
 
 ## The one rule: `&T` is `Send` exactly when `T` is `Sync`
 
-`Sync` states that one fact at the type level. A `Send` error whose `help:` line names `Sync`
-therefore does not ask for a `Send` impl. It reports a shared reference to a value that is not
-shareable.
+`Sync` states that type-level fact. `Send` error whose `help:` names `Sync` asks for no `Send` impl: shared reference points to unshareable value.
 
-Both auto traits are derived field-wise. Fix a bound error in the fields, not with an impl. Two
-helper functions turn any question into a compile error you can read:
+Both auto traits derive field-wise. Fix bound errors in fields, not with impl. Two helpers expose readable compile errors:
 
 ```rust
 fn assert_send<T: Send>() {}
@@ -90,23 +70,15 @@ Read the two lines together. The head trait is `Send`, because that is the bound
 unmet obligation is `Sync`, on the pointee. The failing impl is `impl<T: Sync + ?Sized> Send for
 &T`, and you cannot write a different one (see [E0321](#unsafe-impl-send-cannot-target-a-reference-e0321)).
 
-Repair in this order. Delete the sharing and move the value instead of the reference. Or give the
-pointee interior mutability that is `Sync`: an atomic, a `Mutex`, or an `RwLock`. Only then read
-the `rust-unsafe` skill, and only for a type you own whose own invariant makes the impl sound.
+Repair in order: remove sharing; move value instead of reference. Or give pointee `Sync` interior mutability: atomic, `Mutex` or `RwLock`. Only then read `rust-unsafe`, only for owned type whose invariant makes impl sound.
 
-Never add `unsafe impl Send` or `unsafe impl Sync` only to make an error in this skill go away,
-including on a wrapper struct around an `Rc`, a `Cell`, or a guard. The compiler accepts the impl
-whether or not it is sound. Fix the field, the lock, or the signature instead.
+Never add `unsafe impl Send` or `unsafe impl Sync` merely to remove diagnostic, including wrappers around `Rc`, `Cell` or guard. Compiler accepts impl whether sound or not. Fix field, lock or signature.
 
-The two message texts are not interchangeable. `cannot be sent` is a failed `Send` bound;
-`cannot be shared` is a failed `Sync` bound. The second appears under an `Arc`, because
-`Arc<T>: Send` itself requires `T: Sync`.
+Messages differ: `cannot be sent` means failed `Send` bound; `cannot be shared` means failed `Sync` bound. Second appears under `Arc` because `Arc<T>: Send` requires `T: Sync`.
 
 ## Verify the auto traits
 
-The compiler proves only the auto traits it derives from fields. After a manual `unsafe impl`, it
-no longer checks what a raw pointer field points to, so a green build proves nothing about that
-impl.
+Compiler proves only field-derived auto traits. After manual `unsafe impl`, no check of raw pointer field's pointee; green build proves nothing about impl.
 
 | Claim | Check |
 | --- | --- |
@@ -117,13 +89,7 @@ impl.
 | No `std::sync` guard lives across an `.await` | `clippy::await_holding_lock`, warn by default |
 | A future used at a `Send` boundary satisfies that bound | Assert the bound at the real consumer. Optional `clippy::future_not_send` can help diagnose selected code; it is not a project-wide requirement |
 
-Select the repository's existing Clippy target/feature lane when these bounds change.
-`cargo clippy --locked --all-targets -- -D warnings` is an example after a Cargo project and
-lockfile exist, not proof that Windows-only consumers were checked. `future_not_send` is
-allow-by-default and can report intentionally local futures; do not enable it globally or add
-blanket expectations as part of diagnosing one boundary. Its generic limitations also mean
-that lint success does not prove every instantiation is `Send`. Use the actual caller and
-focused positive/negative probes for that claim.
+Select existing Clippy target/feature lane when bounds change. `cargo clippy --locked --all-targets -- -D warnings` is example once Cargo project/lockfile exist, not proof of Windows-only consumer checks. `future_not_send` is allow-by-default; may report intentionally local futures. Do not enable globally or add blanket expectations for one-boundary diagnosis. Generic limitations mean lint success does not prove every instantiation is `Send`. Use actual caller and focused positive/negative probes.
 
 ```rust
 pub struct Session { pub id: u32, pub buf: Vec<u8> }
@@ -149,9 +115,7 @@ const _: () = {
 | `Mutex<T>`, `RwLock<T>` | `T: Send` | see [lock bounds](#lock-payload-bounds-mutex-and-rwlock-are-not-interchangeable) |
 | `MutexGuard<'_, T>`, `RwLockReadGuard`, `RwLockWriteGuard` | never | `T: Sync` |
 
-Two rows carry the surprise. **`Arc<T>` needs both traits on the payload, not only `Send`.** An
-`Arc` clone hands a second owner shared access to one value, so the payload must be shareable as
-well as movable:
+Two surprising rows. **`Arc<T>` needs both payload traits, not only `Send`.** `Arc` clone gives second owner shared access to one value: payload must be shareable and movable:
 
 ```rust,compile_fail,E0277
 use std::cell::Cell;
@@ -177,10 +141,7 @@ both `Send` and `Sync`, because `Mutex<T>: Sync` needs only `T: Send`. The `note
 in the suggested `RwLock`: `RwLock<Cell<i32>>` fails again (see
 [lock bounds](#lock-payload-bounds-mutex-and-rwlock-are-not-interchangeable)).
 
-`clippy::arc_with_non_send_sync` (warn by default) reports `Arc::new` of a payload that is not
-`Send + Sync` at the construction site, before any thread boundary. `Rc` is an option only when
-the complete owner/caller contract permits it, including task bounds; single-thread execution
-alone does not justify replacing an existing `Arc`.
+`clippy::arc_with_non_send_sync` (warn by default) reports `Arc::new` of payload lacking `Send + Sync` at construction, before thread boundary. `Rc` permitted only by complete owner/caller contract, including task bounds; single-thread execution alone does not justify replacing existing `Arc`.
 
 **`&mut T` is not the mirror of `&T`.** `&mut T: Send` requires `T: Send`, not `T: Sync`:
 
@@ -200,12 +161,11 @@ error[E0277]: `Rc<i32>` cannot be sent between threads safely
   = note: required because it appears within the type `&mut Rc<i32>`
 ```
 
-A `&mut T` is a move channel, not a view. `std::mem::replace(x, T::default())` takes the value out
-through the reference, so the receiving thread owns and drops it. That is the `Send` obligation.
+`&mut T` is move channel, not view. `std::mem::replace(x, T::default())` removes value through reference; receiving thread owns/drops it. Hence `Send` obligation.
 
 ## `unsafe impl Send` cannot target a reference (E0321)
 
-You cannot decide per reference type whether it is `Send`. The impl does not exist to be written:
+Cannot choose `Send` per reference type; impl forbidden:
 
 ```rust,compile_fail,E0321
 pub struct Handle(*mut u8);
@@ -221,18 +181,14 @@ error[E0321]: cross-crate traits with a default impl, like `Send`, can only be i
   |                              for non-struct/enum type
 ```
 
-`unsafe impl Send for Handle {}` compiles, because `Handle` is a struct in this crate. `Sync` is
-the only lever that reaches `&Handle`: write `unsafe impl Sync for Handle {}`, and `&Handle`
-becomes `Send` through the blanket impl. That is a stronger promise. The `rust-unsafe` skill holds
-the audit it needs.
+`unsafe impl Send for Handle {}` compiles: `Handle` is local struct. Only `Sync` reaches `&Handle`: `unsafe impl Sync for Handle {}` makes `&Handle` become `Send` through blanket impl. Stronger promise; `rust-unsafe` supplies required audit.
 
 ## Lock payload bounds: `Mutex` and `RwLock` are not interchangeable
 
 - `Mutex<T>: Sync` requires only `T: Send`.
 - `RwLock<T>: Sync` requires `T: Send + Sync`.
 
-A `Mutex` hands out one `&mut T` at a time, so the payload never has to be shareable. An `RwLock`
-hands out many concurrent `&T`, so the payload must be `Sync` on its own.
+`Mutex` gives one `&mut T` at a time: payload need not be shareable. `RwLock` gives many concurrent `&T`: payload itself must be `Sync`.
 
 ```rust
 use std::cell::Cell;
@@ -254,17 +210,11 @@ error[E0277]: `Cell<i32>` cannot be shared between threads safely
   = note: required for `std::sync::RwLock<Cell<i32>>` to implement `Sync`
 ```
 
-Changing a read-heavy `Mutex<T>` to an `RwLock<T>` is therefore **not** a drop-in change. It stops
-compiling as soon as the payload holds a `Cell` or a `RefCell`, and the error lands on the
-`Arc<RwLock<...>>` at a call site far from the edit. Check the payload first. An `Rc` payload is
-not a symptom of the swap. `Mutex<T>: Sync` also requires `T: Send`, so `Mutex<Rc<T>>` is neither
-`Send` nor `Sync` before the edit. `Mutex<T>: Send` and `RwLock<T>: Send` both need only
-`T: Send`, so the `Send` direction gives no warning.
+Read-heavy `Mutex<T>` → `RwLock<T>` is **not** drop-in change. Payload holding `Cell` or `RefCell` stops compilation; error appears on distant `Arc<RwLock<...>>` caller. Check payload first. `Rc` payload is not swap symptom: `Mutex<T>: Sync` also requires `T: Send`, so `Mutex<Rc<T>>` was already neither `Send` nor `Sync`. `Mutex<T>: Send` and `RwLock<T>: Send` both need only `T: Send`; `Send` direction gives no warning.
 
 ## Guards: `MutexGuard` is not `Send`, and it is `Sync`
 
-`std::sync::MutexGuard<'_, T>` is `!Send` for every `T`. POSIX requires the unlocking thread to be
-the locking thread, so the guard's `Drop` must run where the guard was created.
+`std::sync::MutexGuard<'_, T>` is `!Send` for every `T`. POSIX requires locking/unlocking on same thread; guard's `Drop` must run on creation thread.
 
 ```rust,compile_fail,E0277
 use std::sync::MutexGuard;
@@ -277,9 +227,7 @@ error[E0277]: `std::sync::MutexGuard<'static, i32>` cannot be sent between threa
   = help: the trait `Send` is not implemented for `std::sync::MutexGuard<'static, i32>`
 ```
 
-Do not read that as "nothing derived from the guard leaves the thread". The guard is `Sync`
-whenever `T: Sync`, so `&MutexGuard<'_, T>` **is** `Send`. Reading through the guard is reading
-`&T`, and that is safe to share. This runs and prints `total=6`:
+This does not mean "nothing derived from guard leaves thread". Guard is `Sync` whenever `T: Sync`; `&MutexGuard<'_, T>` **is** `Send`. Reading through guard reads `&T`, safe to share. Runs and prints `total=6`:
 
 ```rust,run
 use std::sync::Mutex;
@@ -298,7 +246,7 @@ fn main() {
 }
 ```
 
-Consequences to hold:
+Consequences:
 
 - Give a worker `&guard` only when the payload is `Sync`. `&MutexGuard<'_, T>` is `Send` exactly
   when `T: Sync`, so `&MutexGuard<'_, Cell<T>>` and `&MutexGuard<'_, RefCell<T>>` do not cross.
@@ -313,18 +261,11 @@ Consequences to hold:
 
 ## `PhantomData` surgery
 
-`PhantomData<X>` inherits the auto traits of `X`. Use `PhantomData<Cell<()>>` to remove only
-`Sync`. Use a raw pointer marker such as `PhantomData<*mut ()>` only when you mean to remove both,
-because it also blocks a move to a worker thread. Write `()` in the marker, not your own `T`: a
-marker that names `T` also changes variance. Read
-[references/phantomdata-markers.md](references/phantomdata-markers.md) when you design a marker:
-it has the marker table with variance, and the marker that removes only `Send`.
+`PhantomData<X>` inherits `X` auto traits. Use `PhantomData<Cell<()>>` to remove only `Sync`. Raw pointer marker, e.g. `PhantomData<*mut ()>`, removes both, blocking move to worker thread. Write `()` in marker, not own `T`: naming `T` also changes variance. Read [references/phantomdata-markers.md](references/phantomdata-markers.md) when designing marker: variance table and marker removing only `Send`.
 
 ## Auto traits leak out of `impl Trait` and `async fn`
 
-A public `-> impl Trait` with no explicit `+ Send` publishes whatever auto traits the **body**
-happens to have. Adding one `Rc` inside the function is then a breaking change, and the compiler
-reports it at every distant call site, with a `note:` that points into your private body:
+Public `-> impl Trait` without explicit `+ Send` publishes **body**'s auto traits. Adding one `Rc` inside function then breaks callers; compiler reports each distant call site with `note:` pointing into private body:
 
 ```text
 error[E0277]: `Rc<Vec<u32>>` cannot be sent between threads safely
@@ -333,8 +274,7 @@ error[E0277]: `Rc<Vec<u32>>` cannot be sent between threads safely
 note: required because it appears within the type `impl Iterator<Item = u32>`
 ```
 
-Spell the bound in the signature. The guarantee is then frozen, and the body is the thing that
-must comply:
+State bound in signature: freezes guarantee; body must comply:
 
 ```rust
 pub fn ids() -> impl Iterator<Item = u32> + Send {
@@ -343,7 +283,7 @@ pub fn ids() -> impl Iterator<Item = u32> + Send {
 fn main() { assert_eq!(ids().sum::<u32>(), 6); }
 ```
 
-With `+ Send` written, the same offending body fails at the definition:
+With `+ Send`, offending body fails at definition:
 
 ```rust,compile_fail,E0277
 use std::rc::Rc;
@@ -361,13 +301,9 @@ error[E0277]: `Rc<Vec<u32>>` cannot be sent between threads safely
   |     ----------------------------- return type was inferred to be `Map<...>` here
 ```
 
-Write `+ Send` only when you intend it, and add `+ Sync` when callers share the returned value. An
-API that is single-threaded by design cannot carry the bound, because it then fails at the
-definition. Record that decision in the doc comment.
+Write `+ Send` only when intended; add `+ Sync` when callers share returned value. Single-threaded-by-design API cannot carry bound: fails at definition. Record decision in doc comment.
 
-This is not async-specific. `async fn f() -> T` desugars to `fn f() -> impl Future<Output = T>`.
-It has the same leak. On stable Rust 1.98.1, no syntax puts a bound on an `async fn` return type.
-Write the desugared form:
+Not async-specific. `async fn f() -> T` desugars to `fn f() -> impl Future<Output = T>`; same leak. Stable Rust 1.98.1 has no syntax for bound on `async fn` return type. Write desugared form:
 
 ```rust
 use std::future::Future;
@@ -379,11 +315,9 @@ pub fn load(id: u32) -> impl Future<Output = u32> + Send {
 fn main() { let _ = load(1); }
 ```
 
-Do not silence the `async_fn_in_trait` warning when callers spawn the future. For `async fn`
-in a trait that callers spawn, and for return type notation, use the `rust-async-internals`
-skill, when it is installed.
+Do not silence `async_fn_in_trait` warning when callers spawn future. For spawned trait `async fn` and return type notation, use `rust-async-internals` when installed.
 
-The async diagnostic has **no error code**, so a search for E0277 finds nothing:
+Async diagnostic has **no error code**; E0277 search finds nothing:
 
 ```text
 error: future cannot be sent between threads safely
@@ -395,14 +329,11 @@ note: future is not `Send` as this value is used across an await
   |                                ^^^^^ await occurs here, with `names` maybe used later
 ```
 
-Read the `note:`. It names the value and the exact `.await` that traps it. The
-`rust-compiler-errors` skill covers the message shape when installed. Choose the repair
-from the real boundary and intended ownership contract; a signature change is one option.
+Read `note:`: names value and exact `.await` trapping it. `rust-compiler-errors` covers message shape when installed. Choose repair from real boundary/intended ownership contract; signature change is one option.
 
 ## Related skills
 
-Use these skills by name when installed. Otherwise use the NevroTick fallbacks above; do not
-stop or install another skill merely because this table names it.
+Use named skills when installed; otherwise NevroTick fallbacks above. Do not stop or install skills merely because table names them.
 
 | Skill | Boundary |
 | --- | --- |

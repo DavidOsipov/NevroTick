@@ -1,16 +1,14 @@
 # Implementation adaptation sources
 
-Reviewed 28 October 2026. This is a maintenance/provenance record; read the linked
-conditional reference during the actual task rather than loading this whole file.
-Repository architecture takes precedence over external examples. No Cargo graph,
-Rust build, parser experiment or Windows UI execution was performed for this
-documentation adaptation.
+Reviewed 28 October 2026. Maintenance/provenance record; load task-relevant linked
+conditional reference, not whole file. Repository architecture outranks external
+examples. Documentation adaptation performed no Cargo graph, Rust build, parser
+experiment or Windows UI execution.
 
 ## Website source mapping
 
 Source root: `/home/david_osipov/personal-website-templated-1/.agents/implementation/`.
-These source entrypoints, group router and shared contract were inspected; the
-website files were not modified.
+Inspected source entrypoints, group router/shared contract; no website edits.
 
 | Website skill | NevroTick skill | Preserved and changed decisions |
 | --- | --- | --- |
@@ -19,8 +17,8 @@ website files were not modified.
 | evolve-data-contracts | evolve-data-contracts | Preserve semantic compatibility matrices and separate rollout/retirement; cover versioned native IPC, protected policy/journals, mixed generations and MSI rollback |
 | implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use native Win32/UIA/Narrator/DPI and English-first catalog instead of HTML/ARIA/browser assertions or mandatory website locales |
 
-No browser/ECMAScript reference corpus, website code examples, npm scripts or
-website-only enforcement helper was copied into the Rust project.
+Copied no browser/ECMAScript corpus, website examples, npm scripts or website-only
+enforcement helper into Rust project.
 
 ## Project authority
 
@@ -35,9 +33,8 @@ website-only enforcement helper was copied into the Rust project.
 
 ## Primary internet and GitHub research
 
-These observations were checked against official documentation or project-owned
-source. Rolling documentation/branch links are a dated observation, not a pinned
-dependency artifact or a claim that NevroTick uses their latest release.
+Checked against official documentation/project-owned source. Rolling docs/branches
+are dated observations, not pinned artifacts or claims of latest NevroTick dependencies.
 
 | Source inspected | Finding used in the adaptation |
 | --- | --- |
@@ -51,18 +48,17 @@ dependency artifact or a claim that NevroTick uses their latest release.
 | [Cargo workspaces](https://doc.rust-lang.org/cargo/reference/workspaces.html) | Shared package metadata is inherited explicitly; root metadata does not alone establish each member's settings |
 | [Cargo build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html) | Cargo compiles and executes build.rs before package compilation; locked/offline resolution does not make that local code inert |
 
-The connected GitHub fetch retrieved serde-rs/json source. Attempts to fetch the
-windows-rs README through the file endpoint returned 404; no conclusion relies on
-those failed reads. Microsoft documentation and the local architectural record
-support the Win32/UIA guidance. No additional fallback package or tool was installed.
+Connected GitHub retrieved serde-rs/json source. windows-rs README file fetches
+returned 404; conclusions rely on none. Microsoft docs/local architecture support
+Win32/UIA guidance. Installed no fallback package/tool.
 
 ## Prior Rust port supplied by the user
 
 Pinned overlay: [DavidOsipov/pdfcraft c9a02b378271f92a73cb44be9fd9e4acc6921516](https://github.com/DavidOsipov/pdfcraft/tree/c9a02b378271f92a73cb44be9fd9e4acc6921516),
 submitted as [storytold/pdfcraft PR 2912](https://github.com/storytold/pdfcraft/pull/2912).
-Treat it as supplied reference material, not proof the upstream adopted it.
+Supplied reference material proves no upstream adoption.
 
-The following pinned files were read via the GitHub connector:
+Pinned files read through GitHub connector:
 
 - [Rust skill](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-rust-implementation/SKILL.md),
   [Rust workflow](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-rust-implementation/references/rust-workflow.md):

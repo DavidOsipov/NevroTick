@@ -2,14 +2,14 @@
 
 Reviewed 28 October 2026. Source skill:
 `/home/david_osipov/personal-website-templated-1/.agents/skills/environment/dependency-updates/SKILL.md`.
-The scoped discovery/cohort/review/qualification and dirty-work custody workflow is
-retained. Cargo metadata, lockfile/source/features/MSRV/targets and build scripts
-replace npm/ncu, peer graphs and node_modules assumptions. The source was read,
-not modified. Its npm comparison helper was not copied.
+Retains scoped discovery/cohort/review/qualification and dirty-work custody.
+Cargo metadata, lockfile/source/features/MSRV/targets and build scripts replace
+npm/ncu, peer graphs and node_modules assumptions. Source read, never modified;
+npm comparison helper not copied.
 
-The [canonical architecture](../../../docs/windows-time-architecture.md), sections
-18.2–18.10, controls licensing, Serde/TLS/native decisions and admission. Research
-versions and optional tools are not installed, pinned or qualified by this skill.
+[canonical architecture](../../../docs/windows-time-architecture.md), sections
+18.2–18.10, controls licensing, Serde/TLS/native decisions and admission. Skill
+research neither installs, pins nor qualifies versions/optional tools.
 
 | Primary source inspected | Applied finding |
 | --- | --- |
@@ -28,7 +28,6 @@ diff/hash, regression and retirement condition; excluded vendored crates need
 explicit test accounting. Published-base audits do not attest to local changes.
 The full David Osipov MIT notice is retained in the dependency leaf.
 
-No dependency was added, upgraded, downloaded or built for this adaptation.
-Command recipes are prospective and must be checked against the selected toolchain.
-Advisory freshness, license compatibility and Windows runtime behavior remain
-admission/qualification tasks for the eventual real graph.
+Adaptation added, upgraded, downloaded/built no dependencies. Prospective commands
+need selected-toolchain checks. Advisory freshness, license compatibility and
+Windows runtime remain real-graph admission/qualification tasks.

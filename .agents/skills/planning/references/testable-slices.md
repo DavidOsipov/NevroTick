@@ -1,8 +1,8 @@
 # Testable slices and delegation
 
-Expand only the next executable stage. State input/preconditions, one observable integrated outcome, files/owner, independent oracle, legitimate and relevant failure controls, environment, limits, cleanup and exit. Component checks support that outcome; they do not replace it. Defer later choices explicitly instead of fabricating APIs or test commands before source exists.
+Expand only next executable stage: input/preconditions, one observable integrated outcome, files/owner, independent oracle, legitimate/relevant failure controls, environment, limits, cleanup, exit. Component checks support, never replace outcome. Explicitly defer later choices; no fabricated APIs/test commands before source exists.
 
-For delegated work assign disjoint writes or a single owner, common source identity, raw artifacts, expected deliverable and bounded budget. Review returned observations and changed artifacts; a subagent's conclusion is not an independent oracle. A reviewer should receive the request and frozen raw inputs rather than the author's desired verdict. Keep a compact checkpoint with completed evidence, current dirty state, unresolved decision and next action.
+Delegation: disjoint writes or single owner, common source identity, raw artifacts, expected deliverable, bounded budget. Review returned observations/changed artifacts; subagent conclusion is no independent oracle. Give reviewer request/frozen raw inputs, not desired verdict. Compact checkpoint: completed evidence, current dirty state, unresolved decision, next action.
 
 Keep environment claims separate:
 
@@ -11,4 +11,4 @@ Keep environment claims separate:
 - Native Windows experiments require the relevant effective identities, API observations, bounded side effects and cleanup. Clock experiments use disposable VMs under architecture section 14.9.
 - Packaging needs the exact complete MSI and install/repair/upgrade/rollback/uninstall observations. Signing and release readiness are separate evidence and authority.
 
-No Cargo workspace means Cargo checks are unavailable for that task. Tool smoke tests or a throwaway Rust example do not qualify NevroTick. Documentation integrity and skill-pack checks remain valid bounded work.
+Without Cargo workspace, Cargo checks unavailable for task. Tool smoke tests/throwaway Rust examples do not qualify NevroTick. Documentation integrity/skill-pack checks remain valid bounded work.

@@ -7,12 +7,12 @@ description: "Measure NevroTick CPU, memory, wakeups, handles, queues and respon
 
 Read [the testing contract](../CONTRACT.md).
 
-Use the architecture's section 17 and CHECK-21 budgets; identify named hardware, Windows security profile, candidate hash and workload. Do not substitute invented thresholds or a VM measurement for a hardware-specific requirement.
+Use architecture section 17/CHECK-21 budgets; identify named hardware, Windows security profile, candidate hash, workload. No invented thresholds or VM substitution for hardware-specific requirement.
 
-Choose bounded workloads for steady tracking/idle UI, reconnect/outage, malformed requests, NAK storms, source changes, logging and long-running recovery. Measure the actual owning process/service, CPU/working set/handles/threads/wakeups, queue/work bounds and UI/control-loop responsiveness.
+Choose bounded steady tracking/idle UI/reconnect/outage/malformed requests/NAK storms/source changes/logging/long-running recovery workloads. Measure actual owning process/service, CPU/working set/handles/threads/wakeups, queue/work bounds, UI/control-loop responsiveness.
 
-Define the metric's start/stop events, bounded repeats/warmup and preselected statistic plus spread before sampling. Retain all raw samples, outliers and failed/missing observations with reasons; an unavailable measurement is not zero. Compare before/after only with comparable candidate/environment identities, and keep a near-noise or unspecified-decision-rule verdict uncertain.
+Before sampling define metric start/stop events, bounded repeats/warmup, preselected statistic/spread. Retain all raw samples/outliers/failed/missing observations/reasons; unavailable is not zero. Compare only comparable candidate/environment identities; near-noise/unspecified-decision-rule verdict remains uncertain.
 
-Observe before fixture teardown so forced child cleanup cannot hide leaks. Separate cold/warm caches and startup from steady state; preserve time series, workload inputs and first spikes/failures. Keep UTC/monotonic/active-awake timing distinctions.
+Observe before fixture teardown; forced child cleanup must not hide leaks. Separate cold/warm caches/startup/steady state; preserve time series/workload inputs/first spikes/failures. Keep UTC/monotonic/active-awake distinctions.
 
 A short smoke does not establish the planned one-hour baseline or 72-hour soak. Run only the authorized scope/budget and report remaining qualification. Read [Windows evidence](../references/windows-evidence.md); instrumentation overhead and unavailable physical power states remain explicit.

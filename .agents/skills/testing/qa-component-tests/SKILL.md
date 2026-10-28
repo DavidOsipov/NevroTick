@@ -7,10 +7,10 @@ description: "Verify a bounded NevroTick component such as a controller, IPC cli
 
 Read [the testing contract](../CONTRACT.md).
 
-Choose a component boundary and its observable contract. Exercise the production component with controlled collaborators; name which transport, clock, persistence, OS and UI parts are real versus doubled.
+Choose component boundary/observable contract. Exercise production component with controlled collaborators; identify real/doubled transport, clock, persistence, OS, UI.
 
-Drive inputs through the public component interface and assert resulting state, emitted commands/events, accessibility semantics where exposed and resource cleanup. Cover success, rejection, collaborator failure and late completion after generation/cancellation changes. The observer must not set the desired state itself.
+Drive inputs through public component interface; assert resulting state, emitted commands/events, exposed accessibility semantics, cleanup. Cover success/rejection/collaborator failure/late completion after generation/cancellation changes. Observer must not set desired state.
 
-For the UI, test status projection, settings validation, command availability and stale/reconnecting states without granting the normal-user process clock authority. In-process view tests cannot prove native keyboard/AT delivery or UAC behavior. Use [Windows evidence](../references/windows-evidence.md) when a real HWND/UIA path is required.
+UI: test status projection/settings validation/command availability/stale/reconnecting states without normal-user process clock authority. In-process view tests cannot prove native keyboard/AT delivery/UAC behavior. Use [Windows evidence](../references/windows-evidence.md) for required real HWND/UIA path.
 
-Use bounded completion conditions rather than fixed sleeps. Keep a real integration/native follow-up for the boundary omitted by doubles and report it explicitly.
+Use bounded completion conditions; no fixed sleeps. Retain/report real integration/native follow-up for boundary omitted by doubles.

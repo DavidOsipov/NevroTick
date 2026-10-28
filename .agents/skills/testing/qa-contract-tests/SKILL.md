@@ -7,10 +7,10 @@ description: "Verify strict NevroTick IPC, configuration, domain-construction an
 
 Read [the testing contract](../CONTRACT.md).
 
-Read the applicable implementation contract and [strict contract cases](../references/numerical-protocol.md). Trace raw bytes → bounded map-only DTO → private fallible domain construction → current guard → effect/acknowledgement. Identify each owner and the representation consumed at the next boundary.
+Read applicable implementation contract/[strict contract cases](../references/numerical-protocol.md). Trace raw bytes → bounded map-only DTO → private fallible domain construction → current guard → effect/acknowledgement. Identify each owner/next-boundary consumed representation.
 
-Test unknown/duplicate/escaped keys, object-versus-array shape, missing/null/invalid values, complete consumption, versions, exact integers, finite computed values, limits and every constructor/migration bypass. Include valid neighboring and legitimate maximum-size cases so reject-all cannot pass.
+Test unknown/duplicate/escaped keys, object-versus-array shape, missing/null/invalid values, complete consumption, versions, exact integers, finite computed values, limits, every constructor/migration bypass. Include valid neighboring/legitimate maximum-size controls; reject-all must fail.
 
-For compatibility, freeze the supported producer/consumer version and feature matrix. Compare meaning, units, presence/defaults and failure behavior, not just field shape or round trips. Public Rust APIs need a minimal real external consumer where visibility/type/trait claims matter; wire version compatibility remains separate from Rust source compatibility.
+Compatibility: freeze supported producer/consumer version/feature matrix. Compare meaning, units, presence/defaults, failure behavior; shape/round trips insufficient. Public Rust visibility/type/trait claims need minimal real external consumer; separate wire-version/Rust-source compatibility.
 
-Verify invalid input has no prohibited effect and valid-shaped unauthorized/stale input still fails the current guard. Cross-process Windows enforcement requires its native checks. For a disputed expectation, locate the authoritative contract before altering tests or production.
+Verify invalid input causes no prohibited effect; valid-shaped unauthorized/stale input fails current guard. Cross-process Windows enforcement requires native checks. Disputed expectation: locate authoritative contract before changing tests/production.

@@ -40,3 +40,6 @@ Primary sources checked for these adaptations:
 
 Only skill documents and interface metadata were adapted. No Rust example, external code,
 Cargo command, target runner or Windows/native operation was executed for this adaptation.
+
+Later local change: compressed instructional prose; preserved code, metadata,
+headings, links, technical conditions and licence texts. Upstream sources/pins unchanged.

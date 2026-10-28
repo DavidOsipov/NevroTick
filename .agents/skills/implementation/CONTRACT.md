@@ -1,34 +1,33 @@
 # Rust implementation contract
 
-Read this for data contracts and compatibility transitions. Ordinary Rust or UI edits
-enter it only when a data-contract concern applies. Repository instructions and
+Use for data contracts and compatibility transitions; ordinary Rust/UI edits only
+when a data-contract concern applies. Repository instructions and
 [canonical architecture](../../../docs/windows-time-architecture.md), especially
-sections 5–6 and 18, control; these skills add no approval round or authority.
+sections 5–6 and 18, control. Skills add no approval round or authority.
 
-Choose implementation, review, planning or tests-only mode from the request. Review
-without editing; planning stops at the requested plan; tests-only work does not
-authorize an unrelated production repair. Reuse the current plan and existing
-evidence while its inputs remain unchanged. Record material missing decisions,
-then continue independent work.
+Match requested mode: implementation, review, planning or tests-only. Review
+without edits; planning ends at requested plan; tests-only grants no unrelated
+production repair. Reuse current plan/evidence while inputs stay unchanged.
+Record material missing decisions; continue independent work.
 
 ## One maintained owner for each guarantee
 
 Trace bytes → inert wire record → domain construction → current authority/state
 guard → serialized effect → actual acknowledgement. `ipc-contract` owns versioned
-DTOs, `time-domain` owns private pure invariants, and the receiving service owns
-current permission. These are architectural responsibilities and may initially be
-modules, not separate crates. Keep JSON, UI, OS calls and effects out of `time-core`.
+DTOs; `time-domain` owns private pure invariants; receiving service owns current
+permission. Responsibilities may initially be modules, not separate crates.
+Keep JSON, UI, OS calls and effects out of `time-core`.
 
-The selected prototype uses bounded direct `serde`/`serde_json` decoding and
-fallible Rust constructors. No validation crate is an automatic Zod equivalent.
-Garde remains held; `serde_path_to_error` is optional; schema generation is not
-adopted. Follow architecture section 18.5 before admitting any candidate.
+Selected prototype: bounded direct `serde`/`serde_json` decoding, fallible Rust
+constructors. No validation crate automatically replaces Zod. Garde remains held;
+`serde_path_to_error` optional; schema generation not adopted. Follow architecture
+section 18.5 before admitting any candidate.
 
-A boundary changes trust, representation, persistence or independently versioned
-consumption. Typed calls between immutable validated values in one context do not
-need repeated parsing. Meaningful transformations still need their own invariants,
-checked outputs and failure behavior. Changes to policy, generation, ownership,
-time or destination can invalidate contextual checks without changing a type.
+Boundaries change trust, representation, persistence or independently versioned
+consumption. Typed calls between immutable validated values in one context need no
+repeated parsing. Meaningful transformations still need invariants, checked outputs
+and failure behavior. Policy, generation, ownership, time or destination changes
+can invalidate contextual checks without type changes.
 
 ## Preserve meaning and failure atomicity
 
@@ -37,17 +36,17 @@ version, normalization, output guarantees and consumers. Keep UTC, monotonic,
 active-awake time, NTP timestamps, phase and frequency distinct. Public positive
 offset means Windows is behind reference time and needs to advance.
 
-Consumers use the checked output, never the original DTO after validating another
-copy. Do not deserialize unrestricted invariant-bearing types or expose bypasses
-through public fields, unchecked `From`, mutation or permissive defaults. Only the
-real protocol-verification path constructs authenticated evidence; only the
-broker's actual guard grants current authority.
+Consumers use checked output, never original DTO after validating another copy.
+No unrestricted deserialization of invariant-bearing types or bypasses through
+public fields, unchecked `From`, mutation or permissive defaults. Only real
+protocol verification constructs authenticated evidence; only broker's actual
+guard grants current authority.
 
 Validate mandatory persisted policy/journals after protected bounded reads.
-Invalid updates preserve the prior valid revision; invalid mandatory startup state
-blocks protected effects. Optional statistical caches may be discarded under their
-documented recovery contract. Failure never manufactures synchronized status,
-resets authority budgets or silently enables plain NTP.
+Invalid updates preserve prior valid revision; invalid mandatory startup state
+blocks protected effects. Discard optional statistical caches only under documented
+recovery contract. Failure never manufactures synchronized status, resets authority
+budgets or silently enables plain NTP.
 
 Pure validation is separate from authorization and sink safety. At the effect
 owner, serialize guard and effect using trusted identity, current revision,
@@ -56,12 +55,11 @@ asynchronous work. Ambiguous effects require reconciliation before retry.
 
 ## Evidence and completion
 
-Use [testing contract](../testing/CONTRACT.md) and the relevant QA owner to select
-checks, rather than reproducing a second testing policy. For changed enforcement,
-use an independent invalid control and a valid neighboring control through the
-actual adapter/consumer. Check the executed command admits the affected files;
-green counts, installed tools and configuration alone establish no behavior.
-Never relax a contract/check solely to obtain green results.
+Select checks through [testing contract](../testing/CONTRACT.md) and relevant QA
+owner; add no second testing policy. Changed enforcement needs independent invalid
+and valid neighboring controls through actual adapter/consumer. Confirm executed
+command admits affected files. Green counts, installed tools/configuration alone
+prove no behavior. Never relax contracts/checks solely for green results.
 
 Use [evolution](evolve-data-contracts/SKILL.md) for compatibility decisions before
 dependent edits, then [contract implementation](implement-rust-contracts/SKILL.md)
@@ -69,9 +67,8 @@ for bounded owner changes. [Planning](../planning/plan-code-change/SKILL.md),
 [security](../security/CONTRACT.md), and
 [dependency updates](../environment/dependency-updates/SKILL.md) retain their scopes.
 
-Finish with the requested result, owner and checked-data path, failure/effect
-behavior, affected consumers, executed checks and limitations. WSL/Linux evidence
-does not prove Windows service, IPC, UI, installer or real clock behavior. A planned
-CHECK entry, research finding, successful build and qualified release are separate
-claims. Do not introduce a dependency, migration, publication or release merely to
-satisfy this workflow.
+Report requested result, owner, checked-data path, failure/effect behavior,
+affected consumers, executed checks and limits. WSL/Linux evidence proves no
+Windows service, IPC, UI, installer or real clock behavior. Planned CHECK entries,
+research, builds and qualified releases remain separate claims. Add no dependency,
+migration, publication or release merely to satisfy workflow.

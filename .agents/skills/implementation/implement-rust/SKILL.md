@@ -5,33 +5,33 @@ description: "Implement, refactor or review NevroTick Rust logic, ownership, err
 
 # Implement Rust
 
-Start with repository instructions and the current architectural owner. Preserve
-the request's implementation/review/planning scope, existing dirty work and resolved
-decisions. Do not create a Cargo workspace, new dependency or service architecture
-as a side effect of an ordinary code edit.
+Start with repository instructions/current architectural owner. Preserve requested
+implementation/review/planning scope, dirty work and resolved decisions. Ordinary
+code edits must not create Cargo workspaces, dependencies or service architecture
+as side effects.
 
-Locate the producer, callers, mutation paths, effects and target/feature lane.
+Locate producer, callers, mutation paths, effects and target/feature lane.
 Distinguish pure core, wire admission, engine, broker, Windows adapter and UI.
-Use Serena symbols/references after its required initialization when source exists;
-use Probe for Rust search/extraction and the configured documentation tools for
-design context. An empty graph before source exists is expected.
+With source present, initialize Serena before symbol/reference queries; use Probe
+for Rust search/extraction and configured documentation tools for design context.
+Empty graph before source exists is expected.
 
-Choose the smallest model that makes meaningful mistakes hard to express:
+Choose smallest model that makes meaningful mistakes hard to express:
 
-- Private newtypes for units/identity; enums for explicit states and outcomes;
-  `Result` for expected failures; checked conversion/arithmetic at boundaries.
+- Private newtypes for units/identity; enums for explicit states/outcomes;
+  `Result` for expected failures; checked boundary conversion/arithmetic.
 - Preserve exact timestamps/counters until deliberate conversion of small deltas.
   Reject non-finite estimator/FFI results and validate post-conversion bounds.
-- Make ownership, borrowing and lifetime rules follow actual handle/state owners.
-  Avoid introducing `Arc<Mutex<_>>`, cloning or dynamic dispatch merely to silence a
-  compiler error. A lock must cover the complete invariant-bearing transaction.
-- Do not erase operational failure into `None`, an empty result or stale success.
-  Redact secrets and preserve enough structured context to diagnose rejection.
+- Match ownership, borrowing and lifetimes to actual handle/state owners.
+  No `Arc<Mutex<_>>`, cloning or dynamic dispatch merely to silence compiler errors.
+  Locks must cover complete invariant-bearing transactions.
+- Never erase operational failure into `None`, empty results or stale success.
+  Redact secrets; retain structured context sufficient to diagnose rejection.
 
-Use [Rust and Windows boundaries](references/rust-windows.md) when changing FFI,
-handles, panic policy, async work, cancellation or lifecycle. Pure core forbids
-unsafe; Windows adapters have small reviewed unsafe contracts. Keep the UI and
-engine free of clock-setting privilege.
+For FFI, handles, panic policy, async work, cancellation or lifecycle changes, use
+[Rust and Windows boundaries](references/rust-windows.md). Pure core forbids unsafe;
+Windows adapters need small reviewed unsafe contracts. UI/engine have no
+clock-setting privilege.
 
 For compiler/runner/feature changes or review-feedback intake, read
 [execution evidence](references/execution-evidence.md) before selecting commands.
@@ -50,15 +50,15 @@ changes to [evolution](../evolve-data-contracts/SKILL.md), and controls/focus/re
 status to [native UI](../implement-native-ui/SKILL.md). Use the shared
 [contract](../CONTRACT.md) only when its data-contract trigger applies.
 
-Verify the changed guarantee and actual callers with the smallest appropriate
-behavioral check, plus applicable compiler/Clippy/format checks in the existing
-target matrix. For a bug, demonstrate the causal failure and healthy control before
-the repair when practical. Use the [QA contract](../../testing/CONTRACT.md) for
-test integrity. Compiler acceptance proves type obligations, not freshness,
-authorization, numerical truth or Win32 runtime behavior.
+Verify changed guarantee/actual callers with smallest appropriate behavioral
+check plus applicable compiler/Clippy/format checks in existing target matrix.
+For bugs, show causal failure and healthy control before repair where practical.
+Use [QA contract](../../testing/CONTRACT.md) for test integrity. Compiler acceptance
+proves type obligations, not freshness, authorization, numerical truth or Win32
+runtime behavior.
 
-Report the result, changed owner/callers, failure/effect decisions, checks actually
-executed and remaining target/runtime uncertainty. Reuse passing evidence while
-the relevant state is unchanged; do not impose every release gate on a small edit.
+Report result, changed owner/callers, failure/effect decisions, executed checks
+and target/runtime uncertainty. Reuse passing evidence while relevant state stays
+unchanged; small edits need no blanket release-gate campaign.
 
 Adapted David Osipov skill material: [licence and notices](THIRD_PARTY_NOTICES.md).

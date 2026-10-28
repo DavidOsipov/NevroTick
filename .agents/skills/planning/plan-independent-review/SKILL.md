@@ -5,7 +5,7 @@ description: "Independently review a NevroTick plan or revised stage for missing
 
 # Review a plan's next stage
 
-Review the requested stage without implementing or amending policy. Read applicable `AGENTS.md`, `docs/README.md`, the relevant canonical architecture and [testing contract](../../testing/CONTRACT.md). Obtain the request, plan/revision, source/dirty identity, next-stage scope and existing results. Read cited artifacts yourself; an author's verdict is not evidence. Use a fresh reviewer where available and disclose self-review.
+Review requested stage; do not implement or amend policy. Read applicable `AGENTS.md`, `docs/README.md`, canonical architecture, [testing contract](../../testing/CONTRACT.md). Obtain request, plan/revision, source/dirty identity, next-stage scope, existing results. Read cited artifacts yourself; author verdict is not evidence. Use fresh reviewer where available; disclose self-review.
 
 | Inspect | Reject an unsupported claim when |
 | --- | --- |
@@ -16,8 +16,8 @@ Review the requested stage without implementing or amending policy. Read applica
 | Execution and recovery | The next stage lacks its Windows environment, bounded clock experiment, independent observation, cleanup, ownership proof, compatible rollback or integrated exit. |
 | Evidence status | Architecture, retained research, planned checks or a green historical run are promoted to current implementation/release proof. |
 
-Inspect affected dependency and API facts against current official/upstream evidence when uncertain. Do not turn missing evidence into a product defect or N/A. Resolve disputed source facts with bounded inspection, not votes. Review only changed sections when a frozen relevant state remains unchanged; invalidate affected conclusions on source drift.
+Verify uncertain affected dependency/API facts against current official/upstream evidence. Missing evidence is neither product defect nor N/A. Resolve disputed source facts through bounded inspection, not votes. Review only changed sections while relevant frozen state unchanged; invalidate affected conclusions on source drift.
 
-Return plan/revision/source identity, stage, reviewer independence and `ready`, `revise` or `blocked`. For each material finding give severity, requirement/boundary, exact location/evidence, consequence and smallest correction/owner. `ready` means that named stage can start; later stages may remain open. `revise` identifies a correctable plan error. `blocked` names an unavailable necessary decision, capability or required review and its resolution. Required independence cannot be fulfilled by relabelling self-review.
+Return plan/revision/source identity, stage, reviewer independence, `ready`, `revise` or `blocked`. Each material finding: severity, requirement/boundary, exact location/evidence, consequence, smallest correction/owner. `ready`: named stage can start; later stages may remain open. `revise`: correctable plan error. `blocked`: unavailable necessary decision/capability/required review and resolution. Relabelled self-review cannot fulfil required independence.
 
-Return one permitted next action. Wording preferences do not block readiness; reviewer agreement does not accept residual risk, prove test execution, establish ASVS conformance or grant release permission.
+Return one permitted next action. Wording preferences do not block readiness; reviewer agreement accepts no residual risk, proves no test execution/ASVS conformance, grants no release permission.

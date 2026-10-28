@@ -1,48 +1,43 @@
 # Version, persistence and lifecycle transitions
 
-Record each required combination of old/new writer, old/new reader and stored
-version as supported, deliberately unsupported or unverified, with its evidence.
-Include UI/broker/engine/helper and MSI maintenance combinations actually allowed
-by the packaging design. A single complete package does not prove process
-replacement is simultaneous. Architecture sections 11, 12 and 19 own lifecycle
-and protected restoration.
+Record each required old/new writer, reader and stored-version combination as
+supported, deliberately unsupported or unverified, with evidence. Include permitted
+UI/broker/engine/helper and MSI maintenance combinations. Complete packages do not
+prove simultaneous process replacement. Architecture sections 11, 12 and 19 own
+lifecycle/protected restoration.
 
-For each affected record identify the canonical writer, version decoder,
-constructor, authorization context, publication point and consumers. Preserve
-explicit unit/sign semantics and exact integers; JSON number serialization and
-parsing must not introduce a floating intermediate. Test normalization collisions,
-discriminator changes, absent/null/default distinctions and deliberate projection
-loss with independent fixtures.
+Identify canonical writer, version decoder, constructor, authorization context,
+publication point and consumers per affected record. Preserve units/sign/exact
+integers; JSON serialization/parsing must introduce no floating intermediate.
+Test normalization collisions, discriminator changes, absent/null/defaults and
+deliberate projection loss against independent fixtures.
 
-Define the transition before new writes begin:
+Define transition before new writes:
 
-- Reader/writer order and supported window; explicit version negotiation or
-  rejection; old process behavior during replacement.
-- Protected staging and atomic replacement at the owner; checks before publishing;
-  interruption and startup reconciliation for partial/malformed state.
-- Whether downgrade can read the new representation and whether rollback may
-  restore trust, budgets or one-use authority that has already been consumed.
-- Retirement evidence for old writers, readers, data and migration code separately.
+- Reader/writer order, supported window, explicit version negotiation/rejection,
+  old-process behavior during replacement.
+- Owner-protected staging/atomic replacement, prepublication checks,
+  interruption/startup reconciliation for partial/malformed state.
+- Downgrade readability; whether rollback can restore consumed trust, budgets or
+  one-use authority.
+- Separate retirement evidence for old writers, readers, data and migration code.
 
-Migrations validate source version and provenance, construct a new validated value
-and preserve required audit evidence. Never grant new rights from a data default,
-reset replay/cumulative budgets on read failure, or reinterpret an old timestamp
-as a fresh observation. Optional cache invalidation is distinct from mandatory
-policy/journal recovery. Round-trip equality alone cannot establish old/new semantic
-compatibility if both converters share the same mistake.
+Migrations validate source version/provenance, construct validated new values and
+preserve required audit evidence. Never grant rights from defaults, reset
+replay/cumulative budgets on read failure or reinterpret old timestamps as fresh.
+Optional cache invalidation differs from mandatory policy/journal recovery.
+Roundtrips prove no semantic compatibility if converters share mistakes.
 
-For protected persistence name the phases explicitly: preparation/validation,
-authorized staging, checked write/flush/close, publication, acknowledgement/model
-refresh and recovery cleanup. Compare failures with the relevant phase snapshot,
-not an invented promise that every error restores the pre-call state. If bytes
-were replaced but acknowledgement failed, reconcile the disk/service model before
-retry. Atomic replacement and power-loss durability are distinct claims; a file
-flush alone does not prove durable rename/metadata under every filesystem.
-Use valid neighboring state and observable fault-hit evidence to reach each
-publication boundary; an earlier schema/path rejection cannot test late recovery.
+Name protected persistence phases: preparation/validation, authorized staging,
+checked write/flush/close, publication, acknowledgement/model refresh, recovery
+cleanup. Compare failures with relevant phase snapshot; promise no universal
+pre-call rollback. Reconcile disk/service model before retry when replacement
+preceded acknowledgement failure. Atomic replacement differs from power-loss
+durability; flushing alone proves no durable rename/metadata on every filesystem.
+Use valid neighboring state/fault-hit observations to reach each publication boundary;
+early schema/path rejection cannot test late recovery.
 
-Rehearse interrupted update/rollback and mixed generations in the proper isolated
-Windows lane before claiming lifecycle qualification. Automatic TUF updating is
-retained research, not adopted architecture; do not add its state or authority as
-part of a routine schema migration. Any future updater requires its own design
-decision and threat-model/applicability update.
+Rehearse interrupted updates/rollback and mixed generations in proper isolated
+Windows lane before lifecycle qualification. Automatic TUF updating remains
+unadopted research; routine schema migration must add no updater state/authority.
+Future updater needs separate design decision and threat-model/applicability update.

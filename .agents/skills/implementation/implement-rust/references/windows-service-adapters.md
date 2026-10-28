@@ -1,16 +1,15 @@
 # Qualify Windows service and native-work adapters
 
-Use this reference when implementing or reviewing the engine/broker SCM adapter,
-callback lifetime, service account setup or stop/restart behavior. Read the
-[canonical architecture](../../../../../docs/windows-time-architecture.md) sections
-4, 9–11, 17.1, 18.6, CHECK-27 and S0.2–S0.3 first. This is an execution procedure
-for those choices; it neither adopts a dependency nor supplies production limits.
+Use for engine/broker SCM adapters, callback lifetimes, service accounts or
+stop/restart implementation/review. First read [canonical architecture](../../../../../docs/windows-time-architecture.md)
+sections 4, 9–11, 17.1, 18.6, CHECK-27 and S0.2–S0.3. Procedure adopts no dependency
+or production limits.
 
-At the documentation-only stage there is no Cargo/native candidate to qualify.
-Source review can establish API fit or a blocker; Windows runtime results remain
-incomplete. Do not create a runtime project, install tools, register services or
-change a clock merely to complete this reference's checklist. Execute only cases
-within the current task's authorized machine and mutation scope.
+Documentation-only stage has no Cargo/native candidate. Source review may prove
+API fit/blockers; Windows runtime remains incomplete. Do not create runtime
+projects, install tools, register services or change clocks merely for checklist
+completion. Execute cases
+only within task-authorized machine/mutation scope.
 
 Navigate to [adapter choice](#freeze-the-adapter-choice-before-coding),
 [lifecycle ownership](#identify-one-lifecycle-owner-per-own-process-service),
@@ -22,13 +21,12 @@ Navigate to [adapter choice](#freeze-the-adapter-choice-before-coding),
 
 ## Freeze the adapter choice before coding
 
-Record the exact package/version, registry checksum, packaged source revision,
-features, transitive Windows projection generations and selected target/toolchain.
-Compare the published package with the reviewed source, including dispatcher,
-status conversion, error propagation, callback registration/release and panic paths.
-Use [dependency updates](../../../environment/dependency-updates/SKILL.md) when
-admitting or changing the graph. A repository's current main branch or a similarly
-named package does not substitute for this comparison.
+Record exact package/version, registry checksum, packaged revision, features,
+transitive Windows projection generations and target/toolchain. Compare published
+package/reviewed source: dispatcher, status conversion, error propagation,
+callback registration/release and panic paths. Use [dependency updates](../../../environment/dependency-updates/SKILL.md)
+for graph admission/changes. Current main branches or similarly named packages
+cannot replace comparison.
 
 | Candidate from architecture 18.6 | Inspect and decide |
 | --- | --- |
@@ -36,9 +34,9 @@ named package does not substitute for this comparison.
 | Microsoft **`windows-services` 0.100.0**, plural; source `a57cc321bfdbac6bb98c488ba49f399da8fcb98a` | Held alternative. In this inspected revision `set_state` discards the `SetServiceStatus` result, detailed checkpoint/wait-hint control is absent, and `service_main` automatically reports Running after the start callback. Prove an upstream or adapter change resolves the required behavior before reconsidering it. This is an API-fit hold, not a vulnerability finding. [Pinned implementation](https://github.com/microsoft/windows-rs/blob/a57cc321bfdbac6bb98c488ba49f399da8fcb98a/crates/libs/services/src/lib.rs). |
 | Small direct SCM adapter through the selected Windows bindings | Bounded fallback if the wrappers cannot meet the contract. Account for every added unsafe obligation and run the same qualification cases. Do not combine two dispatchers or retain both wrappers as production alternatives by accident. |
 
-Keep candidate/hold decisions separate from an adopted manifest/lockfile. Record
-the API mismatch, experiment result and chosen narrow alternative; an unexecuted
-prototype is not an adopted or qualified production graph.
+Separate candidate/hold decisions from adopted manifest/lockfile. Record API
+mismatch, experiment result and narrow alternative. Unexecuted prototypes prove
+no adopted/qualified production graph.
 
 ## Identify one lifecycle owner per own-process service
 
@@ -54,17 +52,15 @@ service initialization in ServiceMain. Console/debug fallback is a separately
 selected mode and cannot count as native SCM evidence. See Microsoft's
 [dispatcher contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-startservicectrldispatcherw).
 
-Before execution, write the intended transition table, accepted control mask for
-each state, service exit-code mapping, monotonic startup/stop deadlines and
-escalation owner. Leave undecided budgets explicitly incomplete. Do not borrow a
-library sample's timeouts as production defaults.
+Before execution, define transitions, per-state accepted-control masks, service
+exit codes, monotonic startup/stop deadlines and escalation owner. Mark undecided
+budgets incomplete; library sample timeouts are no production defaults.
 
 ## Exercise status and control behavior
 
-First use a controllable adapter seam to inject failures and hold startup/cleanup
-at deterministic barriers. Then exercise the selected built executable under the
-real SCM. Preserve which observations came from injection and which came from
-Windows; a seam's failure result does not demonstrate a real OS failure path.
+First inject failures/hold startup and cleanup at deterministic adapter barriers.
+Then exercise selected executable under real SCM. Separate injected observations
+from Windows results; seam failures prove no real OS failure path.
 
 | Input/action | Observable output and pass condition |
 | --- | --- |
@@ -94,12 +90,11 @@ delivered and when the callback context can be released. See
 
 ## Prove callback and resource custody
 
-For each registered callback record allocation owner, registration success/failure,
-event-data validity window, notification ownership, last permitted invocation and
-release point. Instrument callback entry/exit and context destruction with bounded
-IDs/counters. Include pre-registration errors, failure after registration, normal
-stop, enabled shutdown paths and process death. Inspect counters before fixture
-teardown; forced teardown must not supply the cleanup being claimed.
+Per callback record allocation owner, registration success/failure, event-data
+validity, notification owner, last allowed invocation and release point. Instrument
+entry/exit/context destruction with bounded IDs/counters. Cover pre-registration
+errors, post-registration failure, normal stop, enabled shutdown and process death.
+Inspect before fixture teardown; forced teardown cannot supply claimed cleanup.
 
 The callback performs bounded decoding/copying and signals the existing owner;
 it does not retain borrowed event pointers, wait for native jobs or acquire a lock
@@ -144,17 +139,17 @@ Pair each denial with a valid-shaped request and a healthy permitted operation:
 | Intended broker performs an allowed query/handle operation | Successful Windows result and correct cleanup under the actual service token, establishing a positive account/control fixture. |
 | Intended broker's smallest authorized positive clock operation | Only under the bounded card below, with independent observation and recovery. A successful query does not qualify the omitted write/privilege subcase. |
 
-S0.3 adds real named-pipe status/protected methods, fake server and PID-reuse/restart
-cases at their IPC owner. Mark these unexecuted rather than crediting SCM startup
-as bidirectional endpoint identity proof.
+S0.3 adds real pipe status/protected methods, fake servers and PID-reuse/restart
+cases at IPC owner. Mark unexecuted; SCM startup proves no bidirectional endpoint
+identity.
 
 ## Couple stop deadlines to actual native jobs and clock ownership
 
-Freeze the section 17.1 experimental budget: initially at most two submitted native
-jobs including worker waiters, at most one acquisition per endpoint and no extra
-application backlog. Label it an unmeasured P0 starting budget. Count hidden DNS,
-certificate/provider and delegated work; measure submitted/running jobs, bytes,
-threads and handles against the declared admission graph.
+Freeze section 17.1 experimental budget: initially at most two submitted native
+jobs including worker waiters, at most one acquisition per endpoint, no extra
+application backlog. Label unmeasured P0 starting budget. Count hidden DNS,
+certificate/provider/delegated work; measure submitted/running jobs, bytes,
+threads/handles against declared admission graph.
 
 Hold a native job behind a barrier, cancel/expire its request, invalidate its
 generation, and request service stop. Its permit stays with the actual job until
@@ -179,8 +174,8 @@ owner; no generic test teardown may overwrite later administrator/GPO/successor 
 
 ## Small disposable-VM experiment card and receipts
 
-Prepare this card before the S0.2 clock-writing subcase or S0.4 writes, and retain
-the same identity/budgets for the associated service lifecycle cases:
+Prepare card before S0.2 clock-writing subcase or S0.4 writes; retain same
+identity/budgets for associated service lifecycle cases:
 
 ```yaml
 experiment: S0.2 / selected CHECK-1 and CHECK-27 cases
@@ -218,10 +213,10 @@ owns death/restart and restoration cases. Use
 layers and [final qualification](../../../testing/qa-final-qualification/SKILL.md)
 to assess the exact candidate against the selected CHECK subset.
 
-Report **pass** only for the declared cases with native observations, healthy controls
-and bounded recovery. Report **incomplete** for missing Cargo/artifact/Windows evidence,
-undecided budgets or omitted allowed-effect cases. **Stop the dependent choice** on
-unexplained lifetime/release failure, false Running/Stopped success, unexpected rights,
-unbounded stop or ambiguous recovery ownership; preserve receipts and review one
-bounded alternative. This does not stop unrelated experiments or authorize broader
-privileges, dependencies or host mutations.
+Report **pass** only for declared cases with native observations, healthy controls
+and bounded recovery. Missing Cargo/artifact/Windows proof, undecided budgets or
+omitted allowed effects mean **incomplete**. **Stop the dependent choice** for
+unexplained lifetime/release failure, false Running/Stopped success, unexpected
+rights, unbounded stop or ambiguous recovery ownership. Preserve receipts; review
+one bounded alternative. Unrelated experiments may continue; no broader privilege,
+dependency or host-mutation authority follows.

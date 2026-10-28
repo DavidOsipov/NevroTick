@@ -1,9 +1,6 @@
 # Borrow checker fix catalogue
 
-Worked fixes for the errors in [SKILL.md](../SKILL.md), authored upstream for rustc 1.98.1.
-Check the relevant probe on NevroTick's selected edition, toolchain and MSRV; the upstream
-baseline is not local execution evidence. Each entry states an ownership tradeoff. Read only
-the section that matches the actual error, preserving the approved owner and cleanup order.
+Worked fixes for [SKILL.md](../SKILL.md) errors, authored upstream for rustc 1.98.1. Check relevant probe on NevroTick's selected edition, toolchain and MSRV; upstream baseline is not local execution evidence. Each entry states ownership tradeoff. Read only matching section; preserve approved owner/cleanup order.
 
 - [Disjoint access to one collection](#disjoint-access-to-one-collection): E0499 on two indices
 - [A read borrow that blocks a write](#a-read-borrow-that-blocks-a-write): E0502
@@ -19,8 +16,7 @@ the section that matches the actual error, preserving the approved owner and cle
 
 ## Disjoint access to one collection
 
-The compiler tracks borrows per place, not per element. It cannot prove `v[0]` and `v[1]` are
-different places, so two `&mut` into one `Vec` are rejected even when the indices differ.
+Compiler tracks borrows per place, not per element. Cannot prove `v[0]` and `v[1]` disjoint: two `&mut` into one `Vec` rejected even with different indices.
 
 ```rust,compile_fail,E0499
 fn bump(v: &mut Vec<i32>) {
@@ -64,8 +60,7 @@ pub fn drain_into(pair: &mut Pair) {
 }
 ```
 
-`get_disjoint_mut` is stable since Rust 1.86. Before that the same job needed `split_at_mut`
-twice, or an index-and-copy pass.
+`get_disjoint_mut` stable since Rust 1.86. Earlier: `split_at_mut` twice or index-and-copy pass.
 
 ## A read borrow that blocks a write
 
@@ -105,13 +100,11 @@ pub fn retain_matching(v: &mut Vec<String>, needle: &str) {
 }
 ```
 
-Fix 3 has a name: compute the plan under a shared borrow, then execute it under an exclusive
-borrow. It is the general answer whenever the read informs the write. `retain` alone is shorter
-when the predicate needs no outside state.
+Fix 3: compute plan under shared borrow, execute under exclusive borrow. General answer when read informs write. `retain` alone shorter when predicate needs no outside state.
 
 ## A `&self` helper that blocks a field write
 
-A `&self` helper borrows all of `self`. When its result stays live, a write to any field is E0506:
+`&self` helper borrows all `self`. While result lives, any field write yields E0506:
 
 ```rust,compile_fail,E0506
 pub struct Cache {
@@ -132,7 +125,7 @@ impl Cache {
 }
 ```
 
-Work on the fields, not on `self`. Borrows of two distinct fields are disjoint:
+Work on fields, not `self`; distinct field borrows are disjoint:
 
 ```rust
 pub struct Cache {
@@ -149,10 +142,7 @@ impl Cache {
 }
 ```
 
-A private helper that takes `&self` forces a whole-struct borrow. Free functions that take the
-fields, or code written against the fields directly, keep the borrows apart. This is why a large
-struct with many `&mut self` methods eventually fights the borrow checker: every method borrows
-everything.
+Private `&self` helper forces whole-struct borrow. Free functions taking fields, or direct field access, keep borrows apart. Large struct with many `&mut self` methods fights borrow checker: every method borrows everything.
 
 ## E0507: an owned value out of a reference
 
@@ -161,7 +151,7 @@ struct S { name: String }
 fn f(s: &S) -> String { s.name }
 ```
 
-Pick by what should happen to the original:
+Choose original's postcondition:
 
 | Intent | Call |
 | --- | --- |
@@ -171,9 +161,7 @@ Pick by what should happen to the original:
 | The field is optional and becomes `None` | `s.name.take()` on an `Option` |
 | The caller is finished with the whole value | Change the signature to take `self` |
 
-`mem::take` needs `&mut` and `Default` and constructs `T::default()`. For the shown `String`
-field its replacement is empty without allocating; arbitrary `Default` implementations can
-allocate, panic or perform other work. Choose by the original value's required postcondition.
+`mem::take` needs `&mut` and `Default`; constructs `T::default()`. Shown `String` replacement is empty, no allocation; arbitrary `Default` implementations may allocate, panic or do other work. Choose required original-value postcondition.
 
 ```rust
 #[derive(Default)]
@@ -203,8 +191,7 @@ pub fn swap(a: &mut Job, b: &mut Job) {
 }
 ```
 
-`mem::replace` does not require `Default`, which is why it works for a type with no sensible
-empty value.
+`mem::replace` needs no `Default`; works without sensible empty value.
 
 ## E0716: a temporary ended before its borrow
 
@@ -217,7 +204,7 @@ let p = bar(&foo());
 let q = *p;
 ```
 
-Give the temporary a name. That extends it to the end of the enclosing block:
+Name temporary: extends to enclosing block's end:
 
 ```rust
 fn foo() -> Vec<u8> { vec![1, 2, 3] }
@@ -228,16 +215,11 @@ let p = bar(&tmp);
 let q = *p;
 ```
 
-Not every temporary dies at the semicolon. `let r = &make();` extends the temporary, and so does
-`let r = Some(&make());` since Rust 1.89; on an older MSRV the constructor form is E0716. A
-function argument such as `bar(&foo())` is never extended. The optional
-[rust-borrow-semantics](../../rust-borrow-semantics/SKILL.md) reference has the expression rules,
-edition-specific scope changes and two-phase borrows. The project owner remains
-[implement-rust](../../../implementation/implement-rust/SKILL.md).
+Not every temporary dies at semicolon. `let r = &make();` extends temporary; so does `let r = Some(&make());` since Rust 1.89 (older MSRV: constructor form E0716). Function argument, e.g. `bar(&foo())`, never extends. Optional [rust-borrow-semantics](../../rust-borrow-semantics/SKILL.md) covers expression rules, edition-specific scopes and two-phase borrows. Project owner remains [implement-rust](../../../implementation/implement-rust/SKILL.md).
 
 ## A borrow that must cross a thread
 
-`thread::spawn` requires `'static`, so no borrow of a local can enter it.
+`thread::spawn` requires `'static`; local borrows cannot enter.
 
 ```rust
 use std::sync::Arc;
@@ -262,17 +244,13 @@ pub fn scoped(data: &Vec<i32>) {
 }
 ```
 
-`thread::scope` is stable since Rust 1.63. Prefer it when the work is bounded and the caller can
-wait. Use `Arc` when the thread must outlive the calling frame.
+`thread::scope` stable since Rust 1.63. Prefer for bounded work when caller can wait. Use `Arc` when thread must outlive calling frame.
 
-A borrowed parameter that reaches `spawn` is E0521. A local that the closure borrows without
-`move` is E0373, "closure may outlive the current function, but it borrows `v`". Add `move` when
-the thread may own the value. Clone an `Arc` into the closure first when the caller still needs
-it.
+Borrowed parameter reaching `spawn`: E0521. Local borrowed by closure without `move`: E0373, "closure may outlive the current function, but it borrows `v`". Add `move` when thread may own value. First clone `Arc` into closure when caller still needs it.
 
 ## Interior mutability, and its cost
 
-Reach for these only after the splits above fail.
+Use only after splits above fail.
 
 | Type | Check | Failure mode | Use when |
 | --- | --- | --- | --- |
@@ -301,15 +279,9 @@ impl Graph {
 }
 ```
 
-Keep every `borrow_mut` short and never hold one across a call that might re-enter. A `RefCell`
-panic reports `RefCell already borrowed` from `borrow_mut`, or `RefCell already mutably borrowed`
-from `borrow`. The panic location names the failing call, and `RUST_BACKTRACE=1` shows the path
-to it. Nothing records the other live borrow, so shorten every `borrow` and `borrow_mut` guard that
-can be live at that call.
+Keep every `borrow_mut` short; never across possibly reentrant call. `RefCell` panic: `RefCell already borrowed` from `borrow_mut`, or `RefCell already mutably borrowed` from `borrow`. Panic location names failed call; `RUST_BACKTRACE=1` shows path. Other live borrow unrecorded: shorten every `borrow` and `borrow_mut` guard potentially live there.
 
-For thread-safe state and a guard that crosses `.await`, trace the whole transaction and
-resource lifetime with [implement-rust](../../../implementation/implement-rust/SKILL.md).
-Changing the container does not by itself establish ordering, cancellation or authority.
+For thread-safe state and guard crossing `.await`, trace whole transaction/resource lifetime with [implement-rust](../../../implementation/implement-rust/SKILL.md). Container change alone establishes no ordering, cancellation or authority.
 
 ## E0106 and lifetime annotation shapes
 
@@ -317,19 +289,16 @@ Changing the container does not by itself establish ordering, cancellation or au
 struct S { name: &str }
 ```
 
-Two answers, and the right one is usually the second:
+Two answers; usually second is right:
 
 ```rust
 struct Borrowed<'a> { name: &'a str }   // the struct cannot outlive the source
 struct Owned { name: String }           // the struct owns its data
 ```
 
-Store owned data unless the type is a short-lived view built inside one function and consumed
-inside it. A lifetime parameter on a struct spreads: every type that holds it needs one too, and
-the annotation reaches the whole call graph. Pay that cost for a parser view or a zero-copy
-frame, not for a config or a message.
+Store owned data unless short-lived view built/consumed within one function. Struct lifetime parameter spreads to every containing type and whole call graph. Pay cost for parser view/zero-copy frame, not config/message.
 
-When a function returns a reference, state its source with the narrowest lifetime that is true:
+Returned reference: state source with narrowest true lifetime:
 
 ```rust
 // One input, one output. The lifetime is inferred; do not write it.
@@ -359,13 +328,11 @@ impl<'a> View<'a> {
 }
 ```
 
-The third shape matters: tying the output to both inputs when only one is the source forces the
-caller to keep the other alive for no reason. Write the narrowest lifetime that is true.
+Third shape: tying output to both inputs when only one supplies it needlessly keeps other alive. Write narrowest true lifetime.
 
 ## Drop and the borrow checker
 
-Adding `impl Drop` to a type is a change to its borrow rules. Several errors follow, and no error
-title names `Drop`.
+Adding `impl Drop` changes borrow rules; several errors follow, none titled `Drop`.
 
 | You add `Drop` to | The new error | Cause |
 | --- | --- | --- |
@@ -374,13 +341,11 @@ title names `Drop`.
 | any type | E0509 at each partial move out of it | drop glue needs the whole value |
 | a type that derives `Copy` | E0184 at the derive | `Copy` and `Drop` are exclusive |
 
-NLL ends a borrow at its last use, and a `Drop` impl adds one last use at the end of the scope.
+NLL ends borrow at last use; `Drop` impl adds last use at scope's end.
 
 ### E0597: dropck extends the borrow to the drop point
 
-Without a `Drop` impl the compiler knows destruction cannot read `'a`. With one, `drop(&mut self)`
-could read the reference, so the borrow must last until the value is dropped. Locals drop in
-reverse declaration order, so a guard declared before its source now fails.
+Without `Drop` impl, compiler knows destruction cannot read `'a`. With one, `drop(&mut self)` could read reference; borrow must last until value drops. Locals drop in reverse declaration order: guard declared before source now fails.
 
 ```rust,compile_fail,E0597
 struct NoDrop<'a>(&'a i32);
@@ -404,9 +369,7 @@ fn bad() {
 }
 ```
 
-The note reads "borrow might be used here, when `d` is dropped and runs the `Drop` code for type
-`WithDrop`", followed by "values in a scope are dropped in the opposite order they are defined".
-Declare the borrowed local before the guard, or keep the type `Drop`-free.
+Note: "borrow might be used here, when `d` is dropped and runs the `Drop` code for type `WithDrop`", then "values in a scope are dropped in the opposite order they are defined". Declare borrowed local before guard, or keep type `Drop`-free.
 
 ### E0502: the drop point is one more use
 
@@ -423,8 +386,7 @@ fn read_while_guarded() {
 }
 ```
 
-The note reads "mutable borrow might be used here, when `_g` is dropped and runs the `Drop` code
-for type `Guard`". Call `drop(_g)` before the read, or scope the guard in an inner block.
+Note: "mutable borrow might be used here, when `_g` is dropped and runs the `Drop` code for type `Guard`". Call `drop(_g)` before read, or scope guard in inner block.
 
 ### E0507: `drop` holds `&mut self`, so a field pattern moves
 
@@ -451,8 +413,7 @@ impl Drop for Guard {
 }
 ```
 
-Take ownership with `self.0.take()` or `std::mem::replace` when the cleanup must consume the
-payload.
+Take ownership with `self.0.take()` or `std::mem::replace` when cleanup must consume payload.
 
 ### E0509: a `Drop` impl blocks every partial move
 
@@ -471,11 +432,7 @@ fn take(o: Outer) -> Inner {
 }
 ```
 
-Drop glue runs on the whole value, so it cannot run on a value with a hole in it. If cleanup
-belongs to a separately owned resource, one option is to move `Drop` to its own guard and keep
-the aggregate `Drop`-free. Preserve the required cleanup order and lifetime: allowing a partial
-move must not release a resource while the moved field still needs it. In this small example
-the guard's release is independent of `inner`:
+Drop glue needs whole value, with no holes. If cleanup belongs to separately owned resource, may move `Drop` to own guard and keep aggregate `Drop`-free. Preserve required cleanup order/lifetime: partial move must not release resource still needed by moved field. Here guard release is independent of `inner`:
 
 ```rust
 pub struct Inner(pub String);
@@ -504,23 +461,13 @@ pub fn take(o: Outer) -> Inner {
 }
 ```
 
-When cleanup must consume the guard's field, an `Option` with `.take()` or a deliberate
-`mem::replace` can express the remaining state. Adding `Option` to every aggregate field merely
-to allow a move spreads absent states to all callers; name such states only when they are real.
-Keep pure core free of unsafe. A size difference does not authorize `ManuallyDrop` or a manual
-unsafe cleanup path; any real native ownership change belongs to
-[implement-rust](../../../implementation/implement-rust/SKILL.md).
+When cleanup consumes guard's field, `Option` with `.take()` or deliberate `mem::replace` can express remaining state. Adding `Option` everywhere merely to allow move spreads absent states to all callers; name only real states. Keep pure core free of unsafe. Size difference authorizes no `ManuallyDrop` or manual unsafe cleanup; native ownership changes belong to [implement-rust](../../../implementation/implement-rust/SKILL.md).
 
 ### E0184 and E0367: the two `Drop` impl rules
 
-`#[derive(Copy)]` plus `impl Drop` reports "the trait `Copy` cannot be implemented for this type;
-the type has a destructor". A bitwise copy plus a destructor is a double free by construction, so
-a resource handle is never `Copy`. Remove the derive.
+`#[derive(Copy)]` plus `impl Drop` reports "the trait `Copy` cannot be implemented for this type; the type has a destructor". Bitwise copy plus destructor constructs double free; resource handle never `Copy`. Remove derive.
 
-`impl<T: Clone> Drop for Foo<T>` where the struct is `struct Foo<T>(T)` reports E0367, "`Drop` impl
-requires `T: Clone` but the struct it is implemented for does not", with "note: the implementor
-must specify the same requirement". Drop glue must exist for every instantiation, so the impl may
-not apply to only some of them. Move the bound onto the struct definition:
+`impl<T: Clone> Drop for Foo<T>` on `struct Foo<T>(T)` reports E0367, "`Drop` impl requires `T: Clone` but the struct it is implemented for does not", with "note: the implementor must specify the same requirement". Drop glue required for every instantiation; impl cannot apply to only some. Move bound onto struct:
 
 ```rust
 pub struct Bar<T: Clone>(pub T);
@@ -556,9 +503,7 @@ pub fn totals(v: &[String]) -> (usize, usize) {
 }
 ```
 
-Inside a closure body the call is an expression again, so the coercion applies. The rule holds for
-`Option::map`, `Result::map_err`, and every other higher-order call. rustc also reports E0599 on
-the `.sum()` after the failed `map`; that error is a cascade and goes away with the fix.
+Inside closure body, call is expression again; coercion applies. Same rule for `Option::map`, `Result::map_err` and every higher-order call. E0599 on `.sum()` after failed `map` is cascade; disappears with fix.
 
 ## Related
 

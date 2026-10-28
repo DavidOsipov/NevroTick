@@ -1,6 +1,6 @@
 # NevroTick testing skills
 
-Read [CONTRACT.md](CONTRACT.md) for shared scope, evidence and closeout rules. Choose only the leaves that prove the requested claim. Local understood work needs no orchestrator or full-system campaign. [SOURCES.md](SOURCES.md) records all 36 donor mappings and current primary-source research; it is maintenance provenance, not mandatory runtime reading.
+Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose only claim-proving leaves. Understood local work needs no orchestrator/full-system campaign. [SOURCES.md](SOURCES.md): all 36 donor mappings/current primary-source research; maintenance provenance, no mandatory runtime reading.
 
 ## Plan, coordinate and close
 
@@ -62,4 +62,4 @@ Read [CONTRACT.md](CONTRACT.md) for shared scope, evidence and closeout rules. C
 
 ## Maintenance
 
-Maintain one copy of shared guidance and keep leaf-relative links valid. Use the pack checker and metadata validation supplied by the root skills router for structural/discovery claims. For material instruction changes, exercise representative requests with raw requirements and assess the observed choice/evidence, including valid controls and unavailable capability cases. Structural checks cannot prove good task selection, native host discovery or application behavior. Do not copy website Node/Vitest wrappers or proposed PdfCraft xtask commands into this project.
+Keep one shared-guidance copy/valid leaf-relative links. Use root skills router pack checker/metadata validation for structure/discovery claims. For material instruction changes, exercise representative requests/raw requirements; assess observed choice/evidence, including valid controls/unavailable capabilities. Structural checks prove no task-selection quality, native host discovery or application behavior. Do not copy website Node/Vitest wrappers or proposed PdfCraft xtask commands.

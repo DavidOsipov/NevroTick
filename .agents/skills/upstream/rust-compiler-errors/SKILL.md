@@ -6,13 +6,7 @@ license: "BSD-3-Clause"
 
 # Rust compiler errors
 
-In NevroTick, use this as diagnostic reference alongside
-[implement-rust](../../implementation/implement-rust/SKILL.md); the existing
-[QA contract](../../testing/CONTRACT.md) owns verification. Start from the actual
-failure, existing Cargo project, selected toolchain, package, features and target.
-Preserve the approved state owner, resource lifetime and authority at the effect
-sink. This skill does not authorize new dependencies, features, runtimes, an
-edition/MSRV change or unsafe in pure core. Keep the current task's scope.
+NevroTick diagnostic reference alongside [implement-rust](../../implementation/implement-rust/SKILL.md); existing [QA contract](../../testing/CONTRACT.md) owns verification. Start from actual failure, existing Cargo project, selected toolchain, package, features and target. Preserve approved state owner, resource lifetime and effect-sink authority. No authorization for new dependencies, features, runtimes, edition/MSRV change or unsafe in pure core. Keep current task scope.
 
 ## First moves
 
@@ -27,26 +21,18 @@ cargo build --message-format=short
 cargo build --message-format=json 2>/dev/null | grep -o '"code":{"code":"E[0-9]*"' | sort | uniq -c | sort -rn
 ```
 
-Use these command shapes with the same package, features and target as the failing command;
-do not start a new build merely because this reference was loaded. Read the full first causal
-diagnostic before using a filtered count: one move or type error can produce a cascade.
+Use command shapes with failing command's package, features and target; loading reference alone warrants no new build. Read full first causal diagnostic before filtered count: one move/type error can cascade.
 
 ## Prove the fix
 
-- While you iterate, run `cargo check` with the same package, features, and target that failed.
-  It reports the same type and borrow errors, faster.
-- By default, `cargo check` selects library and binary targets. Select the failing test, bench
-  or example explicitly, or use `--all-targets` when those targets belong to the supported lane.
-- Before you call the error fixed, run the command that failed. `cargo check` and `cargo clippy`
-  stop before code generation and linking, so they can exit 0 even when the original build
-  fails with "reached the recursion limit while instantiating" or a linker error.
-- A clean build proves that the types check, not that the behavior is right. Run the test that
-  covers the changed code.
+- Iterate with `cargo check` on failing package, features and target: same type/borrow errors, faster.
+- By default, `cargo check` selects library/binary targets. Select failing test, bench or example explicitly; use `--all-targets` when those targets belong to supported lane.
+- Before claiming fix, rerun failed command. `cargo check` and `cargo clippy` stop before code generation/linking: can exit 0 while original build fails with "reached the recursion limit while instantiating" or linker error.
+- Clean build proves types check, not correct behavior. Run test covering changed code.
 
 ## Fixes that compile and hide the bug
 
-These reflexes can silence an error while retaining or introducing a defect. First establish
-whether the change matches the intended ownership and behavior.
+These reflexes can silence errors while retaining/introducing defects. First establish intended ownership and behavior.
 
 | Reflex | What it hides | When it is right, or what to do instead |
 | --- | --- | --- |
@@ -60,8 +46,7 @@ whether the change matches the intended ownership and behavior.
 | `cargo add <name>` from a `help:` line for E0432 or E0433 | rustc suggests `cargo add` for any unknown first path segment, a module of this crate included. A guessed name can be an unrelated or malicious package | Follow [Unresolved imports](#e0432-and-e0433-unresolved-imports) |
 | A higher `#![recursion_limit]` for E0275 or "reached the recursion limit while instantiating" | An infinite type chain; the build fails later and slower | See the E0275 row and the "while instantiating" row of the triage table |
 
-If repeated edits do not explain the same error, stop changing syntax and answer these before
-proposing an ownership change:
+If repeated edits do not explain same error, stop syntax changes; answer before ownership change:
 
 1. Which single component should own this data for its whole lifetime?
 2. Does the borrow cross a boundary it should not cross: a thread, an `.await`, a callback, an
@@ -112,10 +97,7 @@ proposing an ownership change:
 
 ## The clone reflex
 
-Cloning before a move can avoid E0382 only when the value implements `Clone` and the new
-ownership fits the operation. Calling `clone` after the value was moved does not recover it.
-Determine who needs the value and whether a clone duplicates storage or shares underlying
-state; an `Arc` clone shares the same allocation. Size alone does not settle correctness.
+Cloning before move can avoid E0382 only when value implements `Clone` and new ownership fits operation. Calling `clone` after move does not recover value. Determine who needs value and whether clone duplicates storage or shares state; `Arc` clone shares allocation. Size alone does not settle correctness.
 
 | The value is | The answer |
 | --- | --- |
@@ -125,25 +107,17 @@ state; an `Arc` clone shares the same allocation. Size alone does not settle cor
 | An identity: a connection, a file, a job | One owner. Pass `&mut` down, or pass a handle |
 | Large and consumed once | Move it, and restructure the caller so it can be moved |
 
-A clone inside a loop may allocate, increment a reference count, copy inline data, or run
-custom code. Check the concrete `Clone` implementation and ownership requirement before
-estimating its cost; measure only when performance is part of the task.
+Loop clone may allocate, increment reference count, copy inline data or run custom code. Check concrete `Clone` implementation and ownership before estimating cost; measure only when performance belongs to task.
 
 ## Borrow conflicts are usually a split problem
 
-E0499 and E0502 rarely need interior mutability. They need the compiler to see that two borrows
-touch different data: `split_at_mut` or `get_disjoint_mut` for indices, field borrows instead of a
-`&self` helper, or a copy of the value before the write. Reach for `RefCell` only after the splits
-fail (see the hazard table).
+E0499/E0502 rarely need interior mutability. Show compiler disjoint borrows: `split_at_mut` or `get_disjoint_mut` for indices, field borrows instead of `&self` helper, or value copy before write. Consider `RefCell` only after splits fail (see hazard table).
 
-Read [references/borrow-checker-fixes.md](references/borrow-checker-fixes.md) when the first move
-in the triage table does not fit an E0499, E0502, E0506, E0507, E0716, E0373, E0521, or E0106
-error, or to compare the cost of each interior mutability type.
+Read [references/borrow-checker-fixes.md](references/borrow-checker-fixes.md) when triage's first move does not fit E0499, E0502, E0506, E0507, E0716, E0373, E0521 or E0106, or to compare interior mutability costs.
 
 ## E0282, E0283, E0284, and the never type need a type anchor
 
-These errors mean the available constraints do not select one type. Rust does not infer every
-method or operator input backward from the final result type. Add the smallest local anchor:
+Available constraints select no single type. Rust does not infer every method/operator input backward from final result type. Add smallest local anchor:
 
 ```rust
 let parsed: u64 = "42".parse()?;
@@ -151,13 +125,9 @@ let bytes = Vec::<u8>::new();
 let converted = u64::from(7_u8);
 ```
 
-Prefer a typed local, a turbofish on the constructor or method that owns the unknown type, or a
-fully qualified call. Do not change a public return type, add `'static`, or add a broad trait
-bound only to silence inference. Rebuild after the one anchor; later diagnostics can be a
-cascade from the first unknown type.
+Prefer typed local, turbofish on constructor/method owning unknown type, or fully qualified call. Do not change public return type, add `'static` or broad trait bound merely to silence inference. Rebuild after one anchor; later diagnostics may cascade from first unknown type.
 
-An unconstrained generic call as a statement, such as `f()?;`, has no anchor at all. Edition 2024
-falls back to `!` instead of `()`, so the error names the never type:
+Unconstrained generic statement call, e.g. `f()?;`, has no anchor. Edition 2024 falls back to `!` instead of `()`; error names never type:
 
 ```rust,compile_fail,E0277
 fn parse_or_default<T: Default>() -> Result<T, ()> { Ok(T::default()) }
@@ -168,10 +138,7 @@ fn load() -> Result<(), ()> {
 }
 ```
 
-The note says "this error might have been caused by changes to Rust's type-inference algorithm".
-On edition 2021 the same code fails with the deny-by-default lint
-`dependency_on_unit_never_type_fallback` (1.92+): "this function depends on never type fallback
-being `()`". Both have one fix. Name the type:
+Note: "this error might have been caused by changes to Rust's type-inference algorithm". On edition 2021, same code fails with deny-by-default lint `dependency_on_unit_never_type_fallback` (1.92+): "this function depends on never type fallback being `()`". Both fixes: name type:
 
 ```rust
 fn parse_or_default<T: Default>() -> Result<T, ()> { Ok(T::default()) }
@@ -186,8 +153,7 @@ fn load() -> Result<(), ()> {
 
 ## E0432 and E0433: unresolved imports
 
-Read the `note:` and `help:` lines before you add a dependency. A `cargo add` line in `help:` is
-not a fix (see the hazard table). Stop at the first step that matches:
+Read `note:` and `help:` before adding dependency. `cargo add` line in `help:` is not fix (see hazard table). Stop at first matching step:
 
 1. `note: found an item that was configured out` with "the item is gated behind the `f`
    feature". The feature is off. Read the file path under the note.
@@ -227,12 +193,7 @@ not a fix (see the hazard table). Stop at the first step that matches:
 
 ## A `Drop` impl changes the borrow checker
 
-`impl Drop` is not a local change. It breaks code that compiled before with E0597, E0502, E0509,
-or E0184, and no error title names `Drop`: the drop point is one more use of every borrow the value
-holds. The note says "... when `_g` is dropped and runs the `Drop` code for type `Guard`". Drop the
-guard before the read, scope it in an inner block, or keep the type `Drop`-free. Read the `Drop`
-section of [references/borrow-checker-fixes.md](references/borrow-checker-fixes.md) when an error
-follows a new `impl Drop`, or for E0507 inside `drop(&mut self)`.
+`impl Drop` is not local change. Can break previously compiling code with E0597, E0502, E0509 or E0184; no error title names `Drop`: drop point adds use of every held borrow. Note: "... when `_g` is dropped and runs the `Drop` code for type `Guard`". Drop guard before read, scope in inner block or keep type `Drop`-free. Read `Drop` section of [references/borrow-checker-fixes.md](references/borrow-checker-fixes.md) after new `impl Drop` errors, or E0507 inside `drop(&mut self)`.
 
 ## Optional companion references
 
@@ -240,9 +201,7 @@ follows a new `impl Drop`, or for E0507 inside `drop(&mut self)`.
   extension, two-phase borrows and edition-specific drop order.
 - [rust-send-sync](../rust-send-sync/SKILL.md): field-level `Send`/`Sync` obligations.
 
-Use a companion only when its mechanism matters. For other diagnostics, inspect the actual
-locked source and `rustc --explain`, using [implement-rust](../../implementation/implement-rust/SKILL.md)
-as the project owner. A missing specialist skill is not a requirement to install one.
+Use companion only when mechanism matters. Otherwise inspect actual locked source and `rustc --explain`, with [implement-rust](../../implementation/implement-rust/SKILL.md) as project owner. Missing specialist does not require installation.
 
 Adapted from po4yka/rust-skills; see [LICENSE](LICENSE) and
 [local changes and source pin](LOCAL-CHANGES.md).

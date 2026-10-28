@@ -6,22 +6,13 @@ license: "BSD-3-Clause"
 
 # Rust Borrow Semantics
 
-In NevroTick, use this as a language-mechanics reference alongside
-[implement-rust](../../implementation/implement-rust/SKILL.md); the existing
-[QA contract](../../testing/CONTRACT.md) owns verification. Establish the actual
-expression, existing Cargo project, edition, toolchain/MSRV and supported
-package/feature/target lane. Preserve the approved state owner, invariant-bearing
-lock interval, resource lifetime and authority at the effect sink. This skill does
-not authorize new dependencies, runtimes, features, edition/MSRV changes or unsafe
-in pure core. A probe proves its language question, not the application's safety.
+NevroTick language-mechanics reference alongside [implement-rust](../../implementation/implement-rust/SKILL.md); existing [QA contract](../../testing/CONTRACT.md) owns verification. Establish actual expression, existing Cargo project, edition, toolchain/MSRV and supported package/feature/target lane. Preserve approved state owner, invariant-bearing lock interval, resource lifetime and effect-sink authority. No authorization for new dependencies, runtimes, features, edition/MSRV changes or unsafe in pure core. Probe proves language question, not application safety.
 
-Keep the exact source expression until you know every borrow and drop point. A manual
-desugaring, an added helper call, a macro, or an edition change can move those points while the
-types stay the same.
+Keep exact source expression until every borrow/drop point is known. Manual desugaring, added helper call, macro or edition change can move points without changing types.
 
 ## Start with four facts
 
-Record these facts before you propose a fix:
+Record before proposing fix:
 
 1. Is each operand a place expression or a value expression?
 2. Which expression creates each temporary?
@@ -29,8 +20,7 @@ Record these facts before you propose a fix:
 4. Which edition and which minimum supported Rust version (MSRV) apply? Temporary scope and
    lifetime extension rules changed in several releases from 1.79 to 1.98.
 
-Then write the expected reservation, activation, and drop points. Prove them with a probe (see
-[Verification](#verification)).
+Write expected reservation, activation and drop points. Prove with probe (see [Verification](#verification)).
 
 ## Triage
 
@@ -49,8 +39,7 @@ Then write the expected reservation, activation, and drop points. Prove them wit
 
 ## Place expressions and value expressions
 
-A place expression identifies storage. A value expression produces a value. The difference
-decides whether an operation moves from existing storage or creates a temporary.
+Place expression identifies storage; value expression produces value. Distinction decides move from existing storage versus temporary creation.
 
 | Shape | Usually a place | Usually a value |
 | --- | --- | --- |
@@ -59,18 +48,15 @@ decides whether an operation moves from existing storage or creates a temporary.
 | Parentheses | Keep the inner classification | Keep the inner classification |
 | Block tail | Depends on the tail expression | Depends on the tail expression |
 
-Do not classify from the type. A `String` can be a local place or the value that a call returns.
+Do not classify from type. `String` can be local place or call-returned value.
 
 ## Temporary scopes
 
-A temporary drops at the end of its enclosing temporary scope. The important scopes are the
-statement, a condition, a match arm, and a block tail.
+Temporary drops at enclosing temporary scope's end: statement, condition, match arm or block tail.
 
-Edition 2024 narrows two scopes. It drops `if let` scrutinee temporaries before the `else`
-block, and it drops block-tail temporaries before the block's locals. Both changes release a
-guard earlier, never later. A `match` scrutinee temporary still lives through every arm.
+Edition 2024 narrows two scopes: `if let` scrutinee temporaries drop before `else` block; block-tail temporaries drop before block's locals. Both release guards earlier, never later. `match` scrutinee temporary still lives through every arm.
 
-This probe runs on edition 2024. On edition 2021 the first assertion fails:
+Probe runs on edition 2024; first assertion fails on edition 2021:
 
 ```rust,run
 use std::sync::Mutex;
@@ -91,7 +77,7 @@ fn main() {
 }
 ```
 
-The narrowing can also reject code that compiled on edition 2021:
+Narrowing can reject code that compiled on edition 2021:
 
 ```rust,compile_fail,E0716
 fn main() {
@@ -100,8 +86,7 @@ fn main() {
 }
 ```
 
-When a resource guard must release before later work, bind it and make the drop point explicit
-with braces. The drop point is then the same on every edition:
+When resource guard must release before later work, bind it; make drop point explicit with braces. Same drop point on every edition:
 
 ```rust
 use std::sync::Mutex;
@@ -117,10 +102,7 @@ assert!(state.try_lock().is_ok());
 
 ## Temporary lifetime extension
 
-Some `let` patterns (`ref` bindings) and initializers extend a borrowed temporary to the end of
-the block. The rule is syntactic. It is not general lifetime inference. Since Rust 1.89 the
-extension also passes through the arguments of a tuple struct or tuple variant constructor. On an
-older MSRV the two constructor lines below fail with E0716:
+Some `let` patterns (`ref` bindings) and initializers extend borrowed temporary to block's end. Syntactic rule, not general lifetime inference. Since Rust 1.89, extension passes through tuple struct/variant constructor arguments. On older MSRV, two constructor lines below fail with E0716:
 
 ```rust,run
 fn make() -> String { String::from("alive") }
@@ -137,7 +119,7 @@ fn main() {
 }
 ```
 
-An ordinary function call does not extend the temporary:
+Ordinary function call does not extend temporary:
 
 ```rust,compile_fail,E0716
 fn make() -> String { String::from("short") }
@@ -149,7 +131,7 @@ fn main() {
 }
 ```
 
-Fix this shape. Name the owner before the borrow:
+Fix: name owner before borrow:
 
 ```rust
 fn make() -> String { String::from("long") }
@@ -162,9 +144,7 @@ assert_eq!(value, "long");
 
 ## Two-phase borrows
 
-A two-phase mutable borrow starts as a reservation and becomes exclusive at activation. Shared
-access can occur between those points. Rust creates two-phase borrows only for these implicit
-borrows:
+Two-phase mutable borrow starts as reservation, becomes exclusive at activation. Shared access possible between points. Rust creates two-phase borrows only for these implicit borrows:
 
 | Implicit shape | Typical example |
 | --- | --- |
@@ -172,7 +152,7 @@ borrows:
 | Mutable reborrow in a function argument | Passing an existing `&mut T` to another call |
 | Mutable borrow for overloaded compound assignment | `place += rhs` |
 
-The standard method-call shape compiles:
+Standard method-call shape compiles:
 
 ```rust,run
 fn main() {
@@ -182,8 +162,7 @@ fn main() {
 }
 ```
 
-An explicit `&mut` borrow is not two-phase. A manual UFCS rewrite can therefore fail even when
-the method call compiles:
+Explicit `&mut` borrow is not two-phase. Manual UFCS rewrite can fail while method call compiles:
 
 ```rust,compile_fail,E0502
 fn main() {
@@ -193,7 +172,7 @@ fn main() {
 }
 ```
 
-Do not explain the first program as evaluation order alone. Record these points:
+Do not explain first program by evaluation order alone. Record:
 
 1. The receiver autoref reserves `&mut values`.
 2. Rust evaluates the other arguments. Shared reads can occur during the reservation.
@@ -204,28 +183,19 @@ Rust still rejects a conflicting write between reservation and activation.
 
 ## Clone is not a scope operator
 
-A clone that makes a borrow error disappear duplicates ownership. It does not explain the
-borrow. If the cause is a temporary scope, name the owner or add a block. If the cause is a
-two-phase borrow, keep the method-call shape or compute the argument first. Clone only when an
-independent copy matches the domain, for example a small value or shared read-only state. Do not
-clone a resource handle or a unique buffer to escape a scope.
+Clone can hide borrow error by duplicating ownership; it does not explain borrow. Temporary scope: name owner or add block. Two-phase borrow: keep method-call shape or compute argument first. Clone only when independent copy matches domain, e.g. small value or shared read-only state. Do not clone resource handle or unique buffer to escape scope.
 
 ## Edition 2024 review
 
-Run the two migration lints on the crate while it is still on edition 2021. They go quiet after
-the edition changes, because the behavior has already changed:
+Run two migration lints while crate remains on edition 2021. Lints go quiet after edition changes: behavior already changed:
 
 ```bash
 cargo clippy --locked -p <crate> --all-targets --target <supported-target> --no-default-features --features <supported-feature-set> -- -W if_let_rescope -W tail_expr_drop_order
 ```
 
-The placeholders describe one explicitly selected lane, not a literal command. Preserve its
-actual default-feature selection; omit `--features` for a lane with none, and omit
-`--no-default-features` when defaults belong to it. The lints see only compiled code. Select
-the relevant supported feature/target lanes through the project's existing verification owner;
-do not combine incompatible features or expand a small diagnostic into a release qualification.
+Placeholders describe one explicitly selected lane, not literal command. Preserve actual default-feature selection; omit `--features` for lane with none, omit `--no-default-features` when defaults belong. Lints see only compiled code. Select relevant supported feature/target lanes through existing verification owner; do not combine incompatible features or expand small diagnostic into release qualification.
 
-Both lints are allow-by-default members of `rust_2024_compatibility`. Interpret the results:
+Both lints are allow-by-default `rust_2024_compatibility` members. Interpret results:
 
 - `cargo fix --edition` rewrites an `if_let_rescope` site into a `match`. The `match` keeps the
   edition 2021 lock hold, and any deadlock that came with it. Keep that hold only when the
@@ -237,12 +207,11 @@ Both lints are allow-by-default members of `rust_2024_compatibility`. Interpret 
 - Do not use an edition migration as a lock-lifetime refactor. Run behavior tests for code whose
   temporaries own locks, transactions, file descriptors, or other guards.
 
-Use [implement-rust](../../implementation/implement-rust/SKILL.md) for the actual feature/target
-lane and any authorized edition migration. The language examples here do not adopt a migration.
+Use [implement-rust](../../implementation/implement-rust/SKILL.md) for actual feature/target lane and authorized edition migration. Language examples adopt no migration.
 
 ## Verification
 
-Use the smallest proof that decides the question:
+Use smallest decisive proof:
 
 1. Put the exact expression in a standalone file. Do not simplify it first.
 2. Compile the probe on the workspace edition using an already available toolchain
@@ -257,15 +226,11 @@ Use the smallest proof that decides the question:
 5. Run the real workspace tests after the probe. The probe proves the language rule, not the
    application invariant.
 
-Do not use Miri to answer whether code type-checks. Use Miri after compilation when unsafe
-aliasing or provenance is also in scope.
+Do not use Miri for type-check questions. Use after compilation when unsafe aliasing/provenance also in scope.
 
 ## Optional companion reference
 
-[rust-compiler-errors](../rust-compiler-errors/SKILL.md) covers general ownership and lifetime
-diagnostics. Use it when its triage helps; otherwise inspect `rustc --explain` and the primary
-language rules with [implement-rust](../../implementation/implement-rust/SKILL.md) as the project
-owner. No absent specialist skill or new tool installation is required.
+[rust-compiler-errors](../rust-compiler-errors/SKILL.md) covers general ownership/lifetime diagnostics. Use when triage helps; otherwise inspect `rustc --explain` and primary language rules with [implement-rust](../../implementation/implement-rust/SKILL.md) as project owner. No absent specialist skill or new tool installation required.
 
 Adapted from po4yka/rust-skills; see [LICENSE](LICENSE) and
 [local changes and source pin](LOCAL-CHANGES.md).

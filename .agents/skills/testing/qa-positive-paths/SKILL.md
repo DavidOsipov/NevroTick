@@ -7,10 +7,10 @@ description: "Choose positive controls and expected successful NevroTick paths t
 
 Read [the testing contract](../CONTRACT.md).
 
-Identify the legitimate caller, required current state and exact expected successful transition. Use normal constructors and real entry points, with independent expected values and acknowledged effects.
+Identify legitimate caller, required current state, exact expected successful transition. Use normal constructors/real entry points, independent expectations, acknowledged effects.
 
-Cover representative valid operating states and important edge-valid inputs: ordinary and maximum allowed frames/policies, current authorized correction, supported persisted version and valid authenticated packet. Keep source identity, units, freshness and policy budgets visible.
+Cover representative valid states/important edge-valid inputs: ordinary/maximum allowed frames/policies, current authorized correction, supported persisted version, valid authenticated packet. Keep source identity/units/freshness/policy budgets visible.
 
-Pair rejection tests with the closest valid neighbor; ensure the handler actually admits it and performs the promised effect exactly once. A stub returning success without publication or acknowledgement is insufficient. For optional recovery, show ordinary reacquisition still works.
+Pair rejection with closest valid neighbor; verify handler admits it/performs promised effect exactly once. Success stub without publication/acknowledgement insufficient. Optional recovery: show ordinary reacquisition still works.
 
-Select the cheapest evidence layer reaching the claim. Pure valid controls cannot prove real Windows privilege/IPC behavior; use [Windows evidence](../references/windows-evidence.md) when needed.
+Select cheapest claim-reaching evidence layer. Pure valid controls cannot prove real Windows privilege/IPC behavior; use [Windows evidence](../references/windows-evidence.md) when needed.

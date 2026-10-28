@@ -60,3 +60,6 @@ The upstream JSON reference describes v0.3.1 and v0.6.3+ feature changes; this
 record does not certify release compatibility or the full command reference.
 Check the actual installed CLI's version, command help and observed JSON output
 on the selected Windows test machine before relying on those commands.
+
+Later local change: compressed instructional prose; preserved code, metadata,
+headings, links, technical conditions and licence texts. Upstream sources/pins unchanged.

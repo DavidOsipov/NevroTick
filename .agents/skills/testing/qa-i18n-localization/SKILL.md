@@ -7,10 +7,10 @@ description: "Test NevroTick message catalogs, units and native layout for adopt
 
 Read [the testing contract](../CONTRACT.md).
 
-Inspect the actual locale policy and typed message catalog. English is the initial scope; Russian is added only when adopted. Do not make a missing unadopted locale a product defect or copy the website's bilingual baseline automatically.
+Inspect actual locale policy/typed message catalog. Initial scope English; Russian only when adopted. Missing unadopted locale is no product defect; no automatic website bilingual baseline.
 
-For adopted locales verify stable error/message IDs, placeholders, plural behavior, accessible names and fallback semantics. Locale must not change policy/wire identifiers, numerical units, offset sign, source identity or authorization. Local display and UTC diagnostics need explicit labels.
+Adopted locales: verify stable error/message IDs/placeholders/plural behavior/accessible names/fallback semantics. Locale must not change policy/wire identifiers, numerical units, offset sign, source identity, authorization. Explicitly label local display/UTC diagnostics.
 
-Test long messages, negative values, non-ASCII names, bidi/mixed-script text and settings/error states through actual consumers. Check field errors, truncation and assistive-technology pronunciation where relevant; display labels must not obscure security-sensitive canonical identities.
+Test long messages/negative values/non-ASCII names/bidi/mixed-script text/settings/error states through actual consumers. Check relevant field errors/truncation/assistive-technology pronunciation; labels must not obscure security-sensitive canonical identities.
 
 Coordinate [visual/DPI](../qa-visual-dpi/SKILL.md) and [accessibility](../qa-accessibility/SKILL.md) for real native observations. Report exact locales and any catalog-only versus live-UI limits.

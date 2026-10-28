@@ -1,10 +1,10 @@
 # Chrony port and deterministic simulator recipe
 
-Read this for a translated/adapted chrony algorithm or the simulator that qualifies
-it. Work one bounded algorithm, its state and immediate consumers at a time; do
-not translate the entire C program or recreate its Unix integration. Reuse the
-adopted runner and pure simulation seam. This reference neither selects a harness
-library nor admits dependencies, a Cargo workspace or native actions.
+Use for translated/adapted chrony algorithms or their qualifying simulator.
+Work one bounded algorithm, owned state and immediate consumers at a time; never
+translate whole C program/recreate Unix integration. Reuse adopted runner/pure
+simulation seam. This selects no harness library, dependencies, Cargo workspace
+or native actions.
 
 The canonical owners are architecture [section 7](../../../../../docs/windows-time-architecture.md#7-chrony-derived-numerical-and-protocol-core)
 for the port map/pipeline, [section 10](../../../../../docs/windows-time-architecture.md#10-windows-clock-backend)
@@ -20,8 +20,8 @@ portable numerical success does not clear them.
 
 ## Slice inputs and reviewable outputs
 
-Before implementation, establish these artifacts in the task's existing evidence
-location; the names below describe content, not a new repository layout.
+Before implementation, establish artifacts in existing task evidence location;
+names describe content, not new repository layout.
 
 | Input | Output to retain |
 | --- | --- |
@@ -31,20 +31,18 @@ location; the names below describe content, not a new repository layout.
 | Independent trajectory/vector facts and event schedule | Reproducible scenario: literal inputs, derivation, seed if used, clock model, event ordering, bounded workload and expected per-event observations |
 | Candidate and runner/configuration identities | Evidence: first discriminating failure, healthy control, minimal repair, executed cases/results, raw trace/diff and pass/fail/blocked scope |
 
-Record deviations as decisions with rationale, changed expectations and affected
-callers, including omitted chrony options. A missing contract, unavailable source
-or unresolved rights needed for that slice blocks its implementation claim; keep
-useful read-only analysis separate. A ledger is not legal clearance. Maintain a
-narrow watch for upstream fixes affecting retained behavior, with the last checked
-revision and affected local owner; do not silently advance the pin.
+Record deviations, including omitted chrony options, with rationale, changed
+expectations and affected callers. Missing contract/source or unresolved slice rights
+blocks implementation claims; retain separate useful read-only analysis. A ledger is
+not legal clearance. Watch upstream fixes affecting retained behavior; record last
+checked revision/local owner. Never silently advance pin.
 
 ## Extract the algorithm and its contract
 
-The architecture's chrony **4.9 reference** is commit
-`8df4f1263e206585e6c4e61352d042c2dd12916a`, not an instruction to use a moving
-branch. The following primary files/functions were inspected for this recipe;
-inspect the exact selected body, dependencies and notices again when choosing a
-different slice or pin.
+Architecture's chrony **4.9 reference** pins commit
+`8df4f1263e206585e6c4e61352d042c2dd12916a`, never moving branches. These primary
+files/functions were inspected; recheck exact selected body, dependencies/notices
+when choosing another slice/pin.
 
 | Pinned primary source | Candidate boundary and translation trap |
 | --- | --- |
@@ -83,12 +81,11 @@ Define the pure contract before porting:
 
 ## Build independent facts before the port
 
-Use [numerical truth](../../../testing/references/numerical-protocol.md) and the
-existing [golden](../../../testing/qa-golden-fixture-parity/SKILL.md),
+Use [numerical truth](../../../testing/references/numerical-protocol.md) and existing
+[golden](../../../testing/qa-golden-fixture-parity/SKILL.md),
 [property](../../../testing/qa-property-based-testing/SKILL.md) or
-[model](../../../testing/qa-model-based-testing/SKILL.md) owner for the selected
-method. Do not add a parallel testing framework or use production helpers to
-generate expected values.
+[model](../../../testing/qa-model-based-testing/SKILL.md) owner for selected method.
+No parallel framework or production-generated expected values.
 
 Useful small analytic fixtures, selected only when relevant to the slice:
 
@@ -107,20 +104,19 @@ Useful small analytic fixtures, selected only when relevant to the slice:
   gain a vote. Compare the configured minimum independently of majority. Include
   an eligible agreeing set as the healthy control.
 
-For a regression/history slice, cover known slope/intercept, asymmetric jitter,
-sample aging/pruning and compensation for acknowledged clock corrections. For a
-selection slice, compare estimates aged to the **same** instant, eligibility,
-principal/supporter/rejected sets and reasons, uncertainty and hysteresis across
-nearly equal peers. Use one/two falsetickers with explicit population sizes and
-two-source disagreement; do not assume a majority remains after faults. No
-majority allows no new disputed phase correction, and never silently lowers the
-configured minimum or enables a single-source profile.
+Regression/history slices cover known slope/intercept, asymmetric jitter,
+sample aging/pruning and acknowledged-correction compensation. Selection slices
+compare estimates aged to **same** instant, eligibility, principal/supporter/rejected
+sets/reasons, uncertainty and nearly-equal-peer hysteresis. Use one/two falsetickers
+with explicit populations and two-source disagreement; do not assume majority survives.
+Without majority, allow no new disputed phase correction; never silently reduce
+configured minimum or fall back to single-source profile.
 
-For discipline/holdover, assert the full trajectory: finite phase budget distinct
-from stable oscillator compensation, uncertainty growth and honest freshness,
-reacquisition after discontinuity, and accepted leap/time-scale ownership. A
-compatible supporter is not necessarily an independent error sample. Do not
-collapse all uncertainty into a smaller average or infer tracking from reachability.
+For discipline/holdover assert full trajectory: finite phase budget separate from
+stable oscillator compensation, uncertainty growth/honest freshness, reacquisition
+after discontinuity and accepted leap/time-scale ownership. Compatible supporters
+need not be independent error samples. Never average away all uncertainty or infer
+tracking from reachability.
 
 ## Deterministic event simulator seam
 
@@ -135,13 +131,12 @@ coordinates:
 | Monotonic elapsed time | Orders events and expires deadlines through sleep; UTC steps cannot extend authorization |
 | Active-awake elapsed time | Advances only while awake; sleep duration is not evidence of delivered transient slew |
 
-Represent packet send/delivery/loss/reorder, timer expiry, configuration/association
-and clock-generation changes, suspend/resume, external/self-induced steps,
-proposal submission, backend application and acknowledgement as explicit events.
-Declare deterministic tie ordering, seeds, event count/horizon/queue bounds and
-fresh reset conditions so the literal failing schedule can be replayed alone.
-Generate exchanges from the declared path and oscillator model rather than from
-the implementation's estimator.
+Explicit events cover packet send/delivery/loss/reorder, timer expiry,
+configuration/association and clock-generation changes, suspend/resume,
+external/self-induced steps, proposal submission, backend application/acknowledgement.
+Declare deterministic ties, seeds, event count/horizon/queue bounds and fresh resets
+for standalone literal-failure replay. Generate exchanges from declared path/oscillator
+model, never implementation estimator.
 
 Maintain an independent physical-effect ledger and the controller's knowledge of
 those effects. Include rejected-with-no-effect, applied-with-quantization,
@@ -189,15 +184,13 @@ claiming the simulation proves Windows ownership detection.
    failure and accepts its valid control when that gate is in scope. CHECK-20's
    source/license/build inventory is separate from numerical pass results.
 
-If using clknetsim, follow architecture section 20.1: pin its revision and prove
-the exercised I/O/timer seam is actually intercepted, or compare captured chrony
-trajectories through an explicit simulation interface. Its Linux interception is
-not a Windows service harness. Do not install/build imported source merely to
-complete a documentation or planning task.
+For clknetsim follow architecture section 20.1: pin revision; prove exercised
+I/O/timer interception or compare captured chrony trajectories through explicit
+simulation interface. Linux interception is no Windows service harness. Never
+install/build imported source merely for documentation/planning completion.
 
-Report exactly what is qualified: a bounded pure algorithm/simulator slice can
-pass while unavailable differential evidence, missing prerequisites or native
-Windows checks remain blocked/unassessed. P1's CHECK-6/7/8/19/20 and pure admission
-subset require their own evidence; one slice does not complete that phase. Native
-sign, quantization, sleep/Modern Standby, ownership and actual clock trajectory
-qualification remain separate P0/P4 Windows obligations.
+Report exact qualified scope. Pure algorithm/simulator slices may pass while
+differential evidence, prerequisites/native Windows checks remain blocked/unassessed.
+P1's CHECK-6/7/8/19/20 and pure admission subset need separate evidence; one slice
+cannot complete phase. Native sign, quantization, sleep/Modern Standby, ownership
+and actual clock trajectory remain separate P0/P4 Windows obligations.

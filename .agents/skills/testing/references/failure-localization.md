@@ -1,31 +1,28 @@
 # Tracing, reducing and locating a regression
 
-Use causal tracing for an unexplained bad effect; use reduction or historical
-search only when that narrower question will help. Keep original input/artifacts immutable, the
-same independent semantic predicate, a healthy control and finite candidate,
-time, preparation and retry allowances. These procedures add no installation,
-repository mutation or live clock/service permission.
+Use causal tracing for unexplained bad effect; reduction/historical search only
+for useful narrower question. Keep immutable original input/artifacts, same
+independent semantic predicate, healthy control, finite candidate/time/preparation/
+retry allowances. No added installation/repository mutation/live clock/service permission.
 
 ## Find the first broken boundary
 
-Start at the observed incorrect output or effect and trace its actual predecessor
-calls and state transitions. For each suspect boundary record its owner, incoming
-value and units, expected invariant, outgoing value/result, current authority and
-candidate identity. Across processes or async jobs retain request/generation and
-correlation identity; a caller stack alone cannot establish the remote producer.
+From observed wrong output/effect trace actual predecessor calls/state
+transitions. Each suspect boundary: owner, incoming value/units, expected invariant,
+outgoing value/result, current authority, candidate identity. Across processes/async
+jobs retain request/generation/correlation identity; caller stack alone cannot
+establish remote producer.
 
-If existing observations cannot distinguish competing causes, add the smallest
-bounded pre/post observation at the suspect operation in the admitted fixture.
-Use redacted structured values, event order and a stack or correlation identifier
-where useful. Avoid raw packets, cookies, keys or environment dumps; retain the
-diagnostic limits and any timing disturbance. Missing output from a suppressed
-logger is an observation gap, not proof the operation never ran.
+If observations cannot distinguish competing causes, add smallest bounded
+pre/post observation at suspect operation in admitted fixture. Use redacted
+structured values/event order/useful stack or correlation identifier. No raw
+packets/cookies/keys/environment dumps; retain diagnostic limits/timing disturbance.
+Suppressed logger output is observation gap; does not prove operation never ran.
 
-Replay the original failure and healthy control with the same expectations.
-Find where a valid input/state first becomes invalid, including an earlier missed
-admission or lost acknowledgement; preserve downstream protection. Distinguish
-that evidence from a hypothesis about the eventual repair. Keep diagnostic code
-only when it has a continuing, reviewed purpose.
+Replay original failure/healthy control with same expectations. Find first
+valid-input/state → invalid transition, including earlier missed admission/lost
+acknowledgement; preserve downstream protection. Separate evidence/repair
+hypothesis. Retain diagnostic code only for continuing reviewed purpose.
 
 ## Semantic outcomes
 
@@ -41,17 +38,16 @@ that deadline is the actual contract. Retain primary and secondary failures.
 
 ## Reduce a witness
 
-Qualify the predicate on the original failure and healthy control before search.
-Remove coarse units, then smaller or structure-aware units, preserving required
-identities, relationships, raw encoding and event order. Accept a candidate only
-when the same TARGET_FAIL remains and controls remain healthy; do not change the
-predicate or replace the actual entrypoint to make progress.
+Before search qualify predicate on original failure/healthy control. Remove
+coarse, then smaller/structure-aware units; preserve required identities,
+relationships, raw encoding, event order. Accept candidate only with same
+TARGET_FAIL/healthy controls; no predicate change/actual-entrypoint replacement
+for progress.
 
-Each candidate starts from fresh owned state, while preserving state between
-events within its own sequence. For order-dependent failures, keep the victim
-fixed and reduce its ordered predecessors. Multiple predecessors can jointly
-pollute state even when every predecessor/victim pair passes; test groups and
-complements before blaming one predecessor. A failed reset invalidates later
+Each candidate starts fresh owned state; preserve within-sequence state. For
+order-dependent failures fix victim/reduce ordered predecessors. Predecessors may
+jointly pollute state despite passing predecessor/victim pairs; test groups/
+complements before single-predecessor blame. Failed reset invalidates later
 attempts until resolved.
 
 Independently replay the original, reduced witness and healthy control through
@@ -83,10 +79,10 @@ Retain every tested revision and skip reason; unresolved revisions at the bounda
 leave an ambiguous candidate set. A build failure is bad only when building is
 the selected contract, rather than a prerequisite to another behavior.
 
-Freshly replay the reported bad revision and relevant passing parent/boundary,
-then inspect the actual diff and merge context. The first observed bad commit
-does not establish the causal mechanism. Preserve logs before ending the owned
-search and restoring its starting state; reconcile only owned temporary changes.
+Freshly replay reported bad revision/relevant passing parent/boundary; inspect
+actual diff/merge context. First observed bad commit proves no causal mechanism.
+Preserve logs before ending owned search/restoring starting state; reconcile
+only owned temporary changes.
 
 Donor workflows and adaptation scope are recorded in
 [testing sources](../SOURCES.md) and [provenance](../../PROVENANCE.md).

@@ -7,10 +7,10 @@ description: "Run or design a bounded NevroTick fuzz target for structured IPC/c
 
 Read [the testing contract](../CONTRACT.md).
 
-Select one target and invariant: raw framed JSON admission, DTO-to-domain conversion, migration, numeric conversion, safe error projection, NTP wire or NTS/crypto. Keep these distinct so rejection at an earlier parser does not masquerade as coverage of a later guard.
+Select one target/invariant: raw framed JSON admission, DTO-to-domain conversion, migration, numeric conversion, safe error projection, NTP wire, NTS/crypto. Separate targets; earlier parser rejection proves no later-guard coverage.
 
-Start with accepted seeds plus independent expected facts and named malformed boundaries. Preserve duplicate keys/raw malformed bytes through the actual production decoder. Use coverage-guided or structure-aware generation only when the chosen runner is qualified; deterministic byte/transition cases remain useful when unavailable.
+Start accepted seeds/independent expected facts/named malformed boundaries. Preserve duplicate keys/raw malformed bytes through actual production decoder. Coverage-guided/structure-aware generation requires qualified runner; deterministic byte/transition cases remain useful without it.
 
-Cap total cases/time, bytes/depth, memory, workers, output retention and minimization. Distinguish ordinary rejection, crash, hang, launch/wait error and cleanup failure. A caught panic or zero wrapper exit cannot hide an actual failure. Preserve original and minimized exact bytes, corpus/build/configuration hashes, toolchain and reproduction command.
+Cap total cases/time, bytes/depth, memory, workers, output retention, minimization. Distinguish ordinary rejection/crash/hang/launch/wait error/cleanup failure. Caught panic/zero wrapper exit cannot hide failure. Preserve original/minimized exact bytes, corpus/build/configuration hashes, toolchain, reproduction command.
 
 Read [Rust techniques](../references/rust-techniques.md), including the conflicting upstream Windows support statements. Qualify the installed nightly/sanitizer/target with known controls. `tmin` reduces an individual failure; `cmin` reduces a coverage corpus. Neither creates Windows protected-effect evidence or permission for an overnight campaign.

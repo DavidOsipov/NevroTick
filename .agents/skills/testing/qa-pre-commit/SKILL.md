@@ -7,10 +7,10 @@ description: "Review or prepare NevroTick staged content with preserved user sta
 
 Read [the testing contract](../CONTRACT.md).
 
-Resolve task authority, repository/index/HEAD state and intended changes. Inspect staged, unstaged and untracked work separately; preserve existing user-owned hunks and receipts. Stage only when the task already authorizes it, using literal intended paths or reviewed hunks.
+Resolve task authority/repository/index/HEAD state/intended changes. Separately inspect staged/unstaged/untracked work; preserve existing user hunks/receipts. Stage only with existing task authorization using literal intended paths/reviewed hunks.
 
-Read [staged-candidate verification](../references/staged-candidate.md) when readiness depends on index contents. A dirty-working-tree pass does not establish the complete staged tree; changed-file copying can omit unchanged dependencies or staged deletions. Materialization must preserve required bytes/modes, attributes, inputs and any Git-dependent checks.
+Read [staged-candidate verification](../references/staged-candidate.md) for index-dependent readiness. Dirty-working-tree pass does not establish complete staged tree; changed-file copy may omit unchanged dependencies/staged deletions. Materialization must preserve required bytes/modes/attributes/inputs/Git-dependent checks.
 
 Review changes for reachable defects and required tests, configuration/lockfile/fixtures, generated output and accidental secrets. Meaningful suspected repair needs independent causal evidence and valid controls within existing scope. `git diff --cached --check` is only a structural/whitespace check.
 
-Run applicable selected gates on the actual candidate, record identity/results and compare custody before closeout. Formatting/hooks/index changes invalidate affected evidence. Do not commit, push, bypass hooks or clean unrelated work as an implicit consequence of this skill.
+Run selected applicable gates on actual candidate; record identity/results; compare custody before closeout. Formatting/hooks/index changes invalidate affected evidence. Skill implies no commit/push/hook bypass/unrelated cleanup.

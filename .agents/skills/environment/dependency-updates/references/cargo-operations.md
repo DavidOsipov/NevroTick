@@ -1,52 +1,46 @@
 # Scoped Cargo operations and evidence
 
-Inspect the actual pinned tool versions/help and workspace before using commands.
-These are recipes, not a claim that tools/configuration or a Cargo project exist.
-Operate in the authorized owned candidate; retain the baseline manifest/lockfile
-identities and never delete Cargo.lock to force fresh resolution.
+Inspect actual pinned versions/help/workspace before commands. Recipes prove no
+existing tools/configuration/Cargo project. Use authorized owned candidate; retain
+baseline manifest/lockfile identities. Never delete Cargo.lock to force resolution.
 
 ## Discover and resolve
 
 `cargo metadata --locked --format-version 1` describes resolved packages/targets;
-retain only needed fields and do not print environment credentials.
-`cargo tree --locked -e features` exposes feature activation paths; inspect
-`cargo tree --locked -d` for multiple versions and use reverse inspection for
-security-sensitive dependencies. Select the actual target and feature flags for
-each lane; tree output is an approximation, not byte-level proof of shipped code.
+retain needed fields only; print no credentials. `cargo tree --locked -e features`
+exposes feature activation; inspect `cargo tree --locked -d` for multiple versions
+and reverse graphs for security-sensitive dependencies. Select actual target/feature
+flags per lane; trees approximate, not byte-level proof of shipped code.
 
-Use primary release metadata to compare currently declared requirements, locked
-versions and proposed exact versions. An available scanner/outdated helper may
-aid discovery, but its installation or latest-version list is not required or
-compatibility evidence. Check the MSRV of the resolved transitive graph and the
-selected Windows SDK/linker/architecture lanes, not only the direct crate.
+Compare declared requirements, locked/proposed exact versions using primary release
+metadata. Scanner/outdated helpers may aid discovery; installation/latest lists
+are neither required nor compatibility proof. Check resolved transitive MSRV and
+selected Windows SDK/linker/architecture lanes, beyond direct crates.
 
-For an approved compatible update, a scoped operation such as
-`cargo update -p PACKAGE --precise VERSION` is preferable to blanket update. Cargo
-can change transitives needed to resolve that package; inspect the actual delta.
-`--dry-run` can preview a resolution on a toolchain supporting it. Change a
-manifest requirement only when the intended cohort requires it, then resolve and
-review the resulting graph. Use exact reviewed revisions for git sources under
-the architecture policy; do not substitute a branch head for a release checksum.
+For approved compatible updates, prefer scoped operations such as
+`cargo update -p PACKAGE --precise VERSION` over blanket updates. Inspect required
+transitive changes. Supporting toolchains offer `--dry-run` resolution previews.
+Change manifest requirements only for intended cohort; resolve/review resulting
+graph. Use exact reviewed git revisions under architecture policy; never substitute
+branch heads for release checksums.
 
-If local forks/vendor patches exist, reconcile root patch routing, lock entries,
-upstream revision, retained diff/hash, license notices and the reason for each
-patch. Map every retained/changed/dropped patch to a detecting regression and its
-upstream removal condition. Workspace tests may exclude vendored packages; run
-their required named regressions explicitly. An audit of a published base crate
-does not attest to a changed local path dependency.
+For local forks/vendor patches, reconcile root patch routing, lock entries,
+upstream revision, diff/hash, license notices and patch reasons. Map each retained,
+changed or dropped patch to detecting regression/upstream removal condition.
+Workspace tests may exclude vendored packages; run required named regressions
+explicitly. Published-base audits do not attest to changed local path dependencies.
 
-Features are additive and unified within the applicable resolver rules. A direct
-`default-features = false` does not prove another path did not enable a feature.
-Inspect actual features, source, checksum, patches, build.rs, proc macros and native
-libraries. In a future virtual workspace, deliberately select the resolver;
-Rust 2024 implies resolver 3 for a package but a virtual workspace still needs its
-own workspace resolver setting. Choose edition/MSRV only during their authorized
-workspace decision, not as an incidental update.
+Features are additive/unified under applicable resolver rules. Direct
+`default-features = false` cannot prove no other enabling path. Inspect actual
+features, source, checksum, patches, build.rs, proc macros and native libraries.
+Deliberately select future virtual workspace resolver: Rust 2024 implies resolver 3
+for packages, but virtual workspaces still need explicit workspace setting.
+Choose edition/MSRV only under authorized workspace decision, never incidentally.
 
 ## Qualify the final graph
 
-Use the repository's real CI/TOOLING commands with the selected Windows and portable
-lanes. Once the workspace exists, representative checks are:
+Use real repository CI/TOOLING commands for selected Windows/portable lanes.
+Once workspace exists, representative checks:
 
 ```sh
 cargo fmt --all -- --check
@@ -55,21 +49,21 @@ cargo test --locked --workspace
 cargo build --locked --workspace
 ```
 
-Apply the intended features/target/profile and project-required checks; do not
-assume all-targets covers every OS/architecture or use all-features when backends
-conflict. Run ordered checks without concurrent mutation of Cargo sources/lockfile
-or shared evidence. Inspect generated code/build outputs where those affect the
-claim. Package download/resolution is not compilation, compilation is not runtime
-behavior, and a host build is not Windows MSI/service/clock qualification.
+Apply intended features/target/profile and required checks. All-targets cannot cover
+every OS/architecture; avoid all-features with conflicting backends. Order checks
+without concurrent Cargo source/lockfile or shared-evidence mutation. Inspect
+claim-relevant generated code/outputs. Resolution/download proves no compilation;
+compilation proves no runtime behavior; host builds prove no Windows MSI/service/
+clock qualification.
 
-Use the admitted advisory/license/origin checker with recorded policy and database
-revision; retain existing findings and assess the changed graph. Chrony-derived
+Use admitted advisory/license/origin checker; record policy/database revision,
+retain existing findings and assess changed graph. Chrony-derived
 code's GPLv2-only constraints and selected transitive license grants need concrete
 review. A permissive UI example license does not license its framework. Avoid
 unsupported universal claims about Rust TLS providers or Windows trust parity.
 
-The final receipt identifies source/lock/toolchain/features/target, graph delta,
-advisory and licensing results, commands/statuses and actual artifacts. Unsigned
-build reproducibility and timestamped signing have different byte identities.
-Do not declare the cohort release-qualified until its required native evidence
-exists. [SOURCES](../../SOURCES.md) records primary research used in this workflow.
+Final receipt identifies source/lock/toolchain/features/target, graph delta,
+advisory/licensing results, commands/statuses and actual artifacts. Unsigned
+reproducible builds and timestamped signing have different byte identities.
+Claim no release qualification before required native evidence.
+[SOURCES](../../SOURCES.md) records primary workflow research.

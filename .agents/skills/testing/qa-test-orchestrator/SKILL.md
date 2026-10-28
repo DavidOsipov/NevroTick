@@ -7,13 +7,13 @@ description: "Coordinate a substantial NevroTick verification task across Rust, 
 
 Read [the testing contract](../CONTRACT.md).
 
-Resolve scope, requirements, source/candidate identity and the existing plan first. Read [the router](../README.md); select complementary techniques by the claims they can prove. A known local change can go directly to its leaf.
+First resolve scope, requirements, source/candidate identity, existing plan. Read [the router](../README.md); select complementary claim-proving techniques. Known local change: go directly to leaf.
 
-For coordinated whole-system stabilization, use [system stabilization](../qa-system-stabilization/SKILL.md) to retain the parent perimeter and assign every selected required obligation and integration seam. Worker/package passes remain provisional until those obligations have sufficient integrated-candidate evidence; local verification keeps its narrower scope.
+For coordinated whole-system stabilization, use [system stabilization](../qa-system-stabilization/SKILL.md): retain parent perimeter; assign every selected required obligation/integration seam. Worker/package passes provisional until sufficient integrated-candidate evidence; local verification retains narrower scope.
 
-1. Establish needed tool readiness and one finite acceptance set. Separate pure-core, strict contract, native IPC/clock, UI and package requirements. Name selected CHECK IDs and required environments without declaring planned checks executed.
-2. Choose owners and bounded batches. Delegate independent boundaries where useful; assign cross-worker seams and final integration to one coordinator. Each worker gets requirements, inputs, candidate identity, permitted effects, budget and expected evidence. Avoid duplicated full suites and concurrent mutations of one Windows machine.
-3. Require independent expectations and healthy controls before repairs. Classify product, oracle, fixture, environment and policy failures before changing either side. Keep first failures and consumed budgets through retries.
-4. Reconcile actual observed evidence and ownership, then execute only missing affected checks on the integrated candidate. Whole-system work finishes with [black-box acceptance](../qa-black-box-acceptance/SKILL.md) before [final qualification](../qa-final-qualification/SKILL.md).
+1. Establish needed tool readiness/one finite acceptance set. Separate pure-core/strict contract/native IPC/clock/UI/package requirements. Name selected CHECK IDs/required environments; planned checks are unexecuted.
+2. Choose owners/bounded batches. Delegate useful independent boundaries; one coordinator owns cross-worker seams/final integration. Each worker: requirements, inputs, candidate identity, permitted effects, budget, expected evidence. Avoid duplicated full suites/concurrent mutations of one Windows machine.
+3. Require independent expectations/healthy controls before repairs. Classify product/oracle/fixture/environment/policy failures before changing either side. Preserve first failures/consumed budgets through retries.
+4. Reconcile observed evidence/ownership; execute only missing affected integrated-candidate checks. Whole-system work: [black-box acceptance](../qa-black-box-acceptance/SKILL.md) before [final qualification](../qa-final-qualification/SKILL.md).
 
-Maintain [context continuity](../qa-context-checkpoint/SKILL.md) for multi-worker/interrupted work. Report incomplete required evidence explicitly; process coordination does not establish runtime correctness.
+Maintain [context continuity](../qa-context-checkpoint/SKILL.md) for multi-worker/interrupted work. Explicitly report incomplete required evidence; coordination proves no runtime correctness.

@@ -1,31 +1,28 @@
 # Windows event and network-policy integration
 
-Read the relevant section when a task changes Windows Event Log, optional ETW,
-or installer-owned Firewall/WFP policy. Architecture sections 12, 15.3 and 18.6
-control ownership; CHECK-1/13/15/17/18/21/23/26/27 select the affected evidence.
-These are candidate integrations and qualification instructions, not evidence
-that a provider, channel, filter or application has been implemented.
+Read relevant sections for Windows Event Log, optional ETW or installer-owned
+Firewall/WFP changes. Architecture sections 12, 15.3 and 18.6 own decisions;
+CHECK-1/13/15/17/18/21/23/26/27 select evidence. Candidate integrations/procedures
+prove no implemented provider, channel, filter or application.
 
-Use existing task authorization for actual installation, service operations,
-privileged policy changes and network probes. This reference grants none of
-those actions and adds no approval round. Do not request `SeAuditPrivilege`,
-write arbitrary events to the Security log, add a kernel driver, disable host
-protections or add antivirus exclusions to make a check pass.
+Installation, service operations, privileged policy changes/network probes require
+existing task authority; this reference grants none or new approval rounds. Never
+request `SeAuditPrivilege`, write arbitrary Security-log events, add kernel drivers,
+disable host protections or add antivirus exclusions to pass checks.
 
 ## Establish the owner and candidate
 
-Identify the actual component, service SID/account/token, installer transaction
-and protected effect before selecting an API. Record the exact Windows build,
-architecture, package/payload hashes, configuration, active host policy and
-initial product-owned state. Follow [native proof](native-proof.md) for real
-enforcement claims; source review and simulated failures have narrower scope.
+Before API selection identify actual component, service SID/account/token,
+installer transaction and protected effect. Record exact Windows build,
+architecture, package/payload hashes, configuration, active host policy and initial
+product-owned state. Real enforcement claims follow [native proof](native-proof.md);
+source review/simulated failures remain narrower.
 
-Keep installer registration, runtime provider registration, channel policy,
-consumer/export authority and network enforcement as distinct owners. Neither
-the `windows` bindings nor a diagnostic crate supplies these policies. Do not
-add dependencies or import a general firewall/logging engine merely to follow
-this reference; the selected narrow adapter and explicit features require their
-own admission under architecture section 18.6.
+Separate installer registration, runtime provider registration, channel policy,
+consumer/export authority and network enforcement owners. Neither `windows`
+bindings nor diagnostic crates supply policies. Add no dependency/general
+firewall/logging engine merely for this reference; narrow adapter/explicit features
+need separate admission under architecture section 18.6.
 
 ## Event Log
 
@@ -86,17 +83,15 @@ own admission under architecture section 18.6.
 
 ## Optional ETW
 
-Keep optional profiling/diagnostic ETW disabled until a measured task requires
-it. It is not the persisted operational-event contract. Fix provider identity,
-levels/keywords and allowed fields; keep packet dumps, NTS cookies/keys, TLS
-material and approval tokens out of both payloads and formatting paths. Inspect
-synthetic recognizable secrets through enabled, filtered and failure paths,
-including retained trace files and selected real-time consumers.
+Keep optional profiling/diagnostic ETW disabled until measured need. ETW does not
+replace persisted operational events. Fix provider identity, levels/keywords and
+allowed fields; exclude packet dumps, NTS cookies/keys, TLS material and approval
+tokens from payloads/formatting. Inspect synthetic secrets through enabled,
+filtered/failure paths, retained traces and selected real-time consumers.
 
-Measure disabled overhead at the real call site: expensive allocation and
-formatting must be guarded by the selected framework's
-enabled check. `EventEnabled` is a conservative quick check, so a true result
-does not prove a consumer received an event. See
+Measure disabled overhead at real call site; guard expensive allocation/formatting
+with selected framework's enabled check. `EventEnabled` is conservative: true
+proves no consumer delivery. See
 [EventEnabled](https://learn.microsoft.com/en-us/windows/win32/api/evntprov/nf-evntprov-eventenabled).
 
 Qualify registration failure, enable/disable and level/keyword filtering,
@@ -171,22 +166,21 @@ service identity, effective profiles/rules, direct/delegated retrieval owners,
 reachable allow/deny observations and the restored final state. Protect/redact
 receipts without losing the identity needed to reproduce the claim.
 
-Select faults at reached boundaries: denied registration/publication, missing
-resources, full/disabled logs, ETW registration or stop failure, policy API
-failure/partial transaction, interrupted upgrade/repair and administrator policy
-changes during maintenance. Observe bounded failure and legitimate recovery;
-assert cleanup before fixture teardown can hide leaked handles, sessions or
-filters. Logging failure must leave safe broker cleanup available.
+Select reached-boundary faults: denied registration/publication, missing resources,
+full/disabled logs, ETW registration/stop failure, policy API failure/partial
+transaction, interrupted upgrade/repair and maintenance-time administrator policy
+changes. Observe bounded failure/legitimate recovery; assert cleanup before fixture
+teardown hides handle/session/filter leaks. Logging failure must preserve safe
+broker cleanup.
 
-Restoration compares saved and current ownership/generation. Remove or restore
-only attributable product-owned provider/channel/session/rule changes; preserve
-successor versions, later administrator changes, host policy and retained logs
-according to the declared retention decision. Never reset all firewall profiles,
-delete rules by a broad display-name match, clear unrelated logs or reapply a
-whole-machine policy snapshot as cleanup. Report ambiguity and diagnose the
-blocked operation instead of widening privileges or policy.
+Compare saved/current ownership/generation before restoration. Remove/restore only
+attributable product-owned provider/channel/session/rule changes; preserve successor
+versions, later administrator changes, host policy and retained logs per declared
+retention. Never reset all profiles, delete broad display-name rule matches, clear
+unrelated logs or reapply whole-machine policy snapshots. Report ambiguity/diagnose
+blocked operation; never widen privileges/policy.
 
-Return the chosen owner/mechanism, exact candidate, observed allowed/forbidden
-effects, faults/cleanup and unexecuted boundaries. A pack check, rendered test
-event or policy dump alone does not qualify installed service isolation,
-release readiness or ASVS analysis/alerting coverage.
+Report chosen owner/mechanism, exact candidate, observed allowed/forbidden effects,
+faults/cleanup and unexecuted boundaries. Pack checks, rendered test events or
+policy dumps alone cannot qualify installed service isolation, release readiness
+or ASVS analysis/alerting coverage.

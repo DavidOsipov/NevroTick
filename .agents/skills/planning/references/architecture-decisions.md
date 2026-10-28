@@ -1,6 +1,6 @@
 # Rust ownership and abstraction decisions
 
-Read for a real abstraction, concurrency, platform or dependency decision. Start from the canonical architecture, not a preferred pattern name.
+Read for actual abstraction/concurrency/platform/dependency decision. Start from canonical architecture; no preferred-pattern default.
 
 | Pressure | Small starting point | Evidence needed before adding machinery |
 | --- | --- | --- |
@@ -11,6 +11,6 @@ Read for a real abstraction, concurrency, platform or dependency decision. Start
 | Cached/projected state | One canonical writer; revision-tagged immutable snapshots | Invalidation/rebuild and mixed-generation consumer rules. Cache hits are not fresh authorization. |
 | Windows FFI | Reviewed narrow safe adapter with owned RAII handles | ABI, pointer lifetime/alignment, thread affinity, cancellation, invalid-handle values, error capture and cleanup. Safe wrapper names do not prove unsafe preconditions. |
 
-Keep `unsafe` out of the pure core, protocol parser, domain and IPC contracts as required by the architecture. Keep Windows effects behind the platform adapter. A Rust destructor supports ordinary resource cleanup; it does not run after arbitrary process termination and cannot prove global clock restoration. Async cancellation can drop work at await points; specify who owns partially completed effects and how completion is reconciled.
+Keep `unsafe` outside pure core, protocol parser, domain, IPC contracts per architecture. Windows effects behind platform adapter. Rust destructor supports ordinary cleanup; does not run after arbitrary process termination or prove global clock restoration. Async cancellation can drop work at await points; specify partially completed effect owner/completion reconciliation.
 
-For each chosen approach record invariant, affected owner/interface, alternatives, tradeoff, current evidence and invalidation condition. Do not add a crate, service, generic framework or elaborate pattern merely to satisfy the skill. Suggested crate boundaries can start as modules if dependency direction remains enforceable.
+For each approach record invariant, affected owner/interface, alternatives, tradeoff, current evidence, invalidation condition. No crate/service/generic framework/elaborate pattern merely to satisfy skill. Suggested crates may start as modules if dependency direction enforceable.

@@ -1,20 +1,20 @@
 # Windows evidence layers
 
-Use the canonical [architecture](../../../../docs/windows-time-architecture.md) for selected accounts, endpoints, clock APIs, package lifecycle and performance budgets. This file routes evidence; it does not authorize changing the host.
+Use canonical [architecture](../../../../docs/windows-time-architecture.md): selected accounts/endpoints/clock APIs/package lifecycle/performance budgets. Evidence routing grants no host-change authority.
 
 ## Native execution and isolation
 
-Record Windows edition/build, architecture, toolchain/SDK/linker, service identities, security profile, feature set, candidate hashes and VM/hardware characteristics. Windows-target compilation on WSL establishes only compilation for the selected configuration. A VM can exercise services/ACLs/packages but may distort oscillator, suspend and resource measurements; name these limits. Use named hardware where CHECK-21 requires it.
+Record Windows edition/build, architecture, toolchain/SDK/linker, service identities, security profile, features, candidate hashes, VM/hardware characteristics. Windows-target WSL compilation proves only selected-configuration compilation. VMs exercise services/ACLs/packages; may distort oscillator/suspend/resource measurements. Name limits; use CHECK-21-required named hardware.
 
-For a disposable clock/service/installer test machine, capture owned baseline service/W32Time configuration, clock state, package state and recovery conditions. Ensure cleanup can run after service/process death; a test process destructor cannot clean up after an abort. Account for other-user sessions and successors before restoring state. Avoid scripts that blindly reset a rate now owned by another controller.
+Disposable clock/service/installer machine: capture owned baseline service/W32Time configuration, clock/package state, recovery conditions. Ensure cleanup after service/process death; destructor cannot clean after abort. Account for other-user sessions/successors before restoration. No blind rate reset under successor controller ownership.
 
 ## Tokens, IPC and effects
 
-Exercise real engine/broker/UI/helper tokens and their allowed verbs (CHECK-1–3). Include standard user, filtered/elevated admin, delegated/revoked application grants, old sessions, remote clients and a fake server. A disabled button or denied constructor is not the endpoint authorization test. Inspect the actual named-pipe ACL/server identity and attempt protected effects with valid-shaped requests.
+Exercise real engine/broker/UI/helper tokens/allowed verbs (CHECK-1–3). Include standard user, filtered/elevated admin, delegated/revoked application grants, old sessions, remote clients, fake server. Disabled button/denied constructor is no endpoint authorization test. Inspect actual named-pipe ACL/server identity; attempt valid-shaped protected-effect requests.
 
 Observe the true Windows result: applied sign/rate/phase, quantization, privilege behavior and acknowledgement. Include cancellation before/during native work, native call failure, delayed completion, stale generations, lost acknowledgement and cumulative budgets. Verify no unwinding crosses FFI and no replacement permit is fabricated while cancelled work still owns one (CHECK-10/27).
 
-Exercise actual SCM start/stop pending and running status, failure/preshutdown controls, registration failure, restart and no-login startup. UI exit must not stop the background service. Handle/thread/resource counts belong to their actual owner, not a global count whose meaning is unclear.
+Exercise actual SCM start/stop pending/running status, failure/preshutdown controls, registration failure, restart, no-login startup. UI exit must not stop background service. Attribute handle/thread/resource counts to actual owner; unclear global counts insufficient.
 
 ## Installation and delivered artifacts
 
@@ -22,7 +22,7 @@ V1 is one complete signed per-machine MSI. Validate its actual component/service
 
 Inspect external system effects and journal/restoration state before and after each fault. Windows Installer rollback does not automatically reverse arbitrary service/system changes from custom actions. Validate those compensations, including mid-action interruption and rollback-disabled behavior. Correct prior W32Time state and successor ownership must survive repair/removal; do not fight managed policy (CHECK-5).
 
-An unsigned/test-signed P0 artifact may demonstrate its declared mechanics in isolation. It does not establish production publisher trust, final signed-byte identity or clean-machine release acceptance. TUF research and a possible future MSIX are not adopted product implementations.
+Isolated unsigned/test-signed P0 artifact may demonstrate declared mechanics; proves no production publisher trust/final signed-byte identity/clean-machine release acceptance. TUF research/possible future MSIX are unadopted.
 
 ## Native UI, accessibility and presentation
 
@@ -32,4 +32,4 @@ Check critical status/source/settings/diagnostics/elevation/tray flows, clear tr
 
 Exercise contrast themes, system text scaling, at least 200% display scaling, moving between different-DPI monitors and changing DPI while running. A manifest declaration or screenshot at one DPI cannot prove correct change handling. Check long/localized/non-ASCII/bidi labels, keyboard access and stable focused row order. Rate-limit meaningful announcements; do not narrate every offset update.
 
-English is the initial adopted locale; Russian is conditional on a later explicit locale decision. Locale never alters wire/policy IDs, units, sign or authorization. UIA assertions, Narrator observations and screenshots are separate evidence. Apply WCAG2ICT as guidance for relevant WCAG criteria without claiming a standalone certification.
+Initial adopted locale English; Russian requires later explicit decision. Locale never changes wire/policy IDs/units/sign/authorization. UIA assertions/Narrator observations/screenshots: separate evidence. Apply WCAG2ICT guidance for relevant WCAG criteria; no standalone certification claim.

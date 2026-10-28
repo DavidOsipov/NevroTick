@@ -19,8 +19,8 @@
 
 ## Later stages
 
-State integrated outcomes and dependencies; mark details deferred until relevant evidence exists.
+State integrated outcomes/dependencies; defer details until relevant evidence exists.
 
 ## Evidence and handoff
 
-Record executed observations separately from planned checks, exact source/artifact/environment identity, review independence, remaining limits and next permitted action.
+Separate executed observations/planned checks; record exact source/artifact/environment identity, review independence, remaining limits, next permitted action.

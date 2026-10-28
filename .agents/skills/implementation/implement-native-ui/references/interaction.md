@@ -1,40 +1,38 @@
 # Native interaction and accessibility
 
-Architecture section 16 controls acceptance. The website skill's semantic intent
-transfers to native roles, relationships and behavior; HTML tags, ARIA and browser
-audits do not constitute native Windows evidence.
+Architecture section 16 controls acceptance. Transfer website semantic intent to
+native roles, relationships and behavior; HTML tags, ARIA/browser audits prove no
+native Windows behavior.
 
-Choose native text, action, check/radio, list and dialog controls according to the
-task. Expose meaningful UI Automation names, roles, values, states, relationships
-and supported patterns. Associate labels and field errors; decorative icons must
-not become duplicate action names. Dialog titles describe the task; focus starts
-predictably, Escape/cancel behaves correctly and focus returns after dialogs/UAC.
+Choose native text, action, check/radio, list/dialog controls by task. Expose meaningful
+UI Automation names, roles, values, states, relationships and supported patterns.
+Associate labels/errors; decorative icons must not duplicate action names. Task-specific
+dialog titles, predictable initial focus, correct Escape/cancel and returned focus
+after dialogs/UAC are required.
 
-Preserve keyboard tab order, access keys, visible focus and complete operation
-without a pointing device. Keep critical settings/recovery reachable outside the
-tray. Test Narrator speech separately from UIA property assertions; avoid replacing
-real spoken-output evidence with a synthetic accessibility tree.
+Preserve tab order, access keys, visible focus and full operation without pointing
+devices. Keep critical settings/recovery outside tray. Test Narrator speech
+separately from UIA assertions; synthetic trees cannot replace spoken-output evidence.
 
 Support Windows contrast themes, text scaling, at least 200% display scaling and
-multi-monitor DPI changes without hidden controls or values. Status distinctions
-use text/icon/shape as well as color. Long source labels, negative numbers and
-larger fonts must not hide the action or rejection reason. Provide text/table
-equivalents if a chart is later justified; avoid permanent animation/GPU work.
+multi-monitor DPI changes without hidden controls/values. Status uses text/icon/shape
+plus color. Long labels, negative numbers/larger fonts must hide no action/rejection
+reason. Future justified charts need text/table equivalents; avoid permanent
+animation/GPU work.
 
-The UI consumes versioned current-generation snapshots and labels retained data
-stale. A transport error and an empty valid source list are different outcomes.
-Show explicit units and the public offset sign. The source identity used for
-security decisions stays distinct from its potentially localized/display label.
-Keep implementation details out of normal user actions unless needed for a choice.
+Consume versioned current-generation snapshots; label retained data stale.
+Transport errors differ from valid empty source lists. Show units/public offset sign.
+Security source identity differs from localized/display labels. Expose implementation
+details in normal actions only when needed for decisions.
 
-Start with English and a typed message catalog/stable error IDs. Russian is added
-only when explicitly adopted; it is not mandatory inherited website parity.
-Translate display strings, not wire keys, stable IDs, numerical units or authority.
-For an adopted locale check placeholders/plurals, accessible names, long text and
-bidi/non-ASCII display. Diagnostic UTC/local presentation labels its time scale.
+Start with English and typed message catalog/stable error IDs. Add Russian only
+when explicitly adopted, not inherited website parity. Translate display strings,
+never wire keys, stable IDs, numerical units or authority. For adopted locales check
+placeholders/plurals, accessible names, long text and bidi/non-ASCII display.
+Diagnostic UTC/local presentation labels time scale.
 
-Use applicable WCAG A/AA through WCAG2ICT as an evaluation framework. WCAG2ICT is
-guidance, not a native certification. Retain UIA inspection, Accessibility Insights,
-keyboard and Narrator evidence for the actual target application and Windows lane.
+Evaluate applicable WCAG A/AA through WCAG2ICT. WCAG2ICT is guidance, not native
+certification. Retain UIA, Accessibility Insights, keyboard and Narrator evidence
+for actual application/Windows lane.
 
-Primary sources and architectural status are recorded in [SOURCES](../../SOURCES.md).
+Primary sources/architectural status: [SOURCES](../../SOURCES.md).

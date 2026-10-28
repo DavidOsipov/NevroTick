@@ -7,10 +7,10 @@ description: "Write or review focused Rust unit tests for NevroTick numerical, d
 
 Read [the testing contract](../CONTRACT.md).
 
-Locate the narrow production unit and its real invariant. Use existing Cargo/libtest conventions and fixtures; inspect actual package/features and test discovery. Avoid a new mocking/property framework when a small deterministic table suffices.
+Locate narrow production unit/actual invariant. Use existing Cargo/libtest conventions/fixtures; inspect actual package/features/test discovery. No new mocking/property framework if small deterministic table suffices.
 
-Construct expected results independently. Cover a meaningful valid case, the suspected failure, adjacent boundaries and forbidden state/effects as applicable. For time arithmetic, use explicit UTC/monotonic/active-awake clocks, exact units and analytically chosen values; do not invoke the production algorithm to calculate its own oracle.
+Derive expectations independently. Cover meaningful valid case, suspected failure, adjacent boundaries, applicable forbidden state/effects. Time arithmetic: explicit UTC/monotonic/active-awake clocks, exact units, analytic values; production algorithm must not calculate own oracle.
 
-Use legitimate constructors. A test-only bypass may challenge an internal invariant deliberately, but must not make a real consumer bypass possible. Assertions should observe returned values, stable error semantics and state after failure. Restore owned state and inspect leaked tasks/resources before fixture teardown.
+Use legitimate constructors. Deliberate test-only invariant bypass must enable no real consumer bypass. Assert returned values/stable error semantics/state after failure. Restore owned state; inspect leaked tasks/resources before fixture teardown.
 
-For repairs, demonstrate the intended product RED before the smallest authorized change, then GREEN with unchanged expectations. Report exact named execution, not only listing/compilation. See [Rust techniques](../references/rust-techniques.md) for runner limits and [numerical truth](../references/numerical-protocol.md) for core cases; unit evidence does not qualify Windows FFI.
+Repair: intended product RED before smallest authorized change; GREEN with unchanged expectations. Report exact named execution; listing/compilation insufficient. See [Rust techniques](../references/rust-techniques.md) for runner limits, [numerical truth](../references/numerical-protocol.md) for core cases; unit evidence does not qualify Windows FFI.

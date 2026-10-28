@@ -7,10 +7,10 @@ description: "Compare NevroTick captured outputs or pinned reference trajectorie
 
 Read [the testing contract](../CONTRACT.md).
 
-Freeze fixture rights/provenance, input bytes, producer revision, configuration and expected semantic facts. Useful goldens include protocol vectors, selection/correction trajectories, status/error projections and package inventories; pinned chrony output is differential evidence, not sole truth.
+Freeze fixture rights/provenance, input bytes, producer revision, configuration, expected semantic facts. Useful goldens: protocol vectors, selection/correction trajectories, status/error projections, package inventories. Pinned chrony output: differential evidence, never sole truth.
 
-Decide normalization from the contract before comparison. Retain raw output/diff. Units, signs, source identity/order, trust/freshness, unknown fields, error semantics and generation values may be contractual; do not erase them to stabilize snapshots. Allow incidental variation only with a stated basis.
+Decide contract-derived normalization before comparison. Retain raw output/diff. Units/signs/source identity/order/trust/freshness/unknown fields/error semantics/generation values may be contractual; do not erase for stable snapshots. Incidental variation needs stated basis.
 
-Challenge the comparator with a changed semantic sentinel that must fail and a permitted harmless variation that must pass. Compare actual generated output, not a fixture produced by the same production formatter used as the oracle.
+Challenge comparator: changed semantic sentinel must fail; permitted harmless variation must pass. Compare actual generated output; same-production-formatter fixture is no oracle.
 
-Review baseline changes as semantic decisions rather than accepting a tool's update mode for GREEN. Report exactly which facts and representations agree, plus untested platforms/native effects. See [numerical/protocol truth](../references/numerical-protocol.md).
+Review baseline changes as semantic decisions; no tool-update-mode GREEN. Report exact agreeing facts/representations, untested platforms/native effects. See [numerical/protocol truth](../references/numerical-protocol.md).

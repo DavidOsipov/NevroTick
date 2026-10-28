@@ -6,32 +6,15 @@ license: "MIT"
 
 ## NevroTick scope
 
-Use this command reference alongside the project-owned `qa-accessibility` and
-`qa-e2e-tests` skills; their requirements and the canonical architecture control
-the assessment. Native Win32 UIA is supported. This skill does not select WinUI,
-.NET, Windows App SDK or MSIX for NevroTick.
+Use alongside project-owned `qa-accessibility` and `qa-e2e-tests`; their requirements and canonical architecture control assessment. Native Win32 UIA supported. Selects no WinUI, .NET, Windows App SDK or MSIX for NevroTick.
 
-Run only on a qualified Windows test machine with an already available `winapp`
-CLI and an approved isolated application/test session. Record the OS, CLI version,
-candidate and target identity; check installed command help and JSON shapes before
-relying on these examples. The retained JSON reference describes features added
-in v0.3.1 and v0.6.3+, not verified compatibility with every later CLI.
+Run only on qualified Windows test machine with already available `winapp` CLI and approved isolated application/test session. Record OS, CLI version, candidate and target identity; check installed help/JSON shapes before using examples. Retained JSON reference describes features added in v0.3.1 and v0.6.3+, not verified compatibility with every later CLI.
 
-Resolve the explicitly scoped application, then use its HWND for actions where
-supported. Recheck ownership when windows change. Examples use placeholder targets.
-Loading this skill does not authorize tool/SDK installation, elevation, Sandbox
-enablement, DevTools attachment/injection, system-wide shortcuts or actions on
-other applications. Optional upstream skills below are references, not bundled
-dependencies or permission to expand the task.
+Resolve explicitly scoped application; use its HWND for supported actions. Recheck ownership when windows change. Examples use placeholder targets. No authorization for tool/SDK installation, elevation, Sandbox enablement, DevTools attachment/injection, system-wide shortcuts or other-application actions. Optional upstream skills are references, not bundled dependencies or permission to expand task.
 
-Verify each action through the target's actual resulting UIA state, screenshot
-or keyboard/focus behavior. Exit zero alone is insufficient: the pinned keyboard
-shim calls `PostMessage` without checking its Boolean result, and queued messages
-need not be processed as intended. Inspect Narrator speech separately from UIA
-assertions. If the Windows/tool environment is unavailable, provide qualified
-command suggestions and report runtime evidence as unavailable.
+Verify each action through target's resulting UIA state, screenshot or keyboard/focus behavior. Exit zero insufficient: pinned keyboard shim calls `PostMessage` without checking Boolean result; queued messages may not process as intended. Inspect Narrator speech separately from UIA assertions. Without Windows/tool environment, provide qualified commands; report runtime evidence unavailable.
 
-**If you can't run `winapp` yourself** (no shell, or the command is denied), give the user the exact `winapp` command(s) for their project instead of only describing the steps.
+**If unable to run `winapp`** (no shell/command denied), give exact project `winapp` command(s), not only steps.
 
 ## When to use
 - Inspecting a running Windows app's UI from the command line
@@ -42,33 +25,21 @@ command suggestions and report runtime evidence as unavailable.
 - For a separately scoped WinUI 3 application's XAML internals, see the optional upstream [winui-devtools skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winui-devtools/SKILL.md); it is not required for NevroTick's Win32 UI.
 
 ## Prerequisites
-For a separately scoped WinUI 3 application, the optional upstream
-[winui-devtools skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winui-devtools/SKILL.md)
-and `winapp devtools` cover XAML source/tree, bindings and dependency properties.
-That workflow requires an attached
-target or explicit authorization to inject with `--attach`; a PID alone is not
-consent. An AutomationId works as a selector in both tools; generated slugs do
-not transfer to DevTools. Continue using `winapp ui`
-for cross-framework actions, screenshots, waits and accessibility.
+For separately scoped WinUI 3 application, optional upstream [winui-devtools skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winui-devtools/SKILL.md) and `winapp devtools` cover XAML source/tree, bindings and dependency properties. Requires attached target or explicit injection authorization for `--attach`; PID alone is not consent. AutomationId selectors work in both tools; generated slugs do not transfer to DevTools. Use `winapp ui` for cross-framework actions, screenshots, waits and accessibility.
 
-To measure WinUI work while driving a scenario, use the
-[optional upstream performance skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-performance/SKILL.md) to bracket UI actions with capture markers.
+Measure WinUI scenario work with [optional upstream performance skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-performance/SKILL.md): bracket UI actions with capture markers.
 
-- For UIA mode: an available qualified CLI, an accessible running target and the relevant UIA provider/patterns are required; access restrictions or missing providers can prevent inspection.
+- UIA mode requires available qualified CLI, accessible running target and relevant UIA provider/patterns; access restrictions or missing providers can prevent inspection.
 - For input-injecting verbs (`click`, `hover`, `drag`, `touch`, `pen`, `scroll --wheel`/`--wheel-horizontal`, `send-keys --via send-input`): an **unlocked, interactive desktop** with the target window foregroundable. On a locked/secure desktop they fail fast with `no_interactive_desktop`. The UIA-pattern verbs (`inspect`, `search`, `get-*`, `wait-for`, `set-value`, `invoke`, `scroll --direction/--to`) are headless/locked-session friendly — prefer them in CI.
 - `screenshot` is **not** in that group: it always takes an exclusive turn, so it queues behind other UI workflows, and capture can need a usable interactive desktop — the engine restores the target if it is minimized, and falls back to foregrounding it when frame capture is unavailable or `--capture-screen` is used.
 - `--capture-screen` needs **exactly one window**. `-w <hwnd>` gives it one: that window's screen region, including anything visibly on top of it. If `-a` matches several top-level or owned windows the command fails with `invalid_arguments` before capturing; run `winapp ui list-windows -a <app>` and retry with `-w <hwnd>`.
-- **If other UI workflows may run at the same time**, set one workflow id per logical workflow (see below). Nothing breaks without it, but your commands will not be recognized as belonging together.
+- **If UI workflows may overlap**, set one id per logical workflow (below). Without id, commands still work but are not grouped.
 
 ## Coordinating with other UI workflows
 
-Windows has one foreground window, one keyboard focus, one cursor, and one input stream. `winapp ui`
-therefore makes desktop-driving commands take **cooperative turns** so concurrent workflows cannot
-steal each other's focus or dismiss each other's menus. That is always on. Read-only commands never
-wait.
+Windows has one foreground window, keyboard focus, cursor and input stream. `winapp ui` desktop-driving commands always take **cooperative turns** to prevent concurrent focus theft/menu dismissal. Read-only commands never wait.
 
-Keeping the desktop *across* commands is opt-in — without an id, each command is a one-shot that
-releases the desktop the moment it finishes:
+Desktop custody *across* commands is opt-in: without id, each command releases desktop immediately on finish:
 
 ```powershell
 # Set once per logical UI workflow — same value for cooperating calls, different values for
@@ -76,39 +47,21 @@ releases the desktop the moment it finishes:
 $env:WINAPP_UI_WORKFLOW_ID = [guid]::NewGuid().ToString()
 ```
 
-Rules that matter when driving this from an agent:
+Agent workflow rules:
 
-- **Each tool call usually gets a fresh shell**, and there is no process-ancestry fallback, so
-  commands are grouped ONLY by the id you inject. Without it every call is its own workflow.
-- **A workflow with an id keeps its turn for four seconds** after its last command. That covers
-  back-to-back commands in one script; it deliberately expires while you are reasoning. Treat it as
-  a fallback for when you cannot say you are done — not as the way to finish.
-- **Run `winapp ui yield` when you finish a known sequence.** It hands the desktop over immediately
-  instead of making a waiting workflow sit out a four-second grace nobody needs. Yielding twice, or
-  after the grace lapsed, is a harmless success.
-- **After a reasoning gap, replay your setup.** Another workflow may have used the desktop, so
-  reopen the menu / re-navigate, re-resolve the element, then act. Do not assume transient UI
-  survived.
+- **Each tool call usually gets fresh shell**; no process-ancestry fallback. Commands grouped ONLY by injected id; without it, every call is separate workflow.
+- **Workflow with id keeps turn for four seconds** after last command: covers consecutive script commands, deliberately expires during reasoning. Fallback when unable to signal done, not completion method.
+- **Run `winapp ui yield` after known sequence.** Hands desktop over immediately, avoiding unnecessary four-second grace. Repeated yield or yield after grace harmlessly succeeds.
+- **After reasoning gap, replay setup.** Another workflow may have used desktop: reopen menu/re-navigate, re-resolve element, then act. Do not assume transient UI survived.
 - **Prefer one tight script over many round trips** for a known sequence: `winapp ui invoke View -w
   $hwnd; winapp ui search "Status bar" -w $hwnd; winapp ui click "Status bar" -w $hwnd; winapp ui yield`.
-- **`record` shares the turn with its own workflow**, so same-workflow clicks and typing are captured
-  while it runs — but only if both commands carry the same id. A `record` with no id blocks everyone
-  else for its whole duration.
-- **Ordering is owner affinity, then FIFO.** An active workflow may keep issuing commands ahead of
-  others already waiting; once it yields or its grace expires, waiters are served in arrival order.
-- **Waiting is indefinite and cancellable.** After one second a notice on stderr says what holds the
-  desktop and for how long (silent under `--json` and `--quiet`); Ctrl+C exits `130` with error code
-  `cancelled` and the command never ran.
-- **There is no hard cap** — a long script, unbounded recording, or failure loop can block other
-  mutating workflows until it finishes or is stopped.
+- **`record` shares own workflow's turn**: captures concurrent clicks/typing only when both commands carry same id. `record` without id blocks everyone else throughout.
+- **Ordering: owner affinity, then FIFO.** Active workflow may issue commands ahead of waiters; after yield/grace expiry, serve waiters in arrival order.
+- **Waiting indefinite, cancellable.** After one second, stderr names desktop holder/duration (silent under `--json` and `--quiet`); Ctrl+C exits `130`, error `cancelled`, command never ran.
+- **No hard cap**: long script, unbounded recording or failure loop can block other mutations until completion/stop.
 
 Commands that never wait: `status`, `list-windows`, `inspect`, `search`, `get-*`, `wait-for`.
-Commands that wait for the turn but never take the desktop (headless/locked-session friendly):
-`set-value`, `scroll-into-view`, `scroll --direction`/`--to`, `record`. They mutate the app, so they
-queue behind another workflow. Inside your own workflow they overlap with other shared work — that
-is how `record` captures the `set-value` calls it is recording — but they still wait behind an
-earlier `DesktopExclusive` command of your own workflow, so a `click` followed by a `set-value` runs
-in the order you wrote it.
+Commands waiting for turn without taking desktop (headless/locked-session friendly): `set-value`, `scroll-into-view`, `scroll --direction`/`--to`, `record`. App mutations queue behind other workflows. Within own workflow, overlap with shared work lets `record` capture `set-value`; still wait behind earlier own-workflow `DesktopExclusive`, preserving `click` then `set-value` order.
 Commands that take the desktop exclusively: `invoke`, `click`, `drag`, `hover`, `scroll --wheel`/`--wheel-horizontal`,
 `touch`, `pen`, `focus`, `send-keys`, `screenshot`.
 
@@ -177,14 +130,7 @@ winapp ui invoke AgreeCheckbox -a myapp --action toggle-on --json
 winapp ui invoke Open -w <dialog-HWND> --type Button --action invoke
 ```
 
-Use `--action` to avoid automatic pattern and ancestor fallback. Omit it for the
-existing automatic behavior. With `--root`, `--type`, or `--class-name`, the
-filters follow the same matching rules as read queries: exactly one element must
-match inside the selected app/window, or the command fails without acting, and
-the ancestor fallback is skipped. See the
-[action reference](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#invoke)
-for supported actions, scope, idempotent toggles, and failure recovery, and the
-[JSON envelope](references/ui-json-envelope.md#ui-invoke---json) for action results.
+Use `--action` to prevent automatic pattern/ancestor fallback; omit for existing automatic behavior. `--root`, `--type` or `--class-name` use read-query matching: exactly one match in selected app/window, otherwise fail without acting; skip ancestor fallback. See [action reference](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#invoke) for actions, scope, idempotent toggles, failure recovery; [JSON envelope](references/ui-json-envelope.md#ui-invoke---json) for results.
 
 ### Disambiguate duplicate elements
 ```powershell
@@ -247,12 +193,10 @@ winapp ui screenshot -w <hwnd> --capture-screen --output with-popups.png
 winapp ui screenshot -a myapp --focus --output focused.png
 ```
 
-Default capture includes owned windows even with an explicit main HWND; it produces one labeled composite, not separate image files. An element selector for an item in an open menu, flyout, tooltip, or teaching tip crops from that item's popup window, so you don't need `--capture-screen` for it. For scope and on-screen overlay placement, see [Screenshot](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#screenshot). With `--on sandbox`, the reported screenshot path is the delivered host destination. In an app with WinUI DevTools attached, screenshots leave out its toolbar, markers, comment panel and inspector window.
+Default capture includes owned windows even with explicit main HWND: one labeled composite, not separate files. Selector for open menu/flyout/tooltip/teaching-tip item crops item's popup; no `--capture-screen` needed. Scope/on-screen overlay placement: [Screenshot](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#screenshot). With `--on sandbox`, reported path is delivered host destination. Attached WinUI DevTools toolbar, markers, comment panel and inspector excluded from screenshots.
 
 ### Record video (H.264 MP4)
-Record a window or element region to MP4. Prefer a positive `--duration-sec N` for
-agents and scripts; otherwise recording waits for a stop signal. npm helpers require
-`durationSec` (integer 1–86400). Their abort signal is forceful cancellation, not graceful stop.
+Record window/element region to MP4. Prefer positive `--duration-sec N` for agents/scripts; otherwise waits for stop signal. npm helpers require `durationSec` (integer 1–86400); abort signal forcibly cancels, not graceful stop.
 ```powershell
 # Record a window for 10s at 15 fps
 winapp ui record -a myapp --duration-sec 10 --fps 15 --output demo.mp4
@@ -272,10 +216,7 @@ winapp ui record -a myapp --cursor --duration-sec 10 --output demo.mp4
 - Default `--duration-sec 0` records until Ctrl+C, a newline, or EOF on redirected stdin.
 - `--frames` writes `<output-name>.frames` with a manifest, NDJSON index, and changed JPEGs. It supports 1-30 fps and `--max-edge` 64-4096 (default 1280), with a 1 GiB cap. Use `elapsedMs` to bound transitions.
 - `--cursor` draws the pointer and a ring at each click; add `--no-click-highlight` to keep the pointer without rings. With `--frames`, each `frames.ndjson` line gains `cursor` (`x`, `y`, `visible`, `inFrame`) and `clicks` (`button`, `kind`, `elapsedMs`, `x`, `y`) in image pixels.
-- Existing recording outputs are rejected by default. Use a fresh path, or explicitly
-  request `--overwrite` to replace them after the new take finishes. Previous frame
-  directories are archived, not deleted. On partial failure, keep the reported evidence
-  and follow `recoveryHint`.
+- Existing outputs rejected by default. Use fresh path, or explicitly request `--overwrite` to replace them after new take finishes. Previous frame directories archived, not deleted. Partial failure: retain reported evidence; follow `recoveryHint`.
 - Default recording draws open menus, flyouts and tooltips over the window in place; no flag is needed. They're clipped to the window's bounds, and popups from other processes need `--capture-screen` (see [Menus and flyouts in recordings](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#menus-and-flyouts-in-recordings)).
 - `--capture-screen` captures from the screen DC so overlays and popups are included; the window is brought to the foreground first. When WGC is unavailable and `--capture-screen` is not passed, the CLI returns an error — re-run with `--capture-screen` to consent to screen-DC capture. Because the screen DC captures whatever is genuinely in front, the target's foreground is **verified immediately before capture**; if activation was refused the command fails with `foreground_not_target` and writes nothing rather than returning an image of the wrong window.
 - Providing a selector that doesn't match any element fails immediately with `element_not_found` (rather than silently recording the whole window).
@@ -295,14 +236,14 @@ winapp ui hover btn-info-a1b2 -a myapp --dwell-time 1200; winapp ui screenshot -
 ```
 
 ### Click or hover a screen point
-When the press needs a point rather than an element's center (inside a WebView2 page, or one part of a large control), pass `--at x,y` with screen coordinates from `ui inspect` instead of a selector. `--at` can't be combined with a selector.
+For point instead of element center (WebView2 page/part of large control), use `--at x,y` with `ui inspect` screen coordinates instead of selector. `--at` cannot combine with selector.
 ```powershell
 winapp ui click --at 1520,780 -a myapp            # add --right or --double as needed
 winapp ui hover --at 1520,780 -a myapp
 ```
 
 ### Send keyboard input
-Synthesize keystrokes — the keyboard counterpart to `click`. Use for arrow/Tab/Enter navigation, shortcuts, and per-keystroke typing (vs `set-value`'s atomic write). Tokens are whitespace-separated: named keys (`enter`, `down`, `tab`, `esc`, `f5`), modifier combos (`ctrl+shift+t`), literal text (`hello`), and raw virtual keys (`vk=0xNN`).
+Synthesize keystrokes, keyboard counterpart to `click`: arrow/Tab/Enter navigation, shortcuts, per-keystroke typing (versus `set-value` atomic write). Whitespace-separated tokens: named keys (`enter`, `down`, `tab`, `esc`, `f5`), modifier combos (`ctrl+shift+t`), literal text (`hello`), raw virtual keys (`vk=0xNN`).
 ```powershell
 # Keyboard navigation then commit
 winapp ui send-keys "down down enter" -a myapp
@@ -337,7 +278,7 @@ winapp ui send-keys "ctrl+capslock+f12" -a myapp --via send-input
 - Long literal text on `--via send-input` is **auto-throttled**: the text is split into small character chunks injected one `SendInput` at a time with a brief pause between the chunks of that one run, so the target can drain its input queue and every character lands. A single unbroken burst overruns the queue and silently drops characters even though the command reports success. The pacing is scoped to a single long text run — short text, key names, and modifier combos (including sequences like `ctrl+a delete`) inject with no added delay, and the command emits an informational warning when a payload is large enough to be throttled. Because each paced chunk lands on whatever window is foreground, `send-input` re-verifies the target still owns the foreground before every continuation chunk and **aborts with `foreground_not_target`** if focus leaves the target mid-injection, so a focus change partway through can't spray the rest of the text into another window (a focus-changing chord such as `alt+tab` is exempt and is never treated as drift). For large bulk text, prefer `set-value` (atomic, no keystrokes or foreground needed) on controls that support it.
 
 ### Drag (reorder, resize, sliders, drag-and-drop)
-Press the mouse button at one point, move to another, then release with `drag <from> <to>`, where each endpoint is an element selector (uses its center) or screen `x,y` coordinates from `ui inspect`. Uses `SendInput` with intermediate moves so apps see a realistic `WM_MOUSEMOVE` stream.
+Press, move, release with `drag <from> <to>`; endpoints: element selector (center) or screen `x,y` from `ui inspect`. Uses `SendInput` intermediate moves for realistic `WM_MOUSEMOVE` stream.
 ```powershell
 # Reorder one item onto another (center → center)
 winapp ui drag itm-card-9f8e itm-slot-2c1a -a myapp
@@ -354,7 +295,7 @@ winapp ui drag itm-card-9f8e itm-trash-0001 -a myapp --right
 - A selector drags from/to the element's center; `x,y` are screen coordinates in the same space `ui inspect`/`search` report. Element endpoints are re-resolved just before the drag and fail with `target_moved` if still animating; on a locked/secure desktop the drag fails with `no_interactive_desktop`.
 
 ### Touch gestures (tap, swipe, pinch, stretch, long-press)
-Inject synthetic touch. The contact anchor is an element selector (its center) or an explicit `--at x,y` screen coordinate. Prefers the modern synthetic-pointer device and falls back to the legacy touch-injection API.
+Inject synthetic touch at element selector's center or explicit `--at x,y` screen coordinate. Prefer modern synthetic-pointer device; fall back to legacy touch-injection API.
 ```powershell
 # Tap an element center; or tap explicit screen coordinates
 winapp ui touch btn-ok-1a2b -a myapp
@@ -369,7 +310,7 @@ winapp ui touch img-map-9f8e -a myapp --gesture stretch --distance 200 --angle 9
 - Gestures: `tap` (default), `double-tap`, `long-press`, `swipe`, `pinch`, `stretch`. `--fingers` 1–10 (pinch/stretch always 2). `--angle` 0–359 sets the pinch/stretch finger axis (0 horizontal, 90 vertical). Refuses without a non-zero foregrounded target (`no_target`/`foreground_not_target`/`no_interactive_desktop`); every coordinate is checked against the target window, and a point outside it produces a non-fatal warning (`warnings[]` in `--json`) while injection still proceeds — consistent with the mouse verbs. If injected touch is unsupported on the device, the command surfaces the real Win32 error rather than a false success. In a Remote Desktop/VM session delivery isn't guaranteed even on exit 0 — the command appends a delivery-uncertainty warning (`warnings[]` in `--json`); verify the effect with a screenshot.
 
 ### Pen / stylus (taps and ink strokes)
-Inject synthetic pen input (Windows 10 1809+). Target an element center, an explicit `--at`, or a full `--path` ink stroke, with pressure/tilt/eraser control.
+Inject synthetic pen input (Windows 10 1809+) at element center, explicit `--at` or full `--path` ink stroke; pressure/tilt/eraser control.
 ```powershell
 # Pen tap at element center; firm tap at explicit coords
 winapp ui pen canvas-1a2b -a myapp
@@ -400,33 +341,14 @@ winapp ui get-property Document -a myapp --property FontWeight --json
 winapp ui get-focused -a myapp
 ```
 
-For `get-focused`, `-a` includes windows in the selected process; `-w` restricts
-focus to that exact window, excluding its owned popups. A control can belong to
-the target through its parent window even when it omits its own process ID.
-See `references/ui-json-envelope.md` for focus no-match and query-error handling.
+`get-focused`: `-a` includes selected process windows; `-w` restricts focus to exact window, excluding owned popups. Control may belong through parent window despite missing own process ID. See `references/ui-json-envelope.md` for no-match/query-error handling.
 
-To check a blank or cleared field, use `winapp ui wait-for SearchBox -a myapp --value ""`.
-See [empty-value behavior](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#get-value)
-for JSON output and reading the accessibility label separately.
+Check blank/cleared field: `winapp ui wait-for SearchBox -a myapp --value ""`. See [empty-value behavior](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#get-value) for JSON output and separate accessibility-label read.
 
-`get-property` also accepts `FontName`, `FontSize`, `ForegroundColor`, `IsItalic`,
-and `StrikethroughStyle`. Omit `--property` to include all six formatting attributes.
-Treat `Mixed`, `NotSupported`, and `Unavailable` as distinct states, not formatting
-values. Names are case-sensitive; unknown names fail with `invalid_arguments`.
-See the [formatting reference](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#whole-document-text-formatting)
-for units and state meanings, and `references/ui-json-envelope.md` for the JSON shape.
+`get-property` also accepts `FontName`, `FontSize`, `ForegroundColor`, `IsItalic`, `StrikethroughStyle`. Omit `--property` for all six formatting attributes. `Mixed`, `NotSupported`, `Unavailable` are distinct states, not formatting values. Names case-sensitive; unknown names fail with `invalid_arguments`. [formatting reference](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#whole-document-text-formatting): units/state meanings; `references/ui-json-envelope.md`: JSON shape.
 
 ### Set values
-To prepare a control for keyboard input, use `winapp ui focus <selector> -a <app>`
-(keep `--on sandbox` when working in Sandbox). It activates the control's window
-and verifies both foreground and keyboard focus before success. It restores a
-minimized window first. If a command reports the target window is minimized (some
-apps, such as Calculator, hide their UI until restored), run
-`winapp ui focus -a <app>` (no selector) to restore and activate it, then retry. Do not use a
-screenshot as a focus workaround. If activation is refused, inspect for a blocking
-dialog and ask the user to activate the intended window; do not retry in a loop
-or switch to the local desktop. See the [focus reference](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#focus)
-for failure codes and recovery.
+Prepare keyboard input with `winapp ui focus <selector> -a <app>` (retain `--on sandbox` in Sandbox). Restores minimized window, activates control's window; verifies foreground and keyboard focus before success. If target reported minimized (e.g. Calculator hides UI until restored), run `winapp ui focus -a <app>` (no selector), then retry. No screenshot focus workaround. If activation refused, inspect blocking dialog; ask user to activate intended window. Do not loop retries or switch to local desktop. See [focus reference](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/docs/ui-automation.md#focus) for failure codes/recovery.
 
 `set-value` writes programmatically (no keystrokes, no foreground) via a fallback chain: ValuePattern → RangeValuePattern (numeric) → LegacyIAccessible `put_accValue` for TextPattern-only edit controls.
 ```powershell
@@ -482,10 +404,10 @@ winapp ui wait-for itm-status-c3d4 -a myapp --value "Complete" --timeout 5000
 - Use `--hide-disabled` and `--hide-offscreen` to reduce noise
 
 ### Why `;` instead of `&&`
-The examples use `;`, which runs subsequent commands unconditionally. Check `$LASTEXITCODE` and the observed result before each dependent action; do not continue a mutation sequence after a failed prerequisite. A diagnostic screenshot may still be useful after a failed action. PowerShell 7 supports `&&` for conditional chaining; choose control flow deliberately rather than assuming a universal native-CLI deadlock.
+Examples use `;`: subsequent commands unconditional. Check `$LASTEXITCODE` and observed result before each dependent action; do not continue mutations after failed prerequisite. Diagnostic screenshot may help after failed action. PowerShell 7 supports conditional `&&`; choose control flow deliberately, not from assumed universal native-CLI deadlock.
 
 ### File dialog workaround
-File open/save dialogs are standard Windows dialogs with UIA support. Interact with them using existing commands:
+Standard Windows file open/save dialogs support UIA; use existing commands:
 ```powershell
 # 1. Trigger the dialog (e.g., click "Open File" button)
 winapp ui invoke btn-openfilebtn-a2b3 -a myapp
@@ -499,11 +421,11 @@ winapp ui list-windows -a myapp
 winapp ui set-value txt-1148-c4d5 "C:\path\to\file.png" -w <dialog-hwnd>
 winapp ui invoke btn-open-e6f7 -w <dialog-hwnd>
 ```
-Note: The filename input in standard file dialogs typically has AutomationId `1148`. Use `inspect -w <dialog-hwnd> --interactive` to discover the actual slugs.
+Standard file-dialog filename input typically has AutomationId `1148`. Discover actual slugs with `inspect -w <dialog-hwnd> --interactive`.
 
 ## JSON output envelopes
 
-The `--json` envelope for `ui inspect`, `ui get-focused`, `ui search`, and `ui wait-for` was reshaped in v0.3.1. The DPI context and typed `get-property` element are available in v0.6.3+. Highlights:
+`--json` envelope for `ui inspect`, `ui get-focused`, `ui search`, `ui wait-for` reshaped in v0.3.1. DPI context and typed `get-property` element available in v0.6.3+. Highlights:
 
 - `ui inspect --json` now nests elements under `windows[].elements[]` (was a flat `elements[]`).
 - Each inspected window and the `ui status --json` target reports `windowDpi`, `scale`, `dpiAwareness`, and `coordinateSpace: "physical-screen-pixels"`. This is the target window's DPI context. The selected target fails fast on an unreadable DPI instead of defaulting to 96; a secondary window that disappears mid-walk carries `dpiError` and omits the four context fields.
@@ -518,8 +440,7 @@ Read [the JSON envelopes](references/ui-json-envelope.md) when parsing command o
 
 ## Automating in Windows Sandbox
 
-This retained upstream example is optional. Use only an already approved and
-prepared Sandbox; creating or enabling one is outside this skill's authorization.
+Optional retained upstream example. Use only already approved/prepared Sandbox; creation/enablement not authorized here.
 
 ```powershell
 winapp run . --on sandbox --detach
@@ -527,17 +448,12 @@ winapp ui inspect --on sandbox -a MyApp
 winapp ui screenshot --on sandbox -a MyApp -o .\result.png
 ```
 
-Use `--detach` before follow-up UI commands, and retain `--on sandbox` with guest PIDs
-or window handles. Inject the same `WINAPP_UI_WORKFLOW_ID` into cooperating guest calls;
-finish with `winapp ui yield --on sandbox` after all of them complete.
+Use `--detach` before follow-up UI commands; retain `--on sandbox` with guest PIDs/window handles. Inject same `WINAPP_UI_WORKFLOW_ID` in cooperating guest calls; after all complete, finish with `winapp ui yield --on sandbox`.
 
-See the optional upstream [winapp-sandbox skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-sandbox/SKILL.md)
-for setup consent, connected-client requirements, brief focus
-changes during setup/reconnect, and capture recovery. App screenshots and recordings,
-including default filenames and `--frames` directories, return to the host.
+Optional upstream [winapp-sandbox skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-sandbox/SKILL.md): setup consent, connected-client requirements, brief setup/reconnect focus changes, capture recovery. App screenshots/recordings, default filenames and `--frames` directories return to host.
 
 ## Related skills
-These upstream workflows are not bundled or required by this Win32 UIA skill:
+These upstream workflows neither bundled nor required by Win32 UIA skill:
 
 - [winapp-sandbox](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-sandbox/SKILL.md) describes optional Sandbox automation.
 - [winapp-setup](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-setup/SKILL.md) describes optional SDK setup.
@@ -560,4 +476,4 @@ These upstream workflows are not bundled or required by this Win32 UIA skill:
 
 ## CLI reference
 
-Run `winapp <command> --help` for current command options, or `winapp --cli-schema` for the complete machine-readable command schema.
+Current options: `winapp <command> --help`; complete machine-readable schema: `winapp --cli-schema`.

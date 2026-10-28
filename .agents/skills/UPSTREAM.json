@@ -21,11 +21,11 @@
       "local_changes": "upstream/rust-compiler-errors/LOCAL-CHANGES.md",
       "files": {
         "upstream/rust-compiler-errors/LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80",
-        "upstream/rust-compiler-errors/LOCAL-CHANGES.md": "3e501fecb43bf7fa5487309cd3a1cb012d62cf1f3d544f66ef55c5ffdb47ac52",
-        "upstream/rust-compiler-errors/SKILL.md": "8853cbdd56d3530ba4fdcbed50fcc00aa88b5dc40ae9fcd8b94544a2916fd72e",
+        "upstream/rust-compiler-errors/LOCAL-CHANGES.md": "e2a9b849218fe2866fa9e846afa44f758059c893dde97e4f86d1872a0af8f228",
+        "upstream/rust-compiler-errors/SKILL.md": "cf49c86cadb7cdad59c2aa2cf4321de0c96eb461cb0d014ff8b7b6cdf7872132",
         "upstream/rust-compiler-errors/agents/openai.yaml": "c4aaf9c7b0bfd49384930bd0a31e64225dc49259a340116dab5230a3135e722c",
-        "upstream/rust-compiler-errors/references/borrow-checker-fixes.md": "7995ebf4af9f8240119cca1036831aeb842f195b8b7e2053a0e63490b5cfae25",
-        "upstream/rust-compiler-errors/references/dyn-compatibility.md": "4a5f78ed880b0eb8f820c6f29964eee9fa1aad08fe630c1ff852d9bff41d0773"
+        "upstream/rust-compiler-errors/references/borrow-checker-fixes.md": "ec5677ef0b3fa999063340bd5f53e5b5b374e820488256a8ff52856d47e99219",
+        "upstream/rust-compiler-errors/references/dyn-compatibility.md": "5a63352ed76b07e2c0ba2c80f42b6d80e4d3d10da29a103852410bcf7ee243e6"
       }
     },
     {
@@ -44,8 +44,8 @@
       "local_changes": "upstream/rust-borrow-semantics/LOCAL-CHANGES.md",
       "files": {
         "upstream/rust-borrow-semantics/LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80",
-        "upstream/rust-borrow-semantics/LOCAL-CHANGES.md": "ca017fecdaf01cac05de04d9416ce0614748fbc59066bfb63fdc14e98ad0eedc",
-        "upstream/rust-borrow-semantics/SKILL.md": "62c96514b60f198fe30a00970cae772b1d346efea6ac5bbb1a0b57e494dcf3e5",
+        "upstream/rust-borrow-semantics/LOCAL-CHANGES.md": "b038986fc9feda8866366a1d7c6526b84883ea6b6c40612d02a351daef4ed756",
+        "upstream/rust-borrow-semantics/SKILL.md": "a846b9511b391bed7b8321ad64eb0cdb33f17518d4cdae498aadd95db1e3cffd",
         "upstream/rust-borrow-semantics/agents/openai.yaml": "7a13e656cb0b0bbf11d2eef0272e21f087fb11e260f1e354158288ca941da952"
       }
     },
@@ -66,10 +66,10 @@
       "local_changes": "upstream/rust-send-sync/LOCAL-CHANGES.md",
       "files": {
         "upstream/rust-send-sync/LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80",
-        "upstream/rust-send-sync/LOCAL-CHANGES.md": "8abd70a5191294c576742f7110da01ee01f5bb5e5e1f2ace64a01a8d848d5871",
-        "upstream/rust-send-sync/SKILL.md": "4da9e4b50daf20891aa2d5ab3665b9a5f7a532fed61f5fcbf4d4b0d63c827d7c",
+        "upstream/rust-send-sync/LOCAL-CHANGES.md": "0c3f59a040df034e925f0aff7223df93d2c567ec58ea165dee5a4b79452fc8c5",
+        "upstream/rust-send-sync/SKILL.md": "cfc55d5ef8faf55d35a440c00172c4bc0d2cb5402f43e20c73f2177ea57b2605",
         "upstream/rust-send-sync/agents/openai.yaml": "df76e1269ac8d866e9cf735447427cd7682535f839070f91ded3d7291fe720e1",
-        "upstream/rust-send-sync/references/phantomdata-markers.md": "ea1e2e412351af0064daffb7205fabbfcdb266487eb1df44006c62119d98e276"
+        "upstream/rust-send-sync/references/phantomdata-markers.md": "7c8dfef6551e4a098894fbff1982ca1c3b62a6e44cf213aca0eca37343f53ec4"
       }
     },
     {
@@ -89,10 +89,10 @@
       "local_changes": "upstream/winapp-ui-automation/LOCAL-CHANGES.md",
       "files": {
         "upstream/winapp-ui-automation/LICENSE": "c421b2a5e0ee627bb1c5d859bbca37d7654c02f63d626e753644484a9054c2d1",
-        "upstream/winapp-ui-automation/LOCAL-CHANGES.md": "afe116b1af7f20ebd4aff29c9caee565e049d132c91ca53f1694cc1a2ca34290",
-        "upstream/winapp-ui-automation/SKILL.md": "124ce6be151539db91e1ae3f9d63c2e8d5dfcaf3dad54ea7cacc805634c1c701",
+        "upstream/winapp-ui-automation/LOCAL-CHANGES.md": "d816ee72d4dc7ef17871bfd92163e490e18db29471507bd8fe178a8c688cde2a",
+        "upstream/winapp-ui-automation/SKILL.md": "c31635c7319fb4ad472e93376932f361d1db5917fb800c6c92a11db9e883fde7",
         "upstream/winapp-ui-automation/agents/openai.yaml": "0b8046330a64fdddcfc7e74c854cfb019e2de65b9f7b8d0b663f4293710db14d",
-        "upstream/winapp-ui-automation/references/ui-json-envelope.md": "c8e3c145fb79f4e0276d79bda10263fdf3e670b0df4c549b1490a3380f98b264"
+        "upstream/winapp-ui-automation/references/ui-json-envelope.md": "898d2092c6d4abe077ae998ac29db74a90f5b550022f86ae94d958f4d4b08dd7"
       }
     }
   ]

@@ -1,6 +1,6 @@
 # Security adaptation provenance
 
-Checked 28 October 2026. Product authority remains `docs/windows-time-architecture.md` and its explicitly unimplemented verification plans. Sources were read from the website checkout's working tree; the website was not modified. Its browser-specific constitution/amendments, implementation paths, test scripts and evidence archives were not copied as NevroTick policy.
+Checked 28 October 2026. `docs/windows-time-architecture.md` and explicitly unimplemented verification plans retain authority. Read website working-tree sources without edits. Copied no browser constitution/amendments, implementation paths, test scripts or evidence archives as NevroTick policy.
 
 | Website source under `.agents/skills/security/` | NevroTick target | Native adaptation |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ Checked 28 October 2026. Product authority remains `docs/windows-time-architectu
 | `security-edge-api` | `security-local-ipc` | Mutually authenticated named pipes, operation rights, strict frames and current broker guards replace HTTP handlers. |
 | `security-privacy-logging` | `security-privacy-logging` | Local native event/tracing/export/retention paths and explicit desktop analysis gaps replace website telemetry/consent assumptions. |
 
-The original workflow's scoped task modes, one canonical owner, threat/control/check handoff, legitimate/hostile controls, evidence limits and inherited coverage/mutation targets are retained under the canonical architecture. Selective references replace duplicated website reference trees and helpers.
+Retains scoped modes, canonical owner, threat/control/check handoff, legitimate/hostile controls, evidence limits and inherited coverage/mutation targets under canonical architecture. Selective references replace duplicated website trees/helpers.
 
 | Primary source inspected | Finding used | Qualification limit |
 | --- | --- | --- |
@@ -30,4 +30,4 @@ The original workflow's scoped task modes, one canonical owner, threat/control/c
 
 Also inspected the user's prior port at [PdfCraft PR 2912](https://github.com/storytold/pdfcraft/pull/2912), using pinned head `c9a02b378271f92a73cb44be9fd9e4acc6921516`: [architecture/data flows](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-architecture-data-flows/references/architecture.md), [transactions](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-safe-filesystem-persistence/references/transactions.md), and [security/resources](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-safe-filesystem-persistence/references/security-resources.md). Adapted phase-specific publication/acknowledgement observations, exact raw inputs, aggregate budgets and cancellation/completion/release distinctions. No PDF semantics, filesystem-root policy, observed product defects, code or tool dependencies were imported. That closed unmerged proposal is guidance provenance, not an adopted NevroTick architecture or upstream endorsement.
 
-Local authority consulted includes the ASVS applicability profile (pinned full clauses, draft dispositions, attribution and open gaps retained there) and the TUF update assessment's explicit unadopted status. This pack does not reproduce the standard or turn research into compliance/update implementation.
+Consulted local ASVS applicability profile (retains pinned full clauses, draft dispositions, attribution/open gaps) and explicitly unadopted TUF assessment. Pack reproduces no standard or compliance/update implementation from research.

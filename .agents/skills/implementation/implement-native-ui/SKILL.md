@@ -5,41 +5,39 @@ description: "Implement or review NevroTick native Windows controls, status pres
 
 # Implement native UI
 
-Use canonical architecture section 16. The default candidate is Win32 common
-controls through `windows`/`windows-sys` plus a small safe adapter. Slint and
-egui/AccessKit are alternatives requiring a demonstrated need and license/target
-qualification. Do not introduce a webview or change toolkits to translate the
-website's HTML skill.
+Use canonical architecture section 16. Default candidate: Win32 common controls
+through `windows`/`windows-sys` plus small safe adapter. Slint and egui/AccessKit
+alternatives need demonstrated need and license/target qualification. Translating
+website HTML skill does not justify webviews or toolkit changes.
 
-Trace the user task, control relationships, current status owner and effect path.
-Choose native controls and UI Automation patterns that express the actual action,
-value and selection semantics. Native controls are a foundation; their presence
-does not prove keyboard or screen-reader behavior.
+Trace user task, control relationships, current status owner and effect path.
+Choose native controls/UI Automation patterns expressing actual action, value and
+selection semantics. Native controls alone prove no keyboard/screen-reader behavior.
 
 Preserve these product semantics:
 
-- The normal-user UI projects coherent broker snapshots. Show Tracking/Acquiring/
+- Normal-user UI projects coherent broker snapshots. Show Tracking/Acquiring/
   Holdover/Conflict/Blocked, authentication, agreement, observation age, uncertainty
   and action separately. Disconnection means unavailable/stale, never synchronized.
-- “Sync now” requests measurements; it does not grant a clock step. Quit UI and
-  stop synchronizing are distinct. Closing exits unless tray operation is enabled;
-  service operation has its own lifecycle.
-- Explain elevation requirements before UAC and show errors near the relevant
-  control. Share pure field rules with the receiver, which independently decodes,
-  constructs and authorizes every request. No UI validation grants permission.
-- Keep focused source-row order stable and throttle meaningful state announcements;
-  second-by-second offset announcements and color-only trust signals are unsuitable.
+- “Sync now” requests measurements, grants no clock step. Quit UI and stop
+  synchronizing differ. Closing exits unless tray operation enabled; service has
+  separate lifecycle.
+- Explain elevation before UAC; show errors near relevant control. Share pure field
+  rules with receiver; it independently decodes, constructs and authorizes every
+  request. UI validation grants no permission.
+- Keep focused source-row order stable; throttle meaningful state announcements.
+  No second-by-second offset announcements or color-only trust signals.
 
 Read [native interaction and accessibility](references/interaction.md) for control,
 dialog, status, DPI or locale changes. Preserve UI-thread and handle ownership in
 [Rust adapters](../implement-rust/references/rust-windows.md). Route wire/state
 changes to [contracts](../implement-rust-contracts/SKILL.md).
 
-Verify affected behavior on Windows: UIA names/roles/patterns and actual keyboard,
-focus and Narrator behavior are separate checks. Use
-[qa-accessibility](../../testing/qa-accessibility/SKILL.md) plus the selected
-component/end-to-end owners. Mocked snapshots or screenshots alone do not prove
-native accessibility. Report unavailable Windows checks explicitly; do not claim a
-UI prototype or WSL build completed P0/P5 accessibility acceptance.
+Verify changed behavior on Windows. Check UIA names/roles/patterns separately from
+actual keyboard, focus and Narrator behavior. Use
+[qa-accessibility](../../testing/qa-accessibility/SKILL.md) plus selected
+component/end-to-end owners. Mocked snapshots/screenshots alone prove no native
+accessibility. Report unavailable Windows checks; UI prototypes/WSL builds do not
+complete P0/P5 accessibility acceptance.
 
 Adapted David Osipov skill material: [licence and notices](THIRD_PARTY_NOTICES.md).
