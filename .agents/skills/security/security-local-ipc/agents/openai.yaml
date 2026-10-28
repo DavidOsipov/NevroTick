@@ -1,0 +1,4 @@
+interface:
+  display_name: "Secure local request-to-effect flow"
+  short_description: "Implement or review NevroTick local IPC endpoint identity,"
+  default_prompt: "Use $security-local-ipc to implement or review NevroTick local IPC endpoint identity, Windows named-pipe permissions, bounded messages, per-operation authorization and current-generation effects."

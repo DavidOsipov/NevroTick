@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test exact boundary neighbors"
+  short_description: "Build explicit just-below, exact and just-above NevroTick"
+  default_prompt: "Use $qa-boundary-edge-cases to build explicit just-below, exact and just-above NevroTick boundary cases for time, resources, representation and lifecycle rules."

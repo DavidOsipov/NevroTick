@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compare state transitions with an independent model"
+  short_description: "Test NevroTick controller, authority and recovery sequences"
+  default_prompt: "Use $qa-model-based-testing to test NevroTick controller, authority and recovery sequences against an independently defined transition model."

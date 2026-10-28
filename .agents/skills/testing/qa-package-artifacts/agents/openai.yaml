@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inspect built Windows artifacts"
+  short_description: "Verify emitted NevroTick binaries, MSI contents, metadata,"
+  default_prompt: "Use $qa-package-artifacts to verify emitted NevroTick binaries, MSI contents, metadata, provenance and delivered-package consistency independently of source configuration."

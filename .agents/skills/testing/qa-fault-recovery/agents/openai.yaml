@@ -1,0 +1,4 @@
+interface:
+  display_name: "Inject faults and verify recovery"
+  short_description: "Test NevroTick controlled failures for bounded recovery,"
+  default_prompt: "Use $qa-fault-recovery to test NevroTick controlled failures for bounded recovery, preserved authority, durable state and honest status."

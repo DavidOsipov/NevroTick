@@ -1,0 +1,4 @@
+interface:
+  display_name: "Preserve the actual cryptographic trust basis"
+  short_description: "Implement or review NevroTick TLS/NTS trust, crypto-provider"
+  default_prompt: "Use $security-crypto-secrets to implement or review NevroTick TLS/NTS trust, crypto-provider and RNG choices, NTS keys/cookies, protected secret persistence and isolated wrong-date recovery."

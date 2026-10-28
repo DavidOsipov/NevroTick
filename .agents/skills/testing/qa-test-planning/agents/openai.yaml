@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Rust and Windows tests"
+  short_description: "Design a bounded, requirement-grounded test plan for a"
+  default_prompt: "Use $qa-test-planning to design a bounded, requirement-grounded test plan for a NevroTick behavior or change before choosing fixtures, environments and tools."

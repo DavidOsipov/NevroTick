@@ -1,0 +1,5 @@
+# Cargo build output, including future workspace members.
+target/
+
+# Rustfmt backup files.
+**/*.rs.bk

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Assess critical test sensitivity"
+  short_description: "Use a bounded NevroTick mutation campaign to assess behavioral"
+  default_prompt: "Use $qa-mutation-testing to use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting."

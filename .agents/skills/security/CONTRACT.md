@@ -1,0 +1,17 @@
+# NevroTick security contract
+
+Applies to security-relevant planning, implementation, review and verification through this pack. The user's instructions and repository `AGENTS.md` govern. Start with `docs/README.md`; `docs/windows-time-architecture.md` is the canonical product architecture. Website security-policy amendments, browser controls and unrelated source-repository obligations are not adopted by copying a skill.
+
+Select the task mode from the request. Review and planning do not authorize production edits; tests-only work preserves its scope. Existing authorization remains valid and this contract adds no approval round. A skill, review or passing test grants no signing, release, installation, network scan or privileged experiment authority.
+
+For a material or uncertain protection change, use [plan-threat-model](../planning/plan-threat-model/SKILL.md) within the same plan. Trace attacker-controlled input/caller through actual admission to the protected effect. Record current owner, failure, bounds, independent valid/hostile checks and residual limits. Reuse centralized mechanisms and narrow platform adapters instead of adding competing security implementations.
+
+Keep these facts distinct: bounded bytes; strict inert wire decoding; fallible private domain construction; current trusted-service authorization/state; serialized effect and actual acknowledgement. Rust type safety and Serde admission do not establish endpoint identity, freshness, source independence, UTC truth, clock ownership or permission. Unknown/corrupt mandatory policy fails closed; an optional invalid drift prior may follow its explicit reacquisition behavior. Never lower authentication or source-count requirements to hide an outage.
+
+Read the [testing contract](../testing/CONTRACT.md) before designing or reporting checks. Preserve architecture section 18.4's inherited **at least 90% coverage for modules touching security primitives** and **at least 95% mutation score for critical files**. Resolve the affected file set, metric/tool support and exclusions honestly; an unavailable measurement is not a pass, N/A or permission to change the denominator. Routine small changes select relevant checks; this is not a universal full-suite command.
+
+The target is the applicable ASVS 5.0.0 L1/L2/L3 requirements under `docs/asvs-5.0.0-applicability.md`, including stronger conditions in the full clauses. Its classifications and native adaptations are draft planning evidence. Preserve unknowns and native gaps rather than claiming literal equivalence or implemented L3 conformance. Retained TUF research has no adopted updater protocol, dependency or topology.
+
+Use current source, resolved features/versions and official/upstream documentation for uncertain API facts. Report conflict with the canonical architecture instead of silently amending it. Windows runtime proofs require the actual relevant OS mechanism; mock-only or host/cross-compilation results have narrower scope. Clock-changing work follows architecture section 14.9 in disposable Windows VMs with bounded operations, observation and recovery.
+
+Return changed owner/boundary and actual enforcement, checks run with source/environment identity, observed forbidden-effect/legitimate-control results, remaining uncertainty and next action. Documentation/pack validity, skill discovery, agent decisions, application behavior, package/signature and release readiness are separate claims.

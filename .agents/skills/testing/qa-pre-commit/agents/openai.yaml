@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review a commit candidate faithfully"
+  short_description: "Review or prepare NevroTick staged content with preserved user"
+  default_prompt: "Use $qa-pre-commit to review or prepare NevroTick staged content with preserved user staging and verification tied to the complete intended Git candidate."

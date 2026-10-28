@@ -1,0 +1,4 @@
+interface:
+  display_name: "Enforce Windows authority at the effect"
+  short_description: "Implement or review NevroTick Windows service identities,"
+  default_prompt: "Use $security-windows-privileges to implement or review NevroTick Windows service identities, effective tokens, privilege limits, process access, DLL loading and clock ownership enforcement."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test pure Rust behavior"
+  short_description: "Write or review focused Rust unit tests for NevroTick"
+  default_prompt: "Use $qa-unit-tests to write or review focused Rust unit tests for NevroTick numerical, domain and state logic using independent expectations and controlled effects."

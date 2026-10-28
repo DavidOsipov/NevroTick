@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify expected rejections and failures"
+  short_description: "Test NevroTick invalid inputs, unavailable collaborators and"
+  default_prompt: "Use $qa-negative-paths to test NevroTick invalid inputs, unavailable collaborators and denied operations for correct error, atomicity and forbidden-effect behavior."

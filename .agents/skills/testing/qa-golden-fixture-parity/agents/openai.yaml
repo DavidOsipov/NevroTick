@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify stable output and semantic parity"
+  short_description: "Compare NevroTick captured outputs or pinned reference"
+  default_prompt: "Use $qa-golden-fixture-parity to compare NevroTick captured outputs or pinned reference trajectories with independent semantic facts and a deliberately tested comparator."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Measure resource and responsiveness budgets"
+  short_description: "Measure NevroTick CPU, memory, wakeups, handles, queues and"
+  default_prompt: "Use $qa-performance-resources to measure NevroTick CPU, memory, wakeups, handles, queues and responsiveness under declared steady, hostile and recovery workloads."

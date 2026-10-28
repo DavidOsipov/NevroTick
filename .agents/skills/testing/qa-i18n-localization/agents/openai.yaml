@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify adopted locale semantics"
+  short_description: "Test NevroTick message catalogs, units and native layout for"
+  default_prompt: "Use $qa-i18n-localization to test NevroTick message catalogs, units and native layout for adopted locales while preserving wire and security semantics."

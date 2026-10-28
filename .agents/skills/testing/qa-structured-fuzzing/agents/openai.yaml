@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fuzz actual parsers and conversions"
+  short_description: "Run or design a bounded NevroTick fuzz target for structured"
+  default_prompt: "Use $qa-structured-fuzzing to run or design a bounded NevroTick fuzz target for structured IPC/configuration, NTP/NTS parsing or numeric conversion with useful seeds and explicit oracles."

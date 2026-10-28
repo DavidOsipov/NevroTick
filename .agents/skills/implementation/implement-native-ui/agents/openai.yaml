@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement native UI"
+  short_description: "Implement or review NevroTick native Windows controls, status"
+  default_prompt: "Use $implement-native-ui to implement or review NevroTick native Windows controls, status presentation, keyboard and focus behavior, accessibility and localization."

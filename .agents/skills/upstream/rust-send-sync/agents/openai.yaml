@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rust Send and Sync"
+  short_description: "Diagnose Rust thread and task trait bounds"
+  default_prompt: "Use $rust-send-sync to diagnose the Send/Sync obligation at this actual thread or task boundary."

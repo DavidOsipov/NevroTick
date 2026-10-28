@@ -1,0 +1,4 @@
+interface:
+  display_name: "Keep presentation and privileged authority separate"
+  short_description: "Implement or review NevroTick normal-user native UI trust"
+  default_prompt: "Use $security-native-ui to implement or review NevroTick normal-user native UI trust presentation, bounded service commands, narrow elevated helper requests, safe text/actions and diagnostic exports."

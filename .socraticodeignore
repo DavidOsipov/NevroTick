@@ -1,0 +1,5 @@
+# Tool metadata is not application code or architecture documentation.
+/.serena/
+
+# Cargo build output, including nested crates.
+target/

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check quantified Rust invariants"
+  short_description: "Use bounded generated cases and shrinking to test a NevroTick"
+  default_prompt: "Use $qa-property-based-testing to use bounded generated cases and shrinking to test a NevroTick invariant with an independent oracle and reproducible counterexamples."

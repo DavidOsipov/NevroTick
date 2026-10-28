@@ -1,0 +1,49 @@
+{
+  "artifacts": [
+    {
+      "name": "documentation-guide",
+      "path": "./docs/README.md",
+      "description": "Documentation reading order, provenance, and authority. The architecture is canonical; review and update research do not establish implementation or compliance."
+    },
+    {
+      "name": "windows-time-architecture",
+      "path": "./docs/windows-time-architecture.md",
+      "description": "Canonical Rust Windows Time Client architecture and creation specification (RWTC-ARCH-001). Authority boundaries, NTP/NTS recovery, dependencies, packaging, UX, and planned verification. Design requirements, not evidence of implemented behavior."
+    },
+    {
+      "name": "windows-time-diagrams",
+      "path": "./docs/windows-time-diagrams.md",
+      "description": "Editable Mermaid views of the Windows time-client architecture. The architecture document controls if a diagram disagrees."
+    },
+    {
+      "name": "asvs-applicability",
+      "path": "./docs/asvs-5.0.0-applicability.md",
+      "description": "ASVS 5.0.0 applicability and planned-verification profile. Requirements and verification plans; not implemented-compliance evidence."
+    },
+    {
+      "name": "development-hardening",
+      "path": "./docs/windows-time-development-hardening.md",
+      "description": "Proposed development-environment enforcement and qualification specification: exact Rust/Cargo policies, tool admission, CI, analyzer/test gates, native Windows evidence and receipts. Not adopted configuration, installed tooling or executed application evidence."
+    },
+    {
+      "name": "signing-guide",
+      "path": "./docs/windows-time-signing-guide.md",
+      "description": "Operational guide to provider eligibility, protected signing scope/order, publisher verification and complete MSI release. Provider approval, production signing and clean-machine verification are not completed. Does not authorize external applications or publication."
+    },
+    {
+      "name": "architecture-review",
+      "path": "./docs/windows-time-review.md",
+      "description": "Retained independent architecture review, reconciliation, and correction rechecks. Historical reviewed-baseline labels are intentional; the current architecture remains authoritative."
+    },
+    {
+      "name": "update-assessment",
+      "path": "./docs/windows-time-update-assessment.md",
+      "description": "Consolidated assessment of TUF-authenticated updates, time semantics, Rust dependency constraints, and Windows handoff. Research assessment; no TUF implementation or updater architecture has been adopted."
+    },
+    {
+      "name": "supporting-tuf-reviews",
+      "path": "./docs/supporting-reviews",
+      "description": "Supporting independent TUF protocol, dependency, and Windows research records. Consult the consolidated update assessment for current conclusions; these records are not normative implementation specifications."
+    }
+  ]
+}

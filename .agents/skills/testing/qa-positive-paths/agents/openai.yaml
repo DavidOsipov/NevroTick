@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify legitimate successful behavior"
+  short_description: "Choose positive controls and expected successful NevroTick"
+  default_prompt: "Use $qa-positive-paths to choose positive controls and expected successful NevroTick paths that prevent rejection-only or disabled-effect implementations from appearing correct."

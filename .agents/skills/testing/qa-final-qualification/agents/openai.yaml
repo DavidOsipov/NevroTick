@@ -1,0 +1,4 @@
+interface:
+  display_name: "Qualify the observed candidate"
+  short_description: "Assess final NevroTick verification evidence against a declared"
+  default_prompt: "Use $qa-final-qualification to assess final NevroTick verification evidence against a declared scope and exact candidate without promoting plans, skips or host checks into release passes."

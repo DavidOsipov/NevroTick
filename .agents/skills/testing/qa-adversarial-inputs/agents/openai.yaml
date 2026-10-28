@@ -1,0 +1,4 @@
+interface:
+  display_name: "Challenge hostile input admission"
+  short_description: "Design bounded hostile NevroTick input cases that challenge the"
+  default_prompt: "Use $qa-adversarial-inputs to design bounded hostile NevroTick input cases that challenge the actual protocol, IPC, persistence and resource admission path."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Windows UI Automation"
+  short_description: "Inspect and verify native Windows UI with winapp"
+  default_prompt: "Use $winapp-ui-automation to inspect and verify the scoped NevroTick native UI on a qualified Windows test machine."

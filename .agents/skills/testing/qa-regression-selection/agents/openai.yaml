@@ -1,0 +1,4 @@
+interface:
+  display_name: "Select affected regression checks"
+  short_description: "Choose the smallest justified NevroTick regression set while"
+  default_prompt: "Use $qa-regression-selection to choose the smallest justified NevroTick regression set while accounting for indirect consumers, targets, features and recovery paths."

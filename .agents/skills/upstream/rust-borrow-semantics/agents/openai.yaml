@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rust Borrow and Drop Semantics"
+  short_description: "Explain temporary lifetimes and guard drop points"
+  default_prompt: "Use $rust-borrow-semantics to explain this exact Rust expression's borrow and drop points on NevroTick's selected toolchain."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Threat model the changed path"
+  short_description: "Plan security controls and independent checks for changed or"
+  default_prompt: "Use $plan-threat-model to plan security controls and independent checks for changed or uncertain NevroTick inputs, Windows permissions, NTP/NTS trust, IPC, persistence, dependencies, packaging or protected effects."

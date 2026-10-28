@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delegate complementary verification work"
+  short_description: "Dispatch independent NevroTick test/review tasks with clear"
+  default_prompt: "Use $qa-subagent-dispatch to dispatch independent NevroTick test/review tasks with clear boundary ownership, evidence identity and bounded shared resource use."

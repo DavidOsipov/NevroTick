@@ -1,0 +1,4 @@
+interface:
+  display_name: "Log useful facts without copying secret input"
+  short_description: "Implement or review NevroTick redacted events, diagnostic"
+  default_prompt: "Use $security-privacy-logging to implement or review NevroTick redacted events, diagnostic snapshots and exports, local retention, secret-safe tracing and optional telemetry decisions."

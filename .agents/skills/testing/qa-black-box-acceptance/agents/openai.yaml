@@ -1,0 +1,4 @@
+interface:
+  display_name: "Accept integrated input-to-output behavior"
+  short_description: "Independently assess a frozen NevroTick candidate against known"
+  default_prompt: "Use $qa-black-box-acceptance to independently assess a frozen NevroTick candidate against known input and output facts after system stabilization or when input-to-output acceptance is requested."

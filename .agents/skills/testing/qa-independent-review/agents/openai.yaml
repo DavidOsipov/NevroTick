@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review evidence independently"
+  short_description: "Independently review NevroTick verification claims, tests and"
+  default_prompt: "Use $qa-independent-review to independently review NevroTick verification claims, tests and candidate changes against requirements and actual evidence."

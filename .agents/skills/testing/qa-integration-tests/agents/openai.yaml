@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test real collaborator boundaries"
+  short_description: "Verify NevroTick behavior across real Rust modules, processes,"
+  default_prompt: "Use $qa-integration-tests to verify NevroTick behavior across real Rust modules, processes, protocol peers or persistence adapters at an explicitly chosen integration boundary."

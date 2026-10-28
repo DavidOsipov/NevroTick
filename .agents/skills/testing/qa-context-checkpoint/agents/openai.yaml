@@ -1,0 +1,4 @@
+interface:
+  display_name: "Preserve verification continuity"
+  short_description: "Checkpoint or resume substantial NevroTick verification with"
+  default_prompt: "Use $qa-context-checkpoint to checkpoint or resume substantial NevroTick verification with current scope, evidence, owners, live effects and consumed budgets intact."

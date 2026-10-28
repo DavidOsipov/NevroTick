@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify native Windows accessibility"
+  short_description: "Assess NevroTick native control semantics, keyboard use,"
+  default_prompt: "Use $qa-accessibility to assess NevroTick native control semantics, keyboard use, Narrator behavior and accessibility error/status communication."

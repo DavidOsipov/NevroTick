@@ -1,0 +1,4 @@
+interface:
+  display_name: "Find missing behavioral evidence"
+  short_description: "Survey NevroTick behavior independently of existing tests to"
+  default_prompt: "Use $qa-coverage-gap-analysis to survey NevroTick behavior independently of existing tests to prioritize unassessed requirements and evidence gaps in a broad audit."

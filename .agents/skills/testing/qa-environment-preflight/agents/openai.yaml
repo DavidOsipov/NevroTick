@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check verification readiness"
+  short_description: "Establish tool, Cargo, target, Windows-machine and fixture"
+  default_prompt: "Use $qa-environment-preflight to establish tool, Cargo, target, Windows-machine and fixture readiness for selected NevroTick checks before substantial execution."

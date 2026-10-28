@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rust dependency updates"
+  short_description: "Research, update and qualify a bounded NevroTick Cargo"
+  default_prompt: "Use $dependency-updates to research, update and qualify a bounded NevroTick Cargo dependency cohort, including features, MSRV, Windows support, licenses and supply-chain changes."

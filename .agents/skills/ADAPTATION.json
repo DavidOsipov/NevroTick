@@ -1,0 +1,272 @@
+{
+  "source_repository": "personal-website-templated-1",
+  "source_directory": ".agents",
+  "adapted_on": "2026-10-28",
+  "additional_donor": {
+    "url": "https://github.com/storytold/pdfcraft/pull/2912",
+    "head_repository": "DavidOsipov/pdfcraft",
+    "head_commit": "c9a02b378271f92a73cb44be9fd9e4acc6921516"
+  },
+  "skills": [
+    {
+      "source": "implementation/evolve-data-contracts/SKILL.md",
+      "source_sha256": "5c39ad5748c47fef2e319b9c97af56902155558bbee5ed1f2bef9c6cc94a46f9",
+      "target": "implementation/evolve-data-contracts/SKILL.md"
+    },
+    {
+      "source": "implementation/implement-semantic-html/SKILL.md",
+      "source_sha256": "603add096d9c1665335ab233b383c72890a3cb0649fd6973b535895419c0394f",
+      "target": "implementation/implement-native-ui/SKILL.md"
+    },
+    {
+      "source": "implementation/implement-typescript/SKILL.md",
+      "source_sha256": "2f66198fbb4be53e1a23a6f53ac96bd3508b546145e84ad618c9217bb7b3c908",
+      "target": "implementation/implement-rust/SKILL.md"
+    },
+    {
+      "source": "implementation/implement-zod-contracts/SKILL.md",
+      "source_sha256": "c20b4cc6e99f703d8de2f60fea35d33468ff24a38f805320f6fa95c4dc0aa040",
+      "target": "implementation/implement-rust-contracts/SKILL.md"
+    },
+    {
+      "source": "skills/environment/dependency-updates/SKILL.md",
+      "source_sha256": "6ff3769f2bbd23c953134664fc85789fa9e4eb4165391cdb0e57be3e206567ad",
+      "target": "environment/dependency-updates/SKILL.md"
+    },
+    {
+      "source": "skills/planning/plan-architecture/SKILL.md",
+      "source_sha256": "afa182137f4b95d8b7acc686d6667294d953ab025e7a0f5776db2707756e7fda",
+      "target": "planning/plan-architecture/SKILL.md"
+    },
+    {
+      "source": "skills/planning/plan-code-change/SKILL.md",
+      "source_sha256": "f0d482d0d3b2dfaba4c1784e5cafcd47b2f5ed0d873ffd6080cabc3f128139e5",
+      "target": "planning/plan-code-change/SKILL.md"
+    },
+    {
+      "source": "skills/planning/plan-independent-review/SKILL.md",
+      "source_sha256": "db5327b354fb446d5572c6081569f55c35c7a965463ff7f444be2162bf472951",
+      "target": "planning/plan-independent-review/SKILL.md"
+    },
+    {
+      "source": "skills/planning/plan-threat-model/SKILL.md",
+      "source_sha256": "495a0e45f7532b5f765ff3e60875c92bd1f180eb3b706a42df427b2ccfd16401",
+      "target": "planning/plan-threat-model/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-browser-policy/SKILL.md",
+      "source_sha256": "5817e544db683248734082809940d885a1fa4e6a5f2144e4b88825356475ba7f",
+      "target": "security/security-windows-privileges/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-build-deployment/SKILL.md",
+      "source_sha256": "7d85a161dc1465642857a84cdc51e078668086beb25a4e82a5939df810473784",
+      "target": "security/security-build-deployment/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-content-assets/SKILL.md",
+      "source_sha256": "cdbcfc2ba65c4ce16b73b1aa41f6b90a2f4bc3a788998b449a3860c2db840325",
+      "target": "security/security-protocol-inputs/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-crypto-secrets/SKILL.md",
+      "source_sha256": "a584704e18a0127f51e9d9e3ad7d29cfaebe08ebfda041ba5cd3f76473ef4bcb",
+      "target": "security/security-crypto-secrets/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-dom-sanitization/SKILL.md",
+      "source_sha256": "5162996671559f65a95c1a7566c32876802a6f9cfc7383eec2cae2d4f010b101",
+      "target": "security/security-native-ui/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-edge-api/SKILL.md",
+      "source_sha256": "4156fb864742d8b15a942a29a2de64f837b523432094a5e2a7fe9b0ec2469164",
+      "target": "security/security-local-ipc/SKILL.md"
+    },
+    {
+      "source": "skills/security/security-privacy-logging/SKILL.md",
+      "source_sha256": "33ad5007586f49e46183237fb9819ba6d36518622fb732ae1e473991d0750ec1",
+      "target": "security/security-privacy-logging/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-accessibility/SKILL.md",
+      "source_sha256": "cd5eec375a25848d84ea537febfac9249e7069bb3bbd0345f7c6275aa52891ce",
+      "target": "testing/qa-accessibility/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-adversarial-inputs/SKILL.md",
+      "source_sha256": "bce7c0c91516f38c601cab1d4a125f44415165070102fcdb7c8e2a7f8edd61b0",
+      "target": "testing/qa-adversarial-inputs/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-black-box-acceptance/SKILL.md",
+      "source_sha256": "5f11e1f76e7192c5b23ad82e7cbc8b1880aece7e5ed75dc4d541f9108310cf0b",
+      "target": "testing/qa-black-box-acceptance/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-boundary-edge-cases/SKILL.md",
+      "source_sha256": "8c593d6bd8a63a4dff815695c24ac04cce751181866dc9d83b38ce5e5996cbd4",
+      "target": "testing/qa-boundary-edge-cases/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-build-content-metadata/SKILL.md",
+      "source_sha256": "b5770ef46d4be37bf9383ad197537fbf59275eacd29d3b740766ce86ad7d5f47",
+      "target": "testing/qa-package-artifacts/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-component-tests/SKILL.md",
+      "source_sha256": "b31b3b37e25159bd4357db7d5250d87743c12d77fc5a7a604c848c3e471f3cd5",
+      "target": "testing/qa-component-tests/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-context-checkpoint/SKILL.md",
+      "source_sha256": "594bbe7106d97633c9992dbe0b754b9cec1c56d2f8cfe13be229d4dbaac4f85d",
+      "target": "testing/qa-context-checkpoint/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-contract-tests/SKILL.md",
+      "source_sha256": "dcf2e35080ca0c89a1c18315b6d059354b2f7480c8136d21ed95173c985b864a",
+      "target": "testing/qa-contract-tests/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-coverage-gap-analysis/SKILL.md",
+      "source_sha256": "8d0633e1fa1658fb89e5bfbcc61711dd2345817338a54f200a0b6b85be80bc64",
+      "target": "testing/qa-coverage-gap-analysis/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-e2e-tests/SKILL.md",
+      "source_sha256": "67fac5b038011cc58630b72cb9f8934e4bc2588f396eab775133d3a52e4c45c4",
+      "target": "testing/qa-e2e-tests/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-environment-preflight/SKILL.md",
+      "source_sha256": "1ee18b8c2644bd86e9b152594886379da210d04a17b763a2fda4ee192ffc2039",
+      "target": "testing/qa-environment-preflight/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-failure-triage/SKILL.md",
+      "source_sha256": "e8ed286d3fb618ce2d08d967ec7e459ae377444db051e593910987252732753e",
+      "target": "testing/qa-failure-triage/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-fault-recovery/SKILL.md",
+      "source_sha256": "8e3b4520a6205808d7c48c8335d569e8acafb9e68161f31a7bf85ef9d0b62476",
+      "target": "testing/qa-fault-recovery/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-final-qualification/SKILL.md",
+      "source_sha256": "8a6fdf6fbe475888ead0f50cad30966c645509dcb86f0a5dc365f442b3abff68",
+      "target": "testing/qa-final-qualification/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-golden-fixture-parity/SKILL.md",
+      "source_sha256": "d6b7eb672c2d96273a182c3f508fab74b73815831301e12447a9a3f34bf59a99",
+      "target": "testing/qa-golden-fixture-parity/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-i18n-localization/SKILL.md",
+      "source_sha256": "ecbff6aa5fbcf2400c1fc75a3f5c5f7f87ff91310618a26adf971bca7560e124",
+      "target": "testing/qa-i18n-localization/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-independent-review/SKILL.md",
+      "source_sha256": "4351509b16069ad8ca6f31fb5e6fbcc2ef63473d30d14ccfae80bc38536d6371",
+      "target": "testing/qa-independent-review/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-integration-tests/SKILL.md",
+      "source_sha256": "b058d4c4482c2989c2d1c123b1d8f2228c04f3c1ebd3afe12581181a0ef47452",
+      "target": "testing/qa-integration-tests/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-model-based-testing/SKILL.md",
+      "source_sha256": "75a453d8330a9810dbd74b9883925fe3b80c9982d9c0f53f9044a297d91e0c4d",
+      "target": "testing/qa-model-based-testing/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-mutation-testing/SKILL.md",
+      "source_sha256": "11e6538fd0284d326f86d8026ea123e18dd1045c0e25b08cab43a6eba00ba2a7",
+      "target": "testing/qa-mutation-testing/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-negative-paths/SKILL.md",
+      "source_sha256": "c3e0ae00078dff19187e0ce37b855eff4e87946466879aed4402dccc46989b37",
+      "target": "testing/qa-negative-paths/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-performance-resources/SKILL.md",
+      "source_sha256": "6ef3225a342da557f9dfb621bd84990d441d5fceac00f8b21052a69e43abc069",
+      "target": "testing/qa-performance-resources/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-positive-paths/SKILL.md",
+      "source_sha256": "1b0b943d007f2071a90dc0217dfac1c5f962d13dc826789b97b23c03c1c8572d",
+      "target": "testing/qa-positive-paths/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-pre-commit/SKILL.md",
+      "source_sha256": "46710cbb7d5843d941297831eed1bb40f5b7d15ae59cbde2ed2b9fa1c1db1343",
+      "target": "testing/qa-pre-commit/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-property-based-testing/SKILL.md",
+      "source_sha256": "1a02ee6fd3743744c4d0eac305a2281083f0905abdc1da980ccace2614333285",
+      "target": "testing/qa-property-based-testing/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-regression-selection/SKILL.md",
+      "source_sha256": "37257076237968e37f0942ce9f960227a346cf8f9a3324137f019a771790c3b6",
+      "target": "testing/qa-regression-selection/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-security-boundaries/SKILL.md",
+      "source_sha256": "69e93037ec26de358523a8a1f6552af3754f3f243c0908a9708514ab8bff12ec",
+      "target": "testing/qa-security-boundaries/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-state-concurrency-lifecycle/SKILL.md",
+      "source_sha256": "105a45423d023b1cedeabde1eb636da575f87e324d8d74035185913b0cbbae27",
+      "target": "testing/qa-state-concurrency-lifecycle/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-static-checks/SKILL.md",
+      "source_sha256": "46e0c7f69333732b164ebb0455ab47e4a677a92e16a81367c8cb121e1f9871f6",
+      "target": "testing/qa-static-checks/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-structured-fuzzing/SKILL.md",
+      "source_sha256": "c343a388c73da0850a057b5eaf60a824aabacfa7c2764245a9a19a252ba01fd9",
+      "target": "testing/qa-structured-fuzzing/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-subagent-dispatch/SKILL.md",
+      "source_sha256": "88e797cf25d48f614ce6f3b0e7a2b5588cc13f0f22bb3ac92d11521f09d6b961",
+      "target": "testing/qa-subagent-dispatch/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-system-stabilization/SKILL.md",
+      "source_sha256": "b58e2c0856dd1a60e187c212323b5b62a6868420c0b442a7172cc8b00feed672",
+      "target": "testing/qa-system-stabilization/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-test-orchestrator/SKILL.md",
+      "source_sha256": "a7ad077acd256bd5ed232709702712c21e0e72b7cafcd797861d7c33d6b0a7f4",
+      "target": "testing/qa-test-orchestrator/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-test-planning/SKILL.md",
+      "source_sha256": "37e3d3e231372feb8c849a0d8690c3cedf2fe4443b5584e864db55dae3689486",
+      "target": "testing/qa-test-planning/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-unit-tests/SKILL.md",
+      "source_sha256": "4b2e4c038fa199d737a92e3584ee7e7231e7d49f3d706956c852853cbd3d5ab7",
+      "target": "testing/qa-unit-tests/SKILL.md"
+    },
+    {
+      "source": "skills/testing/qa-visual-responsive/SKILL.md",
+      "source_sha256": "c69c02e28b73b8e68fd666b4e2b9b4ef8a5bb5ff749e0cb2a407da1b5956ad45",
+      "target": "testing/qa-visual-dpi/SKILL.md"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review a plan's next stage"
+  short_description: "Independently review a NevroTick plan or revised stage for"
+  default_prompt: "Use $plan-independent-review to independently review a NevroTick plan or revised stage for missing consumers, unsafe assumptions, weak evidence and unavailable prerequisites; return ready, revise or blocked for that stage."

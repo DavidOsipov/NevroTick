@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-28",
+  "scope": "Pinned instructional skills; no imported executable code or runtime installation",
+  "skills": [
+    {
+      "name": "rust-compiler-errors",
+      "target": "upstream/rust-compiler-errors/SKILL.md",
+      "repository": "po4yka/rust-skills",
+      "commit": "5d5f4706d6bf1d03366a1fb463aa1732de2dbbd2",
+      "source_path": "skills/rust-compiler-errors",
+      "source_url": "https://github.com/po4yka/rust-skills/tree/5d5f4706d6bf1d03366a1fb463aa1732de2dbbd2/skills/rust-compiler-errors",
+      "source_files": {
+        "skills/rust-compiler-errors/SKILL.md": "701055f664aceb4db66a311b1b90b14afb428d679abf34167ac7b0dd6f69597e",
+        "skills/rust-compiler-errors/references/borrow-checker-fixes.md": "d3c34af9b6e6fa824af6d227f2c9dee63381257c98124327028f4f2119e72205",
+        "skills/rust-compiler-errors/references/dyn-compatibility.md": "4a5f78ed880b0eb8f820c6f29964eee9fa1aad08fe630c1ff852d9bff41d0773",
+        "LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80"
+      },
+      "license": "BSD-3-Clause",
+      "license_file": "upstream/rust-compiler-errors/LICENSE",
+      "local_changes": "upstream/rust-compiler-errors/LOCAL-CHANGES.md",
+      "files": {
+        "upstream/rust-compiler-errors/LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80",
+        "upstream/rust-compiler-errors/LOCAL-CHANGES.md": "3e501fecb43bf7fa5487309cd3a1cb012d62cf1f3d544f66ef55c5ffdb47ac52",
+        "upstream/rust-compiler-errors/SKILL.md": "8853cbdd56d3530ba4fdcbed50fcc00aa88b5dc40ae9fcd8b94544a2916fd72e",
+        "upstream/rust-compiler-errors/agents/openai.yaml": "c4aaf9c7b0bfd49384930bd0a31e64225dc49259a340116dab5230a3135e722c",
+        "upstream/rust-compiler-errors/references/borrow-checker-fixes.md": "7995ebf4af9f8240119cca1036831aeb842f195b8b7e2053a0e63490b5cfae25",
+        "upstream/rust-compiler-errors/references/dyn-compatibility.md": "4a5f78ed880b0eb8f820c6f29964eee9fa1aad08fe630c1ff852d9bff41d0773"
+      }
+    },
+    {
+      "name": "rust-borrow-semantics",
+      "target": "upstream/rust-borrow-semantics/SKILL.md",
+      "repository": "po4yka/rust-skills",
+      "commit": "5d5f4706d6bf1d03366a1fb463aa1732de2dbbd2",
+      "source_path": "skills/rust-borrow-semantics",
+      "source_url": "https://github.com/po4yka/rust-skills/tree/5d5f4706d6bf1d03366a1fb463aa1732de2dbbd2/skills/rust-borrow-semantics",
+      "source_files": {
+        "skills/rust-borrow-semantics/SKILL.md": "015ea071059689793349fb36c35f98abb1d4edde15ceca42b36aaaa962de12c9",
+        "LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80"
+      },
+      "license": "BSD-3-Clause",
+      "license_file": "upstream/rust-borrow-semantics/LICENSE",
+      "local_changes": "upstream/rust-borrow-semantics/LOCAL-CHANGES.md",
+      "files": {
+        "upstream/rust-borrow-semantics/LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80",
+        "upstream/rust-borrow-semantics/LOCAL-CHANGES.md": "ca017fecdaf01cac05de04d9416ce0614748fbc59066bfb63fdc14e98ad0eedc",
+        "upstream/rust-borrow-semantics/SKILL.md": "62c96514b60f198fe30a00970cae772b1d346efea6ac5bbb1a0b57e494dcf3e5",
+        "upstream/rust-borrow-semantics/agents/openai.yaml": "7a13e656cb0b0bbf11d2eef0272e21f087fb11e260f1e354158288ca941da952"
+      }
+    },
+    {
+      "name": "rust-send-sync",
+      "target": "upstream/rust-send-sync/SKILL.md",
+      "repository": "po4yka/rust-skills",
+      "commit": "5d5f4706d6bf1d03366a1fb463aa1732de2dbbd2",
+      "source_path": "skills/rust-send-sync",
+      "source_url": "https://github.com/po4yka/rust-skills/tree/5d5f4706d6bf1d03366a1fb463aa1732de2dbbd2/skills/rust-send-sync",
+      "source_files": {
+        "skills/rust-send-sync/SKILL.md": "eca57fc23b25cab1a3fcd720b2ffed8a5e1e34c44a2d2bc6cc3b56af67a9de99",
+        "skills/rust-send-sync/references/phantomdata-markers.md": "c3745c2f34c5f1087a2a64d2326d1c16550f823bfb6ebd222ec1e8d0baf6eaef",
+        "LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80"
+      },
+      "license": "BSD-3-Clause",
+      "license_file": "upstream/rust-send-sync/LICENSE",
+      "local_changes": "upstream/rust-send-sync/LOCAL-CHANGES.md",
+      "files": {
+        "upstream/rust-send-sync/LICENSE": "04f7cebeefa702c91d9b372e11c860fe1beda1ceb1b47987ce4329894c4bee80",
+        "upstream/rust-send-sync/LOCAL-CHANGES.md": "8abd70a5191294c576742f7110da01ee01f5bb5e5e1f2ace64a01a8d848d5871",
+        "upstream/rust-send-sync/SKILL.md": "4da9e4b50daf20891aa2d5ab3665b9a5f7a532fed61f5fcbf4d4b0d63c827d7c",
+        "upstream/rust-send-sync/agents/openai.yaml": "df76e1269ac8d866e9cf735447427cd7682535f839070f91ded3d7291fe720e1",
+        "upstream/rust-send-sync/references/phantomdata-markers.md": "ea1e2e412351af0064daffb7205fabbfcdb266487eb1df44006c62119d98e276"
+      }
+    },
+    {
+      "name": "winapp-ui-automation",
+      "target": "upstream/winapp-ui-automation/SKILL.md",
+      "repository": "microsoft/winappCli",
+      "commit": "31fc2ac52b9340846d9b5baa0b9be634ca77a8d1",
+      "source_path": "plugins/winapp/skills/winapp-ui-automation",
+      "source_url": "https://github.com/microsoft/winappCli/tree/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winapp-ui-automation",
+      "source_files": {
+        "plugins/winapp/skills/winapp-ui-automation/SKILL.md": "b573575768792d12e43ff7bedfc1fcd4b33b12461bd0fec2aea3e117ec049696",
+        "plugins/winapp/skills/winapp-ui-automation/references/ui-json-envelope.md": "51e86f783d24c1d5fa19f568dab8d894e89304f0a882361d131f0118edb31638",
+        "LICENSE": "c421b2a5e0ee627bb1c5d859bbca37d7654c02f63d626e753644484a9054c2d1"
+      },
+      "license": "MIT",
+      "license_file": "upstream/winapp-ui-automation/LICENSE",
+      "local_changes": "upstream/winapp-ui-automation/LOCAL-CHANGES.md",
+      "files": {
+        "upstream/winapp-ui-automation/LICENSE": "c421b2a5e0ee627bb1c5d859bbca37d7654c02f63d626e753644484a9054c2d1",
+        "upstream/winapp-ui-automation/LOCAL-CHANGES.md": "afe116b1af7f20ebd4aff29c9caee565e049d132c91ca53f1694cc1a2ca34290",
+        "upstream/winapp-ui-automation/SKILL.md": "124ce6be151539db91e1ae3f9d63c2e8d5dfcaf3dad54ea7cacc805634c1c701",
+        "upstream/winapp-ui-automation/agents/openai.yaml": "0b8046330a64fdddcfc7e74c854cfb019e2de65b9f7b8d0b663f4293710db14d",
+        "upstream/winapp-ui-automation/references/ui-json-envelope.md": "c8e3c145fb79f4e0276d79bda10263fdf3e670b0df4c549b1490a3380f98b264"
+      }
+    }
+  ]
+}

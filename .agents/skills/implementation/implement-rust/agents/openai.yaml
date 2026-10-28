@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Rust"
+  short_description: "Implement, refactor or review NevroTick Rust logic, ownership,"
+  default_prompt: "Use $implement-rust to implement, refactor or review NevroTick Rust logic, ownership, errors, state, concurrency and Windows adapter boundaries."

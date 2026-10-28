@@ -1,0 +1,4 @@
+interface:
+  display_name: "Orchestrate NevroTick verification"
+  short_description: "Coordinate a substantial NevroTick verification task across"
+  default_prompt: "Use $qa-test-orchestrator to coordinate a substantial NevroTick verification task across Rust, protocol, Windows, UI and package evidence without imposing a full suite on local work."

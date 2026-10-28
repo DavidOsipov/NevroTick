@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan architecture at the real owner"
+  short_description: "Plan NevroTick Rust ownership, module boundaries, state"
+  default_prompt: "Use $plan-architecture to plan NevroTick Rust ownership, module boundaries, state authority, IPC and persistence contracts, Windows effects, dependency direction or lifecycle changes."

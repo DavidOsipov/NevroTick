@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnose verification failures"
+  short_description: "Classify a NevroTick failed check causally before changing"
+  default_prompt: "Use $qa-failure-triage to classify a NevroTick failed check causally before changing production behavior, assertions, fixtures or environment."

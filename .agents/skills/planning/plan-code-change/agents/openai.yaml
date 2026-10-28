@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan a NevroTick change"
+  short_description: "Plan or resume NevroTick Rust features, fixes, migrations or"
+  default_prompt: "Use $plan-code-change to plan or resume NevroTick Rust features, fixes, migrations or refactors with uncertain impact; give understood small changes a concise in-chat plan."

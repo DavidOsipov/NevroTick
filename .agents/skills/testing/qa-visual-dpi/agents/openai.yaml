@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify native layout and DPI changes"
+  short_description: "Test NevroTick visual usability across Windows DPI, text"
+  default_prompt: "Use $qa-visual-dpi to test NevroTick visual usability across Windows DPI, text scaling, contrast, window sizing and multi-monitor changes."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify protected effects and authority"
+  short_description: "Test NevroTick trust boundaries using real caller identity,"
+  default_prompt: "Use $qa-security-boundaries to test NevroTick trust boundaries using real caller identity, current guards and observable protected effects."

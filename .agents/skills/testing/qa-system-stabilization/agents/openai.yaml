@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stabilize a bounded system flow"
+  short_description: "Resolve NevroTick multi-stage or uncertain-coupling failures"
+  default_prompt: "Use $qa-system-stabilization to resolve NevroTick multi-stage or uncertain-coupling failures through finite obligation mapping, causal repair and integrated acceptance."

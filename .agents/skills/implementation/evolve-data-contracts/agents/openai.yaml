@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evolve data contracts"
+  short_description: "Plan, implement or review compatible changes to NevroTick IPC,"
+  default_prompt: "Use $evolve-data-contracts to plan, implement or review compatible changes to NevroTick IPC, persisted state, units, normalization, versions and independently consumed outputs."

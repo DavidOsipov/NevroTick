@@ -1,0 +1,4 @@
+interface:
+  display_name: "Admit protocol and stored input before state mutation"
+  short_description: "Implement or review bounded NevroTick NTP/NTS parsing, DNS and"
+  default_prompt: "Use $security-protocol-inputs to implement or review bounded NevroTick NTP/NTS parsing, DNS and negotiated destinations, configuration admission, protected-file reads and persistence resource limits."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rust Compiler Diagnostics"
+  short_description: "Trace Rust errors to their ownership or type cause"
+  default_prompt: "Use $rust-compiler-errors to diagnose this Rust compiler failure in the existing NevroTick target and feature lane."

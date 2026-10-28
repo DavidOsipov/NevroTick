@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test timing, cancellation and ownership"
+  short_description: "Verify NevroTick asynchronous state, concurrency, cancellation,"
+  default_prompt: "Use $qa-state-concurrency-lifecycle to verify NevroTick asynchronous state, concurrency, cancellation, service and resource lifecycle behavior at its actual ownership boundaries."

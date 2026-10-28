@@ -1,0 +1,4 @@
+interface:
+  display_name: "Exercise complete Windows journeys"
+  short_description: "Test a NevroTick user or service journey through built"
+  default_prompt: "Use $qa-e2e-tests to test a NevroTick user or service journey through built executable entry points and actual observable Windows results."

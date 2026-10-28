@@ -1,0 +1,4 @@
+interface:
+  display_name: "Preserve trust through the complete Windows package"
+  short_description: "Implement or review NevroTick Cargo and CI trust, final Windows"
+  default_prompt: "Use $security-build-deployment to implement or review NevroTick Cargo and CI trust, final Windows binary protections, signing authority, complete MSI packaging and reversible install/update/repair/uninstall lifecycle."

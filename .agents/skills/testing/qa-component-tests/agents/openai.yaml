@@ -1,0 +1,4 @@
+interface:
+  display_name: "Test native application components"
+  short_description: "Verify a bounded NevroTick component such as a controller, IPC"
+  default_prompt: "Use $qa-component-tests to verify a bounded NevroTick component such as a controller, IPC client or native view with explicit collaborator and platform limits."
