@@ -1,5 +1,7 @@
 # Development-environment hardening for the Rust Windows time client
 
+**Owner-decision amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) confirms source-derived reuse with independent stress/bug verification and records the initial OpenPGP release alternative. Existing Authenticode-specific checks still apply to that preferred profile and remain not qualified if unavailable; qualify the separate OpenPGP artifact/installed-file trust path under architecture section 19.5 and research R-06. No missing-signature check may be converted to unconditional success. All other applicable compiler, lint, audit, evidence and hardening requirements remain. No application test is claimed by this amendment.
+
 **Document:** RWTC-DEV-HARDENING-001, revision 1.0  
 **Research date:** 28 October 2026  
 **Baseline:** Product architecture RWTC-ARCH-001 revision 1.4  

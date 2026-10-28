@@ -6,6 +6,16 @@
       "description": "Documentation reading order, provenance, and authority. The architecture is canonical; review and update research do not establish implementation or compliance."
     },
     {
+      "name": "nevrotick-owner-decisions",
+      "path": "./docs/nevrotick-owner-decisions.md",
+      "description": "Owner decisions for source-derived reuse, large-error recovery, Pool/default-profile policy, individual exceptions and release ownership/signing. Distinguishes accepted instructions from recommendations and unresolved gates; no implementation or release qualification."
+    },
+    {
+      "name": "nevrotick-research-handoff",
+      "path": "./docs/nevrotick-research-handoff.md",
+      "description": "Bounded research assignments and NTS operator candidates, linked to architecture OPEN/CHECK gates. Identifies required evidence and owner/provider decisions; candidate endpoints, policy parameters and release profiles are not qualified by this research."
+    },
+    {
       "name": "windows-time-architecture",
       "path": "./docs/windows-time-architecture.md",
       "description": "Canonical Rust Windows Time Client architecture and creation specification (RWTC-ARCH-001). Authority boundaries, NTP/NTS recovery, dependencies, packaging, UX, and planned verification. Design requirements, not evidence of implemented behavior."
@@ -23,12 +33,12 @@
     {
       "name": "development-hardening",
       "path": "./docs/windows-time-development-hardening.md",
-      "description": "Proposed development-environment enforcement and qualification specification: exact Rust/Cargo policies, tool admission, CI, analyzer/test gates, native Windows evidence and receipts. Not adopted configuration, installed tooling or executed application evidence."
+      "description": "Development-environment enforcement and qualification specification: Rust/Cargo policies, tool admission, CI, analyzer/test gates and native Windows evidence. Inspect actual configuration and TOOLING.md for adopted bootstrap checks; this specification alone proves no executed application behavior."
     },
     {
       "name": "signing-guide",
       "path": "./docs/windows-time-signing-guide.md",
-      "description": "Operational guide to provider eligibility, protected signing scope/order, publisher verification and complete MSI release. Provider approval, production signing and clean-machine verification are not completed. Does not authorize external applications or publication."
+      "description": "Operational guide to preferred Authenticode and owner-approved initial OpenPGP release profiles, human approval, artifact/installed-file trust and complete MSI lifecycle. Exact provider/key/Windows qualification remains pending; no automatic signing or release authority."
     },
     {
       "name": "architecture-review",

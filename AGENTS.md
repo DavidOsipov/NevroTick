@@ -20,15 +20,27 @@ Windows 11 x64, `x86_64-pc-windows-msvc`. Start with
 
 | Document | Authority and use |
 | --- | --- |
+| [Owner decisions](docs/nevrotick-owner-decisions.md) | Accepted instructions, pending recommendations and individual owner-decision procedure. Read before changing reuse, correction, source defaults or release policy. |
+| [Research handoff](docs/nevrotick-research-handoff.md) | Remaining evidence assignments, NTS provider candidates and decision gates; research findings are not implementation qualification. |
 | [Architecture](docs/windows-time-architecture.md) | Canonical technical/security contracts, ownership, decisions, delivery phases, CHECK requirements. |
 | [Feature plan](docs/windows-time-features.md) | Proposed V1 capabilities, journeys, presentation, acceptance scenarios, delivery slices; architecture controls technical semantics. |
-| [Development hardening](docs/windows-time-development-hardening.md) | Proposed enforcement/qualification; inspect actual configuration before treating tools/gates as adopted. |
+| [Development hardening](docs/windows-time-development-hardening.md) | Enforcement/qualification policy; inspect actual configuration and TOOLING.md for adopted bootstrap checks versus pending application/native evidence. |
 | [ASVS applicability](docs/asvs-5.0.0-applicability.md) | Applicability/planned verification; no completed compliance. |
 | [Signing guide](docs/windows-time-signing-guide.md) | Provider, signing, complete-package workflow; eligibility/native verification require evidence. |
 | [Update assessment](docs/windows-time-update-assessment.md) | Retained research; TUF/automatic updater not adopted. |
 
-Supporting reviews explain decisions/corrections; neither replace main documents
-nor prove implementation. Preserve canonical REQ/BND/DEC/THR/CHECK identities.
+Accepted owner decisions govern their stated scope; recommendations remain
+proposals. Supporting reviews explain decisions/corrections; neither replace
+current contracts nor prove implementation. Preserve canonical
+REQ/BND/DEC/THR/CHECK identities.
+
+For a material unresolved choice, prepare the decision card in NV-DEC-001 with
+evidence, options, recommendation and the dependent action, then ask David.
+Routine work within accepted contracts continues. Record the outcome in the
+canonical documents; do not treat silence or research deferral as risk acceptance.
+OD-05 already accepts the Foundation publisher display, David as release approver
+and an initial OpenPGP alternative if free Authenticode is unavailable; the
+profile-specific trust and Windows qualification gates remain.
 
 Checkout began with documentation, skills, tool configuration. Inspect current
 manifests/source before choosing commands; historical documents/diagnostics do not
@@ -67,11 +79,14 @@ Read canonical sections for exact limits; preserve these boundaries:
 - Keep timestamp units and UTC, monotonic, active-awake clocks distinct. Positive
   offset means Windows behind. Estimator history reflects actual acknowledged
   applied correction, not merely requested correction.
-- Preserve NTS-only defaults, explicit visibly labelled plain-NTP profiles. No
-  silent trust downgrade after NTS failure. Bootstrap hints support only bounded
+- Preserve the existing NTS-only baseline while resolving OD-03's Pool/default-
+  profile interaction; no unqualified shipped preset or silent trust downgrade.
+  Plain-NTP profiles stay explicit and visibly labelled. Bootstrap hints support only bounded
   provisional TLS-clock recovery; authorize neither global clock writes nor
   authenticated-tracking claims.
-- Keep clock ownership, stale-state rejection, cumulative correction allowances,
+- OD-02 makes very large authenticated recovery a qualification goal. Era/date,
+  quorum and correction bounds remain unresolved; 12 hours is not an approved
+  plain-NTP constant. Keep clock ownership, stale-state rejection, cumulative correction allowances,
   sleep/resume invalidation, W32Time handover/restoration explicit. Ordinary
   “Sync now” requests fresh bounded check; grants neither arbitrary clock
   correction nor administrative policy changes.

@@ -1,6 +1,6 @@
 # Signing the Windows time client: a practical MSI guide
 
-**Revision:** 1.0  
+**Revision:** 1.0 with owner-decision amendment, 29 October 2026  
 **Research date:** 28 October 2026  
 **Status:** Implementation guide; provider approval, production signing and clean-machine verification are **not completed**.  
 **Applies to:** The Chrony-derived Rust time client for Windows 11, delivered as one complete MSI containing its services, ordinary-user UI and administrative helper.
@@ -9,7 +9,9 @@
 
 The recommended free public-signing route is to **apply to SignPath Foundation for the project**. Start at [the Foundation website](https://signpath.org/), read its [current conditions](https://signpath.org/terms.html), and use its [application page](https://signpath.org/apply.html). Approval is discretionary; being open source does not by itself secure signing access. [S1–S3]
 
-The immediate action is an eligibility inquiry with an accurate description of the project and its Chrony provenance. We should resolve that question early, while developing a working, documented preview. The project is still at the planning stage, and the Foundation's published conditions include an existing release in the intended distribution form. Ask what evidence it accepts for a first signed release; do not publish an unsafe installer merely to satisfy a checkbox. [S2]
+Prepare eligibility research and a draft inquiry describing the project, Chrony provenance and proprietary brand assets. David has deferred the remaining research for another AI; any later provider contact is a separate authorized action. The project is still at the planning stage, and the Foundation's published conditions include an existing release in the intended distribution form. Ask what evidence it accepts for a first signed release; do not publish an unsafe installer merely to satisfy a checkbox. [S2]
+
+**Accepted owner policy:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) records that the Foundation publisher display is acceptable, David Osipov is the human approver, and an initial complete MSI with OpenPGP signatures is permitted if free Authenticode is unavailable. Section 7 below defines that separate release profile. Provider acceptance and actual qualification remain open.
 
 The architecture already covered the strategy in section 19.5, and left actual acceptance as **OPEN-11**. This document supplies the operational steps. It does not claim that we have obtained a certificate, submitted an application, installed a signing integration or closed any release gate.
 
@@ -26,7 +28,7 @@ For this project, the desired result is:
 1. An approved project and signing policy at the provider.
 2. A trusted build workflow associated with the correct repository.
 3. A narrowly scoped ability to submit the intended release artifacts.
-4. A designated human who approves release signing.
+4. David Osipov as the human who approves release signing.
 5. Downloadable, timestamped, signed payloads and the complete MSI.
 
 The signing provider's token is still sensitive even when it cannot export the private key. Keep it out of agent workspaces, pull-request jobs, ordinary test machines and build logs. The release process must prevent a token holder from substituting another repository, workflow, artifact or publisher identity.
@@ -35,7 +37,7 @@ The signing provider's token is still sensitive even when it cannot export the p
 
 The published conditions are labelled **Draft**. They require eligible open-source, maintained, documented, released software and impose source-ownership and release-control requirements. Re-read them before applying. [S2]
 
-Ask how the provider classifies our Chrony-derived Rust translation: its modified-upstream rules refer to upstream signed builds and a visible fork. Acceptance must be confirmed rather than inferred. [S2]
+Research the provider treatment of proprietary NevroTick artwork as well as our Chrony-derived Rust translation. No approval/rejection or brand-licence change is inferred. If later authorized, ask how the provider classifies the translation: its modified-upstream rules refer to upstream signed builds and a visible fork. Acceptance must be confirmed rather than inferred. [S2]
 
 Provider acceptance and copyright/license compatibility are separate decisions. The architecture retains the **GPL-2.0-only compatibility gate** for selected Chrony-derived source. It has not admitted the held Rustls/AWS-LC/ring provider graphs, chosen a substitute merely for signing convenience, or granted permission to remove notices. Before a production application, prepare an accurate source and dependency inventory with the license review results for the actual distributable graph.
 
@@ -74,7 +76,7 @@ Do not add provider attribution or claim that signing is approved until it actua
 
 ### Step 1 — Establish the repository and a working preview
 
-Create the product repository, preserve the source provenance, document installation/removal and produce the bounded laboratory preview described by architecture task S0.6. Resolve the installer authoring tool's own licensing and eligibility; free application signing does not settle that separate question.
+Use the existing [NevroTick repository](https://github.com/DavidOsipov/NevroTick), preserve the source provenance, document installation/removal and produce the bounded laboratory preview described by architecture task S0.6. Resolve the installer authoring tool's own licensing and eligibility; free application signing does not settle that separate question.
 
 Prepare the dossier above. Ask the early eligibility questions before investing in a provider-specific pipeline. If a first-release requirement is unclear, record the provider's answer instead of treating an unpublished plan as an eligible released product.
 
@@ -113,6 +115,8 @@ The Foundation's hosted-runner rule needs coordination with our separate Windows
 
 ### Step 5 — Sign in the agreed order
 
+This sequence is for the preferred Authenticode profile. Section 7 covers the owner-approved initial OpenPGP alternative.
+
 Use one of two provider-approved sequences:
 
 | Sequence | Required handling |
@@ -122,9 +126,11 @@ Use one of two provider-approved sequences:
 
 Apply SHA-256 digest policy and a trusted timestamp as supported by the approved service. Preserve the resulting timestamp evidence. A timestamp helps a verifier assess a signature against its signing time; it is not permission to ignore revocation, a broken chain, a different publisher or Windows verification failures. Microsoft's SignTool documentation describes digest and timestamp verification options. [S7]
 
-Never publish the unsigned input by mistake. Never edit an executable, MSI table or embedded file after its relevant signature has been created. Any such transformation requires the appropriate rebuild/re-sign/re-verify sequence.
+For an Authenticode release, never publish the unsigned input by mistake. The separately declared OpenPGP release uses its own final-artifact verification and must not be mislabeled as Authenticode-signed. Never edit an executable, MSI table or embedded file after its relevant signature has been created. Any such transformation requires the appropriate rebuild/re-sign/re-verify sequence.
 
-## 5. Verification before publishing
+## 5. Authenticode verification before publishing
+
+Apply these checks to the Authenticode profile. Record them as not qualified when using the initial OpenPGP profile; do not suppress failures and call that a pass.
 
 Use the admitted Windows SDK's SignTool on the actual returned files. Example commands below are **verification recipes, not executed results**; substitute the real file names and run from a trusted tool environment.
 
@@ -168,13 +174,23 @@ Azure Artifact Signing currently requires a paid Azure subscription. Public Trus
 
 A valid signature also does **not guarantee the absence of SmartScreen prompts**. Reputation and other Windows protections remain separate considerations. Microsoft's current guidance says EV certificates no longer automatically bypass SmartScreen reputation checks. Paying for EV solely to promise warning-free installation would be an unsound plan. [S11]
 
-## 7. Development can proceed before public signing is approved
+## 7. Development and the accepted initial OpenPGP release profile
 
 The architecture already permits an isolated, test-signed S0.6 MSI to qualify installation, privilege separation and removal behavior. Trust that test certificate only inside the disposable laboratory VM; record the substituted trust store and certificate in the evidence. Restore or destroy the VM afterward.
 
 That experiment does not satisfy the public publisher-trust portion of CHECK-18 or CHECK-23. Ordinary users must not be instructed to install our development root certificate. Do not disable Windows signature, reputation or application-control protections to make a public package install.
 
-If no acceptable free provider approves the project, retain the public signed-release gate while continuing bounded development. The choices then are an eligible sponsor/provider arrangement, a funded public-signing service, or a separately qualified complete Store package. The need for a single understandable installation remains unchanged.
+**OD-05 supersedes the former blanket public-release blocker:** if no usable free Authenticode route is available initially, David permits an MSI without project Authenticode signatures, accompanied by OpenPGP signatures. This does not approve a paid service or an automatic release. The package remains one complete product, and David approves the exact candidate.
+
+Before this profile can ship, establish a trusted full release-key fingerprint and key-custody/expiry/revocation/rotation process. Produce a detached signature over the exact final MSI and an OpenPGP-signed manifest binding version, source/build identity, package hash, corresponding-source and SBOM artifacts. Authenticate the expected key, not just a matching name or short key ID. No key has been selected or generated by this guide. [S12]
+
+Qualify valid, tampered, wrong-signer and mismatched-version/manifest cases. Preserve upstream signatures where present. Review the complete path from verified download and approved package to protected installed code, helper/IPC identity, DLL loading, repair and update lineage. Missing Authenticode must not become unconditional acceptance; a hash beside attacker-writable code is not an independent trust anchor. Research R-06 must resolve the signed-helper assumptions before qualifying this route.
+
+OpenPGP verification supplies no Windows verified-publisher identity. Unknown unsigned code can be blocked by Smart App Control or organizational policy; test the installer and each payload under the supported security configurations, disclose restrictions, and do not recommend disabling protections or installing a development root. [S13, S14]
+
+Keep CHECK-18 results separate: preferred Authenticode qualification remains incomplete if unavailable; the early OpenPGP path requires its own exact-artifact, installed-file and native lifecycle evidence. All unrelated licence, privilege, mitigation, feature and applicable ASVS gates remain. Sidecar signatures/manifests are verification material, not another application installer. No embedded updater or runtime OpenPGP dependency is adopted. Microsoft's unsigned MSIX facility is a testing path, not the broad-distribution alternative. [S15]
+
+See [NV-DEC-001 section 7](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) and [research R-06](nevrotick-research-handoff.md#8-r-06--signing-eligibility-and-initial-openpgp-releases). A later Authenticode transition must preserve product upgrade identity and reject unsupported downgrade of trust.
 
 ## 8. Completion checklist and ownership
 
@@ -183,16 +199,24 @@ If no acceptable free provider approves the project, retain the public signed-re
 | Chrony/source and exact dependency-license position | Maintainer and qualified license reviewer | Open; preserve architecture gates |
 | Provider treatment of this Rust port and first release | Maintainer and provider | Not confirmed |
 | Public signing application and acceptance | Maintainer | Not submitted by this work |
-| Publisher identity and permitted payload coverage | Release owner and provider | Open |
+| Publisher display and human approver | David Osipov / provider | Foundation display accepted; David is approver. Exact issued identity and payload scope unverified |
 | Enforced binary metadata and public signing policy | Build/release owner | Not implemented or published |
 | Protected build, submission and human approval | Release/security owner | Planned; not implemented |
 | Valid/tampered/wrong-publisher signing checks | Release verifier | Not executed |
-| Complete signed MSI lifecycle on clean Windows | Installer/Windows verifier | Not executed |
+| Complete MSI lifecycle for declared release profile on supported Windows | Installer/Windows verifier | Not executed; OpenPGP and Authenticode trust evidence remain distinct |
 | Renewal, revocation, access removal and recovery | Release/security owner | Must be written and rehearsed before public release |
 
-**OPEN-11 closes only with an approved usable route and recorded identity/policy evidence.** Public release additionally requires the actual signed-artifact and lifecycle checks. A provider account, a screenshot of a certificate or this guide alone is insufficient.
+**OPEN-11 now tracks both the preferred provider route and the initial OpenPGP route.** David's policy choices are recorded; provider acceptance, key/workflow, installed-file trust and native evidence remain open. Public release requires a qualified selected route with actual artifact-authentication and lifecycle checks; an early OpenPGP release need not wait solely for free Authenticode acceptance. A provider account, a screenshot of a certificate or this guide alone is insufficient.
 
 ## 9. Sources and related documents
+
+Additional primary sources for the 29 October amendment:
+
+- **S12:** [GnuPG verification and fingerprints](https://gnupg.org/download/integrity_check.html).
+- **S13:** [Microsoft UAC behavior](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/how-it-works).
+- **S14:** [Microsoft Smart App Control](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/overview).
+- **S15:** [Microsoft unsigned MSIX testing feature](https://learn.microsoft.com/en-us/windows/msix/package/unsigned-package).
+
 
 Primary provider and Microsoft pages were checked on 28 October 2026. Eligibility and service rules can change; recheck before application and release. The project-specific pipeline controls and acceptance criteria above are proposed engineering policy, not statements that a provider has accepted our implementation.
 
