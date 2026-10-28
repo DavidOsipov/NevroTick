@@ -1,0 +1,249 @@
+# NevroTick — спецификация интерфейса v0.2
+
+**Дата:** 28 октября 2026 года.  
+**Статус:** предлагаемая структура интерфейса и тексты для дизайн-прототипа. Это не реализованное Windows-приложение и не свидетельство прохождения проверок.  
+**Архитектурная основа:** RWTC-ARCH-001, revision 1.4; уточнения интерфейса из RWTC-FEATURES-001, revision 1.0, со статусом Proposed.  
+**Язык документа:** русский; предлагаемые строки интерфейса — English.
+
+## 1. Три уровня решений
+
+| Уровень | Что относится к нему |
+| --- | --- |
+| Пользовательский выбор | Название **NevroTick**, выбранный взрослый рисованный персонаж: чёрные растрёпанные волосы с белой прядью, угловатое лицо, неодинаковые глаза, синяя куртка, сравнение наручных и карманных часов. V1 посвящён времени; DNS относится к будущему расширению бренда. Ручное добавление серверов с выбором NTP/NTS входит в текущий запрос. |
+| Требования исходной архитектуры | Небольшой native Windows UI, обычные пользовательские права, фоновые службы, раздельные показатели доверия, явная политика NTS/NTP/bootstrap, защищённое применение системных настроек, диагностика, доступность и один полный MSI. Эти требования нельзя ослабить удобством макета. |
+| Предложение UI v0.2 | Навигация **Status / Sources / Settings**; **Diagnostics** и **About** отдельно; порядок profile/headline, понятные роли источников, четыре возраста, история восстановления, диагностика и пользовательские предпочтения. Применяются выбранные уточнения из features; это решения дизайна, а не дополнительные полномочия приложения. |
+
+Основные источники: [§16, Minimal, accessible user experience](../references/source-docs/windows-time-architecture.md#16-minimal-accessible-user-experience), [§4.2, Operation authorization](../references/source-docs/windows-time-architecture.md#42-operation-authorization), [§7.5, Operating profiles](../references/source-docs/windows-time-architecture.md#75-operating-profiles), [§19, Single-package distribution](../references/source-docs/windows-time-architecture.md#19-single-package-distribution-and-signing).
+
+В исходной архитектуре ещё стоит рабочее название продукта. В этом дизайн-пакете применяется пользовательский бренд; исходный документ не переписывается. TUF, отдельный updater и автоматическая установка обновлений не приняты: [update assessment, статус и §1](../references/source-docs/windows-time-update-assessment.md#1-assessment).
+
+[Features revision 1.0](../references/source-docs/windows-time-features.md) имеет исходный статус **Proposed v1 product requirements and implementation slices**. Он уточняет предложенную презентацию, не заменяет авторитетные ограничения архитектуры 1.4 и не закрывает её gates. Ссылки features на windows-time-development-hardening.md и windows-time-signing-guide.md ведут к документам, отсутствующим в полученном комплекте; их содержание здесь не проверено. Матрица соответствия: [06-features-review.md](06-features-review.md).
+
+## 2. Общая оболочка
+
+Небольшое изменяемое окно с обычной Windows-рамкой. Системный шрифт, стандартные элементы управления, спокойные нейтральные поверхности и один акцент. На экранах настроек и данных маскот остаётся небольшим знаком бренда; крупная иллюстрация допустима в начале знакомства и About. Иллюстрация не заменяет статус и не конкурирует с ошибкой.
+
+Основные вкладки: **Status**, **Sources**, **Settings**. Доступ к **Diagnostics** и **About** не зависит от трея. DNS, TUF и production-страница **Updates** отсутствуют. Переключатель состояний в демонстрационном прототипе, если используется, находится за пределами изображения окна продукта и обозначается как управление демонстрацией.
+
+Общие правила:
+
+- Программа открывается без запроса повышения прав.
+- Закрытие окна завершает UI, если пользователь не включил трей. Службы продолжают работу.
+- Цвет всегда дополнен текстом и формой. Главный статус не обозначается одним зелёным щитом.
+- Неприменённые изменения отличимы от действующей политики.
+- Неизвестные значения показываются как **Not available** или тире с доступным пояснением, а не как ноль.
+- Состояние службы, актуальность снимка и доверие к времени не подменяют друг друга.
+- Appearance по умолчанию — **Use Windows setting**. Светлый выбранный визуальный образ остаётся вариантом при светлой системе.
+- Tray и его запуск при входе выключены по умолчанию. Запуск при входе относится к tray observer, не к открытию главного окна и не к службам.
+- Числа в макете иллюстративны. Пределы коррекции, интервалы, бюджеты и диапазоны берутся из будущей квалифицированной политики; этот документ не назначает безопасных значений.
+
+Источник: [§16.1–16.4](../references/source-docs/windows-time-architecture.md#161-toolkit-and-interaction-model), [§22, открытые решения OPEN-5/6/8/10](../references/source-docs/windows-time-architecture.md#22-open-decisions-and-release-blockers).
+
+## 3. Полный инвентарь поверхностей
+
+ID ниже предназначены для согласования макетов и снимков. Они не задают программные маршруты или IPC-команды.
+
+Основная демонстрационная сцена — **status**. Варианты редактора: **source-editor-ntp**, **source-editor-error**; вариант системных настроек — **settings-policy**. Подробности источника раскрываются внутри Sources. Действия прототипа симулируют локальную валидацию, черновик, review и разрешённое применение на фиктивных данных; реальных сетевых запросов, UAC или записи часов нет.
+
+Фактический каталог сцен и снимков указан в [screens/README.md](../screens/README.md). Инвентарь ниже описывает типы поверхностей, поэтому его строки не являются количеством сцен. **correction-expired** показывает устаревшее предложение; **source-editor-advanced** — раскрытые поля редактора.
+
+| ID | Поверхность | Содержание | Основные действия |
+| --- | --- | --- | --- |
+| status | Главное окно, Status | Профиль и понятный headline; деятельность/причина; аутентификация, согласие и возраст qualified estimate; смещение/неопределённость; отдельные correction/snapshot ages и состояние службы | **Sync now**, **View sources**, **Diagnostics**; контекстное действие восстановления |
+| sources | Главное окно, Sources | Активный профиль; стабильная таблица логических источников; отдельная группа bootstrap helpers; индикатор черновика | **Add source**, **Edit**, **Remove**, **Details**, **Review changes** |
+| settings | Главное окно, Settings | Политика доверия, коррекции, восстановления; отдельно пользовательские предпочтения | **Review changes**, **Reset draft**; локальное изменение темы/трея |
+| onboarding | Первый запуск | Фоновая работа, текущее владение часами, профиль, готовность источников; наблюдение на управляемом устройстве | **Review configuration**, **Open status**; переход в источники |
+| source-editor | Add/Edit source | Протокол, идентичность и подключение; роль назначается алгоритмом; дополнительные параметры; локальная валидация | **Save draft**, **Cancel** |
+| source-details | Подробности источника | Роль, причины допуска/отклонения, фактическая конечная точка, возраст и статистика, NTS/сертификатный контекст | **Close**, **Edit source**, **Open related events** |
+| review-changes | Проверка машинных изменений | Было → станет; последствия; требования полномочий; текущая версия политики | **Apply changes**, **Back to editing**, **Cancel** |
+| apply-result | Применение и результат | Applying / Applied / Cancelled / Denied / Failed / Changed elsewhere / Result unknown | **Done**, **Return to draft**, **Reload current settings**, **Check result** по ситуации |
+| correction-approval | Разовая большая коррекция | Величина, направление, текущее/предлагаемое время, свежесть доказательств, срок действия предложения | **Approve once**, **Cancel**, **Request new measurements** |
+| recovery | Параметры и объяснение восстановления | Opt-in bootstrap; один/два помощника; состояние подсказок и NTS; отдельная приблизительная дата администратора | **Save draft**, **Review changes**, разрешённое контекстом повторение |
+| diagnostics | Diagnostics / Activity | Current issue → What it affects → Suggested next action; события, свежесть, профиль/владение, история восстановления и технические подробности | **Copy summary**, **Export diagnostics**, **Close** |
+| export | Экспорт диагностики | Предпросмотр состава и редактирования частных сведений; путь назначения | **Save report**, **Cancel** |
+| about | About | Бренд, версия, лицензии/атрибуция, privacy и сведения для поддержки; release URL только после его определения | **Close**; ссылка на официальный release page только при наличии утверждённого адреса |
+| unsaved-changes | Неприменённые изменения | Что будет отброшено при выходе из редактирования | **Keep editing**, **Discard draft** |
+| tray | Необязательное меню трея | Текст текущего состояния и возраста данных | **Open NevroTick**, **Sync now**, **Diagnostics**, **Quit UI** |
+| maintenance | Установка и обслуживание полного MSI | Install / Update / Repair / Uninstall; готовность, прогресс, откат, восстановление владельца, перезагрузка при необходимости | Действия соответствующего MSI-сценария; без самостоятельного updater |
+
+Диалоги могут быть панелями внутри обычного окна, если сохраняются читаемость, доступность и контракт фокуса. Source details и recovery не обязаны создавать постоянные дополнительные окна. Установочные поверхности принадлежат MSI, а не ежедневному UI.
+
+## 4. Status
+
+Главный экран отвечает на четыре вопроса: работает ли продукт, аутентифицирована ли текущая опора, насколько свежи и пригодны доказательства и что нужно сделать. Порядок чтения: **Profile + headline → Current activity / remedy → Evidence → Service availability → Actions**. Проблема связи, мешающая текущему утверждению, показывается заметно, а не только в footer. Предлагаемые подписи:
+
+| Поле | English copy | Смысл |
+| --- | --- | --- |
+| Профиль | **NTS only**, **NTP — unauthenticated**, **Observe only** | Политика и запрет/разрешение изменения часов; не выводится только из состояния службы |
+| Состояние | **Time sync active**, **Checking time sources**, **Time sources disagree**, **Synchronization needs attention** | Понятная проекция архитектурных Tracking/Acquiring/Conflict/Blocked; внутренние состояния не переименовываются |
+| Деятельность | **Gradually correcting the clock**, **Waiting for enough agreeing sources**, **Next scheduled check**, конкретное recovery-действие | Текущее действие или препятствие перед числовыми подробностями |
+| Аутентификация | **Authentication: NTS** / **Authentication: None — NTP** | Свойство принятого источника/набора, не гарантия правильного UTC |
+| Согласие | **Source agreement** | Число и роли подходящих источников; выполнение и большинства, и установленного минимума |
+| Свежесть оценки | **Last qualified estimate** | Возраст последней подходящей согласованной оценки; недавний отдельный или отвергнутый ответ не обновляет его |
+| Смещение | **Estimated offset** | Явные единицы и пояснение знака; положительное означает, что Windows отстаёт |
+| Неопределённость | **Estimated uncertainty** | Оценка с возрастом и условиями, не обещание абсолютной точности |
+| Следующее действие | **Next scheduled check** / **Next attempt** / **Action required** | Реальный ожидаемый повтор или доступное действие, без придуманного SLA |
+| Служба | **Background service** / **Service health unknown** | Подтверждённая доступность/сбой либо отсутствие знания, отдельно от доверия к времени |
+
+**Sync now** означает запрос более ранних измерений в существующей политике. Запрос не принимает целевой timestamp или новый адрес. UI различает **Checking**, **Already checking**, **Waiting for enough agreeing sources**, **Try again after the current limit**, **Correction in progress**, а также конкретный blocked/unavailable outcome. Повторные нажатия не создают бесконечную очередь; доступность кнопки и пояснение отражают coalescing/ограничение частоты. В прототипе это демонстрационные ответы; настоящие ограничения проверяются в службе.
+
+При потере связи со службой: **Status unavailable. Showing the last received snapshot.** Последние значения остаются историческими. Служба может продолжать работу; footer и Diagnostics также показывают неизвестное здоровье службы, а не неподтверждённый отказ. Подтверждённый service failure — другое состояние с отдельным основанием.
+
+### 4.1 Четыре значения свежести
+
+| English label | Что измеряется | Где доступно |
+| --- | --- | --- |
+| **Last valid reply** | Последний допустимый ответ конкретного источника; его время ещё может быть отвергнуто статистически | Sources и подробности источника |
+| **Last qualified estimate** | Последняя согласованная оценка, прошедшая действующую политику качества | Status и Diagnostics |
+| **Last applied correction** | Последняя коррекция, применение которой подтвердил broker | Status/details и Diagnostics; отсутствие подтверждения не заменяется requested |
+| **Status snapshot age** | Возраст опубликованного снимка состояния, используемого UI | Status и Diagnostics, особенно при disconnection |
+
+Это четыре разных семантических поля. Нельзя переиспользовать один age с меняющейся подписью или назвать всё **Last synced**. Перезапуск окна не обновляет возраст измерений. Если monotonic/generation continuity недостаточна после сна/перезапуска, показывается **Unknown** / reacquiring; исправленная календарная дата не должна создавать ложную свежесть. Per-source **Last accepted measurement**, если показан, дополнительно отличим от Last valid reply и от общей qualified estimate.
+
+Числовое ± в fixture — иллюстрация, не обещание симметричного интервала модели. Будущая реализация показывает реальную форму и смысл оценки без выдуманного процента уверенности.
+
+Источники: [§5.3](../references/source-docs/windows-time-architecture.md#53-broker-command-surface), [§6, знак смещения и StatusSnapshot](../references/source-docs/windows-time-architecture.md#6-domain-types-and-state-authority), [§9](../references/source-docs/windows-time-architecture.md#9-runtime-state-machine), [§16.2](../references/source-docs/windows-time-architecture.md#162-main-window).
+
+Уточнения presentation: [features F-04](../references/source-docs/windows-time-features.md#f-04--show-truthful-status-immediately), [F-05](../references/source-docs/windows-time-features.md#f-05--request-a-fresh-check-with-sync-now), [§3.1](../references/source-docs/windows-time-features.md#31-main-window), [§4](../references/source-docs/windows-time-features.md#4-state-and-freshness-presentation).
+
+## 5. Sources и ручной редактор
+
+### 5.1 Список
+
+Строка представляет **логический источник**, а не отдельный IP-адрес. В обычном списке видимы каноническая серверная идентичность рядом с friendly name, аутентификация **NTS/NTP**, роль **Main / Supporting / Not used / Waiting**, свежесть и короткая причина. Внутренний principal отображается как Main. **Draft** — отдельная метка неприменённого изменения; Waiting не означает, что черновик уже участвует в работе службы.
+
+Смещение, задержка, неопределённость, группа оператора и шкала времени доступны в раскрываемых подробностях. Выделенная строка не прыгает при новых измерениях. NTS-источник может оставаться аутентифицированным, но иметь роль Not used из-за расхождения оценки.
+
+Сортировка не задаёт приоритет доверия. Несколько имён/IP могут принадлежать одному оператору; количество строк не доказывает независимость. Helpers показаны отдельно: **Date recovery only — no vote in normal synchronization**. Их редактирует отдельный Date recovery dialog, а не обычный source editor.
+
+Source details и Diagnostics получают **Certificate-time basis** отдельным полем. Оно не вычисляется из protocol=NTS. После успешного восстановления сохраняется доступная заметка о plain-NTP/operator-approximate basis и одном/двух helpers; новый здоровый headline не стирает её и не делает исходную подсказку аутентифицированной. Текущая packet authentication и сохранённая recovery history могут иметь разные свойства.
+
+Источник уточнений: [features F-03](../references/source-docs/windows-time-features.md#f-03--select-a-principal-source-and-compatible-supporters), [§3.2](../references/source-docs/windows-time-features.md#32-sources), [architecture §8.3](../references/source-docs/windows-time-architecture.md#83-trust-data-shown-to-users-and-diagnostics).
+
+### 5.2 Поля редактора
+
+| Поле | Предложение UI | Валидация и ошибки |
+| --- | --- | --- |
+| Отображаемое имя | **Display name (optional)** | Ограниченный текст; не заменяет настоящую идентичность |
+| Протокол | **Protocol: NTS / NTP** | Явный выбор, без Auto; значение должно соответствовать роли и активному профилю |
+| Идентичность | **Server hostname or IP address** | Не URL/путь/команда; каноническая DNS/IDNA/IP-форма по политике. Для NTS обязателен соответствующий проверяемый сертификатный identity |
+| Подключение | **NTS-KE port** либо **NTP port** | Допустимый числовой порт; транспорт и поля соответствуют протоколу. NTS может аутентифицированно делегировать конечную точку; фактический результат показывается в details |
+| Назначение | **Time source** в обычном редакторе | Bootstrap helper настраивается в отдельном Date recovery; никакого тихого изменения роли или профиля |
+| Активность | **Enabled** | Изменение участвует в черновике системной политики |
+| Группа оператора | **Source operator / independence group** | Корректная ссылка и дедупликация; пользовательское имя группы само по себе не доказательство независимости |
+| Шкала времени | **Time-scale policy** | Совместимость UTC/smear-политик с остальным набором; не угадывается по одному ответу |
+| Опрос | **Polling policy** — справочная информация | Интервалы следуют квалифицированной политике; normal setup не требует raw interval/frequency tuning |
+
+Дополнительные поля скрываются в **Advanced**; значения по умолчанию приходят из политики. Копирование декоративного имени в поле проверяемой идентичности автоматически не выполняется.
+
+Примеры ошибок: **Enter a hostname or IP address, not a URL.**; **This source duplicates an existing logical source.**; **This source does not fit the selected trust profile.**; **The configured source agreement cannot be met by this source set.** Под ошибкой остаются введённые данные; фокус переводится к первому ошибочному полю, summary доступен с клавиатуры. Серверная проверка ограничений остаётся обязательной даже для полей, не доступных в basic UI.
+
+Локальная валидация не устанавливает сетевое соединение и не изменяет часы. **Save draft** меняет только текущий черновик и блокируется при несовместимом протоколе или ошибочных полях. Смена профиля в Settings также остаётся черновиком; Apply недоступен, пока набор источников не приведён в соответствие. До реализации отдельного разрешённого контракта отсутствует сетевой **Test server** для неприменённого адреса: обычный Refresh предназначен только для действующей конфигурации.
+
+### 5.3 Протокол и профиль
+
+| Активный профиль | Допустимое использование |
+| --- | --- |
+| NTS | Только аутентифицированные подходящие NTS-источники участвуют в обычном выборе времени |
+| NTS с включённым bootstrap | Явно выбранные NTP helpers дают только подсказку даты для восстановления; их вес в обычном выборе равен нулю |
+| NTP | Обычные NTP-источники разрешены явно; интерфейс постоянно обозначает отсутствие аутентификации |
+| Observe only | Измерения и оценки без изменения Windows-часов; фактическая аутентификация данных всё равно показывается |
+
+V1 не смешивает NTS и NTP в одном голосующем наборе. Если пользователь хочет обычный NTP-источник при NTS-профиле, UI объясняет необходимость отдельной смены профиля. Для bootstrap нужно перейти в отдельный Date recovery. Окончательные изменения проходят Review & apply; добавление адреса ничего не переключает молча. Single-source mode и произвольное числовое controller tuning в basic v1 отложены.
+
+При удалении/отключении источника нельзя автоматически уменьшать требуемое согласие. Невалидный конечный набор блокирует применение и объясняет, как исправить черновик. Отсутствие источников на первом запуске — отдельное пустое состояние.
+
+Источники: [§4.2](../references/source-docs/windows-time-architecture.md#42-operation-authorization), [§6.2–6.4](../references/source-docs/windows-time-architecture.md#62-exact-json-and-resource-contract), [§7.2–7.5](../references/source-docs/windows-time-architecture.md#72-sample-to-clock-pipeline), [§10.5](../references/source-docs/windows-time-architecture.md#105-leap-seconds-and-time-scales), [§12.2](../references/source-docs/windows-time-architecture.md#122-configuration-semantics).
+
+## 6. Settings, применение и UAC
+
+Системные настройки и личные предпочтения разделены визуально и по сохранению.
+
+- **Time sources and trust:** профиль, источники, объяснение требуемого согласия и переход к отдельному bootstrap.
+- **Clock correction:** разрешённые автоматические коррекции и поведение больших отклонений. Пределы показываются с единицами и последствиями; макетные примеры не становятся безопасными дефолтами.
+- **Appearance:** системная тема/контраст, отображение, необязательный трей. Эти изменения не требуют повышения прав.
+
+Числовые step/rate controls не входят в basic UI: доступны только утверждённые варианты политики и объяснения последствий. Переход уже работающего продукта в Observe only запрещает новые записи и завершает относимую к продукту коррекцию только при установленном владении; он не включает W32Time автоматически.
+
+Пользовательские значения по умолчанию: **Use Windows setting**, tray **Off**, **Start the tray observer when I sign in — Off**. Последний выбор доступен только при включённом tray. Выключенный tray исключает такой observer autostart, что явно отражается в UI. Речь о скрытом observer, не об открытии основного окна. Эти параметры не изменяют startup служб.
+
+При закрытом окне и выключенном observer продукт не обещает немедленное новое экранное предупреждение. Tray не является независимым watchdog; rich OS notifications пока отложены. Первое обычное открытие после успешной установки идёт в Status; onboarding — краткая необязательная подсказка либо объяснение незавершённой настройки, не обязательный второй wizard.
+
+Источники: [features F-06](../references/source-docs/windows-time-features.md#f-06--inspect-and-change-sources-and-profiles-safely), [F-10](../references/source-docs/windows-time-features.md#f-10--provide-a-small-accessible-native-ui-and-optional-tray), [§3.3](../references/source-docs/windows-time-features.md#33-settings), [§5](../references/source-docs/windows-time-features.md#5-default-settings-and-authority), [§6.A](../references/source-docs/windows-time-features.md#6-essential-user-journeys), [§7](../references/source-docs/windows-time-features.md#7-visibility-when-the-window-is-closed).
+
+Контракт системного изменения:
+
+1. Пользователь редактирует черновик при обычных правах.
+2. Проверяются поля и их совместимость; старая политика продолжает действовать.
+3. Review показывает точную разницу и эффект, включая потерю аутентификации либо необходимость будущего разрешения большой коррекции.
+4. **Apply changes** заранее сообщает **Administrator permission required**.
+5. Windows выполняет настоящий UAC для конкретного действия. UI не собирает административный пароль.
+6. После подтверждения authoritative helper/broker повторно проверяет права, данные и ожидаемую ревизию.
+7. Только подтверждённый результат отображается как **Changes applied**.
+
+UAC cancellation: **Changes were not applied. Your previous settings are still active.** Возврат к черновику и прежнему элементу фокуса. Ошибка валидации/сохранения оставляет старую политику. Если конфигурацию изменили параллельно: **Settings changed elsewhere. Review the current settings before applying your draft.** Автоматического перезаписывания новой политики нет.
+
+Отмена UAC до отправки операции отличается от потери связи после принятия транзакции. Во втором случае: **Checking the result of your previous request…**; сначала выясняется результат, затем разрешается повтор. Нельзя обещать, что закрытие индикатора Applying отменило уже начатую транзакцию.
+
+Источники: [§4.2](../references/source-docs/windows-time-architecture.md#42-operation-authorization), [§5.2–5.3](../references/source-docs/windows-time-architecture.md#52-message-contract), [§6.4](../references/source-docs/windows-time-architecture.md#64-boundary-ownership-and-failures), [§12.1–12.2](../references/source-docs/windows-time-architecture.md#121-state-separation).
+
+## 7. Большая коррекция и восстановление
+
+**Approve exceptional correction** показывает направление, величину, текущее и предлагаемое время с часовым поясом, основание и свежесть предложения. Кнопка **Approve once** разрешает конкретную действующую операцию. Предложение привязано к текущему состоянию и имеет ограниченный срок; устаревшее предложение нельзя «подтвердить ещё раз». Нет флажка **Always allow any correction**.
+
+Демонстрационная сцена **correction-expired** явно показывает устаревшее предложение: **Request approval** недоступна, нужны новые измерения. Она не симулирует успешное применение прежнего target.
+
+Bootstrap по умолчанию выключен. Один и два helpers — разные явно выбранные политики. Недоступность одного из двух не уменьшает количество автоматически. Предлагаемый текст: **Using an unauthenticated time estimate to check NTS certificates. The system clock has not changed.** После успешного получения NTS сохраняется доступная история основания проверки.
+
+При ошибке сертификата UI различает неправильную идентичность, недоверенную цепочку, ограничения отзыва/сети и возможную проблему даты. Никаких **Ignore certificate errors**, **Disable certificate validation**, **Fall back to NTP**.
+
+Revision 1.4 добавляет значимый вариант: **System date is outside the supported verification range.** Он применим и к обычному, и к provisional verifier. Дата не нормализуется молча в допустимую; пользователь получает доступные recovery-действия или конкретный Blocked. Точный диапазон остаётся вопросом квалификации, а не настройкой, произвольно назначенной дизайнером.
+
+Приблизительная дата администратора — подсказка для отдельной процедуры, не прямое предложение глобально установить неаутентифицированное время. Успешное восстановление NTS не означает, что большая коррекция Windows уже разрешена.
+
+Источники: [§8](../references/source-docs/windows-time-architecture.md#8-recovery-when-the-system-date-breaks-tls), [§10.2](../references/source-docs/windows-time-architecture.md#102-steps-and-large-errors), [§18.7.2, Extreme-date source lead](../references/source-docs/windows-time-architecture.md#1872-certificate-policy-is-a-separate-windows-integration-decision).
+
+## 8. Диагностика, About и MSI
+
+Diagnostics начинается с **Current issue → What it affects → Suggested next action**. Затем показаны события, активный профиль, известное состояние службы/владения, четыре значения свежести, certificate-time basis и сохранённая recovery history. Технические подробности раскрываются по запросу.
+
+Наблюдение и гипотеза различаются: **No reply from the configured servers** допустимо при отсутствии ответов; **Your firewall is blocking NTP** нельзя утверждать без доказательств. При потере status connection здоровье службы может быть unknown. Если отказ службы подтверждён и обычное восстановление не помогло, предлагается complete-MSI repair, а не неутверждённая кнопка restart/stop.
+
+**Copy summary** показывает предварительно видимый редактированный summary и копирует его по действию пользователя. **Export diagnostics** использует такой же фактический контекст и дополнительный предпросмотр файла. Ошибка clipboard/file operation не сообщается как успех. Неверная календарная дата не разрушает порядок событий. PID, pipe names и выбор TLS-библиотеки не являются обязательным знанием для пользователя.
+
+Export сначала показывает предпросмотр. По умолчанию редактируются частные hostname/IP и имена пользователей; NTS keys/cookies, ключи TLS и секретные payload не экспортируются вообще. **Save report** сохраняет файл, не отправляет его третьей стороне. Не добавлять телеметрию или удалённую отправку под видом диагностики.
+
+About показывает версию макета отдельно от будущей версии продукта, лицензии и privacy. Для реального продукта предусматривается пользовательская ссылка на официальный release page. Адрес ещё не определён: в прототипе он не выдумывается и отсутствующая ссылка не выглядит работающей. Открытие будущей страницы не является обновлением или разрешением установки.
+
+Отдельной production-страницы Updates нет. Для установки/обновления/repair/uninstall предусмотрены только поверхности полного MSI с фактическим исходом и необходимой перезагрузкой. Никаких утверждений **TUF verified**, **Automatically protected updates** или автоматического rollback-статуса без реального результата. Будущий setup/privacy текст объясняет обращения к настроенным time servers и разрешённым DNS/certificate-validation службам; нельзя обещать отсутствие любой сети, кроме NTP.
+
+Передача владения часами и восстановление W32Time остаются установочной административной транзакцией. Не добавлять в v1 кнопку **Release ownership to Windows** как готовую функцию: в архитектуре это будущая возможность. При конфликте организации UI показывает причину и путь к администратору, а не пытается постоянно преодолеть Group Policy.
+
+Источники: [§11](../references/source-docs/windows-time-architecture.md#11-w32time-ownership-and-installation-lifecycle), [§12.3](../references/source-docs/windows-time-architecture.md#123-logging-and-support), [§19.2](../references/source-docs/windows-time-architecture.md#192-lifecycle-and-user-expectations), [update assessment §1](../references/source-docs/windows-time-update-assessment.md#1-assessment).
+
+Уточнения: [features F-01](../references/source-docs/windows-time-features.md#f-01--install-and-maintain-one-product), [F-09](../references/source-docs/windows-time-features.md#f-09--explain-failures-and-export-useful-diagnostics), [§3.4](../references/source-docs/windows-time-features.md#34-diagnostics).
+
+## 9. Фокус, доступность и ошибки
+
+| Ситуация | Контракт UI v0.2 |
+| --- | --- |
+| Открытие диалога | Фокус на первом содержательном поле или безопасном основном действии; заголовок доступен screen reader |
+| Ошибка поля | Сводка ошибок доступна без мыши; ошибка программно связана с полем; фокус на первом исправляемом поле |
+| Cancel / Escape | Возврат к инициировавшему элементу; при существенном черновике — unsaved-changes, без скрытого применения |
+| Возврат из UAC | Фокус и контекст сохранены; озвучивается только существенный результат |
+| Поток измерений | Фокус и порядок строк не меняются; каждое изменение цифры не объявляется |
+| Смена состояния | Текстовое объявление с ограниченной частотой; причина и действие доступны в обычном окне |
+| Масштаб и контраст | Системные contrast themes, увеличение текста, не менее 200% display scaling и смена DPI без потери содержимого |
+| Длинное имя / локализация | Перенос или доступные подробности; проверяемая идентичность не скрывается неоднозначным обрезанием |
+| Неактивная кнопка | Рядом понятна причина; tooltip не является единственным способом узнать её |
+| Трей | Не единственный путь к настройкам, диагностике и восстановлению |
+
+Это критерии будущей native-проверки. HTML-макет может подтвердить структуру и часть взаимодействий, но не квалифицирует Win32 UI Automation, Narrator, secure desktop UAC или Windows high-contrast поведение.
+
+Источник: [§16.3–16.4](../references/source-docs/windows-time-architecture.md#163-accessibility-acceptance).
+
+## 10. Что должно быть решено позднее
+
+До реализации нужно зафиксировать конкретные допустимые значения политики, поддерживаемые диапазоны дат, native-набор контролов, поведение TLS/revocation/retrieval и реальные условия восстановления. Изменения revision 1.4 по entropy legacy NTP и conditional native HTTP — инженерные gates, а не новые пользовательские переключатели. UI не заявляет ASVS L3 conformity или шифрование всего сетевого трафика.
+
+Список сценариев и границы проверки прототипа: [04-states-and-acceptance.md](04-states-and-acceptance.md). Сопоставление всех F-01–F-10 и обоснование отличий от v0.1: [06-features-review.md](06-features-review.md). Native acceptance остаётся planned / not executed.
