@@ -7,11 +7,11 @@
 
 ## 1. Авторитет и пределы источников
 
-1. [Architecture RWTC-ARCH-001 revision 1.4](../references/source-docs/windows-time-architecture.md) остаётся авторитетной для trust, полномочий, clock ownership, протоколов, correction/recovery и жизненного цикла.
-2. [Features RWTC-FEATURES-001 revision 1.0](../references/source-docs/windows-time-features.md) сохранён с исходным статусом **Proposed v1 product requirements and implementation slices**. Его presentation/default proposals применены в дизайне v0.2; это не превращает все будущие feature gates в исполненные проверки.
+1. [Architecture RWTC-ARCH-001 revision 1.4](../../windows-time-architecture.md) остаётся авторитетной для trust, полномочий, clock ownership, протоколов, correction/recovery и жизненного цикла. Неизменённая копия в references сохраняет исходный snapshot.
+2. [Features RWTC-FEATURES-001 revision 1.0](../../windows-time-features.md) сохраняет статус **Proposed v1 product requirements and implementation slices**. Его presentation/default proposals применены в дизайне v0.2; это не превращает будущие feature gates в исполненные проверки.
 3. Пользовательский выбор NevroTick, маскота, широкого бренда и v1 времени сохраняется. Будущий DNS не добавляется в интерфейс v1.
 4. Features не принимает TUF, auto-updater, новые dependencies, signing scheme или native toolkit. [Update assessment](../references/source-docs/windows-time-update-assessment.md#1-assessment) также остаётся candidate.
-5. Features ссылается на **windows-time-development-hardening.md** и **windows-time-signing-guide.md**. Эти два документа отсутствуют в полученном комплекте; их содержание, gates и утверждения **не проверены**. Ссылки внутри оригинального features сохранены как часть источника. Этот пакет не создаёт заменители и не приписывает им прочитанные требования.
+5. В полученном архиве отсутствовали development-hardening и signing-guide. В текущем репозитории доступны [development hardening](../../windows-time-development-hardening.md) и [signing guide](../../windows-time-signing-guide.md); архивные ссылки сохранены. Наличие документов не закрывает их implementation/signing gates.
 
 Инвентарь доступного комплекта проверен локально. Наличие исходного документа и совпадение с его текстом не являются свидетельством работающего приложения.
 
@@ -101,4 +101,6 @@
 
 Нативные операции здесь не выполняются: нет наблюдённого clock trajectory, real NTS trust establishment, UAC/SCM/IPC qualification, MSI signing/lifecycle evidence, измерений CPU/memory или native accessibility pass. Features прямо маркирует свои AC-кейсы **planned / not executed**; этот статус сохранён.
 
-Будущие документы development-hardening и signing-guide нужно получить и отдельно сверить до утверждений об их требованиях либо выполнении. Их отсутствие не даёт основания обходить уже известные gates архитектуры 1.4.
+Применимые gates доступных development-hardening и signing-guide сверяются перед соответствующим инженерным этапом; дизайн не является доказательством их выполнения.
+
+Текущая критическая сверка уточнила только документы: разделены результат измерений и broker acknowledgement; исправлен смысл общей operator group; добавлены согласованность correction evidence, ограничения post-Apply, исторический recovery, семантика оконных действий и доступность ошибок/выбора/тем. Точные требования — [02-ui-spec.md](02-ui-spec.md), UX-29–UX-35 — [04-states-and-acceptance.md](04-states-and-acceptance.md). Корректность React-прототипа не является условием будущей реализации: native UI следует канонической архитектуре и уточнённому дизайну. Старые HTML/JPG и результаты QA не объявляются обновлёнными.

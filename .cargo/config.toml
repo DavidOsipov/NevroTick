@@ -1,0 +1,11 @@
+# Keep portable-core checks on the host; select the native target explicitly.
+# Use admitted native MSVC inputs or the explicit bundled-LLD/xwin cross lane.
+[target.x86_64-pc-windows-msvc]
+rustflags = [
+    "-C", "control-flow-guard=yes",
+    "-C", "link-arg=/GUARD:CF",
+    "-C", "link-arg=/DYNAMICBASE",
+    "-C", "link-arg=/HIGHENTROPYVA",
+    "-C", "link-arg=/NXCOMPAT",
+    "-C", "link-arg=/WX",
+]

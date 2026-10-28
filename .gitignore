@@ -3,3 +3,16 @@ target/
 
 # Rustfmt backup files.
 **/*.rs.bk
+
+# JavaScript preview dependencies, build output and Vite caches.
+node_modules/
+/docs/nevrotick-design-v0.2/prototype/dist/
+.vite/
+
+# Local Microsoft SDK cache from direct xwin invocations.
+.xwin-cache/
+
+# Bytecode from the Python bootstrap helpers.
+__pycache__/
+*.pyc
+*.pyo

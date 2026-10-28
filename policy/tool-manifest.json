@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-28",
+  "scope": "DEV-01 environment bootstrap; no application graph, release or native lab qualification",
+  "rust": {
+    "channel": "1.99.1",
+    "edition_candidate": "2024",
+    "msrv": null,
+    "manifest_url": "https://static.rust-lang.org/dist/channel-rust-1.99.1.toml",
+    "manifest_sha256": "fb152be80975c194aa5fc684b2aec3a6e14e2b855efe2faa4e5f8ae6e590f463",
+    "compiler_commit": "58cf8f9c35b355199727627d07ae34a4e2846d67",
+    "llvm_version": "23.1.1",
+    "rustup_version": "1.29.2",
+    "host": "x86_64-unknown-linux-gnu",
+    "native_target": "x86_64-pc-windows-msvc",
+    "license": "MIT OR Apache-2.0",
+    "linux_binary_sha256": {
+      "rustc": "b53b780f77f952062f8ca8a3b70aef2390b1e45ad91939be94afdc9543026853",
+      "cargo": "a670e02cfa39ac2e53f77a2d911ca1fc9e2c479b0603ec956625be1daf24e3af",
+      "rustfmt": "68cb47a2a38daa8ff2ec6d623a2374b0a165d77ec74f1f654216665018c04598",
+      "clippy-driver": "89b6cc8d0d988b00a3f65bc90c76fedbaedb6bcb442b34563aefe3621f26544b",
+      "rust-analyzer": "e800226d398f8f8f501319b887bf04da8e14da877a2df382dc1bf6e4748b9839"
+    },
+    "rustup_linux_sha256": "5be191e8c70a5007074254cb74d78dbfdd25cd5a61c27de7b8e5410122ec24f4",
+    "rustup_linux_archive_url": "https://static.rust-lang.org/rustup/archive/1.29.2/x86_64-unknown-linux-gnu/rustup-init"
+  },
+  "tools": [
+    {
+      "name": "cargo-nextest",
+      "version": "0.9.150",
+      "platform": "x86_64-linux",
+      "url": "https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.150/cargo-nextest-0.9.150-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "b0959bc64232974224cf9fb22c915845398c0e8668fa7831eb5b43fb1eef781f",
+      "license": "Apache-2.0 OR MIT",
+      "version_args": [
+        "--version"
+      ],
+      "scope": "optional test runner; keep doctests and selected libtest cases",
+      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "binary_sha256": "62dcc4348e189f5fbd5881f6b753c59d62f2e664b28c6357898644288d703c02"
+    },
+    {
+      "name": "cargo-deny",
+      "version": "0.20.2",
+      "platform": "x86_64-linux",
+      "url": "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f",
+      "license": "MIT OR Apache-2.0",
+      "version_args": [
+        "--version"
+      ],
+      "scope": "dependency-policy candidate; real graph and good/bad policy controls required",
+      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "binary_sha256": "b329e25933d01c36dd7c47d84ea5716694f9b7caf53a5003d45674703a8ed54a"
+    },
+    {
+      "name": "cargo-audit",
+      "version": "0.22.2",
+      "platform": "x86_64-linux",
+      "url": "https://github.com/rustsec/rustsec/releases/download/cargo-audit/v0.22.2/cargo-audit-x86_64-unknown-linux-gnu-v0.22.2.tgz",
+      "sha256": "ab28a1bdb54db4d5d8ad5981cf1f959410370b3d28250dbd35f6a44248620e39",
+      "license": "Apache-2.0 OR MIT",
+      "version_args": [
+        "--version"
+      ],
+      "scope": "optional complementary artifact check; shares RustSec advisory data",
+      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "binary_sha256": "473b9a71e5cb5bde22f69c32f749c9b83931287d92dc36b91cb04f6705640ef2"
+    },
+    {
+      "name": "cargo-mutants",
+      "version": "27.1.0",
+      "platform": "x86_64-linux",
+      "url": "https://github.com/sourcefrog/cargo-mutants/releases/download/v27.1.0/cargo-mutants-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "dfe6dc37d0342c891d2829b5a695aa57c2d0edecef7e7d0399a30cc6e206411e",
+      "license": "MIT",
+      "version_args": [
+        "mutants",
+        "--version"
+      ],
+      "scope": "later critical-file mutation gate; no empty-scope qualification",
+      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "binary_sha256": "f985f265ee3ea3e453aa98b04c52134953911f692f8ce8abf137f3873202a2d0"
+    },
+    {
+      "name": "cargo-llvm-cov",
+      "version": "0.9.1",
+      "platform": "x86_64-linux",
+      "url": "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.9.1/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "b3f68e625481fed9b16444174f3fa5ebcdbde4a1878803a35eabe2dcefcdc41a",
+      "license": "Apache-2.0 OR MIT",
+      "version_args": [
+        "llvm-cov",
+        "--version"
+      ],
+      "scope": "later scoped coverage; matching Rust LLVM tools required",
+      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "binary_sha256": "d8334c0e109a983ea8ecc25b6146cfebbd295a9a71b4f8027e20a68fa2f1dcd4"
+    }
+  ],
+  "controls": {
+    "installation": "Pinned upstream prebuilt archives; verify SHA-256 before execution; preserve replaced executables outside checkout. No downloaded install shell scripts.",
+    "execution": "Trusted std-only fixtures; mandatory credential-free network-isolated bwrap for Linux smoke. Native MSVC linking checked separately.",
+    "updates": "Resolve current stable metadata, review upstream changes and digests, then update this manifest and rerun affected controls. Pins never float at build time.",
+    "owner": "NevroTick development tooling",
+    "runtime_dependencies": "Not selected by this bootstrap. Preserve architecture crypto/provider/license holds."
+  },
+  "pending": [
+    "Application Cargo workspace, MSRV, lint inheritance and release profiles once real code exists",
+    "Disposable supported-Windows laboratory for actual service/clock/IPC/UI/MSI tests",
+    "Tool-specific graph/advisory/coverage/mutation qualification against actual product code"
+  ],
+  "cross_toolchain": {
+    "xwin": {
+      "version": "0.10.0",
+      "url": "https://github.com/Jake-Shadle/xwin/releases/download/0.10.0/xwin-0.10.0-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "d870eb4b2f390878af6da1ccd3cf321d22fcb72720984853b4be732ae597fc88",
+      "license": "MIT OR Apache-2.0"
+    },
+    "microsoft_inputs": {
+      "channel": "release",
+      "manifest_version": "18",
+      "architecture": "x86_64",
+      "variant": "desktop",
+      "sdk_version": "10.0.28000",
+      "crt_version": "14.51",
+      "terms": "Microsoft SDK/CRT terms apply independently of xwin licence; no redistribution clearance is asserted",
+      "sdk_component_display_version": "10.0.28000.2705",
+      "crt_payload_version": "14.51.36254",
+      "channel_manifest_sha256": "81190fd42f993460f9a2172c42f8722d43bcb1f8ba1523f98a1d629994aacdb4",
+      "package_manifest_sha256": "976b2ce70dfe7d8d8ab349663ef14d8c4a29a8c3ec840b96e5d38e118e0a5379",
+      "terms_url": "https://go.microsoft.com/fwlink/?LinkId=2327714",
+      "terms_document_sha256": "ff03a242ec131e8353643612cdf58ae3d6cc9b51d7dce929351d140ba24a8b83",
+      "channel_manifest_url": "https://download.visualstudio.microsoft.com/download/pr/9a3f23c2-cc94-49a0-88c0-f9f19f2ac9df/9169ccb033af2767e14d8733568de2216dbfe7f7965bd1682229ac1fe300fea5/VisualStudio.18.Release.chman",
+      "package_manifest_declared_sha256": "b7aefeb168ba0be6c55db436328ef42f1800013146390350aed9ecb6d39f9bd6",
+      "metadata_discrepancy": {
+        "scope": "Development acquisition metadata; published package-manifest digest/size disagrees with stable CDN bytes",
+        "evidence": "xwin0.10.0 independently documents this upstream defect; repeated raw CDN reads and xwin cache agree on the observed digest",
+        "source": "https://github.com/Jake-Shadle/xwin/blob/0.10.0/src/manifest.rs#L377-L385",
+        "control": "Require both unchanged declared metadata and exact reviewed raw content digest; verify every selected Microsoft payload digest against that pinned catalog",
+        "limit": "Content pin over authenticated upstream TLS; not verification of the incorrect publisher-declared catalog checksum"
+      }
+    },
+    "linker": {
+      "source": "Bundled rust-lld from pinned Rust toolchain",
+      "version": "23.1.1",
+      "qualification": "Isolated std-only Rust and Cargo MSVC cross-link + PE inspection + unelevated Windows execution passed; no product/runtime mitigation qualification",
+      "binary_sha256": "9b6f51f983a8184f5d47d224e336cdb35171ad5b138981bc62a22e6d65e7b214"
+    },
+    "choice": "User selected LLVM + xwin in WSL; do not install Visual Studio workloads",
+    "scope": "Development cross-build lane; Windows target/ABI unchanged; native product and release acceptance remain separate",
+    "bootstrap_qualification": {
+      "checked_on": "2026-10-28",
+      "source_sha256": "dfd8c527021a78db3f74813493e67332faadca84257ec6e891d88bc60c043585",
+      "cargo_pe_sha256": "c66f8611e96f94f279c3bf27701beb61c6f9f886d01bc5feb7b92e14bfce8a30",
+      "pe_machine": "AMD64 0x8664",
+      "pe_magic": "PE32+ 0x20B",
+      "dll_characteristics": "0xC160: DYNAMIC_BASE/HIGH_ENTROPY_VA/NX_COMPAT/GUARD_CF",
+      "guard_flags": "0x10500: CF_INSTRUMENTED/CF_FUNCTION_TABLE_PRESENT/CF_LONGJUMP_TABLE_PRESENT",
+      "guard_function_count": 425,
+      "windows_exit": 0,
+      "windows_output": "NevroTick MSVC smoke: 42",
+      "elevated": false,
+      "system_installers": false,
+      "sdk_library_bytes": 666635697,
+      "cache_total_bytes": 752105697,
+      "scope": "Fixed dependency-free fixture; process/runtime protection and application behavior remain separate checks"
+    }
+  },
+  "bootstrap_helpers": {
+    "bwrap": {
+      "path": "/usr/bin/bwrap",
+      "sha256": "e318903862396f96de3df57264e0158682b952fd3fb53ac23d876413e7b30f71",
+      "version": "bubblewrap 0.9.0"
+    },
+    "prlimit": {
+      "path": "/usr/bin/prlimit",
+      "sha256": "17064f67e650d6152a6902b013aab496b54c87587c8eea6f5023aafee6154069",
+      "version": "prlimit from util-linux 2.39.3"
+    },
+    "cc": {
+      "path": "/usr/bin/x86_64-linux-gnu-gcc-13",
+      "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+      "version": "x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+    },
+    "ld": {
+      "path": "/usr/bin/x86_64-linux-gnu-ld.bfd",
+      "sha256": "e9ceb054c12207970f2726dfc07e9a66b411602748628baf27399f02a9bbb31b",
+      "version": "GNU ld (GNU Binutils for Ubuntu) 2.42"
+    },
+    "python3": {
+      "path": "/usr/bin/python3.12",
+      "sha256": "e50d468e8b0adfb05733f5b87b3cff34829c4a8c1aea50c865aa8bdfe4bb150f",
+      "version": "Python 3.12.3"
+    }
+  },
+  "windows_rust": {
+    "host": "x86_64-pc-windows-msvc",
+    "version": "1.99.1",
+    "rustup_version": "1.29.2",
+    "rustup_archive_url": "https://static.rust-lang.org/rustup/archive/1.29.2/x86_64-pc-windows-msvc/rustup-init.exe",
+    "rustup_archive_sha256": "00f139da614dced87d3c3d4121c43eebdac3c1bf8a5ee86b9d80dfd71c8d70fd",
+    "persistent_path_modified": false,
+    "build_tools_installed": false,
+    "scope": "Per-user compiler/components installed; selected development builds use WSL LLVM+xwin"
+  }
+}
