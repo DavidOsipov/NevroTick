@@ -37,8 +37,13 @@ FORBIDDEN_ENV = {
     "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER",
     "CARGO_MAKEFLAGS", "CC", "CXX", "AR", "LD", "CFLAGS", "CXXFLAGS", "LDFLAGS",
     "RUSTUP_DIST_SERVER", "RUSTUP_UPDATE_ROOT",
+    "RUSTFMT", "CLIPPY_ARGS", "CLIPPY_CONF_DIR", "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT",
+    "CARGO_INCREMENTAL", "LLVM_COV", "LLVM_PROFDATA",
 }
-FORBIDDEN_PREFIXES = ("CARGO_TARGET_", "CARGO_PROFILE_", "CARGO_BUILD_", "CARGO_ALIAS_", "CC_", "CXX_")
+FORBIDDEN_PREFIXES = (
+    "CARGO_TARGET_", "CARGO_PROFILE_", "CARGO_BUILD_", "CARGO_ALIAS_", "CC_", "CXX_",
+    "NEXTEST_", "CARGO_MUTANTS_", "CARGO_LLVM_COV_",
+)
 MAX_OUTPUT = 2 * 1024 * 1024
 
 
@@ -50,13 +55,24 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def external_receipt(path: Path, root: Path) -> Path:
+    """Resolve output links and keep evidence from overwriting checkout inputs."""
+    destination = path.expanduser().resolve()
+    if destination.is_relative_to(root.resolve()):
+        raise Incomplete("Evidence receipts must resolve outside the checkout.")
+    if destination.exists():
+        if not destination.is_file() or destination.stat().st_nlink != 1:
+            raise Incomplete("Evidence receipt must be a regular file without hard links.")
+    return destination
+
+
 def overridden_names(environment: dict[str, str]) -> list[str]:
     """Only return variable names; ambient values can contain credentials."""
     return sorted(name for name in environment if name in FORBIDDEN_ENV or name.startswith(FORBIDDEN_PREFIXES))
 
 
-def run(command: list[str], *, cwd: Path, timeout: int = 30, environment=None) -> dict:
-    """Bound wall time and captured output; kill the owned process group on failure."""
+def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None) -> dict:
+    """Bound wall time/output and reject surviving children of the owned group."""
     process = subprocess.Popen(
         command, cwd=cwd, env=environment, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True,
@@ -67,7 +83,7 @@ def run(command: list[str], *, cwd: Path, timeout: int = 30, environment=None) -
         with selectors.DefaultSelector() as selector:
             selector.register(process.stdout, selectors.EVENT_READ)
             deadline = time.monotonic() + timeout
-            while selector.get_map():
+            while selector.get_map() or process.poll() is None:
                 if time.monotonic() >= deadline:
                     failure = f"wall timeout ({timeout}s)"
                     break
@@ -83,14 +99,29 @@ def run(command: list[str], *, cwd: Path, timeout: int = 30, environment=None) -
                 if failure:
                     break
         if failure:
-            os.killpg(process.pid, signal.SIGKILL)
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         process.wait(timeout=5)
-    except BaseException:
-        if process.poll() is None:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=5)
-        raise
+        if failure is None:
+            try:
+                os.killpg(process.pid, 0)
+            except ProcessLookupError:
+                pass
+            else:
+                failure = "descendant processes outlived command"
     finally:
+        # A reaped leader does not establish completion of its process group.
+        # Close custody on success and failure, including descendants that have
+        # detached their standard streams. Escaped sessions remain outside this
+        # helper's guarantee; the fixed smoke fixture also has a PID namespace.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        if process.poll() is None:
+            process.wait(timeout=5)
         process.stdout.close()
     return {"command": command, "exit_code": process.returncode,
             "output": output.decode("utf-8", errors="replace"), "failure": failure}
@@ -190,6 +221,8 @@ def inspect(root: Path) -> dict:
     identities = {}
     for executable, args in [("rustc", ["-vV"]), ("cargo", ["-V"]),
                              ("rustfmt", ["--version"]), ("clippy-driver", ["--version"]),
+                             ("cargo-clippy", ["--version"]), ("cargo-fmt", ["--version"]),
+                             ("rustdoc", ["--version"]),
                              ("rust-analyzer", ["--version"])]:
         path = toolchain_dir / "bin" / executable
         if not path.is_file():
@@ -372,7 +405,10 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     root = Path(__file__).resolve().parents[1]
     report = {"scope": "NevroTick DEV-01 bootstrap only", "repository": str(root), "status": "incomplete"}
+    receipt = None
     try:
+        if args.json:
+            receipt = external_receipt(args.json, root)
         report["metadata"] = inspect(root)
         if args.smoke:
             report["smoke"] = {"status": "incomplete", "lanes": []}
@@ -380,8 +416,12 @@ def main(argv=None) -> int:
         report["status"] = "passed"
     except (Incomplete, OSError, ValueError, KeyError, subprocess.SubprocessError, tomllib.TOMLDecodeError) as error:
         report["error"] = str(error)
-    if args.json:
-        args.json.expanduser().resolve().write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    if receipt is not None:
+        try:
+            external_receipt(args.json, root).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        except (Incomplete, OSError, ValueError) as error:
+            report["status"] = "incomplete"
+            report["error"] = str(error)
     print(f"{report['status'].upper()}: {report['scope']}")
     if "error" in report:
         print(report["error"], file=sys.stderr)

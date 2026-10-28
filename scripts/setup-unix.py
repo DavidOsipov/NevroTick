@@ -117,6 +117,8 @@ def main() -> None:
     rustup = shutil.which("rustup")
     if rustup is None:
         parser.error("Install rustup from https://rustup.rs first")
+    if sha256(Path(rustup).resolve().read_bytes()) != manifest["rust"]["rustup_linux_sha256"]:
+        parser.error("Rustup executable differs from the reviewed digest; refusing execution")
     manager = subprocess.run([rustup, "--version"], cwd=ROOT, capture_output=True,
                              text=True, check=True, timeout=30)
     if not manager.stdout.startswith("rustup " + manifest["rust"]["rustup_version"] + " "):

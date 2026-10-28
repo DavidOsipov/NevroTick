@@ -1,0 +1,30 @@
+{
+  "title": "NevroTick — mascot bust — dark slate background — 1382 × 1382 px",
+  "headline": "NevroTick — mascot bust",
+  "description": "Upper-body illustration of the fictional NevroTick mascot comparing two watches, from the reviewed raster kit v1.1. On a dark slate background. Created using generative AI; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "The upper body of an anxious cartoon man with tousled dark hair, a white streak and a slate-blue coat, comparing two watches. On a dark slate background.",
+  "keywords": [
+    "NevroTick",
+    "mascot",
+    "bust",
+    "watches",
+    "reviewed v1.1",
+    "dark background",
+    "AI-generated",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Illustration",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 1382,
+  "height": 1382,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:b30ea282-c8d1-55f4-9b7e-ee22b1f7a5ae",
+  "digital_source_type": "trainedAlgorithmicMedia"
+}

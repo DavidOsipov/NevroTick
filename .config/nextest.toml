@@ -1,0 +1,29 @@
+# Exact binary admission also lives in policy/tool-manifest.json.
+nextest-version = { required = "0.9.150", recommended = "0.9.150" }
+
+[profile.default]
+default-filter = "all()"
+test-threads = 2
+retries = 0
+flaky-result = "fail"
+fail-fast = false
+global-timeout = "10m"
+slow-timeout = { period = "30s", terminate-after = 2, grace-period = "5s", on-timeout = "fail" }
+leak-timeout = { period = "500ms", result = "fail" }
+status-level = "all"
+final-status-level = "all"
+failure-output = "immediate-final"
+success-output = "never"
+
+[profile.default.junit]
+# Relative to target/nextest/default, not the repository root.
+path = "junit.xml"
+report-name = "nevrotick"
+store-success-output = false
+store-failure-output = true
+report-skipped = "all"
+flaky-fail-status = "failure"
+
+# Use --user-config-file none --no-tests=fail at the trusted entry point.
+# Native lifecycle experiments require their own admitted fixture/profile and
+# restoration; this portable profile authorizes no host-clock/service effects.

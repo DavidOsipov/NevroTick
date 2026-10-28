@@ -1,0 +1,30 @@
+{
+  "title": "NevroTick — portrait head icon — warm light background — 512 × 512 px",
+  "headline": "NevroTick — portrait head icon",
+  "description": "The reviewed NevroTick mascot head portrait originating from the approved app-icon-concept artwork. This is a size-specific raster export. On a warm light background. Created using generative AI; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "The anxious NevroTick mascot head with tousled dark hair, a white streak, an angular pale face and a blue collar. On a warm light background.",
+  "keywords": [
+    "NevroTick",
+    "mascot head",
+    "portrait",
+    "icon",
+    "reviewed v1.1",
+    "light background",
+    "AI-generated",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Icon",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 512,
+  "height": 512,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:39d91930-2527-5298-b66c-ad4c6204582e",
+  "digital_source_type": "trainedAlgorithmicMedia"
+}

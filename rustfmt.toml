@@ -1,0 +1,14 @@
+# Stable rustfmt 1.10.0, bundled with the pinned Rust 1.99.1 toolchain.
+# Keep parser and formatting editions explicit, including standalone fixtures.
+edition = "2024"
+style_edition = "2024"
+newline_style = "Unix"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+reorder_imports = true
+reorder_modules = true
+force_explicit_abi = true
+
+# Formatting is a failing --check lane. Nightly-only formatting controls do not
+# belong in the stable build; line width does not bound comments or literals.

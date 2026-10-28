@@ -1,0 +1,31 @@
+{
+  "title": "NevroTick — reviewed character reference — reference sheet — 1800 × 1530 px",
+  "headline": "NevroTick — reviewed character reference",
+  "description": "Reference sheet combining the reviewed full-length mascot, bust, portrait head and enlarged eye details, with Russian labels. Composition contains AI-generated artwork and was prepared in an AI-assisted design workflow; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "A labeled NevroTick reference sheet with the full-length character, bust, head and enlarged views of their eyes.",
+  "keywords": [
+    "NevroTick",
+    "character reference",
+    "mascot",
+    "eye detail",
+    "reviewed v1.1",
+    "reference sheet",
+    "AI-generated component",
+    "AI-assisted",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Reference sheet",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 1800,
+  "height": 1530,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:2abd7e9c-fa1f-5074-b90d-3d0b0635ee48",
+  "digital_source_type": "compositeSynthetic"
+}

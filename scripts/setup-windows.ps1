@@ -64,6 +64,11 @@ $newRustup = -not (Test-Path -LiteralPath $rustup)
 
 $installRustup = $newRustup
 if (-not $newRustup) {
+    # Rustup's installed multiplexer is byte-identical to the pinned installer.
+    # Check identity before executing an existing manager, including --version.
+    if ((Get-FileHash -Algorithm SHA256 -LiteralPath $rustup).Hash -ne $RustupSha256) {
+        throw 'Existing Rustup SHA256 differs from the admitted manager; it was not executed.'
+    }
     $versionOutput = & $rustup --version
     if ($LASTEXITCODE -ne 0) { throw 'Existing Rustup could not report its version.' }
     $installRustup = -not (($versionOutput | Select-Object -First 1) -match "^rustup $([regex]::Escape($RustupVersion))\s")
@@ -91,6 +96,9 @@ if ($installRustup) {
     Invoke-Checked $installer @('-y', '--no-modify-path', '--default-host', $hostTarget, '--default-toolchain', 'none', '--profile', 'minimal')
 }
 
+if ((Get-FileHash -Algorithm SHA256 -LiteralPath $rustup).Hash -ne $RustupSha256) {
+    throw 'Installed Rustup SHA256 differs from the admitted manager; it was not executed.'
+}
 Invoke-Checked $rustup @('toolchain', 'install', $selectedToolchain, '--no-self-update', '--profile', 'minimal', '--component', 'rustfmt', '--component', 'clippy', '--component', 'rust-analyzer', '--component', 'rust-src', '--component', 'llvm-tools-preview')
 if ($newRustup) {
     Invoke-Checked $rustup @('default', $selectedToolchain)

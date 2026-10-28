@@ -1,0 +1,31 @@
+{
+  "title": "NevroTick — application tile — dark slate background — 1024 × 1024 px",
+  "headline": "NevroTick — application tile",
+  "description": "Application icon combining the reviewed raster mascot head with a rounded slate-colored panel. The tile panel is part of the artwork. On a dark slate background. Composition contains AI-generated artwork and was prepared in an AI-assisted design workflow; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "The anxious NevroTick mascot head on a rounded slate-colored application tile. On a dark slate background.",
+  "keywords": [
+    "NevroTick",
+    "application icon",
+    "app tile",
+    "mascot head",
+    "rounded panel",
+    "dark background",
+    "AI-generated component",
+    "AI-assisted",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Icon",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 1024,
+  "height": 1024,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:06325959-68ca-57d7-ba1f-c5aba32a1833",
+  "digital_source_type": "compositeSynthetic"
+}

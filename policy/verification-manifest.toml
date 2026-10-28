@@ -1,0 +1,9 @@
+# Fill these inventories from actual product ownership before application gates run.
+# An empty inventory is preparation, never passing product evidence.
+schema_version = 1
+status = "awaiting-product-code"
+security_module_minimum_executable_line_percent = 90
+critical_file_minimum_mutation_percent = 95
+security_modules = []
+critical_files = []
+feature_matrix = []

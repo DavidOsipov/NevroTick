@@ -1,0 +1,36 @@
+{
+  "images": 84,
+  "all_decoded": true,
+  "all_dimensions_preserved": true,
+  "all_alpha_exact": true,
+  "metadata_did_not_change_pixels": true,
+  "all_metadata_readback_verified": true,
+  "all_exiftool_validation_ok": true,
+  "validation_warnings": [],
+  "validation_errors": [],
+  "source_total_bytes": 30393408,
+  "avif_total_bytes_before_metadata": 3974106,
+  "avif_total_bytes": 4512924,
+  "metadata_total_bytes": 538818,
+  "metadata_standard": "XMP (Dublin Core, IPTC Core/Extension, PLUS) with compatible EXIF descriptive fields",
+  "exiftool_version": 12.76,
+  "encoder": {
+    "Pillow": "12.3.0",
+    "libavif": "1.4.2",
+    "codec": "AOM 3.14.1",
+    "subsampling": "4:4:4",
+    "speed": 4,
+    "color": "lossy",
+    "alpha": "lossless"
+  },
+  "quality_profile": "Q45 for most images; Q60 for opaque logos/wordmarks and the icon-size chart; Q85 for images no larger than 64 px.",
+  "source_kit": "NevroTick-PNG-JPEG-kit-v1.1",
+  "author": "David Osipov",
+  "license": "Proprietary brand artwork; all rights reserved",
+  "source_code_license": "Separately open source; no particular code license asserted",
+  "classification_counts": {
+    "compositeSynthetic": 22,
+    "omitted_for_code_assisted": 40,
+    "trainedAlgorithmicMedia": 22
+  }
+}

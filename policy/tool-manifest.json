@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "reviewed_on": "2026-10-28",
-  "scope": "DEV-01 environment bootstrap; no application graph, release or native lab qualification",
+  "reviewed_on": "2026-10-29",
+  "scope": "DEV-01 environment bootstrap and DEV-02 isolated strict-policy controls; no application graph, release or native lab qualification",
   "rust": {
     "channel": "1.99.1",
     "edition_candidate": "2024",
@@ -19,6 +19,9 @@
       "cargo": "a670e02cfa39ac2e53f77a2d911ca1fc9e2c479b0603ec956625be1daf24e3af",
       "rustfmt": "68cb47a2a38daa8ff2ec6d623a2374b0a165d77ec74f1f654216665018c04598",
       "clippy-driver": "89b6cc8d0d988b00a3f65bc90c76fedbaedb6bcb442b34563aefe3621f26544b",
+      "cargo-clippy": "4255f7671a17fba900ffd84a20f1dd0c986d52a2404496d3b7518f5044de5663",
+      "cargo-fmt": "6b42f43e4523abba428eb42b3a106727843428b096ef7ed8a9497bddcc50448a",
+      "rustdoc": "832e53ca262db3d3fcaca659dc6e71f0f5a924a48adc580ee4278acac75f3e80",
       "rust-analyzer": "e800226d398f8f8f501319b887bf04da8e14da877a2df382dc1bf6e4748b9839"
     },
     "rustup_linux_sha256": "5be191e8c70a5007074254cb74d78dbfdd25cd5a61c27de7b8e5410122ec24f4",
@@ -36,7 +39,7 @@
         "--version"
       ],
       "scope": "optional test runner; keep doctests and selected libtest cases",
-      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "admission": "Hash/version admitted; isolated healthy/failure/empty/leak/timeout and JUnit controls passed. Product and native test matrix remain pending.",
       "binary_sha256": "62dcc4348e189f5fbd5881f6b753c59d62f2e664b28c6357898644288d703c02"
     },
     {
@@ -49,8 +52,8 @@
       "version_args": [
         "--version"
       ],
-      "scope": "dependency-policy candidate; real graph and good/bad policy controls required",
-      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "scope": "Strict deny.toml; exact product feature/target graphs and acquisition controls required",
+      "admission": "Hash/version admitted; local graph license/ban/build and synthetic source-policy controls passed. Real graph, source acquisition, advisory freshness and yank checks remain pending.",
       "binary_sha256": "b329e25933d01c36dd7c47d84ea5716694f9b7caf53a5003d45674703a8ed54a"
     },
     {
@@ -64,7 +67,7 @@
         "--version"
       ],
       "scope": "optional complementary artifact check; shares RustSec advisory data",
-      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "admission": "Hash/version admitted; committed synthetic local advisory DB patched/vulnerable and config rejection controls passed with fixture-only --no-yanked. Real freshness/index/yank checks remain pending.",
       "binary_sha256": "473b9a71e5cb5bde22f69c32f749c9b83931287d92dc36b91cb04f6705640ef2"
     },
     {
@@ -79,7 +82,7 @@
         "--version"
       ],
       "scope": "later critical-file mutation gate; no empty-scope qualification",
-      "admission": "download identity and version smoke only; product-analysis semantics remain pending",
+      "admission": "Hash/version and exact configuration admitted; nonempty isolated enumeration and invalid-config controls passed. No campaign or per-file threshold qualification.",
       "binary_sha256": "f985f265ee3ea3e453aa98b04c52134953911f692f8ce8abf137f3873202a2d0"
     },
     {
@@ -100,13 +103,13 @@
   ],
   "controls": {
     "installation": "Pinned upstream prebuilt archives; verify SHA-256 before execution; preserve replaced executables outside checkout. No downloaded install shell scripts.",
-    "execution": "Trusted std-only fixtures; mandatory credential-free network-isolated bwrap for Linux smoke. Native MSVC linking checked separately.",
+    "execution": "Fixed std-only Rust and local graph/advisory fixtures; mandatory cleared-env, private-network bwrap+prlimit. Native MSVC linking and Windows setup-manager checks qualified separately.",
     "updates": "Resolve current stable metadata, review upstream changes and digests, then update this manifest and rerun affected controls. Pins never float at build time.",
     "owner": "NevroTick development tooling",
     "runtime_dependencies": "Not selected by this bootstrap. Preserve architecture crypto/provider/license holds."
   },
   "pending": [
-    "Application Cargo workspace, MSRV, lint inheritance and release profiles once real code exists",
+    "Application Cargo workspace, MSRV, complete package/feature/target inventory and adoption of configured strict lints/release profiles once real code exists",
     "Disposable supported-Windows laboratory for actual service/clock/IPC/UI/MSI tests",
     "Tool-specific graph/advisory/coverage/mutation qualification against actual product code"
   ],
@@ -202,6 +205,12 @@
     "rustup_archive_sha256": "00f139da614dced87d3c3d4121c43eebdac3c1bf8a5ee86b9d80dfd71c8d70fd",
     "persistent_path_modified": false,
     "build_tools_installed": false,
-    "scope": "Per-user compiler/components installed; selected development builds use WSL LLVM+xwin"
+    "scope": "Per-user compiler/components installed; selected development builds use WSL LLVM+xwin",
+    "manager_guard_qualification": {
+      "reviewed_on": "2026-10-29",
+      "script_sha256": "c7c3690b2bb6eab25283f42452186a33a62af04eb4410627fc3935f02eab8a01",
+      "scope": "Native Windows: runnable version-spoofing manager rejected before execution/acquisition; synthetic manager positive observer ran separately; genuine installed manager hash matched pinned installer.",
+      "runtime_or_installer_replay": "Not performed by this guard control; no persistent Windows settings changed."
+    }
   }
 }

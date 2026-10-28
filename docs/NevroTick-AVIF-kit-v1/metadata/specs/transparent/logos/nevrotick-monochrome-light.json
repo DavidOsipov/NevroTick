@@ -1,0 +1,32 @@
+{
+  "title": "NevroTick — monochrome logo, light ink — transparent, for dark surfaces — 3200 × 821 px",
+  "headline": "NevroTick — monochrome logo, light ink",
+  "description": "Single-ink horizontal NevroTick logo combining an optical head mark with exact outlined lettering, in light ink. Prepared for dark surfaces; the surrounding canvas is transparent. Created in an AI-assisted code and design workflow from existing vector geometry or outlined typography; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "A simplified mascot head beside the word NevroTick, both in a single light color. Transparent surrounding canvas.",
+  "keywords": [
+    "NevroTick",
+    "logo",
+    "monochrome",
+    "optical head",
+    "outlined typography",
+    "light ink",
+    "transparent background",
+    "for dark surfaces",
+    "AI-assisted",
+    "deterministic rasterization",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Logo",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 3200,
+  "height": 821,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:ad664811-ad29-54f7-8a49-4de28c70e395"
+}

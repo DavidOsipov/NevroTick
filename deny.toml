@@ -1,0 +1,67 @@
+# Validated against cargo-deny 0.20.2, not rolling example schemas.
+# Run every admitted target/feature row, including build/dev dependencies.
+# This bootstrap policy approves no third-party runtime license yet. Extend the
+# GPL-2.0-only allowlist only after CHECK-26 exact-graph/license review.
+[graph]
+all-features = false
+no-default-features = false
+
+[output]
+feature-depth = 2
+
+[advisories]
+db-urls = ["https://github.com/RustSec/advisory-db"]
+unmaintained = "all"
+unsound = "all"
+yanked = "deny"
+disable-yank-checking = false
+maximum-db-staleness = "P1D"
+unused-ignored-advisory = "deny"
+ignore = []
+
+[licenses]
+allow = ["GPL-2.0-only"]
+confidence-threshold = 1.0
+include-dev = true
+include-build = true
+unused-allowed-license = "deny"
+unused-license-exception = "deny"
+exceptions = []
+
+[licenses.private]
+ignore = false
+
+[bans]
+multiple-versions = "deny"
+multiple-versions-include-dev = true
+wildcards = "deny"
+allow-wildcard-paths = false
+highlight = "all"
+deny = [
+    { crate = "ring", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
+    { crate = "aws-lc-rs", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
+    { crate = "aws-lc-sys", reason = "Architecture OPEN-1: exact crypto/native license graph remains held." },
+    { crate = "aws-lc-fips-sys", reason = "Architecture OPEN-1: AWS-LC native graph remains held." },
+]
+skip = []
+skip-tree = []
+
+[bans.build]
+# Each exception needs a reviewed exact package/checksum and execution boundary.
+allow-build-scripts = []
+executables = "deny"
+interpreted = "deny"
+enable-builtin-globs = true
+include-dependencies = true
+include-workspace = true
+include-archives = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
+required-git-spec = "rev"
+# An approved origin can legitimately be absent from a particular feature row.
+unused-allowed-source = "allow"
+unused-allowed-org = "deny"

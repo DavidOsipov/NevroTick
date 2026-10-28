@@ -1,0 +1,32 @@
+{
+  "title": "NevroTick — raster identity overview — reference sheet — 1600 × 1480 px",
+  "headline": "NevroTick — raster identity overview",
+  "description": "Overview sheet showing NevroTick logo arrangements, the mascot and icon variants from the reviewed raster kit. Composition contains AI-generated artwork and was prepared in an AI-assisted design workflow; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "A NevroTick brand overview with logo arrangements, a full-length mascot, a bust and several icon variants.",
+  "keywords": [
+    "NevroTick",
+    "brand overview",
+    "logo",
+    "mascot",
+    "icons",
+    "reviewed v1.1",
+    "reference sheet",
+    "AI-generated component",
+    "AI-assisted",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Reference sheet",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 1600,
+  "height": 1480,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:20d6fd7b-9941-523e-bf4d-688068bfcfef",
+  "digital_source_type": "compositeSynthetic"
+}

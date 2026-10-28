@@ -1,0 +1,28 @@
+# Draft profile for xmp-image-metadata. Do not use until preflight is ready.
+# Source: user-authorized fields from reference/author_profile.yaml.
+# Deliberately not the profile's default CC-BY-4.0 policy.
+creator:
+  name: "David Osipov"
+contact:
+  email: "business@david-osipov.vision"
+  url: "https://david-osipov.vision"
+  city: "Tbilisi"
+  country: "Georgia"
+rights:
+  owner: "David Osipov"
+plus:
+  copyright_owner_name: "David Osipov"
+  licensor_name: "David Osipov"
+  licensor_email: "business@david-osipov.vision"
+defaults:
+  timezone: "+00:00"
+  creator_tool: "NevroTick AVIF metadata workflow"
+default_license: "All-Rights-Reserved"
+license_presets:
+  All-Rights-Reserved:
+    name: "All Rights Reserved"
+    url: ""
+    deed: ""
+    rights_line: "© {creator}. All rights reserved."
+    usage_terms: "Proprietary NevroTick brand artwork. All rights reserved. Permission is required to reproduce or reuse this visual asset. These terms apply to the image and visual brand assets only. NevroTick source code is licensed separately as open source; no source-code license is granted or identified by this image metadata."
+    instructions: "NevroTick brand artwork: proprietary; all rights reserved. Source code is licensed separately as open source. Contact business@david-osipov.vision for permission to reuse this visual asset."

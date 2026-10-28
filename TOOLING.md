@@ -31,8 +31,9 @@ fixture; actual package compatibility and MSRV remain explicit future decisions.
 [policy/tool-manifest.json](policy/tool-manifest.json) records upstream archive
 URLs/digests, installed binary identities, scopes and pending qualifications.
 Tool availability and a version smoke do not qualify its eventual graph,
-coverage, mutation or advisory gate. No speculative deny.toml, nightly analyzer,
-application dependencies, CI workflow or signing authority was introduced.
+coverage, mutation or advisory gate. The strict configurations below have
+isolated controls; real product graphs and behavioral denominators remain pending.
+No application dependencies or signing authority were selected by this setup.
 
 ## Repeatable WSL setup and checks
 
@@ -42,7 +43,8 @@ Run from the checkout root with the existing Rustup and Python 3.11+:
 python3 -B scripts/setup-unix.py --json /tmp/nevrotick-tool-install.json
 python3 -B scripts/check-environment.py
 python3 -B scripts/check-environment.py --smoke --json /tmp/nevrotick-environment.json
-python3 -B -m unittest discover -s scripts/tests -v
+python3 -B scripts/check-strict.py --fixtures --json /tmp/nevrotick-strict.json
+python3 -X dev -Werror -B -m unittest discover -s scripts/tests -v
 ```
 
 The installer uses the reviewed pins rather than floating versions, verifies
@@ -67,6 +69,69 @@ MSVC target compile check, deliberate unsafe-declaration rejection and a restore
 healthy control. Jobs, output and wall time are bounded. Resource limits are
 per-process/namespace, **not cumulative cgroup quotas**; this lane admits the
 fixed trusted fixture, not arbitrary dependency build scripts.
+
+## Strict development policy
+
+Configured on 29 October 2026 using Context7 (Clippy and cargo-deny), pinned
+tool help/schemas and primary upstream documentation. The policies use supported
+stable rules. Broad Clippy `restriction`/`nursery` groups are deliberately excluded
+because their rules can conflict or remain experimental; selected restrictions
+follow the development-hardening guide.
+
+| File | Enforced intent and current scope |
+| --- | --- |
+| [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |
+| [rustfmt.toml](rustfmt.toml), [clippy.toml](clippy.toml) | Explicit 2024 formatting and private API checks; no blanket test exemptions for unwrap/expect/panic/debug output. |
+| [deny.toml](deny.toml) | Strict advisory, license, source, duplicate/wildcard and build-script policy, including held crypto providers. Only the project's GPL-2.0-only license is initially allowed; third-party licenses require exact-graph review. |
+| [.config/nextest.toml](.config/nextest.toml) | Two test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
+| [.cargo/audit.toml](.cargo/audit.toml) | No ignored advisory IDs or severity cutoff; warnings fail. Acquisition is separate from analysis and requires an admitted database/index snapshot. |
+| [.cargo/mutants.toml](.cargo/mutants.toml) | Frozen Cargo inputs, bounded timeout multipliers, no copied VCS/target, lint capping disabled. Enumeration/configuration controls are qualified; a mutation campaign is still pending. |
+| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Inventories are explicitly awaiting product code; empty inventories cannot establish application qualification. |
+
+The Rust Cargo fragment is tested in owned temporary workspaces. Adopt its lint
+and profile tables into the first real workspace and put `[lints] workspace = true`
+in **every** first-party member, including build-script/proc-macro crates. Pure
+domain/protocol/numerical crates additionally use `#![forbid(unsafe_code)]`.
+Windows adapters use narrowly scoped, reasoned exceptions with documented safety
+contracts. Stale expectations fail. Release `panic = "unwind"` is a qualification
+baseline; each component's shipping fault policy still needs its documented
+decision and FFI checks.
+
+`scripts/check-strict.py` admits hashes before executing tools, validates policy
+invariants, freezes fixture configuration bytes and rejects stale results after
+concurrent policy changes. `--fixtures` checks healthy cases and intended failures
+for formatting, compiler/Clippy/rustdoc rules, unsafe exceptions, arithmetic
+profiles and nextest. The unittest command also exercises actual cargo-deny,
+audit, nextest and mutation enumeration with local fixtures in the cleared-env,
+network-isolated sandbox. Neither command builds application code.
+
+`python3 -B scripts/check-strict.py --workspace` checks **manifest adoption only**;
+it currently fails because no application workspace exists. It does not prove
+the intended package/target inventory, feature matrix, native behavior or release
+readiness. The reviewed verification inventory must be populated from real owners
+before application gates are introduced. CLI evidence paths must resolve outside
+the checkout; they cannot overwrite checked policy files.
+
+Dependency controls cover local license/ban/build-script graphs and synthetic
+source metadata. The audit control detects a synthetic vulnerable package in a
+local committed database and accepts its patched neighbor. These controls do
+not establish real registry/Git acquisition, yank checks or freshness. A successful
+scan and `stale = false` are insufficient freshness evidence: require a verified
+RustSec/index refresh receipt no older than 24 hours. Keep network refresh separate
+from frozen, credential-free analysis. `cargo-audit` shares RustSec data with
+`cargo-deny`; it is complementary evidence, not an independent advisory source.
+
+Once real code and the critical inventory exist, use the admitted package/feature/
+target rows and native host where required. Coverage has no native configuration
+file: the selected invocation must pass `--frozen --failure-mode any --json
+--output-path <external-report> --fail-under-file-lines 90` to `cargo llvm-cov`.
+Reconcile its files and executable-line denominators with the reviewed security
+modules; the CLI file threshold alone does not implement module accounting.
+Mutation campaigns also require explicit `--baseline run`, `--jobs`, `--timeout`
+and `--build-timeout` budgets and complete per-file outcome accounting. Strict-lint
+build failures are unviable mutants, not caught behavioral mutations. Missing
+reports, empty selections, tool failures and incomplete feature rows remain
+incomplete. These coverage/mutation application gates cannot be qualified yet.
 
 ## Windows development route
 
@@ -139,8 +204,8 @@ Those experiments still need the architecture's owned disposable Windows lab.
 Use [docs/README.md](docs/README.md), the canonical architecture, and hardening
 DEV-01 onward. The next real experiment owns its Cargo workspace, exact lockfile,
 member lint inheritance, feature rows, independent acceptance oracle and selected
-profiles. Release arithmetic checks and fault/FFI policy must be adopted there;
-this environment setup does not silently impose a shipping panic policy.
+profiles. The strict lint/profile fragment above must be adopted there; this
+environment setup does not silently impose a shipping panic policy.
 
 [.cargo/config.toml](.cargo/config.toml) records the target-specific Windows CFG,
 ASLR, DEP and linker-warning intent, without forcing a Windows default target.
@@ -152,8 +217,11 @@ Once a real workspace exists, run its selected checks, for example:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
+cargo clippy --workspace --all-targets --frozen -- -D warnings
+cargo doc --workspace --no-deps --frozen
+cargo nextest run --workspace --frozen --user-config-file none --no-tests=fail
+cargo test --workspace --doc --frozen
+cargo deny --frozen check --deny warnings
 ```
 
 Use explicit feature/target selections; do not add a universal all-features gate.

@@ -1,0 +1,15 @@
+# Pinned Clippy 0.1.99. Lint levels live in policy/rust-workspace.toml;
+# configuration files cannot enable lints or replace member inheritance.
+
+# Apply enabled API documentation checks to private Windows/authority adapters.
+check-private-items = true
+
+# Tests receive no blanket exemption. Use narrow expectations with reasons for
+# fixture extraction or deliberate panic tests, and keep production controls.
+allow-unwrap-in-tests = false
+allow-expect-in-tests = false
+allow-panic-in-tests = false
+allow-dbg-in-tests = false
+
+# The real package's rust-version will supply Clippy's MSRV. The release
+# compiler pin does not silently choose a minimum supported Rust version.

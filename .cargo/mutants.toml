@@ -1,0 +1,19 @@
+# cargo-mutants 27.1.0 supported schema; not an admitted mutation campaign.
+# A reviewed critical-file manifest, nonempty per-file accounting, exact feature
+# rows and external build/process budgets are prerequisites for the 95% gate.
+additional_cargo_args = ["--frozen"]
+all_features = false
+cap_lints = false
+copy_vcs = false
+copy_target = false
+gitignore = true
+test_tool = "cargo"
+test_workspace = true
+timeout_multiplier = 3.0
+build_timeout_multiplier = 2.0
+minimum_test_timeout = 10.0
+output = "target"
+
+# Strict lint capping remains disabled. A later explicitly qualified mutation
+# instrument may use --cap-lints=true with external build timeouts; that never
+# weakens ordinary compiler, lint, release or per-file outcome policy.

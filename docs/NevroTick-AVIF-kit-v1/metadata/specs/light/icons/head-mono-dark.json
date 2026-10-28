@@ -1,0 +1,30 @@
+{
+  "title": "NevroTick — monochrome head icon, dark ink — warm light background — 1024 × 1024 px",
+  "headline": "NevroTick — monochrome head icon, dark ink",
+  "description": "Optically simplified NevroTick mascot head drawn in a single dark ink, rendered from the existing vector geometry. On a warm light background. Created in an AI-assisted code and design workflow from existing vector geometry or outlined typography; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "A simplified NevroTick mascot head in a single dark color. On a warm light background.",
+  "keywords": [
+    "NevroTick",
+    "head icon",
+    "monochrome",
+    "optical simplification",
+    "dark ink",
+    "light background",
+    "AI-assisted",
+    "deterministic rasterization",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Icon",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 1024,
+  "height": 1024,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:71e90e1d-37ca-5990-821d-a3df3e8aeaac"
+}

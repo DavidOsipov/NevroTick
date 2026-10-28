@@ -1,0 +1,29 @@
+{
+  "title": "NevroTick — wordmark — transparent, for light surfaces — 3200 × 678 px",
+  "headline": "NevroTick — wordmark",
+  "description": "Exact NevroTick lettering rendered from existing outlined typography. Prepared for light surfaces; the surrounding canvas is transparent. Created in an AI-assisted code and design workflow from existing vector geometry or outlined typography; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "The name NevroTick in the brand wordmark lettering. Transparent surrounding canvas.",
+  "keywords": [
+    "NevroTick",
+    "wordmark",
+    "outlined typography",
+    "transparent background",
+    "for light surfaces",
+    "AI-assisted",
+    "deterministic rasterization",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Logo",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 3200,
+  "height": 678,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:3f7c521c-5ba0-5343-ac75-aebc14b22eb3"
+}

@@ -1,0 +1,31 @@
+{
+  "title": "NevroTick — full-length mascot — dark slate background — 1099 × 1748 px",
+  "headline": "NevroTick — full-length mascot",
+  "description": "Full-length fictional NevroTick mascot comparing two watches. This version derives from the reviewed v1.1 master with the viewer-right small pupil corrected. On a dark slate background. Created and corrected using generative AI; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "An anxious cartoon man with tousled dark hair and a white streak, wearing a slate-blue coat and boots, comparing a wristwatch and a round pocket watch. On a dark slate background.",
+  "keywords": [
+    "NevroTick",
+    "mascot",
+    "full-length character",
+    "watches",
+    "corrected v1.1",
+    "dark background",
+    "AI-generated",
+    "AI-corrected",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Illustration",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 1099,
+  "height": 1748,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:a8f6f589-b9ed-5c14-9599-2f5fb88beea1",
+  "digital_source_type": "trainedAlgorithmicMedia"
+}

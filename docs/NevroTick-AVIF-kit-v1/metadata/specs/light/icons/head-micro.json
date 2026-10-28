@@ -1,0 +1,30 @@
+{
+  "title": "NevroTick — micro optical head icon — warm light background — 24 × 24 px",
+  "headline": "NevroTick — micro optical head icon",
+  "description": "An intentionally simplified NevroTick mascot head rendered from the existing micro optical vector construction for small display sizes. On a warm light background. Created in an AI-assisted code and design workflow from existing vector geometry or outlined typography; author: David Osipov. Derived from the reviewed NevroTick raster kit v1.1. Proprietary NevroTick brand artwork; the application source code is licensed separately as open source.",
+  "alt_text": "A simplified icon of the anxious NevroTick mascot head. On a warm light background.",
+  "keywords": [
+    "NevroTick",
+    "head icon",
+    "micro icon",
+    "optical simplification",
+    "small display size",
+    "light background",
+    "AI-assisted",
+    "deterministic rasterization",
+    "David Osipov",
+    "proprietary brand artwork"
+  ],
+  "intellectual_genre": "Icon",
+  "image_creator": {
+    "name": "David Osipov"
+  },
+  "format": "image/avif",
+  "width": 24,
+  "height": 24,
+  "dc_type": "StillImage",
+  "license": "All-Rights-Reserved",
+  "rights_marked": true,
+  "licensor_url": "https://david-osipov.vision",
+  "image_guid": "urn:uuid:8100cf39-4d39-5099-a444-b69f458826ea"
+}

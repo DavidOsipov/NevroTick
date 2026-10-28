@@ -1,0 +1,25 @@
+NevroTick — proprietary brand artwork
+
+© David Osipov. All rights reserved.
+
+The NevroTick images, mascot, logos, wordmarks, icons and visual brand assets in this kit are proprietary. Permission from David Osipov is required to reproduce or reuse these brand assets.
+
+These terms apply to the visual assets only. NevroTick application source code is licensed separately as open source. This asset kit does not grant, identify or replace the source-code license. Consult the source repository for the applicable code license.
+
+The images were created using AI or prepared in an AI-assisted workflow. The author credited for the artwork is David Osipov. Individual embedded metadata describes the applicable form of AI assistance.
+
+Author and licensing contact:
+David Osipov
+business@david-osipov.vision
+https://david-osipov.vision
+Tbilisi, Georgia
+
+Third-party font notices remain separate in licenses/dejavu-font-notice.txt. These terms do not replace third-party notices or claim ownership of third-party font software.
+
+Русское пояснение
+
+Изображения, персонаж, логотипы, надписи, иконки и визуальная айдентика NevroTick в этом комплекте являются проприетарными материалами бренда. Все права сохранены за David Osipov. Для воспроизведения или повторного использования этих материалов требуется разрешение автора.
+
+Эти условия относятся к графике и бренду. Исходный код программы NevroTick распространяется отдельно как open source; его конкретная лицензия определяется в репозитории программы и этим комплектом не устанавливается.
+
+Изображения созданы с использованием ИИ. Автор: David Osipov. Детали происхождения каждого файла указаны в его метаданных.

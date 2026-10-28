@@ -63,6 +63,55 @@ class FetchControls(unittest.TestCase):
             network.assert_not_called()
 
 
+class ManagerAdmissionControls(unittest.TestCase):
+    def check_manager(self, *, admitted: bool) -> tuple[bool, mock.Mock]:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project, home = root / "project", root / "home"
+            (project / "policy").mkdir(parents=True)
+            manager, marker = root / "rustup", root / "manager-executed"
+            manager.write_text(
+                f"#!{sys.executable}\nfrom pathlib import Path\n"
+                f"Path({str(marker)!r}).write_text('executed')\n"
+                "print('rustup 1.29.2 synthetic-control')\n"
+            )
+            manager.chmod(0o755)
+            (project / "policy/tool-manifest.json").write_text(json.dumps({
+                "rust": {"channel": "1.99.1", "rustup_version": "1.29.2",
+                         "rustup_linux_sha256": SETUP.sha256(manager.read_bytes()) if admitted else "0" * 64,
+                         "manifest_url": "https://static.rust-lang.org/dist/channel-rust-1.99.1.toml",
+                         "manifest_sha256": SETUP.sha256(b"manifest")},
+                "tools": [],
+            }))
+            (project / "rust-toolchain.toml").write_text('[toolchain]\nchannel="1.99.1"\n')
+            with mock.patch.object(SETUP, "ROOT", project), \
+                 mock.patch.object(Path, "home", return_value=home), \
+                 mock.patch.object(SETUP.platform, "system", return_value="Linux"), \
+                 mock.patch.object(SETUP.platform, "machine", return_value="x86_64"), \
+                 mock.patch.object(SETUP.os, "geteuid", return_value=1000), \
+                 mock.patch.dict(SETUP.os.environ, {}, clear=True), \
+                 mock.patch.object(SETUP.shutil, "which", return_value=str(manager)), \
+                 mock.patch.object(sys, "argv", ["setup-unix.py", "--tools-only"]), \
+                 mock.patch.object(SETUP, "fetch", return_value=b"manifest") as fetch, \
+                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                if admitted:
+                    SETUP.main()
+                else:
+                    with self.assertRaises(SystemExit):
+                        SETUP.main()
+            return marker.exists(), fetch
+
+    def test_version_spoofing_manager_is_rejected_before_execution_or_download(self) -> None:
+        ran, fetch = self.check_manager(admitted=False)
+        self.assertFalse(ran)
+        fetch.assert_not_called()
+
+    def test_hash_admitted_manager_has_a_healthy_execution_control(self) -> None:
+        ran, fetch = self.check_manager(admitted=True)
+        self.assertTrue(ran)
+        fetch.assert_called_once()
+
+
 class InstallationControls(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="nevrotick-installer-test-", dir="/tmp")
@@ -241,8 +290,11 @@ class InstallationControls(unittest.TestCase):
                   "url": "https://github.com/owner/repo/nextest.tar.gz",
                   "sha256": SETUP.sha256(second_data)}
         rust_manifest_url = "https://static.rust-lang.org/dist/channel-rust-1.99.1.toml"
+        manager = self.root / "rustup"
+        manager.write_bytes(b"admitted synthetic Rustup")
         (project / "policy/tool-manifest.json").write_text(json.dumps({
             "rust": {"channel": "1.99.1", "rustup_version": "1.29.2", "manifest_url": rust_manifest_url,
+                     "rustup_linux_sha256": SETUP.sha256(manager.read_bytes()),
                      "manifest_sha256": SETUP.sha256(b"manifest")},
             "tools": [first, second],
         }))
@@ -278,7 +330,7 @@ class InstallationControls(unittest.TestCase):
              mock.patch.object(SETUP.platform, "machine", return_value="x86_64"), \
              mock.patch.object(SETUP.os, "geteuid", return_value=1000), \
              mock.patch.dict(SETUP.os.environ, {"CARGO_HOME": str(cargo_home)}, clear=True), \
-             mock.patch.object(SETUP.shutil, "which", return_value="/synthetic/rustup"), \
+             mock.patch.object(SETUP.shutil, "which", return_value=str(manager)), \
              mock.patch.object(sys, "argv", ["setup-unix.py", "--tools-only", "--json", str(receipt_path)]), \
              mock.patch.object(SETUP, "fetch", side_effect=acquire), \
              mock.patch.object(SETUP.subprocess, "run", side_effect=version_command), \

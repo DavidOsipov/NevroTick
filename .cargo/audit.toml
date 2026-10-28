@@ -1,0 +1,22 @@
+# Optional complementary auditor; cargo-deny remains the primary graph gate.
+# Pinned cargo-audit 0.22.2 schema. No implicit metadata acquisition in analysis:
+# supply an admitted DB/index snapshot and verify its <=24h refresh receipt.
+[advisories]
+ignore = []
+informational_warnings = ["unmaintained", "unsound", "notice"]
+# No severity threshold: do not hide lower-scored applicable vulnerabilities.
+
+[database]
+url = "https://github.com/RustSec/advisory-db.git"
+fetch = false
+stale = false
+
+[output]
+deny = ["warnings"]
+format = "json"
+quiet = false
+show_tree = true
+
+[yanked]
+enabled = true
+update_index = false

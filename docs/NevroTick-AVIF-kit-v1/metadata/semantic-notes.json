@@ -1,0 +1,70 @@
+{
+  "status": "Final metadata embedded in all 84 AVIF images; readback and validation passed.",
+  "classification_sources": [
+    "https://cv.iptc.org/newscodes/digitalsourcetype/",
+    "https://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia",
+    "https://cv.iptc.org/newscodes/digitalsourcetype/compositeSynthetic",
+    "https://cv.iptc.org/newscodes/digitalsourcetype/compositeWithTrainedAlgorithmicMedia"
+  ],
+  "classification": {
+    "trainedAlgorithmicMedia": "Underlying artwork was generated with a trained generative model. A corrected AI-generated full figure remains in this class; ordinary scaling, alpha padding or solid background flattening do not change its origin.",
+    "compositeSynthetic": "Composition of AI-generated artwork with other layout, backgrounds, typography, labels or optical marks. This includes the app tile, color logo lockups and all three proof sheets.",
+    "compositeWithTrainedAlgorithmicMedia": "Current IPTC meaning is generative editing or augmentation. Not used simply because a composite contains AI artwork.",
+    "omitted_for_code_assisted": "Existing SVG geometry or outlined typography was rasterized in an AI-assisted workflow. Its precise generative authorship is not established. Do not allow the builder digitalCapture fallback to remain."
+  },
+  "important_distinctions": [
+    "png/icons/head-small.png is a 64 px optical simplification; png/icons/sizes/nevrotick-64.png is a raster portrait resampling. Their DigitalSourceType treatments differ intentionally.",
+    "Stacked and illustrated logos include the tagline even though their filenames do not contain tagline.",
+    "For-dark PNG sources preserve transparency; the suffix is intended display context, not an embedded dark background.",
+    "Light monochrome artwork uses light ink; dark monochrome artwork uses dark ink.",
+    "App tile includes its rounded slate panel as part of the artwork while retaining transparent outer corners/margins in transparent variants.",
+    "Creator contact city/country are not image geolocation.",
+    "New UUIDs in image_guid identify the AVIF asset record; they are not inherited original-document IDs or cryptographic provenance.",
+    "Per-file descriptions are based on existing verified source manifests, review notes and supplied construction code. This step does not claim a fresh visual review or embedded metadata validation.",
+    "Stored source hashes are copied from the reviewed source manifest and must be compared by the final conversion/verification process; they were not recomputed during JSON preparation.",
+    "Raw generation prompts, prompt writer, model version, unrelated personal identifiers and camera/capture fields are intentionally absent.",
+    "Proprietary metadata expresses the user-selected terms for the brand assets. Existing third-party font notices remain separate and must not be replaced or erased."
+  ],
+  "required_post_builder_cleanup": {
+    "all_images": [
+      "photoshop:CaptionWriter",
+      "photoshop:Urgency",
+      "photoshop:Source",
+      "xmpMM:OriginalDocumentID"
+    ],
+    "if_empty": [
+      "photoshop:AuthorsPosition"
+    ],
+    "code_assisted_only": [
+      "Iptc4xmpExt:DigitalSourceType"
+    ],
+    "retain_confirmed": [
+      "dc:creator",
+      "photoshop:Credit",
+      "Iptc4xmpCore:CreatorContactInfo",
+      "dc:rights",
+      "xmpRights:Marked",
+      "xmpRights:Owner",
+      "xmpRights:UsageTerms",
+      "plus:CopyrightOwner",
+      "plus:Licensor"
+    ],
+    "reason": "Unconfirmed builder defaults were removed before embedding; see this file and validation-summary.json."
+  },
+  "preparation_checks": [
+    "84 source-map paths covered exactly once",
+    "84 distinct expected AVIF paths",
+    "84 distinct parseable per-image JSON specs",
+    "required author, AI disclosure, license and dimensions present",
+    "DST omission consistently marked for cleanup",
+    "no prompts, GPS, persons, fabricated capture dates or model version fields"
+  ],
+  "final_checks": [
+    "All 84 AVIF files decoded",
+    "Embedded fields match approved per-image specifications",
+    "ExifTool validation returned OK with no warnings or errors for every image",
+    "Decoded pixels were identical before and after metadata embedding",
+    "Source dimensions and transparent alpha channels were preserved",
+    "Source file hashes were recomputed during conversion and unchanged at final verification"
+  ]
+}
