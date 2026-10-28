@@ -85,6 +85,7 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
                  "renamed_and_removed_lints", "improper_ctypes", "improper_ctypes_definitions",
                  "unexpected_cfgs", "missing_docs", "unreachable_pub", "unused_qualifications"},
         "clippy": {"all", "pedantic", "undocumented_unsafe_blocks", "allow_attributes_without_reason",
+                   "allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok",
                    "unwrap_used", "expect_used", "panic", "todo", "unimplemented", "unreachable",
                    "dbg_macro", "let_underscore_must_use", "as_conversions", "mem_forget", "exit"},
         "rustdoc": {"all", "broken_intra_doc_links", "private_intra_doc_links"},
@@ -379,6 +380,11 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
              'pub fn extract(value: Option<u8>) -> u8 { value.expect("synthetic") }\n', "expect_used"),
             ("clippy-reason-negative", '\n#[allow(dead_code)]\nfn unreasoned() {}\n',
              "allow_attributes_without_reason"),
+            ("clippy-permanent-allow-negative", '\n#[allow(dead_code, reason = "isolated control")]\n'
+             'fn permanently_suppressed() {}\n', "allow_attributes"),
+            ("clippy-result-ok-negative", '\n/// Deliberate ignored error control.\n'
+             'pub fn discard(value: Result<(), std::io::Error>) { value.ok(); }\n',
+             "unused_result_ok"),
             ("clippy-test-unwrap-negative", '\n/// Deliberate test exemption control.\n/// # Panics\n'
              '/// Panics if the synthetic option is absent.\n#[test]\nfn test_scope() { '
              'let value = std::hint::black_box(Some(1_u8)); assert_eq!(value.unwrap(), 1); }\n',
@@ -401,9 +407,25 @@ pub unsafe fn read_control(pointer: *const u8) -> u8 {
         source.write_text(with_control(unsafe_control))
         execute("reasoned-unsafe-exception-positive", clippy)
         source.write_text(with_control(unsafe_control.replace(
+            "unsafe { *pointer }",
+            "unsafe { let first = *pointer; let second = *pointer; first.saturating_add(second) }",
+        )))
+        execute("multiple-unsafe-operations-negative", clippy, "multiple_unsafe_ops_per_block")
+        source.write_text(with_control(unsafe_control.replace(
             "    // SAFETY: The caller supplies the documented valid readable byte.\n", ""
         )))
         execute("undocumented-unsafe-negative", clippy, "undocumented_unsafe_blocks")
+        source.write_text(with_control('''
+#[expect(dead_code, reason = "isolated control proves a fulfilled local expectation")]
+fn deliberately_unreferenced() {}
+
+/// Preserve an intentionally consumed optional result.
+#[must_use]
+pub fn optional_result(value: Result<u8, std::io::Error>) -> Option<u8> {
+    value.ok()
+}
+'''))
+        execute("fulfilled-expectation-and-used-result-positive", clippy)
         source.write_text(SOURCE.replace("Advance a tick without wrapping.", "See [`MissingControlType`]."))
         execute("rustdoc-link-negative", docs, "unresolved link")
         source.write_text(SOURCE.replace("tick.checked_add(1)", "tick.checked_add( 1 )"))

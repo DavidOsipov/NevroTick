@@ -1,0 +1,23 @@
+title = "NevroTick: upstream secret rules with one reviewed prose exception"
+
+[extend]
+useDefault = true
+
+# No credential baseline or inline gitleaks:allow exemptions. The entry point
+# supplies an empty ignore file and scans retained history and the working tree.
+
+# Independently reviewed false positive: this complete English control mapping
+# appears four times in each of these two ASVS documents. Restrict the exception
+# to the generic rule AND the exact document suffix AND this exact full line.
+# Directory scans use absolute paths; history scans use repository-relative ones.
+# Gitleaks' line slicer retains the preceding LF for noninitial lines. Permit
+# that one serialization byte, while keeping both ends of the prose anchored.
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Public ASVS CTRL-KEYS control description; not credential material"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)docs/(?:nevrotick-design-v0\.2/references/source-docs/)?asvs-5\.0\.0-applicability\.md$''']
+regexes = ['''^\n?\| Native control mapping \| CTRL-KEYS: key inventory, access separation, rekey/disposal and no plaintext secret outputs; any persisted association requires explicit protected-storage policy\. \|$''']

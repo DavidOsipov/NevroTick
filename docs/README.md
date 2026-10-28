@@ -8,6 +8,8 @@ This bundle contains eight principal Markdown documents and seven supporting ind
 
 **Upstream code is not presumed bug-free or vulnerability-free.** Chrony and other reused projects, libraries and tools require independent verification of the behavior NevroTick relies on. See [architecture section 20.1](windows-time-architecture.md#201-independent-numerical-truth) and [the test and stress matrix](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing).
 
+**Development baseline, 29 October 2026:** [the tooling record](../TOOLING.md) describes adopted bootstrap checks and the new repository security workflow separately from pending application/native qualification. The [planned dependency refresh](windows-time-architecture.md#186-runtime-dependency-register) retains the selected Rust stack and updates held AWS-LC/Schannel references without admitting those providers or installing application crates.
+
 **Current UI milestone:** [UI-M0, architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), is a restricted native fixture-only prototype. D1 display/theme, D2 production service/policy-state and D3 full keyboard/Narrator/UIA work are explicitly **Deferred**, not prerequisites for UI-M0. Restore them at their specified integration/preview gates. Other workstreams and eventual product/release requirements remain unchanged; completing UI-M0 does not complete P0 toolkit qualification.
 
 ## Reading guide
@@ -43,6 +45,6 @@ Some records retain workspace paths, initial hashes and source identifiers for p
 
 All documents are UTF-8 Markdown. Mermaid remains editable fenced source. Keep the extracted directory together for relative document links.
 
-`SHA256SUMS.txt` covers every Markdown file, including this reading guide. It supports byte-integrity comparison, not publisher authentication or a digital signature.
+An exported bundle may supply `SHA256SUMS.txt` for byte-integrity comparison; this checkout currently has no root documentation manifest, so it establishes no bundle-integrity result. The design subdirectories maintain their own separate manifests. Checksums do not authenticate a publisher or replace a digital signature.
 
 Older PDF/CSV exports, intermediate candidates, helper scripts, credentials and executable tools are excluded. No application build, Windows installation, clock change, scanner execution, signing request or conformance test was performed to create the feature-plan addition.

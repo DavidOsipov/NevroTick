@@ -36,17 +36,21 @@ def fetch(url: str, expected: str) -> bytes:
 
 def install_tool(tool: dict, bin_dir: Path, cache: Path, backup: Path) -> dict:
     name = tool["name"]
-    if name not in {"cargo-nextest", "cargo-deny", "cargo-audit", "cargo-mutants", "cargo-llvm-cov"}:
+    if name not in {"cargo-nextest", "cargo-deny", "cargo-audit", "cargo-mutants", "cargo-llvm-cov",
+                    "cargo-cyclonedx"}:
         raise ValueError("Unexpected executable in tool manifest")
+    if name == "cargo-cyclonedx" and not tool.get("binary_sha256"):
+        raise ValueError("The SBOM executable digest must be pinned before installation")
     print(f"Verifying {name} {tool['version']}...", flush=True)
-    archive_path = cache / (tool["sha256"] + ".tar.gz")
+    suffix = ".tar.xz" if tool["url"].endswith(".tar.xz") else ".tar.gz"
+    archive_path = cache / (tool["sha256"] + suffix)
     if archive_path.exists() and archive_path.stat().st_size > 160 * 1024 * 1024:
         raise ValueError(f"Cached archive exceeds the download budget: {name}")
     data = archive_path.read_bytes() if archive_path.exists() else fetch(tool["url"], tool["sha256"])
     if sha256(data) != tool["sha256"]:
         raise ValueError(f"Cached archive digest mismatch: {name}")
     archive_path.write_bytes(data)
-    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as archive:
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:xz" if suffix == ".tar.xz" else "r:gz") as archive:
         binaries = [member for member in archive.getmembers()
                     if member.isfile() and Path(member.name).name == name]
         if len(binaries) != 1 or binaries[0].size > 256 * 1024 * 1024:
@@ -55,6 +59,8 @@ def install_tool(tool: dict, bin_dir: Path, cache: Path, backup: Path) -> dict:
         if source is None:
             raise ValueError(f"Missing executable: {name}")
         payload = source.read()
+        if tool.get("binary_sha256") and sha256(payload) != tool["binary_sha256"]:
+            raise ValueError(f"Unadmitted executable digest: {name}")
         for member in archive.getmembers():
             if member.isfile() and Path(member.name).name.upper().startswith(("LICENSE", "COPYING", "NOTICE")):
                 if member.size > 1024 * 1024:
@@ -99,35 +105,44 @@ def install_tool(tool: dict, bin_dir: Path, cache: Path, backup: Path) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tools-only", action="store_true", help="Rust pin is already installed")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--tools-only", action="store_true", help="Rust pin is already installed")
+    mode.add_argument("--sbom-only", action="store_true", help="install only the reviewed release SBOM tool")
     parser.add_argument("--json", type=Path, help="Write installation receipt outside the source tree")
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         parser.error("This admitted archive set is Linux x86_64 only")
     if os.geteuid() == 0:
         parser.error("Run tool installation as the ordinary developer, without sudo")
-    overrides = [name for name in ("RUSTUP_DIST_SERVER", "RUSTUP_UPDATE_ROOT", "RUSTUP_TOOLCHAIN")
-                 if name in os.environ]
-    if overrides:
-        parser.error("Unadmitted Rust installation overrides: " + ", ".join(overrides))
     manifest = json.loads((ROOT / "policy/tool-manifest.json").read_text())
-    pin = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]
-    if pin["channel"] != manifest["rust"]["channel"]:
-        parser.error("Toolchain and admission manifest disagree")
-    rustup = shutil.which("rustup")
-    if rustup is None:
-        parser.error("Install rustup from https://rustup.rs first")
-    if sha256(Path(rustup).resolve().read_bytes()) != manifest["rust"]["rustup_linux_sha256"]:
-        parser.error("Rustup executable differs from the reviewed digest; refusing execution")
-    manager = subprocess.run([rustup, "--version"], cwd=ROOT, capture_output=True,
-                             text=True, check=True, timeout=30)
-    if not manager.stdout.startswith("rustup " + manifest["rust"]["rustup_version"] + " "):
-        parser.error("Update rustup to the reviewed manifest version before installing the toolchain")
-    fetch(manifest["rust"]["manifest_url"], manifest["rust"]["manifest_sha256"])
-    if not args.tools_only:
-        subprocess.run([rustup, "toolchain", "install", pin["channel"], "--no-self-update", "--profile", pin["profile"],
-                        "--component", ",".join(pin["components"]),
-                        "--target", ",".join(pin["targets"])], cwd=ROOT, check=True, timeout=1200)
+    pin = None
+    if args.sbom_only:
+        selected_tools = manifest.get("release_tools", [])
+        if len(selected_tools) != 1 or selected_tools[0].get("name") != "cargo-cyclonedx":
+            parser.error("The SBOM-only lane requires the single reviewed cargo-cyclonedx tool")
+    else:
+        selected_tools = manifest["tools"]
+        overrides = [name for name in ("RUSTUP_DIST_SERVER", "RUSTUP_UPDATE_ROOT", "RUSTUP_TOOLCHAIN")
+                     if name in os.environ]
+        if overrides:
+            parser.error("Unadmitted Rust installation overrides: " + ", ".join(overrides))
+        pin = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]
+        if pin["channel"] != manifest["rust"]["channel"]:
+            parser.error("Toolchain and admission manifest disagree")
+        rustup = shutil.which("rustup")
+        if rustup is None:
+            parser.error("Install rustup from https://rustup.rs first")
+        if sha256(Path(rustup).resolve().read_bytes()) != manifest["rust"]["rustup_linux_sha256"]:
+            parser.error("Rustup executable differs from the reviewed digest; refusing execution")
+        manager = subprocess.run([rustup, "--version"], cwd=ROOT, capture_output=True,
+                                 text=True, check=True, timeout=30)
+        if not manager.stdout.startswith("rustup " + manifest["rust"]["rustup_version"] + " "):
+            parser.error("Update rustup to the reviewed manifest version before installing the toolchain")
+        fetch(manifest["rust"]["manifest_url"], manifest["rust"]["manifest_sha256"])
+        if not args.tools_only:
+            subprocess.run([rustup, "toolchain", "install", pin["channel"], "--no-self-update", "--profile", pin["profile"],
+                            "--component", ",".join(pin["components"]),
+                            "--target", ",".join(pin["targets"])], cwd=ROOT, check=True, timeout=1200)
     cargo_home = Path(os.environ.get("CARGO_HOME", str(Path.home() / ".cargo")))
     bin_dir = cargo_home / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
@@ -137,7 +152,7 @@ def main() -> None:
     backup = Path(tempfile.mkdtemp(prefix=time.strftime("%Y%m%d-%H%M%S-"), dir=state))
     print(f"Backups: {backup}", flush=True)
     receipt = {"scope": "Verified upstream tool installation and version smoke; no product analysis",
-               "toolchain": pin["channel"], "tools": [], "backup_directory": str(backup),
+               "toolchain": pin["channel"] if pin else None, "tools": [], "backup_directory": str(backup),
                "status": "incomplete"}
 
     def save_receipt() -> None:
@@ -146,7 +161,7 @@ def main() -> None:
             args.json.write_text(json.dumps(receipt, indent=2) + "\n")
 
     save_receipt()
-    for tool in manifest["tools"]:
+    for tool in selected_tools:
         try:
             receipt["tools"].append(install_tool(tool, bin_dir, cache, backup))
         except BaseException:

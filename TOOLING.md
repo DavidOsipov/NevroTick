@@ -27,6 +27,7 @@ fixture; actual package compatibility and MSRV remain explicit future decisions.
 | cargo-mutants | 27.1.0 | Later critical-file mutation checks |
 | cargo-llvm-cov | 0.9.1 | Later measured coverage with matching LLVM tools |
 | xwin | 0.10.0 | Compact x64 Microsoft CRT/SDK acquisition for WSL cross-builds |
+| cargo-cyclonedx | 0.5.9 | Release-tool lane; CycloneDX 1.5 JSON Rust dependency inventories |
 
 [policy/tool-manifest.json](policy/tool-manifest.json) records upstream archive
 URLs/digests, installed binary identities, scopes and pending qualifications.
@@ -80,7 +81,7 @@ follow the development-hardening guide.
 
 | File | Enforced intent and current scope |
 | --- | --- |
-| [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |
+| [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. Permanent local `allow` attributes, multiple unsafe operations per block and discarded `Result::ok()` values also fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |
 | [rustfmt.toml](rustfmt.toml), [clippy.toml](clippy.toml) | Explicit 2024 formatting and private API checks; no blanket test exemptions for unwrap/expect/panic/debug output. |
 | [deny.toml](deny.toml) | Strict advisory, license, source, duplicate/wildcard and build-script policy, including held crypto providers. Only the project's GPL-2.0-only license is initially allowed; third-party licenses require exact-graph review. |
 | [.config/nextest.toml](.config/nextest.toml) | Two test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
@@ -132,6 +133,125 @@ and `--build-timeout` budgets and complete per-file outcome accounting. Strict-l
 build failures are unviable mutants, not caught behavioral mutations. Missing
 reports, empty selections, tool failures and incomplete feature rows remain
 incomplete. These coverage/mutation application gates cannot be qualified yet.
+
+## Repository security automation
+
+[The security workflow](.github/workflows/security.yml) adds CodeQL data-flow
+analysis, workflow analysis and redacted secret scanning. It runs on pull
+requests, merge-queue candidates, main pushes, a daily schedule and manual
+dispatch. Each analysis uses an ephemeral GitHub-hosted runner, read-only
+repository access and checkout without persisted credentials. No job receives
+signing/deployment credentials, OIDC, a self-hosted runner, a release cache or
+code-scanning write permission. The always-running final gate rejects missing,
+failed, cancelled or unexpectedly skipped required jobs.
+
+| Tool / configuration | Strict behavior |
+| --- | --- |
+| [CodeQL configuration](.github/codeql-config.yml) and [pins](.github/security/tool-pins.json) | Exact bundle and official action revisions; `security-extended` and `security-and-quality`, no query exclusions. Existing Actions, Python and JavaScript inputs are selected, including code in documentation prototypes. Rust has a source-dependent lane; no source means explicitly awaiting application analysis. Rust `build-mode: none` can execute build scripts/proc macros, so it retains a separate unprivileged runner. |
+| [Rust preparation](.github/security/prepare_rust.py) and [admission](.github/security/check_rust_policy.py) | Rust source or a Cargo manifest activates the lane. Verify official rustup/distribution metadata digests, acquire the pinned toolchain into new private runner-temporary directories, then verify compiler bytes, tracked lockfile and member lint/profile adoption before extraction. No WSL-specific host-helper identities or shared installation paths are imposed on hosted runners. |
+| [SARIF gate](.github/security/check_sarif.py) | Findings at every severity, including suppressed/baseline findings, block. Missing/malformed/oversized reports, failed invocations, absent security-query metadata and empty source/line evidence also block. Reports remain local to analysis; upload success cannot satisfy the gate. |
+| [Workflow checker](.github/security/check_workflows.py) and [pins](.github/security/workflow-tool-pins.json) | actionlint 1.7.12, ShellCheck 0.11.0 with optional checks, and zizmor 1.30.1 in pedantic offline mode. All reported severities fail; ignores and user configuration are disabled. Acquisition verifies archive and executable SHA-256 and copies only a bounded regular archive member. |
+| [Gitleaks checker](.github/security/check_secrets.py) and [configuration](.gitleaks.toml) | Pinned executable, redaction, default detection rules, full retained-history and working-tree scans. No finding baseline or inline suppression bypass. One independently reviewed exact ASVS prose line in two documentation locations is the only project exception; token-shaped test values in those same documents remain blocking. |
+
+Run the local configuration/control checks with:
+
+```sh
+python3 -X dev -Werror -B -m unittest discover -s .github/security -v
+python3 -B .github/security/check_workflows.py
+```
+
+The workflow checker downloads verified binaries into owned temporary storage;
+it does not install shared tools. For offline rechecks use `--tools-dir` with
+the already acquired binaries; every reused executable is hashed again. Its
+actual healthy and violation controls exercise workflow syntax, ShellCheck and
+template injection before checking repository workflows. Secret-scan acquisition
+and its exact invocation live in the workflow; the checker accepts only the
+pinned executable digest and challenges synthetic-secret detection first.
+
+Local analyzer/control results do not establish a successful hosted CodeQL
+extraction, complete Rust/Windows cfg coverage, a protected required status or
+hosted secret push protection. GitHub rulesets/environment settings need separate
+hosted evidence. Offline zizmor skips online metadata audits, and actionlint's
+optional Python helper is disabled; CodeQL analyzes Python separately. A native
+PowerShell-specific analyzer and native Windows/package mitigation observations
+remain pending. Do not treat configuration alone as those qualifications.
+
+The 29 October Rust refresh checked official stable tool releases and the planned
+crate candidates in architecture sections 18.5–18.8. Installed Rust 1.99.1 and the
+existing Cargo analysis-tool pins remain current; the selected runtime versions
+also remain current. The [architecture dependency refresh](docs/windows-time-architecture.md#186-runtime-dependency-register)
+updates held AWS-LC/Schannel references and preserves their provider/license/API
+gates. There is no application lockfile to resolve yet. Prototype dependencies
+are outside this maintenance task and are unchanged.
+
+## Release SBOM tooling
+
+`cargo-cyclonedx` **0.5.9** is installed in the ordinary user's Cargo bin directory
+in Linux/WSL. Its separate `release_tools` entry in
+[the tool manifest](policy/tool-manifest.json) pins the official prebuilt archive,
+executable SHA-256, version command and Apache-2.0 tool license. The retained tool
+license grants no new runtime dependency permission. Existing compiler/analyzer
+binaries are unchanged; ordinary lint checks do not require the release tool.
+
+Reinstall only this tool, without changing the toolchain or other analyzers:
+
+```sh
+python3 -B scripts/setup-unix.py --sbom-only --json /tmp/nevrotick-sbom-install.json
+```
+
+[The SBOM policy](policy/sbom.toml) selects CycloneDX **1.5 JSON**, the supported
+Windows x64 target, all transitive dependencies, retained build dependencies and
+strict license-expression parsing. [The generator wrapper](scripts/generate-sbom.py)
+uses the actual build's feature selection. It runs frozen Cargo metadata and the
+generator in an offline, credential-free, resource-bounded sandbox, with an
+immutable lockfile and a private source snapshot. Its Cargo cache mounts are
+read-only and exclude credentials. Reports and input/output hash receipts go to
+a **new external directory**, leaving user manifests, lockfiles and source intact.
+
+Once the real Cargo manifest and lockfile exist:
+
+```sh
+python3 -B scripts/generate-sbom.py --output-dir /tmp/nevrotick-rust-sbom
+```
+
+Pass `--no-default-features` and repeat `--features <actual-feature>` when those
+match the build being inventoried. No universal all-features selection is used.
+The wrapper checks nonempty component identity and dependency-reference closure;
+these structural checks are not full CycloneDX JSON-schema validation. It also
+compares each crate's component identities with an independently selected frozen
+`cargo tree` for the same target and feature row. The actual controls retain
+normal/build dependencies, exclude dev/other-target dependencies and exercise
+optional features. Build dependencies are inventoried with the generator's
+`excluded` scope, distinct from distributed runtime components.
+
+Every actual workspace member must emit exactly one inventory with its expected
+Cargo identity. Missing, duplicate or foreign roots fail. Reports are bounded to
+16 MiB each, 64 MiB in aggregate and 128 files; the source snapshot is limited to
+256 MiB. Oversized/linked reports are rejected before retaining their contents.
+
+Upstream [issue 871](https://github.com/CycloneDX/cyclonedx-rust-cargo/issues/871)
+is reproduced by a target-conditional feature fixture: Cargo metadata and the
+generator can over-include another target's dependency. The wrapper rejects that
+mismatch and emits no report. It never prunes the generated inventory to conceal
+the problem. Real RED/healthy/GREEN controls cover this guard. Other project
+feature rows still require qualification against their actual graph.
+
+**Every published version must attach its prepared SBOM assets alongside the
+complete MSI and final checksums.** Before the protected publisher runs, the
+release owner must reconcile this Rust inventory with native objects/libraries,
+generated source, resources, build-tool provenance and the actual MSI payload;
+validate the final CycloneDX/SPDX document; and bind the exact version, source
+candidate and **final signed MSI/payload hashes**. A Cargo inventory alone cannot
+satisfy CHECK-26 or that complete-product requirement. Prepare the SBOM before
+publication; do not generate a lockfile-only inventory after publishing a version.
+
+The eventual release publisher uploads the verified attachment set into a draft
+release, verifies that every required asset is attached, then publishes the draft.
+The attachment step uses,
+for example `gh release upload "$tag" "$signed_msi" "$complete_sbom" "$checksums"`
+without `--clobber`. This is a handoff contract, not a new publication job or
+authorization to upload now. No application Cargo graph, MSI or release workflow
+exists yet, so complete-package reconciliation and publication remain pending.
 
 ## Windows development route
 

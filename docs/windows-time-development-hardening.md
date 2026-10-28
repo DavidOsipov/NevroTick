@@ -174,6 +174,9 @@ all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 undocumented_unsafe_blocks = "deny"
 allow_attributes_without_reason = "deny"
+allow_attributes = "deny"
+multiple_unsafe_ops_per_block = "deny"
+unused_result_ok = "deny"
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
@@ -201,6 +204,8 @@ workspace = true
 The repository checker must reject missing inheritance and prove that the intended target actually runs through the lint gate. A changed manifest must not quietly exclude the broker or a generated first-party module.
 
 Clippy explicitly discourages blanket enabling `restriction` and `nursery`; choose the relevant restrictions individually. The supplied extra rules address unchecked conversions, ignored results, panic placeholders, unsafe documentation and hidden process/resource escapes. Their exact diagnostics and exceptions still need qualification against the pinned toolchain. [C02, C07]
+
+The repository's [adoptable policy fragment](../policy/rust-workspace.toml) additionally rejects permanent local `allow` attributes, multiple unsafe operations in one block and discarded `Result::ok()` values. Its isolated pinned-tool controls accept fulfilled reasoned expectations and consumed optional results, and reject each corresponding violation. These are bootstrap enforcement observations; application target/feature and native qualification remain pending. See [the current tooling record](../TOOLING.md).
 
 ### 5.2 Unsafe, conversions and error behavior
 
@@ -320,6 +325,13 @@ After verified acquisition, deny egress independently and build from staged inpu
 | cargo-crev | Defer as an alternative review ecosystem | Running two overlapping trust systems at kickoff is not necessary. [SC16] |
 | cargo-geiger | Optional unsafe inventory | Statistics do not prove soundness or cover all native/FFI risk. [SC17] |
 | cargo-machete | Optional dependency hygiene | `--with-metadata` may modify the lockfile and uses all features; keep it out of an assumed immutable gate. [SC18] |
+
+The repository bootstrap now installs pinned `cargo-cyclonedx` 0.5.9 in a
+separate release-tool lane. Its [configuration and offline wrapper](../TOOLING.md#release-sbom-tooling)
+produce Rust component inventories and reject target/feature graph mismatches;
+they do not qualify a complete native/MSI SBOM. Every published version must
+attach the reconciled, validated SBOM with its complete MSI and final signed-byte
+checksums. S6.4/CHECK-26 retain package reconciliation and protected publication.
 
 ### 7.3 cargo-deny outcomes, not copied policy folklore
 

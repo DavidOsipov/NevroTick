@@ -101,6 +101,24 @@
       "binary_sha256": "d8334c0e109a983ea8ecc25b6146cfebbd295a9a71b4f8027e20a68fa2f1dcd4"
     }
   ],
+  "release_tools": [
+    {
+      "name": "cargo-cyclonedx",
+      "version": "0.5.9",
+      "platform": "x86_64-linux",
+      "url": "https://github.com/CycloneDX/cyclonedx-rust-cargo/releases/download/cargo-cyclonedx-0.5.9/cargo-cyclonedx-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "fb8dbee9f182173e062a64a387b21a0badc6fab8b2abf9294973f012972bf6d8",
+      "binary_sha256": "32fe44609a71e051f88dd08ff7e1e3039dd70afa3ddf09de004feec6e2273bdc",
+      "license": "Apache-2.0",
+      "version_args": [
+        "cyclonedx",
+        "--version"
+      ],
+      "scope": "Development-only Rust CycloneDX SBOM generator; no runtime license admission or complete MSI/native inventory claim",
+      "admission": "Pinned published archive and executable identity; explicit --sbom-only installation and version smoke. Real locked graph, target/features, native inventory and release reconciliation remain separate gates.",
+      "source": "https://api.github.com/repos/CycloneDX/cyclonedx-rust-cargo/releases/tags/cargo-cyclonedx-0.5.9"
+    }
+  ],
   "controls": {
     "installation": "Pinned upstream prebuilt archives; verify SHA-256 before execution; preserve replaced executables outside checkout. No downloaded install shell scripts.",
     "execution": "Fixed std-only Rust and local graph/advisory fixtures; mandatory cleared-env, private-network bwrap+prlimit. Native MSVC linking and Windows setup-manager checks qualified separately.",

@@ -1,0 +1,16 @@
+name: NevroTick security and correctness
+
+# The bundled, pinned query packs supply both suites. No suppressions, severity
+# cutoff or blanket docs exclusion: the current JavaScript prototype is in docs.
+disable-default-queries: false
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/target/**'
+  - '**/dist/**'
+
+# The Rust job starts only for nonempty source and admits pinned compiler bytes
+# and real manifest policy before extraction. Host-extractor coverage of Windows
+# cfg paths and project authority semantics remains a separate qualification.

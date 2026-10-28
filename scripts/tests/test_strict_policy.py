@@ -50,6 +50,14 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.replace("policy/rust-workspace.toml", 'unwrap_used = "deny"\n', "")
         self.assert_refused("Required strict lint missing")
 
+    def test_security_restrictions_cannot_be_removed(self):
+        original = (self.root / "policy/rust-workspace.toml").read_bytes()
+        for name in ("allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok"):
+            with self.subTest(lint=name):
+                (self.root / "policy/rust-workspace.toml").write_bytes(original)
+                self.replace("policy/rust-workspace.toml", f'{name} = "deny"\n', "")
+                self.assert_refused("Required strict lint missing")
+
     def test_empty_clippy_table_cannot_become_an_empty_success(self):
         path = self.root / "policy/rust-workspace.toml"
         source, count = re.subn(

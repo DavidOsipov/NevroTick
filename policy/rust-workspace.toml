@@ -30,6 +30,11 @@ all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
 undocumented_unsafe_blocks = "deny"
 allow_attributes_without_reason = "deny"
+# Prefer checked expectations over permanent local suppressions, and make each
+# unsafe block carry one reviewable operation. Keep legitimate used .ok() values.
+allow_attributes = "deny"
+multiple_unsafe_ops_per_block = "deny"
+unused_result_ok = "deny"
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"

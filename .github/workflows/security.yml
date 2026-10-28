@@ -1,0 +1,221 @@
+name: Repository security
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  source-inventory:
+    name: Inventory actual source languages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      candidate: ${{ steps.inventory.outputs.candidate }}
+      python: ${{ steps.inventory.outputs.python }}
+      javascript: ${{ steps.inventory.outputs.javascript }}
+      rust: ${{ steps.inventory.outputs.rust }}
+    steps:
+      - name: Check out the exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Record nonempty language inventories for the exact candidate
+        id: inventory
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          python3 -B - <<'PYCODE'
+          import os
+          from pathlib import Path
+          import subprocess
+          candidate = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          if candidate != os.environ['EXPECTED_COMMIT']:
+              raise SystemExit('Checkout does not match this candidate.')
+          paths = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
+          suffixes = {'python': ('.py',), 'javascript': ('.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx'), 'rust': ('.rs',)}
+          with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
+              output.write('candidate=' + candidate + '\n')
+              for language, endings in suffixes.items():
+                  count = sum(path.endswith(endings) or (
+                      language == 'rust' and (path == 'Cargo.toml' or path.endswith('/Cargo.toml'))
+                  ) for path in paths)
+                  output.write(language + '=' + str(count > 0).lower() + '\n')
+                  print(language + ': ' + (str(count) + ' source/manifest entries' if count else 'awaiting source; no application scan claimed'))
+          PYCODE
+
+  workflow-policy:
+    name: Workflow semantics and security policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify report and tool-admission controls
+        run: python3 -X dev -Werror -B -m unittest discover -s .github/security -v
+      - name: Enforce pinned actionlint, ShellCheck and pedantic zizmor
+        run: python3 -B .github/security/check_workflows.py
+
+  codeql-actions:
+    name: CodeQL Actions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      candidate: ${{ steps.policy.outputs.candidate }}
+    env:
+      CODEQL_LANGUAGE: actions
+    steps: &codeql_steps
+      - name: Check out the exact candidate without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare reviewed Rust in a private ephemeral toolchain area
+        if: ${{ env.CODEQL_LANGUAGE == 'rust' }}
+        run: python3 -B .github/security/prepare_rust.py
+      - name: Admit installed Rust binaries, lockfile and workspace policy
+        if: ${{ env.CODEQL_LANGUAGE == 'rust' }}
+        run: python3 -B .github/security/check_rust_policy.py
+      - name: Acquire and verify the fixed CodeQL bundle before execution
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --connect-timeout 20 --max-time 300 --retry 2 \
+            'https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.3/codeql-bundle-linux64.tar.gz' \
+            --output codeql-bundle.tar.gz
+          echo '64518dc413c8e7b5733fee2489e830a899bb1e3f28c8873b5869d5cc90164c5c  codeql-bundle.tar.gz' | sha256sum --check --strict
+      - name: Initialize the selected analysis in a fresh read-only-token runner
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ env.CODEQL_LANGUAGE }}
+          build-mode: none
+          tools: ${{ runner.temp }}/codeql-bundle.tar.gz
+          config-file: .github/codeql-config.yml
+          dependency-caching: false
+      - name: Extract and analyze without publication credentials or shared caches
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          upload: never
+          upload-database: false
+          output: ${{ runner.temp }}/sarif
+          category: /language:${{ env.CODEQL_LANGUAGE }}/
+      - name: Block findings and incomplete analysis for the exact candidate
+        id: policy
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+          SARIF_REPORTS: ${{ runner.temp }}/sarif
+        run: |
+          candidate_commit=$(git rev-parse HEAD)
+          test "${candidate_commit}" = "${EXPECTED_COMMIT}"
+          python3 -B .github/security/check_sarif.py \
+            --language "${CODEQL_LANGUAGE}" --reports "${SARIF_REPORTS}"
+          printf 'candidate=%s\n' "${candidate_commit}" >> "${GITHUB_OUTPUT}"
+
+  codeql-python:
+    name: CodeQL Python
+    needs: [source-inventory]
+    if: ${{ needs.source-inventory.outputs.python == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      candidate: ${{ steps.policy.outputs.candidate }}
+    env:
+      CODEQL_LANGUAGE: python
+    steps: *codeql_steps
+
+  codeql-javascript:
+    name: CodeQL JavaScript
+    needs: [source-inventory]
+    if: ${{ needs.source-inventory.outputs.javascript == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      candidate: ${{ steps.policy.outputs.candidate }}
+    env:
+      CODEQL_LANGUAGE: javascript-typescript
+    steps: *codeql_steps
+
+  codeql-rust:
+    name: CodeQL Rust
+    needs: [source-inventory]
+    if: ${{ needs.source-inventory.outputs.rust == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      candidate: ${{ steps.policy.outputs.candidate }}
+    env:
+      CODEQL_LANGUAGE: rust
+    steps: *codeql_steps
+
+  secrets:
+    name: Full-history and working-tree secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the complete retained history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Acquire and verify Gitleaks before execution
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --connect-timeout 20 --max-time 120 --retry 2 \
+            'https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz' \
+            --output gitleaks.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tar.gz' | sha256sum --check --strict
+          mkdir gitleaks-tool
+          tar --extract --gzip --file gitleaks.tar.gz --directory gitleaks-tool gitleaks
+      - name: Challenge the scanner then enforce redacted scans
+        env:
+          GITLEAKS_BINARY: ${{ runner.temp }}/gitleaks-tool/gitleaks
+        run: python3 -B .github/security/check_secrets.py --binary "${GITLEAKS_BINARY}"
+
+  security-gate:
+    name: Security gate
+    if: ${{ always() }}
+    needs: [source-inventory, workflow-policy, codeql-actions, codeql-python, codeql-javascript, codeql-rust, secrets]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Check out only the gate code without stored credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require every expected check to succeed
+        env:
+          REQUIRED_RESULTS: ${{ toJSON(needs) }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: python3 -B .github/security/check_gate.py

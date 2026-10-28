@@ -1,0 +1,17 @@
+# Rust inventory policy, not a claim of a complete native/MSI product SBOM.
+schema_version = 1
+generator = "cargo-cyclonedx"
+format = "json"
+spec_version = "1.5"
+describe = "crate"
+target = "x86_64-pc-windows-msvc"
+all_transitive_dependencies = true
+include_build_dependencies = true
+strict_license_parsing = true
+offline = true
+maximum_snapshot_bytes = 268435456
+
+# scripts/generate-sbom.py takes the actual build's feature selection explicitly.
+# Do not use universal all-features or infer shipped contents from Cargo.lock.
+# Release publishing must reconcile native/generated/resources/MSI inventory and
+# the final signed artifact hashes, then attach the SBOM with those same assets.

@@ -23,10 +23,10 @@ SETUP = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(SETUP)
 
 
-def archive_bytes(entries: list[tuple[str, bytes | None, bytes]]) -> bytes:
+def archive_bytes(entries: list[tuple[str, bytes | None, bytes]], *, compression: str = "gz") -> bytes:
     """Build small files/link headers without touching the installation paths."""
     buffer = io.BytesIO()
-    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+    with tarfile.open(fileobj=buffer, mode="w:" + compression) as archive:
         for name, payload, member_type in entries:
             member = tarfile.TarInfo(name)
             member.type = member_type
@@ -112,6 +112,36 @@ class ManagerAdmissionControls(unittest.TestCase):
         fetch.assert_called_once()
 
 
+class ReleaseToolSelectionControls(unittest.TestCase):
+    def test_sbom_only_installs_no_toolchain_or_ordinary_analysis_tools(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="nevrotick-sbom-selection-", dir="/tmp") as directory:
+            root = Path(directory)
+            project, task_home = root / "project", root / "home"
+            (project / "policy").mkdir(parents=True)
+            tool = {"name": "cargo-cyclonedx", "version": "0.5.9"}
+            (project / "policy/tool-manifest.json").write_text(json.dumps({
+                "tools": [{"name": "cargo-deny"}], "release_tools": [tool],
+            }))
+            with mock.patch.object(SETUP, "ROOT", project), \
+                 mock.patch.object(Path, "home", return_value=task_home), \
+                 mock.patch.object(SETUP.platform, "system", return_value="Linux"), \
+                 mock.patch.object(SETUP.platform, "machine", return_value="x86_64"), \
+                 mock.patch.object(SETUP.os, "geteuid", return_value=1000), \
+                 mock.patch.dict(SETUP.os.environ, {}, clear=True), \
+                 mock.patch.object(sys, "argv", ["setup-unix.py", "--sbom-only"]), \
+                 mock.patch.object(SETUP, "fetch") as network, \
+                 mock.patch.object(SETUP.shutil, "which") as manager, \
+                 mock.patch.object(SETUP.subprocess, "run") as command, \
+                 mock.patch.object(SETUP, "install_tool", return_value={"name": "cargo-cyclonedx"}) as install, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                SETUP.main()
+            network.assert_not_called()
+            manager.assert_not_called()
+            command.assert_not_called()
+            self.assertEqual(install.call_count, 1)
+            self.assertEqual(install.call_args.args[0], tool)
+
+
 class InstallationControls(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="nevrotick-installer-test-", dir="/tmp")
@@ -169,6 +199,54 @@ class InstallationControls(unittest.TestCase):
         self.assertEqual(command.call_args.args[0], [str(self.target), "--version"])
         self.assertTrue(command.call_args.kwargs["check"])
         self.assertEqual(stat.S_IMODE(self.target.stat().st_mode), 0o755)
+
+    def test_reviewed_xz_archive_has_the_same_safe_installation_control(self) -> None:
+        self.tool["url"] = "https://github.com/owner/repo/tool.tar.xz"
+        data = archive_bytes([("release/cargo-deny", self.payload, tarfile.REGTYPE)], compression="xz")
+        result, _command = self.install(data)
+        self.assertEqual(self.target.read_bytes(), self.payload)
+        self.assertEqual(result["archive_sha256"], SETUP.sha256(data))
+
+    def test_reviewed_xz_sbom_tool_installs_with_its_cargo_subcommand(self) -> None:
+        data = archive_bytes([("release/cargo-cyclonedx", self.payload, tarfile.REGTYPE)], compression="xz")
+        tool = {**self.tool, "name": "cargo-cyclonedx", "version": "0.5.9",
+                "version_args": ["cyclonedx", "--version"],
+                "url": "https://github.com/owner/repo/tool.tar.xz",
+                "sha256": SETUP.sha256(data), "binary_sha256": SETUP.sha256(self.payload)}
+        with mock.patch.object(SETUP, "fetch", return_value=data), \
+             mock.patch.object(SETUP.subprocess, "run", return_value=
+                               subprocess.CompletedProcess([], 0, "cargo-cyclonedx 0.5.9\n", "")) as command, \
+             contextlib.redirect_stdout(io.StringIO()):
+            result = SETUP.install_tool(tool, self.bin_dir, self.cache, self.backup)
+        self.assertEqual((self.bin_dir / "cargo-cyclonedx").read_bytes(), self.payload)
+        self.assertEqual(result["binary_sha256"], tool["binary_sha256"])
+        self.assertEqual(command.call_args.args[0],
+                         [str(self.bin_dir / "cargo-cyclonedx"), "cyclonedx", "--version"])
+
+    def test_substituted_sbom_binary_cannot_replace_or_execute_existing_tool(self) -> None:
+        target = self.bin_dir / "cargo-cyclonedx"
+        target.write_bytes(self.old)
+        data = archive_bytes([("release/cargo-cyclonedx", self.payload, tarfile.REGTYPE)], compression="xz")
+        tool = {**self.tool, "name": "cargo-cyclonedx", "version": "0.5.9",
+                "version_args": ["cyclonedx", "--version"],
+                "url": "https://github.com/owner/repo/tool.tar.xz",
+                "sha256": SETUP.sha256(data), "binary_sha256": "0" * 64}
+        with mock.patch.object(SETUP, "fetch", return_value=data), \
+             mock.patch.object(SETUP.subprocess, "run") as command, \
+             contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, "executable digest"):
+                SETUP.install_tool(tool, self.bin_dir, self.cache, self.backup)
+            command.assert_not_called()
+        self.assertEqual(target.read_bytes(), self.old)
+
+    def test_sbom_executable_pin_is_required_before_acquisition(self) -> None:
+        tool = {**self.tool, "name": "cargo-cyclonedx", "version": "0.5.9"}
+        with mock.patch.object(SETUP, "fetch") as network, \
+             mock.patch.object(SETUP.subprocess, "run") as command:
+            with self.assertRaisesRegex(ValueError, "executable digest"):
+                SETUP.install_tool(tool, self.bin_dir, self.cache, self.backup)
+            network.assert_not_called()
+            command.assert_not_called()
 
     def test_corrupt_cached_archive_cannot_replace_or_execute_existing_tool(self) -> None:
         self.preserve_existing()
