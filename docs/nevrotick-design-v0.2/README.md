@@ -9,7 +9,7 @@
 
 ## С чего начать
 
-1. Для реализации начните со **[спецификации UI](docs/02-ui-spec.md)** и **[состояний и критериев приёмки](docs/04-states-and-acceptance.md)**. Они уточнены после критической сверки дизайна.
+1. Для первого native-этапа начните с **[границ UI-M0 в архитектуре](../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)** и **[спецификации UI](docs/02-ui-spec.md)**. Полные **[состояния и критерии приёмки](docs/04-states-and-acceptance.md)** сохраняются для последующих этапов с учётом этих границ.
 2. Технические решения проверяйте по **[канонической архитектуре репозитория](../windows-time-architecture.md)** и **[feature-плану](../windows-time-features.md)**. Копии в references сохраняют исходный контекст, но не заменяют актуальные документы.
 3. **[NevroTick-UI-preview.html](NevroTick-UI-preview.html)** и **[снимки](screens/README.md)** используйте как визуальные иллюстрации. Переключатель сцен относится к просмотру дизайна, а не к будущей программе.
 4. Сопоставление F-01–F-10 находится в **[06-features-review.md](docs/06-features-review.md)**. **[design-qa.md](prototype/design-qa.md)** сохраняет исторический объём проверки исходного макета.
@@ -17,6 +17,12 @@
 Продукт будет пересоздан на Rust/Win32 средствами, выбранными в документации. React-код, его локальные валидаторы, фиксированные размеры и демонстрационные данные не являются эталонной реализацией. Текущая правка уточняет дизайн и критерии будущего UI; HTML, JPG и логика прототипа не пересоздавались и могут не отражать эти уточнения. Сохранены выбранный бренд и общая композиция.
 
 Макет использует демонстрационные данные и адреса `.example`. Он не делает NTP/NTS-запросов, не запускает службы, не вызывает Windows UAC/MSI и не меняет часы. Производственное приложение на Rust/Win32 здесь не реализовано.
+
+## Первый native-этап UI-M0
+
+[Архитектура §16.5](../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) задаёт текущий restricted slice: unelevated Win32-окно со Status, Sources, Settings, source details и небольшим локальным редактором. Постоянная надпись **Prototype — sample data** сохраняется и в отдельных preview-диалогах. Checked-in fixtures и in-memory preview — единственные данные; **Update preview** выполняет локальную валидацию, **Cancel** отбрасывает непринятые правки, Close завершает процесс и отбрасывает все preview-изменения. **Sync now** и защищённые действия недоступны с пояснением или отсутствуют; нет live IPC/status, NTP/NTS/DNS, дисковой persistence, управления службами, UAC или изменения часов. Minimize/restore остаются обычными Windows-действиями.
+
+**D1** — темы/contrast/text/mixed-monitor DPI, **D2** — production stale/reconnect/draft/admin-result handling и **D3** — полная keyboard/focus/Narrator/UIA qualification имеют статус **Deferred**: не реализовывать, не квалифицировать и не делать условием завершения UI-M0. Используются стандартные контролы в одной документированной display configuration с обычным resizing и сохранением встроенных labels/keyboard/system behavior; настройки машины не меняются ради макета. Полные продуктовые требования возвращаются по triggers §16.5 и переносятся в следующий handoff. Применимые Rust/dependency/FFI-quality правила сохраняются. Все сцены комплекта не обязательны для UI-M0; его завершение не закрывает P0 toolkit qualification, другие workstreams или release gates.
 
 ## Что изменено в v0.2
 

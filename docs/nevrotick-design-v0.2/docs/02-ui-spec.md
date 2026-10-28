@@ -5,6 +5,16 @@
 **Архитектурная основа:** RWTC-ARCH-001, revision 1.4; уточнения интерфейса из RWTC-FEATURES-001, revision 1.0, со статусом Proposed.  
 **Язык документа:** русский; предлагаемые строки интерфейса — English.
 
+## Область первого native-этапа UI-M0
+
+Для UI-M0 применяются явные границы **[архитектуры §16.5](../../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)**; полный продуктовый контракт ниже сохраняется для последующих этапов. Это unelevated fixture-driven Win32-окно со Status, Sources, Settings, source details и небольшим source-edit preview, а не реализация всех сцен HTML-макета. Главное окно постоянно показывает **Prototype — sample data**, отдельные preview-диалоги сохраняют такой же контекст.
+
+Данные берутся только из checked-in fixtures; field validation ведёт к **Update preview** / **Cancel** и изменяет только память процесса. Ошибка видима и оставляет предыдущий preview; Cancel отбрасывает непринятые правки, Close завершает процесс и отбрасывает все preview-изменения без production unsaved-policy workflow. Minimize/restore работают как обычные Windows-действия. **Sync now** отключён с пояснением; machine-policy/Apply и остальные защищённые действия недоступны или отсутствуют. Нет live status/IPC, NTP/NTS/DNS, дисковой persistence, управления службами, UAC, изменения часов или скрытого live-переключателя. Локальное изменение не называется **Applied**, **Saved to service** или административным успехом.
+
+**D1** (themes/contrast/text/mixed-monitor DPI), **D2** (production freshness/reconnect/policy drafts/admin results) и **D3** (полные keyboard/focus/Narrator/UIA) — **Deferred**. Агенты не реализуют и не квалифицируют эти группы сейчас и не делают их условием завершения UI-M0. Стандартные labels, keyboard и system behavior сохраняются без полной accessibility-кампании. Одна documented reference display configuration, пригодный обычный resizing, узкие документированные FFI, корректные handles/callback lifetimes/teardown и применимые Rust/dependency/review проверки остаются в работе. Настройки машины ради reference configuration не меняются.
+
+Владелец UI-направления переносит D1–D3 и triggers в backlog/следующий handoff: D2 возвращается до соответствующей live-интеграции, D1/D3 — до general-user preview/release либо более ранней заявки на эти возможности. Приёмка и требуемые native observations определены в §16.5; compile/screenshot их не заменяют. UI-M0 не завершает P0 toolkit qualification, полные UI-критерии, другие workstreams или release gates. Это описание объёма, не результат выполненных проверок.
+
 ## 1. Три уровня решений
 
 | Уровень | Что относится к нему |
@@ -20,6 +30,8 @@
 [Features revision 1.0](../../windows-time-features.md) имеет исходный статус **Proposed v1 product requirements and implementation slices**. Он уточняет презентацию, не заменяет [каноническую архитектуру репозитория](../../windows-time-architecture.md) и не закрывает её gates. В исходном полученном архиве не было development-hardening и signing-guide; теперь доступны [план hardening](../../windows-time-development-hardening.md) и [руководство signing](../../windows-time-signing-guide.md). Их наличие не означает внедрения или квалификации. Неизменённые копии в references сохраняют происхождение. Матрица соответствия: [06-features-review.md](06-features-review.md).
 
 ## 2. Общая оболочка
+
+Для UI-M0 действует ограниченный slice выше: без theme/tray subsystem и production draft/unsaved-policy workflow. Правила Close и предпочтений ниже описывают полный продукт; native Minimize не копирует browser-сцену «закрыто».
 
 Небольшое изменяемое окно с обычной Windows-рамкой. Системный шрифт, стандартные элементы управления, спокойные нейтральные поверхности и один акцент. На экранах настроек и данных маскот остаётся небольшим знаком бренда; крупная иллюстрация допустима в начале знакомства и About. Иллюстрация не заменяет статус и не конкурирует с ошибкой.
 
@@ -51,6 +63,8 @@
 Источник: [§16.1–16.4](../references/source-docs/windows-time-architecture.md#161-toolkit-and-interaction-model), [§22, открытые решения OPEN-5/6/8/10](../references/source-docs/windows-time-architecture.md#22-open-decisions-and-release-blockers).
 
 ## 3. Полный инвентарь поверхностей
+
+Инвентарь описывает полный продукт. В UI-M0 обязательны только Status, Sources, Settings, source details и локальный editor; остальные сцены не становятся условиями его завершения.
 
 ID ниже предназначены для согласования макетов и снимков. Они не задают программные маршруты или IPC-команды.
 
@@ -98,6 +112,8 @@ ID ниже предназначены для согласования маке�
 
 **Sync now** означает запрос более ранних измерений в существующей политике. Запрос не принимает целевой timestamp или новый адрес. UI различает **Checking**, **Already checking**, **Waiting for enough agreeing sources**, **Try again after the current limit**, **Correction in progress**, а также конкретный blocked/unavailable outcome. Повторные нажатия не создают бесконечную очередь; доступность кнопки и пояснение отражают coalescing/ограничение частоты. В прототипе это демонстрационные ответы; настоящие ограничения проверяются в службе.
 
+В native UI-M0 **Sync now** отключён; даже фиктивный click-to-success не добавляется. Production live-status/freshness правила ниже — D2 / Deferred до соответствующей интеграции.
+
 При потере связи со службой: **Status unavailable. Showing the last received snapshot.** Последние значения остаются историческими. Служба может продолжать работу; footer и Diagnostics также показывают неизвестное здоровье службы, а не неподтверждённый отказ. Подтверждённый service failure — другое состояние с отдельным основанием.
 
 ### 4.1 Четыре значения свежести
@@ -133,6 +149,8 @@ Source details и Diagnostics получают **Certificate-time basis** отд
 
 ### 5.2 Поля редактора
 
+В UI-M0 реализуется небольшой локальный **Update preview / Cancel** editor; **Save draft**, production revisions и дисковая запись относятся к D2 / Deferred. Полная таблица ниже не требует реализации каждого поля в первом slice.
+
 | Поле | Предложение UI | Валидация и ошибки |
 | --- | --- | --- |
 | Отображаемое имя | **Display name (optional)** | Ограниченный текст; не заменяет настоящую идентичность |
@@ -167,6 +185,8 @@ V1 не смешивает NTS и NTP в одном голосующем наб�
 Источники: [§4.2](../references/source-docs/windows-time-architecture.md#42-operation-authorization), [§6.2–6.4](../references/source-docs/windows-time-architecture.md#62-exact-json-and-resource-contract), [§7.2–7.5](../references/source-docs/windows-time-architecture.md#72-sample-to-clock-pipeline), [§10.5](../references/source-docs/windows-time-architecture.md#105-leap-seconds-and-time-scales), [§12.2](../references/source-docs/windows-time-architecture.md#122-configuration-semantics).
 
 ## 6. Settings, применение и UAC
+
+Для UI-M0 это Settings layout preview с недоступными machine-policy controls; production drafts, review/apply, UAC и результаты из этого раздела — D2 / Deferred и не блокируют UI-M0.
 
 Системные настройки и личные предпочтения разделены визуально и по сохранению.
 
@@ -244,6 +264,8 @@ About показывает версию макета отдельно от бу�
 
 ## 9. Фокус, доступность и ошибки
 
+Полные keyboard/focus/Narrator/UIA требования таблицы — D3 / Deferred для UI-M0, а theme/contrast/text/DPI qualification — D1 / Deferred. Не реализовывать и не квалифицировать их сейчас; сохранить встроенное поведение стандартных контролов и видимые ошибки restricted slice. Полный контракт возвращается по §16.5 архитектуры.
+
 | Ситуация | Контракт UI v0.2 |
 | --- | --- |
 | Открытие диалога | Фокус на первом содержательном поле или безопасном основном действии; заголовок доступен screen reader |
@@ -264,6 +286,8 @@ About показывает версию макета отдельно от бу�
 Источник: [§16.3–16.4](../references/source-docs/windows-time-architecture.md#163-accessibility-acceptance).
 
 ## 10. Что должно быть решено позднее
+
+Engineering gates ниже относятся к соответствующей production-интеграции; они не требуют реализации engine/TLS/служб для fixture-only UI-M0. Применимые UI Rust/FFI/dependency-quality правила сохраняются.
 
 До реализации нужно зафиксировать конкретные допустимые значения политики, поддерживаемые диапазоны дат, native-набор контролов, поведение TLS/revocation/retrieval и реальные условия восстановления. Изменения revision 1.4 по entropy legacy NTP и conditional native HTTP — инженерные gates, а не новые пользовательские переключатели. UI не заявляет ASVS L3 conformity или шифрование всего сетевого трафика.
 

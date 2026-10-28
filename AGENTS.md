@@ -34,6 +34,20 @@ Checkout began with documentation, skills, tool configuration. Inspect current
 manifests/source before choosing commands; historical documents/diagnostics do not
 establish current state. Never create Cargo workspace merely to pass docs/tool checks.
 
+## Current UI milestone
+
+Apply [architecture §16.5](docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
+before UI/QA skills. UI-M0 is an unelevated, fixture-only native prototype.
+**D1** theme/contrast/text/DPI work, **D2** production freshness/reconnect/policy/
+administrative-result handling and **D3** full keyboard/Narrator/UIA work are
+**Deferred**: do not implement or qualify them now, or make them UI-M0 blockers.
+Retain standard controls' inherited behavior and labels, Rust/FFI quality checks,
+sample-data labelling, disabled protected actions and native window observations.
+No live network/DNS, production IPC, persistence, services, elevation or clock
+effects. Carry deferred owners/triggers into the backlog and next-stage plan;
+restore them before the integrations/preview claims specified in §16.5.
+UI-M0 does not complete P0 toolkit qualification or constrain other workstreams.
+
 ## Architectural constraints
 
 Read canonical sections for exact limits; preserve these boundaries:

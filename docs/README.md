@@ -4,7 +4,11 @@
 **Snapshot date:** 28 October 2026  
 **Canonical architecture:** RWTC-ARCH-001, revision 1.4
 
-This bundle contains eight principal Markdown documents and seven supporting independent reviews. The new feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. All seven previously supplied principal documents remain byte-for-byte unchanged. Proposed behavior and planned checks are not implementation evidence.
+This bundle contains eight principal Markdown documents and seven supporting independent reviews. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include a 29 October 2026 amendment making upstream-code verification and stress testing explicit. Proposed behavior and planned checks are not implementation evidence.
+
+**Upstream code is not presumed bug-free or vulnerability-free.** Chrony and other reused projects, libraries and tools require independent verification of the behavior NevroTick relies on. See [architecture section 20.1](windows-time-architecture.md#201-independent-numerical-truth) and [the test and stress matrix](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing).
+
+**Current UI milestone:** [UI-M0, architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), is a restricted native fixture-only prototype. D1 display/theme, D2 production service/policy-state and D3 full keyboard/Narrator/UIA work are explicitly **Deferred**, not prerequisites for UI-M0. Restore them at their specified integration/preview gates. Other workstreams and eventual product/release requirements remain unchanged; completing UI-M0 does not complete P0 toolkit qualification.
 
 ## Reading guide
 

@@ -5,6 +5,8 @@
 **Baseline:** Product architecture RWTC-ARCH-001 revision 1.4  
 **Status:** Proposed enforcement specification and qualification plan. No product repository was created, tools installed, configurations applied, application compiled or Windows tests executed by this work.
 
+**Documentation amendment:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; no new execution evidence.
+
 ## 1. Purpose and recommended baseline
 
 The development environment should make unsafe changes difficult to introduce, policy bypasses visible, and missing evidence impossible to report as a pass. The strongest useful setup combines a pinned compiler, strict coherent lint rules, dependency admission, isolated execution, independent behavioral tests, protected CI and verification of the actual Windows artifacts.
@@ -43,6 +45,14 @@ The architecture remains authoritative for product behavior and unresolved choic
 The pinned website guidance at commit `6530d3a8d44cbe4f829b1e09edd3a1c90cffc087` informed the agent, security, testing and independent-review rules. Its TypeScript/Astro/npm commands are not Rust requirements. The security-audit guidance was used in design/guidance mode; this is not a completed codebase security audit.
 
 **Policy language:** “required” below means the proposed behavior of an implemented gate. It does not claim the gate already exists. A configuration blueprint must pass tool admission before becoming the repository's active policy. Existing architecture requirements are preserved; new quantitative choices, such as the advisory refresh interval, are labelled as proposals.
+
+### 2.1 Restricted first UI milestone applicability
+
+[Architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) incorporates the owner's NV-UI-M0-001 scope decision. UI-M0 is an unelevated native Win32 prototype with deterministic checked-in sample data, Status/Sources/Settings, source details and an ephemeral source-edit preview. Keep the sample-data label visible; local validation, **Update preview** and Cancel affect only in-memory state discarded on exit. Sync now is disabled with an explanation; protected actions are disabled or omitted. No live status, production IPC, NTP/NTS/DNS traffic, service operations, policy persistence, UAC, Apply or clock effects are permitted in this UI slice.
+
+D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, policy drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator/UIA qualification) are **Deferred**, not Passed, Removed or N/A. Agents must not implement or qualify them or block UI-M0 on them. Preserve standard controls' inherited behavior and labels in one documented reference display configuration. Carry the canonical deferral ledger and triggers into the backlog/next-stage record: restore the relevant D2 rules before live status or real policy/protected commands, and D1/D3 before general-user preview/release or earlier support/qualification claims.
+
+Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker/binding direction. One owner controls the shared native adapter; serialize shared desktop interaction and build outputs. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or MSI qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
 
 ## 3. Development threat model and execution boundaries
 
@@ -436,6 +446,26 @@ Qualify Windows x64 MSVC nightly fuzz/ASan separately against exact Rust, cargo-
 
 Add a tool only when it addresses a concrete uncovered invariant. Keep interpreter isolation, model a legitimate reachable witness, inject a fault to obtain a counterexample, and record unsupported operations. Reducing a proof bound or excluding a failing FFI case reduces the claim; it does not prove the omitted behavior.
 
+### 9.7 Verification of upstream code and stress testing
+
+Chrony and every other upstream codebase, crate, native library, tool, copied/ported implementation and generated component must be treated as potentially containing defects or vulnerabilities. Reputation, prior deployment, upstream tests, signatures and absent advisories do not exempt adopted behavior from independent verification. This is a verification requirement, not a claim that a particular upstream revision has a known defect. Apply [architecture sections 20.1 and 20.3](windows-time-architecture.md#201-independent-numerical-truth) to the exact revision, selected features, supported targets and actual NevroTick integration.
+
+For each adopted component, record the relied-on requirements, trust/resource boundaries, independent expected results and applicable test families. Exercise production entry points and retained upstream algorithms as well as NevroTick adapters; testing only a wrapper is insufficient evidence for algorithm correctness. Reuse upstream suites and reference trajectories, but keep independently authored expectations so shared defects can be detected.
+
+| Test family | Required question where applicable |
+| --- | --- |
+| Unit, boundary and property/model tests | Do valid cases, exact limits, arithmetic extremes and state transitions satisfy an independent contract, including combinations that ordinary examples miss? |
+| Differential and golden-vector tests | Does the implementation match independently justified protocol/numerical facts and the intended upstream behavior? Diagnose disagreements; upstream parity alone cannot settle correctness. |
+| Fuzzing, adversarial and negative tests | Do malformed, valid-shaped hostile, replayed, stale and oversized inputs preserve authority and resource limits, while valid neighbors still succeed? |
+| Integration, interoperability and native tests | Does the selected code behave correctly through real module/process/protocol boundaries and supported Windows APIs, features and artifacts? |
+| Concurrency, fault injection and recovery | Do cancellation, restart, suspend/resume, lost acknowledgements and unavailable/exhausted collaborators preserve ownership, cleanup and safe recovery under relevant interleavings? |
+| Load, stress and soak tests | Do steady and burst workloads, limits and controlled overload, repeated faults and prolonged operation preserve correctness, measured budgets, responsiveness and recovery? |
+| Regression, coverage and mutation checks | Do minimized failures remain reproducible, critical paths execute and independently specified assertions detect injected behavioral defects? Preserve the existing per-module/file thresholds and denominator rules. |
+
+Stress campaigns must include relevant mixes of legitimate and malformed traffic, peer/client churn, loss/delay/reordering/replay, reconnect storms, extreme clock/drift conditions and repeated lifecycle events. Exercise resource exhaustion in owned fixtures. Declare workload, concurrency, duration, seeds, resource ceilings, stop conditions and external timeouts before execution. Measure CPU, memory, wakeups, handles/threads, queue/log growth, latency and recovery; observe forbidden clock/security effects and leaks before harness cleanup. Retain CHECK-21's one-hour baseline and 72-hour reconnect/fault soak on named hardware; do not substitute a short smoke or report only that nothing crashed.
+
+Select techniques according to failure modes and supported environments; this does not mandate every technique for every file or authorize effects on shared hosts or public services. Preserve healthy controls, exact source/build/feature identities, first failures, seeds and minimized regression cases. A confirmed upstream defect requires a requirement-grounded correction and port/dependency-ledger entry, not weakened expectations to preserve parity. Reassess affected tests and stress cases after upstream fixes, version/feature changes or integration changes. Unsupported or unexecuted required cases remain gaps; test success never establishes absence of all bugs or vulnerabilities.
+
 ## 10. Native Windows qualification and safe experiment ownership
 
 Real Windows tests remain mandatory for service tokens/privileges, pipe identity and impersonation, protected files/registry, reparse/handle lifetime, process mitigations, DLL loading, clock effects, power/resume, accessibility and complete MSI lifecycle. Cross-compilation or a Linux model cannot close those checks.
@@ -497,7 +527,7 @@ Each required run records:
 - Actual commands, admitted environment overrides, discovered/ran/skipped scope and resource limits.
 - Original subprocess exits, first failures, retries, cancellations and raw result/artifact hashes.
 - Gate control results, exclusions, unsupported scope, reviewer and cleanup observations.
-- Final state: **PASS, FAIL, BLOCKED, NOT RUN, or justified N/A**.
+- Final state: **PASS, FAIL, BLOCKED, NOT RUN, or justified N/A**; UI-M0's explicitly scoped D1–D3 use **Deferred** with their re-entry triggers.
 
 Skipped, timed-out, unsupported or missing required cases cannot be summarized as PASS. Reviewer agreement does not multiply executions or authorize risk acceptance. A green status for a previous commit is not evidence for the current candidate.
 

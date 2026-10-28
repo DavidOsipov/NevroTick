@@ -15,6 +15,14 @@ The launch target remains supported Windows 11 x64, a native English-first UI, N
 
 This document translates [architecture revision 1.4](windows-time-architecture.md) into user capabilities, screens, defaults, failure behavior and implementable slices. It does not replace that specification, select new dependencies, clear the license/crypto holds, adopt TUF, or close any native/signing gate. Existing source/trust and correction requirements remain authoritative. New presentation choices are proposals for the first implementation.
 
+### Current UI entry milestone: UI-M0
+
+The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). Build an unelevated native Win32 fixture-only prototype: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice.
+
+D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator and UI Automation qualification) are **Deferred**. Agents must not implement or qualify them during UI-M0 or make them completion prerequisites. Preserve standard controls' inherited behavior and accessible labels. Restore the relevant D2 rules before each live-status, real-policy or protected-command integration; restore D1/D3 before general-user preview/release or earlier support/qualification claims. The UI owner carries their triggers into the backlog and next-stage record.
+
+Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one owner for the shared native adapter. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
+
 ### The ten basic capabilities
 
 | ID | Capability | User benefit |
@@ -295,6 +303,8 @@ A compulsory watcher, an independent watchdog service and always-on notification
 
 Every row below is **planned / not executed**. Test valid behavior and a relevant failure/forbidden effect through the actual entry point. Use independent timestamp fixtures and controlled time/network sources; implementation-produced expected output is not an independent oracle. Native authority, service lifecycle, clock trajectory and assistive-technology claims require the real supported Windows environment.
 
+This AC catalog describes the full product. UI-M0 uses the restricted M0-01–08 checks in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0); sample-data observations do not complete full-product cases, and D1–D3 remain Deferred without blocking UI-M0.
+
 | Case | Features | Scenario and required observation | Existing checks |
 | --- | --- | --- | --- |
 | AC-01 | F-01/02/10 | Boot without login, synchronize, open/close/crash UI, then log off. Service behavior continues; default closure leaves no UI process. | CHECK-12/21/23 |
@@ -322,10 +332,11 @@ Resource targets remain those of architecture §17, including separate service/U
 
 ## 9. Delivery slices for agentic development
 
-The feature scope can be delivered in small integrated slices while preserving the architecture's P0–P7 dependencies. The descriptions name future component owners; there is no application repository or implementation in this planning task.
+The feature scope can be delivered in small integrated slices while preserving the architecture's P0–P7 dependencies. UI-M0 is the restricted UI entry milestone, not a substitute for S-0 or a prerequisite for independent engine/broker/protocol/installation work. Inspect the current repository before choosing implementation commands.
 
 | Slice | Observable result | Work ownership and prerequisites | Exit evidence |
 | --- | --- | --- | --- |
+| UI-M0 — Restricted native preview | Fixture-only Status/Sources/Settings, source details, ephemeral editor and ordinary native window behavior | UI workstream; one native-adapter owner, coordinated presentation work and independent restricted-scope review | [M0-01–08](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), including native reference-configuration observations; D1–D3 **Deferred** with triggers; no live/protected effects or P0/full-product completion claim |
 | S-0 — Qualified foundations | A bounded lab can exercise platform/authority/installer assumptions and an accessible status prototype | Existing P0 cards plus DEV-01–03; platform, security, dependency/license, packaging and UI owners | Actual tool/environment/privilege evidence; finite decisions or explicit blockers. No unqualified production clock writes. |
 | S-1 — Independently checked time model | Core admits/rejects supplied data and derives explainable main/supporting membership | Portable core and verification owners, P1; pinned Chrony provenance and numerical/input contracts | Independent valid/fault vectors, trajectory comparisons, bounded fuzz/property evidence and inherited critical-file gates |
 | S-2 — Usable observe-only client | Actual admitted NTS/NTP acquisition, secured status and a minimal real read-only window | Network, broker/IPC and UI owners; P2/P3 plus early P5; exact provider/verifier graph qualified | Real acquisition/status, denial cases and ordinary-user behavior; observation makes no global clock writes |
@@ -340,9 +351,9 @@ Parallel agents may work on independent core, UI presentation and fixture tasks 
 
 ### First implementation task card
 
-When implementation is authorized, begin with S-0 and the existing development bootstrap. Alongside that work, define the feature-facing status contract in the future repository: field ownership, state/profile/health distinctions, the four freshness meanings, offset sign/units, stable reason IDs and Sync now outcomes.
+The first UI implementation task is UI-M0 under [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): establish or reuse the real native shell, add the bounded fixture presentation model, integrate the selected surfaces and independently review the restricted candidate. Do not implement a refresh command or attach live services in this slice. Other workstreams may continue S-0 and their existing development bootstrap independently.
 
-The smallest integrated UI prototype is **one status screen, Sources inspection and a bounded refresh action**, with real authority/connection handling as soon as its service slice exists. Its fixture set must include valid tracking, missing agreement, observe-only, stale/disconnected status and approval required. This scope can validate readability and accessibility before building all dialogs. Source/provider licensing and platform feasibility stay explicit prerequisites for their dependent executable paths.
+Before later live status, restore D2 and define/test field ownership, state/profile/health meaning, freshness/clock basis, generations, offset sign/units, stable reasons and action outcomes. Restore policy/result semantics before real editing or protected commands, and D1/D3 before the specified preview/release claims. Source/provider licensing and platform feasibility remain prerequisites for their dependent executable paths. UI-M0 supplies no evidence that those later gates are complete.
 
 ## 10. Defer from the basic release
 

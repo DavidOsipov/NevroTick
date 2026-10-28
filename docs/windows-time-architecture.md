@@ -8,6 +8,8 @@
 **Product name:** descriptive working title; branding is undecided  
 **Scope:** a chrony-derived Rust NTP/NTS client for Windows, with a small native UI
 
+**Documentation amendment:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; no new execution evidence.
+
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
 The selected v1 design is **one complete, signed, per-machine MSI** containing a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker, and the administration helper. The user installs, updates, repairs and removes one product. The installer owns service installation and reversible Windows Time Service handover. A future MSIX, if qualified, must contain the same complete product with an equivalent lifecycle; separate UI and service distributions are excluded.
@@ -408,6 +410,8 @@ The depth budget is a product schema/adapter requirement, not a claimed serde_js
 | Source lifecycle | ntp_sources.c plus scheduler/resolver behavior | Source identity, endpoint replacement, retry and generation ownership |
 
 Key reference functions include `SRC_SelectSource`, `combine_sources`, `SST_DoNewRegression`, `SST_GetSelectionData`, `REF_SetReference` and `update_slew`. Use exact pinned upstream source and fixtures. Maintain a deviation register whenever the Rust implementation intentionally differs. This is a behavior port with a new Windows shell, not a declaration of compatibility with every chrony option. [S17]
+
+Chrony is a fallible reference. Do not preserve a confirmed upstream defect merely to achieve behavioral parity. Establish the correct result from an independent requirement, protocol contract or numerical oracle; add a regression test and record the correction, affected upstream revision and upstream fix/report disposition in the port ledger and deviation register. Apply the verification policy in sections 20.1 and 20.3 to retained algorithms and their Windows integration.
 
 ### 7.2 Sample-to-clock pipeline
 
@@ -1262,6 +1266,8 @@ Native UI integration remains section 16's Win32-control prototype. Use document
 
 ## 16. Minimal, accessible user experience
 
+The first UI implementation slice is the owner's restricted **UI-M0** milestone in [section 16.5](#165-restricted-first-ui-milestone-ui-m0). Its temporary scope overrides immediate UI-specification and UI/testing-skill obligations for D1–D3. Sections 16.1–16.4 retain the full product and later qualification requirements; they must not turn those deferred groups into UI-M0 prerequisites.
+
 ### 16.1 Toolkit and interaction model
 
 The default candidate is native Win32 common controls through the `windows`/`windows-sys` bindings, with a small safe wrapper layer. It avoids a browser runtime and offers familiar Windows interaction. Native controls are a foundation, not proof that the application is accessible. P0 must demonstrate the real status view, source list, settings dialog, elevation action and tray interaction with Windows accessibility tools. [S40, S50]
@@ -1297,6 +1303,43 @@ Use applicable WCAG 2.2 A/AA criteria through WCAG2ICT as an evaluation framewor
 Start with English, but centralize messages in a typed catalog with stable error IDs. Add Russian when the locale is explicitly adopted, preserving placeholder/plural parity and accessible names. Locale selection never changes wire identifiers, policy keys, numerical units or authorization semantics.
 
 Show local date/time where useful, with UTC available in diagnostics. Label milliseconds, seconds and ppm explicitly and handle negative signs consistently. Screen-reader text should expand abbreviations where necessary. Long translations, bidi text and non-ASCII source display names must not break layout or create ambiguous security-sensitive identifiers.
+
+### 16.5 Restricted first UI milestone: UI-M0
+
+**Owner decision, 29 October 2026:** first build a small native Win32 visual and interaction prototype, running unelevated and disconnected from production services. This restriction applies only to the UI workstream. Engine, broker, protocol, installer and other work may proceed independently under their existing requirements. UI-M0 does not change the eventual architecture, one-MSI distribution or release gates, and does not complete P0 toolkit qualification, S0.5 or P5.
+
+The slice contains an ordinary resizable window with NevroTick branding, Status, Sources and Settings, source details and a small source-edit preview. Checked-in deterministic fixtures feed plain presentation types and native controls. Time/offset/uncertainty/authentication/health are sample values, not live measurements. Keep a persistent **Prototype — sample data** label, including equivalent context in standalone preview dialogs. **Sync now is disabled** with an explanation. Machine-policy controls are visibly unavailable; other protected actions are disabled with explanations or omitted. No Apply transaction, UAC imitation or fabricated synchronization/admin success is permitted.
+
+Local field validation may update an in-memory source preview through **Update preview**. An invalid edit shows an error and preserves the prior preview; Cancel discards unaccepted editor changes. Close exits normally and discards all preview edits. Normal minimize/restore/close must use native window behavior. This transient editor state introduces no production drafts, policy revisions, persistence or review/apply workflow. Do not require every scene in the design package. Written UI specifications control layout/content intent; HTML/JSX and screenshots are illustrative, not behavioral authority.
+
+| ID | Status and boundary during UI-M0 | Re-entry trigger |
+| --- | --- | --- |
+| D1 | **Deferred:** light/dark/system theme selection, custom themes, contrast, enlarged text, mixed-monitor DPI adaptation and qualification. Use default native controls in one documented reference display configuration; inherited Windows behavior may remain. | Before a general-user preview/release or an earlier milestone claiming these display modes. |
+| D2 | **Deferred:** production fresh/stale/unavailable snapshots, connection generations/reconnects, policy drafts/revisions/conflicts/review/apply, UAC and confirmed/failed/unknown administrative results. Only fixture data and transient local editor values are allowed. | Restore status freshness/connection/generation rules before live status, even read-only; restore policy, receiver authorization and result rules before real settings or protected commands. |
+| D3 | **Deferred:** full keyboard workflows, comprehensive focus management, Narrator/UIA qualification and custom accessibility providers. Preserve standard controls' inherited keyboard behavior and accessible labels without adding a full qualification campaign. | Before a general-user preview/release or an earlier accessibility/usability qualification claim. |
+
+Agents must **not implement or qualify D1–D3 during UI-M0, or make completing them a prerequisite for finishing it**. Record them as Deferred, never Passed, Removed or Not applicable. The UI workstream owner carries all three items and their triggers into the backlog and next-stage plan; a later independent reviewer verifies the restored requirements. The owner has already selected this scope; no additional permission round is required. UI-M0 completion does not automatically satisfy the re-entry gates.
+
+Use one available Windows 11 x64 environment and one monitor. Prefer 100% scaling, default text size and a light theme only where already available; document the actual theme, display/text scaling and manifest settings. Do not change machine-wide preferences to force a preferred fixture. Essential content must fit and ordinary resizing remain usable through simple layout/scrolling in that configuration. No alternate-theme, contrast, text-scaling or mixed-DPI campaign is in scope.
+
+Create or reuse the real UI crate only when implementing this slice, with the approved toolchain, narrow Windows bindings and pinned features. Standard buttons, tabs, text fields, lists and dialogs suffice; a conventional source list/details panel may replace browser-specific variable-height rows. Keep one owner for the shared Win32 adapter, message loop, callback state, handles, string lifetimes and teardown conventions. Presentation-model work may proceed in disjoint files; serialize shared desktop interaction and build-output writes. Retain relevant compiler/format/lint/dependency checks, narrow documented unsafe FFI and independent review. This milestone admits no replacement framework, browser runtime, plug-in loader or updater.
+
+There must be no actual NTP/NTS/DNS traffic, production IPC, service installation/control, registry policy writes, persistent preview state, elevation or host-clock action. The only data paths are fixture → presentation → controls and locally validated input → in-memory preview. Keep the fixture provider replaceable behind a small presentation boundary; do not add a service client, reconnect supervisor, generalized event/command system or hidden live-service switch. Restore the relevant D2 contracts before connecting real data or commands.
+
+The following are **planned acceptance checks, not completed results**:
+
+| ID | Observable acceptance |
+| --- | --- |
+| M0-01 | The real UI candidate builds for its selected Windows target/binding features and applicable repository checks; record actual commands and results. |
+| M0-02 | Native Windows observation establishes unelevated launch, normal minimize/restore and process exit/resource release on Close. |
+| M0-03 | Status, Sources and Settings fit the documented reference environment and retain essential content and the persistent sample-data label. |
+| M0-04 | One valid edit updates the preview; an invalid edit preserves it with visible error text; Cancel discards unaccepted edits; process restart retains no preview edits. |
+| M0-05 | Sync now and displayed protected actions are unavailable with explanations; no real sync, persisted policy or administrative success is claimed. |
+| M0-06 | Source/configuration review confirms fixture-only data and no live transport/privileged effect paths. Native lifecycle observation supplements source review. |
+| M0-07 | Independent review finds no unresolved material ownership/lifetime/error-handling defect in the changed native adapter; checks retain real failures/skips. |
+| M0-08 | The completion record identifies the exact candidate and dirty inputs, build/lockfile configuration, screens/fixtures, observed Windows/display environment, commands/results, evidence, gaps and D1–D3 as Deferred with their owners/triggers. No general accessibility/security-conformance/release claim is made. |
+
+Use small independent behavioral checks for the editor and meaningful mouse-driven native window observations. Do not add a broad production test campaign. A cross-build, screenshot or zero-test success cannot satisfy native M0-02/M0-03. If native execution is unavailable, record it as incomplete and continue only work independent of that observation; UI-M0 is not complete. A live-service path is a scope violation to remove or move to later work, not a reason to implement D2 now. Scoped completion authorizes no signing, deployment or host-state change.
 
 ---
 
@@ -1636,6 +1679,8 @@ Version 1 uses complete signed-installer updates; a qualified future Store distr
 
 ### 20.1 Independent numerical truth
 
+**Upstream origin is not an assurance of correctness or security.** NevroTick must not presume that chrony, any other upstream project, library or tool, copied/ported code, generated code or native dependency is free of bugs or vulnerabilities. Project maturity, upstream tests, signed artifacts, a clean advisory scan and agreement between implementations do not establish that guarantee. Every adopted component needs verification of the behavior and boundaries NevroTick relies on, using its actual revision, features, target and integration. Reuse upstream tests as additional evidence; derive independent expectations and adversarial cases rather than relying on those tests or the upstream implementation as the sole oracle.
+
 Build a deterministic simulator that generates timestamps from a known true UTC trajectory, oscillator error, delay/asymmetry, loss and source faults. Production code must not compute its own expected results. Use independently authored packet/crypto vectors, analytic scenarios and model properties alongside differential comparison with pinned chrony behavior.
 
 For example, with millisecond-relative readings `T1=0, T2=70, T3=80, T4=110`, the expected offset is +20 ms and round-trip network delay is 100 ms. This fixture comes from a known +20 ms server offset, 50 ms each-way network delay and 10 ms server processing. A separate asymmetric-delay case must demonstrate the resulting estimation bias rather than claiming authentication removes it.
@@ -1645,6 +1690,8 @@ Compare selected/supporting/rejected membership, reason codes, polling, uncertai
 clknetsim is useful for reference trajectories, but its Linux syscall interception is not a Windows service harness. Pin its revision and prove that the Rust adapter's I/O/timer paths are actually intercepted, or use an explicit simulation interface and compare captured chrony trajectories. Real Windows tests remain mandatory. [S53]
 
 ### 20.2 Acceptance catalog
+
+For restricted UI-M0, use [M0-01–M0-08 in section 16.5](#165-restricted-first-ui-milestone-ui-m0). They do not discharge the full product CHECK catalog, P0 toolkit qualification or the deferred D1–D3 groups.
 
 Every check below is **planned / not executed**. Owners are future engineering roles, not a claim that staffing is assigned. A check spanning several phases is qualified incrementally: a P0 experiment supplies only its named subset of evidence, not an overall release pass. In particular, S0.6 may test CHECK-23 lifecycle/authority with isolated test signing; production publisher trust is established in P6/CHECK-18.
 
@@ -1680,7 +1727,11 @@ Every check below is **planned / not executed**. Owners are future engineering r
 
 ### 20.3 Test layers and execution safety
 
+UI-M0 uses section 16.5's bounded editor/native-window evidence and applicable Rust/FFI/dependency checks. D1–D3 and broad production stress/soak/coverage/mutation campaigns are not prerequisites for this fixture-only slice. The following product verification requirements retain their applicability to later integration and release; they are not completed by a prototype result.
+
 Unit/property/model tests cover the pure core, bounded parsers and transitions. Fuzz raw UDP, NTS-KE, IPC/configuration/persistence boundaries with allocation/time limits. Use Miri and sanitizers where the selected targets support them; record unsupported target coverage rather than inventing it. Differential tests cover chrony behavior, and Windows integration covers actual SCM, privileges, IPC, clock operations and power transitions.
+
+Include adopted upstream code in the requirement-to-test inventory, with no exemption based on its origin. Select unit, integration, boundary, property/model, differential, fuzz/adversarial, concurrency, fault/recovery and load/stress/soak tests for its risks and integration; use the matrix in [the development-hardening guide, section 9.7](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing). Test sustained and burst workloads, controlled overload, combined source/network faults and repeated lifecycle transitions. Observe correctness, forbidden effects, bounded CPU/memory/handles/queues/logging, responsiveness and recovery before teardown. CHECK-21 retains its one-hour baseline and 72-hour reconnect/fault soak; a short fuzz smoke or crash-free run cannot replace those measurements. Select methods by the component's failure modes rather than requiring every technique for every file, and record missing evidence explicitly.
 
 Clock-changing tests run only in disposable VMs or dedicated machines with recorded host-time integration, snapshots/recovery access and controlled local time sources. They must not run on an ordinary shared developer workstation or public production servers. The harness restores state and checks cleanup before teardown can hide leaked handles or active adjustments.
 
@@ -1719,6 +1770,8 @@ Extend CHECK-17/18/21/23 with actual Event Viewer channel/provider ACLs, missing
 ## 21. Delivery phases and readiness gates
 
 Implementation is not authorized or started by this planning document. When requested, create the future repository with the source pins, this plan, an adapted Rust policy and a working-state index. Preserve one canonical plan rather than separate conflicting agent plans.
+
+The current first UI slice is [UI-M0](#165-restricted-first-ui-milestone-ui-m0): real native shell → deterministic presentation/editor model → integrated selected screens → independent restricted-candidate review. Its M0-01–M0-08 exit and D1–D3 restoration gates stand separately from P0/S0.5 and P5. It is not a new global prerequisite for the other workstreams; the full phases below remain in force.
 
 ### P0 - Prove the platform and policy assumptions
 
