@@ -73,6 +73,18 @@ effects. Carry deferred owners/triggers into the backlog and next-stage plan;
 restore them before the integrations/preview claims specified in §16.5.
 UI-M0 does not complete P0 toolkit qualification or constrain other workstreams.
 
+For UI work, use David's [design v0.2 reference](docs/nevrotick-design-v0.2/README.md):
+read the [UI specification](docs/nevrotick-design-v0.2/docs/02-ui-spec.md), then consult
+the [interactive preview](docs/nevrotick-design-v0.2/NevroTick-UI-preview.html) and
+[screen catalogue](docs/nevrotick-design-v0.2/screens/README.md) for composition and
+interaction references. Use the [AVIF brand kit](docs/NevroTick-AVIF-kit-v1/README.md)
+and its [manifest](docs/NevroTick-AVIF-kit-v1/manifest.json) for mascot, logos,
+wordmarks, icons and background variants; preserve its asset notices separately
+from the code licence. Apply these references within the milestone above. The
+React viewer and archived architecture copies are reference material; current
+canonical contracts govern behavior, and rendered scenes may predate specification
+corrections.
+
 ## Architectural constraints
 
 Read canonical sections for exact limits; preserve these boundaries:

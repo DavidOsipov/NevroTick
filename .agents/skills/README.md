@@ -37,8 +37,12 @@ release. Future-version work must name changed architecture decisions.
 
 Preserve source skills' evidence discipline: existing work, producer → state →
 consumer tracing, independent behavioral oracles; distinguish compiler, simulated,
-native Windows, packaged-product proof. Repository currently has documentation/
-tooling; skills establish no application, dependency graph, Windows test run or release.
+native Windows, packaged-product proof. The repository now contains the minimal
+`nevrotick-ui` UI-M0 workspace and its admitted dependency graph. Use
+[the shared verifier](../../TOOLING.md#starting-implementation) for its portable,
+dependency and Windows cross-build rows, and [the task record](../../tasks/ui-m0.md)
+for executed evidence. Skills themselves establish no passing application test,
+native observation or release qualification. UI-M0's D1/D2/D3 deferrals remain.
 
 When selecting existing compiler, lint, test, security or inventory commands, use
 [configured tool execution](testing/references/configured-tooling.md). It maps
@@ -96,5 +100,5 @@ license-metadata mismatches, missing license files, inventory drift. Recorded
 hash alone neither legally clears license nor authenticates unfetched remote source.
 
 Discovery checks/realistic independent use exercises provide separate evidence.
-Package checks do not test Rust behavior. Select Cargo/Windows checks for actual
-implementation changes after Cargo workspace exists.
+Package checks do not test Rust behavior. Select the shared product verifier and
+applicable native observations for actual implementation changes.

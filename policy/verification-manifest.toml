@@ -1,9 +1,19 @@
-# Fill these inventories from actual product ownership before application gates run.
-# An empty inventory is preparation, never passing product evidence.
+# Initial UI-M0 ownership only. Extend from actual owners as production code arrives.
+# This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
-status = "awaiting-product-code"
+status = "ui-m0-scope-recorded-coverage-and-mutation-pending"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
-security_modules = []
-critical_files = []
-feature_matrix = []
+security_modules = [
+    { name = "preview-admission", package = "nevrotick-ui", files = ["crates/nevrotick-ui/src/model.rs"], scope = "local prototype fields only; no production authority" },
+]
+critical_files = [
+    "crates/nevrotick-ui/src/model.rs",
+    "crates/nevrotick-ui/src/native.rs",
+    "crates/nevrotick-ui/src/native/controls.rs",
+    "crates/nevrotick-ui/src/native/view.rs",
+]
+feature_matrix = [
+    { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "nevrotick-ui", target = "x86_64-pc-windows-msvc", scope = "fixture native UI; native observations separate", dependency_owner = "policy/ui-m0-dependencies.json" },
+]

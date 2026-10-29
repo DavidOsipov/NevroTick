@@ -1,0 +1,103 @@
+name: Rust product checks
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: rust-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+jobs:
+  portable:
+    name: UI-M0 portable model
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare the Linux sandbox capability
+        run: |
+          if ! command -v bwrap >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends bubblewrap
+          fi
+          bwrap --version
+      - name: Challenge product admission and result accounting
+        run: |
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_verify.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_prepare_product.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_refresh_product_advisories.py -v
+      - name: Acquire the pinned compiler in private runner storage
+        run: python3 -B .github/security/prepare_rust.py
+      - name: Acquire the reviewed vendor bytes without executing package code
+        env:
+          VENDOR_DIR: ${{ runner.temp }}/ui-m0-vendor
+        run: python3 -B scripts/prepare-product.py --vendor-dir "${VENDOR_DIR}"
+      - name: Acquire pinned test and dependency tools and verify before execution
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --connect-timeout 20 --max-time 180 --retry 2 \
+            'https://github.com/nextest-rs/nextest/releases/download/cargo-nextest-0.9.150/cargo-nextest-0.9.150-x86_64-unknown-linux-gnu.tar.gz' \
+            --output nextest.tar.gz
+          echo 'b0959bc64232974224cf9fb22c915845398c0e8668fa7831eb5b43fb1eef781f  nextest.tar.gz' | sha256sum --check --strict
+          mkdir nextest-tool
+          tar --extract --gzip --file nextest.tar.gz --directory nextest-tool cargo-nextest
+          echo '62dcc4348e189f5fbd5881f6b753c59d62f2e664b28c6357898644288d703c02  nextest-tool/cargo-nextest' | sha256sum --check --strict
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
+            --connect-timeout 20 --max-time 180 --retry 2 \
+            'https://github.com/EmbarkStudios/cargo-deny/releases/download/0.20.2/cargo-deny-0.20.2-x86_64-unknown-linux-musl.tar.gz' \
+            --output deny.tar.gz
+          echo '9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f  deny.tar.gz' | sha256sum --check --strict
+          mkdir deny-tool
+          tar --extract --gzip --file deny.tar.gz --directory deny-tool --strip-components=1 \
+            cargo-deny-0.20.2-x86_64-unknown-linux-musl/cargo-deny
+          echo 'b329e25933d01c36dd7c47d84ea5716694f9b7caf53a5003d45674703a8ed54a  deny-tool/cargo-deny' | sha256sum --check --strict
+      - name: Acquire current advisory and registry metadata separately
+        env:
+          METADATA_HOME: ${{ runner.temp }}/ui-m0-metadata
+          METADATA_RECEIPT: ${{ runner.temp }}/ui-m0-metadata.json
+          DENY_BINARY: ${{ runner.temp }}/deny-tool/cargo-deny
+        run: |
+          python3 -B scripts/refresh-product-advisories.py \
+            --cargo-home "${METADATA_HOME}" --receipt "${METADATA_RECEIPT}" \
+            --deny "${DENY_BINARY}" \
+            --toolchain-dir "${RUSTUP_HOME}/toolchains/1.99.1-x86_64-unknown-linux-gnu"
+      - name: Check the frozen dependency graph before package code executes
+        env:
+          PRODUCT_SCRATCH: ${{ runner.temp }}
+          VENDOR_DIR: ${{ runner.temp }}/ui-m0-vendor
+          METADATA_RECEIPT: ${{ runner.temp }}/ui-m0-metadata.json
+          DENY_BINARY: ${{ runner.temp }}/deny-tool/cargo-deny
+          DEPENDENCY_RECEIPT: ${{ runner.temp }}/ui-m0-dependencies.json
+        run: |
+          python3 -B scripts/verify.py --lane dependencies \
+            --toolchain-dir "${RUSTUP_HOME}/toolchains/1.99.1-x86_64-unknown-linux-gnu" \
+            --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \
+            --deny "${DENY_BINARY}" --advisory-receipt "${METADATA_RECEIPT}" \
+            --json "${DEPENDENCY_RECEIPT}"
+      - name: Verify actual portable product code in the isolated row
+        env:
+          PRODUCT_SCRATCH: ${{ runner.temp }}
+          VENDOR_DIR: ${{ runner.temp }}/ui-m0-vendor
+          NEXTEST_BINARY: ${{ runner.temp }}/nextest-tool/cargo-nextest
+          PRODUCT_RECEIPT: ${{ runner.temp }}/ui-m0-portable.json
+        run: |
+          python3 -B scripts/verify.py --lane portable \
+            --toolchain-dir "${RUSTUP_HOME}/toolchains/1.99.1-x86_64-unknown-linux-gnu" \
+            --vendor-dir "${VENDOR_DIR}" --scratch-root "${PRODUCT_SCRATCH}" \
+            --nextest "${NEXTEST_BINARY}" --json "${PRODUCT_RECEIPT}"

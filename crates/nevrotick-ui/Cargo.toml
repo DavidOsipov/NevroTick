@@ -1,0 +1,21 @@
+[package]
+name = "nevrotick-ui"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Unelevated fixture-only NevroTick UI-M0 prototype"
+
+[lints]
+workspace = true
+
+[dependencies]
+garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", default-features = false, features = [
+    "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_LibraryLoader",
+    "Win32_UI_WindowsAndMessaging", "Win32_UI_Controls",
+] }

@@ -5,9 +5,12 @@ The repository pin is Rust **1.99.1**, the current stable release checked agains
 its official distribution manifest. Rustup is **1.29.2**. The same compiler and
 components are installed in WSL and for the native Windows user.
 
-There is no application Cargo workspace yet. This setup builds temporary,
-dependency-free fixtures outside the checkout; it does not manufacture passing
-application tests or select production crates, an MSRV, or a shipping profile.
+The initial setup used temporary, dependency-free fixtures outside the checkout.
+On 29 October, the separate UI-M0 implementation added a minimal real Cargo
+workspace, one `nevrotick-ui` crate and a locked dependency graph. Use
+[Starting implementation](#starting-implementation) for its shared verification
+command and [the task record](tasks/ui-m0.md) for current results. Historical
+bootstrap controls below do not establish application behavior or a shipping profile.
 The additional analysis tools below were installed separately on 29 October;
 their compiler experiments do not change the repository's shipping Rust pin.
 
@@ -16,15 +19,16 @@ their compiler experiments do not change the repository's shipping Rust pin.
 [rust-toolchain.toml](rust-toolchain.toml) selects the compiler, minimal profile,
 Clippy, rustfmt, rust-analyzer, rust-src, LLVM tools, and the
 `x86_64-pc-windows-msvc` standard library. It governs this checkout without
-changing other projects' default compiler. Edition 2024 has passed the bootstrap
-fixture; actual package compatibility and MSRV remain explicit future decisions.
+changing other projects' default compiler. UI-M0 declares edition 2024 and
+`rust-version = "1.99"`; its verification lane uses the pinned 1.99.1 compiler.
+This does not establish a separately tested production MSRV.
 
 | Tool | Installed stable version | Initial scope |
 | --- | --- | --- |
 | Rust / Cargo | 1.99.1 | Host compilation and Windows MSVC target |
 | rustup | 1.29.2 | Toolchain management |
 | cargo-nextest | 0.9.150 | Optional test runner; doctests remain separate |
-| cargo-deny | 0.20.2 | Dependency-policy tool when a real graph exists |
+| cargo-deny | 0.20.2 | Frozen UI-M0 dependency rows and separate bootstrap controls |
 | cargo-audit | 0.22.2 | Optional complementary scan; shares RustSec data |
 | cargo-mutants | 27.1.0 | Later critical-file mutation checks |
 | cargo-llvm-cov | 0.9.1 | Later measured coverage with matching LLVM tools |
@@ -35,8 +39,9 @@ fixture; actual package compatibility and MSRV remain explicit future decisions.
 URLs/digests, installed binary identities, scopes and pending qualifications.
 Tool availability and a version smoke do not qualify its eventual graph,
 coverage, mutation or advisory gate. The strict configurations below have
-isolated controls; real product graphs and behavioral denominators remain pending.
-No application dependencies or signing authority were selected by this setup.
+isolated controls. The first UI-M0 graph has separate admission evidence;
+production graphs and security coverage/mutation denominators remain pending.
+The original tool setup selected no application dependencies or signing authority.
 
 ## Repeatable WSL setup and checks
 
@@ -85,15 +90,15 @@ follow the development-hardening guide.
 | --- | --- |
 | [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. `missing_docs_in_private_items` also requires private-item documentation. Permanent local `allow` attributes, multiple unsafe operations per block and discarded `Result::ok()` values fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |
 | [rustfmt.toml](rustfmt.toml), [clippy.toml](clippy.toml) | Explicit 2024 formatting and private API checks; no blanket test exemptions for unwrap/expect/panic/debug output. |
-| [deny.toml](deny.toml) | Strict advisory, license, source, duplicate/wildcard and build-script policy, including held crypto providers. Only the project's GPL-2.0-only license is initially allowed; third-party licenses require exact-graph review. |
+| [deny.toml](deny.toml) | Retained strict bootstrap policy, including held crypto providers; its GPL-2.0-only/no-build-script baseline remains unchanged. The UI-M0 verifier adds only the reviewed graph's grants to an owned snapshot; direct `cargo deny` against this baseline does not admit the product graph. |
 | [.config/nextest.toml](.config/nextest.toml) | Two test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
 | [.cargo/audit.toml](.cargo/audit.toml) | No ignored advisory IDs or severity cutoff; warnings fail. Acquisition is separate from analysis and requires an admitted database/index snapshot. |
 | [.cargo/mutants.toml](.cargo/mutants.toml) | Frozen Cargo inputs, bounded timeout multipliers, no copied VCS/target, lint capping disabled. Enumeration/configuration controls are qualified; a mutation campaign is still pending. |
-| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Inventories are explicitly awaiting product code; empty inventories cannot establish application qualification. |
+| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Records the UI-M0 preview-admission owner, four critical files and Linux/Windows target rows. Coverage/mutation results remain pending; UI-M0 follows its restricted acceptance scope. |
 
-The Rust Cargo fragment is tested in owned temporary workspaces. Adopt its lint
-and profile tables into the first real workspace and put `[lints] workspace = true`
-in **every** first-party member, including build-script/proc-macro crates. Pure
+The Rust Cargo fragment is tested in owned temporary workspaces and is now
+adopted by the UI-M0 workspace. Keep `[lints] workspace = true` in **every**
+first-party member, including any future build-script/proc-macro crates. Pure
 domain/protocol/numerical crates additionally use `#![forbid(unsafe_code)]`.
 Windows adapters use narrowly scoped, reasoned exceptions with documented safety
 contracts. Stale expectations fail. Release `panic = "unwind"` is a qualification
@@ -105,9 +110,10 @@ now require shared garde validation inside private checked construction, plus
 explicit input/output, failure/effect and lifecycle contracts for every function
 and module. [The agent enforcement guide](.agents/skills/implementation/implement-rust-contracts/references/contract-enforcement.md)
 defines rule ownership, bypass restrictions and required behavioral evidence.
-Garde 0.23.0 with defaults disabled and `derive` only is the selected starting
-dependency; no product Cargo graph has been installed or qualified. Public/private
-documentation lints enforce presence, not the correctness of those contracts.
+Garde 0.23.0 with defaults disabled and `derive` only is now part of the admitted
+UI-M0 graph. Public/private documentation lints enforce presence, not the
+correctness of those contracts. The following receipts concern the earlier
+independent bootstrap controls, not the UI-M0 application checks.
 The private-helper control passed with the old policy, failed under the new rule,
 and retained a passing documented neighbor. All 37 strict-policy fixture lanes
 and 24 policy tests passed; receipts are under
@@ -122,10 +128,10 @@ audit, nextest and mutation enumeration with local fixtures in the cleared-env,
 network-isolated sandbox. Neither command builds application code.
 
 `python3 -B scripts/check-strict.py --workspace` checks **manifest adoption only**;
-it currently fails because no application workspace exists. It does not prove
-the intended package/target inventory, feature matrix, native behavior or release
-readiness. The reviewed verification inventory must be populated from real owners
-before application gates are introduced. CLI evidence paths must resolve outside
+it can now inspect the actual UI-M0 workspace. It does not prove the intended
+package/target inventory, feature matrix, native behavior or release readiness.
+Extend the reviewed security/critical-file inventory as production owners arrive
+and apply the corresponding gates. CLI evidence paths must resolve outside
 the checkout; they cannot overwrite checked policy files.
 
 Dependency controls cover local license/ban/build-script graphs and synthetic
@@ -137,8 +143,8 @@ RustSec/index refresh receipt no older than 24 hours. Keep network refresh separ
 from frozen, credential-free analysis. `cargo-audit` shares RustSec data with
 `cargo-deny`; it is complementary evidence, not an independent advisory source.
 
-Once real code and the critical inventory exist, use the admitted package/feature/
-target rows and native host where required. Coverage has no native configuration
+For applicable coverage/mutation work, use the recorded package/feature/target
+rows and native host where required. Coverage has no native configuration
 file: the selected invocation must pass `--frozen --failure-mode any --json
 --output-path <external-report> --fail-under-file-lines 90` to `cargo llvm-cov`.
 Reconcile its files and executable-line denominators with the reviewed security
@@ -166,7 +172,7 @@ jobs; deferral is never reported as successful SAST.
 | Tool / configuration | Strict behavior |
 | --- | --- |
 | [CodeQL configuration](.github/codeql-config.yml) and [pins](.github/security/tool-pins.json) | Prepared, deferred lanes for Actions, Python, JavaScript and Rust. Retained settings pin the bundle/actions and select `security-extended` plus `security-and-quality` without query exclusions. Source presence does not override deferral. Re-enabling requires a reviewed workflow and independent gate-policy change. |
-| [Rust preparation](.github/security/prepare_rust.py) and [admission](.github/security/check_rust_policy.py) | Retained, inactive preparation for a future isolated hosted lane: official metadata/toolchain digests, private tool directories, compiler identity, tracked lockfile and member policy admission. Rust extraction can execute build scripts/proc macros even with `build-mode: none`; these scripts are not ordinary local setup commands. |
+| [Rust preparation](.github/security/prepare_rust.py) and [admission](.github/security/check_rust_policy.py) | The new product workflow uses the private pinned-toolchain preparation; the CodeQL admission/extraction path remains inactive. Product admission and isolated execution use `scripts/verify.py`. Rust extraction can execute build scripts/proc macros even with `build-mode: none`; retained CodeQL preparation is not an ordinary local setup command. |
 | [SARIF gate](.github/security/check_sarif.py) | Retained report-policy controls reject all findings, including suppressed/baseline findings, plus missing/malformed/oversized reports, failed invocations and empty source/line evidence. Its helper tests do not supply a CodeQL execution or application SAST result. |
 | [Workflow checker](.github/security/check_workflows.py) and [pins](.github/security/workflow-tool-pins.json) | actionlint 1.7.12, ShellCheck 0.11.0 with optional checks, and zizmor 1.30.1 in pedantic offline mode. All reported severities fail; ignores and user configuration are disabled. Acquisition verifies archive and executable SHA-256 and copies only a bounded regular archive member. |
 | [Gitleaks checker](.github/security/check_secrets.py) and [configuration](.gitleaks.toml) | Pinned executable, redaction, default detection rules, full retained-history and working-tree scans. No finding baseline or inline suppression bypass. One independently reviewed exact ASVS prose line in two documentation locations is the only project exception; token-shaped test values in those same documents remain blocking. |
@@ -186,10 +192,28 @@ template injection before checking repository workflows. Secret-scan acquisition
 and its exact invocation live in the workflow; the checker accepts only the
 pinned executable digest and challenges synthetic-secret detection first.
 
+The new [Rust workflow](.github/workflows/rust.yml) uses the same shared verifier:
+it provisions bubblewrap on its temporary Linux runner, acquires pinned tools and
+reviewed vendor bytes, refreshes public advisory/index
+metadata separately, checks both frozen dependency target rows, then runs the
+portable product row. Windows linking and native UI observations remain separate.
+The workflow must be published and observed successfully before its Rust status
+is added as a required check; local workflow validation does not establish a
+hosted execution result.
+
+GitHub ruleset reads on 29 October confirmed the alignment with CodeQL deferral.
+[Main protection (26069359)](https://github.com/DavidOsipov/NevroTick/rules/26069359)
+still protects all branches against deletion and force pushes and requires linear
+history and signed commits; its deferred CodeQL requirement was removed.
+[Main required checks (26110199)](https://github.com/DavidOsipov/NevroTick/rules/26110199)
+requires `Security gate` on `refs/heads/main`, bound to GitHub Actions integration
+15368 with strict status checks. Creation is exempt, and both rulesets retain the
+same existing bypass actors. No new Rust status is required yet. These settings
+establish neither new-workflow execution nor protection against an authorized bypass.
+
 Local analyzer/control results do not establish application CodeQL extraction,
-complete Rust/Windows cfg coverage, a protected required status or
-hosted secret push protection. GitHub rulesets/environment settings need separate
-hosted evidence. Offline zizmor skips online metadata audits, and actionlint's
+complete Rust/Windows cfg coverage or hosted secret push protection.
+Offline zizmor skips online metadata audits, and actionlint's
 optional Python helper is disabled; deferred CodeQL supplies no Python analysis. A native
 PowerShell-specific analyzer and native Windows/package mitigation observations
 remain pending. Do not treat configuration alone as those qualifications.
@@ -262,8 +286,9 @@ python3 -B scripts/codeql-mcp.py --create-database /absolute/source --name revie
 Extraction accepts this checkout or owned external fixtures, creates a new
 database, and seals source inputs. Rust extraction can run build scripts and
 proc macros even with `--build-mode=none`. Missing offline dependencies or
-unsupported target/features remain incomplete. The current product has no Cargo
-workspace; do not create one for a tool check. Use
+unsupported target/features remain incomplete. UI-M0 now has a real workspace;
+the historical fixture receipt below does not qualify its CodeQL extraction or
+queries. Do not create extra workspaces for a tool check. Use
 [the data-flow skill](.agents/skills/testing/qa-data-flow-analysis/SKILL.md) and
 [its query/evidence reference](.agents/skills/testing/references/codeql-data-flow.md)
 for explicit source/sink models, positive/negative controls, database freshness
@@ -290,8 +315,8 @@ crate candidates in architecture sections 18.5–18.8. Installed Rust 1.99.1 and
 existing Cargo analysis-tool pins remain current; the selected runtime versions
 also remain current. The [architecture dependency refresh](docs/windows-time-architecture.md#186-runtime-dependency-register)
 updates held AWS-LC/Schannel references and preserves their provider/license/API
-gates. There is no application lockfile to resolve yet. Prototype dependencies
-are outside this maintenance task and are unchanged.
+gates. That maintenance pass preceded the first application lockfile; the later
+UI-M0 graph was admitted separately and does not lift the held provider decisions.
 
 ## Additional Rust analysis tools
 
@@ -393,7 +418,7 @@ immutable lockfile and a private source snapshot. Its Cargo cache mounts are
 read-only and exclude credentials. Reports and input/output hash receipts go to
 a **new external directory**, leaving user manifests, lockfiles and source intact.
 
-Once the real Cargo manifest and lockfile exist:
+For an admitted build/feature row and the generator's required offline cache:
 
 ```sh
 python3 -B scripts/generate-sbom.py --output-dir /tmp/nevrotick-rust-sbom
@@ -435,8 +460,9 @@ release, verifies that every required asset is attached, then publishes the draf
 The attachment step uses,
 for example `gh release upload "$tag" "$signed_msi" "$complete_sbom" "$checksums"`
 without `--clobber`. This is a handoff contract, not a new publication job or
-authorization to upload now. No application Cargo graph, MSI or release workflow
-exists yet, so complete-package reconciliation and publication remain pending.
+authorization to upload now. The UI-M0 Cargo graph exists, but no complete MSI or
+release workflow exists, so complete-package reconciliation and publication
+remain pending.
 
 ## Native Windows memory diagnostics
 
@@ -541,8 +567,9 @@ resource soak. Custom allocators can escape Windows heap instrumentation.
 Measure ordinary resource budgets separately from instrumentation overhead.
 
 Read the [agent workflow](.agents/skills/testing/references/windows-memory.md)
-before selecting native tests. No application Cargo workspace or native product
-memory qualification exists yet; UI-M0 remains fixture-only. Native control
+before selecting native tests. The UI-M0 workspace exists; its reached native
+paths need their own observations and are not qualified by these tool controls.
+UI-M0 remains fixture-only. Native control
 evidence is retained outside the checkout under
 `%LOCALAPPDATA%\NevroTick\windows-memory-20261029`. The bootstrap controls use a
 fixed dependency-free Rust executable, native Windows build 10.0.26300 and an
@@ -589,18 +616,19 @@ The selected stable catalog supplies SDK selector **10.0.28000** and CRT selecto
 **14.51** (CRT payload **14.51.36254**). Selectors and exact catalog/payload
 identities are separate; the manifest and setup receipt retain both.
 
-Acquire the reviewed libraries into an explicit cache on the Windows drive,
-then use the narrow linker override when a real Cargo workspace exists:
+Acquire the reviewed libraries into an explicit cache on the Windows drive when
+that setup is needed:
 
 ```sh
 python3 -B scripts/setup-xwin.py --cache-dir '/mnt/c/Users/<Windows-user>/AppData/Local/NevroTick/xwin-cache' --accept-license
-cargo --config "target.x86_64-pc-windows-msvc.linker=\"${PWD}/scripts/xwin-linker.py\"" build --target x86_64-pc-windows-msvc --locked
 ```
 
 The setup prints the library location and retains acquisition evidence outside
 the checkout. The wrapper adds only the three admitted library paths and
 preserves the compiler's link arguments, including the target hardening flags.
-It does not change the global Cargo configuration or default target.
+It does not change the global Cargo configuration or default target. For UI-M0,
+use the shared `windows` row below, which additionally admits the complete library
+inventory and builds inside the isolated product environment.
 
 Setup prunes verified payload copies and matching unpack intermediates by
 default; `--keep-cache` retains them for offline reacquisition. The installed
@@ -645,32 +673,109 @@ Those experiments still need the architecture's owned disposable Windows lab.
 
 ## Starting implementation
 
-Use [docs/README.md](docs/README.md), the canonical architecture, and hardening
-DEV-01 onward. The next real experiment owns its Cargo workspace, exact lockfile,
-member lint inheritance, feature rows, independent acceptance oracle and selected
-profiles. The strict lint/profile fragment above must be adopted there; this
-environment setup does not silently impose a shipping panic policy.
+Start with [docs/README.md](docs/README.md), architecture §16.5 and
+[the UI-M0 task record](tasks/ui-m0.md). The minimal [workspace](Cargo.toml)
+contains one [nevrotick-ui crate](crates/nevrotick-ui/Cargo.toml): a portable,
+checked preview model and a Windows-only native adapter. Its fixture data and
+edits are in memory only. There is no live network/DNS, production IPC,
+persistence, service, elevation or clock effect. D1 display/theme, D2 production
+state and D3 full accessibility remain deferred at the canonical re-entry gates.
 
-[.cargo/config.toml](.cargo/config.toml) records the target-specific Windows CFG,
-ASLR, DEP and linker-warning intent, without forcing a Windows default target.
-Do not replace those flags with global RUSTFLAGS. The cross-linker is admitted
-through a narrow, explicit command/configuration; substituted linker output must
-be inspected rather than inferred from flags.
+The exact [lockfile](Cargo.lock), manifest/feature identities, sixteen external
+packages, selected license grants and source-file maps are recorded in
+[the UI-M0 dependency policy](policy/ui-m0-dependencies.json). Garde uses only
+`derive`; the five selected `windows-sys` feature groups are Windows-only.
+On 29 October, `dependency-check-6.json` recorded successful frozen advisory,
+license, source and build-script checks for Linux and Windows. The receipt lives
+under `%LOCALAPPDATA%\NevroTick\ui-m0`; this proves that graph at its recorded
+snapshot, not future advisory freshness or native UI behavior. Current application
+results and unresolved observations belong in the task record.
 
-Once a real workspace exists, run its selected checks, for example:
+Use [scripts/verify.py](scripts/verify.py) from the checkout root. With the external
+inputs configured, the default command is the portable row:
 
 ```sh
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --frozen -- -D warnings
-cargo doc --workspace --no-deps --frozen
-cargo nextest run --workspace --frozen --user-config-file none --no-tests=fail
-cargo test --workspace --doc --frozen
-cargo deny --frozen check --deny warnings
+python3 -B scripts/verify.py
 ```
 
-Use explicit feature/target selections; do not add a universal all-features gate.
-Commit Cargo.lock with the real graph. Preserve the documented TLS/provider,
-licence and signing holds; installing toolchains resolves none of them.
+| Row | Work and evidence limit |
+| --- | --- |
+| `--lane portable` (default) | Format, compiler, Clippy, rustdoc, actual library/integration tests and separate doctests. Empty or skipped required test selections fail. |
+| `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows graph checks using a separately acquired RustSec/index snapshot, bound to the lockfile and at most 24 hours old. |
+| `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and actual binary linking; copies the executable and receipt to a new external directory. Native execution remains a separate observation. |
+
+Rows run with a read-only source snapshot, cleared environment, isolated network
+and owned output inside bubblewrap. The verifier admits pinned tools and source
+bytes, checks sandbox boundaries, records effective checker/configuration hashes
+and rejects input drift. Resource/time/output bounds remain distinct from hard
+cumulative quotas. There is no host-execution fallback and no automatic download.
+`--json /path/to/new-receipt.json` retains the selected row's output. The nextest
+store is redirected only in the owned snapshot so reports stay in writable output;
+test policy and the repository configuration remain unchanged.
+
+For first setup, select new external destinations and run acquisition separately:
+
+```sh
+python3 -B scripts/prepare-product.py --vendor-dir /path/to/new-vendor --configure --scratch-root /path/to/build-scratch
+python3 -B scripts/refresh-product-advisories.py --cargo-home /path/to/new-metadata --receipt /path/to/new-metadata-receipt.json
+python3 -B scripts/verify.py --lane dependencies --advisory-receipt /path/to/new-metadata-receipt.json
+python3 -B scripts/verify.py
+```
+
+`prepare-product.py` verifies bounded archives and their reviewed extracted-file
+maps without executing package code. `--configure` requires an absent private
+`~/.local/share/nevrotick/ui-m0.json` pointer; it never replaces an existing one.
+The verifier reads `vendor_dir` and `scratch_root` from that pointer, while explicit
+`--vendor-dir` and `--scratch-root` select another admitted location. Put large build
+outputs on the selected Windows drive when appropriate. A small owned Linux copy
+of vendor/metadata inputs can avoid DrvFS per-file overhead; preserve and verify
+the same file maps. Refresh metadata into new locations when needed and pass the
+new receipt explicitly. Portable/Windows rows do not silently refresh or rerun the
+dependency row; complete that admission before executing newly admitted graph code.
+
+The root [deny.toml](deny.toml) deliberately retains the bootstrap GPL-only and
+no-build-script baseline. The dependency row generates a configuration solely
+inside its owned source snapshot: GPL-2.0-only, MIT, BSL-1.0 and Unicode-3.0 grants
+for this frozen graph, and exactly `proc-macro2@1.0.107`, `quote@1.0.47` and
+`rustversion@1.0.23` build-script allowances. The `MIT AND Unicode-3.0` conjunction
+is preserved. All held-provider, advisory, source and other ban rules remain.
+These license identifiers are scoped by the immutable graph, not package-specific
+license exceptions. Running direct `cargo deny` with the root baseline will reject
+this product graph; use the shared dependency row.
+
+The Windows row additionally needs `--xwin-config` and `--xwin-inventory`, or the
+corresponding pointer values. Its full selected-library inventory is bound to the
+acquisition receipt and checked before/after linking. The current installed-input
+inventory does not reproduce archive-to-installed parity: the earlier verified
+acquisition pruned its payload copies. Target CFG/ASLR/DEP flags are retained from
+[.cargo/config.toml](.cargo/config.toml); inspect the emitted image before claiming
+effective protections.
+
+The configured host's reviewed inventory is
+`%LOCALAPPDATA%\NevroTick\ui-m0\xwin-installed-inventory.json`, selected by its
+private pointer. It covers all 529 files in the admitted x64 CRT, SDK UM and SDK
+UCRT library directories. Neither `setup-xwin.py` nor `prepare-product.py`
+generates this inventory. A fresh host must separately review its acquisition
+receipt and installed library bytes, then record that inventory before the Windows
+row can run; copying an unrelated host's inventory or merely hashing unreviewed
+installed inputs does not establish their provenance. Portable verification does
+not require the Windows inventory.
+
+For native observations, use the ordinary Windows account with exclusive desktop
+interaction. Copy [ui-m0-windows.ps1](scripts/ui-m0-windows.ps1) to a local Windows
+path and verify its SHA-256 matches the repository file; also match the executable
+to the cross-build receipt. This avoids a RemoteSigned rejection of a WSL UNC
+script without changing execution policy. With those local paths:
+
+```powershell
+powershell -NoProfile -File 'C:\owned\ui-m0-windows.ps1' -ImagePath 'C:\owned\nevrotick-ui.exe' -OutputDirectory 'C:\owned\new-ui-m0-observations'
+```
+
+`ImagePath` must identify the owned local executable; `OutputDirectory` must be
+new. The helper observes controls and window lifecycle and records bounded resource
+samples. Its existence or a cross-build is not a passed native run, accessibility
+qualification, sustained leak/soak result, P0 completion or release evidence.
+Keep TLS/provider, production-license, service/clock laboratory and signing holds.
 
 ## Code-navigation tools
 
@@ -680,5 +785,5 @@ current indexing status and the registered document contexts. Probe supplies
 Rust search/extraction without a persistent index. Context-mode processes large
 output; Context7 and primary upstream sources resolve API questions. Root
 [AGENTS.md](AGENTS.md) describes when to choose each tool. Existing connection
-history is not a fresh runtime qualification; no application graph is expected
-before source exists.
+history is not a fresh runtime qualification. UI-M0 now supplies Rust source for
+navigation; confirm current indexing before relying on its application graph.

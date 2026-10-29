@@ -1,0 +1,83 @@
+[workspace]
+members = ["crates/nevrotick-ui"]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.99"
+license = "GPL-2.0-only"
+repository = "https://github.com/DavidOsipov/NevroTick"
+
+# Canonical Cargo fragment for real workspaces and isolated policy controls.
+# This file is not an application manifest. Copy these tables into the first
+# real workspace root; every first-party member must opt in with
+# [lints]
+# workspace = true
+# scripts/check-strict.py checks adoption instead of inventing application code.
+#
+# deny permits reviewed, narrowly scoped expectations in Windows adapters.
+# Pure domain/protocol/numerical crate roots additionally forbid unsafe_code.
+# Keep broad groups at priority -1 and individual rules at the default 0.
+
+[workspace.lints.rust]
+warnings = { level = "deny", priority = -1 }
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+unused_unsafe = "deny"
+unused_must_use = "deny"
+unfulfilled_lint_expectations = "deny"
+unknown_lints = "deny"
+renamed_and_removed_lints = "deny"
+improper_ctypes = "deny"
+improper_ctypes_definitions = "deny"
+unexpected_cfgs = "deny"
+missing_docs = "deny"
+unreachable_pub = "deny"
+unused_qualifications = "deny"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+# Require a documented contract surface for private helpers as well as public
+# APIs. Documentation presence does not prove pre/postconditions are correct.
+missing_docs_in_private_items = "deny"
+undocumented_unsafe_blocks = "deny"
+allow_attributes_without_reason = "deny"
+# Prefer checked expectations over permanent local suppressions, and make each
+# unsafe block carry one reviewable operation. Keep legitimate used .ok() values.
+allow_attributes = "deny"
+multiple_unsafe_ops_per_block = "deny"
+unused_result_ok = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+dbg_macro = "deny"
+let_underscore_must_use = "deny"
+as_conversions = "deny"
+mem_forget = "deny"
+exit = "deny"
+
+# Stable rustdoc::all also checks crate documentation, code blocks, HTML,
+# backticks and private-item examples. Doctests run separately.
+# It does not include the nightly-only missing_doc_code_examples lint.
+[workspace.lints.rustdoc]
+all = { level = "deny", priority = -1 }
+broken_intra_doc_links = "deny"
+private_intra_doc_links = "deny"
+
+# Qualification baseline, not a selected shipping component fault policy.
+# Keep arithmetic checks in optimized code and retain matching debug symbols.
+[profile.release]
+overflow-checks = true
+debug-assertions = false
+panic = "unwind"
+incremental = false
+debug = "limited"
+strip = "none"
+
+[profile.verify-release]
+inherits = "release"
+debug-assertions = true

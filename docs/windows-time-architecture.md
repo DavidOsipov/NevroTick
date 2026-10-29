@@ -55,6 +55,14 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 
 Research findings and proposed product decisions are kept distinct. A successful source inspection is evidence of what the source says; it does not qualify a new Rust implementation. The website's JavaScript commands and browser controls do not become Windows product requirements merely because the source guidance names them. [S01, S02, S03]
 
+**Implementation update, 29 October 2026:** the capsule above preserves the
+architecture-review baseline. The existing repository now contains the authorized
+fixture-only `nevrotick-ui` Cargo workspace for §16.5. Its exact dependency graph,
+shared verification entry point and scoped implementation/evidence are recorded in
+[TOOLING.md](../TOOLING.md) and the [UI-M0 task](../tasks/ui-m0.md). This adds no
+engine, broker, live transport, persisted policy, clock effects or release
+qualification. P0 investigations and D1–D3 re-entry gates remain unchanged.
+
 ### 1.1 Interpretation of the nine requested properties
 
 | ID | Required observable result | Important constraint | Acceptance checks |
@@ -1990,7 +1998,11 @@ Extend CHECK-17/18/21/23 with actual Event Viewer channel/provider ACLs, missing
 
 ## 21. Delivery phases and readiness gates
 
-Implementation is not authorized or started by this planning document. When requested, create the future repository with the source pins, this plan, an adapted Rust policy and a working-state index. Preserve one canonical plan rather than separate conflicting agent plans.
+This planning document itself grants no implementation authority. The separately
+authorized UI-M0 work now uses the existing repository, pinned sources, adapted
+Rust policy and [task record](../tasks/ui-m0.md). Other implementation follows its
+applicable authorization and phase gates. Preserve one canonical architecture
+rather than separate conflicting agent plans.
 
 The current first UI slice is [UI-M0](#165-restricted-first-ui-milestone-ui-m0): real native shell → deterministic presentation/editor model → integrated selected screens → independent restricted-candidate review. Its M0-01–M0-08 exit and D1–D3 restoration gates stand separately from P0/S0.5 and P5. It is not a new global prerequisite for the other workstreams; the full phases below remain in force.
 
@@ -2161,7 +2173,7 @@ The **five Mermaid source blocks** remain the same architecture views, with exac
 
 ### 24.3 Next action
 
-The next development action, when requested, is to create the future repository and execute the bounded S0.1-S0.3 investigations with a minimal Windows harness. S0.1 now prioritizes the actual compatible TLS/provider/native graph alongside Serde and the other selected candidates. S0.2/S0.3 establish effective service privileges, safe lifecycle ownership and authenticated local control; the limited positive clock probe follows its P0 experiment card. S0.7 must resolve the verifier/bootstrap/egress and bounded handshake execution policy before P2 depends on it. S1.1 implements the bounded decoder/domain contract before connecting inputs to effects. Numerical porting and production clock actuation retain their separate gates.
+The next development action, when requested, is to use the existing repository and execute the bounded S0.1-S0.3 investigations with a minimal Windows harness. S0.1 now prioritizes the actual compatible TLS/provider/native graph alongside Serde and the other selected candidates. S0.2/S0.3 establish effective service privileges, safe lifecycle ownership and authenticated local control; the limited positive clock probe follows its P0 experiment card. S0.7 must resolve the verifier/bootstrap/egress and bounded handshake execution policy before P2 depends on it. S1.1 implements the bounded decoder/domain contract before connecting inputs to effects. Numerical porting and production clock actuation retain their separate gates.
 
 Do not begin by translating the whole chrony tree, building an elaborate UI, or assuming that an MSI/MSIX file has already solved service authority and recovery. The specification makes those engineering decisions concrete enough to test first.
 
