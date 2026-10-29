@@ -11,6 +11,7 @@ requires loading every skill.
 | --- | --- |
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |
 | Optimize a measured CPU, allocation, latency, wakeup, startup or size cost | [optimize-rust-performance](implementation/optimize-rust-performance/SKILL.md); [resource QA](testing/qa-performance-resources/SKILL.md) for measurement/acceptance |
+| Architect or harden Windows services, SCM lifecycle and recovery | [Service adapter guide](implementation/implement-rust/references/windows-service-adapters.md) and [Windows privileges](security/security-windows-privileges/SKILL.md) |
 | Enforce function/module contracts, IPC/configuration admission or domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
 | Implement native controls, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
@@ -66,7 +67,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 57 grouped skills without aliases;
+for precise selection. The pack registers 58 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack

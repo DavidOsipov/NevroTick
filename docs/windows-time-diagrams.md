@@ -1,11 +1,13 @@
 # Rust Windows Time Client — Architecture diagrams
 
 **Plan:** RWTC-ARCH-001, revision 1.4, 28 October 2026  
-**Status:** selected design; no application or Windows runtime has been qualified
+**Status:** selected design with 29 October owner-decision amendment; no application or Windows runtime has been qualified
 
 These editable Mermaid views are extracted from the [canonical architecture and threat model](windows-time-architecture.md). Keep each diagram in that plan authoritative and regenerate this companion when the architecture changes. GitHub and other Mermaid-capable Markdown renderers display the diagrams directly; the fenced source is also available to edit.
 
-**Distribution contract:** one signed complete MSI per supported architecture contains the native UI, engine service, privileged clock broker, helper and required payloads. One product owns install/update/repair/removal. Runtime process separation restricts authority; it does not require separate packages. Any future MSIX must satisfy the same complete-product contract.
+**Distribution contract:** one complete MSI per supported architecture, authenticated under the declared release profile in architecture section 19.5, contains the native UI, engine service, privileged clock broker, helper and required payloads. One product owns install/update/repair/removal. Runtime process separation restricts authority; it does not require separate packages. Any future MSIX must satisfy the same complete-product contract.
+
+**Release-profile amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) permits an initial OpenPGP release alternative when free Authenticode is unavailable. This changes release-policy evidence, not process authority or package count. OpenPGP supplies no Windows publisher trust; installed-file integrity and native lifecycle remain qualification gates.
 
 ## Reading the views
 
@@ -134,7 +136,7 @@ The operating-system clock is unchanged throughout candidate-time TLS work. Plai
 
 ```mermaid
 flowchart TD
-    P["One complete signed MSI"] --> V["Preflight complete payload, identities, policy and recovery"]
+    P["One complete approved MSI"] --> V["Preflight complete payload, identities, policy and recovery"]
     V -->|"Fail or required rollback disabled"| X["Stop before clock takeover"]
     V -->|"Pass"| J["Durably record prior W32Time state and ownership generation"]
     J --> O["Quiesce prior owner and activate one broker generation"]

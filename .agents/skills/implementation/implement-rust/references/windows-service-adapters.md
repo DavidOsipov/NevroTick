@@ -13,8 +13,10 @@ only within task-authorized machine/mutation scope.
 
 Navigate to [adapter choice](#freeze-the-adapter-choice-before-coding),
 [lifecycle ownership](#identify-one-lifecycle-owner-per-own-process-service),
+[service configuration/recovery](#freeze-service-configuration-and-recovery-behavior),
 [status/control cases](#exercise-status-and-control-behavior),
 [callback custody](#prove-callback-and-resource-custody),
+[object access](#freeze-the-object-and-operation-access-matrix),
 [account fixtures](#qualify-actual-accounts-and-alloweddenied-effects),
 [stop/recovery](#couple-stop-deadlines-to-actual-native-jobs-and-clock-ownership) or
 [experiment receipts](#small-disposable-vm-experiment-card-and-receipts).
@@ -55,6 +57,65 @@ selected mode and cannot count as native SCM evidence. See Microsoft's
 Before execution, define transitions, per-state accepted-control masks, service
 exit codes, monotonic startup/stop deadlines and escalation owner. Mark undecided
 budgets incomplete; library sample timeouts are no production defaults.
+
+## Freeze service configuration and recovery behavior
+
+The elevated installer/helper owns service registration/configuration and bounded
+maintenance under architecture section 11. Runtime lifecycle owners report status
+and handle admitted controls; they do not grant themselves service configuration
+rights. Keep one reviewed configuration record **per service**, bound to the
+product generation and executable identity. Populate this matrix before native
+qualification; unresolved counts/durations/flag choices remain P0 decisions.
+
+| Configuration or outcome | Engine record | Broker record |
+| --- | --- | --- |
+| Registration and startup | Fixed installer-owned name/path/arguments, own-process type, LocalService/restricted service SID, required privileges, start mode, dependencies and readiness conditions | Separate fixed identity, virtual account and required privileges; readiness includes ownership assessment and recovery reconciliation. Unavailable/ambiguous ownership permits only the defined read-only Blocked behavior, never a clock write; SCM Running still describes service availability |
+| Recovery sequence | Exact ordered action/delay pairs, finite restart budget, terminal behavior and quiet-period reset policy | Separate action/delay pairs and budget justified by the measured retained-rate recovery envelope; do not copy engine values without proof |
+| Failure classification | Explicit `fFailureActionsOnNonCrashFailures`, meaningful Win32/service-specific exit-code mapping, configuration versus effective activation evidence | Same fields; distinguish initialization failure, read-only Blocked availability, ordinary request rejection and fatal failed impersonation reversion. A rejected request is not a process fault; failed reversion follows section 5.4's fatal path, and no successful exit is fabricated to conceal failure |
+| Stop and escalation | Accepted controls by state, monotonic deadlines, native-job custody, SCM-coordinated process recovery and backoff owner | Independent cleanup deadline, attributable clock-state handling, external failure diagnostics and recovery owner |
+| Maintenance and exhaustion | Quiescence/disable/restore procedure; exhausted recovery is visible and does not create replacement runtimes | Same lifecycle ownership; exhausted recovery also reports unresolved adjustment cleanup, with no automatic takeover by another clock controller |
+
+Microsoft's [failure-actions contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw)
+repeats the **last action** after the list is exhausted. End a finite restart
+sequence with `SC_ACTION_NONE`; a short list ending in Restart is unbounded.
+`dwResetPeriod` is seconds without a failure before the counter resets, not a
+stop timeout; `INFINITE` prevents that reset. The
+[action delay](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-sc_action)
+uses milliseconds. Record reset/boot behavior as well as the action count: a reset
+can reopen the sequence. Do not add automatic host reboot or arbitrary recovery
+commands to the bounded restart design; those introduce separate authority and
+system effects requiring a new decision.
+
+With configured actions, the [non-crash failure flag](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actions_flag)
+controls whether reporting Stopped with nonzero `dwWin32ExitCode` also triggers
+recovery; termination without Stopped already qualifies. It is not a per-exit-code
+recovery policy. Microsoft documents flag changes taking effect at the next system
+start. Query configured values and separately qualify actual activation, including
+reboot where required; successful setters/readback prove no current behavior.
+
+An [already queued SCM restart cannot be canceled](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w).
+A later orderly stop or changed recovery list does not establish quiescence.
+For maintenance that must keep a service down, the authorized installer/helper
+must capture the owned configuration, explicitly disable the affected service to
+prevent the queued restart, then establish stopped/process-quiescent state within
+the existing transaction. Keep that protection through replacement and qualify
+re-enablement against delayed actions. Disabling prevents restart; it does not
+prove queue deletion. Restore only the authorized intended configuration, with
+product-generation and later administrator/GPO/successor checks; never blindly
+restore Automatic or modify unrelated services.
+
+| Native scenario | Required observation |
+| --- | --- |
+| Unexpected engine or broker termination | Correct configured delayed action and new process generation; no old results or renewed correction allowances. Broker re-establishes ownership before any write/reset. |
+| Controlled startup/runtime failure reporting Stopped with error | Actual behavior matches the effective flag and truthful exit-code policy; compare a healthy start and successful intentional stop. |
+| Repeated failures through exhaustion and after the declared reset interval | Measured attempt count/delays, terminal None, reset behavior and external diagnosed outcome; no secondary restart mechanism defeating the bound. |
+| Delayed restart queued before update/repair/rollback/uninstall | Maintenance disable/quiescence prevents unexpected restart; interrupted maintenance and re-enablement preserve ownership and authorized configuration. |
+| Broker fails throughout the recovery envelope | Retained adjustment is measured/reported under section 10.4; terminal None is not proof of clock cleanup or a finite lease. |
+
+Retain queried configuration, effective-state observations, boot/product/process
+identities, monotonic event times and external SCM diagnostics with each result.
+Never change the actual host merely to fill this matrix; use the admitted
+disposable fixture and bounded recovery card below.
 
 ## Exercise status and control behavior
 
@@ -110,6 +171,45 @@ pointers. Abort/process death requires an external recovery owner.
 | `SERVICE_STATUS_HANDLE` from handler registration | Status token, not a generic owned kernel handle. Do not put it in `OwnedHandle`/call `CloseHandle`; the registration contract requires no explicit close, and terminal status has its own lifetime. [Registration contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-registerservicectrlhandlerexw). |
 | `SC_HANDLE` from SCM/service open or creation | Release once through `CloseServiceHandle`; closing the handle does not delete the service registration. [CloseServiceHandle](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-closeservicehandle). |
 | Process/thread/token/event handles and callback/context allocations | Identify the exact creation API, ownership transfer and matching release API for each. Pseudo/borrowed handles and callback pointers are not generic owned handles. Check early-return and partial-start paths as well as normal destruction; never cast across incompatible Windows projection types to bypass a mismatch. |
+
+## Freeze the object and operation access matrix
+
+Before selecting ACLs or wrapper defaults, record each real operation as:
+**actor/effective token → exact object → API and minimum requested access →
+allowed effect → denied neighboring effect → native evidence**. Include object
+owner, DACL/inheritance, service/restricted/logon SIDs, handle lifetime and any
+impersonation state. Distinguish access requested, access granted and a successful
+effect; source constants or a copied SDDL string prove none of them.
+
+| Object boundary | Required per-operation entry and separation |
+| --- | --- |
+| SCM manager | Separate manager rights from service-object rights. Justify `SC_MANAGER_CONNECT` for opening a known service; creation/database mutation belongs to the elevated lifecycle owner, not UI/engine/broker runtime. No default `SC_MANAGER_ALL_ACCESS`. |
+| Engine/broker service objects | Request only the query rights actually used for service/server identity, such as `SERVICE_QUERY_STATUS` or `SERVICE_QUERY_CONFIG`. Installer/helper start/stop/configure/delete/security changes get separate exact masks and fixed service targets; no general runtime `SERVICE_CHANGE_CONFIG`, `WRITE_DAC`, `WRITE_OWNER` or deletion authority. No default `SERVICE_ALL_ACCESS`. |
+| Process and thread objects | Preserve the limited query/synchronization handles required by the actual stable-identity proof. Separately deny engine-to-broker injection, writable memory and unneeded termination/suspension/handle-duplication rights; no inherited handle or alternate opening path may bypass the boundary. |
+| Token objects and privileges | Identify token query versus adjustment/duplication/impersonation access. Inspect actual primary and relevant thread tokens, required-privilege allowlists and present/enabled privileges; engine cannot acquire broker authority through a token handle. |
+| Named pipes | Record each endpoint's creator, instance rights, caller token and verb authority. Preserve local-only admission, authenticated server identity, bounded messages and current per-method authorization under architecture section 5.4; do not broaden file/pipe generic masks for wrapper convenience. |
+| Files, directories and registry keys | Separate immutable installed code, broker policy/journal, engine secrets, diagnostic sinks and per-user UI data by their existing writers. Record exact read/write/create/delete/security rights, parent inheritance and protected paths; standard users/engine cannot replace broker code, policy or trusted identity material. |
+
+The [SCM/service access contract](https://learn.microsoft.com/en-us/windows/win32/services/service-security-and-access-rights)
+defines distinct rights and warns about service mutation grants. Its default
+service DACL includes user-defined-control access for local authenticated users;
+do not assume defaults authorize only administrators. Accepted-control masks
+describe supported delivery, not caller authorization. No custom control may
+bypass the broker's protected-method policy. Ordinary UI status uses product IPC;
+retain only the SCM/process query access actually required for server verification,
+instead of either denying all queries or granting lifecycle control.
+
+For restart recovery configuration, [ChangeServiceConfig2W](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w)
+requires `SERVICE_CHANGE_CONFIG` and, when configuring Restart, `SERVICE_START`.
+Keep those rights with the installer/helper. Exact ACLs/SDDL and wrapper access
+requests remain S0.2/S0.3 proof outputs, not newly adopted universal masks.
+Qualify the matrix under actual engine, broker, standard-user, filtered-admin and
+elevated-helper tokens; pair denied access with legitimate query/control cases.
+Unexpected dangerous grants fail startup/installation qualification, rather than
+being repaired by adding privileges. Use
+[Windows privilege review](../../../security/security-windows-privileges/SKILL.md)
+and [native proof](../../../security/references/native-proof.md) for the evidence
+and residual administrator/host limits.
 
 ## Qualify actual accounts and allowed/denied effects
 

@@ -1,5 +1,7 @@
 # Development-environment hardening for the Rust Windows time client
 
+**Owner-decision amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) confirms source-derived reuse with independent stress/bug verification and records the initial OpenPGP release alternative. Existing Authenticode-specific checks still apply to that preferred profile and remain not qualified if unavailable; qualify the separate OpenPGP artifact/installed-file trust path under architecture section 19.5 and research R-06. No missing-signature check may be converted to unconditional success. All other applicable compiler, lint, audit, evidence and hardening requirements remain. No application test is claimed by this amendment.
+
 **Document:** RWTC-DEV-HARDENING-001, revision 1.0  
 **Research date:** 28 October 2026  
 **Baseline:** Product architecture RWTC-ARCH-001 revision 1.4  
@@ -283,7 +285,7 @@ For optimization tasks, use [the performance optimization skill](../.agents/skil
 
 ### 6.2 Target-specific Windows compiler/linker settings
 
-Candidate `.cargo/config.toml` for x64 MSVC with a pinned, recorded `link.exe`:
+The following target settings are already present in [`.cargo/config.toml`](../.cargo/config.toml). Pin and record the admitted linker: the [tooling record](../TOOLING.md) distinguishes native MSVC inputs and the explicit bundled-LLD/xwin bootstrap lane. Its recorded std-only PE/native-execution fixture does not qualify future application binaries or all runtime policies.
 
 ```toml
 [target.x86_64-pc-windows-msvc]
@@ -316,6 +318,28 @@ The trusted build entry point must reject unreviewed environment/configuration o
 | Rust stack protector / LLVM CFI | Separate research only | Current stack-protector/CFI interfaces have unstable/internal constraints; do not present them as a qualified stable Windows release setting. [C19, C21] |
 
 Verify three layers: **effective build inputs, emitted images and effective runtime policy**. Use supported Windows process-policy APIs and handle failures. UI and broker can need different settings; do not turn on every process policy without testing legitimate operation. DLL search/load restrictions, valid-load controls, unexpected DLL canaries and the architecture's no-sideloading checks remain required. [C22; architecture CHECK-16/18/23]
+
+### 6.4 Per-process mitigation qualification
+
+Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) as the canonical role/activation/failure contract and manifest schema. This 29 October refinement incorporates useful specificity from the supplied PDFCraft proposal without adopting its CRT, dependencies or UI architecture. Existing tooling observations remain scoped to their recorded fixture. All application-level cases below are **planned / not executed**.
+
+For every delivered executable and applicable DLL, inspect the exact final PE and load configuration with `dumpbin /headers /loadconfig` or an admitted equivalent tool. Record the CFG `Guard`, `CF Instrumented` and `FID table present` indicators where applicable, DEP/ASLR properties, relocations and any selected CET marker. These checks must agree with actual build inputs and the native/prebuilt/static/standard-library inventory; a CFG-positive executable or one successful negative fixture does not prove complete linked-code coverage. `nochecks` remains prohibited. This requirement does not mandate installing Visual Studio just to obtain `dumpbin`. [C10, C11, C15]
+
+Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations.
+
+| Case | Required observation | Legitimate control and scope |
+| --- | --- | --- |
+| Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable | Expected enforced state admits work. An explicitly optional unavailable hardware enhancement is diagnosed without masquerading as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
+| ACG | A harmless executable-memory allocation/protection transition is denied under the qualified no-opt-out/no-downgrade profile; record effective bits | Ordinary heap use and the exact engine/broker/native-provider workflows succeed. Do not execute injected payloads or infer compatibility from absence of an intentional JIT. |
+| Image loading | Separate controlled remote-image and low-mandatory-label canaries fail to load; CWD/PATH canaries exercise section 15.2 separately | The intended protected dependency loads from its expected path. Mark of the Web is not the low-label fixture; System32 preference is not a directory allowlist. |
+| Strict CFG and handles | Optional Strict CFG denies an incompatible code-bearing DLL; strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
+| Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile | Final service APIs, boot-before-login, stop/restart and recovery work. A custom-parent child-policy fixture does not close the SCM gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
+| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; optional unsupported hardware remains explicitly unsupported. |
+| Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid single-MSI install/update/repair/remove completes under each declared release profile. Existing CHECK-12/13/18/23 remain authoritative. |
+
+Run native denial/termination tests only in the owned disposable Windows environment of architecture section 14.9, with independent observation, resource/time bounds and cleanup. No test changes the user's clock or global Exploit Protection policy. Audit-first trials apply only to controls with a documented audit mode; an audit event never passes an enforcement case. Preserve UI-M0 deferrals: full production accessibility/IME integration tests run at the existing reentry gates.
+
+Tie records to the complete payload/SBOM and exact package; repeat affected cases when a toolchain, native provider, linked module, startup/hosting path, Windows support matrix or installer policy changes. Use the existing diagnostics and artifact records rather than a new background scanner. Do not copy `+crt-static`, admit held cryptographic providers or add a launcher solely to make a mitigation checklist appear complete.
 
 ## 7. Dependencies, auditors and supply-chain policy
 
@@ -516,6 +540,40 @@ For each adopted component, record the relied-on requirements, trust/resource bo
 Stress campaigns must include relevant mixes of legitimate and malformed traffic, peer/client churn, loss/delay/reordering/replay, reconnect storms, extreme clock/drift conditions and repeated lifecycle events. Exercise resource exhaustion in owned fixtures. Declare workload, concurrency, duration, seeds, resource ceilings, stop conditions and external timeouts before execution. Measure CPU, memory, wakeups, handles/threads, queue/log growth, latency and recovery; observe forbidden clock/security effects and leaks before harness cleanup. Retain CHECK-21's one-hour baseline and 72-hour reconnect/fault soak on named hardware; do not substitute a short smoke or report only that nothing crashed.
 
 Select techniques according to failure modes and supported environments; this does not mandate every technique for every file or authorize effects on shared hosts or public services. Preserve healthy controls, exact source/build/feature identities, first failures, seeds and minimized regression cases. A confirmed upstream defect requires a requirement-grounded correction and port/dependency-ledger entry, not weakened expectations to preserve parity. Reassess affected tests and stress cases after upstream fixes, version/feature changes or integration changes. Unsupported or unexecuted required cases remain gaps; test success never establishes absence of all bugs or vulnerabilities.
+
+### 9.8 Diagnostics and shared-adapter verification
+
+Implement the canonical [shared Windows adapter contract](windows-time-architecture.md#34-shared-windows-adapters-and-diagnostics) and [diagnostics contract](windows-time-architecture.md#123-logging-and-support). Inspect real emitters, subscribers, filters, writer queues and export consumers; unused safe wrappers/redaction helpers prove no reached path. These are application implementation gates, not checks performed by this documentation amendment.
+
+| Check family | Independent expected observation |
+| --- | --- |
+| Required versus optional events | With optional output filtered to WARN/ERROR/OFF in the harness, an INFO-severity required event still reaches its required sink attempt. Exercise release feature/callsite/global-filter behavior and admitted dependency/log bridges; no duplicate records or compiled-out promised DEBUG. |
+| Privacy and usefulness | Recognizable synthetic secrets through success, rejection, dependency errors, panic/report paths and export appear in no selected ordinary output at any enabled level. Bounded legitimate context remains useful. Verify actual field/counter/text encoding; raw dump/EVTX policy remains separate. |
+| Control authority | A permitted administrator can start/stop scoped service collection; ordinary status/refresh users, stale revisions, malformed profiles, arbitrary paths/filter strings and neighboring unauthorized commands have no protected effect. Native tokens/peer identity remain CHECK-2 evidence. |
+| Session state and expiry | Replayed starts do not renew; stale stops/replies cannot alter a successor. A helper exits after acknowledged admission without ending collection; UI closure does not renew it. Test partial activation, lost acknowledgements, broker-to-target control loss, broker/target restart, authorization revocation, duration/byte caps, UTC jumps and suspend/resume. Local expiry and failed-reset guard stop verbose capture; status never reports unacknowledged global success. |
+| Clock independence | A verbosity-only change leaves the active source policy, estimator, valid correction and cumulative allowance unchanged. Log failure cannot authorize a request or block required cleanup. |
+| Resource exhaustion and lifecycle | Concurrent component writers respect aggregate file allocations and bounded record/memory/queue/rate limits. Full/missing/denied sinks, floods, rotation/flush failures and stop/crash paths yield bounded loss/status without recursion, critical-path I/O waits or leaked native work. Include a healthy-event control. |
+| Windows and feature boundaries | Verify actual provider/channel resource identity, access and retention under section 15.3; required/success and denied/failure paths on Windows. Inspect per-binary features/imports and correct resource-specific cleanup: sharing an adapter must not add GUI/TLS/clock-write composition to unrelated roles. |
+
+Tie results to the exact candidate, enabled features, process roles and declared finite limits. Pure tests exercise records, mappings, bounded state transitions and fake sinks; native Windows tests establish pipe/token/SCM, callback lifetime and Event Log behavior. CHECK-21 measures INFO and bounded DEBUG cost under supported host security, including flood pressure and disabled-callsite overhead. Reuse CHECK-1/2/3/14/15/17/21/26/27 instead of creating parallel gate identities. Inspect cleanup before the harness hides leaks, and preserve unavailable/native cases as gaps. This work does not enable production diagnostics in UI-M0.
+
+### 9.9 IPC identity, framing and native lifetime verification
+
+Apply [architecture section 5.4](windows-time-architecture.md#54-native-ipc-implementation-and-qualification) with `security-local-ipc`, `implement-rust-contracts`, `qa-contract-tests` and `qa-security-boundaries`. Freeze endpoint roles, selected byte/message mode, actual native API/wrapper path, security descriptors, token tracking, process/endpoint generations, finite limits and feature/lockfile identity before qualification. Bind each case to the production entry point and an independent expected effect; the existence of upstream tests proves no product behavior.
+
+| Area and checks | Hostile/fault case and required result | Legitimate control |
+| --- | --- | --- |
+| Listener ownership — CHECK-2/27 | Pre-created name, unauthorized extra instance, idle/disconnect storms, replacement-accept failure and last-handle loss cannot silently transfer the active namespace; lost ownership blocks admission/reacquires through first-instance checks | Concurrent/repeated permitted connections and later genuine restart succeed |
+| Genuine peers — CHECK-1/2 | Same owner SID with a foreign instance, reused/stale PID, SCM pending-state ambiguity, wrong service, anonymous caller and failed identity query produce no privileged effect or trusted status | Genuine current service and intended client identity are established through held native objects |
+| Request/token association — CHECK-2/25 | Fragmented/pipelined reads and changed security context cannot attribute one request to another caller; token acquisition fails without ambient/self fallback; no await/dispatch occurs while impersonating | Authorized identification-level client works, and the worker has reverted before processing the next request |
+| Effective authority and reversion — CHECK-2/12 | Filtered admin, disabled/deny-only group, restricted token and wrong service SID fail their prohibited verbs; injected failed reversion stops process request execution and uses qualified external crash recovery | Current elevated/authorized request and healthy reversion succeed; owned recovery preserves clock limits |
+| Wrapper configuration — CHECK-1/2/26 | Generic-rights/default-descriptor mismatch cannot cause ACL widening; unauthorized client cannot create instances, alter ownership/security or inherit privileged handles | Exact reviewed requested rights, DACL and QoS work together through actual selected APIs |
+| Framing and overload — CHECK-3/25 | Cancellation at header/body/write boundaries, EOF, duplicate prefix, trickled bytes, stalled receiver and queue saturation preserve framing/correlation or close the connection; fixed deadlines/caps prevent indefinite retention or starvation | Valid maximum-size frames and permitted concurrent requests complete; late/partial replies never repeat an ambiguous clock effect |
+| Native completion — CHECK-3/27 | Pending connects/reads/writes, cancellation-versus-success races and stop/disconnect retain operation storage/permits until actual completion; no unbounded write flush, replacement work or cleanup blockage | Correct connected/pending/partial native outcomes and post-recovery traffic succeed; resources release before harness teardown |
+| Reached remote boundary — CHECK-2 | Controlled remote client with otherwise sufficient credentials is rejected by local-only pipe enforcement; firewall rejection or an unreachable peer alone is not evidence | Intended local request with matching product permissions succeeds |
+| Compromised authorized engine — CHECK-3/25 | Actual engine identity submits oversize/truncated frames, wrong verbs, stale/replayed and overbudget proposals; bounds apply before forbidden allocation/effect | Current bounded engine request still receives the proper acknowledgement |
+
+Pure tests can establish framing progress, strict decoding and substituted-token decisions. Tokens/DACLs, actual pipe peer attribution, pending-instance ownership, native cancellation and fatal reversion need isolated Windows fixtures. Real clock/fatal-broker cases obey section 14.9's disposable-VM limits and external observation/restoration plan; no experiments on the user's workstation or public services. Keep exact source/configuration, reached boundary, native outcomes, valid controls and remaining P0/native gaps. Do not call IPC hardened until the affected proofs pass; UI-M0 remains fixture-only.
 
 ## 10. Native Windows qualification and safe experiment ownership
 

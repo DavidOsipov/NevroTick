@@ -11,7 +11,9 @@ Build a small Windows 11 application that keeps system time synchronized in the 
 
 The motivating problem is a time service that stops working without a useful explanation. Therefore the first release should prioritize **unattended operation, honest health information, safe recovery and actionable diagnosis**. A decorative clock face or a large dashboard would contribute less to that goal.
 
-The launch target remains supported Windows 11 x64, a native English-first UI, NTPv4 and NTS client support, and one complete signed MSI. The application is useful with its window closed and before anyone logs in. It does not require an account or a remote control plane.
+**Owner amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) records the accepted choices and distinguishes recommendations; [NV-RESEARCH-001](nevrotick-research-handoff.md) assigns unresolved evidence. UI-M0 remains unchanged.
+
+The launch target remains supported Windows 11 x64, a native English-first UI, NTPv4 and NTS client support, and one complete MSI under the declared Authenticode or initial OpenPGP profile. The application is useful with its window closed and before anyone logs in. It does not require an account or a remote control plane.
 
 This document translates [architecture revision 1.4](windows-time-architecture.md) into user capabilities, screens, defaults, failure behavior and implementable slices. It does not replace that specification, select new dependencies, clear the license/crypto holds, adopt TUF, or close any native/signing gate. Existing source/trust and correction requirements remain authoritative. New presentation choices are proposals for the first implementation.
 
@@ -48,7 +50,7 @@ The MSI contains the UI, synchronization engine, clock broker, administrative he
 
 Setup checks readiness and preserves the existing Windows Time configuration before handing over. It must not overwrite peer/domain settings or invent a universal state to restore later. Managed machines initially observe without taking control. The ordinary UI opens without inheriting installer elevation.
 
-Updates use one complete signed MSI. Repair preserves valid configuration, ownership records and consumed correction allowances. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
+Updates use one complete MSI authenticated under the explicitly selected release profile; see architecture section 19.5 and OD-05. Repair preserves valid configuration, ownership records and consumed correction allowances. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
 
 **Acceptance:** clean install, boot without login, UI closure, complete update, repair and uninstall with no UI present; inject a takeover/maintenance failure and prove the prior or successor owner is respected. A successful file copy is not sufficient installation readiness. [Architecture §§11, 19; CHECK-5/13/18/23]
 
@@ -126,6 +128,8 @@ The hints affect only the isolated certificate-time recovery path. They cannot s
 
 If the accepted result lies outside tested automatic correction limits, show **Review clock correction — Administrator required**. Display the direction, magnitude/target interval, evidence freshness, consequence and single-use nature. A changed generation, policy, estimate or expired proposal requires a new review. Declining leaves the clock unchanged by that proposal.
 
+**Owner goal OD-02:** include approximately 100-year local-date errors in recovery qualification. Exact true-date/era bounds, authenticated quorum and direction/runtime correction policy remain open. The tentative 12-hour plain-NTP limit is not an adopted value; preserve separate acquisition and broker authority.
+
 **Acceptance:** a qualified recovery succeeds while the clock remains unchanged until all gates and correction authority pass. Wrong-name certificates, forged NTS messages, disagreeing helpers and stale approvals fail safely. Successful NTS acquisition alone cannot bypass the correction gate. [CHECK-3/9/10; OPEN-5/6/8]
 
 ### F-09 — Explain failures and export useful diagnostics
@@ -136,9 +140,11 @@ Differentiate observed facts from hypotheses. For example: **No reply from the c
 
 Provide **Copy summary** and **Export diagnostics** with a preview. Default export redacts private endpoints and usernames and never contains NTS cookies/keys, TLS secrets, credentials or arbitrary memory. Export is initiated and written by the ordinary UI from bounded redacted data; a caller's filename never becomes an arbitrary privileged service write. No automatic upload or telemetry is enabled.
 
+Normal application logging uses INFO with admitted dependency messages at WARN or stricter. Troubleshooting uses a temporary, scoped DEBUG session under [architecture section 12.3](windows-time-architecture.md#123-logging-and-support): service collection requires administrative authorization; users control only their own UI diagnostics without elevation. Show the effective component scope, remaining duration and partial/failed collection honestly, with a stop action for the authorized owner. Required security/service events remain independent of optional verbosity. This belongs to production F-09/P3/P5; UI-M0 gains no live switch.
+
 Use event ordering that remains intelligible when wall time is wrong. Full/unavailable logs must not obstruct safe cleanup. If a service is confirmed unavailable after recovery attempts, explain the standard complete-package repair route; a bespoke restart/service-control button is not part of this v1 command surface.
 
-**Acceptance:** representative failures produce accurate causes/actions; hostile input and log flooding remain bounded; a useful ordinary event survives redaction. Export does not reveal protected state. [Architecture §§5.3, 12, 16; CHECK-14/17/22]
+**Acceptance:** representative failures produce accurate causes/actions; hostile input and log flooding remain bounded; a useful ordinary event survives redaction. Export does not reveal protected state. Unauthorized service-profile changes fail; temporary collection expires across UTC changes/restart/resume, and unavailable sinks do not misrepresent synchronization or suppress required-event routing. [Architecture §§5.3, 12, 16; CHECK-14/17/22]
 
 ### F-10 — Provide a small accessible native UI and optional tray
 
@@ -241,23 +247,23 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Setting or behavior | Proposed launch default | Authority / qualification |
 | --- | --- | --- |
 | Background operation | Services start independently of login | Installer-owned, qualified recovery |
-| Normal trust profile | NTS only | Machine policy; no automatic downgrade |
-| Source preset | Target four diverse NTS identities | Exact providers, allowed use, delegation and time-scale compatibility must be selected before release |
+| Normal trust profile | Existing NTS-only baseline pending OD-03 resolution | Pool preference does not establish an NTS preset or silently authorize a default trust downgrade |
+| Source preset | Target four diverse NTS operators; supplied directory is discovery input | Candidate shortlist in research R-04; qualification and exact identities remain open. Pool defaults require a vendor zone and an explicit role |
 | Agreement | Existing minimum-two-plus-majority proposal | Freeze the tested policy; never reduce automatically |
 | Plain NTP | Available by deliberate profile change | Administrator; permanently visible unauthenticated label |
 | Recovery hints | Off | Administrator explicitly chooses one or two helpers |
 | Two-helper recovery | Both must satisfy policy | No silent one-helper fallback |
 | Normal correction | Qualified bounded gradual adjustment | Numeric limits remain OPEN-5/7 |
-| Exceptional correction | Review required beyond automatic limits | Current single-use administrative approval |
+| Exceptional correction | Review required beyond qualified automatic limits; investigate wider authenticated recovery | OD-02 behavior goal; current single-use approval or explicitly qualified preauthorization, with persistent budgets |
 | Managed machines | Observe-only | Takeover requires explicit authorization and applicable policy checks |
 | Window closure | Exit UI; services continue | Current user |
 | Tray visibility | Off; user can enable it | Per-user; separate resource/accessibility qualification |
 | Tray at sign-in | Off; separate opt-in while tray is enabled | Per-user fixed installed UI path; no service-policy change |
 | Appearance | Follow supported Windows system preferences | Per-user; no custom theme engine required |
 | Language | English | Other locales require explicit adoption and QA |
-| Diagnostics | Bounded local logs; redacted previewable export | No secret data or privileged arbitrary export path |
+| Diagnostics | INFO application output; reviewed dependency messages WARN or stricter; bounded redacted export | Shared contract in architecture section 12.3; finite scoped DEBUG, administrative service control, per-user UI control; no secret data or privileged arbitrary export path |
 | Remote telemetry/crash upload | Off | No account or automatic support upload required |
-| Updates | User-initiated complete signed MSI | Existing installer and signing gates |
+| Updates | User-initiated complete MSI under declared release profile | OD-05/architecture section 19.5; no silent downgrade of release trust |
 
 The source preset is a release deliverable, not an invitation to hard-code unreviewed endpoints. For each proposed provider, record operator, identity, protocol, supported delegation/ports, usage policy, intended population and time scale. Do not silently enroll a public fleet in a service whose published terms do not permit it. If a suitable default set cannot be qualified, record that as an onboarding/release blocker rather than claim a zero-configuration experience.
 
@@ -322,7 +328,7 @@ This AC catalog describes the full product. UI-M0 uses the restricted M0-01–08
 | AC-13 | F-01/07 | Kill engine and broker during correction. Recover only with current ownership; ambiguous/successor state blocks resets. Crash loops preserve consumed budgets. | CHECK-10/12/27 |
 | AC-14 | F-01/06 | Managed-policy takeover defaults to observation; later GPO/controller activation causes honest conflict handling without fighting the owner. | CHECK-5/13 |
 | AC-15 | F-01 | Update/repair/uninstall with UI closed and old sessions; inject interruption. No partial product, permissive reset, stale-owner restoration or false completion. | CHECK-13/18/23 |
-| AC-16 | F-09 | Trust/network/policy failure yields useful bounded evidence; exports redact protected data; log flooding/full storage cannot block cleanup or create success. | CHECK-14/17/27 |
+| AC-16 | F-09 | Failures yield useful redacted evidence; required events survive optional filters; authorized temporary DEBUG expires; floods/full storage cannot block cleanup or create success. | CHECK-2/14/17/27 |
 | AC-17 | F-04/06/08/09/10 | Complete status, editing, UAC cancellation, correction review and export using keyboard/Narrator, contrast and 200% scaling. Focus/announcements remain usable. | CHECK-22 |
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
 | AC-19 | F-02/03/07 | Independently generated offset/drift/asymmetry cases and real clock measurements establish convergence/holdover behavior within the declared test envelope. | CHECK-7/8/10/11/24 |
@@ -343,7 +349,7 @@ The feature scope can be delivered in small integrated slices while preserving t
 | S-3 — Safe unattended synchronization | One owned controller corrects time before login and with UI closed | Broker/platform, installer and engine owners; P3/P4 authority/ownership prerequisites | Independent real clock trajectory, stop/restart/ownership cases, bounded native work and installation handover |
 | S-4 — Recovery and administrative workflows | Source editing, wrong-date recovery and single-use correction review work through the same policy | Network/platform/UI owners; P2/P4/P5 with resolved relevant OPEN-5/6/8 decisions | AC-07–14 valid/failure pairs; no stale approvals, downgrade or hint-derived clock write |
 | S-5 — Finished basic experience | Main/Sources/Settings/Diagnostics, optional tray, support export and complete maintenance are usable | UI, accessibility, packaging and platform owners; P5/P6; lifecycle work began in S-0 | Keyboard/Narrator/scaling, source/state truthfulness, resource measurements and interrupted-maintenance cases |
-| S-6 — Exact public release candidate | One complete signed package with the verified features | P6/P7; release/signing/license owners and independent verifier | Complete feature/architecture matrix, real signatures, clean-machine lifecycle, current security evidence and no unresolved dependent blocker |
+| S-6 — Exact public release candidate | One complete package with verified features and declared release profile | P6/P7; David/release/signing/license owners and independent verifier | Complete feature/architecture matrix, actual profile-specific authenticity and installed-file evidence, supported clean-machine lifecycle and no unresolved dependent blocker |
 
 Do not build the entire settings UI against invented responses and call that S-2. Prototype data must be visibly labelled, and the integrated exit needs actual admitted service data. Similarly, a headless numerical test cannot qualify Windows clock control.
 
@@ -365,7 +371,7 @@ Before later live status, restore D2 and define/test field ownership, state/prof
 | Dedicated handback-to-Windows button | Requires the explicit elevated transaction already identified by the architecture; uninstall retains the established restoration path |
 | Config import/export or free-form policy editor | Additional parser/migration/privileged-input surface; bounded native settings first |
 | Single-source mode and arbitrary controller tuning | Weaker trust or additional numerical policy; add only with explicit labelled requirements and evidence |
-| Automatic background updates or TUF integration | Separate update trust, version/rollback and recovery design; complete signed MSI updates remain the baseline |
+| Automatic background updates or TUF integration | Separate update trust, version/rollback and recovery design; complete MSI updates under the explicit release profile remain the baseline |
 | Complete MSIX channel or native ARM64 support | Equivalent complete-product and platform qualification required |
 | Russian and other locales | Adopt translations with placeholder/plural, layout and accessibility parity; English first |
 | Remote dashboard, accounts, fleet control, plugins/scripts, NTP server/PTP/refclocks | Outside the workstation client problem and current threat model |
@@ -376,13 +382,13 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 
 | Decision | What must be established | Owner / gate |
 | --- | --- | --- |
-| Shipped source preset | Qualified operator diversity, identities, provider permission/polling, delegation, reachability and compatible time scale | Network/release; P0/P2 and source policy |
+| Shipped source preset | Resolve OD-03 Pool/NTS role; qualified operator diversity, identities, vendor/provider permission, polling, delegation, reachability and compatible time scale | Network/release; P0/P2 and source policy |
 | Automatic correction and holdover limits | Tested magnitude/rate/direction/count/age/error bounds and current approval behavior | Platform/security; OPEN-5/7/13 |
 | Wrong-date recovery | Accepted date/era range, helper policy and actual Windows certificate/revocation behavior | Network/security; OPEN-6/8 |
 | Plain-NTP assurance claims | Explicit unauthenticated profile and resolution of applicable ASVS interpretation/exception questions | Security owner; OPEN-9 |
 | Supported Windows builds | Actual client OS, architecture, power modes and protection configurations | Platform/release; OPEN-2 |
 | UI and tray qualification | Actual UIA, keyboard, Narrator, scaling, startup/closure and measured resource behavior | UI/accessibility; OPEN-10/13 |
-| Complete release path | Exact compatible graph, installer-tool eligibility, publisher/signing and lifecycle recovery | License/packaging/release; OPEN-1/11/14 |
+| Complete release path | Exact compatible graph, installer-tool eligibility, OD-05 release profile/key or publisher, installed-file trust and lifecycle recovery | License/packaging/release; OPEN-1/11/14 |
 
 These are existing phase gates or concrete refinements of them. Missing evidence is not a reason to silently weaken the feature. Proposed UI copy, default presentation and tray choices can be refined with user testing without changing the security semantics.
 

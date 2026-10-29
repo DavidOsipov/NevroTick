@@ -20,15 +20,40 @@ Windows 11 x64, `x86_64-pc-windows-msvc`. Start with
 
 | Document | Authority and use |
 | --- | --- |
+| [Owner decisions](docs/nevrotick-owner-decisions.md) | Accepted instructions, pending recommendations and individual owner-decision procedure. Read before changing reuse, correction, source defaults or release policy. |
+| [Research handoff](docs/nevrotick-research-handoff.md) | Remaining evidence assignments, NTS provider candidates and decision gates; research findings are not implementation qualification. |
 | [Architecture](docs/windows-time-architecture.md) | Canonical technical/security contracts, ownership, decisions, delivery phases, CHECK requirements. |
 | [Feature plan](docs/windows-time-features.md) | Proposed V1 capabilities, journeys, presentation, acceptance scenarios, delivery slices; architecture controls technical semantics. |
-| [Development hardening](docs/windows-time-development-hardening.md) | Proposed enforcement/qualification; inspect actual configuration before treating tools/gates as adopted. |
+| [Development hardening](docs/windows-time-development-hardening.md) | Enforcement/qualification policy; inspect actual configuration and TOOLING.md for adopted bootstrap checks versus pending application/native evidence. |
 | [ASVS applicability](docs/asvs-5.0.0-applicability.md) | Applicability/planned verification; no completed compliance. |
 | [Signing guide](docs/windows-time-signing-guide.md) | Provider, signing, complete-package workflow; eligibility/native verification require evidence. |
 | [Update assessment](docs/windows-time-update-assessment.md) | Retained research; TUF/automatic updater not adopted. |
 
-Supporting reviews explain decisions/corrections; neither replace main documents
-nor prove implementation. Preserve canonical REQ/BND/DEC/THR/CHECK identities.
+Accepted owner decisions govern their stated scope; recommendations remain
+proposals. Supporting reviews explain decisions/corrections; neither replace
+current contracts nor prove implementation. Preserve canonical
+REQ/BND/DEC/THR/CHECK identities.
+
+For a material unresolved choice, prepare the decision card in NV-DEC-001 with
+evidence, options, recommendation and the dependent action, then ask David.
+Routine work within accepted contracts continues. Record the outcome in the
+canonical documents; do not treat silence or research deferral as risk acceptance.
+OD-05 already accepts the Foundation publisher display, David as release approver
+and an initial OpenPGP alternative if free Authenticode is unavailable; the
+profile-specific trust and Windows qualification gates remain.
+
+Windows exploit-protection work: read [architecture section 15.4](docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
+and [hardening section 6.4](docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification).
+Keep per-process roles, activation phase, required/optional policy, effective state
+and native evidence distinct; existing compiler flags prove no complete runtime profile.
+
+Shared OS/IPC work: read [architecture section 3.4](docs/windows-time-architecture.md#34-shared-windows-adapters-and-diagnostics). Reuse narrow role-specific `windows-platform` adapters and portable `ipc-contract`; shared code grants no privilege or generic Windows command surface.
+
+Engine runtime/concurrency work: read [architecture section 18.6.1](docs/windows-time-architecture.md#1861-engine-runtime-decision-and-alternatives), section 17.1 and the TLS execution gate in section 18.7.1. Tokio remains an engine-only current-thread prototype; qualify bounded native work and the complete NTS-KE arrangement. Its selection does not require `tokio-rustls` or extend runtime dependencies to the core, broker, UI or helper.
+
+IPC implementation/security work: read [architecture section 5.4](docs/windows-time-architecture.md#54-native-ipc-implementation-and-qualification) and [hardening section 9.9](docs/windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification) alongside `security-local-ipc`. Qualify actual wrapper rights, thread-bound caller capture, fatal reversion, continuous endpoint ownership and partial/native I/O completion; examples and mocks do not prove Windows enforcement.
+
+Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
 Checkout began with documentation, skills, tool configuration. Inspect current
 manifests/source before choosing commands; historical documents/diagnostics do not
@@ -83,11 +108,14 @@ Read canonical sections for exact limits; preserve these boundaries:
 - Keep timestamp units and UTC, monotonic, active-awake clocks distinct. Positive
   offset means Windows behind. Estimator history reflects actual acknowledged
   applied correction, not merely requested correction.
-- Preserve NTS-only defaults, explicit visibly labelled plain-NTP profiles. No
-  silent trust downgrade after NTS failure. Bootstrap hints support only bounded
+- Preserve the existing NTS-only baseline while resolving OD-03's Pool/default-
+  profile interaction; no unqualified shipped preset or silent trust downgrade.
+  Plain-NTP profiles stay explicit and visibly labelled. Bootstrap hints support only bounded
   provisional TLS-clock recovery; authorize neither global clock writes nor
   authenticated-tracking claims.
-- Keep clock ownership, stale-state rejection, cumulative correction allowances,
+- OD-02 makes very large authenticated recovery a qualification goal. Era/date,
+  quorum and correction bounds remain unresolved; 12 hours is not an approved
+  plain-NTP constant. Keep clock ownership, stale-state rejection, cumulative correction allowances,
   sleep/resume invalidation, W32Time handover/restoration explicit. Ordinary
   “Sync now” requests fresh bounded check; grants neither arbitrary clock
   correction nor administrative policy changes.
@@ -111,6 +139,7 @@ no new report tree or orchestration campaign.
 | --- | --- |
 | Uncertain scope, stages or ownership | [plan-code-change](.agents/skills/planning/plan-code-change/SKILL.md); architecture/threat/review skills when their decisions change. |
 | Rust logic, concurrency or Windows adapters | [implement-rust](.agents/skills/implementation/implement-rust/SKILL.md), including conditional SCM/chrony/simulator references. |
+| Windows service architecture, SCM lifecycle or recovery | [Service adapter guide](.agents/skills/implementation/implement-rust/references/windows-service-adapters.md), with per-service recovery and object-access matrices; [Windows privileges](.agents/skills/security/security-windows-privileges/SKILL.md) for authority. |
 | Function/module contracts, wire admission and domain invariants | [implement-rust-contracts](.agents/skills/implementation/implement-rust-contracts/SKILL.md). |
 | Wire, persisted-state or semantic compatibility | [evolve-data-contracts](.agents/skills/implementation/evolve-data-contracts/SKILL.md). |
 | Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), then applicable accessibility/DPI checks. |

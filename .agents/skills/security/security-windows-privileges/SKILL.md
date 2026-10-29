@@ -7,6 +7,8 @@ description: "Implement or review NevroTick Windows service identities, effectiv
 
 Read [the security contract](../CONTRACT.md), architecture sections 4, 10–11 and 15, and [native proof requirements](../references/native-proof.md) for OS qualification.
 
+For SCM/service hardening, use the [service adapter guide](../../implementation/implement-rust/references/windows-service-adapters.md), especially its [object/operation access matrix](../../implementation/implement-rust/references/windows-service-adapters.md#freeze-the-object-and-operation-access-matrix) and [per-service recovery matrix](../../implementation/implement-rust/references/windows-service-adapters.md#freeze-service-configuration-and-recovery-behavior). Keep installer/helper configuration authority separate from runtime status reporting; verify effective rights and recovery behavior under actual accounts.
+
 For service-scoped network restrictions or event-provider authority, read relevant [Windows host integration](../references/windows-host-integration.md) sections. Distinguish actual token/service and direct/delegated network owners from configured policy; require bounded product-owned restoration.
 
 1. Identify caller, target securable object, requested rights and protected effect. Preserve own-process engine/broker separation: network-facing engine lacks clock-setting privilege; only narrow broker writes global clock; normal UI is `asInvoker`; installer/helper owns bounded elevated lifecycle work.
