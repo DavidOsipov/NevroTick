@@ -14,8 +14,15 @@ Use the [testing contract](../.agents/skills/testing/CONTRACT.md) to select evid
 The plan is distributed by responsibility; these links locate its owners without
 creating another specification.
 
+The [development execution plan](plans/development-plan.md) consolidates the
+P0–P7 sequence, NTP/NTS priorities, upstream evaluation, explicit implementation
+contracts, mandatory skill reading by phase and phase-end acceptance. Use it to
+assign the next bounded development task; the canonical documents below continue
+to own requirements, and task records own executed evidence.
+
 | Question | Source of truth |
 | --- | --- |
+| What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
