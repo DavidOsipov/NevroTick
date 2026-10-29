@@ -18,11 +18,13 @@ Exercise actual SCM start/stop pending/running status, failure/preshutdown contr
 
 ## Installation and delivered artifacts
 
-V1 is one complete signed per-machine MSI. Validate its actual component/service inventory, privileges, fixed paths, PE/runtime mitigations, dependency DLL loading and signature/publisher identity. Test install, update, repair, downgrade rejection, uninstall without UI, interrupted stages, disabled rollback, reboot, hostile properties/paths and concurrent/old-generation cleanup (CHECK-13/16/18/23).
+V1 is one complete per-machine MSI authenticated under the explicitly selected [architecture §19.5 release profile](../../../../docs/windows-time-architecture.md#195-free-signing-plan) and [OD-05](../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership). Validate its actual component/service inventory, privileges, fixed paths, PE/runtime mitigations, dependency DLL loading and profile-specific release/installed-code identity. Test install, update, repair, downgrade rejection, uninstall without UI, interrupted stages, disabled rollback, reboot, hostile properties/paths and concurrent/old-generation cleanup (CHECK-13/16/18/23).
+
+For Authenticode, verify final payload/package signatures, publisher, chain and timestamp behavior. For the initial OpenPGP alternative, verify the trusted full release-key fingerprint, exact-final-MSI detached signature, signed artifact/version/source/SBOM manifest and installed-code trust design on the declared Windows configurations. OpenPGP does not establish Windows publisher trust or helper/IPC identity by itself. Record absent Authenticode as unqualified, retain native trust/lifecycle gates, and report restrictions from Windows policy accurately.
 
 Inspect external system effects and journal/restoration state before and after each fault. Windows Installer rollback does not automatically reverse arbitrary service/system changes from custom actions. Validate those compensations, including mid-action interruption and rollback-disabled behavior. Correct prior W32Time state and successor ownership must survive repair/removal; do not fight managed policy (CHECK-5).
 
-Isolated unsigned/test-signed P0 artifact may demonstrate declared mechanics; proves no production publisher trust/final signed-byte identity/clean-machine release acceptance. TUF research/possible future MSIX are unadopted.
+Isolated unsigned/test-signed P0 artifact may demonstrate declared mechanics; proves no production publisher trust/final profile-authenticated identity/clean-machine release acceptance. The initial OpenPGP profile requires its own release evidence and approval; it is not established by a P0 mechanics experiment. TUF research/possible future MSIX are unadopted.
 
 ## Native UI, accessibility and presentation
 

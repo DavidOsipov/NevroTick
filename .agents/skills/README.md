@@ -9,6 +9,7 @@ requires loading every skill.
 | Task | Start with |
 | --- | --- |
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |
+| Architect or harden Windows services, SCM lifecycle and recovery | [Service adapter guide](implementation/implement-rust/references/windows-service-adapters.md) and [Windows privileges](security/security-windows-privileges/SKILL.md) |
 | Decode IPC/configuration or enforce domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
 | Implement native controls, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |

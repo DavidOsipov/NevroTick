@@ -33,6 +33,11 @@ For FFI, handles, panic policy, async work, cancellation or lifecycle changes, u
 Windows adapters need small reviewed unsafe contracts. UI/engine have no
 clock-setting privilege.
 
+For Windows service registration, SCM callbacks/status, account isolation or
+stop/restart changes, read [the service adapter guide](references/windows-service-adapters.md)
+directly. Record separate engine/broker recovery settings and an operation/access
+matrix before qualifying native behavior; wrapper examples establish neither.
+
 For compiler/runner/feature changes or review-feedback intake, read
 [execution evidence](references/execution-evidence.md) before selecting commands.
 
