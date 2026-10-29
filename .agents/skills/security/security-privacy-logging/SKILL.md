@@ -17,3 +17,11 @@ For Windows Event Log providers/channels or optional ETW, read relevant [Windows
 6. Keep telemetry off unless explicitly adopted. Local logging alone does not prove ASVS's separate analysis/detection/alerting requirements; assess actual Windows event/managed forwarding boundary. Retain desktop-profile gaps without silently sending data.
 
 Send synthetic recognizable secrets through real success/error/export paths; inspect all selected outputs with useful legitimate diagnostic control. Exercise disk/queue failures/rate bounds only for changed claims. Report fields/sinks/retention, observed exclusions, lost-event behavior and privacy/analysis limits. Never publish, email or upload diagnostics without authorization.
+
+For uncertain secret propagation, use
+[CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) from
+key/cookie/token inputs through clones, formatting, error conversion and event
+fields to every selected log/export sink. Treat redaction as a barrier only for
+the exact output it protects; inspect tracing macros and unmodeled native sinks
+directly. Confirm findings with synthetic-secret output observations; empty
+queries cannot establish absence of disclosure.

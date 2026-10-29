@@ -5,6 +5,13 @@ description: "Implement or review NevroTick native Windows controls, status pres
 
 # Implement native UI
 
+Apply canonical architecture section 16.5 before the general guidance below.
+During UI-M0 use fixture-only, unelevated native controls, sample-data labels and
+disabled protected actions. Keep D1 display, D2 production state/policy and D3
+full keyboard/Narrator/UIA work Deferred with owners/re-entry triggers; do not
+implement or qualify them as UI-M0 prerequisites. Retain inherited standard
+control behavior, accessible labels and the milestone's native observations.
+
 Use canonical architecture section 16. Default candidate: Win32 common controls
 through `windows`/`windows-sys` plus small safe adapter. Slint and egui/AccessKit
 alternatives need demonstrated need and license/target qualification. Translating
@@ -32,6 +39,28 @@ Read [native interaction and accessibility](references/interaction.md) for contr
 dialog, status, DPI or locale changes. Preserve UI-thread and handle ownership in
 [Rust adapters](../implement-rust/references/rust-windows.md). Route wire/state
 changes to [contracts](../implement-rust-contracts/SKILL.md).
+
+For changed window/control, native buffer, callback or handle lifetimes, select
+[Windows memory diagnostics](../../testing/references/windows-memory.md) and
+repeat creation/use/destruction with observations before process exit. Account
+for GDI/USER objects separately from heap and kernel-handle counts; each resource
+needs its matching release owner. These Rust/FFI checks also apply to UI-M0's
+fixture paths and do not activate deferred D1/D2/D3 work.
+
+Use the shared garde/domain construction path for settings and source-edit
+validation; adapter callbacks consume checked values and preserve state on error.
+Do not duplicate rules in control handlers or let direct programmatic calls bypass
+them. Apply [function/module enforcement](../implement-rust-contracts/references/contract-enforcement.md)
+to callback inputs, transformed snapshots and returned FFI values. During UI-M0
+these obligations cover the local preview only; they do not activate deferred
+production Apply, persistence, service policy or other D2 behavior.
+
+Select Rust/FFI format, compiler/Clippy and focused checks through the
+[configured-tool workflows](../../testing/references/configured-tooling.md),
+using the UI crate's actual Windows target and binding features. Keep dependency
+admission separate from fixture behavior. During UI-M0 retain those engineering
+checks and M0 native observations; apply the full accessibility guidance below
+only at its re-entry trigger.
 
 Verify changed behavior on Windows. Check UIA names/roles/patterns separately from
 actual keyboard, focus and Narrator behavior. Use

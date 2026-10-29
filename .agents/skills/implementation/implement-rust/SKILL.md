@@ -10,6 +10,14 @@ implementation/review/planning scope, dirty work and resolved decisions. Ordinar
 code edits must not create Cargo workspaces, dependencies or service architecture
 as side effects.
 
+Read the shared [implementation contract](../CONTRACT.md). For every changed
+function/module, identify preconditions, postconditions, failure and effect/state
+guarantees and their enforcement. Use private checked types in signatures;
+validate new raw values and transformed results before exposure. Mandatory garde
+validation belongs in the shared fallible construction path, so direct callers
+cannot forget a separate validation step. See
+[contract enforcement](../implement-rust-contracts/references/contract-enforcement.md).
+
 Locate producer, callers, mutation paths, effects and target/feature lane.
 Distinguish pure core, wire admission, engine, broker, Windows adapter and UI.
 With source present, initialize Serena before symbol/reference queries; use Probe
@@ -47,11 +55,44 @@ not establish clean-room provenance or clear an unwritten dependency graph.
 Route data admission or internal invariant contracts to
 [implement-rust-contracts](../implement-rust-contracts/SKILL.md), compatibility
 changes to [evolution](../evolve-data-contracts/SKILL.md), and controls/focus/rendered
-status to [native UI](../implement-native-ui/SKILL.md). Use the shared
-[contract](../CONTRACT.md) only when its data-contract trigger applies.
+status to [native UI](../implement-native-ui/SKILL.md). Reuse immutable typed
+guarantees across internal calls; recheck facts invalidated by state/context changes.
+
+For an explicit performance task or measured cost/regression, use
+[performance optimization](../optimize-rust-performance/SKILL.md): attribute the
+bottleneck, compare bounded baseline/candidate runs and preserve correctness,
+security and resource limits. Ordinary Rust edits need no benchmark campaign.
+
+Select executable checks from the
+[configured-tool workflows](../../testing/references/configured-tooling.md).
+For real Rust source, run applicable format/compiler/Clippy lanes and focused
+regressions for the changed owner and callers; API/documentation changes also
+need their rustdoc/doctest lane. Admit actual target/features before execution;
+host checks cannot replace Windows adapter linking or native observations.
+Policy/runner changes use existing healthy/rejection controls, not a fabricated
+application workspace. Preserve target mitigation flags and narrow expectations.
+
+For a concrete memory/ownership gap, select admitted Miri on reached portable
+tests. For synchronization changes, select an instrumented bounded Loom model;
+use experimental Lockbud only after the real source/features compile on its
+separate admitted compiler. Small arithmetic/state invariants may suit Kani;
+hostile parser/conversion inputs may suit cargo-fuzz. Use the guide's guarded
+analysis lane and then qualify the real harness; bootstrap controls alone test
+no product path. Keep shipping Rust and native Windows observations separate.
+
+For reached Windows heap/handle/FFI or resource-lifetime changes, use
+[native memory diagnostics](../../testing/references/windows-memory.md).
+Select Application Verifier/PageHeap for native misuse and separate lifecycle
+measurements for retention; retain the target's intended ordinary-user token
+and restore only owned image settings after the run.
+
+When locating uncertain cross-function input-to-effect or secret-to-output paths,
+read [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md).
+Confirm query paths against current callers and current guards; a missing result
+cannot establish an unreachable effect.
 
 Verify changed guarantee/actual callers with smallest appropriate behavioral
-check plus applicable compiler/Clippy/format checks in existing target matrix.
+check and the selected configured checks.
 For bugs, show causal failure and healthy control before repair where practical.
 Use [QA contract](../../testing/CONTRACT.md) for test integrity. Compiler acceptance
 proves type obligations, not freshness, authorization, numerical truth or Win32

@@ -1,4 +1,4 @@
 interface:
   display_name: "Implement Rust contracts"
-  short_description: "Implement or review NevroTick serialized boundaries, strict"
-  default_prompt: "Use $implement-rust-contracts to implement or review NevroTick serialized boundaries, strict Serde DTO decoding, private domain invariants and checked input-to-effect paths."
+  short_description: "Enforce Rust function, module and input contracts"
+  default_prompt: "Use $implement-rust-contracts to implement or review NevroTick function/module contracts, mandatory garde-backed domain construction, strict Serde admission and checked input-to-effect paths."

@@ -19,4 +19,32 @@ For packaged event-provider resources/channels or product Firewall/WFP policy, r
 6. Inject failures at meaningful reached stages/reboot interruptions. Separate package publication, installed state, journal progress and acknowledgement. Upgrade must not briefly restore W32Time through old-product removal; uninstall respects later administrator/GPO changes. Neither NTS outage nor MSI convenience permits automatic weak-authentication clock-controller fallback.
 7. Signing/release trust needs actual approved provider/identity, protected authorization, verification and incident/rotation policy. Checksums alone provide no independent release authentication. Proposed free-signing routes/green unsigned builds prove no signing acceptance. Implement no bespoke privileged auto-updater from retained TUF assessment.
 
+For changed workflow/scanner/gate policy, select the existing helper tests,
+workflow checker and pinned secret scanner through the
+[configured-tool workflows](../../testing/references/configured-tooling.md).
+Hosted CodeQL scanning is explicitly deferred: its prepared jobs perform no
+extraction. Keep local MCP analysis separate from hosted workflow activation.
+The final workflow gate accepts only explicit deferral with skipped CodeQL jobs
+and successful mandatory workflow/secret checks; this supplies no SAST result.
+For local database/query work, use
+[CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) and
+the build/security owner's current installation, restricted-tool and CLI-terms
+admission in [TOOLING.md](../../../../TOOLING.md#repository-security-automation).
+Inspect actual exposed capabilities and build-script/proc-macro execution before
+extraction; local MCP availability supplies no product scan or Windows evidence.
+Treat retained hosted Rust preparation as a separate runner lane, not local setup.
+
+For a changed analysis or dependency-review guarantee, select Miri/fuzz/Loom/
+Kani/Lockbud/cargo-vet through the guarded analysis entry point in the configured
+guide. Preserve exact separate analysis-compiler pins and shipping Rust 1.99.1;
+fixture controls do not qualify a product graph. Cargo-vet missing audits block:
+never fabricate reviews/imports/exemptions or widen features to obtain success.
+
+At artifact inventory time, use that guide's existing `scripts/generate-sbom.py`
+wrapper for its current `x86_64-pc-windows-msvc` policy target, matching build
+features and a new external output directory. Other targets require explicit
+policy/wrapper admission before use.
+Reconcile its frozen Rust inventory with native/build/generated components and
+the final MSI; generation alone does not qualify complete-package provenance.
+
 Coordinate [qa-package-artifacts](../../testing/qa-package-artifacts/SKILL.md), [qa-fault-recovery](../../testing/qa-fault-recovery/SKILL.md) and [qa-final-qualification](../../testing/qa-final-qualification/SKILL.md) for changed claims. Report source/artifact identity, executed checks, lifecycle/restoration observations, signing status and release blockers separately. Readiness grants no publication/install permission.

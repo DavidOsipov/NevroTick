@@ -46,11 +46,16 @@ None. Never default invalid supplied authority fields. Freeze enum discriminator
 versions. Canonicalize identities once under domain rule; use canonical form for
 checks/effects. Display labels carry no network/path authority.
 
-Private types enforce pure field/cross-field rules through fallible construction.
+Private types enforce shared garde and domain field/cross-field rules through
+mandatory fallible construction. Follow [contract enforcement](contract-enforcement.md)
+for direct-call, mutation and transformed-output obligations; deriving validation
+does not execute it. Bound collections before validation/error aggregation and
+convert reports to the product's bounded redacted error representation.
 No unrestricted Deserialize for invariant-bearing types. Prefer separate DTO →
 explicit conversion; approved direct forms use `#[serde(try_from = "WireType")]`
 or audited equivalent. Public tuple fields, mutable inner access, unchecked `From`
-and permissive Default can bypass constructors. Test-only bypasses stay test-only.
+and permissive Default can bypass constructors. Builders, migrations and interior
+mutability must not provide another path. Test-only bypasses stay test-only.
 
 Explicitly check finite floating/FFI results; ordinary ranges do not reject NaN.
 Checked arithmetic/unit conversions need post-conversion bounds. Test neighboring

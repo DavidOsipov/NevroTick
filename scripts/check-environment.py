@@ -71,10 +71,10 @@ def overridden_names(environment: dict[str, str]) -> list[str]:
     return sorted(name for name in environment if name in FORBIDDEN_ENV or name.startswith(FORBIDDEN_PREFIXES))
 
 
-def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None) -> dict:
+def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None, stdin=None) -> dict:
     """Bound wall time/output and reject surviving children of the owned group."""
     process = subprocess.Popen(
-        command, cwd=cwd, env=environment, stdout=subprocess.PIPE,
+        command, cwd=cwd, env=environment, stdin=stdin, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True,
     )
     output = bytearray()

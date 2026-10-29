@@ -3,9 +3,9 @@
 **Document:** RWTC-DEV-HARDENING-001, revision 1.0  
 **Research date:** 28 October 2026  
 **Baseline:** Product architecture RWTC-ARCH-001 revision 1.4  
-**Status:** Proposed enforcement specification and qualification plan. No product repository was created, tools installed, configurations applied, application compiled or Windows tests executed by this work.
+**Status:** Enforcement specification and qualification plan with partially adopted development tooling. The original research created no application or execution evidence. The current [tooling record](../TOOLING.md) distinguishes installed tools and bootstrap controls from pending application, native-product and release qualification.
 
-**Documentation amendment:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; no new execution evidence.
+**Documentation amendments:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; owner-directed garde adoption and mandatory function/module contract discipline; adopted native memory diagnostics and agent workflow. Application gates remain pending implementation and qualification.
 
 ## 1. Purpose and recommended baseline
 
@@ -19,17 +19,19 @@ There is no defensible percentage by which this toolset will reduce bugs before 
 | --- | --- | --- |
 | Compiler | Exact stable Rust/MSVC toolchain, checked release arithmetic, explicit fault policy | Reproducible diagnostics and safer failure behavior |
 | Source policy | rustfmt; compiler warnings; Clippy `all`, `pedantic` and selected restrictions; rustdoc; unsafe boundaries | Catches common mistakes and makes exceptions reviewable |
+| Function/module contracts | Precise typed APIs; private fallible construction invoking shared garde rules; checked postconditions and current-state guards | Makes omitted field rules visible and prevents ordinary callers from constructing invalid domain values through public APIs |
 | Dependency policy | Exact lock/feature graph; cargo-deny; native/build-script/proc-macro inventory | Known advisories, sources, licenses and unwanted capability checks |
 | CI policy | actionlint, zizmor, secret scanning; protected policy and immutable action identities | Detects workflow errors and reduces credential/artifact substitution paths |
 | Static analysis | Qualified CodeQL Rust analysis with documented gaps | Adds data-flow checks beyond the compiler and Clippy |
 | Behavioral evidence | nextest, separate doctests, independent examples, proptest, bounded fuzzing | Checks real requirements and rare boundary behavior |
+| Native memory and resources | Application Verifier Basics, full PageHeap and CDB on affected Windows paths; separate lifecycle retention measurements | Detects reached native heap/API misuse and challenges resource ownership; neither installed tools nor crash-free runs establish absence of leaks |
 | Test sensitivity | At least 90% executable-line coverage per security module; at least 95% mutation score per critical source file | Preserves the accepted architecture's thresholds and exposes weak tests |
 | Windows qualification | Native x64 MSVC execution, PE inspection, runtime mitigation queries, privileged-effect and installer tests | Establishes behavior that portable Rust tests cannot prove |
 | Release | Complete artifact inventory/SBOM, independent exact-candidate review, isolated signing approval | Connects verified source and tests to the actual complete MSI |
 
 Advanced tools are admitted for a named invariant: Miri for suitable Rust memory/aliasing behavior, Windows ASan for a qualified native surface, Loom for a small concurrency protocol, and Kani for a bounded arithmetic/admission property. Requiring all of them everywhere would add unsupported configurations and false assurance.
 
-These are development dependencies and CI tools. They should not enlarge the installed service/UI payload. The runtime validation design remains bounded Serde decoding, private validated types and effect-time authorization; this document does not introduce a Zod-style runtime schema engine.
+The compiler, analyzers and test tools are development dependencies and should not enlarge the installed service/UI payload. Runtime contracts use bounded Serde decoding, mandatory shared garde validation inside private fallible construction, and effect-time authorization under architecture section 6. Garde is a selected runtime dependency whose exact product graph still needs admission; it does not replace the decoder or trusted-state guards.
 
 ## 2. Authority, scope and unchanged decisions
 
@@ -44,7 +46,7 @@ The architecture remains authoritative for product behavior and unresolved choic
 
 The pinned website guidance at commit `6530d3a8d44cbe4f829b1e09edd3a1c90cffc087` informed the agent, security, testing and independent-review rules. Its TypeScript/Astro/npm commands are not Rust requirements. The security-audit guidance was used in design/guidance mode; this is not a completed codebase security audit.
 
-**Policy language:** “required” below means the proposed behavior of an implemented gate. It does not claim the gate already exists. A configuration blueprint must pass tool admission before becoming the repository's active policy. Existing architecture requirements are preserved; new quantitative choices, such as the advisory refresh interval, are labelled as proposals.
+**Policy language:** “required” describes the expected behavior of a gate or workflow, not proof that it exists or has passed. Explicitly adopted workflows apply within their documented scope; proposed gate implementations still need admission. Existing architecture requirements are preserved; new quantitative choices, such as the advisory refresh interval, are labelled as proposals. Use the tooling record and actual configuration to distinguish current enforcement from pending application evidence.
 
 ### 2.1 Restricted first UI milestone applicability
 
@@ -107,6 +109,20 @@ The execution boundary must provide an allowlisted environment, unprivileged ide
 No signing/publishing token, cloud credential, privileged OIDC grant, SSH agent, production trust-store access or unrelated checkout belongs in a build/analyzer sandbox. If a hosted integration requires a status-upload token, confine it to a separate minimal data-only upload stage. It must not execute scripts from the report artifact.
 
 Use separate worktrees/output directories for parallel agents and one owner for `Cargo.lock`, shared contracts, tool policy and native lab state. A worktree does not isolate service names, registry keys, the VM clock or machine-wide settings. Do not schedule concurrent mutable-state experiments on the same guest.
+
+### 3.4 Mandatory contracts for agent-written code
+
+Apply the [hostile-input assumption](windows-time-architecture.md#61-validation-architecture-and-enforcement-order) to user-entered product data and external programmatic data alike. Identify each implemented admission path and its bounds; UI controls, local/admin origin, authenticated channels and prior acceptance do not establish payload safety. Require real-handler adversarial checks, including UI bypass, well-formed unauthorized/stale requests and aggregate resource pressure, with accepted neighboring controls and no partial protected effects on rejection.
+
+Apply [architecture section 6.3.1](windows-time-architecture.md#631-contracts-for-every-function-and-module) to every function and module, including private helpers, trait implementations and callbacks. Encode preconditions and output invariants in types wherever possible. Document the remaining semantic units, ranges, resource/lifecycle obligations, permitted effects, failures and postconditions at their owner. An unchanged immutable validated type carries its invariant across a call; a transformation, mutation, deserialization or changed trusted context requires the corresponding check. Do not substitute repeated serialization or decorative validation annotations for this analysis.
+
+DTO/settings validators use garde, called by the private fallible constructor before a domain value can be returned. UI feedback and service admission share the same pure rule definitions; the receiver independently decodes and constructs its input. No `allow_unvalidated`; each field needs actual validation/recursive validation or a `skip` with a nearby invariant-owner explanation and independent review. Metadata-only annotations do not count as validation. Inspect all constructors, `Deserialize` implementations, builders, defaults, mutable accessors and interior-mutable handles for bypasses. Keep checks active in release builds; `debug_assert!` and test-only validation do not enforce production contracts.
+
+For each changed contract, identify its enforcement point and independent observation before implementation. Choose the applicable checks: runtime valid/invalid neighbors through the real constructor/consumer; external consumer compile-fail tests for forbidden construction/mutation with a passing supported-use control; checked-transform/postcondition and failure-atomicity cases; property tests for combinations; bounded Kani proofs for selected finite invariants. Compile-fail must arise from the intended restriction, not a broken fixture/import or unsupported toolchain. Trace source-to-effect bypasses with the admitted CodeQL workflow when cross-function reachability is uncertain; scanner success alone does not prove contract completeness.
+
+Reviewers must reject a path that bypasses required validation, consumes the unchecked original instead of the checked result, silently drops a postcondition, or treats a stale authorization marker as current permission. Missing applicable evidence remains incomplete; agents cannot clear it by removing rules, weakening a constructor, broadening a skip or shrinking the selected test scope. Retain the actual small change scope: a trivial total helper need not acquire a new report or validator when its type and implementation already establish the complete contract.
+
+The selected initial declaration is `garde = { version = "=0.23.0", default-features = false, features = ["derive"] }`; section 18.5 of the architecture owns dependency admission. No application Cargo workspace exists yet, so these instructions do not claim a locked graph, executed garde integration or enforced product CI. UI-M0's D1/D2/D3 deferrals remain in force; validate its actual fixture-only paths without introducing deferred production integrations.
 
 ## 4. Pinning and admitting the toolchain
 
@@ -262,6 +278,8 @@ Cargo's ordinary release defaults omit overflow checks. Enabling them makes inte
 Cargo cannot set `panic` through a per-package profile override, and test harness behavior does not establish the production executable's panic strategy. Separate component profiles require named builds and artifact identities. Run the exact shipping executables through their fault cases. Rust unwinding must not cross Windows callbacks; `catch_unwind` neither catches abort/all native faults nor makes corrupted state safe to resume. [C08, C09]
 
 Run optimized invariant checks and the actual shipping profile. Keep optimization, LTO, codegen units, CRT selection and stripping decisions measurable. Compare size, CPU, power, precision and regression trajectories before choosing `opt-level="s"`/`"z"`, thin LTO or one codegen unit. Retain matching debugging symbols with a source-path/privacy policy. Do not enable fast-math behavior that invalidates estimator assumptions.
+
+For optimization tasks, use [the performance optimization skill](../.agents/skills/implementation/optimize-rust-performance/SKILL.md) with [resource QA](../.agents/skills/testing/qa-performance-resources/SKILL.md). Start from a measured cost and owning path, define comparable baseline/candidate identities and a decision rule, attribute the bottleneck, then make and verify a causal change. Preserve raw repeated samples, correctness/hostile-input controls and memory, tail-latency, wakeup and recovery trade-offs. Profiling locates a cause; representative runs establish a claimed improvement. Preserve mandatory validation, checked arithmetic, security settings and bounded native-work custody. Architecture section 17 owns budgets; CHECK-21 and UI-M0 retain their existing applicability. The [measurement reference](../.agents/skills/implementation/optimize-rust-performance/references/measurement.md) documents conditional tools and evidence limits; it installs no profiler or benchmark dependency.
 
 ### 6.2 Target-specific Windows compiler/linker settings
 
@@ -448,6 +466,27 @@ Preserve and replay every failure. A reject-all parser or a harness that swallow
 
 Qualify Windows x64 MSVC nightly fuzz/ASan separately against exact Rust, cargo-fuzz/libfuzzer-sys, native compiler, linker, CRT and sanitizer runtime. Require a deliberately faulty local fixture to produce its expected diagnostic and a valid neighbor to run. Inspect Rust and relevant native instrumentation. Do not infer ARM64 support from x64, install unsupported stable flags, or bypass the channel using `RUSTC_BOOTSTRAP`.
 
+#### 9.5.1 Adopted native memory workflow
+
+Application Verifier, GFlags/PageHeap and CDB from Windows SDK **10.0.28000.2957** are installed for development. The [tooling record](../TOOLING.md#native-windows-memory-diagnostics) owns installation, commands and observed bootstrap results; [the native-memory skill reference](../.agents/skills/testing/references/windows-memory.md) owns the agent procedure. Exact tool, DLL, debugger-configuration and image-profile admission is defined in [the policy](../policy/windows-memory.json) and enforced by [the guarded helper](../scripts/windows-memory.ps1). Do not copy installation snapshots into an application pass claim.
+
+Select this lane when changing unsafe Windows adapters, native buffer/string/callback lifetimes, handle ownership or cleanup, or investigating a native crash. Trace acquisition, transfer, use and release through success, partial initialization, cancellation and recovery; name the paths the test must reach. UI-M0 keeps its bounded native-window and FFI scope: a relevant memory check does not activate D1–D3, production integrations or broad soak requirements.
+
+1. Freeze the candidate and its symbols/configuration, select an owned Windows fixture and unique image basename admitted by the helper, and declare test inputs, duration, memory/output limits, cleanup owner and stop conditions. Run read-only Preflight as the ordinary-user debugger account. Tool presence does not authorize arbitrary privileged or hostile target execution.
+2. Enable the exact per-image verifier/full-PageHeap profile in the separate elevated configuration shell before starting the candidate. Run CDB and the ordinary test candidate unelevated with the admitted current-user debugger configuration and local symbols. Real service/privilege experiments still require section 10's separately owned native lab and intended service identity. System-wide GFlags settings, unrelated process names and arbitrary extra verifier layers are outside this profile.
+3. Observe effective settings and reached cases. Retain the first verifier stop/exception, stack, raw log, native exits and healthy behavior. A fault caught by CDB can still yield exit zero; classify actual diagnostics and independently observed outcomes. On tool/profile or relevant allocator/API changes, replay healthy and deliberately faulty controls for the claim. Bootstrap heap-overrun and invalid-handle controls do not qualify every allocator, Leak layer or application path.
+4. Stop and account for owned processes, then Disable and verify both IFEO registry views against the protected ownership receipt, including after failure or timeout. Do not overwrite unexpected state or declare cleanup complete after an ambiguous restoration. The helper configures an image; it does not launch, sandbox or supervise the candidate. Its configuration-command timeout and post-collection output check do not enforce the test's resource limits.
+
+PageHeap observes the heap paths it instruments and changes allocation cost and timing. Its settings persist until explicitly removed. Application Verifier's Leak layer reports tracked resources at DLL unload; outstanding resources alone are not proof of a leak. Use the dedicated lifecycle measurements below for retention, and retain the independent ASan/Miri admission limits above. [Microsoft PageHeap documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/gflags-and-pageheap), [Application Verifier layers](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/application-verifier-tests-within-application-verifier).
+
+#### 9.5.2 Retention and resource ownership
+
+For changes to long-lived state, queues/caches, native resources or task cancellation, identify each allocation, handle, thread/task and permit owner, its bound and its release condition. Rust ownership and garde validation do not establish bounded retention: reference cycles, intentionally forgotten allocations, unbounded collections and abandoned work need explicit lifecycle contracts and observations. Native work retains custody and capacity permits until actual completion or qualified recovery, even if its waiting future is dropped.
+
+Measure declared workloads after warm-up and after each repeated lifecycle/quiescent checkpoint, before process exit or fixture teardown can mask growth. Record private/committed memory, relevant allocation attribution, handles, threads/tasks, queues and permits; include USER/GDI objects when UI ownership changes. Require useful healthy work and bounded behavior on failures/cancellation, comparing retained state with the owner's declared budget rather than treating every outstanding allocation or cached page as a leak. Record unsupported resource/allocator observations as gaps.
+
+Keep corruption instrumentation separate from representative performance measurements: full PageHeap changes memory usage and timing. Retain CHECK-21's one-hour baseline and 72-hour reconnect/fault soak on named hardware for the applicable product stage; neither a short instrumented run nor nextest's process/output `leak-timeout` replaces those observations. No application leak/soak result exists merely because the tool controls passed.
+
 ### 9.6 Bounded use of Miri, Loom and Kani
 
 | Tool | Good initial question | Claim boundary |
@@ -499,12 +538,14 @@ Independent checks within a tier may run concurrently in isolated owned environm
 | Tier | Required work | When and authority |
 | --- | --- | --- |
 | T0 — admission | Source/policy/tool identity, lock/feature/source/license/advisory disposition, workflow/secret checks, scope inventory | Before target-controlled execution; tools that invoke Cargo already need the sandbox |
-| T1 — fast contracts | Formatting, compiler/Clippy/rustdoc, unit/property/API tests, doctests and qualified SAST | Every relevant PR/configuration change; no privileged clock effects |
-| T2 — affected behavior | Regression corpus, focused fuzzing, affected coverage/mutation, native integration and lifecycle/accessibility checks | Based on changed requirements; missing affected evidence blocks that change |
+| T1 — fast contracts | Formatting, compiler/Clippy/rustdoc, applicable constructor/consumer and external compile-fail controls, unit/property/API tests, doctests and qualified SAST | Every relevant PR/configuration change; checked postconditions and no privileged clock effects |
+| T2 — affected behavior | Regression corpus, focused fuzzing, affected coverage/mutation, native integration, applicable native-memory and retention checks, lifecycle/accessibility checks | Based on changed requirements and milestone; missing affected evidence blocks that change |
 | T3 — release candidate | Complete supported matrix, all required critical-file gates, native authority/mitigation/package checks, resource measurements, inventory/SBOM and independent review | Exact source/artifact candidate; full scope cannot be inferred from unrelated older focused runs |
 | T4 — signing/publication | Provider acceptance, human approval, origin-bound signing, final payload/MSI verification and lifecycle evidence | Separate release authority; public release remains blocked until requirements pass |
 
 Scheduled advisory/secret metadata refresh and long fuzz campaigns run separately and can reopen admitted inputs. They do not modify the lockfile or auto-accept risk.
+
+This tier table specifies required evidence, not current CI coverage. The adopted native-memory helpers currently support owned manual Windows runs; no hosted application memory gate is established by installing them. A future CI lane must qualify its own identity/isolation, controls, diagnostic classification and restoration before reporting this evidence automatically.
 
 ### 11.2 Gate qualification controls
 
@@ -525,6 +566,7 @@ Run these when admitting a checker or changing its relevant configuration. Use i
 | Coverage | Required module omitted, below threshold, zero denominator or stale report | Known line/branch fixture reconciles and each module passes its own threshold |
 | Mutation | Missed mutant, unviable build, timeout, zero mutants, unknown JSON, missing shard | Correct baseline and caught behavioral mutation; per-file math/outcomes remain distinct |
 | Fuzz/model tools | Reject-all harness, swallowed failure, impossible assumptions or insufficient bounds | Valid accepted input/reachable witness and expected diagnostic/counterexample |
+| Native memory diagnostics | Reached heap-overrun or invalid-handle control; disabled/wrong image profile or lost diagnostics | Healthy neighboring control completes, effective settings and intended fault/stack are observed, diagnostics cannot become an exit-zero pass, and owned settings are restored |
 | Native effects | Unauthorized/stale operation, leak or failed restoration | Authorized bounded effect independently observed and owned cleanup established |
 | Promotion | Wrong-source/wrong-workflow/tampered artifact | Approved exact artifact reaches only the authorized signing route |
 
@@ -545,7 +587,7 @@ Skipped, timed-out, unsupported or missing required cases cannot be summarized a
 
 ## 12. Repository files, adoption work and completion criteria
 
-### 12.1 Proposed files
+### 12.1 Repository files and remaining blueprint
 
 | Path | Purpose and owner |
 | --- | --- |
@@ -555,6 +597,8 @@ Skipped, timed-out, unsupported or missing required cases cannot be summarized a
 | `deny.toml` | Exact-version validated dependency policy; security/license review |
 | `.config/nextest.toml` | Bounded test execution, process limits and explicitly isolated native groups |
 | `policy/tool-manifest.json` | Tool origins, exact versions/digests, target support and controls |
+| `policy/windows-memory.json`, `policy/windows-debugger.xml` | Adopted native-tool pins, exact image profile and current-user debugger restrictions; native-tool owner |
+| `scripts/setup-windows-memory.ps1`, `scripts/windows-memory.ps1`, `scripts/tests/test_windows_memory.ps1` | Adopted acquisition/configuration, guarded per-image lifecycle and helper controls; actual candidate execution/measurement remains separately owned |
 | `policy/verification-manifest.toml` | Requirements to modules, critical files, feature rows and native tests |
 | `policy/exceptions/` | Narrow reviewed exceptions with owner, evidence and expiry/reopen conditions |
 | `verification/gate-fixtures/` | Independent deliberately bad/good checker controls |
@@ -562,7 +606,7 @@ Skipped, timed-out, unsupported or missing required cases cannot be summarized a
 | `.github/workflows/`, `.github/CODEOWNERS` | Isolated checks, protected ownership, release separation and recorded hosted settings |
 | `docs/toolchain-and-ci.md`, `docs/release-policy.md` | Admitted configuration and operational release/recovery procedures |
 
-These paths are an implementation blueprint, not files already created in the future product repository. Prefer one authoritative policy source with generated reports to contradictory duplicated rules. Gate implementation itself is security-relevant code and needs negative controls and independent review.
+The table combines adopted bootstrap files and the remaining implementation blueprint; inspect the checkout and [tooling record](../TOOLING.md) before assuming a file or gate exists. Prefer one authoritative policy source with generated reports to contradictory duplicated rules. Gate implementation itself is security-relevant code and needs negative controls and independent review.
 
 ### 12.2 Finite adoption tasks
 
@@ -572,7 +616,7 @@ These paths are an implementation blueprint, not files already created in the fu
 | DEV-02: Enforce lint/profile policy | Member inventory, strict lint/rustdoc controls, safe/unsafe and override fixtures, parsed configurations | Tool admission first; component panic policy remains a shipping gate |
 | DEV-03: Admit dependency/CI policy | Exact graph/source/license dispositions, freshness receipt, workflow/secret/CodeQL controls | Preserve S0.1 crypto/license hold; actual held dependency blocks only dependent product work |
 | DEV-04: Qualify behavioral evidence | Independent fixtures, nextest/doctests, 90% module and 95% file checkers with complete denominators | P1 core implementation and reviewed critical manifest; no empty green bootstrap |
-| DEV-05: Qualify native analysis/lab | x64 Windows evidence, effective mitigations, bounded lab ownership; explicit ASan/coverage support results | Existing S0 platform experiments; optional tools cannot waive required native behavior |
+| DEV-05: Qualify native analysis/lab | x64 Windows evidence, effective mitigations, bounded lab ownership; native-memory controls and candidate paths; separate retention, ASan and coverage results | AppVerifier/PageHeap/CDB bootstrap controls passed; application/native-product, Leak-layer, soak and ASan qualification remain pending. Tool controls cannot waive required native behavior |
 | DEV-06: Protect promotion | Complete candidate inventory, provider-approved flow, independent release review and final MSI verification | OPEN-11 and production signing gates; no automatic public release from an agent |
 
 Bound unresolved tool experiments by time, owner and decision criterion. If a tool cannot analyze a required surface, record the gap and choose an independently justified alternative; do not remove the requirement. Optional model tools need not block starting bounded P0 work.

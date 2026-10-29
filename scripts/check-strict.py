@@ -44,6 +44,7 @@ pub const fn next_tick(tick: u64) -> Option<u64> {
     tick.checked_add(1)
 }
 
+/// Behavioral controls for the checked successor boundary.
 #[cfg(test)]
 mod tests {
     use super::next_tick;
@@ -70,7 +71,8 @@ mod tests {
 
 
 def with_control(addition: str) -> str:
-    return SOURCE.replace("#[cfg(test)]", addition + "\n#[cfg(test)]", 1)
+    marker = "/// Behavioral controls for the checked successor boundary."
+    return SOURCE.replace(marker, addition + "\n" + marker, 1)
 
 
 def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
@@ -84,7 +86,8 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
                  "unused_must_use", "unfulfilled_lint_expectations", "unknown_lints",
                  "renamed_and_removed_lints", "improper_ctypes", "improper_ctypes_definitions",
                  "unexpected_cfgs", "missing_docs", "unreachable_pub", "unused_qualifications"},
-        "clippy": {"all", "pedantic", "undocumented_unsafe_blocks", "allow_attributes_without_reason",
+        "clippy": {"all", "pedantic", "missing_docs_in_private_items",
+                   "undocumented_unsafe_blocks", "allow_attributes_without_reason",
                    "allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok",
                    "unwrap_used", "expect_used", "panic", "todo", "unimplemented", "unreachable",
                    "dbg_macro", "let_underscore_must_use", "as_conversions", "mem_forget", "exit"},
@@ -344,6 +347,27 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
         execute("format-positive", ["cargo", "fmt", "--all", "--", "--check"])
         execute("compiler-positive", cargo)
         execute("clippy-positive", clippy)
+        # This proves documentation presence on a private helper. Its prose and
+        # semantic pre/postconditions still need independent contract review.
+        private_control = '''
+/// Return the checked successor through the private contract boundary.
+#[must_use]
+pub const fn private_contract_entry(value: u64) -> Option<u64> {
+    checked_successor(value)
+}
+
+/// Return the successor or `None` on overflow, without modifying state.
+const fn checked_successor(value: u64) -> Option<u64> {
+    value.checked_add(1)
+}
+'''
+        source.write_text(with_control(private_control))
+        execute("private-contract-docs-positive", clippy)
+        source.write_text(with_control(private_control.replace(
+            "/// Return the successor or `None` on overflow, without modifying state.\n", ""
+        )))
+        execute("private-contract-docs-negative", clippy, "missing_docs_in_private_items")
+        source.write_text(SOURCE)
         execute("rustdoc-positive", docs)
         tests = execute("unit-positive", ["cargo", "test", "--lib", "--frozen", "--jobs", "1"])
         ENV.require_test_count(tests, 2, "policy unit control")
@@ -417,6 +441,7 @@ pub unsafe fn read_control(pointer: *const u8) -> u8 {
         execute("undocumented-unsafe-negative", clippy, "undocumented_unsafe_blocks")
         source.write_text(with_control('''
 #[expect(dead_code, reason = "isolated control proves a fulfilled local expectation")]
+/// Deliberately unused helper for the fulfilled-expectation control.
 fn deliberately_unreferenced() {}
 
 /// Preserve an intentionally consumed optional result.

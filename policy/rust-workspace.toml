@@ -28,6 +28,9 @@ unused_qualifications = "deny"
 [workspace.lints.clippy]
 all = { level = "deny", priority = -1 }
 pedantic = { level = "deny", priority = -1 }
+# Require a documented contract surface for private helpers as well as public
+# APIs. Documentation presence does not prove pre/postconditions are correct.
+missing_docs_in_private_items = "deny"
 undocumented_unsafe_blocks = "deny"
 allow_attributes_without_reason = "deny"
 # Prefer checked expectations over permanent local suppressions, and make each

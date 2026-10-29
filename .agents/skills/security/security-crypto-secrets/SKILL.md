@@ -15,3 +15,10 @@ Read [the security contract](../CONTRACT.md), architecture sections 7–8, 12 an
 6. Exclude keys, cookies, bearer approvals and raw sensitive packets from `Debug`, errors, traces, diagnostics and exports. Test negative decryption/trust/AEAD cases and valid neighbors without logging test secrets.
 
 Route needed changes through [dependency-updates](../../environment/dependency-updates/SKILL.md); use [qa-security-boundaries](../../testing/qa-security-boundaries/SKILL.md) for actual trust/cipher/provider paths. Report trust/nonce/lifetime contract, changed consumers, executed cases and unresolved OS/provider limits. NTS authenticates packets under its trust basis; it removes no delay attacks and proves no exact UTC.
+
+When secret copies or trust-state consumers are uncertain, use
+[CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
+trace key/cookie/approval and provisional-trust sources to persistence, logs,
+ordinary-session state or broker proposals. Model those facts separately;
+reachability analysis neither verifies a cryptographic primitive nor proves
+zeroization of all copies or platform trust behavior.

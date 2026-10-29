@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "server_version": "2.27.3",
+  "server_commit": "b0fae2809de0a5ff4fb984677354b7015b6ad57f",
+  "cli_version": "2.27.3",
+  "rust_library": "0.2.24",
+  "ci_codeql": "deferred",
+  "transport": "stdio",
+  "node_version": "24.21.0",
+  "node_sha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
+  "allowed_tools": [
+    "codeql_resolve_languages",
+    "codeql_resolve_packs",
+    "codeql_resolve_database",
+    "codeql_resolve_metadata",
+    "codeql_resolve_queries",
+    "codeql_resolve_tests",
+    "codeql_query_compile",
+    "codeql_query_run",
+    "codeql_bqrs_info",
+    "codeql_bqrs_decode",
+    "codeql_bqrs_interpret",
+    "read_database_source",
+    "list_codeql_databases",
+    "list_query_run_results",
+    "codeql_lsp_diagnostics",
+    "codeql_lsp_definition",
+    "codeql_lsp_references",
+    "codeql_lsp_document_symbols",
+    "search_ql_code",
+    "codeql_test_run"
+  ],
+  "profile": {
+    "request_timeout_seconds": 300,
+    "startup_timeout_seconds": 600,
+    "cpu_seconds": 600,
+    "address_space_bytes": 8589934592,
+    "ram_hint_mb": 1024,
+    "threads": 2
+  },
+  "config_sha256": "75a0485dfbea870936bd98493dfb81ab56e6075c9f02ffadc7194b4d4e98efb8",
+  "inventories": [
+    {
+      "root": "server",
+      "path": "evidence/server-files.json",
+      "sha256": "3a4458c46446f55f436c3f7331146398c166e3c5a89c27c8714a6c7f9366b1a9"
+    },
+    {
+      "root": "rust-tools",
+      "path": "evidence/rust-tools-files.json",
+      "sha256": "506f86a731dde34d14c6fe3c0a83ae3f91450a1d1b2413368e431e8a22b82ee9"
+    },
+    {
+      "root": "cli/codeql",
+      "path": "evidence/cli-files.json",
+      "sha256": "804e4c48045fde0510c06c99897dcd49c23cf0d985099db9cce54bc9e109f438"
+    }
+  ],
+  "known_advisories": [
+    {
+      "id": "GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "version": "3.25.76",
+      "severity": "high",
+      "status": "unresolved upstream; bounded protocol and isolated execution mitigate exposure",
+      "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5"
+    }
+  ],
+  "registry_precheck": {
+    "url": "https://policylayer.com/tools/codeql-development",
+    "last_scanned": "2026-10-24T13:22:03.803Z",
+    "grade": "F",
+    "identity": "unverified",
+    "authentication": null,
+    "suggested": "connect-with-rule",
+    "excluded_flagged_tools": [
+      "audit_clear_repo",
+      "annotation_delete"
+    ]
+  }
+}

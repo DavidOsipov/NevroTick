@@ -13,4 +13,11 @@ Derive expectations independently. Cover meaningful valid case, suspected failur
 
 Use legitimate constructors. Deliberate test-only invariant bypass must enable no real consumer bypass. Assert returned values/stable error semantics/state after failure. Restore owned state; inspect leaked tasks/resources before fixture teardown.
 
+Test the function's semantic postconditions and failure atomicity using valid
+typed inputs, not only its entry validator. For garde-backed construction, call
+the real constructor with invalid and valid neighboring records and then exercise
+its real consumer. Route visibility/alternate-construction claims through
+[contract QA](../qa-contract-tests/SKILL.md); a test that manually calls validation
+before an otherwise unchecked operation cannot prove unavoidable validation.
+
 Repair: intended product RED before smallest authorized change; GREEN with unchanged expectations. Report exact named execution; listing/compilation insufficient. See [Rust techniques](../references/rust-techniques.md) for runner limits, [numerical truth](../references/numerical-protocol.md) for core cases; unit evidence does not qualify Windows FFI.

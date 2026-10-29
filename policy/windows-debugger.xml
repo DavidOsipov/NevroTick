@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settings Version="2">
+  <Setting Name="AutoSaveSettings" Type="VT_BOOL" Value="false" />
+  <Namespace Name="EngineInitialization">
+    <Setting Name="AllowNetworkPaths" Type="VT_BOOL" Value="false" />
+  </Namespace>
+  <Namespace Name="Extensions">
+    <Setting Name="ExtensionRepository" Type="VT_BSTR" Value="Disable" />
+    <Setting Name="UseExperimentalFeatureForNugetShare" Type="VT_BOOL" Value="false" />
+    <Setting Name="AllowNugetExeUpdate" Type="VT_BOOL" Value="false" />
+    <Setting Name="AllowNugetMSCredentialProviderInstall" Type="VT_BOOL" Value="false" />
+    <Namespace Name="ExtensionRepositories">
+      <Namespace Name="LocalInstalled">
+        <Setting Name="IsEnabled" Type="VT_BOOL" Value="false" />
+      </Namespace>
+      <Namespace Name="UserExtensions">
+        <Setting Name="IsEnabled" Type="VT_BOOL" Value="false" />
+      </Namespace>
+    </Namespace>
+  </Namespace>
+</Settings>

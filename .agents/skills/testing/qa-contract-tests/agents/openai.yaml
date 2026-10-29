@@ -1,4 +1,4 @@
 interface:
-  display_name: "Test wire and domain contracts"
-  short_description: "Verify strict NevroTick IPC, configuration, domain-construction"
-  default_prompt: "Use $qa-contract-tests to verify strict NevroTick IPC, configuration, domain-construction and consumer compatibility contracts through their actual admitted paths."
+  display_name: "Test function, module and wire contracts"
+  short_description: "Verify unavoidable validation and API guarantees"
+  default_prompt: "Use $qa-contract-tests to verify NevroTick function/module preconditions, postconditions, mandatory validation, strict wire admission and consumer compatibility through actual callers."

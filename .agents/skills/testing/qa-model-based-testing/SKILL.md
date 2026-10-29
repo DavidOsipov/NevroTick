@@ -14,3 +14,12 @@ Run bounded explicit/generated command sequences through production entry point.
 Model acknowledgement loss, stale late completion, reconnect/restart/suspend/successor ownership. Separate UTC/monotonic/active-awake clocks. Minimize/replay failing concrete sequences from fresh state; preserve failure seam.
 
 A sequential state model does not prove thread schedules or Windows OS behavior. Combine necessary [concurrency](../qa-state-concurrency-lifecycle/SKILL.md) and [native evidence](../references/windows-evidence.md) explicitly. Read [Rust techniques](../references/rust-techniques.md) for optional instrumented models and limits.
+
+For a synchronization/property gap, select admitted Loom or Kani through
+[configured analysis](../references/configured-tooling.md#additional-rust-analysis):
+`python3 -B scripts/check-analysis.py --tool loom --fixtures` or the corresponding
+`--tool kani --fixtures` controls. Loom requires instrumented primitives and a
+bounded state space; Kani requires a reachable property harness, justified
+assumptions and unwind bounds. Bootstrap controls prove no application model.
+Keep the requirements-derived oracle independent and record all reachable,
+excluded, incomplete and failed obligations before claiming model coverage.

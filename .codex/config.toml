@@ -1,0 +1,31 @@
+# Pinned local analysis only; hosted CodeQL remains deferred.
+# The launcher verifies payloads and enforces OS/protocol restrictions.
+[mcp_servers.codeql_dev]
+command = "/usr/bin/python3"
+args = ["-B", "/home/david_osipov/NevroTick/scripts/codeql-mcp.py"]
+cwd = "/home/david_osipov/NevroTick"
+env_vars = []
+startup_timeout_sec = 600
+tool_timeout_sec = 360
+enabled_tools = [
+  "codeql_resolve_languages",
+  "codeql_resolve_packs",
+  "codeql_resolve_database",
+  "codeql_resolve_metadata",
+  "codeql_resolve_queries",
+  "codeql_resolve_tests",
+  "codeql_query_compile",
+  "codeql_query_run",
+  "codeql_bqrs_info",
+  "codeql_bqrs_decode",
+  "codeql_bqrs_interpret",
+  "read_database_source",
+  "list_codeql_databases",
+  "list_query_run_results",
+  "codeql_lsp_diagnostics",
+  "codeql_lsp_definition",
+  "codeql_lsp_references",
+  "codeql_lsp_document_symbols",
+  "search_ql_code",
+  "codeql_test_run",
+]

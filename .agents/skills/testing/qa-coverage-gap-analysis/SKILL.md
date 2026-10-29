@@ -15,4 +15,12 @@ Compare neglected boundaries before revisiting familiar code. Prioritize protect
 
 Select bounded complementary batches; assign cross-worker seams. Record each batch's additional evidence; reconcile actual outcomes/unresolved coverage in same inventory. Counts/labels/technique-per-file quotas prove no semantic completeness.
 
+For uncertain data propagation, use
+[CodeQL data-flow analysis](../references/codeql-data-flow.md) to investigate
+specific raw-input/secret-to-sink gaps. Reconcile extracted files/features,
+source/sink models, macro/generated/native/process seams and reported paths
+against the inventory; an empty alert set leaves unmodeled paths unassessed. For other gaps,
+choose the matching admitted analysis lane through
+[test planning](../qa-test-planning/SKILL.md), with bounded product controls.
+
 Preserve the security coverage/critical-file mutation requirements and uninstrumented Windows paths. Use [test planning](../qa-test-planning/SKILL.md) for selected items, then observed results to update the inventory. A local understood change needs no new system workbook.

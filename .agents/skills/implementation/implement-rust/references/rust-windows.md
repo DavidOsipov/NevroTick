@@ -54,4 +54,10 @@ release panic policy, emitted PE protections and SDK/linker inputs. No blanket
 Clippy restriction/nursery groups or broad allows; narrow expectations need reasons
 and stale-expectation checks.
 
+For native heap/handle/FFI or resource-lifetime evidence, read
+[Windows memory diagnostics](../../../testing/references/windows-memory.md).
+Application Verifier/full PageHeap detect selected reached native defects;
+measure repeated lifecycle retention separately. Keep setup elevation separate
+from ordinary-user execution and verify restoration of owned per-image settings.
+
 Primary sources/reviewed findings: [SOURCES](../../SOURCES.md).

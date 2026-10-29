@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Rust data flows"
+  short_description: "Trace Rust inputs and secrets to guarded effects and outputs"
+  default_prompt: "Use $qa-data-flow-analysis to trace the selected NevroTick Rust source-to-sink paths with CodeQL MCP, validate query models and controls, and report independent evidence and coverage gaps."

@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "sdk_release": "10.0.28000.2957",
+  "status": "admitted",
+  "scope": "Native Windows x64 development diagnostics; no product qualification",
+  "profile": {
+    "application_verifier": [
+      "Basics"
+    ],
+    "page_heap": "full",
+    "image_name_pattern": "^NevroTick-[a-f0-9]{12,64}\\.exe$",
+    "tool_timeout_seconds": 30,
+    "registry_provider_keys": [
+      "Core-{E5DCDFAA-3B35-46A8-B370-9D3575A68E53}",
+      "Exceptions-{F86B022F-E589-4e8f-B0DD-6B7AF9D71A59}",
+      "Handles-{9760941A-8DA5-4dbe-843B-0EBD376CAB02}",
+      "Heaps-{4D056CEB-D8E3-4b85-B148-B543D56D9BDE}",
+      "Leak-{81EEC8DA-0E61-4942-8037-9A6C4A86510D}",
+      "Locks-{159D60EC-F459-456b-A27B-1076AD59F8F4}",
+      "Memory-{8A70B8A4-4FA6-41c3-85EE-595FCB3E1051}",
+      "SRWLock-{6335D1CF-7955-414e-8C6A-1A40AC9357AC}",
+      "Threadpool-{F15FC24E-53A0-444D-8D28-F7697EDD9C83}",
+      "TLS-{EDDA96DB-D216-467d-BE3C-8603745EDA43}"
+    ],
+    "registry_after_step": {
+      "enable-appverif": {
+        "exists": true,
+        "values": [
+          {
+            "name": "GlobalFlag",
+            "kind": "String",
+            "data": "0x100"
+          },
+          {
+            "name": "VerifierDlls",
+            "kind": "String",
+            "data": "vrfcore.dll vfbasics.dll"
+          },
+          {
+            "name": "VerifierFlags",
+            "kind": "DWord",
+            "data": -2124140505
+          }
+        ],
+        "provider_children": true
+      },
+      "enable-pageheap": {
+        "exists": true,
+        "values": [
+          {
+            "name": "GlobalFlag",
+            "kind": "String",
+            "data": "0x00000100"
+          },
+          {
+            "name": "PageHeapFlags",
+            "kind": "String",
+            "data": "0x3"
+          },
+          {
+            "name": "VerifierDlls",
+            "kind": "String",
+            "data": "vrfcore.dll vfbasics.dll"
+          },
+          {
+            "name": "VerifierFlags",
+            "kind": "DWord",
+            "data": -2124140505
+          }
+        ],
+        "provider_children": true
+      },
+      "disable-pageheap": {
+        "exists": true,
+        "values": [
+          {
+            "name": "GlobalFlag",
+            "kind": "String",
+            "data": "0x00000100"
+          },
+          {
+            "name": "VerifierDlls",
+            "kind": "String",
+            "data": "vrfcore.dll vfbasics.dll"
+          },
+          {
+            "name": "VerifierFlags",
+            "kind": "DWord",
+            "data": -2124140506
+          }
+        ],
+        "provider_children": true
+      },
+      "disable-appverif": {
+        "exists": true,
+        "values": [],
+        "provider_children": false
+      }
+    },
+    "registry_evidence": "Native 2026-10-29 SDK 10.0.28000.2957 observed configuration roundtrip; actual runtime qualification separate. IFEO views are shared on this host. Unexpected values/providers block adoption and cleanup."
+  },
+  "tools": {
+    "appverif": {
+      "path": "C:\\Windows\\System32\\appverif.exe",
+      "sha256": "666be0e95c4b7d6a7d9fe5e50601db9c1cabb85baaecaf8f5abfd3eebd00a512",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Windows Kits Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    "gflags": {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\gflags.exe",
+      "sha256": "6e2ac016c8eefe3838a362a2e7c4d2504e7a0cc59cb7e3006400bcf760f00e2b",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    "cdb": {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\cdb.exe",
+      "sha256": "fe5377bb6e6be8777e81cd42e2cf31c79debe219a954154887dccfa77930ffd6",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    }
+  },
+  "sources": [
+    "https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads",
+    "https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/application-verifier",
+    "https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/gflags-and-pageheap"
+  ],
+  "supporting_libraries": [
+    {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\dbgeng.dll",
+      "sha256": "25886b766c0f98c26199ffb1e98e5dd8bfdebc982ead97bb4ac57c0cd62ca15f",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\dbghelp.dll",
+      "sha256": "d75a2cf01f30f26041549bf3d7a8682d921958b3b0b78eee9058f92abadf197b",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\Debuggers\\x64\\dbgcore.dll",
+      "sha256": "e4168914ce41991b4107e427f37858aad4e44f5e3a0618b2fa9f86b742b67a22",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    {
+      "path": "C:\\Windows\\System32\\vfbasics.dll",
+      "sha256": "014939ef50d39b6861c36c7dc0bddc0209344d2908e4fa598954b117dce54b65",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Windows Kits Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    {
+      "path": "C:\\Windows\\System32\\vfcompat.dll",
+      "sha256": "1dcf43f452c5cfa4ca4ec4d5af18162e2565a61f7893f7be778a659d0eaca852",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Windows Kits Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    },
+    {
+      "path": "C:\\Windows\\System32\\vrfcore.dll",
+      "sha256": "3e3787ded039211f5b35858ff1de1e2c4999fea823ec523dc089f782a0667f00",
+      "file_version": "10.0.28000.2957 (WinBuild.160101.0800)",
+      "signer_subject": "CN=Microsoft Windows Kits Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+    }
+  ],
+  "sdk_installer": {
+    "url": "https://download.microsoft.com/download/e6cfffdc-0d3e-4c6c-96d7-d491da459a07/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe",
+    "sha256": "e8e264aca8bc34abdf592352bf09f986a85cdb96db0efba405ca9e149181fe61",
+    "features": [
+      "OptionId.WindowsDesktopDebuggers",
+      "OptionId.AvrfExternal"
+    ],
+    "file_version": "10.1.28000.2957",
+    "signer_subject": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+  },
+  "debugger_config_sha256": "6bf3ee0c0bb5825c61c9affba72c6276d558d9b0624842e7ac6b47deb642ebff",
+  "debugger_config_previous_owned_sha256": [
+    "247e2db769d8a47db84cae9b3913bf34ccc85948572becc78ebed75a72b5101b"
+  ],
+  "debugger_config_location": "current-user:LocalApplicationData/DBG/config.xml"
+}

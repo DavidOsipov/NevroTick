@@ -11,6 +11,11 @@ Choose component boundary/observable contract. Exercise production component wit
 
 Drive inputs through public component interface; assert resulting state, emitted commands/events, exposed accessibility semantics, cleanup. Cover success/rejection/collaborator failure/late completion after generation/cancellation changes. Observer must not set desired state.
 
+Exercise direct API callers that bypass the UI. Confirm mandatory shared
+construction and each module output contract survive adapters and transformations;
+invalid updates preserve prior valid state and emit no protected effect. Use
+[contract QA](../qa-contract-tests/SKILL.md) for constructor/field-coverage bypasses.
+
 UI: test status projection/settings validation/command availability/stale/reconnecting states without normal-user process clock authority. In-process view tests cannot prove native keyboard/AT delivery/UAC behavior. Use [Windows evidence](../references/windows-evidence.md) for required real HWND/UIA path.
 
 Use bounded completion conditions; no fixed sleeps. Retain/report real integration/native follow-up for boundary omitted by doubles.

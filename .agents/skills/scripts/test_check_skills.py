@@ -78,7 +78,7 @@ class SkillFixture(unittest.TestCase):
         self.assertEqual(result.stderr, "")
         self.assertEqual(
             result.stdout,
-            "PASS: 1 skills; metadata, UI prompts, local links and adaptation inventory.\n",
+            "PASS: 1 skills; metadata, UI prompts, local links and skill inventories.\n",
         )
 
     def assert_prompt_rejected(self, prompt: str) -> None:
@@ -130,6 +130,82 @@ class PromptInvocationTests(SkillFixture):
 
     def test_different_invocation_is_rejected(self) -> None:
         self.assert_prompt_rejected("Use $other-skill to verify this package.")
+
+
+class LocalInventoryTests(SkillFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        self.local = self.skills_root / "testing" / "local-skill"
+        (self.local / "agents").mkdir(parents=True)
+        (self.local / "SKILL.md").write_text(
+            '---\nname: "local-skill"\n'
+            'description: "Exercise an original locally authored workflow."\n'
+            '---\n\n# Local skill\n', encoding="utf-8",
+        )
+        (self.local / "agents/openai.yaml").write_text(
+            'interface:\n  display_name: "Local skill"\n'
+            '  short_description: "Check an original local workflow"\n'
+            '  default_prompt: "Use $local-skill for this workflow."\n', encoding="utf-8",
+        )
+        self.entry = {"name": "local-skill", "target": "testing/local-skill/SKILL.md",
+                      "origin": "locally-authored"}
+        self.write_local()
+
+    def write_local(self, entries=None) -> None:
+        (self.skills_root / "LOCAL.json").write_text(
+            json.dumps({"schema_version": 1, "skills": entries if entries is not None else [self.entry]}),
+            encoding="utf-8",
+        )
+
+    def assert_local_rejected(self, message: str) -> None:
+        result = self.run_checker("Use $probe-skill for the adapted workflow.")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertEqual(result.stderr, "")
+        self.assertIn(message, result.stdout)
+        self.assertNotIn("PASS:", result.stdout)
+
+    def test_original_leaf_with_local_inventory_passes(self) -> None:
+        result = self.run_checker("Use $probe-skill for the adapted workflow.")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stderr, "")
+        self.assertIn("PASS: 2 skills", result.stdout)
+
+    def test_unlisted_local_leaf_is_rejected(self) -> None:
+        (self.skills_root / "LOCAL.json").unlink()
+        self.assert_local_rejected("inventory mismatch: unlisted=['testing/local-skill/SKILL.md']")
+
+    def test_missing_local_leaf_is_rejected(self) -> None:
+        (self.local / "SKILL.md").unlink()
+        self.assert_local_rejected("missing=['testing/local-skill/SKILL.md']")
+
+    def test_duplicate_local_target_is_rejected(self) -> None:
+        self.write_local([self.entry, self.entry])
+        self.assert_local_rejected("duplicate local skill target")
+
+    def test_traversal_and_absolute_local_targets_are_rejected(self) -> None:
+        for target in ("testing/../local-skill/SKILL.md", "/testing/local-skill/SKILL.md",
+                       "testing//local-skill/SKILL.md", "upstream/local-skill/SKILL.md"):
+            with self.subTest(target=target):
+                self.entry["target"] = target
+                self.write_local()
+                self.assert_local_rejected("invalid local skill target")
+
+    def test_local_inventory_cannot_claim_an_adapted_leaf(self) -> None:
+        self.entry = {"name": SKILL_NAME, "target": SKILL_PATH, "origin": "locally-authored"}
+        self.write_local()
+        self.assert_local_rejected("local and adapted/upstream skill targets overlap")
+
+    def test_local_inventory_has_no_fabricated_donor_fields(self) -> None:
+        self.entry["source_sha256"] = "a" * 64
+        self.write_local()
+        self.assert_local_rejected("unsupported local inventory fields")
+
+    def test_local_leaf_symlink_cannot_escape_root(self) -> None:
+        outside = self.temporary_root / "outside-skill.md"
+        outside.write_text((self.local / "SKILL.md").read_text(), encoding="utf-8")
+        (self.local / "SKILL.md").unlink()
+        (self.local / "SKILL.md").symlink_to(outside)
+        self.assert_local_rejected("local skill target escapes root")
 
 
 class UpstreamInventoryTests(SkillFixture):

@@ -1,14 +1,20 @@
 # Scoped Cargo operations and evidence
 
-Inspect actual pinned versions/help/workspace before commands. Recipes prove no
-existing tools/configuration/Cargo project. Use authorized owned candidate; retain
+Inspect actual pinned versions/help/workspace before commands. Use the current
+[configured-tool workflows](../../../testing/references/configured-tooling.md);
+examples do not establish an application graph or executed checks. Use an
+authorized owned candidate; retain
 baseline manifest/lockfile identities. Never delete Cargo.lock to force resolution.
 
 ## Discover and resolve
 
-`cargo metadata --locked --format-version 1` describes resolved packages/targets;
-retain needed fields only; print no credentials. `cargo tree --locked -e features`
-exposes feature activation; inspect `cargo tree --locked -d` for multiple versions
+Separate acquisition covered by the task from frozen graph inspection. Missing
+cached sources or admitted metadata are preparation gaps, not permission for an
+analysis command to fetch implicitly.
+
+`cargo metadata --frozen --format-version 1` describes resolved packages/targets;
+retain needed fields only; print no credentials. `cargo tree --frozen -e features`
+exposes feature activation; inspect `cargo tree --frozen -d` for multiple versions
 and reverse graphs for security-sensitive dependencies. Select actual target/feature
 flags per lane; trees approximate, not byte-level proof of shipped code.
 
@@ -19,7 +25,9 @@ selected Windows SDK/linker/architecture lanes, beyond direct crates.
 
 For approved compatible updates, prefer scoped operations such as
 `cargo update -p PACKAGE --precise VERSION` over blanket updates. Inspect required
-transitive changes. Supporting toolchains offer `--dry-run` resolution previews.
+transitive changes. This intentionally changes resolution and is separate from
+the frozen analysis lane; `--locked` would reject a required lockfile update.
+Supporting toolchains offer `--dry-run` resolution previews.
 Change manifest requirements only for intended cohort; resolve/review resulting
 graph. Use exact reviewed git revisions under architecture policy; never substitute
 branch heads for release checksums.
@@ -39,14 +47,15 @@ Choose edition/MSRV only under authorized workspace decision, never incidentally
 
 ## Qualify the final graph
 
-Use real repository CI/TOOLING commands for selected Windows/portable lanes.
-Once workspace exists, representative checks:
+Use real repository CI/TOOLING commands from the shared configured-tool workflow
+for selected Windows/portable lanes. After intended resolution and acquisition,
+representative final checks with a real workspace are:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --locked --workspace --all-targets -- -D warnings
-cargo test --locked --workspace
-cargo build --locked --workspace
+cargo clippy --frozen --workspace --all-targets -- -D warnings
+cargo test --frozen --workspace
+cargo build --frozen --workspace
 ```
 
 Apply intended features/target/profile and required checks. All-targets cannot cover
@@ -56,8 +65,12 @@ claim-relevant generated code/outputs. Resolution/download proves no compilation
 compilation proves no runtime behavior; host builds prove no Windows MSI/service/
 clock qualification.
 
-Use admitted advisory/license/origin checker; record policy/database revision,
-retain existing findings and assess changed graph. Chrony-derived
+Use configured cargo-deny with fatal warnings for selected graph rows and any
+selected complementary cargo-audit for lockfile advisory evidence, in the
+frozen-snapshot lane described by the shared workflow. Record
+policy/database/index identities and refresh receipts no older than 24 hours;
+retain existing findings and assess changed graph. Missing/stale metadata is not
+a pass. Chrony-derived
 code's GPLv2-only constraints and selected transitive license grants need concrete
 review. A permissive UI example license does not license its framework. Avoid
 unsupported universal claims about Rust TLS providers or Windows trust parity.

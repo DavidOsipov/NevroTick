@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check this pack's metadata, discovery files, links and adaptation inventory.
+"""Check this pack's metadata, discovery files, links and skill inventories.
 
 Uses only Python's standard library. Pack metadata deliberately uses a small YAML
 subset: unquoted keys and JSON-quoted string values. This is a package check,
@@ -101,6 +101,42 @@ def upstream_targets(root: Path, errors: list[str]) -> list[str]:
                 errors.append(f"upstream file inventory mismatch for {name}")
     except (ValueError, OSError, KeyError, TypeError) as exc:
         errors.append(f"UPSTREAM.json: {exc}")
+    return targets
+
+
+def local_targets(root: Path, errors: list[str]) -> list[str]:
+    """Register original leaves without inventing a donor or imported hashes."""
+    manifest = root / "LOCAL.json"
+    if not manifest.exists():
+        return []
+    targets: list[str] = []
+    try:
+        inventory = json.loads(manifest.read_text(encoding="utf-8"))
+        if type(inventory["schema_version"]) is not int or inventory["schema_version"] != 1:
+            raise ValueError("unsupported local inventory schema")
+        entries = inventory["skills"]
+        if not isinstance(entries, list) or not entries:
+            raise ValueError("local inventory must contain skill entries")
+        for entry in entries:
+            if not isinstance(entry, dict) or set(entry) != {"name", "target", "origin"}:
+                raise ValueError("unsupported local inventory fields")
+            name, target = entry["name"], entry["target"]
+            if (not isinstance(name, str) or len(name) > 64
+                    or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name)):
+                raise ValueError("invalid local skill name")
+            if (not isinstance(target, str)
+                    or not re.fullmatch(r"(?:environment|implementation|planning|security|testing)/"
+                                        + re.escape(name) + r"/SKILL\.md", target)):
+                raise ValueError(f"invalid local skill target: {target}")
+            if entry["origin"] != "locally-authored":
+                raise ValueError(f"invalid local skill origin: {name}")
+            if target in targets:
+                raise ValueError(f"duplicate local skill target: {target}")
+            targets.append(target)
+            if not (root / target).resolve().is_relative_to(root.resolve()):
+                raise ValueError(f"local skill target escapes root: {target}")
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        errors.append(f"LOCAL.json: {exc}")
     return targets
 
 
@@ -213,9 +249,12 @@ def check(root: Path, source_root: Path | None = None) -> tuple[list[str], int]:
         if len(sources) != len(set(sources)) or len(targets) != len(set(targets)):
             errors.append("duplicate source or target in adaptation inventory")
         imported = upstream_targets(root, errors)
+        authored = local_targets(root, errors)
         if set(targets) & set(imported):
             errors.append("adaptation and upstream skill targets overlap")
-        expected = set(targets) | set(imported)
+        if set(authored) & (set(targets) | set(imported)):
+            errors.append("local and adapted/upstream skill targets overlap")
+        expected = set(targets) | set(imported) | set(authored)
         actual = {str(p.relative_to(root)) for p in skills}
         if actual != expected:
             errors.append(f"inventory mismatch: unlisted={sorted(actual-expected)}; missing={sorted(expected-actual)}")
@@ -239,7 +278,7 @@ def main() -> int:
     if errors:
         print(f"Failed with {len(errors)} error(s) across {count} skills.")
         return 1
-    print(f"PASS: {count} skills; metadata, UI prompts, local links and adaptation inventory.")
+    print(f"PASS: {count} skills; metadata, UI prompts, local links and skill inventories.")
     return 0
 
 

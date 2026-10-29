@@ -1,0 +1,4 @@
+interface:
+  display_name: "Optimize Rust performance"
+  short_description: "Measure and optimize Rust costs without weakening contracts"
+  default_prompt: "Use $optimize-rust-performance to locate the selected NevroTick bottleneck, make a measured improvement within the requested scope, and verify comparable performance and preserved correctness/security contracts."

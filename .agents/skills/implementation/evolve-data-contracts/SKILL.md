@@ -10,10 +10,22 @@ field shapes. Trace raw input → domain construction → state → serializatio
 actual consumers, including data surviving upgrades/rollback. Reuse current plan
 and authorized endpoint: code, rollout or retirement.
 
+If a field's old/new consumers or bypass paths are uncertain, use
+[CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) for
+each admitted source revision and feature row. Include migration, error and
+serialization sinks; source graphs do not cover an unextracted old reader or
+prove runtime compatibility. Reconcile results with the version matrix below.
+
 Identify owner, old/new acceptance, meaning, units/sign, presence/null/defaults,
 normalization, provenance and failure behavior. Decoder attributes, enabled
 features, dependency versions and adapters can change acceptance without DTO
 source changes. Private newtype changes need not change wire format.
+
+Treat garde rule changes as acceptance/meaning changes. Migration and conversion
+must enter the same mandatory validation/construction path as fresh input, then
+meet the new function/module postconditions before publication. Preserve the
+[single rule owner](../implement-rust-contracts/references/contract-enforcement.md);
+do not grandfather invalid values through unchecked migration constructors.
 
 Before dependent edits, decide required old/new producer, reader and stored-generation
 compatibility matrix. Strict old readers may reject added optional fields;

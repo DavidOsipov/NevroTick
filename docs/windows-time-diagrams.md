@@ -79,7 +79,7 @@ An API success/readback acknowledges what the backend applied or accepted; it do
 flowchart TD
     I["IPC bytes or protected file bytes"] --> B["Bounded read and decoder"]
     B --> W["Strict inert wire record"]
-    W --> D["Fallible domain construction"]
+    W --> D["Private fallible construction: garde and domain rules"]
     D --> G["Current authority and state guard"]
     C["OS caller identity and broker policy"] --> G
     G --> E["Serialized protected effect"]
@@ -90,6 +90,12 @@ flowchart TD
 ```
 
 The guard uses trusted caller identity, current policy/ownership and broker-maintained budgets; none is supplied by the wire record as proof. Transport authentication and coarse endpoint access checks already occur before a client is allowed expensive work. Decode and construction failures have no protected effect. A successful clock operation updates the model only through the actual acknowledgement. A file read has a file/schema-specific authority context, not a fabricated IPC caller.
+
+The constructor obligatorily invokes shared garde DTO/settings validation and the
+domain rules before publishing a value. Internal function/module contracts carry
+unchanged immutable invariants through typed APIs and check transformed outputs
+or changed context as required by [architecture section 6.3.1](windows-time-architecture.md#631-contracts-for-every-function-and-module).
+This is the adopted design, not an executed application validation result.
 
 ## 4. Recovery decision flow
 

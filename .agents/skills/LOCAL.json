@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "scope": "Original NevroTick instructional workflows; no imported donor source",
+  "skills": [
+    {
+      "name": "qa-data-flow-analysis",
+      "target": "testing/qa-data-flow-analysis/SKILL.md",
+      "origin": "locally-authored"
+    },
+    {
+      "name": "optimize-rust-performance",
+      "target": "implementation/optimize-rust-performance/SKILL.md",
+      "origin": "locally-authored"
+    }
+  ]
+}

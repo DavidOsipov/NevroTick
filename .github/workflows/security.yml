@@ -31,6 +31,7 @@ jobs:
       python: ${{ steps.inventory.outputs.python }}
       javascript: ${{ steps.inventory.outputs.javascript }}
       rust: ${{ steps.inventory.outputs.rust }}
+      codeql: ${{ steps.inventory.outputs.codeql }}
     steps:
       - name: Check out the exact candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,6 +53,8 @@ jobs:
           suffixes = {'python': ('.py',), 'javascript': ('.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx'), 'rust': ('.rs',)}
           with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
               output.write('candidate=' + candidate + '\n')
+              output.write('codeql=deferred\n')
+              print('CodeQL is deferred by explicit project decision; no CodeQL SAST evidence is produced.')
               for language, endings in suffixes.items():
                   count = sum(path.endswith(endings) or (
                       language == 'rust' and (path == 'Cargo.toml' or path.endswith('/Cargo.toml'))
@@ -76,8 +79,12 @@ jobs:
       - name: Enforce pinned actionlint, ShellCheck and pedantic zizmor
         run: python3 -B .github/security/check_workflows.py
 
+  # Explicitly deferred: retain reviewed preparation without acquiring or running
+  # CodeQL. Re-enablement must also change check_gate.py's independent policy.
   codeql-actions:
     name: CodeQL Actions
+    needs: [source-inventory]
+    if: ${{ needs.source-inventory.outputs.codeql == 'enabled' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -135,7 +142,7 @@ jobs:
   codeql-python:
     name: CodeQL Python
     needs: [source-inventory]
-    if: ${{ needs.source-inventory.outputs.python == 'true' }}
+    if: ${{ needs.source-inventory.outputs.codeql == 'enabled' && needs.source-inventory.outputs.python == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -149,7 +156,7 @@ jobs:
   codeql-javascript:
     name: CodeQL JavaScript
     needs: [source-inventory]
-    if: ${{ needs.source-inventory.outputs.javascript == 'true' }}
+    if: ${{ needs.source-inventory.outputs.codeql == 'enabled' && needs.source-inventory.outputs.javascript == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -163,7 +170,7 @@ jobs:
   codeql-rust:
     name: CodeQL Rust
     needs: [source-inventory]
-    if: ${{ needs.source-inventory.outputs.rust == 'true' }}
+    if: ${{ needs.source-inventory.outputs.codeql == 'enabled' && needs.source-inventory.outputs.rust == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -214,7 +221,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Require every expected check to succeed
+      - name: Require mandatory checks and explicit CodeQL deferral
         env:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
           EXPECTED_COMMIT: ${{ github.sha }}

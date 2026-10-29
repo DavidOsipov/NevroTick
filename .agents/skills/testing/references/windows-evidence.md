@@ -16,6 +16,18 @@ Observe the true Windows result: applied sign/rate/phase, quantization, privileg
 
 Exercise actual SCM start/stop pending/running status, failure/preshutdown controls, registration failure, restart, no-login startup. UI exit must not stop background service. Attribute handle/thread/resource counts to actual owner; unclear global counts insufficient.
 
+## Native memory and resource ownership
+
+For changed or suspect heap, handle, FFI or callback ownership, select
+[Windows memory diagnostics](windows-memory.md). Application Verifier/PageHeap
+with CDB observes reached native faults; repeated allocation, kernel-handle,
+GDI/USER-object, thread and internal task/permit measurements address retention.
+Record allocator/API coverage, actual test token, effective per-image settings
+and verified restoration. Keep instrumented runs separate from the uninstrumented
+hardware budgets and sustained recovery/soak obligations in CHECK-21. Native tool
+controls establish no product memory qualification or permission for extra host
+effects; UI-M0 retains its fixture-only scope and D1/D2/D3 deferrals.
+
 ## Installation and delivered artifacts
 
 V1 is one complete signed per-machine MSI. Validate its actual component/service inventory, privileges, fixed paths, PE/runtime mitigations, dependency DLL loading and signature/publisher identity. Test install, update, repair, downgrade rejection, uninstall without UI, interrupted stages, disabled rollback, reboot, hostile properties/paths and concurrent/old-generation cleanup (CHECK-13/16/18/23).

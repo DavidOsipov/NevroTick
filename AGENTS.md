@@ -56,11 +56,27 @@ Read canonical sections for exact limits; preserve these boundaries:
   clock broker, normal-user Win32 UI, elevated lifecycle helper. Deliver one
   complete per-machine MSI. Suggested crate boundaries propose ownership;
   scaffolding every crate immediately not required.
+- Treat product user input and external programmatic input as potentially
+  malicious. UI controls, local origin, authenticated transport, administrator
+  identity or prior acceptance never establish payload safety. Bound and validate
+  each applicable admission path, then independently check current authority at
+  the effect. Preserve raw-input tests, direct-handler bypass cases, valid
+  neighboring controls, aggregate budgets and bounded redacted rejection.
 - Fixed JSON IPC/configuration/persisted-record boundaries: bounded strict Serde
-  DTO decoding, fallible private domain construction, current trusted
+  DTO decoding, adopted shared garde rules invoked inside fallible private
+  domain construction, current trusted
   authorization/generation/budget checks. Serialize protected decisions/effects
   and actual acknowledgements. Never normalize through `serde_json::Value` to
   bypass strict admission or introduce second runtime schema engine.
+- Every function/module boundary, including private helpers, has explicit input
+  invariants, output guarantees, failure/effect and lifecycle obligations. Enforce
+  them through typed signatures, private checked construction, checked
+  transformations and current owner guards. Reuse immutable validated values;
+  recheck changed representations, state and context. Never rely on optional
+  caller validation, `debug_assert!`, public raw fields or unchecked mutations.
+  Follow [contract enforcement](.agents/skills/implementation/implement-rust-contracts/references/contract-enforcement.md):
+  no `garde(allow_unvalidated)`; each skipped field needs an actual invariant owner
+  and independent review. Garde adoption does not qualify a product Cargo graph.
 - Parse NTP/NTS with bounded protocol-specific byte parsers. Preserve interval
   majority selection/configured minimum agreement; no automatic single-peer
   profile after disagreement.
@@ -95,7 +111,7 @@ no new report tree or orchestration campaign.
 | --- | --- |
 | Uncertain scope, stages or ownership | [plan-code-change](.agents/skills/planning/plan-code-change/SKILL.md); architecture/threat/review skills when their decisions change. |
 | Rust logic, concurrency or Windows adapters | [implement-rust](.agents/skills/implementation/implement-rust/SKILL.md), including conditional SCM/chrony/simulator references. |
-| Wire admission and domain invariants | [implement-rust-contracts](.agents/skills/implementation/implement-rust-contracts/SKILL.md). |
+| Function/module contracts, wire admission and domain invariants | [implement-rust-contracts](.agents/skills/implementation/implement-rust-contracts/SKILL.md). |
 | Wire, persisted-state or semantic compatibility | [evolve-data-contracts](.agents/skills/implementation/evolve-data-contracts/SKILL.md). |
 | Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), then applicable accessibility/DPI checks. |
 | Trust, privileges, IPC, crypto, logging or packaging | [Security index](.agents/skills/security/README.md), matching boundary owner. |

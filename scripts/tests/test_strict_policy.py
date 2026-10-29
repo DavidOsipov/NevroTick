@@ -50,6 +50,10 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.replace("policy/rust-workspace.toml", 'unwrap_used = "deny"\n', "")
         self.assert_refused("Required strict lint missing")
 
+    def test_removing_private_contract_documentation_rule_is_rejected(self):
+        self.replace("policy/rust-workspace.toml", 'missing_docs_in_private_items = "deny"\n', "")
+        self.assert_refused("Required strict lint missing")
+
     def test_security_restrictions_cannot_be_removed(self):
         original = (self.root / "policy/rust-workspace.toml").read_bytes()
         for name in ("allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok"):

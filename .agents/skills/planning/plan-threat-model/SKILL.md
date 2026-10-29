@@ -15,3 +15,10 @@ Use same plan/existing authorization. Read applicable instructions, `docs/README
 6. Return material changes to [plan-independent-review](../plan-independent-review/SKILL.md). Name actual unresolved risk/decision owner. Continue unaffected work; workflow invocation implies no new approval.
 
 Keep NTS-only tracking/opt-in bootstrap provenance exact; failures must not silently lower source count, trust checks or authentication. Retained-research TUF remains unadopted, no current updater requirement. Stop once each material threat has owner/control/check or named unresolved decision. Planned controls/review agreement do not demonstrate security.
+
+For existing Rust paths with uncertain reachability or transformations, use
+[CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
+test the named attacker-input/secret source, propagation and protected/output
+sink. Define each required guard independently; do not model decoding or an
+earlier authorization check as a universal sanitizer. Missing models, extraction
+or path results retain the threat's uncertainty and native evidence obligation.

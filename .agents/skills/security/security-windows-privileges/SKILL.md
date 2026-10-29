@@ -17,3 +17,10 @@ For service-scoped network restrictions or event-provider authority, read releva
 6. Use protected installation paths and reviewed DLL search policy. Inspect final binaries/imports and actual loads. Source mitigation flags or assumed system DLL search order prove no emitted/effective protection.
 
 Select real Windows checks with [qa-security-boundaries](../../testing/qa-security-boundaries/SKILL.md): actual service tokens, prohibited rights/effects denied, legitimate broker operation succeeds, startup misconfiguration blocks, known ownership handover/restoration and successor ownership preserved. Restrict real clock probes to approved disposable VM contract. Report authority/ACL/token evidence, actual rights and remaining host/administrator race limits.
+
+For uncertain routes into privileged adapters, use
+[CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
+follow external command/path/value inputs to clock, SCM, token, process and
+file sinks. Confirm current guards at actual callers and record FFI/model gaps.
+A Rust wrapper's checked type or a static path result does not establish native
+rights, ownership, DLL resolution or protection against replacement races.

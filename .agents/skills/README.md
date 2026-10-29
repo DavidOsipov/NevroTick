@@ -1,7 +1,8 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-for Windows time client in [the documentation guide](../../docs/README.md).
+and two original NevroTick workflows for the Windows time client in
+[the documentation guide](../../docs/README.md).
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
 requires loading every skill.
@@ -9,18 +10,25 @@ requires loading every skill.
 | Task | Start with |
 | --- | --- |
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |
-| Decode IPC/configuration or enforce domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
+| Optimize a measured CPU, allocation, latency, wakeup, startup or size cost | [optimize-rust-performance](implementation/optimize-rust-performance/SKILL.md); [resource QA](testing/qa-performance-resources/SKILL.md) for measurement/acceptance |
+| Enforce function/module contracts, IPC/configuration admission or domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
 | Implement native controls, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
+| Investigate native heap/handle faults or retained resources | [Windows memory diagnostics](testing/references/windows-memory.md), then [resource QA](testing/qa-performance-resources/SKILL.md) for retention |
+| Trace Rust inputs or secrets through guards to effects or output sinks | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
 | Assess or change Cargo dependencies | [dependency-updates](environment/dependency-updates/SKILL.md) |
 | Diagnose a specific compiler, borrow/drop or Send/Sync mechanism; use qualified Windows UIA commands | [Selected upstream specialists](upstream/README.md) |
 
 The [canonical architecture](../../docs/windows-time-architecture.md) controls
-product decisions. Use bounded Serde decoding into strict wire records, fallible
-private domain construction, current authorization/effect checks. Native Win32
+product decisions. Use bounded Serde decoding into strict wire records, adopted
+shared garde rules inside fallible private domain construction, and current
+authorization/effect checks. All function/module interfaces follow
+[contract enforcement](implementation/implement-rust-contracts/references/contract-enforcement.md),
+including checked transformations and explicit failure/effect obligations.
+Native Win32
 UI, unprivileged network engine, privileged clock broker, administrative helper,
 complete per-machine MSI have distinct owners. Prototype crates require
 dependency qualification. Retained TUF research adopts no updater or second
@@ -31,10 +39,21 @@ consumer tracing, independent behavioral oracles; distinguish compiler, simulate
 native Windows, packaged-product proof. Repository currently has documentation/
 tooling; skills establish no application, dependency graph, Windows test run or release.
 
+When selecting existing compiler, lint, test, security or inventory commands, use
+[configured tool execution](testing/references/configured-tooling.md). It maps
+changed guarantees to current entry points and their execution/evidence limits.
+Select Miri, cargo-fuzz, Loom, Kani, Lockbud or cargo-vet only for their relevant
+memory, input, concurrency, proof or dependency-review obligation. For uncertain
+source-to-sink propagation, use the data-flow skill and its local CodeQL MCP
+profile. Installed tools and fixture controls establish no product qualification;
+hosted CodeQL scanning remains deferred.
+
 ## Adaptation and research
 
 [ADAPTATION.json](ADAPTATION.json) maps every original website skill to target and
-original entrypoint digest. Group research explains Rust/Windows decisions with
+original entrypoint digest. [LOCAL.json](LOCAL.json) registers original
+NevroTick workflows separately, without inventing donor or upstream provenance.
+Group research explains Rust/Windows decisions with
 dated primary sources:
 
 - [Implementation sources](implementation/SOURCES.md)
@@ -47,8 +66,8 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. Installed Codex was verified to discover/enable all 56
-grouped skills without aliases, including four upstream specialists.
+for precise selection. The pack registers 57 grouped skills without aliases;
+inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack
 
@@ -69,7 +88,9 @@ checkout via `--source-root /path/to/personal-website-templated-1/.agents`.
 CLI regressions check exact skill invocations, punctuation, multiple mentions;
 reject attached name suffixes/different invocation. [UPSTREAM.json](UPSTREAM.json)
 accounts separately for imported leaves, exact commits, retained licenses,
-complete installed-file hashes. Checker rejects unregistered leaves, mutable pins,
+complete installed-file hashes. `LOCAL.json` records locally authored leaves;
+its entries do not claim imported-source licensing or hashes.
+Checker rejects unregistered leaves, mutable pins,
 license-metadata mismatches, missing license files, inventory drift. Recorded
 hash alone neither legally clears license nor authenticates unfetched remote source.
 

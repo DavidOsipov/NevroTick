@@ -9,6 +9,8 @@ Read [the testing contract](../CONTRACT.md).
 
 Read [Rust techniques](../references/rust-techniques.md). Before mutation freeze source/candidate, selected critical-file manifest, unmodified passing baseline. Use adopted tool/isolated reversible bad variant; no convenient in-place mutation of user-owned source.
 
+Use [configured tool execution](../references/configured-tooling.md) and the admitted cargo-mutants configuration. Select actual files/target/features and explicit baseline/jobs/test/build budgets; keep ordinary lint capping disabled. Installed/enumerated tools and an empty inventory do not establish a campaign or score.
+
 Choose requirement-linked faults: sign/unit mistakes, removed current guards, reduced source minima, stale-result publication, duplicate effects, broken failure atomicity. Killing requires meaningful actual-boundary assertion; unrelated build/fixture failure insufficient.
 
 Record per-file generated/viable/killed/survived/timed-out/unviable/excluded mutants, actual tests, source identity. Compile failures unviable, not killed. Investigate timeout/survivors; independently justify equivalence/exclusion. Empty selections give no passing score.

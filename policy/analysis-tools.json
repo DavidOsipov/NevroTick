@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-29",
+  "platform": "x86_64-unknown-linux-gnu",
+  "scope": "installed analysis tools; isolated fixture qualification, not product/native/release qualification",
+  "codeql": "deferred",
+  "tools": {
+    "fuzz": {
+      "name": "cargo-fuzz",
+      "version": "0.13.2",
+      "entrypoint": "common/bin/cargo-fuzz",
+      "sha256": "f87d63fc80e4f897a32ead5df85bd67665afb6a63ed92bb0d2b0473e15295eba",
+      "source_url": "https://github.com/rust-fuzz/cargo-fuzz/releases/download/0.13.2/cargo-fuzz-0.13.2-x86_64-unknown-linux-musl.tar.gz",
+      "archive_sha256": "b5b704018b63e0f151c17a057ac53b5111e1db545d1b9f72fee79f08a545931c",
+      "license": "MIT OR Apache-2.0"
+    },
+    "vet": {
+      "name": "cargo-vet",
+      "version": "0.10.3",
+      "entrypoint": "common/bin/cargo-vet",
+      "sha256": "a268514d8d4bb62cfe6e11a26686d92fdf2ff5c9e320414afa01cda05e2417cb",
+      "source_url": "https://github.com/mozilla/cargo-vet/releases/download/v0.10.3/cargo-vet-x86_64-unknown-linux-gnu.tar.xz",
+      "archive_sha256": "e83878b80913fbe43629c28768e14ab51f4e86a4ba8f9dd08cc25b8dbc503c19",
+      "license": "MIT OR Apache-2.0"
+    },
+    "miri": {
+      "name": "Miri",
+      "version": "nightly-2026-10-28",
+      "entrypoint": "common/rustup/toolchains/nightly-2026-10-28-x86_64-unknown-linux-gnu/bin/cargo-miri",
+      "sha256": "51a4a3a2171925d17cdce768fbce7f15c26e2dd51b226e2ca68f4b8bc0c9162c",
+      "manifest_sha256": "1967311fbc5935e67f5804023f029f70c48377d78d586ac61e9375960d52eeb3",
+      "source_url": "https://static.rust-lang.org/dist/2026-10-28/channel-rust-nightly.toml",
+      "license": "MIT OR Apache-2.0"
+    },
+    "loom": {
+      "name": "Loom",
+      "version": "0.7.2",
+      "entrypoint": "common/cargo/registry/cache/index.crates.io-1949cf8c6b5b557f/loom-0.7.2.crate",
+      "sha256": "419e0dc8046cb947daa77eb95ae174acfbddb7673b4151f56d1eed8e93fbfaca",
+      "source_url": "https://crates.io/api/v1/crates/loom/0.7.2",
+      "license": "MIT",
+      "kind": "test library; cached source, no product dependency added"
+    },
+    "kani": {
+      "name": "kani",
+      "version": "0.68.0",
+      "entrypoint": "kani/payload/kani-0.68.0/bin/kani-driver",
+      "sha256": "a0f84272664e45a6b9f1ad7671c2e20aa4523676fb57f5310c18b0a359278a6d",
+      "source_commit": "0d2328a93f0e0ff66132d6bfa1a7d884877cf862",
+      "license": "MIT OR Apache-2.0; retain bundled third-party notices",
+      "toolchain": "kani/rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu",
+      "status": "installed-qualified-for-bounded-portable-proof-lane"
+    },
+    "lockbud": {
+      "name": "lockbud",
+      "version": "a1b5303cdbb1d4d0ad886359cc71418570e7c5fd",
+      "entrypoint": "lockbud/bin/cargo-lockbud",
+      "sha256": "ba6f0b27aff3921c6918d46af93700dbb83e540bacf3b8a5ba776d2fc91692c0",
+      "source_commit": "a1b5303cdbb1d4d0ad886359cc71418570e7c5fd",
+      "license": "BSD-3-Clause",
+      "toolchain": "lockbud/rustup/toolchains/nightly-2026-02-07-x86_64-unknown-linux-gnu",
+      "status": "installed-qualified-for-experimental-deadlock-fixtures; product compatibility pending"
+    }
+  },
+  "common_nightly": "common/rustup/toolchains/nightly-2026-10-28-x86_64-unknown-linux-gnu",
+  "common_nightly_pin": "nightly-2026-10-28",
+  "shipping_toolchain": "1.99.1",
+  "profiles": {
+    "miri_flags": [
+      "-Zmiri-strict-provenance",
+      "-Zmiri-symbolic-alignment-check",
+      "-Zmiri-many-seeds=0..4"
+    ],
+    "fuzzer_flags": [
+      "-runs=256",
+      "-max_len=4096",
+      "-timeout=2",
+      "-rss_limit_mb=512",
+      "-malloc_limit_mb=256",
+      "-max_total_time=30"
+    ],
+    "vet_flags": [
+      "--locked",
+      "--frozen",
+      "--no-all-features",
+      "--no-minimize-exemptions",
+      "--no-registry-suggestions",
+      "--output-format=json"
+    ],
+    "kani_flags": [
+      "--default-unwind",
+      "1",
+      "--output-format",
+      "regular",
+      "--solver",
+      "cadical",
+      "-Z",
+      "unstable-options",
+      "--run-sanity-checks",
+      "--harness-timeout",
+      "60s"
+    ],
+    "lockbud_flags": [
+      "-k",
+      "deadlock",
+      "--exit-code-on-bug"
+    ]
+  },
+  "inventories": [
+    {
+      "name": "common",
+      "path": "evidence/common-complete-payload-inventory.json",
+      "sha256": "e5f32fd5dac6b7510f39e8adcf1cf687faf44d62f1a7127dd1c936d716152c9a",
+      "root": "common",
+      "scopes": [
+        "bin",
+        "rustup/toolchains/nightly-2026-10-28-x86_64-unknown-linux-gnu",
+        "rustup/settings.toml",
+        "cargo/registry/cache",
+        "cargo/registry/index",
+        "controls-source",
+        "miri-sysroot",
+        "cargo/registry/src"
+      ]
+    },
+    {
+      "name": "stable",
+      "path": "evidence/stable-complete-payload-inventory.json",
+      "sha256": "8b7bd1c19a976090ce4c8e8246a4ca1d7dfef26d76e04ae3bc9672101694190e",
+      "root": "stable",
+      "scopes": [
+        "bin",
+        "etc",
+        "lib",
+        "libexec",
+        "share"
+      ]
+    },
+    {
+      "name": "kani",
+      "path": "evidence/kani-complete-payload-inventory.json",
+      "sha256": "81baab10c95ac57e27f649c442fb8fcf93c0cfdb0bd7a0cc1a7134be91279822",
+      "root": "kani",
+      "scopes": [
+        "payload/kani-0.68.0",
+        "rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu"
+      ]
+    },
+    {
+      "name": "lockbud",
+      "path": "evidence/lockbud-complete-payload-inventory.json",
+      "sha256": "4d7a85a07bb34c45b4f49ccd028b5890ee7e81c3e10f9f11ef3a685593d42001",
+      "root": "lockbud",
+      "scopes": [
+        "bin",
+        "rustup/toolchains/nightly-2026-02-07-x86_64-unknown-linux-gnu",
+        "LICENSE.lockbud",
+        "UPSTREAM_SOURCE.json"
+      ]
+    }
+  ],
+  "limitations": [
+    "Drvfs payloads have no POSIX privacy; verify trusted inventories before execution and use private Linux0700 work",
+    "Sanitizer RSS checks are periodic, not a hard cgroup RAM quota",
+    "Lockbud older compiler is experimental; never lower shipping MSRV or ignore-rust-version to fit it",
+    "No source graph, configured rules or successful fixture proves product/native Windows behavior",
+    "cargo-vet needs real independent reviews; no fabricated audits/imports/exemptions"
+  ],
+  "codeql_mcp_candidate": {
+    "repository": "https://github.com/advanced-security/codeql-development-mcp-server",
+    "version": "2.27.3",
+    "commit": "b0fae2809de0a5ff4fb984677354b7015b6ad57f",
+    "status": "installed locally; admission and execution governed by policy/codeql-mcp.json; CI deferred",
+    "rust_library_pack": "codeql/rust-all 0.2.24",
+    "transport": "local stdio",
+    "license": "GitHub CodeQL Terms"
+  },
+  "fuzz_target": "x86_64-unknown-linux-gnu",
+  "miri_sysroot": "common/miri-sysroot"
+}

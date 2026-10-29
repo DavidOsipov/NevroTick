@@ -1,6 +1,6 @@
 # NevroTick testing skills
 
-Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose only claim-proving leaves. Understood local work needs no orchestrator/full-system campaign. [SOURCES.md](SOURCES.md): all 36 donor mappings/current primary-source research; maintenance provenance, no mandatory runtime reading.
+Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose only claim-proving leaves. Understood local work needs no orchestrator/full-system campaign. [SOURCES.md](SOURCES.md) retains all 36 donor mappings/current primary-source research; [LOCAL.json](../LOCAL.json) separately registers original workflows, including the data-flow skill. These are maintenance provenance, not mandatory runtime reading.
 
 ## Plan, coordinate and close
 
@@ -46,7 +46,8 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-structured-fuzzing](qa-structured-fuzzing/SKILL.md) | Run or design a bounded NevroTick fuzz target for structured IPC/configuration, NTP/NTS parsing or numeric conversion with useful seeds and explicit oracles. |
 | [qa-mutation-testing](qa-mutation-testing/SKILL.md) | Use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting. |
 | [qa-golden-fixture-parity](qa-golden-fixture-parity/SKILL.md) | Compare NevroTick captured outputs or pinned reference trajectories with independent semantic facts and a deliberately tested comparator. |
-| [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate NevroTick compiler, format, Clippy, source-policy and feature/MSRV checks with meaningful admission controls. |
+| [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate NevroTick compiler, Clippy, source-policy, bounded static analysis and CodeQL data-flow evidence for the actual target/features. |
+| [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) | Trace Rust external, untrusted or secret inputs through functions, state and guards to privileged effects or output sinks with scoped CodeQL MCP analysis and independent path checks. |
 | [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, MSI contents, metadata, provenance and delivered-package consistency independently of source configuration. |
 | [qa-accessibility](qa-accessibility/SKILL.md) | Assess NevroTick native control semantics, keyboard use, Narrator behavior and accessibility error/status communication. |
 | [qa-visual-dpi](qa-visual-dpi/SKILL.md) | Test NevroTick visual usability across Windows DPI, text scaling, contrast, window sizing and multi-monitor changes. |
@@ -55,8 +56,12 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 
 ## Conditional shared references
 
+- [Configured tool execution](references/configured-tooling.md) when selecting existing compiler/lint/test, dependency, workflow/security, coverage/mutation or SBOM entry points. Its additional-analysis section routes Miri, cargo-fuzz, Loom, Kani, Lockbud and cargo-vet by the changed guarantee; tool controls and product harnesses remain separate evidence.
+- [CodeQL data-flow analysis](references/codeql-data-flow.md) for local MCP readiness, exact Rust database/query models, source-to-sink controls and extraction/native coverage gaps. Local analysis does not enable deferred hosted scanning.
 - [Numerical, NTP/NTS and strict contract truth](references/numerical-protocol.md) for analytic or byte-level oracles, domain construction and input-to-effect obligations.
 - [Windows evidence](references/windows-evidence.md) for native tokens/IPC/clock/SCM, complete MSI lifecycle, UIA/Narrator and DPI proof.
+- [Windows memory diagnostics](references/windows-memory.md) for Application Verifier, GFlags/PageHeap and CDB on owned native executables. Select fault detection separately from repeated allocation, handle, GUI-object and task-retention measurements; include profile restoration in the run.
+- [Performance measurement](../implementation/optimize-rust-performance/references/measurement.md) for representative profiler/benchmark selection and comparable before/after samples. Use [performance optimization](../implementation/optimize-rust-performance/SKILL.md) when the task also authorizes changing the measured bottleneck.
 - [Rust techniques](references/rust-techniques.md) for Cargo/feature/MSRV selection, generated tests, modeled concurrency and optional tools.
 - [Staged candidate](references/staged-candidate.md) for faithful full-index review when commit-candidate readiness is requested.
 

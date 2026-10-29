@@ -5,6 +5,7 @@
 - Current source/dirty identity; canonical architecture baseline:
 - Existing implementation and missing evidence:
 - Owners and producer → state/transform → consumer/effect:
+- Changed function/module input/output, failure and effect contracts; enforcing types/constructors/guards; invalidation conditions:
 - Requirements/boundaries/decisions/threats/checks (reuse canonical IDs):
 - Compatibility, failure, resources, cancellation and recovery:
 
@@ -13,6 +14,7 @@
 - Inputs, environment and prerequisites:
 - Owner/files and bounded action:
 - Independently derived expectation and legitimate/failure controls:
+- Contract bypass/transform checks and real caller/consumer observations:
 - Forbidden effect, limits and cleanup:
 - Command/observation and integrated exit:
 - Readiness and unresolved owner decisions:
