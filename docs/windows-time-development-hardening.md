@@ -267,7 +267,7 @@ Run optimized invariant checks and the actual shipping profile. Keep optimizatio
 
 ### 6.2 Target-specific Windows compiler/linker settings
 
-Candidate `.cargo/config.toml` for x64 MSVC with a pinned, recorded `link.exe`:
+The following target settings are already present in [`.cargo/config.toml`](../.cargo/config.toml). Pin and record the admitted linker: the [tooling record](../TOOLING.md) distinguishes native MSVC inputs and the explicit bundled-LLD/xwin bootstrap lane. Its recorded std-only PE/native-execution fixture does not qualify future application binaries or all runtime policies.
 
 ```toml
 [target.x86_64-pc-windows-msvc]
@@ -300,6 +300,28 @@ The trusted build entry point must reject unreviewed environment/configuration o
 | Rust stack protector / LLVM CFI | Separate research only | Current stack-protector/CFI interfaces have unstable/internal constraints; do not present them as a qualified stable Windows release setting. [C19, C21] |
 
 Verify three layers: **effective build inputs, emitted images and effective runtime policy**. Use supported Windows process-policy APIs and handle failures. UI and broker can need different settings; do not turn on every process policy without testing legitimate operation. DLL search/load restrictions, valid-load controls, unexpected DLL canaries and the architecture's no-sideloading checks remain required. [C22; architecture CHECK-16/18/23]
+
+### 6.4 Per-process mitigation qualification
+
+Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) as the canonical role/activation/failure contract and manifest schema. This 29 October refinement incorporates useful specificity from the supplied PDFCraft proposal without adopting its CRT, dependencies or UI architecture. Existing tooling observations remain scoped to their recorded fixture. All application-level cases below are **planned / not executed**.
+
+For every delivered executable and applicable DLL, inspect the exact final PE and load configuration with `dumpbin /headers /loadconfig` or an admitted equivalent tool. Record the CFG `Guard`, `CF Instrumented` and `FID table present` indicators where applicable, DEP/ASLR properties, relocations and any selected CET marker. These checks must agree with actual build inputs and the native/prebuilt/static/standard-library inventory; a CFG-positive executable or one successful negative fixture does not prove complete linked-code coverage. `nochecks` remains prohibited. This requirement does not mandate installing Visual Studio just to obtain `dumpbin`. [C10, C11, C15]
+
+Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations.
+
+| Case | Required observation | Legitimate control and scope |
+| --- | --- | --- |
+| Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable | Expected enforced state admits work. An explicitly optional unavailable hardware enhancement is diagnosed without masquerading as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
+| ACG | A harmless executable-memory allocation/protection transition is denied under the qualified no-opt-out/no-downgrade profile; record effective bits | Ordinary heap use and the exact engine/broker/native-provider workflows succeed. Do not execute injected payloads or infer compatibility from absence of an intentional JIT. |
+| Image loading | Separate controlled remote-image and low-mandatory-label canaries fail to load; CWD/PATH canaries exercise section 15.2 separately | The intended protected dependency loads from its expected path. Mark of the Web is not the low-label fixture; System32 preference is not a directory allowlist. |
+| Strict CFG and handles | Optional Strict CFG denies an incompatible code-bearing DLL; strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
+| Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile | Final service APIs, boot-before-login, stop/restart and recovery work. A custom-parent child-policy fixture does not close the SCM gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
+| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; optional unsupported hardware remains explicitly unsupported. |
+| Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid single-MSI install/update/repair/remove completes under each declared release profile. Existing CHECK-12/13/18/23 remain authoritative. |
+
+Run native denial/termination tests only in the owned disposable Windows environment of architecture section 14.9, with independent observation, resource/time bounds and cleanup. No test changes the user's clock or global Exploit Protection policy. Audit-first trials apply only to controls with a documented audit mode; an audit event never passes an enforcement case. Preserve UI-M0 deferrals: full production accessibility/IME integration tests run at the existing reentry gates.
+
+Tie records to the complete payload/SBOM and exact package; repeat affected cases when a toolchain, native provider, linked module, startup/hosting path, Windows support matrix or installer policy changes. Use the existing diagnostics and artifact records rather than a new background scanner. Do not copy `+crt-static`, admit held cryptographic providers or add a launcher solely to make a mitigation checklist appear complete.
 
 ## 7. Dependencies, auditors and supply-chain policy
 

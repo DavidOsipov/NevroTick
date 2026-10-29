@@ -155,6 +155,8 @@ For every relevant ASVS requirement, separate literal applicability, native adap
 
 Continue the existing phase-specific investigations for account/token/DACL separation, race-safe IPC, real Windows rate/step/leap semantics, recovery after process death, exact supported builds, installer-tool terms, native resource budgets and complete MSIX feasibility. Propose a decision only when an actual tradeoff remains after authorized investigation. Keep full UI qualification deferred at the UI-M0 reentry triggers; completing a fixture prototype closes no later accessibility gate.
 
+For native mitigations, follow [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) and [hardening section 6.4](windows-time-development-hardening.md#64-per-process-mitigation-qualification). Resolve the actual SCM child-policy installation/readback/denial path, required startup failure and ownership-aware recovery, exact native-provider compatibility, and standalone-helper versus MSI DLL hosting. Strict CFG and CET strengthening remain separately qualified candidates. Do not replace the two-service topology, introduce a launcher or silently modify host policy to close an evidence gap.
+
 ## 10. Required output and completion criteria
 
 Return:

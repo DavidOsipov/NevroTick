@@ -42,6 +42,11 @@ OD-05 already accepts the Foundation publisher display, David as release approve
 and an initial OpenPGP alternative if free Authenticode is unavailable; the
 profile-specific trust and Windows qualification gates remain.
 
+Windows exploit-protection work: read [architecture section 15.4](docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
+and [hardening section 6.4](docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification).
+Keep per-process roles, activation phase, required/optional policy, effective state
+and native evidence distinct; existing compiler flags prove no complete runtime profile.
+
 Checkout began with documentation, skills, tool configuration. Inspect current
 manifests/source before choosing commands; historical documents/diagnostics do not
 establish current state. Never create Cargo workspace merely to pass docs/tool checks.

@@ -1232,6 +1232,8 @@ Rust's CFG option is documented, but complete coverage must include linked code 
 
 Set supported runtime policies as early as practical and read back effective policy. Late policy cannot retroactively secure every module already loaded before application startup. Maintain a mitigation manifest per binary and OS/architecture: required, supported/enforced, unsupported with reason, or incompatible with a documented necessary feature. A required unavailable control blocks the relevant release profile. Optional hardware enhancements do not silently become universal requirements.
 
+Section 15.4 defines the role, activation phase, failure handling and evidence fields for that manifest. Ordinary CFG is the baseline; Strict CFG remains a separate compatibility candidate, not an implied consequence of the compiler flag.
+
 The binary-signature mitigation is particularly easy to misstate. A valid SignPath-signed executable does not mean its own publisher-signed DLLs are automatically permitted by Microsoft's signature-only policy. UI accessibility tools may also need compatible interaction. Use precise loading/ACL controls as the baseline and qualify stronger code-integrity policies where they fit. [S33]
 
 ### 15.2 DLL and executable search safety
@@ -1267,6 +1269,61 @@ Current Smart App Control guidance supports trusted RSA and ECC signatures; olde
 Use event metadata that remains meaningful while the clock is wrong: UTC plus time-quality/generation, monotonic sequence and operation correlation where appropriate. Persisted log timestamps do not prove correct UTC. Event-channel readers, writer permissions, clear/export authority, retention and failure behavior are part of the diagnostics inventory; no extra always-running logging service is required.
 
 Native UI integration remains section 16's Win32-control prototype. Use documented manifest/common-control, DPI, theme and UI Automation facilities; qualify keyboard, Narrator, contrast and text scaling rather than assuming the binding crate supplies accessibility. Native power, network and SCM notifications feed the single-owner event model. Avoid WMI polling and routine PowerShell/`sc.exe` subprocesses for APIs already exposed by the adapter. [S90]
+
+### 15.4 Per-process mitigation profiles and startup admission
+
+**29 October 2026 refinement:** the supplied PDFCraft hardening proposal sharpens WIN-3/WIN-4 and CHECK-16; it does not adopt PDFCraft's dependency graph, static-CRT choice or process topology. NevroTick already separates network parsing from privileged clock effects. Use the existing `windows-platform` adapter and small role-specific policy tables; no new security framework, resident checker or user-facing mitigation switches are required. These are implementation/qualification contracts, not observed application protection. UI-M0 keeps section 16.5's scope and deferrals.
+
+#### Role ownership
+
+All product executables retain section 15.1's build protections and section 15.2's load-path rules. The following runtime directions require evidence for the final dependency graph and entry point; a row is not a compatibility pass.
+
+| Process or host | Profile to qualify | Legitimate operations and limits |
+| --- | --- | --- |
+| `engine-service` | Dynamic-code prohibition, image-load restrictions, extension-point restrictions and strict handles; qualify headless Win32k and child-process restrictions | DNS, sockets, NTS-KE, TLS/crypto providers, protected secret storage, IPC and SCM lifecycle must work under the final account. No intentional JIT does not prove native-provider compatibility. |
+| `clock-broker` | Same compact headless direction, with no networking or child-launch capability added to make a test pass | Clock adapters, authenticated pipes, owned recovery and SCM lifecycle remain usable. A mitigation-triggered exit cannot reset correction budgets or authorize a global clock reset. |
+| `desktop-ui` | Common build/load protections; separately qualify dynamic-code, extension-point and strict-handle policy | Keep Win32k available. Do not impose a general child prohibition without proving approved elevation and other adopted OS-activation flows. Full assistive-technology/IME compatibility belongs to the applicable production UI gate, not UI-M0. |
+| Standalone `admin-helper` | Common protections plus a profile for its exact elevated lifecycle operations | Qualify SCM/MSI/UAC interactions. Do not inherit a service's no-child or no-Win32k profile solely because the helper is privileged. |
+| MSI custom-action DLL, if selected | Inspect the DLL's build/load properties and actual installer host separately | A library initializer must not apply process-wide service policy to a Windows Installer host. The standalone-helper result does not qualify an in-process custom action. This ownership rule follows the calling-process scope of the mitigation API. [S29, S103] |
+
+AppContainer remains the separate experiment in section 19.4. It is not required by this refinement and is not supplied by an MSI/MSIX extension or an ordinary service SID. Mitigations reduce exploit opportunities; they establish neither correct UTC nor authority to bypass broker validation.
+
+#### Exact policy semantics
+
+- **Dynamic-code prohibition:** an enforced profile requires `ProhibitDynamicCode=1`, with `AllowThreadOptOut=0` and `AllowRemoteDowngrade=0`. Audit-only observation is not enforcement. A compatibility failure must not silently activate these weakening options; resolve the dependency or document a concrete policy decision. [S95]
+- **CFG and CET activation:** `SetProcessMitigationPolicy` cannot change `EnableControlFlowGuard` or enable initially disabled hardware shadow-stack protection. Record image/creation/host policy separately from runtime setters. `/CETCOMPAT` is still an x64 compatibility marker, not proof of active HSP. [S32, S96, S97]
+- **Strict CFG:** separately qualify its code-bearing DLL admission rule, including the resource-only DLL exception. Once enabled it cannot be disabled through the setter. It does not prove that every statically linked native object or Rust standard-library path contains checks. [S96, S102]
+- **Image restrictions:** record `NoRemoteImages`, `NoLowMandatoryLabelImages` and `PreferSystem32Images` individually. Low mandatory integrity is not Mark of the Web; System32 preference changes search order and is not a System32-only allowlist. These controls restrict executable images, not ordinary NTP network traffic or arbitrary data-file access. They supplement section 15.2. [S98]
+- **Strict handles:** when setting the policy, the invalid-handle and permanent-enable fields must match. Record actual query results and debugger/verifier presence: Application Verifier can produce the documented non-permanent exception state, which is not evidence of the product's permanent setting. [S99]
+- **Compatibility trials:** use audit mode only where the specific mitigation supports it. Ordinary CFG, extension-point disabling and strict-handle validation have no audit mode; use isolated enforced tests. Retain the existing signer-class limitation for signature-only image policy under both release profiles. [S33, S102]
+
+**SCM child-process proof gap:** preserve the engine/broker no-child design, but establish the supported installation mechanism, effective state and denied creation under their actual SCM launch path. A policy enum, header declaration or custom-parent test is insufficient. Parent-side process-creation attributes do not establish control over SCM's launch attributes. App-specific Exploit Protection is a research candidate, not an adopted installer change. Do not introduce a launcher or change service topology merely to claim this control. [S29, S101, S104]
+
+If later evidence selects persistent per-image settings, qualify no-login boot, restart and MSI upgrade/repair/removal, collisions with administrator/enterprise policy, and ownership-preserving restoration. Such settings identify an image by name/path rather than product version; requalify changed binaries. No machine-wide reset, administrator-policy overwrite or manual user setup step is introduced here. [S102]
+
+#### Startup and failure contract
+
+The executable's trusted startup path selects its role profile; untrusted arguments, UI requests or writable configuration cannot replace it with a weaker profile. The platform adapter must:
+
+1. Separate image/build controls, creation-time controls, supported early runtime settings and externally managed settings. Initialize supported runtime controls before accepting normal untrusted work or issuing new protected effects, while retaining the early-loader limitation in section 15.2.
+2. Validate supported fields and API results; capture the native error on failure and query the actual effective settings. A support mask must not silently discard a required bit. A successful setter, an audit event and a successful query establish different facts. [S29, S100]
+3. Compare the observed state with the profile before declaring normal readiness. A missing, unreadable or mismatched required protection blocks the affected normal operation; an explicitly optional hardware enhancement may remain unavailable with an accurate diagnostic. Do not retry with a weaker profile or clear stronger host policy.
+4. Preserve ownership-aware cleanup and bounded recovery already required by sections 8 and 11. Failure grants no new clock authority and must not skip necessary owned cleanup, reset budgets or produce an unbounded SCM restart loop. Installation/takeover preflight must detect an unusable required profile before transferring clock ownership; upgrade failure follows the existing rollback contract.
+5. Emit a bounded structured status through the existing diagnostics path, with role, policy, expected/observed state and safe error information. Keep startup/readback work bounded and out of the per-packet path. Diagnostic reports are not IPC credentials, remote attestation or proof that a process remains uncompromised.
+
+#### Mitigation manifest and evidence
+
+Extend the existing per-binary manifest rather than maintaining a second policy source. Keep the required disposition separate from the observed result.
+
+| Field group | Required record |
+| --- | --- |
+| Candidate identity | Component/host role, source and artifact SHA-256, complete package/version, Authenticode or OpenPGP release profile, target, toolchain/linker and selected features/profile |
+| Expected control | Exact PE condition or Windows policy/fields; required, conditional or optional disposition; condition/decision owner; activation owner and phase |
+| Observed control | Requested values, effective query values, enforced/audit-only/unavailable/failed/not-executed state, native error, OS build/architecture, relevant CPU/VM support and instrumentation tools |
+| Coverage | Imports, runtime/delay loads, native/prebuilt/static objects and standard-library coverage; unresolved portions remain explicit |
+| Behavioral evidence | Independent prohibited-operation result and passing legitimate control; startup/SCM/package path exercised, cleanup/recovery result and evidence reference |
+
+An isolated negative fixture proves its exercised boundary, not complete binary instrumentation or every loaded dependency. Reconcile this record with the delivered SBOM/payload inventory and the existing CHECK-16/18/20/23 evidence. The [development-hardening qualification matrix](windows-time-development-hardening.md#64-per-process-mitigation-qualification) defines the next bounded tests; none is marked passed by this amendment.
 
 ## 16. Minimal, accessible user experience
 
@@ -1724,7 +1781,7 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-13 | Fault injection at each single-product install/update/repair/uninstall stage, including disabled rollback, hostile repair inputs, old-generation cleanup and reboot | Correct owner/restoration; no successor reset or privileged path oracle; no conflicting generations; legitimate maintenance completes | P0/P4/P6, installer/security |
 | CHECK-14 | Source outage, stale evidence, disagreement and malformed snapshot | UI/CLI show correct trust/freshness/uncertainty; no fabricated synchronized status | P3/P5, core/UI |
 | CHECK-15 | Corrupt/old/incompatible state, reparse/hardlink/path swap, disk-full and interrupted replacement | Protected files cannot redirect privileged writes; invalid critical policy does not become permissive | P3/P4, platform/security |
-| CHECK-16 | Inspect PE/runtime mitigations; test DLL canaries, import/load paths and valid dependencies | Protection actually enforced on supported combinations; UI accessibility remains functional | P0/P6/P7, security/build |
+| CHECK-16 | Inspect build/PE/runtime evidence against section 15.4's role manifest; test activation/startup failure, actual SCM child-policy enforcement, DLL canaries, import/load paths and valid dependencies | Required protection enforced before normal protected work; valid workflows and applicable UI accessibility remain functional; failure preserves ownership-aware recovery | P0/P6/P7, security/build |
 | CHECK-17 | Secret-bearing failures, exports, crash paths and log flooding | No keys/cookies in output; bounded storage; necessary redacted diagnostics retained | P2/P3/P5, security |
 | CHECK-18 | Verify the selected release profile: Authenticode payload/package publisher and tamper controls, or OpenPGP signer/manifest/final MSI plus protected installed-file trust; clean-machine lifecycle and policy restrictions | Invalid candidate rejected; valid supported candidate succeeds without developer roots or disabled protections. Record Authenticode not qualified in the OpenPGP profile; no equivalent-publisher claim | P6/P7, release |
 | CHECK-19 | CI valid/invalid lint/SAST/source-origin controls, test-discovery and exit propagation | Relevant bad input fails actual gate; valid code passes; no zero-test success | P1/P7, tooling |
@@ -2059,6 +2116,17 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S93 - Scoped advisory records.** [Rustls 2026-0285](https://rustsec.org/advisories/RUSTSEC-2026-0285.html), [2026-0346](https://rustsec.org/advisories/RUSTSEC-2026-0346.html), [2026-0347](https://rustsec.org/advisories/RUSTSEC-2026-0347.html), [2026-0348](https://rustsec.org/advisories/RUSTSEC-2026-0348.html), [2026-0349](https://rustsec.org/advisories/RUSTSEC-2026-0349.html), [Tokio 2026-0384](https://rustsec.org/advisories/RUSTSEC-2026-0384.html), [bytes 2026-0007](https://rustsec.org/advisories/RUSTSEC-2026-0007.html), [tracing 2023-0078](https://rustsec.org/advisories/RUSTSEC-2023-0078.html), [tracing-subscriber 2025-0055](https://rustsec.org/advisories/RUSTSEC-2025-0055.html), [withdrawn ring report](https://rustsec.org/advisories/RUSTSEC-2025-0007.html), [historical tokio-rustls record](https://rustsec.org/advisories/RUSTSEC-2020-0019.html). Raw records were checked at S70's pinned commit, not through a resolved product graph.
 
 - **S94 - 29 October 2026 dependency refresh.** [Serde registry metadata](https://crates.io/api/v1/crates/serde/1.0.229), [Tokio registry metadata](https://crates.io/api/v1/crates/tokio/1.54.1), [Windows 0.62.2 dependency requirements](https://crates.io/api/v1/crates/windows/0.62.2/dependencies), [AWS wrapper 1.19.0 manifest](https://docs.rs/crate/aws-lc-rs/1.19.0/source/Cargo.toml), [AWS native 0.47.0 manifest](https://docs.rs/crate/aws-lc-sys/0.47.0/source/Cargo.toml), [Schannel 0.1.30 source](https://docs.rs/crate/schannel/0.1.30/source/). Refreshed published archives matched registry SHA-256: `aws-lc-rs` = `048006790404103c488e6c5616b3e7e702a71292aadda08e8f7698a9e0d2eb53`, `aws-lc-sys` = `8bfbe32ac36b3c428696ce315464181bc4029d689fd58e3f2a4e58c252242f52`, `schannel` = `9cb23c424d8ee841bb4d813677ca237e2a610067d594fec130f87d6093495ab5`. This is metadata/source inspection, with no crate execution, resolved graph or native qualification.
+
+- **S95 - Dynamic-code restrictions.** [PROCESS_MITIGATION_DYNAMIC_CODE_POLICY](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_dynamic_code_policy). Enforcement, thread opt-out and remote-downgrade semantics.
+- **S96 - Runtime CFG policy.** [PROCESS_MITIGATION_CONTROL_FLOW_GUARD_POLICY](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_control_flow_guard_policy). Immutable base-CFG state and separately enabled Strict CFG.
+- **S97 - Hardware shadow-stack policy.** [PROCESS_MITIGATION_USER_SHADOW_STACK_POLICY](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_user_shadow_stack_policy). Initial activation limits, compatibility/strict modes and audit state.
+- **S98 - Executable-image loading policy.** [PROCESS_MITIGATION_IMAGE_LOAD_POLICY](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_image_load_policy). Remote/low-integrity images and System32 search preference.
+- **S99 - Strict handle policy.** [PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_strict_handle_check_policy). Matching setter bits, permanence and Application Verifier exception.
+- **S100 - Effective-policy query.** [GetProcessMitigationPolicy](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocessmitigationpolicy). Query access, result and error handling.
+- **S101 - Parent-controlled process attributes.** [UpdateProcThreadAttribute](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute). Creation attributes do not establish a product-controlled SCM launch path.
+- **S102 - Exploit Protection behavior and compatibility.** [Microsoft Exploit protection reference](https://learn.microsoft.com/en-us/defender-endpoint/exploit-protection-reference). Per-image setting scope, audit availability, Strict CFG resource-only exception, Win32k and child-process compatibility.
+- **S103 - Windows Installer DLL hosting.** [Dynamic-Link Libraries](https://learn.microsoft.com/en-us/windows/win32/msi/dynamic-link-libraries). Distinguish DLL custom actions from standalone product helpers.
+- **S104 - App-specific mitigation configuration.** [Set-ProcessMitigation](https://learn.microsoft.com/en-us/powershell/module/processmitigations/set-processmitigation). Documented child-process setting is a research input, not proof of lifecycle-safe service enforcement.
 
 ## Appendix B. Worksheet attribution and use
 
