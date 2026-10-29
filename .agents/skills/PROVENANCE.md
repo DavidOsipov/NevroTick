@@ -58,6 +58,16 @@ Selected method adaptations retain these sources and notices:
   modification notice and [full CC BY-SA 4.0 license](provenance/licenses/trailofbits/LICENSE).
   Its terms do not select the product license or relicense independent documents
   that link to it.
+- The shared [review and handoff reference](planning/references/review-and-handoff.md)
+  adapts selected instructions from Google's Elephant-Goldfish Model at commit
+  `f0ba151b252c9abf1318d9fe857a43265d06de89`, inspected 29 October 2026.
+  The reference records exact source files, attribution and local modifications,
+  and is separately licensed under Apache-2.0 with the
+  [full upstream license](provenance/licenses/egm/LICENSE) retained. Existing skill
+  entrypoints route to it; their original donor records remain unchanged. This is
+  development-workflow material, not an application dependency or a replacement
+  for chrony-derived GPL-2.0-only obligations. The EGM plugin, metadata, scripts,
+  automatic bootstrap and interaction policy were not imported.
 
 These adaptations exclude donor installers, runtimes, automatic commits and
 unrelated workflow rules. BMAD and its official Test Architect were researched

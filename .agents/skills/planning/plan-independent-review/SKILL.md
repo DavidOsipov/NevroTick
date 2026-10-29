@@ -7,6 +7,12 @@ description: "Independently review a NevroTick plan or revised stage for missing
 
 Review requested stage; do not implement or amend policy. Read applicable `AGENTS.md`, `docs/README.md`, canonical architecture, [testing contract](../../testing/CONTRACT.md). Obtain request, plan/revision, source/dirty identity, next-stage scope, existing results. Read cited artifacts yourself; author verdict is not evidence. Use fresh reviewer where available; disclose self-review.
 
+For substantial plans or handoffs, use the shared
+[review and handoff procedure](../references/review-and-handoff.md): establish
+reviewer context/completion, retain its comprehension paragraphs, and reconcile
+the candidate with current decisions. Use the same record for finding resolution;
+the procedure does not add approval gates or require all later stages to be ready.
+
 | Inspect | Reject an unsupported claim when |
 | --- | --- |
 | Request and scope | The plan adds product behavior, dependencies, privileged operations or publication beyond authorization. |

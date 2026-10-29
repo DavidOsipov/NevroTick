@@ -11,6 +11,11 @@ Split independent causal boundaries/risk: numerical truth, protocol admission, I
 
 Each worker: request/requirements/source/candidate identity/raw inputs/mode/allowed paths/effects/expected observations/finite budget. Independent reviewer receives requirements/evidence, no persuasive verdict/desired finding.
 
+For review workers, apply
+[fresh context and completion accounting](../../planning/references/review-and-handoff.md#freeze-review-inputs-and-account-for-completion).
+Record actual context mode, inspected inputs and completed/incomplete/not-run
+status in the coordinator record before synthesis; a launched worker is no result.
+
 One owner per shared writable file/environment/Cargo output/port/simulator clock/Windows machine. Separate independent artifacts/resources; bound aggregate CPU/memory/time. Parallel read-only research may accompany one controlled build/native job. Capacity unavailable: record sequential fallback.
 
 Reconcile facts/disagreements/missing evidence/first failures/cleanup/consumed budgets in one coordinator record. Reviewer agreement neither multiplies executions nor establishes statistical independence. Use [context continuity](../qa-context-checkpoint/SKILL.md) for durable handoff.

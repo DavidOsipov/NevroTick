@@ -24,6 +24,11 @@ For multiple stages, uncertain impact, security-sensitive work or migration:
 4. Give [qa-test-planning](../../testing/qa-test-planning/SKILL.md) requirements/independent expectations. Expand next stage: inputs, action, valid/invalid controls, environment, cleanup, exit. Read [testable slices](../references/testable-slices.md) for cross-process/delegated work.
 5. Obtain [independent plan review](../plan-independent-review/SKILL.md) for substantial plans; resolve material findings, recheck affected sections. Later stages may remain explicitly deferred; do not delay ready P0 experiment to invent full product.
 
+Before a substantial revision or handoff, apply
+[decision reconciliation](../references/review-and-handoff.md#reconcile-the-handoff-with-current-decisions)
+in the existing plan. Name its predecessor/current authority and consequential
+changed, added or removed obligations; preserve approved decisions and canonical IDs.
+
 Separate pure Rust checks, Windows-native behavior, package lifecycle, final release evidence. Before Cargo source exists, report Cargo checks unavailable; no dummy project or documentation-as-passing-build claim. Real clock experiments: architecture section 14.9, disposable Windows VMs, bounded operations/recovery.
 
 When step 2 cannot establish a cross-function source-to-sink path, use

@@ -3,6 +3,7 @@
 - Request and intended observable result:
 - Authorization and non-goals:
 - Current source/dirty identity; canonical architecture baseline:
+- For substantial revisions: predecessor/revision; consequential retained/changed/added/removed obligations, current authority and unresolved contradictions:
 - Existing implementation and missing evidence:
 - Owners and producer → state/transform → consumer/effect:
 - Changed function/module input/output, failure and effect contracts; enforcing types/constructors/guards; invalidation conditions:
@@ -26,3 +27,8 @@ State integrated outcomes/dependencies; defer details until relevant evidence ex
 ## Evidence and handoff
 
 Separate executed observations/planned checks; record exact source/artifact/environment identity, review independence, remaining limits, next permitted action.
+
+For substantial reviews/handoffs, use the existing record with
+[review and handoff guidance](../references/review-and-handoff.md): preserve
+comprehension output, per-reviewer completion and stable findings with resolution
+evidence/invalidation conditions. Small understood edits need no extra template fields.

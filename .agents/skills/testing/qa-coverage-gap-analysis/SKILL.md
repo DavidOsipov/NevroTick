@@ -11,6 +11,12 @@ Create/resume one canonical-architecture/current-producer/consumer requirement/b
 
 Include scoped source outside familiar import graphs/known registrations; unexplained roots remain unassessed, never silently excluded. Distinguish unknown/missing/partial/stale/adequate evidence; old/narrow pass cannot erase remaining obligation.
 
+For document/source consistency, apply
+[difference classification](../../planning/references/review-and-handoff.md#classify-document-and-source-differences)
+before reporting drift. Bind each claim to current authority, milestone and
+candidate; planned/deferred work and missing evidence are distinct from a proven
+contradiction. Record new consequential boundaries in this inventory.
+
 Compare neglected boundaries before revisiting familiar code. Prioritize protected effects, exact arithmetic, strict admission, NTS recovery, authority budgets, persistent recovery, package lifecycle and native UI gaps by reachable impact and uncertainty. Missing tests establish a gap, not a demonstrated product defect.
 
 Select bounded complementary batches; assign cross-worker seams. Record each batch's additional evidence; reconcile actual outcomes/unresolved coverage in same inventory. Counts/labels/technique-per-file quotas prove no semantic completeness.

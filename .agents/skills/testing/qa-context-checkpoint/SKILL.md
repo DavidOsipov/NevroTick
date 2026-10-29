@@ -11,6 +11,12 @@ For multi-worker/multi-phase/interrupted work keep one discoverable coordinator 
 
 Record requirements/acceptance set, source/dirty/configuration/fixture/candidate identities, admitted effects, resource owners, exact completed commands/results, raw evidence paths, first failures/retries, unresolved findings, live processes/tasks and consumed time/attempt/case budgets. State the next concrete action.
 
+For repeated review findings, use the shared
+[finding lifecycle](../../planning/references/review-and-handoff.md#preserve-finding-identity-and-resolution-evidence)
+in this record: stable issue IDs, raw-result links, disposition, verification and
+invalidation conditions. Retain reviewer completion and unresolved work; preserve
+the distinction between an applied edit, a verified fix and an owner decision.
+
 Interrupted diagnosis: retain last discriminating observation/open hypotheses/evidence-ruled-out approaches. Carry observed method/harness failures with avoidance/recovery action; distinguish untested concerns. Before repeating approach, recheck next action against constraints.
 
 On resume reconcile actual files/index/running jobs/machine/service/clock state/ownership/artifacts before continuing. Revalidate only changed prerequisites; old reports prove no unchanged candidate bytes. Preserve aggregate budget consumption/pending cleanup.

@@ -23,3 +23,15 @@ Useful source decisions consolidated into shared conditional references; website
 Local authority consulted: `docs/README.md`, architecture sections 3–8, 10–15, 18–24, `docs/asvs-5.0.0-applicability.md`, and the status of `docs/windows-time-update-assessment.md`. Standards attribution and pinned clause text stay with the existing profile; this pack does not reproduce the standard or claim conformance.
 
 The user's prior Rust adaptation, [PdfCraft PR 2912](https://github.com/storytold/pdfcraft/pull/2912), was also consulted at pinned unmerged head `c9a02b378271f92a73cb44be9fd9e4acc6921516`: [architecture/data-flow guidance](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-architecture-data-flows/references/architecture.md). Its distinction between observed edges, tool candidates and inference, including target/features/generated code/trait dispatch, strengthens current-source tracing. PDF graph, renderer, save semantics, existing crate names and historical toolchain facts were not transferred. The proposal is provenance, not an adopted NevroTick requirement.
+
+## EGM review and handoff adaptation — 29 October 2026
+
+The [shared conditional reference](references/review-and-handoff.md) adapts
+Google's Elephant-Goldfish Model at immutable commit
+`f0ba151b252c9abf1318d9fe857a43265d06de89`. Its attribution section lists the exact
+source instructions and retained Apache-2.0 license. Selected methods cover
+comprehension paragraphs, real review completion, finding resolution, predecessor
+reconciliation and document/source differences. Local changes preserve current
+decision authority, stage-scoped readiness and proportional evidence; no automatic
+risk acceptance, extra approval sequence or full-product specification gate.
+This is an instruction adaptation, not a measured review-quality or product result.

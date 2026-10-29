@@ -74,3 +74,14 @@ David Osipov's 2026 authorship/MIT grant was inspected in [the pinned notice](ht
 | [MSI rollback custom actions](https://learn.microsoft.com/en-us/windows/win32/msi/rollback-custom-actions), [Windows Installer practices](https://learn.microsoft.com/en-us/windows/desktop/Msi/windows-installer-best-practices) | Fault-test actual compensation and rollback-disabled behavior; arbitrary service/system changes are not automatically restored | Baseline remains a complete per-machine MSI; generic per-user advice is not a product requirement |
 
 Online sources were read through the web tool and public upstream GitHub connector. No application compilation, native Windows check, property/mutation/fuzz campaign or release qualification was executed as part of authoring this testing pack.
+
+## EGM review coordination adaptation — 29 October 2026
+
+The [review and handoff reference](../planning/references/review-and-handoff.md)
+records exact source paths from Google's Elephant-Goldfish Model at
+`f0ba151b252c9abf1318d9fe857a43265d06de89`, its Apache-2.0 license and modifications.
+Dispatch, checkpoint and coverage skills use that one reference for actual
+reviewer completion, stable findings and authority/stage-aware document comparison.
+It preserves failed/missing evidence, current authorization and focused rechecks;
+reviewer counts or budget exhaustion establish neither correctness nor accepted
+risk. No EGM runtime, tester, plugin metadata or fixed swarm was installed.
