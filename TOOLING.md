@@ -193,8 +193,11 @@ and its exact invocation live in the workflow; the checker accepts only the
 pinned executable digest and challenges synthetic-secret detection first.
 
 The new [Rust workflow](.github/workflows/rust.yml) uses the same shared verifier:
-it provisions bubblewrap on its temporary Linux runner, acquires pinned tools and
-reviewed vendor bytes, refreshes public advisory/index
+it provisions bubblewrap and loads Ubuntu's packaged `bwrap-userns-restrict`
+AppArmor profile on its temporary Linux runner, then exercises namespace setup
+before acquisition. This preserves the runner's global AppArmor restrictions and
+the verifier's isolated network and dropped capabilities. It acquires pinned tools
+and reviewed vendor bytes, refreshes public advisory/index
 metadata separately, checks both frozen dependency target rows, then runs the
 portable product row. Windows linking and native UI observations remain separate.
 The workflow must be published and observed successfully before its Rust status

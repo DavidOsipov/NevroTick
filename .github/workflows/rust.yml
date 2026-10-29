@@ -31,11 +31,12 @@ jobs:
           persist-credentials: false
       - name: Prepare the Linux sandbox capability
         run: |
-          if ! command -v bwrap >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install --yes --no-install-recommends bubblewrap
-          fi
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends bubblewrap apparmor-profiles
+          sudo apparmor_parser -r /usr/share/apparmor/extra-profiles/bwrap-userns-restrict
           bwrap --version
+          bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
+            --ro-bind / / -- /usr/bin/true
       - name: Challenge product admission and result accounting
         run: |
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_verify.py -v

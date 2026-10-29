@@ -253,5 +253,30 @@ build/observation evidence and screenshots. No commit or publication had been ma
 at that checkpoint. The later commit/push authorization is recorded above.
 
 Pre-commit review also made the hosted Linux sandbox prerequisite explicit:
-`rust.yml` installs bubblewrap on the temporary runner when absent, before tool
-acquisition. Product execution still requires the unchanged isolation controls.
+the first published `rust.yml` installed bubblewrap on the temporary runner before
+tool acquisition. Product execution still required the unchanged isolation controls.
+
+## Publication and hosted qualification
+
+Signed commit `8a7d9a9839687eb72f38c56837b957ce095b5e0c` published the reviewed
+28-file candidate to `main`; its tree matched the complete staged materialization.
+The [security workflow](https://github.com/DavidOsipov/NevroTick/actions/runs/40860783004)
+passed. The [first Rust workflow](https://github.com/DavidOsipov/NevroTick/actions/runs/40860783028)
+stopped before dependency code or product tests: Ubuntu 24.04 denied bubblewrap's
+isolated loopback setup (`Failed RTM_NEWADDR: Operation not permitted`). The
+runner had bubblewrap 0.9.0-1ubuntu0.3; this was a sandbox capability failure.
+
+The follow-up loads the distribution's `bwrap-userns-restrict` AppArmor profile
+from `apparmor-profiles`, following the documented
+[Ubuntu sandbox setup](https://github.com/openai/codex-security/blob/main/README.md#github-actions),
+and probes namespace setup before acquisition. No global AppArmor setting or
+shared development host is changed; the actual verifier and isolation controls
+are unchanged. Hosted confirmation of the repair remains pending.
+
+GitHub's publication warning was separately inspected: all 15 open Dependabot
+alerts on 29 October target the unchanged design reference's
+`docs/nevrotick-design-v0.2/prototype/package-lock.json` (7 high, 7 moderate, 1 low),
+not `Cargo.lock`. Current workflows do not install or run that npm prototype.
+Its Vite server binds `0.0.0.0`; repair and qualify its dependency graph before
+running/exposing that server or processing untrusted build input. These findings
+remain open and are not suppressed by the native product checks.

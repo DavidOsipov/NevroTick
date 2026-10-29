@@ -84,6 +84,9 @@ from the code licence. Apply these references within the milestone above. The
 React viewer and archived architecture copies are reference material; current
 canonical contracts govern behavior, and rendered scenes may predate specification
 corrections.
+The archived React tooling has open dependency findings recorded in the
+[UI-M0 task](tasks/ui-m0.md#publication-and-hosted-qualification). Resolve and verify
+them before executing that tooling; the native Rust build does not use it.
 
 ## Architectural constraints
 
