@@ -1,0 +1,4 @@
+interface:
+  display_name: "WSL disk cleanup"
+  short_description: "Reclaim WSL space while preserving work and live data"
+  default_prompt: "Use $wsl-cleanup to measure WSL storage, identify concrete cleanup candidates, perform only the authorized removals, and verify recovered space and preserved work and services."
