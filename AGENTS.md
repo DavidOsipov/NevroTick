@@ -49,6 +49,8 @@ and native evidence distinct; existing compiler flags prove no complete runtime 
 
 Shared OS/IPC work: read [architecture section 3.4](docs/windows-time-architecture.md#34-shared-windows-adapters-and-diagnostics). Reuse narrow role-specific `windows-platform` adapters and portable `ipc-contract`; shared code grants no privilege or generic Windows command surface.
 
+IPC implementation/security work: read [architecture section 5.4](docs/windows-time-architecture.md#54-native-ipc-implementation-and-qualification) and [hardening section 9.9](docs/windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification) alongside `security-local-ipc`. Qualify actual wrapper rights, thread-bound caller capture, fatal reversion, continuous endpoint ownership and partial/native I/O completion; examples and mocks do not prove Windows enforcement.
+
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
 Checkout began with documentation, skills, tool configuration. Inspect current
