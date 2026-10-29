@@ -6,6 +6,39 @@
 
 The maintained set contains ten principal Markdown documents and seven supporting independent reviews. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
 
+## Plans, acceptance and execution evidence
+
+Agents start with [AGENTS.md](../AGENTS.md), choose the existing task and relevant
+rows below, then load the matching [repository skills](../.agents/skills/README.md).
+Use the [testing contract](../.agents/skills/testing/CONTRACT.md) to select evidence.
+The plan is distributed by responsibility; these links locate its owners without
+creating another specification.
+
+| Question | Source of truth |
+| --- | --- |
+| Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
+| What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
+| Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
+| What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
+| What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-20, mapped to technical checks. |
+| What technical/security result is required? | [Architecture §20.2](windows-time-architecture.md#202-acceptance-catalog): CHECK-1–CHECK-27, independent expected results, protected effects, valid controls and stage/owner. |
+| What is in scope for the current UI prototype? | [Architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): M0-01–M0-08 and D1–D3 deferrals/re-entry gates; [UI-M0 task](../tasks/ui-m0.md) for implementation ownership and evidence. |
+| Which unresolved decisions or investigations gate dependent work? | [Open decisions](windows-time-architecture.md#22-open-decisions-and-release-blockers), [owner-decision procedure](nevrotick-owner-decisions.md) and [research assignments](nevrotick-research-handoff.md). |
+| How are checks run, and where are results kept? | [TOOLING.md](../TOOLING.md#starting-implementation) and [configured tool execution](../.agents/skills/testing/references/configured-tooling.md); the existing task record owns candidate-specific results and gaps. |
+
+Keep the identifiers distinct: S-0 is a delivery slice; S0.1–S0.7 are P0
+experiments. UI-M0's M0 checks do not complete the AC/CHECK catalogs or P0/P5.
+Select only the criteria applicable to the authorized task and retain deferred
+requirements with their owners and restoration triggers.
+
+The current [UI-M0 task](../tasks/ui-m0.md#remaining-evidence-and-next-work)
+records an implemented, observed prototype with required full native-memory
+instrumentation still incomplete. Read its later candidate addenda before reusing
+earlier results, and verify relevant source/environment identity before relying on
+them. A task receipt records execution; a catalog specifies expectations.
+
+## Current baseline and amendments
+
 **Upstream code is not presumed bug-free or vulnerability-free.** Chrony and other reused projects, libraries and tools require independent verification of the behavior NevroTick relies on. See [architecture section 20.1](windows-time-architecture.md#201-independent-numerical-truth) and [the test and stress matrix](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing).
 
 **Development baseline, 29 October 2026:** The checkout now contains a minimal real [Cargo workspace](../Cargo.toml), one `nevrotick-ui` crate and its locked UI-M0 dependency graph. [The tooling record](../TOOLING.md#starting-implementation) describes the shared portable, dependency and Windows cross-build checks; [the task record](../tasks/ui-m0.md) owns current implementation and native observations. The frozen graph passed advisory, license, source and build-script checks for Linux and Windows. This admission is limited to UI-M0; the [planned runtime dependency refresh](windows-time-architecture.md#186-runtime-dependency-register) still leaves held AWS-LC/Schannel providers and the production graph unresolved.

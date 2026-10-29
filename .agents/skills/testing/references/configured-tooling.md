@@ -29,15 +29,28 @@ Do not scaffold Cargo or substitute a fixture graph to claim a product pass.
 
 ## Rust implementation and dependency rows
 
+For the current UI-M0 workspace, use
+[the shared verifier](../../../../TOOLING.md#starting-implementation):
+`python3 -B scripts/verify.py` for the portable row, `--lane dependencies` with
+a current advisory receipt for graph checks, and `--lane windows` with a new
+external output directory for the cross-build. That guide defines the required
+admitted inputs and full arguments. These rows preserve isolated execution;
+unavailable prerequisites are an evidence gap, not a direct-Cargo fallback.
+The root `deny.toml` retains the bootstrap policy and rejects the UI-M0 graph;
+the dependency row applies the exact admitted graph policy inside its snapshot.
+Native observations remain separate in [the task record](../../../../tasks/ui-m0.md).
+
 For an ordinary Rust change, select format, compiler/Clippy and focused regression
 checks for affected packages and actual callers. Use the adopted workspace policy
 from [rust-workspace.toml](../../../../policy/rust-workspace.toml); every member
 inherits it, while pure-core roots additionally forbid unsafe code. Expectations
 need reasons and must remain fulfilled; no blanket test or adapter exemptions.
 
-The following are workspace forms. Narrow packages and add the actual `--target`,
-profile, defaults and optional features before execution where required. Keep
-Windows-only consumers in scope; host success does not cover them.
+The following describe underlying Cargo checks within an admitted execution lane;
+they do not replace the UI-M0 verifier above. For another workspace or a changed
+lane, select packages and the actual `--target`, profile, defaults and optional
+features through its reviewed runner. Keep Windows-only consumers in scope; host
+success does not cover them.
 
 | Changed guarantee | Select the relevant commands |
 | --- | --- |

@@ -12,6 +12,36 @@ Keep investigation/verification proportional. Reuse evidence while relevant stat
 unchanged. Prefer repository skills over overlapping plugins unless user selects
 plugin; load another skill only for concrete gap.
 
+## Start each task
+
+1. Resolve the checkout with `git rev-parse --show-toplevel`; inspect
+   `git status --short` and applicable nested `AGENTS.md` before edits. Preserve
+   existing work and inspect current manifests/source rather than assuming a
+   historical repository state.
+2. Read [the documentation guide](docs/README.md), then the relevant authority
+   below. Use its [plan and acceptance map](docs/README.md#plans-acceptance-and-execution-evidence)
+   to identify the workstream, phase/slice, prerequisites and observable exit.
+3. Reuse the existing task/plan. For current UI work, start at
+   [tasks/ui-m0.md](tasks/ui-m0.md): scope, ownership,
+   [acceptance](tasks/ui-m0.md#acceptance-and-checks),
+   [remaining evidence](tasks/ui-m0.md#remaining-evidence-and-next-work) and later
+   candidate addenda. For other work, inspect `tasks/` and any `.agents/plans/`
+   records; follow [the planning guide](.agents/skills/planning/README.md) when
+   creating or revising a plan. Keep one plan/evidence chain.
+4. Select the smallest relevant [skill set](.agents/skills/README.md) and read
+   its `SKILL.md`. Before selecting checks, read
+   [the testing contract](.agents/skills/testing/CONTRACT.md). State the applicable
+   requirement/acceptance IDs, independent expected result, source owner and
+   required environment in the existing task record or a concise in-chat plan.
+5. Use [the configured verification entry points](TOOLING.md#starting-implementation)
+   for implementation checks. At handoff, record the candidate, actual results,
+   remaining gaps/deferrals and next action. Planned criteria, historical passes
+   and cross-builds do not establish current native or release qualification.
+
+Subagent assignments include the bounded question, canonical sections and
+acceptance IDs, current task/candidate, writable scope and expected evidence.
+The coordinator reconciles results against the integrated candidate.
+
 ## Read the right authority
 
 NevroTick: chrony-derived Rust NTP/NTS client, native GUI; initially supported
@@ -55,9 +85,11 @@ IPC implementation/security work: read [architecture section 5.4](docs/windows-t
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
-Checkout began with documentation, skills, tool configuration. Inspect current
-manifests/source before choosing commands; historical documents/diagnostics do not
-establish current state. Never create Cargo workspace merely to pass docs/tool checks.
+The current [Cargo workspace](Cargo.toml) contains
+[nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a portable preview model and native
+Windows UI-M0 adapter. Other proposed components remain architecture plans until
+their source exists. Inspect current manifests/source before choosing commands;
+never scaffold product crates merely to pass documentation/tool checks.
 
 ## Current UI milestone
 
@@ -259,8 +291,8 @@ enable preferred workflow.
    and healthy control where practical, then verify correction. Setup failure or
    zero-test run proves neither behavioral RED nor GREEN. State unresolved causes/
    unavailable environments.
-3. Check changed guarantee against actual package/feature/target matrix. Once
-   Cargo workspace exists, use adopted format/compiler/Clippy, unit/integration,
+3. Check changed guarantee against actual package/feature/target matrix. Use the
+   adopted workspace format/compiler/Clippy, unit/integration,
    doctest lanes. No invented all-features/full-suite mandate replacing scoped
    checks. Preserve architecture coverage/mutation gates for applicable
    implementation/release scope.

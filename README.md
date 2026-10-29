@@ -24,6 +24,8 @@ qualification gaps; a successful cross-build alone does not complete UI-M0.
 | --- | --- |
 | AI agent instructions and authority | [AGENTS.md](AGENTS.md) |
 | Documentation map, architecture and feature plan | [Documentation guide](docs/README.md) |
+| Delivery phases, slices and acceptance criteria | [Plan and acceptance map](docs/README.md#plans-acceptance-and-execution-evidence) |
+| Task-specific agent workflows and verification rules | [Repository skills](.agents/skills/README.md) and [testing contract](.agents/skills/testing/CONTRACT.md) |
 | Accepted owner choices and decisions still pending | [Owner decisions](docs/nevrotick-owner-decisions.md) |
 | Research questions, evidence gates and NTS server candidates | [Research handoff](docs/nevrotick-research-handoff.md) |
 | Development setup and adopted tooling | [TOOLING.md](TOOLING.md) |

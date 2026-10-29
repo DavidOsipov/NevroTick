@@ -7,6 +7,12 @@ Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
 requires loading every skill.
 
+Before choosing a workflow, locate the existing task, phase/slice and acceptance
+IDs through [the plan and acceptance map](../../docs/README.md#plans-acceptance-and-execution-evidence).
+For UI-M0, reuse [its task record](../../tasks/ui-m0.md) and canonical restricted
+scope; a skill supplies the method, not a new product requirement or evidence of
+completion. Read [the testing contract](testing/CONTRACT.md) before selecting checks.
+
 | Task | Start with |
 | --- | --- |
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |

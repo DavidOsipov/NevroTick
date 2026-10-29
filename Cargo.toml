@@ -8,12 +8,11 @@ rust-version = "1.99"
 license = "GPL-2.0-only"
 repository = "https://github.com/DavidOsipov/NevroTick"
 
-# Canonical Cargo fragment for real workspaces and isolated policy controls.
-# This file is not an application manifest. Copy these tables into the first
-# real workspace root; every first-party member must opt in with
+# Workspace policy adopted from the canonical bootstrap Cargo fragment.
+# Every first-party member must opt in with
 # [lints]
 # workspace = true
-# scripts/check-strict.py checks adoption instead of inventing application code.
+# scripts/check-strict.py checks policy adoption in the actual workspace.
 #
 # deny permits reviewed, narrowly scoped expectations in Windows adapters.
 # Pure domain/protocol/numerical crate roots additionally forbid unsafe_code.

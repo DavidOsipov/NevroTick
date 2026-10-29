@@ -1,9 +1,29 @@
 {
   "artifacts": [
     {
+      "name": "agent-guide",
+      "path": "./AGENTS.md",
+      "description": "Repository agent entry point: document authority, current milestone boundaries, skill selection, tool use, acceptance and evidence discipline. Follow current task authorization and canonical contracts; this guide does not establish completed implementation or qualification."
+    },
+    {
       "name": "documentation-guide",
       "path": "./docs/README.md",
       "description": "Documentation reading order, provenance, and authority. The architecture is canonical; review and update research do not establish implementation or compliance."
+    },
+    {
+      "name": "skills-guide",
+      "path": "./.agents/skills/README.md",
+      "description": "Repository skill discovery and routing for planning, Rust implementation, security, testing and dependency work. Select relevant leaves and read their instructions; the index supplies neither product requirements nor executed verification evidence."
+    },
+    {
+      "name": "tooling-guide",
+      "path": "./TOOLING.md",
+      "description": "Development setup, adopted tool entry points and recorded bootstrap or implementation checks. Verify current manifests, configuration, tool availability and candidate identity before execution; historical controls do not qualify current native behavior or release artifacts."
+    },
+    {
+      "name": "ui-m0-task",
+      "path": "./tasks/ui-m0.md",
+      "description": "UI-M0 implementation task: scope, ownership, M0 acceptance mapping, recorded candidate evidence, outstanding gaps and D1-D3 restoration triggers. Architecture section 16.5 controls acceptance; recorded observations have stated candidate/environment limits and do not establish full-product or release qualification."
     },
     {
       "name": "nevrotick-owner-decisions",
@@ -19,6 +39,11 @@
       "name": "windows-time-architecture",
       "path": "./docs/windows-time-architecture.md",
       "description": "Canonical Rust Windows Time Client architecture and creation specification (RWTC-ARCH-001). Authority boundaries, NTP/NTS recovery, dependencies, packaging, UX, and planned verification. Design requirements, not evidence of implemented behavior."
+    },
+    {
+      "name": "windows-time-features",
+      "path": "./docs/windows-time-features.md",
+      "description": "Proposed V1 feature plan, user journeys, AC acceptance scenarios and delivery slices linked to architecture phases and CHECK requirements. Canonical architecture controls technical semantics; full-product acceptance remains separate from restricted UI-M0 and from executed evidence."
     },
     {
       "name": "windows-time-diagrams",
