@@ -166,8 +166,8 @@ observed successfully after publication before making it required.
   through the documented elevated per-image setup and restoration workflow when
   that environment is available. The ordinary-user CDB result is narrower; full
   native-memory and runtime-mitigation qualification remain incomplete.
-- Publish through the normal reviewed commit/PR workflow when authorized, observe
-  the new hosted Rust job, then add that actual check to main's required checks.
+- Hosted publication and the required Rust check are completed; see
+  [publication and hosted qualification](#publication-and-hosted-qualification).
 - Retain D1–D3, production coverage/mutation, provider/source-default decisions,
   disposable service/clock/MSI laboratory and complete-package/signing gates.
 
@@ -268,10 +268,22 @@ runner had bubblewrap 0.9.0-1ubuntu0.3; this was a sandbox capability failure.
 
 The follow-up loads the distribution's `bwrap-userns-restrict` AppArmor profile
 from `apparmor-profiles`, following the documented
-[Ubuntu sandbox setup](https://github.com/openai/codex-security/blob/main/README.md#github-actions),
+[Ubuntu sandbox setup](https://github.com/openai/codex-security/blob/621bad47e69dc41880320259f6fa47bf293c097c/github-action/README.md#ubuntu-sandbox-setup),
 and probes namespace setup before acquisition. No global AppArmor setting or
 shared development host is changed; the actual verifier and isolation controls
-are unchanged. Hosted confirmation of the repair remains pending.
+are unchanged. Signed follow-up `905c0e296f7e93fa3031f1e15e23752ea67d86e4`
+passed the [hosted Rust workflow](https://github.com/DavidOsipov/NevroTick/actions/runs/40861569865)
+and [security workflow](https://github.com/DavidOsipov/NevroTick/actions/runs/40861569914).
+The runner passed the early namespace probe, all admission controls, both frozen
+dependency target rows and the portable product tests/doctests. This is the hosted
+GREEN evidence for the runner repair, separate from the retained native evidence.
+
+After observing success, ruleset `26110199` was updated and read back: both
+`Security gate` and `UI-M0 portable model` are required on `refs/heads/main`, bound
+to GitHub Actions integration 15368. Strict checks, creation exemption and existing
+bypass actors are unchanged; the signed/linear-history/deletion/force-push rules
+remain unchanged. Direct publication used the existing owner bypass while each
+new commit awaited checks; these observed passes do not prove bypass prevention.
 
 GitHub's publication warning was separately inspected: all 15 open Dependabot
 alerts on 29 October target the unchanged design reference's

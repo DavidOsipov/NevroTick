@@ -200,19 +200,21 @@ the verifier's isolated network and dropped capabilities. It acquires pinned too
 and reviewed vendor bytes, refreshes public advisory/index
 metadata separately, checks both frozen dependency target rows, then runs the
 portable product row. Windows linking and native UI observations remain separate.
-The workflow must be published and observed successfully before its Rust status
-is added as a required check; local workflow validation does not establish a
-hosted execution result.
+The [hosted Rust run](https://github.com/DavidOsipov/NevroTick/actions/runs/40861569865)
+and [security run](https://github.com/DavidOsipov/NevroTick/actions/runs/40861569914)
+passed for signed commit `905c0e296f7e93fa3031f1e15e23752ea67d86e4` on 29 October.
+Only after that observation was the actual Rust check added to main's ruleset.
 
 GitHub ruleset reads on 29 October confirmed the alignment with CodeQL deferral.
 [Main protection (26069359)](https://github.com/DavidOsipov/NevroTick/rules/26069359)
 still protects all branches against deletion and force pushes and requires linear
 history and signed commits; its deferred CodeQL requirement was removed.
 [Main required checks (26110199)](https://github.com/DavidOsipov/NevroTick/rules/26110199)
-requires `Security gate` on `refs/heads/main`, bound to GitHub Actions integration
-15368 with strict status checks. Creation is exempt, and both rulesets retain the
-same existing bypass actors. No new Rust status is required yet. These settings
-establish neither new-workflow execution nor protection against an authorized bypass.
+requires `Security gate` and `UI-M0 portable model` on `refs/heads/main`, both bound
+to GitHub Actions integration 15368 with strict status checks. Creation is exempt,
+and both rulesets retain the same existing bypass actors. The update was read back
+and verified. These settings do not prevent an authorized bypass; the direct
+publication used the existing owner bypass while each new commit awaited checks.
 
 Local analyzer/control results do not establish application CodeQL extraction,
 complete Rust/Windows cfg coverage or hosted secret push protection.
