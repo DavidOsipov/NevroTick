@@ -20,6 +20,8 @@ The maintained set contains ten principal Markdown documents and seven supportin
 
 **Latest owner instructions:** [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) records accepted reuse/recovery/release choices and unresolved default-profile policy. [nevrotick-research-handoff.md](nevrotick-research-handoff.md) assigns the remaining investigations, including the supplied NTS directory and proposed operator candidates. Read these before interpreting older unconditional signing language in retained historical reviews.
 
+**Engine runtime clarification, 29 October 2026:** [architecture section 18.6.1](windows-time-architecture.md#1861-engine-runtime-decision-and-alternatives) records the rationale, component boundaries and reconsideration criteria for the existing minimal current-thread Tokio prototype. Section 18.7.1 keeps a bounded synchronous NTS-KE worker available alongside the held async transport candidate. Runtime choice establishes no measured resource, security or timing result; existing dependency and Windows qualification gates apply.
+
 ## Reading guide
 
 | Order | Document | Scope and status |
