@@ -1,0 +1,12 @@
+[package]
+name = "ntp-wire"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pure bounded NevroTick NTP wire representation decoding"
+
+[lints]
+workspace = true

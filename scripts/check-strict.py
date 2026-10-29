@@ -109,7 +109,8 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
             if priority != expected_priority:
                 raise ENV.Incomplete(f"Unexpected workspace lint priority: {tool}::{name}")
     profiles = {
-        "release": {"overflow-checks": True, "debug-assertions": False, "panic": "unwind",
+        "release": {"opt-level": 3, "lto": "thin", "codegen-units": 1,
+                    "overflow-checks": True, "debug-assertions": False, "panic": "unwind",
                     "incremental": False, "debug": "limited", "strip": "none"},
         "verify-release": {"inherits": "release", "debug-assertions": True},
     }

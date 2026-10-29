@@ -87,8 +87,15 @@ Logging/verbosity work: read [architecture section 12.3](docs/windows-time-archi
 
 The current [Cargo workspace](Cargo.toml) contains
 [nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a portable preview model and native
-Windows UI-M0 adapter. Other proposed components remain architecture plans until
-their source exists. Inspect current manifests/source before choosing commands;
+Windows UI-M0 adapter, and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure inert
+wire owner under [S1.1a qualification](tasks/s1.1-header.md) and
+[S1.1b framing qualification](tasks/s1.1-framing.md). It provides structural
+framing without exchange, era, authentication or sample admission.
+[time-domain](crates/time-domain/Cargo.toml) is the third member under
+[S1.1c](tasks/s1.1-time-domain.md): checked numerical/era/clock-domain work in
+progress, with no network, clock or authentication effects.
+Other proposed components remain architecture plans until their source exists.
+Inspect current manifests/source before choosing commands;
 never scaffold product crates merely to pass documentation/tool checks.
 
 ## Current UI milestone

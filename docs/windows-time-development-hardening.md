@@ -7,7 +7,7 @@
 **Baseline:** Product architecture RWTC-ARCH-001 revision 1.4  
 **Status:** Enforcement specification and qualification plan with partially adopted development tooling. The original research created no application or execution evidence. The current [tooling record](../TOOLING.md) distinguishes installed tools and bootstrap controls from pending application, native-product and release qualification.
 
-**Documentation amendments:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; owner-directed garde adoption and mandatory function/module contract discipline; adopted native memory diagnostics and agent workflow. Application gates remain pending implementation and qualification.
+**Documentation amendments:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; owner-directed garde adoption and mandatory function/module contract discipline; adopted native memory diagnostics and agent workflow; selected Windows x64 optimization settings with performance and native qualification still pending. Application gates remain pending implementation and qualification.
 
 ## 1. Purpose and recommended baseline
 
@@ -253,10 +253,14 @@ All exceptions need the exact rule/path, reason, independent evidence, owner, ap
 
 ### 6.1 Checked arithmetic and an explicit fault policy
 
-Candidate qualification profiles:
+Selected release/verification settings and the separately proposed service fault profile:
 
 ```toml
 [profile.release]
+# Optimization candidate; measurements and native qualification remain required.
+opt-level = 3
+lto = "thin"
+codegen-units = 1
 overflow-checks = true
 debug-assertions = false
 panic = "unwind"
@@ -279,7 +283,7 @@ Cargo's ordinary release defaults omit overflow checks. Enabling them makes inte
 
 Cargo cannot set `panic` through a per-package profile override, and test harness behavior does not establish the production executable's panic strategy. Separate component profiles require named builds and artifact identities. Run the exact shipping executables through their fault cases. Rust unwinding must not cross Windows callbacks; `catch_unwind` neither catches abort/all native faults nor makes corrupted state safe to resume. [C08, C09]
 
-Run optimized invariant checks and the actual shipping profile. Keep optimization, LTO, codegen units, CRT selection and stripping decisions measurable. Compare size, CPU, power, precision and regression trajectories before choosing `opt-level="s"`/`"z"`, thin LTO or one codegen unit. Retain matching debugging symbols with a source-path/privacy policy. Do not enable fast-math behavior that invalidates estimator assumptions.
+Run optimized invariant checks and the actual shipping profile. The selected optimization candidate uses `opt-level=3`, thin LTO and one codegen unit; this selection establishes no measured improvement. Section 6.5 defines its trade-offs and qualification limits. Compare size, CPU, power, precision and regression trajectories before retaining a claimed gain or changing to `opt-level="s"`/`"z"`, fat LTO or another codegen-unit count. CRT and stripping choices remain separate. Retain matching debugging symbols with a source-path/privacy policy. Do not enable fast-math behavior that invalidates estimator assumptions.
 
 For optimization tasks, use [the performance optimization skill](../.agents/skills/implementation/optimize-rust-performance/SKILL.md) with [resource QA](../.agents/skills/testing/qa-performance-resources/SKILL.md). Start from a measured cost and owning path, define comparable baseline/candidate identities and a decision rule, attribute the bottleneck, then make and verify a causal change. Preserve raw repeated samples, correctness/hostile-input controls and memory, tail-latency, wakeup and recovery trade-offs. Profiling locates a cause; representative runs establish a claimed improvement. Preserve mandatory validation, checked arithmetic, security settings and bounded native-work custody. Architecture section 17 owns budgets; CHECK-21 and UI-M0 retain their existing applicability. The [measurement reference](../.agents/skills/implementation/optimize-rust-performance/references/measurement.md) documents conditional tools and evidence limits; it installs no profiler or benchmark dependency.
 
@@ -290,6 +294,8 @@ The following target settings are already present in [`.cargo/config.toml`](../.
 ```toml
 [target.x86_64-pc-windows-msvc]
 rustflags = [
+  # Match the pinned target's baseline; do not use the build host's ISA.
+  "-C", "target-cpu=x86-64",
   "-C", "control-flow-guard=yes",
   "-C", "link-arg=/GUARD:CF",
   "-C", "link-arg=/DYNAMICBASE",
@@ -340,6 +346,41 @@ Pair effective process-policy queries with independently observed behavior. The 
 Run native denial/termination tests only in the owned disposable Windows environment of architecture section 14.9, with independent observation, resource/time bounds and cleanup. No test changes the user's clock or global Exploit Protection policy. Audit-first trials apply only to controls with a documented audit mode; an audit event never passes an enforcement case. Preserve UI-M0 deferrals: full production accessibility/IME integration tests run at the existing reentry gates.
 
 Tie records to the complete payload/SBOM and exact package; repeat affected cases when a toolchain, native provider, linked module, startup/hosting path, Windows support matrix or installer policy changes. Use the existing diagnostics and artifact records rather than a new background scanner. Do not copy `+crt-static`, admit held cryptographic providers or add a launcher solely to make a mitigation checklist appear complete.
+
+### 6.5 Windows x64 optimization policy and evidence limits
+
+The selected workspace release candidate is `opt-level=3`, `lto="thin"`, `codegen-units=1` and `incremental=false`; `verify-release` inherits those settings and enables debug assertions. Overflow checks, unwind policy, retained symbols and Windows mitigations remain. Ordinary development retains its incremental workflow. Thin LTO enables cross-crate optimization with less link work than fat LTO; one codegen unit reduces parallel code generation and can increase build time. Neither setting guarantees faster code, and level 3 can be slower than level 2. Compare useful runtime work, startup, tail latency, memory, binary size and build cost on the declared workload before claiming a benefit. No new profile, PGO pipeline or performance result is established here. [C08]
+
+The supplied **Optimized build of the compiler** guide concerns rebuilding `rustc`, including `bootstrap.toml`, its allocator and `opt-dist`; it is not an application build recipe. Its Windows LTO warning links open issue **rust-lang/rust#109114**, checked 29 October 2026: unstable `-Zdylib-lto` with ThinLTO and dynamic Rust-library imports on MSVC. That issue does not establish a general failure of ordinary stable Cargo application ThinLTO. Keep the unstable/dynamic-library experiment outside the selected configuration, and qualify the actual compiler/linker/target/graph rather than assuming either immunity or universal breakage. [C24, C25]
+
+`target-cpu=x86-64` explicitly matches the pinned Rust 1.99.1 MSVC target's base CPU; its target feature baseline remains in force. It does not raise the shipped ISA floor to `x86-64-v2`/`v3` or the build host's `native` CPU. A future higher minimum needs an explicit compatibility decision and supported CPU/OS/VM observations. Application flags do not rebuild the supplied standard library or prebuilt native objects; rebuilding `std` is a separate unstable workflow and is not adopted. [C10, C28]
+
+PGO remains an optional future experiment. Rust's pinned profiler runtime includes Windows/MSVC support, but a selected Windows instrumentation/link/runtime lane and compatible `llvm-profdata` must be admitted and observed. Train the actual Windows executable on representative bounded inputs; retain source, lock/features, complete effective flags, binary/tool identities, workload/seed, raw profiles and merged-profile hash. Use absolute paths, fresh owned profile output and matching generate/use settings; LLVM raw profiles have no forward/backward format guarantee, so prefer tools from the pinned toolchain. Missing/stale profiles or unexecuted training provide no result. [C26]
+
+Preserve the complete hardening flag vector during PGO/CPU experiments: `RUSTFLAGS` or encoded flags replace configured target flags rather than appending automatically. Use a reviewed target-specific configuration or explicitly composed admitted vector, with `--target` separating target flags from host build scripts/proc macros. Ordinary Rust LTO does not automatically provide cross-language LTO for native dependencies; that requires a separately admitted compatible LLVM/native/linker arrangement. [C18, C29]
+
+BOLT's documented inputs are X86-64/AArch64 ELF binaries; this target produces PE/COFF. BOLT is not selected for Windows application binaries. None of these settings closes CHECK-21's native performance/soak evidence, the emitted-image/runtime mitigation checks, or package/release gates. Reuse older receipts only for unchanged inputs; a profile or target-flag change requires fresh affected evidence. [C23, C27]
+
+**Windows DLL-import qualification addendum, 29 October 2026:** The preceding reproducer distinction is not an immunity argument. Open issue **#27438** covers broader Rust/native `dllimport` handling, including native global-data declarations and build-script library selection. Historical **#81408** affected an ordinary Rust executable with cross-crate static data, ThinLTO and LLD. Later changes **#129079** and **#122790** revise that handling; the pinned compiler contains self-import generation and distinguishes regular in-process ThinLTO from linker-plugin LTO. It also retains a Windows regression test that executes binaries built with both `link` and `rust-lld`. Source/test presence is useful evidence, not a local execution of that test, a blanket fix for #27438, or qualification of this application's native graph. [C36]
+
+ThinLTO remains an **unqualified optimization candidate**. Before a Windows release claim, compare `lto="off"` and `"thin"` through relevant native correctness and useful-work cases on the actual compiler/linker/graph; include cross-crate static/string use and reached Windows/CRT import paths, with isolated imported-data controls where that mechanism is being qualified. No Rust DLL in one artifact, successful linking, Linux tests or a different linker alone proves Windows runtime correctness. Turning LTO off does not repair incorrect FFI import declarations, and fat LTO is no presumed workaround. Retain CHECK-19/20/21 and existing native gates without treating this source investigation as a pass. [C36]
+
+### 6.6 LLVM settings for this workload
+
+For the pinned **Rust 1.99.1 / LLVM 23.1.1** Windows x64 toolchain, section 6.5's checked O3/ThinLTO/one-codegen-unit configuration is an **unmeasured optimization candidate**, not a Windows correctness qualification or proof of fastest code. Keep additional `llvm-args` and custom pass lists empty. The pinned compiler enables loop and SLP vectorization at O3 and builds LLVM's normal optimization/LTO pipelines, including their inlining, unrolling and target-cost decisions. This permits legal optimizations; it does not promise every loop will vectorize or every call will inline. [C30]
+
+| Disposition | Setting or family | NevroTick constraint |
+| --- | --- | --- |
+| Recommended default | Selected checked profile; ordinary LLVM pipelines and cost models | Preserve exact timestamp arithmetic, admission, finite-result checks and useful failure paths. Keep the default loop/SLP/inliner/unroll decisions rather than a hand-written pass sequence. [C30] |
+| Recommended default | Windows x64 target ABI, default relocation/code models and section 6.5 CPU baseline | Keep unwind metadata, CFG, ASLR/DEP, symbols and existing linker-warning failures. Do not transplant Unix, kernel, alternate calling-convention or nonrelocatable settings to the application. [C10, C23, C28] |
+| Measurement only | O2 versus O3, LTO/codegen-unit alternatives and the admitted PGO experiment | Use the [performance measurement reference](../.agents/skills/implementation/optimize-rust-performance/references/measurement.md) for bounded candidate comparisons. Require unchanged numerical/hostile-input results and report runtime, tail latency, startup, retained resources, artifact size and build cost; section 6.5's native/release limits remain. |
+| Avoid as blanket tuning | Forced vector widths, interleave/unroll factors, arbitrary inliner thresholds and disabled vectorizers | First identify a real hotspot and inspect the emitted code/remarks. Any narrowly justified experiment must use the exact pinned compiler's supported interface and retain independent numerical checks; no such override is selected. LLVM's cost model already accounts for profitability and code-size/register-pressure trade-offs. [C30, C34] |
+| Avoid | Fast-math, no-NaN/no-infinity assumptions, reassociation, approximate arithmetic and global flush-to-zero/denormals-are-zero changes | These can change numerical behavior or the floating-point environment. Preserve the declared operation, rounding, special-value and subnormal contracts. This is not a claim that FMA is globally disabled: explicitly fused operations and compiler-permitted transformations must be assessed under their actual semantics. [C35] |
+| Avoid as a stable configuration | Removed `-C inline-threshold`, unstable/internal `-Z tune-cpu`, raw LLVM switches and replacement pass pipelines | The pinned option table rejects `inline-threshold`; `tune-cpu` is an unstable option. Raw LLVM arguments/pass names have no general rustc CLI stability guarantee. A copied option name, successful parse or newer manual does not qualify its meaning on the admitted toolchain. [C31] |
+
+For ordinary optimized MSVC-flavor links, the pinned rustc already requests `/OPT:REF,ICF`; unoptimized links request `/OPT:REF,NOICF`. Retained debug information causes `/DEBUG`, which the pinned LLD interprets as a full PDB request. That LLD derives nonincremental linking when REF/ICF are active; Cargo's `incremental=false` separately controls compiler caching. Do not duplicate these flags as a presumed performance improvement. A full PDB packages the information emitted: `debug="limited"` still omits Rust type/variable-level information. ICF can merge function/read-only-data addresses and complicate names/breakpoints; address uniqueness is not a safe identity contract. [C10, C32, C33]
+
+Do not add `/LTCG` as a substitute for Rust LTO or `/DEBUG:FASTLINK` as PDB boilerplate. The pinned LLD warns and substitutes full PDB for FASTLINK, conflicting with `/WX`; native MSVC LTCG and cross-language LLVM LTO have their own input/toolchain requirements. Future native dependencies need their own admitted compiler flags, graph and emitted-object evidence; Rust flags do not retrofit their protections. Record effective inputs and exact artifacts under CHECK-19/20, and retain CHECK-21's separate native performance/soak obligations. This policy adds no code-generation argument, native qualification or performance result. [C17, C29, C32, C33]
 
 ## 7. Dependencies, auditors and supply-chain policy
 
@@ -720,6 +761,19 @@ The sources below are upstream/vendor documentation and source repositories retr
 - **C21:** [Rust unstable sanitizers: CFI](https://doc.rust-lang.org/unstable-book/compiler-flags/sanitizer.html#controlflowintegrity).
 - **C22:** [GetProcessMitigationPolicy](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocessmitigationpolicy).
 - **C23:** [Rust Windows MSVC target support](https://doc.rust-lang.org/rustc/platform-support/windows-msvc.html).
+- **C24:** [Optimized build of the Rust compiler](https://rustc-dev-guide.rust-lang.org/building/optimized-build.html). Compiler-build scope, not an application recipe.
+- **C25:** [Rust issue #109114: unstable dylib ThinLTO on Windows MSVC](https://github.com/rust-lang/rust/issues/109114). Open when checked 29 October 2026; scope and status must be rechecked for dependent changes.
+- **C26:** [Rust PGO workflow](https://doc.rust-lang.org/rustc/profile-guided-optimization.html), [Rust 1.99.1 profiler runtime build](https://github.com/rust-lang/rust/blob/1.99.1/library/profiler_builtins/build.rs), and [LLVM raw profile format/version limits](https://llvm.org/docs/InstrProfileFormat.html#raw-profile-format).
+- **C27:** [BOLT input binary requirements](https://github.com/llvm/llvm-project/blob/main/bolt/README.md#input-binary-requirements).
+- **C28:** [Rust 1.99.1 Windows x64 target source](https://github.com/rust-lang/rust/blob/1.99.1/compiler/rustc_target/src/spec/targets/x86_64_pc_windows_msvc.rs), [LLVM x86 microarchitecture levels](https://clang.llvm.org/docs/UsersManual.html#x86), and [Cargo's separate unstable build-std workflow](https://doc.rust-lang.org/cargo/reference/unstable.html#build-std).
+- **C29:** [Rust cross-language/linker-plugin LTO and Windows toolchain constraints](https://doc.rust-lang.org/rustc/linker-plugin-lto.html).
+- **C30:** Pinned Rust 1.99.1 [vectorization selection](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_ssa/src/back/write.rs#L229-L237), [LLVM optimization inputs](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/back/write.rs#L589-L599), and [default pipeline construction](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_llvm/llvm-wrapper/PassWrapper.cpp#L900-L938).
+- **C31:** Pinned Rust 1.99.1 [removed inline-threshold option](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs#L2242-L2245), [unstable tune-cpu definition](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs#L2922-L2923), and [raw LLVM argument stability limits](https://doc.rust-lang.org/rustc/codegen-options/index.html#llvm-args).
+- **C32:** Pinned Rust 1.99.1 [MSVC-flavor optimization flags](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_ssa/src/back/linker.rs#L1012-L1023), [PDB request](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_ssa/src/back/linker.rs#L1075-L1084), and its pinned LLVM submodule's [PDB handling](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Driver.cpp#L1803-L1831) / [incremental-link default](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Driver.cpp#L2261-L2270).
+- **C33:** Microsoft [COMDAT removal/folding and identity/debugger caveats](https://learn.microsoft.com/en-us/cpp/build/reference/opt-optimizations?view=msvc-170), [PDB modes](https://learn.microsoft.com/en-us/cpp/build/reference/debug-generate-debug-info?view=msvc-170), and [native LTCG input requirements](https://learn.microsoft.com/en-us/cpp/build/reference/ltcg-link-time-code-generation?view=msvc-170).
+- **C34:** LLVM [vectorizer profitability, width and unroll cost models](https://llvm.org/docs/Vectorizers.html).
+- **C35:** LLVM [fast-math flag semantics, including contraction and reassociation](https://llvm.org/docs/LangRef.html#fast-math-flags), and Clang [floating-point and denormal-environment controls](https://clang.llvm.org/docs/UsersManual.html#controlling-floating-point-behavior).
+- **C36:** Broader [Windows dllimport issue #27438](https://github.com/rust-lang/rust/issues/27438), [2024 native-global-data discussion](https://github.com/rust-lang/rust/issues/27438#issuecomment-2360332201), ordinary-application [ThinLTO/LLD issue #81408](https://github.com/rust-lang/rust/issues/81408), later changes [#129079](https://github.com/rust-lang/rust/pull/129079) and [#122790](https://github.com/rust-lang/rust/pull/122790), pinned [import handling](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/consts.rs), [self-import generation](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_ssa/src/back/write.rs#L2294-L2315), and the [native dual-linker regression test](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/tests/run-make/msvc-lld-thinlto-imp-symbols/rmake.rs).
 
 ### Dependency and CI sources
 

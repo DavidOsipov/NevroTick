@@ -15,4 +15,6 @@ Choose requirement-linked faults: sign/unit mistakes, removed current guards, re
 
 Record per-file generated/viable/killed/survived/timed-out/unviable/excluded mutants, actual tests, source identity. Compile failures unviable, not killed. Investigate timeout/survivors; independently justify equivalence/exclusion. Empty selections give no passing score.
 
+For a proposed equivalence, use [boundary-domain proof](../references/mutation-equivalence.md). Distinguish the mutated helper's admitted inputs from values reachable through today's checked callers; retain a concrete witness or a source-bound argument over outputs, errors and effects.
+
 Preserve **95% score per critical file** release obligation; focused trial/favorable aggregate cannot satisfy unrun full manifest. Bound workers/time; retain first failures. Unsupported Windows mutation paths remain visible gate gap; retain critical scope.

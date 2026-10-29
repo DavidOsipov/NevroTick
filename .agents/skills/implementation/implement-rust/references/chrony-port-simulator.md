@@ -46,12 +46,34 @@ when choosing another slice/pin.
 
 | Pinned primary source | Candidate boundary and translation trap |
 | --- | --- |
-| [regress.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c), `RGR_WeightedRegression` | Record whether a parameter is a variance divisor or precision. This function divides by `w`; larger values reduce influence. Preserve the estimator's sample-count and denominator preconditions. |
+| [regress.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c), `RGR_WeightedRegression`, `RGR_FindBestRegression` | Both use inverse-divisor equations; larger `w` reduces influence. The source-statistics caller uses `RGR_FindBestRegression`, whose runs/start-index/statistics behavior exceeds a coefficient kernel. Preserve the actual caller's preconditions. |
 | [sourcestats.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sourcestats.c), `SST_DoNewRegression`, `SST_GetSelectionData`, `SST_SlewSamples` | Bound history, retain aging/pruning and uncertainty semantics, and account for coordinate changes caused by applied corrections. |
 | [sources.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c), `SRC_SelectSource`, `combine_sources` | Separate eligibility/majority, principal hysteresis and supporter compatibility. Offset weighting uses inverse root distance; frequency weighting uses inverse squared frequency standard deviation. |
 | [reference.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c), `REF_SetReference` | Separate oscillator learning, phase error and abstract correction decisions; preserve relevant elapsed-time and uncertainty semantics. |
 | [local.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/local.c), `LCL_AccumulateFrequencyAndOffset` | Map requested versus driver-returned frequency and sample-coordinate notifications into explicit domain events. |
 | [sys_generic.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sys_generic.c), `update_slew`, `apply_step_offset` | Learn from achieved-correction accounting, not Unix calls/constants. Its step-offset convention must be mapped explicitly to NevroTick's positive-behind convention. |
+
+The table locates candidate bodies; it does not establish the active call path.
+Before translating one, extract this compact record from pinned source into the
+existing port ledger/task:
+
+| Follow the real path | Record the boundary that could change the port |
+| --- | --- |
+| Entry, caller and configuration branch → chosen body/helpers | Actual invocations and conditions, including alternate algorithms; a similar function name is insufficient |
+| Caller preparation → algorithm input | Unit/sign/reference transformations, weight meaning, filtering, source-quality policy and implicit clock/global inputs |
+| Owned state → temporary/auxiliary storage | Current and historical windows, scratch and aggregate bounds, preconditions hidden in array offsets or caller guards |
+| Success/failure → mutation and consumer | When pruning/reset/publication happens, partial changes, result/statistic units and downstream interpretation |
+| Retained versus omitted behavior → local owner | Explicit adaptation, required independent expectation and unresolved prerequisite; a helper-only port cannot claim its callers' behavior |
+
+For example, the pinned path is `SST_DoNewRegression → RGR_FindBestRegression`.
+The caller derives weights and corrects asymmetry; `convert_to_intervals` uses
+the newest sample, while `SST_AccumulateSample` stores the negated NTP offset.
+Map both coefficient signs at the local boundary. Inspect runs-test auxiliary
+history and success-dependent pruning separately from the small fit. Upstream
+accumulation resets on duplicate/out-of-order time; local raw-input rejection
+must preserve healthy state under the canonical contract. Record that divergence
+instead of copying the reset. These source observations adopt no additional
+history capacity, source-quality constants or uncertainty policy.
 
 The inspected file headers grant GPL version 2 without an “or later” grant.
 Preserve the actual source notices in the implementation/provenance artifacts;
@@ -79,6 +101,11 @@ Define the pure contract before porting:
   the scenario and contract before seeing candidate output. Exercise just below,
   exactly at and just above each relevant adopted boundary in representable units.
 
+For floating-point kernels or conversions, apply the
+[numerical procedure](numerical-kernels.md): derive independent exact facts and
+separate rounded controls, conditioning/range limits and reachable failures.
+Task-specific thresholds and exact-result promises stay with the adopting API.
+
 ## Build independent facts before the port
 
 Use [numerical truth](../../../testing/references/numerical-protocol.md) and existing
@@ -94,11 +121,9 @@ Useful small analytic fixtures, selected only when relevant to the slice:
   `+20 ms`, network round-trip delay `100 ms`. Change only paths to `20/80 ms`:
   `T2=40, T3=50` gives estimated offset `-10 ms`, delay `100 ms`, bias `-30 ms`
   relative to the same truth. Authentication cannot remove this physical bias.
-- For a regression boundary using variance divisors, independently solve the
-  weighted normal equations for `x=(-1,0,1) s`, `y=(-1,0,3) ms`,
-  `w=(1,1,4)`: intercept at `x=0` is `4/9 ms`, slope `5/3 ms/s`. Contrast an
-  exact straight line and equal-weight control. This checks weight direction;
-  history selection, skew and uncertainty require their own expectations.
+- For regression, use the [worked independent coefficient facts](numerical-kernels.md#worked-independent-coefficient-facts)
+  to distinguish variance divisors from precision multipliers, then add the
+  actual caller's sign/reference, history, skew and uncertainty expectations.
 - Give sources explicit offset intervals and distinct logical identities. Derive
   majority/absence of majority on paper, then add an endpoint alias that must not
   gain a vote. Compare the configured minimum independently of majority. Include

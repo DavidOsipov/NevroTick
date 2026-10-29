@@ -73,6 +73,33 @@ class GuardTests(unittest.TestCase):
             ENV.require_test_count("test result: ok. 0 passed; 0 failed; 0 ignored;", 2, "unit")
         ENV.require_test_count("test result: ok. 2 passed; 0 failed; 0 ignored;", 2, "unit")
 
+    def test_cpu_floor_and_mitigations_are_admitted_together(self):
+        flags = ["-C", "target-cpu=x86-64", "-C", "control-flow-guard=yes",
+                 "-C", "link-arg=/GUARD:CF", "-C", "link-arg=/DYNAMICBASE",
+                 "-C", "link-arg=/HIGHENTROPYVA", "-C", "link-arg=/NXCOMPAT",
+                 "-C", "link-arg=/WX"]
+        variants = [("healthy", flags, "Missing reviewed policy/tool-manifest.json")]
+        variants += [(cpu, [value.replace("target-cpu=x86-64", "target-cpu=" + cpu)
+                             for value in flags], "differs from the admitted")
+                     for cpu in ("native", "x86-64-v2", "x86-64-v3")]
+        variants.append(("missing CPU", flags[2:], "differs from the admitted"))
+        for offset in range(2, len(flags), 2):
+            variants.append(("missing " + flags[offset + 1],
+                             flags[:offset] + flags[offset + 2:], "differs from the admitted"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "rust-toolchain.toml").write_text(
+                '[toolchain]\nchannel="1.99.1"\nprofile="minimal"\n'
+                'components=["clippy","rustfmt","rust-analyzer","rust-src","llvm-tools-preview"]\n'
+                'targets=["x86_64-pc-windows-msvc"]\n')
+            (root / ".cargo").mkdir()
+            for name, candidate, diagnostic in variants:
+                (root / ".cargo/config.toml").write_text(
+                    '[target.x86_64-pc-windows-msvc]\nrustflags=' + json.dumps(candidate) + '\n')
+                with self.subTest(case=name), patch.dict(os.environ, {}, clear=True):
+                    with self.assertRaisesRegex(ENV.Incomplete, diagnostic):
+                        ENV.inspect(root)
+
 
 class ProcessTests(unittest.TestCase):
     def test_completed_command_without_descendants_is_a_healthy_control(self):

@@ -57,6 +57,16 @@ Implement at the real owner:
    Invalid input has no protected effect; ambiguous outcomes do not justify an
    automatic repeated operation.
 
+For history, cookie, pending-request or configuration replacement, use the
+[failure-atomic state-update example](references/contract-enforcement.md#prepare-and-commit-owned-state)
+to locate the commit point and rejection observations. Stage bounded results
+before changing live state; preserve current-context checks at publication.
+
+For error types/conversions, validation-error payloads or failure/recovery changes,
+apply [error handling](../implement-rust/references/error-handling.md): preserve
+typed causes under their privacy/resource contract, map only permitted bounded
+fields to public errors/events, and verify failure atomicity at the actual owner.
+
 Before edits, identify detecting check and valid neighboring control. Verify actual
 raw adapter/checked-output consumer, constructor non-bypassability, exact integer
 round trips, post-transform bounds and failure atomicity. Use

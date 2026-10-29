@@ -5,6 +5,26 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Numerical and state-update procedures — 30 October 2026
+
+The [numerical procedure](implement-rust/references/numerical-kernels.md) extends
+the existing Chrony recipe with independent exact and ordered floating-point
+controls, conditioning and contract-specific error behavior. Primary references
+remain [Rust f64 arithmetic and mul_add](https://doc.rust-lang.org/std/primitive.f64.html#method.mul_add)
+and pinned Chrony
+[regress.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c) /
+[sourcestats.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sourcestats.c).
+Caller findings and corrected arithmetic proposals in
+[S1.2](../../../tasks/s1.2-regression-readiness.md) motivate the method without
+adopting its synthetic thresholds as product policy. No upstream code is copied.
+
+The [state-update example](implement-rust-contracts/references/contract-enforcement.md#prepare-and-commit-owned-state)
+operationalizes existing architecture §6 failure-atomicity requirements and the
+current exchange owner's staged event. It distinguishes synchronous ownership,
+context invalidation and irreversible external effects. These are original local
+instruction changes; their checks are recorded in
+[the skill-quality task](../../plans/2026-10-30-skill-quality.md), not product qualification.
+
 ## Website source mapping
 
 Source root: `/home/david_osipov/personal-website-templated-1/.agents/implementation/`.
@@ -51,6 +71,29 @@ are dated observations, not pinned artifacts or claims of latest NevroTick depen
 Connected GitHub retrieved serde-rs/json source. windows-rs README file fetches
 returned 404; conclusions rely on none. Microsoft docs/local architecture support
 Win32/UIA guidance. Installed no fallback package/tool.
+
+## Error handling and safe diagnostics
+
+Reviewed 30 October 2026 for the original
+[implementation procedure](implement-rust/references/error-handling.md). Local
+architecture §§3.4, 6.5, 12.3 and 18.1 and hardening §9.8 control ownership,
+privacy and qualification. External recommendations do not adopt libraries,
+centralize domain policy, freeze proposed limits or qualify runtime behavior.
+No upstream implementation or example code was copied into the reference.
+
+| Primary evidence | Finding used |
+| --- | --- |
+| [Rust `Error`](https://doc.rust-lang.org/std/error/trait.Error.html) and [API Guidelines C-GOOD-ERR](https://rust-lang.github.io/api-guidelines/interoperability.html#c-good-err) | Specific errors retain actionable meaning; `source()` preserves a cause across abstractions, not permission to emit it; avoid duplicating the cause in `Display` and the chain |
+| [thiserror documentation](https://docs.rs/thiserror/latest/thiserror/), [pinned expansion](https://github.com/dtolnay/thiserror/blob/3b29f0107e7900860c7a061c069958569eb458e7/impl/src/expand.rs#L36-L69) and [transparent-error tests](https://github.com/dtolnay/thiserror/blob/3b29f0107e7900860c7a061c069958569eb458e7/tests/test_transparent.rs#L33-L48) | Ordinary typed error implementations; `from` implies source; transparent wrappers forward behavior and are not privacy barriers. Context7 documentation checked against project source |
+| [anyhow formatting](https://github.com/dtolnay/anyhow/blob/bb1b0f9af0f645d5fdf1ac63a1fcbf3975ee452c/src/fmt.rs#L7-L65) and [formatting contract](https://github.com/dtolnay/anyhow/blob/bb1b0f9af0f645d5fdf1ac63a1fcbf3975ee452c/src/lib.rs#L526-L540) | Alternate Display and Debug can expose causes/backtraces/inner Debug; context can preserve downcasting but does not establish safe output |
+| [Microsoft GetLastError](https://learn.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-getlasterror), [windows-rs 0.62.2 error implementation](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/result/src/error.rs#L117-L138), [HRESULT](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/result/src/hresult.rs#L10-L39) and [BOOL](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/result/src/bool.rs#L16-L23) | Capture only the documented error convention immediately; preserve meaningful success statuses. Native message formatting may use attached error information; generic wrappers cannot decide each API's semantics |
+| [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html#event-collection) | Shared event handling, sensitive-field exclusion, injection-resistant encoding and logging-failure checks; NevroTick's producer-side typed policy remains authoritative |
+| [AWS timeouts, retries and backoff](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) and [Tokio spawn_blocking](https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html) | Retry at a bounded owner with effect/idempotency knowledge; timeout does not prove absence of effects, and started blocking work cannot be aborted by its handle |
+| [Rust catch_unwind](https://doc.rust-lang.org/std/panic/fn.catch_unwind.html) and [File](https://doc.rust-lang.org/std/fs/struct.File.html) | Catching handles only unwinding after the panic hook; File Drop ignores close errors. Required error observation needs explicit fallible completion; neither mechanism proves recovery or crash durability |
+
+Pinned revisions identify inspected upstream evidence, not a selected NevroTick
+Cargo graph. Rolling documentation must be reconciled with the actual locked
+versions/features before implementation. The adapted leaves retain their notices.
 
 ## Prior Rust port supplied by the user
 

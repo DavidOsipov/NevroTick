@@ -58,9 +58,12 @@ all = { level = "deny", priority = -1 }
 broken_intra_doc_links = "deny"
 private_intra_doc_links = "deny"
 
-# Qualification baseline, not a selected shipping component fault policy.
-# Keep arithmetic checks in optimized code and retain matching debug symbols.
+# Admitted runtime-optimization candidate; synchronize Cargo.toml and the strict
+# checker. Benefits require measurements; preserve guards, unwind and symbols.
 [profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
 overflow-checks = true
 debug-assertions = false
 panic = "unwind"

@@ -19,6 +19,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-black-box-acceptance](qa-black-box-acceptance/SKILL.md) | Independently assess a frozen NevroTick candidate against known input and output facts after system stabilization or when input-to-output acceptance is requested. |
 | [qa-final-qualification](qa-final-qualification/SKILL.md) | Assess final NevroTick verification evidence against a declared scope and exact candidate without promoting plans, skips or host checks into release passes. |
 | [qa-pre-commit](qa-pre-commit/SKILL.md) | Review or prepare NevroTick staged content with preserved user staging and verification tied to the complete intended Git candidate. |
+| [qa-skill-evaluations](qa-skill-evaluations/SKILL.md) | Evaluate material skill changes using isolated agent tasks, independent graders and observable code/test outcomes. |
 
 ## Choose a behavior/evidence layer
 
@@ -57,8 +58,11 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 ## Conditional shared references
 
 - [Configured tool execution](references/configured-tooling.md) when selecting existing compiler/lint/test, dependency, workflow/security, coverage/mutation or SBOM entry points. Its additional-analysis section routes Miri, cargo-fuzz, Loom, Kani, Lockbud and cargo-vet by the changed guarantee; tool controls and product harnesses remain separate evidence.
-- [CodeQL data-flow analysis](references/codeql-data-flow.md) for local MCP readiness, exact Rust database/query models, source-to-sink controls and extraction/native coverage gaps. Local analysis does not enable deferred hosted scanning.
+- [CodeQL data-flow analysis](references/codeql-data-flow.md) for local MCP readiness, extraction scope and trace evidence; [the Rust query recipe](references/codeql-rust-query.md) for pinned APIs, source/sink selection, path queries, missing-flow diagnostics and sensitivity controls. Local analysis does not enable deferred hosted scanning.
 - [Numerical, NTP/NTS and strict contract truth](references/numerical-protocol.md) for analytic or byte-level oracles, domain construction and input-to-effect obligations.
+- [Harness qualification](references/harness-qualification.md) for actual-input binding, comparator sensitivity and failure propagation.
+- [Mutation equivalence](references/mutation-equivalence.md) for a surviving mutant's boundary-specific domain and effect proof.
+- [Campaign budgeting](references/campaign-budget.md) for aggregate work across profiles, repaired candidates, fault controls and retries.
 - [Windows evidence](references/windows-evidence.md) for native tokens/IPC/clock/SCM, complete MSI lifecycle, UIA/Narrator and DPI proof.
 - [Windows memory diagnostics](references/windows-memory.md) for Application Verifier, GFlags/PageHeap and CDB on owned native executables. Select fault detection separately from repeated allocation, handle, GUI-object and task-retention measurements; include profile restoration in the run.
 - [Performance measurement](../implementation/optimize-rust-performance/references/measurement.md) for representative profiler/benchmark selection and comparable before/after samples. Use [performance optimization](../implementation/optimize-rust-performance/SKILL.md) when the task also authorizes changing the measured bottleneck.
@@ -68,3 +72,8 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 ## Maintenance
 
 Keep one shared-guidance copy/valid leaf-relative links. Use root skills router pack checker/metadata validation for structure/discovery claims. For material instruction changes, exercise representative requests/raw requirements; assess observed choice/evidence, including valid controls/unavailable capabilities. Structural checks prove no task-selection quality, native host discovery or application behavior. Do not copy website Node/Vitest wrappers or proposed PdfCraft xtask commands.
+
+Use [skill evaluations](qa-skill-evaluations/SKILL.md) for the repeatable procedure
+and its isolated Rust exercise. Keep grader expectations separate from task-agent
+inputs and grade actual artifacts; distinguish a demonstrated exercise from a
+measured improvement across comparable old/new instruction trials.

@@ -1,0 +1,16 @@
+[package]
+name = "ntp-exchange"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pure single-slot NevroTick fixture exchange association"
+
+[dependencies]
+ntp-wire = { version = "=0.0.0", path = "../ntp-wire" }
+time-domain = { version = "=0.0.0", path = "../time-domain" }
+
+[lints]
+workspace = true

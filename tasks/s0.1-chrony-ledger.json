@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "status": "source review only; no code or complete dependency graph admitted",
+  "review_date": "2026-10-29",
+  "project": "Chrony",
+  "reference_version": "4.9",
+  "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
+  "starting_nevrotick_head": "234c4fd082cc2907bb2da69d959aeb3820728527",
+  "raw_evidence_directory": "/home/david_osipov/.local/share/nevrotick/s0.1-source-20261029T122217Z",
+  "source_obtained_via": "connected GitHub public immutable file reads; SHA-256 of retained UTF-8 bytes",
+  "notice_obligation": "Preserve each selected original copyright, GPL-2.0-only grant/disclaimer, modification provenance and corresponding-source/build obligations in any future translation. Context files are not automatically admitted imports.",
+  "files": [
+    {
+      "path": "ntp.h",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp.h",
+      "sha256": "8a398152373c84736d3d77394661996d5194dbfc1f79ec8859a6660b5b6762ae",
+      "bytes": 5598,
+      "selected_symbols_or_context": "wire header/types and sample sign",
+      "proposed_destination": "ntp-wire/header; time-domain observations",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "ntp_core.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_core.c",
+      "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0",
+      "bytes": 115496,
+      "selected_symbols_or_context": "parse_packet; process_response; NCR_ProcessRxKnown; send_packet",
+      "proposed_destination": "ntp-wire parsing; engine admission; later time-core",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2009-2024"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "ntp_ext.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_ext.c",
+      "sha256": "c47ee6d4b78263da319d26bceb68dccf78a93f5be5a94d561e153b68af37c2cb",
+      "bytes": 5202,
+      "selected_symbols_or_context": "NEF_ParseSingleField; NEF_ParseField",
+      "proposed_destination": "ntp-wire/extension",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2019-2020"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "ntp_auth.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_auth.c",
+      "sha256": "b22f29ec98a42c63917fbc985dff21d2151f2e95a7525b78c2baf13626392574",
+      "bytes": 10062,
+      "selected_symbols_or_context": "NAU_CheckResponseAuth",
+      "proposed_destination": "engine authentication profile dispatch",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2019-2020"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "nts_ntp_client.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/nts_ntp_client.c",
+      "sha256": "f4e51bf8f1115ff745a661dbd22e4665071764cbf6149481c859481e07fccae0",
+      "bytes": 20978,
+      "selected_symbols_or_context": "NNC_CheckResponseAuth; extract_cookies; NNC_ChangeAddress",
+      "proposed_destination": "nts-client staged response and association owner",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2020"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "nts_ntp_auth.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/nts_ntp_auth.c",
+      "sha256": "c73ccc4629797f3787edc529a2921f6ee28eb03234cd1717ee3b2ea3d440dcd7",
+      "bytes": 5897,
+      "selected_symbols_or_context": "NNA_DecryptAuthEF",
+      "proposed_destination": "nts-client authenticated extension adapter",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2020"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "ntp_io.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_io.c",
+      "sha256": "538a626b6c9b512539aba2b61360d6fbf99204cfb8d657f907b489be1d610a75",
+      "bytes": 18282,
+      "selected_symbols_or_context": "process_message -> NSR_ProcessRx",
+      "proposed_destination": "engine transport byte admission",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Timo Teras  2009",
+        "Copyright (C) Miroslav Lichvar  2009, 2013-2016, 2018-2021"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "ntp_sources.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_sources.c",
+      "sha256": "c272f644d8734b6087d8f8d008cb6a9c481a480946dde229d82e2c451fdb2e1f",
+      "bytes": 43559,
+      "selected_symbols_or_context": "NSR_ProcessRx -> NCR_ProcessRxKnown",
+      "proposed_destination": "engine source/endpoint and generation owner",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2011-2012, 2014, 2016, 2020-2024"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "util.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/util.c",
+      "sha256": "c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd",
+      "bytes": 37599,
+      "selected_symbols_or_context": "UTI_TimespecToNtp64; UTI_Ntp64ToTimespec; UTI_DiffNtp64ToDouble",
+      "proposed_destination": "time-domain exact timestamp conversion; no copied implicit era pivot",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2009, 2012-2023"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "util.h",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/util.h",
+      "sha256": "845633dc8bf74f2e94456d389123ee495228af90940500ab8e35eaaa5e1f3093",
+      "bytes": 12191,
+      "selected_symbols_or_context": "utility declarations",
+      "proposed_destination": "type/caller context only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "ntp_core.h",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_core.h",
+      "sha256": "b31418f7426f1f72783de7012127037f27f3c4430dadc7afeff65ca25414977c",
+      "bytes": 5612,
+      "selected_symbols_or_context": "NTP_Local_Timestamp and receive API",
+      "proposed_destination": "type/caller context only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2002"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "hash.h",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/hash.h",
+      "sha256": "602f802ac5218234b5e383ee061575653141db8992004a4ee57849d64596e075",
+      "bytes": 1703,
+      "selected_symbols_or_context": "MAX_HASH_LENGTH",
+      "proposed_destination": "upstream bound context only; no legacy MAC implementation selected",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2012"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "configure",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/configure",
+      "sha256": "2e1ce8d71ed7712dd0281521c41e73c73659872ca66889e8e0824b929d8b61ec",
+      "bytes": 33780,
+      "selected_symbols_or_context": "NTP_ERA_SPLIT build derivation",
+      "proposed_destination": "era evidence only; no build executed",
+      "copyright_notices": [
+        "# Copyright (C) Richard P. Curnow  1997-2003",
+        "# Copyright (C) Bryan Christianson  2016",
+        "# Copyright (C) Miroslav Lichvar  2009, 2012-2022",
+        "# Copyright (C) Stefan R. Filipek  2019"
+      ],
+      "header_grant": "not determined by this file header; context only",
+      "code_imported": false
+    },
+    {
+      "path": "COPYING",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/COPYING",
+      "sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "bytes": 17987,
+      "selected_symbols_or_context": "upstream GPL text",
+      "proposed_destination": "notice/corresponding-source obligations; not replacement file grant",
+      "copyright_notices": [
+        "Copyright (C) 1989, 1991 Free Software Foundation, Inc.,",
+        "Copyright (C) <year>  <name of author>",
+        "Gnomovision version 69, Copyright (C) year name of author"
+      ],
+      "header_grant": "not determined by this file header; context only",
+      "code_imported": false
+    },
+    {
+      "path": "NEWS",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/NEWS",
+      "sha256": "0dcdbe1ae44fc75544ceba7f2516a6736486c9c78ffbf50e9afc7bb789c536d8",
+      "bytes": 42851,
+      "selected_symbols_or_context": "4.9 retained change descriptions",
+      "proposed_destination": "monitoring context only",
+      "copyright_notices": [],
+      "header_grant": "not determined by this file header; context only",
+      "code_imported": false
+    },
+    {
+      "path": "test/unit/ntp_core.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/test/unit/ntp_core.c",
+      "sha256": "d17f6c7d246110f9d43ff2e49d5eec348d6e610700234c75b1174c994f6b4708",
+      "bytes": 20100,
+      "selected_symbols_or_context": "packet classification tests near lines594-630",
+      "proposed_destination": "supplemental upstream tests, not independent oracle",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2017-2018, 2023"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    },
+    {
+      "path": "test/unit/ntp_ext.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/test/unit/ntp_ext.c",
+      "sha256": "d416d46a7b0c8eb9253a2ebe6de5890a64e22850dee40b41983f040f1b66df19",
+      "bytes": 6559,
+      "selected_symbols_or_context": "extension framing bounds and randomized loops",
+      "proposed_destination": "supplemental upstream tests, not executed",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar  2020"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
+    }
+  ],
+  "local_adaptations": [
+    {
+      "task": "S1.1d",
+      "status": "pure association implemented; private-candidate verification in progress; shared build-policy integration pending",
+      "destination": "crates/ntp-exchange",
+      "provenance": "crates/ntp-exchange/PROVENANCE.md",
+      "task_record": "tasks/s1.1-exchange-association.md",
+      "selected_source_files": [
+        "ntp_core.c",
+        "ntp_sources.c",
+        "ntp_io.c"
+      ],
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "implementation_candidate": "98e854f8d3c1d26344d5557458804d9e51fd4f62e1fc019c3212a1512a682ea8",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s11d-20261029T182349Z",
+      "deliberate_deviations": [
+        "explicit unauthenticated 48-byte single-slot fixture with caller-asserted typed binding/generations/monotonic facts",
+        "every fully correlated stratum-zero packet consumes once as opaque control regardless of LI or peer timestamps; no RATE/scheduler behavior",
+        "saved real local T1 distinct from token; exact Q32/Q33 arithmetic and explicit numeric era windows; no source/sample/authentication/clock authority"
+      ]
+    }
+  ]
+}

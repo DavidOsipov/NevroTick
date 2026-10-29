@@ -11,6 +11,14 @@ Prefer qualified Authenticode; OD-05 permits an initial OpenPGP profile if a usa
 
 For build policy read proposed [development-hardening guide](../../../../docs/windows-time-development-hardening.md); for provider onboarding, signing scope/order and publisher verification read [signing guide](../../../../docs/windows-time-signing-guide.md). Research/proposed steps prove no adopted enforcement, provider approval, production signing or clean-machine verification. Submission, signing and publication retain task authorization/protected approval owner.
 
+For profile, CPU, LTO or PGO changes, read the
+[Windows build guidance](../../implementation/optimize-rust-performance/references/measurement.md#build-optimization-and-windows-x64).
+Preserve the admitted CPU floor, arithmetic/fault policy, symbols and complete
+mitigation flags. Explicit setting preparation establishes no measured gain.
+Admit PGO training/profile custody separately; Rust LTO admits no cross-language
+LTO or BOLT PE lane. Rebuilds invalidate affected artifact/signature evidence:
+reinspect the final PE and bind package/signing records to its exact bytes.
+
 For packaged event-provider resources/channels or product Firewall/WFP policy, read [Windows host integration](../references/windows-host-integration.md): immutable payload/installed-resource receipts, actual service access/traffic observations, ownership-aware rollback/repair/removal.
 
 1. Trace source/config/lockfile/features/toolchain → host build scripts/proc macros/native tools → linked Windows binaries → complete MSI → profile-authenticated final artifact → installed services/UI/helper. Keep exact identities/qualification for delivered candidate. `Cargo.lock` stays versionable; `target/` excluded. Lockfile reproducibility proves no origin trust or sandboxing.

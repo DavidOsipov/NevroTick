@@ -68,6 +68,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ntp-exchange"
+version = "0.0.0"
+dependencies = [
+ "ntp-wire",
+ "time-domain",
+]
+
+[[package]]
+name = "ntp-wire"
+version = "0.0.0"
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -118,6 +130,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "time-domain"
+version = "0.0.0"
+dependencies = [
+ "garde",
 ]
 
 [[package]]

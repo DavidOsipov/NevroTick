@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "status": "independent fixture specifications, not production test results",
+  "requirement_ids": [
+    "CHECK-6",
+    "CHECK-7",
+    "CHECK-25"
+  ],
+  "entry_points": {
+    "fixed_header": "proposed ntp-wire::decode_fixed_header(&[u8]) -> Result<RawHeader, HeaderError>; exactly 48 bytes; inert output only",
+    "future_exchange": "proposed engine admission -> staged observation/association commit; API and full bounds not yet frozen"
+  },
+  "encoding": "network byte order; NTP seconds/fraction Q32.32; timestamps kept exact; positive offset means local clock behind",
+  "provenance": "literal independent RFC5905 four-timestamp construction, not output from Chrony or ntpd-rs; reviewed by protocol_comparison",
+  "default_context": {
+    "profile": "explicit_plain_ntp_fixture",
+    "source_id": "fixture-A",
+    "endpoint": "192.0.2.1:123",
+    "local_socket_id": "fixture-socket-1",
+    "configuration_generation": 1,
+    "association_generation": 1,
+    "clock_generation": 1,
+    "outstanding_request_id": "request-1",
+    "wire_origin_hex": "e000000000000000",
+    "real_t1_hex": "e000000000000000",
+    "local_t4_hex": "e00000001c28f5c2",
+    "era_anchor": "fixture-only explicit era 0 for all four timestamps",
+    "prior_accepted_response": false,
+    "received_endpoint": "192.0.2.1:123",
+    "received_socket_id": "fixture-socket-1",
+    "received_source_id": "fixture-A",
+    "current_configuration_generation": 1,
+    "current_association_generation": 1,
+    "current_clock_generation": 1,
+    "monotonic_send_us": 1000000,
+    "monotonic_receive_us": 1110000,
+    "monotonic_deadline_us": 2000000
+  },
+  "cases": [
+    {
+      "id": "ordinary-symmetric",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "one_unauthenticated_observation",
+      "independent_arithmetic": {
+        "offset_seconds_numerator": 171798691,
+        "offset_seconds_denominator": 8589934592,
+        "signed_rtt_seconds_numerator": 429496729,
+        "signed_rtt_seconds_denominator": 4294967296,
+        "ideal_offset_ms": "20",
+        "ideal_rtt_ms": "100",
+        "meaning": "Exact Q32 wire result differs from ideal analytic decimal milliseconds. This is not precision-adjusted statistical admission."
+      },
+      "expected_raw_header_overrides": {}
+    },
+    {
+      "id": "asymmetric-path",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e00000000ccccccce00000000f5c28f5",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "one_unauthenticated_observation",
+      "independent_arithmetic": {
+        "offset_seconds_numerator": -1,
+        "offset_seconds_denominator": 8589934592,
+        "signed_rtt_seconds_numerator": 429496729,
+        "signed_rtt_seconds_denominator": 4294967296,
+        "ideal_offset_ms": "0",
+        "ideal_rtt_ms": "100",
+        "true_server_offset_ms": "20",
+        "path_delay_ms": {
+          "forward": 30,
+          "reverse": 70
+        },
+        "processing_ms": 10
+      },
+      "expected_raw_header_overrides": {
+        "receive_timestamp_hex": "e00000000ccccccc",
+        "transmit_timestamp_hex": "e00000000f5c28f5"
+      }
+    },
+    {
+      "id": "randomized-wire-token",
+      "packet_hex": "240206ec000000000000000047505300dfffffff000000000102030405060708e000000011eb851ee0000000147ae147",
+      "context_overrides": {
+        "wire_origin_hex": "0102030405060708"
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "one_unauthenticated_observation",
+      "independent_arithmetic": {
+        "offset_seconds_numerator": 171798691,
+        "offset_seconds_denominator": 8589934592,
+        "signed_rtt_seconds_numerator": 429496729,
+        "signed_rtt_seconds_denominator": 4294967296,
+        "ideal_offset_ms": "20",
+        "ideal_rtt_ms": "100",
+        "meaning": "Exact Q32 wire result differs from ideal analytic decimal milliseconds. This is not precision-adjusted statistical admission."
+      },
+      "expected_raw_header_overrides": {
+        "origin_timestamp_hex": "0102030405060708"
+      }
+    },
+    {
+      "id": "truncated-47",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae1",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "reject_length",
+      "expected_future_exchange_admission": "not_reached"
+    },
+    {
+      "id": "header-only-over-49",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae14700",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "reject_length",
+      "expected_future_exchange_admission": "not_reached"
+    },
+    {
+      "id": "client-mode",
+      "packet_hex": "230206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_mode",
+      "expected_raw_header_overrides": {
+        "mode": 3
+      }
+    },
+    {
+      "id": "old-version",
+      "packet_hex": "1c0206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_selected_v4_profile",
+      "expected_raw_header_overrides": {
+        "version": 3
+      }
+    },
+    {
+      "id": "unsynchronized-leap",
+      "packet_hex": "e40206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_sample",
+      "expected_raw_header_overrides": {
+        "leap": 3
+      }
+    },
+    {
+      "id": "stratum-16",
+      "packet_hex": "241006ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_sample",
+      "expected_raw_header_overrides": {
+        "stratum": 16
+      }
+    },
+    {
+      "id": "kod-rate",
+      "packet_hex": "240006ec000000000000000052415445dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "control_only_no_time_sample",
+      "expected_raw_header_overrides": {
+        "stratum": 0,
+        "reference_id_hex": "52415445"
+      }
+    },
+    {
+      "id": "zero-receive",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e0000000000000000000000000000000e0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_sample",
+      "expected_raw_header_overrides": {
+        "receive_timestamp_hex": "0000000000000000"
+      }
+    },
+    {
+      "id": "wrong-origin",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000001e000000011eb851ee0000000147ae147",
+      "context_overrides": {},
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_correlation",
+      "expected_raw_header_overrides": {
+        "origin_timestamp_hex": "e000000000000001"
+      }
+    },
+    {
+      "id": "second-response-same-request",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {
+        "prior_accepted_response": true
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_replay",
+      "expected_raw_header_overrides": {}
+    },
+    {
+      "id": "wrong-endpoint",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {
+        "received_endpoint": "192.0.2.2:123"
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_endpoint",
+      "expected_raw_header_overrides": {}
+    },
+    {
+      "id": "stale-association",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {
+        "current_association_generation": 2
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_generation",
+      "expected_raw_header_overrides": {}
+    },
+    {
+      "id": "clock-discontinuity",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000e000000000000000e000000011eb851ee0000000147ae147",
+      "context_overrides": {
+        "current_clock_generation": 2
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "reject_clock_continuity",
+      "expected_raw_header_overrides": {}
+    },
+    {
+      "id": "era-rollover-explicit",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000fffffffff800000000000000080000000000000018000000",
+      "context_overrides": {
+        "wire_origin_hex": "fffffffff8000000",
+        "real_t1_hex": "fffffffff8000000",
+        "local_t4_hex": "0000000028000000",
+        "era_anchor": "fixture-only explicit unfolded eras T1=0,T2=1,T3=1,T4=1",
+        "monotonic_receive_us": 1187500
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "requires_approved_era_policy",
+      "independent_arithmetic": {
+        "offset_seconds_numerator": 0,
+        "offset_seconds_denominator": 1,
+        "signed_rtt_seconds_numerator": 1,
+        "signed_rtt_seconds_denominator": 8
+      },
+      "expected_raw_header_overrides": {
+        "origin_timestamp_hex": "fffffffff8000000",
+        "receive_timestamp_hex": "0000000008000000",
+        "transmit_timestamp_hex": "0000000018000000"
+      }
+    },
+    {
+      "id": "era-rollover-ambiguous",
+      "packet_hex": "240206ec000000000000000047505300dfffffff00000000fffffffff800000000000000080000000000000018000000",
+      "context_overrides": {
+        "wire_origin_hex": "fffffffff8000000",
+        "real_t1_hex": "fffffffff8000000",
+        "local_t4_hex": "0000000028000000",
+        "era_anchor": null,
+        "monotonic_receive_us": 1187500
+      },
+      "expected_fixed_header_decode": "decoded",
+      "expected_future_exchange_admission": "blocked_ambiguous_era",
+      "expected_raw_header_overrides": {
+        "origin_timestamp_hex": "fffffffff8000000",
+        "receive_timestamp_hex": "0000000008000000",
+        "transmit_timestamp_hex": "0000000018000000"
+      }
+    }
+  ],
+  "additional_required_cases_before_full_admission": [
+    "0-byte and every length 1..47; exact fixed-header decode consumes 48 only, not a claim that all longer NTP packets are invalid",
+    "extension length/alignment/count and whole-datagram cap boundaries after their product limits are frozen",
+    "checked output conversion min/max/overflow for the selected destination representation; do not assume nanoseconds fit i64",
+    "precision/frequency-error controls for negative signed round-trip delay; no unconditional negative-delay rejection",
+    "NTS valid/corrupt-tag/replay/cookie atomicity cases only with independently admitted cryptographic known-answer fixtures",
+    "rejection sequence followed by a new valid request; no prior healthy history/cookie mutation"
+  ],
+  "default_expected_raw_header": {
+    "leap": 0,
+    "version": 4,
+    "mode": 4,
+    "stratum": 2,
+    "poll": 6,
+    "precision": -20,
+    "root_delay_raw_u32": 0,
+    "root_dispersion_raw_u32": 0,
+    "reference_id_hex": "47505300",
+    "reference_timestamp_hex": "dfffffff00000000",
+    "origin_timestamp_hex": "e000000000000000",
+    "receive_timestamp_hex": "e000000011eb851e",
+    "transmit_timestamp_hex": "e0000000147ae147"
+  },
+  "oracle_use": "For decoded cases merge default_expected_raw_header with expected_raw_header_overrides. These literal field expectations are independent of future production decoding. Future exchange outcomes are unexecuted specifications."
+}

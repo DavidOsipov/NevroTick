@@ -17,6 +17,8 @@ Compare each promised fact independently before formats. Confirm consumer declar
 
 Verify observer sensitivity using task-owned wrong, missing and unexpected-output fixtures. These controls challenge the observer; they do not replace processing through the real candidate entrypoint. Retain the selected, executed and checked record/fact inventory, promised absences and first mismatches. A report count or decoding success alone cannot establish those comparisons.
 
+For a new or changed driver/observer, use [harness qualification](../references/harness-qualification.md): bind the promised input and output facts to actual candidate calls, then select controls that can expose an incorrect route or suppressed comparison.
+
 For in-scope retained state/release artifact, inspect/reconcile actual state/artifact plus fresh fixture processing. Fresh success cannot qualify stale journals/caches/installed components/earlier packaged bytes. Bind consumer declarations to exact referenced payload; bypassed paths remain unqualified.
 
 Use complementary reviewers for broad independent areas when available; assign seam reconciliation to one owner. Record expected versus observed facts, candidate hashes, controls, exact environments and unresolved scope. Only completed selected evidence can support [final qualification](../qa-final-qualification/SKILL.md).

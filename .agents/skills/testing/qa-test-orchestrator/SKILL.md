@@ -18,6 +18,8 @@ For coordinated whole-system stabilization, use [system stabilization](../qa-sys
 
 Maintain [context continuity](../qa-context-checkpoint/SKILL.md) for multi-worker/interrupted work. Explicitly report incomplete required evidence; coordination proves no runtime correctness.
 
+For repeated/multi-profile campaigns, reconcile the [campaign budget](../references/campaign-budget.md) across workers, repaired candidates and fault/supervisor runs. Preserve actual consumption and first failures rather than resetting totals after a retry.
+
 Assign optional analysis by the missing guarantee through
 [test planning](../qa-test-planning/SKILL.md) and the configured guide's six
 analysis lanes; do not dispatch every analyzer on each file. A data-flow worker

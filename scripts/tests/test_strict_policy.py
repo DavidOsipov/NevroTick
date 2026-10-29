@@ -46,6 +46,16 @@ class PolicyAdmissionTests(unittest.TestCase):
         parsed = STRICT.read_configuration(self.root)
         self.assertEqual(set(parsed), set(STRICT.CONFIG_FILES))
 
+    def test_release_optimization_is_explicit_and_keeps_correctness_guards(self):
+        parsed = STRICT.read_configuration(self.root)
+        release = parsed["policy/rust-workspace.toml"]["profile"]["release"]
+        self.assertEqual(release.get("opt-level"), 3)
+        self.assertEqual(release.get("lto"), "thin")
+        self.assertEqual(release.get("codegen-units"), 1)
+        self.assertIs(release["overflow-checks"], True)
+        self.assertEqual(release["panic"], "unwind")
+        self.assertEqual(release["strip"], "none")
+
     def test_removing_required_unwrap_rule_is_rejected(self):
         self.replace("policy/rust-workspace.toml", 'unwrap_used = "deny"\n', "")
         self.assert_refused("Required strict lint missing")
@@ -83,6 +93,18 @@ class PolicyAdmissionTests(unittest.TestCase):
     def test_disabled_release_overflow_checks_are_rejected(self):
         self.replace("policy/rust-workspace.toml", "overflow-checks = true", "overflow-checks = false")
         self.assert_refused("profiles differ")
+
+    def test_release_optimization_cannot_be_silently_overridden(self):
+        path = self.root / "policy/rust-workspace.toml"
+        original = path.read_text()
+        for before, after in (("opt-level = 3", "opt-level = 2"),
+                              ('lto = "thin"', 'lto = "off"'),
+                              ("codegen-units = 1", "codegen-units = 16")):
+            for replacement in (after, ""):
+                with self.subTest(setting=before, replacement=replacement):
+                    path.write_text(original)
+                    self.replace("policy/rust-workspace.toml", before, replacement)
+                    self.assert_refused("profiles differ")
 
     def test_unreviewed_abort_profile_is_rejected(self):
         self.replace("policy/rust-workspace.toml", 'panic = "unwind"', 'panic = "abort"')

@@ -62,6 +62,13 @@ Support an explicitly selected plain-NTP profile for environments that need it. 
 
 Polling, retries and reacquisition are bounded by the admitted provider and resource policy. Users should not need to choose a polling interval or understand oscillator-frequency parameters during normal setup.
 
+Respect server Kiss-o'-Death control packets: show a useful source-level reason
+when polling is slowed or access is refused. Use the reviewed upstream behavior
+and admission rules in [architecture §7.3](windows-time-architecture.md#73-ntp-client-behavior).
+A control reply is not a fresh measurement; it cannot enable plain-NTP fallback
+or reduce the configured agreement requirement. This belongs to production
+acquisition/status integration, not fixture-only UI-M0.
+
 **Acceptance:** independently observed clock behavior while the UI is closed, and successful reacquisition after a controlled network interruption. An NTS authentication failure must not produce a plain-NTP correction. Observe-only startup and restart must make no clock writes, including adjustment resets. [Architecture §§4, 7, 9–10; CHECK-6/9/10/12]
 
 ### F-03 — Select a principal source and compatible supporters

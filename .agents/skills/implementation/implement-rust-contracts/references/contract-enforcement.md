@@ -60,6 +60,54 @@ cannot enforce a runtime rejection contract. Handle invalid input and arithmetic
 failure explicitly; do not turn expected rejection into a panic, fallback default,
 silent clamp or ignored `Result`. Test assertions still supply observations.
 
+## Prepare and commit owned state
+
+Use this pattern when a failed update must preserve the previous valid state.
+It is an ownership/ordering method, not a new transaction framework:
+
+1. Identify the live state, its single writer, the complete update and the exact
+   commit point. Include metadata, retained histories, cookie stores, pending
+   requests, generation and estimates that must change together.
+2. Bound and validate the candidate before eviction or mutation. Prepare the
+   transformed result and any fallible allocation in bounded scratch owned by
+   the operation. Failed preparation must release scratch without consuming
+   live entries or publishing a partial result.
+3. Validate the prepared output and the current context. A synchronous operation
+   holding exclusive ownership can reuse unchanged context; do not add redundant
+   checks merely to mimic an async pattern. After an await, callback or unlocked
+   computation, compare the required generation/revision/authority again under
+   the owner that serializes publication. An early check followed by an unlocked
+   commit leaves a race.
+4. Commit the complete prepared state with no remaining expected fallible work
+   inside the in-memory transition. Account for destructors/callbacks and resource
+   release; calling a swap atomic does not make arbitrary cleanup infallible.
+   Publish the resulting acknowledgement/status only for the completed transition.
+
+Worked example: a bounded estimator history receives a new sample while full.
+Admission and a successful staged fit must precede eviction; numerical failure
+preserves the old history and estimate, with honest existing age/status. A valid
+replacement removes only the contract-selected oldest item, adds the sample once
+and publishes the checked estimate together. If the contract permits retaining a
+sample despite fit failure, that is a different explicit transition, not an
+accidental half-update. These choices belong to the owning task, not this example.
+
+For every promised failure-atomic transition, snapshot observable state and inject
+failure at each reachable preparation/check stage. Observe equality on rejection
+and the exact accepted change for a valid neighbor. Cover full capacity, failed
+transformation, stale prepared output and repeated delivery where relevant. Do not
+construct impossible invalid typed states just to claim coverage. A fake observer
+must not perform the transition or restore state before it is inspected.
+
+The current [exchange owner](../../../../../crates/ntp-exchange/src/association.rs)
+illustrates staging a complete event before consuming its pending slot; the
+[history proposal](../../../../../tasks/s1.2-regression-readiness.md#proposed-smallest-pure-contract-no-activation)
+states validate-before-evict obligations. Neither is evidence for future NTS or
+Windows effects. A clock write, durable publication or native I/O may already have
+happened when an error arrives: use the existing
+[error/effect recovery procedure](../../implement-rust/references/error-handling.md)
+and actual acknowledgement/reconciliation contract. A local staged copy cannot
+roll back an external effect or prove crash durability.
+
 ## Put garde inside the only admission path
 
 The adopted starting dependency declaration for the eventual owning Cargo

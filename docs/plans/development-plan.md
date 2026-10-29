@@ -4,7 +4,7 @@
 **Status:** reviewed; ready to assign the next bounded task; implementation phases remain open  
 **Inspected source baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`, initially clean  
 **Immediate priority:** secure, bounded and performant NTP/NTS acquisition, with independently verified algorithms  
-**Next task:** P0/S0.1 source evaluation and P1 input/oracle preparation, described in section 7
+**Current task:** [S1.2a private weighted-fit kernel authoring](../../tasks/s1.2-regression-readiness.md), following [S1.1e's qualified private deterministic fixture harness](../../tasks/s1.1-deterministic-harness.md) and [S1.1d's exchange association](../../tasks/s1.1-exchange-association.md). Source/graph/budget authoring contracts are reviewed; dependency execution and shared changing build-policy integration remain separate gates.
 
 Agent navigation: [implementation contracts](#3-mandatory-explicit-contracts-during-implementation),
 [phase skill map](#5-required-skill-reading-and-use-by-phase),
@@ -23,18 +23,20 @@ implementation contracts and phase acceptance gates. It does not replace the
 `CHECK`, `AC`, `M0`, `OPEN` and `OD` meanings; P0–P7 below are the existing
 architecture phases, and S-0–S-6 are the existing integrated delivery slices.
 
-The current request authorizes planning/documentation. A subsequent development
-request selects the implementation scope. Routine work within that scope and
-accepted contracts needs no repeated approval. Material unresolved policy choices
-use the decision-card procedure in NV-DEC-001; block only dependent work.
+The original request authorized planning/documentation. David's subsequent
+whole-plan implementation goal authorizes progress through P0–P7, recorded in
+section 10 and the linked task chain. Routine work within accepted contracts needs
+no repeated approval. Material unresolved policy choices use the decision-card
+procedure in NV-DEC-001; block only dependent work. Public release retains its
+exact-candidate approval gate.
 
 | Area | Observed repository state | Consequence for the next agent |
 | --- | --- | --- |
-| Cargo | [Workspace](../../Cargo.toml), lockfile and one [UI crate](../../crates/nevrotick-ui/Cargo.toml) exist. | Inspect current files; do not assume a documentation-only repository. |
+| Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI crate](../../crates/nevrotick-ui/Cargo.toml), inert [wire owner](../../crates/ntp-wire/Cargo.toml) and checked [time-domain owner](../../crates/time-domain/Cargo.toml) exist. | Inspect current files and linked task evidence; numerical source does not establish the complete core. |
 | UI | `main` → native adapter → checked fixture model → standard Win32 controls. Preview edits are transient. | Keep UI-M0 isolated; no network, production IPC, persistence, service, elevation or clock effects. |
 | UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
-| Production software | No time core, network engine, broker, SCM services, production IPC or MSI source is present. | Ownership names below are proposed modules/crates; create only what an authorized slice needs. |
-| Dependencies | UI-M0 has its own admitted frozen graph. Production TLS/provider/AEAD and service graphs remain subject to admission. | A UI dependency receipt does not admit the production graph. Older “no Cargo workspace” statements in retained research are historical, not source inventory. |
+| Production software | Header/framing and explicit numerical arithmetic exist; current-exchange admission, estimator/selection core, network engine, broker, SCM services, production IPC and MSI remain planned. | Ownership names below are proposed modules/crates; create only what an authorized slice needs. |
+| Dependencies | Four local owners retain the sixteen-package UI-M0 external cohort; time-domain uses the existing minimal garde edge and ntp-exchange joins the two pure owners through local-only edges. Production TLS/provider/AEAD and service graphs remain subject to admission. | Current S1.1c graph evidence admits only its recorded source/features. Older “no Cargo workspace” statements in retained research are historical, not source inventory. |
 
 Keep one evidence chain: this plan records phase readiness and links to concrete
 task evidence; existing UI work stays in `tasks/ui-m0.md`. New development tasks
@@ -144,6 +146,7 @@ and [upstream verification/stress policy](../windows-time-development-hardening.
 | Behavior to inspect | Primary Chrony files | Additional comparison purpose |
 | --- | --- | --- |
 | Packet validation and polling | `ntp_core.c`, `ntp.h`, `ntp_ext.c`, `ntp_auth.c` | Independently derive protocol vectors; compare another implementation's rejection and correlation behavior. |
+| Kiss-o'-Death control and recovery | `ntp_core.c`, `ntp_sources.c`, `nts_ntp_client.c`, relevant scheduler/callers/tests | Inspect pinned Chrony and at least one of ntpd-rs/NTPsec; reuse/adapt qualified `RATE`, `DENY`/`RSTR`, unknown-code and NTS `NTSN` behavior. Reconcile RFC 5905 erratum 3007, RFC 8633 §5.4 and RFC 8915 §5.7 before freezing bounds and recovery policy. |
 | NTS exchange and association | `nts_ke_client.c`, `nts_ke_session.c`, `nts_ntp_client.c`, `nts_ntp_auth.c` | Compare pinned ntpd-rs/NTPsec behavior and controlled interoperability; review maintained TLS/AEAD library code. |
 | Regression/history | `sourcestats.c`, `regress.c` | Analytic trajectories, independent high-precision reference and bounded differential traces. |
 | Source selection/combination | `sources.c` | Verify interval majority, minimum agreement, principal hysteresis and distinct offset/frequency weighting. |
@@ -333,10 +336,20 @@ qualified opt-in recovery; S2.4 adversarial/resource/secret handling. A diagnost
 consumer must expose actual admitted results and failure reasons. Do not wire
 production networking into UI-M0.
 
+The existing [protocol comparison follow-up](../../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up)
+owns KoD source analysis and the RFC 8915 alignment checklist. Extend its pinned
+source/port evidence before implementation; reuse upstream algorithms with
+independent expected results. S1.1's opaque control completion is a seam, not a
+polling/recovery implementation. S2.1 owns plain-NTP KoD integration; S2.2 adds
+NTS control semantics and the [AES-preferred TLS policy](../windows-time-architecture.md#1871-license-gate-and-finite-provider-choice).
+S2.3/S2.4 exercise cache recovery, retry and resource failure paths. Keep graph,
+Windows trust and interoperability gates distinct from this documentation review.
+
 | Acceptance | Independent observation and valid/fault controls | Mapping |
 | --- | --- | --- |
-| NTP transport | Controlled IPv4/IPv6 peers, loss/reorder/duplicates/late replies, DNS change and KoD exercise request correlation, endpoints, eras, backoff and generations. KoD is not a time sample; an accepted neighbor still works after rejection. | CHECK-6/8/27 |
+| NTP transport and KoD | Controlled IPv4/IPv6 peers exercise correlation, endpoints, eras and generations. Test reviewed RATE backoff, DENY/RSTR cessation, unknown codes, forged/stale/replayed controls and extreme poll claims. Observe sends and source state; KoD never enters time arithmetic/history or lowers agreement policy. A healthy neighboring source remains usable. | CHECK-6/8/27 |
 | NTS-KE | TLS 1.3 baseline, `ntske/1`, verified identity, complete request flush, bounded framing/cardinality/end rules and offered protocol/AEAD negotiation. Wrong identity, unknown critical records, truncation and unoffered algorithms fail without a usable association. | CHECK-6/9/26 |
+| RFC 8915 and cipher preference | Close the linked checklist with actual entry-point cases for KE errors/warnings/closure, exporter/nonce/AD, cookies, trailing fields, NTS KoD/NAK and retry reset. Observe AES-GCM offer order and negotiated suites; qualify provider acceleration/fallback without raising the CPU floor or admitting a new graph. | CHECK-6/9/17/26 |
 | NTS packets | Independent exporter/AEAD known-answer and peer tests cover direction, UID, origin, replay, corrupt tag and wrong key. Fresh request UID has at least 32 CSPRNG octets; use the required AES-SIV-CMAC-256 profile through an admitted maintained library, not new cryptographic primitives. | CHECK-6/20/26 |
 | Atomic association state | Commit cookie/key/time changes only after the complete protected response validates. Invalid responses leave healthy state intact. Correlated NAK permits bounded re-establishment only; uncorrelated storms create no downgrade or unbounded work. | CHECK-6/17/27 |
 | Endpoint policy | Revalidate actual destination at initial connection, reconnect and DNS/delegation change. Authenticated delegation cannot reach unapproved local/private/other destinations; explicitly approved LAN sources still work. | THR-21, CHECK-6/8/9 |
@@ -560,7 +573,8 @@ separate evidence layers.
 
 Use [TOOLING.md](../../TOOLING.md#starting-implementation) and
 [configured verification](../../.agents/skills/testing/references/configured-tooling.md).
-Current supported entry points, after their inputs have been admitted, are:
+Current supported entry points for UI-M0 and the S1.1 wire/domain owners, after their
+inputs have been admitted, are:
 
 ```sh
 python3 -B scripts/verify.py --lane portable
@@ -569,8 +583,10 @@ python3 -B scripts/verify.py --lane windows --output-dir /path/to/new-build-outp
 ```
 
 Paths above are placeholders for owned actual inputs/outputs, not literal ready
-commands. The current verifier/policy is tied to UI-M0's graph; expanding the
-workspace requires reviewed graph/policy/runner support and discriminating gate
+commands. The current verifier/policy explicitly admits UI-M0, the pure
+`ntp-wire` header/framing owner and checked `time-domain` arithmetic owner.
+Further workspace expansion requires reviewed
+graph/policy/runner support and discriminating gate
 controls before execution. Do not weaken or bypass the verifier to make new crates
 pass. Inspect test discovery and keep portable format/compiler/Clippy/rustdoc,
 library/integration and separate doctest evidence distinct. Native Windows tests
@@ -633,6 +649,8 @@ reading/testing mandatory. No architecture policy is superseded.
 | Independent plan review | Completed by fresh reviewer `independent_plan_review` with conversation inheritance disabled, including a delegated skill-map check. No material findings; ready only for section 7's bounded next task. |
 | Document checks | Local links/Markdown anchors and all 58 skill references resolve; phase/canonical mapping reviewed; whitespace checks pass. No root `docs/SHA256SUMS.txt` exists, so no root bundle-integrity claim is made. |
 | Product implementation/tests | Not executed by this planning task. P0–P7 remain open; UI-M0 retains its separate existing record and gaps. |
+| Subsequent S0.1/R-01 investigation, 29 October 2026 | [Source readiness and S1.1 card](../../tasks/s0.1-source-readiness.md), with the Chrony ledger, independent protocol/crypto comparisons and literal vectors. Source/contract investigation; no product implementation, graph admission, native qualification or phase exit. |
+| Active whole-plan implementation goal, 29 October 2026 | David authorized implementation of the full plan. [S1.1a](../../tasks/s1.1-header.md), [S1.1b](../../tasks/s1.1-framing.md) and [S1.1c](../../tasks/s1.1-time-domain.md) are qualified within their declared pure/header/framing/numerical scopes. The [fresh-reviewed S1.1d card](../../tasks/s1.1-exchange-association.md) now owns fixture association and its separate graph/runner admission. Existing owner-decision, dependency/native qualification and public-release approval gates remain. |
 
 Append phase readiness and task/evidence links here as development proceeds;
 preserve this plan as the roadmap and each existing task as its candidate record.

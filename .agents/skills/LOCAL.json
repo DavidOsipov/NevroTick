@@ -11,6 +11,16 @@
       "name": "optimize-rust-performance",
       "target": "implementation/optimize-rust-performance/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "wsl-cleanup",
+      "target": "environment/wsl-cleanup/SKILL.md",
+      "origin": "locally-authored"
+    },
+    {
+      "name": "qa-skill-evaluations",
+      "target": "testing/qa-skill-evaluations/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

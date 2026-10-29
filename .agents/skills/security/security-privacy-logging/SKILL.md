@@ -7,6 +7,12 @@ description: "Implement or review NevroTick redacted events, diagnostic snapshot
 
 Read [the security contract](../CONTRACT.md) and architecture section 12. Inspect actual writers, subscribers, event sinks, export adapters and error chains; unused redaction helpers prove nothing.
 
+For error-to-output mappings, dependency causes or panic/cleanup reports, apply
+[error handling and safe diagnostics](../../implementation/implement-rust/references/error-handling.md).
+The shared diagnostic policy must constrain typed fields before formatting and
+buffering; a central string scrubber cannot establish privacy. Keep native
+capture in the platform adapter and log the outcome once at its decision owner.
+
 For Windows Event Log providers/channels or optional ETW, read relevant [Windows host integration](../references/windows-host-integration.md#event-log) sections: installer-owned resources, effective access, wrong-clock event ordering, runtime lifecycle and native evidence.
 
 1. State each field's purpose, sensitivity, owner, recipients and retention. Exclude keys, NTS cookies, approval tokens, raw secret-bearing packets, unnecessary user identifiers and private paths from logs/exports. Prefer bounded codes/counters plus selected context; never serialize whole wire/domain objects on rejection.

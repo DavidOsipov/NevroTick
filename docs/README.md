@@ -4,7 +4,7 @@
 **Snapshot date:** 29 October 2026  
 **Canonical architecture:** RWTC-ARCH-001, revision 1.4
 
-The maintained set contains ten principal Markdown documents and seven supporting independent reviews. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
+The maintained set contains ten principal Markdown documents, seven supporting independent reviews and a UI toolkit comparison report. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
 
 ## Plans, acceptance and execution evidence
 
@@ -46,13 +46,21 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
+**UI toolkit comparison, 30 October 2026:** the [Win32 versus egui report](supporting-reviews/ui-toolkit-comparison.md) summarizes measurements, tradeoffs and evidence limits; the [S0.5 execution record](../tasks/s0.5-ui-comparison.md#results) retains detailed inputs and receipts. David rejected the tested egui Glow/AccessKit configuration on memory consumption and closed the comparison; retain Win32 and the existing resource targets. This pilot establishes no full accessibility, sustained performance or product-graph admission.
+
+**Protocol follow-up, 30 October 2026:** [NTP client behavior](windows-time-architecture.md#73-ntp-client-behavior) makes KoD support explicit through pinned Chrony/independent-codebase analysis and reuse. The [existing protocol task](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) records RFC 8915 alignment and remaining implementation checks; [TLS policy](windows-time-architecture.md#1871-license-gate-and-finite-provider-choice) prioritizes AES-GCM while retaining provider/CPU qualification. These are P2 requirements, not implemented NTS/KoD support or measured AES speedup.
+
 **Upstream code is not presumed bug-free or vulnerability-free.** Chrony and other reused projects, libraries and tools require independent verification of the behavior NevroTick relies on. See [architecture section 20.1](windows-time-architecture.md#201-independent-numerical-truth) and [the test and stress matrix](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing).
 
-**Development baseline, 29 October 2026:** The checkout now contains a minimal real [Cargo workspace](../Cargo.toml), one `nevrotick-ui` crate and its locked UI-M0 dependency graph. [The tooling record](../TOOLING.md#starting-implementation) describes the shared portable, dependency and Windows cross-build checks; [the task record](../tasks/ui-m0.md) owns current implementation and native observations. The frozen graph passed advisory, license, source and build-script checks for Linux and Windows. This admission is limited to UI-M0; the [planned runtime dependency refresh](windows-time-architecture.md#186-runtime-dependency-register) still leaves held AWS-LC/Schannel providers and the production graph unresolved.
+**Development baseline, 29 October 2026:** The checkout contains a minimal real [Cargo workspace](../Cargo.toml), the fixture-only `nevrotick-ui`, dependency-free `ntp-wire`, checked numerical `time-domain` and single-slot `ntp-exchange` fixture owners. [The tooling record](../TOOLING.md#starting-implementation) describes the admitted portable, dependency and Windows cross-build checks; [UI-M0](../tasks/ui-m0.md), [S1.1a fixed headers](../tasks/s1.1-header.md), [S1.1b framing](../tasks/s1.1-framing.md) [S1.1c arithmetic](../tasks/s1.1-time-domain.md) and [S1.1d exchange association](../tasks/s1.1-exchange-association.md) own their candidate-specific results and remaining gaps. The sixteen external package records retain the UI-M0 cohort; the new owners admit no production networking or TLS. The [planned runtime dependency refresh](windows-time-architecture.md#186-runtime-dependency-register) still leaves held AWS-LC/Schannel providers and the production graph unresolved.
 
 **Native memory diagnostics, 29 October 2026:** Application Verifier, GFlags/PageHeap and CDB are installed and configured; healthy, heap-overrun and invalid-handle bootstrap controls passed. [Development hardening section 9.5](windows-time-development-hardening.md#95-fuzzing-and-native-memory-diagnostics) defines when agents must select corruption checks and separate retention measurements; [the shared skill workflow](../.agents/skills/testing/references/windows-memory.md) provides execution and cleanup rules. These are tool controls, not application leak/soak or supported-product qualification. Native runs remain owned manual checks until a separate CI lane is qualified.
 
 **Performance guidance:** [Architecture section 17](windows-time-architecture.md#17-resource-and-performance-targets) owns the proposed budgets. Use [performance optimization](../.agents/skills/implementation/optimize-rust-performance/SKILL.md) to locate and improve a measured bottleneck, paired with [resource QA](../.agents/skills/testing/qa-performance-resources/SKILL.md) for comparable measurements and acceptance. This workflow preserves correctness/security and does not claim measured product performance before implementation.
+
+**Application build optimization:** Release settings now explicitly select optimization level 3, ThinLTO and one codegen unit while retaining correctness checks, symbols and Windows protections. [Hardening section 6.5](windows-time-development-hardening.md#65-windows-x64-optimization-policy-and-evidence-limits) records the compiler-selfbuild Windows issue, CPU compatibility, PGO and BOLT limits; [the task record](../tasks/build-optimization.md) owns actual checks. These settings establish no measured speedup or new supported CPU floor.
+
+The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-settings-for-this-workload) selects the bundled backend's optimized pipeline, ordinary floating-point behavior and rustc-managed Windows linker defaults. Its experiment controls preserve exact numerical outputs, latency, resource and power observations; raw LLVM option recipes are not adopted defaults.
 
 **Contract adoption, 29 October 2026:** [DEC-18 and section 6](windows-time-architecture.md#61-validation-architecture-and-enforcement-order) select garde for mandatory shared DTO/settings validation inside private fallible construction. [Every function/module contract](windows-time-architecture.md#631-contracts-for-every-function-and-module) must establish preconditions, checked outputs, failure/effect behavior and current-state obligations through types and the relevant checks. The [agent enforcement rules](windows-time-development-hardening.md#34-mandatory-contracts-for-agent-written-code) preserve one rule owner and prohibit construction bypasses. The UI-M0 model now implements checked preview construction using the admitted garde graph; its behavioral evidence remains distinct from the original design adoption and from future production contracts.
 
@@ -67,6 +75,8 @@ them. A task receipt records execution; a catalog specifies expectations.
 **Latest owner instructions:** [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) records accepted reuse/recovery/release choices and unresolved default-profile policy. [nevrotick-research-handoff.md](nevrotick-research-handoff.md) assigns the remaining investigations, including the supplied NTS directory and proposed operator candidates. Read these before interpreting older unconditional signing language in retained historical reviews.
 
 **Engine runtime clarification, 29 October 2026:** [architecture section 18.6.1](windows-time-architecture.md#1861-engine-runtime-decision-and-alternatives) records the rationale, component boundaries and reconsideration criteria for the existing minimal current-thread Tokio prototype. Section 18.7.1 keeps a bounded synchronous NTS-KE worker available alongside the held async transport candidate. Runtime choice establishes no measured resource, security or timing result; existing dependency and Windows qualification gates apply.
+
+**Deterministic fixture work, 30 October 2026:** [S1.1e](../tasks/s1.1-deterministic-harness.md) records its qualified private driver/oracle candidate, actual host tests, fault controls and cross-build results. Its reviewed three-file test delta is present in the shared checkout; integration with concurrently changing build policy remains separate. [S1.2](../tasks/s1.2-regression-readiness.md) now owns the next regression source/contract preparation. These bounded results complete neither S1.1 nor P1.
 
 ## Reading guide
 
@@ -104,7 +114,7 @@ not define the Rust/Win32 implementation. Rendered HTML/screenshots may predate
 specification corrections. The live canonical architecture and accepted owner
 decisions retain precedence over archived copies in the design bundle.
 
-## Supporting independent reviews
+## Supporting reviews and comparison
 
 These preserve first-pass findings and correction checks, not competing specifications or claims of runtime qualification.
 
@@ -115,6 +125,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [development-compiler-review.md](supporting-reviews/development-compiler-review.md): compiler/lint/profile and Windows mitigation review.
 - [development-evidence-review.md](supporting-reviews/development-evidence-review.md): CI trust, isolation, mutation contract and correction verification.
 - [basic-features-review.md](supporting-reviews/basic-features-review.md): integrated product feature, UX, authority and acceptance review.
+- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): measured Win32/egui pilot, dependency concerns and the owner's decision to retain Win32; detailed execution stays in the S0.5 task.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 

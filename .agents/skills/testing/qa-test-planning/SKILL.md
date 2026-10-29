@@ -21,6 +21,8 @@ Use [case design](../references/case-design.md) for potentially hidden optional/
 
 Separate test discovery/compiler/static proof/simulated behavior/real Windows protected effects. Plan reproducible fixtures/fault seams early; identify assertions needing application-action observation before harness cleanup. Bound cases/generated sequences/time/concurrency/retries/writable resources.
 
+For multiple profiles, candidates, fault controls or replay runs, use [campaign accounting](../references/campaign-budget.md) to distinguish per-invocation ceilings from complete planned and consumed work. Include product-reaching supervisor controls; keep validation-only work separate.
+
 Use [configured analysis](../references/configured-tooling.md#additional-rust-analysis)
 to select Miri for reached portable memory behavior, cargo-fuzz for hostile
 parser inputs, Loom for instrumented schedules, Kani for finite properties,

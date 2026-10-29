@@ -26,6 +26,7 @@ import tomllib
 
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 MSVC_FLAGS = [
+    "-C", "target-cpu=x86-64",
     "-C", "control-flow-guard=yes", "-C", "link-arg=/GUARD:CF",
     "-C", "link-arg=/DYNAMICBASE", "-C", "link-arg=/HIGHENTROPYVA",
     "-C", "link-arg=/NXCOMPAT", "-C", "link-arg=/WX",

@@ -11,6 +11,12 @@ workspace, one `nevrotick-ui` crate and a locked dependency graph. Use
 [Starting implementation](#starting-implementation) for its shared verification
 command and [the task record](tasks/ui-m0.md) for current results. Historical
 bootstrap controls below do not establish application behavior or a shipping profile.
+The subsequent [S1.1a task](tasks/s1.1-header.md) adds the dependency-free
+`ntp-wire` header/framing owner and explicit package verification. Its source,
+behavior and analysis evidence remain separate from UI and native qualification.
+The subsequent [S1.1c task](tasks/s1.1-time-domain.md) adds the checked
+`time-domain` arithmetic owner and admits three-member verification without
+expanding the existing sixteen-package external dependency cohort.
 The additional analysis tools below were installed separately on 29 October;
 their compiler experiments do not change the repository's shipping Rust pin.
 
@@ -94,7 +100,7 @@ follow the development-hardening guide.
 | [.config/nextest.toml](.config/nextest.toml) | Two test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
 | [.cargo/audit.toml](.cargo/audit.toml) | No ignored advisory IDs or severity cutoff; warnings fail. Acquisition is separate from analysis and requires an admitted database/index snapshot. |
 | [.cargo/mutants.toml](.cargo/mutants.toml) | Frozen Cargo inputs, bounded timeout multipliers, no copied VCS/target, lint capping disabled. Enumeration/configuration controls are qualified; a mutation campaign is still pending. |
-| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Records the UI-M0 preview-admission owner, four critical files and Linux/Windows target rows. Coverage/mutation results remain pending; UI-M0 follows its restricted acceptance scope. |
+| [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Records UI-M0 preview admission and the inert header/framing owners, six critical files and Linux/Windows rows for both packages. Candidate results belong to their task records; UI-M0 follows its restricted acceptance scope. |
 
 The Rust Cargo fragment is tested in owned temporary workspaces and is now
 adopted by the UI-M0 workspace. Keep `[lints] workspace = true` in **every**
@@ -676,15 +682,71 @@ lane. They do not establish service privileges, IPC, clock behavior, native UIA/
 Narrator, MSI lifecycle, production crypto compatibility or release readiness.
 Those experiments still need the architecture's owned disposable Windows lab.
 
+## Application optimization settings
+
+The workspace's release candidate uses `opt-level = 3`, `lto = "thin"` and
+`codegen-units = 1`; `verify-release` inherits those settings and enables debug
+assertions. Overflow checks, unwind qualification policy, limited debug symbols,
+no stripping and Windows CFG/ASLR/DEP flags remain required. Development builds
+retain Cargo's incremental defaults. These settings favor runtime optimization
+opportunities at higher compile/link cost; no speedup has been measured.
+
+The Windows target explicitly keeps `target-cpu=x86-64`. `native` specializes to
+the builder, while v2/v3 introduce a new CPU floor; neither is a general-release
+shortcut. This does not rebuild the supplied standard library for another CPU.
+The policy checker rejects unreviewed CPU/profile overrides, including PGO flags
+that would replace the complete mitigation vector.
+
+The guarded `scripts/verify.py --lane windows` row retains compiler/Clippy checks
+and links the UI with `--release`, exporting the executable and its matching PDB
+with profile and digest identity. The direct Windows allocation observer mirrors
+the optimized profiles. These paths require fresh receipts after this change;
+older debug/native receipts do not qualify the new release artifact.
+
+See [hardening section 6.5](docs/windows-time-development-hardening.md#65-windows-x64-optimization-policy-and-evidence-limits)
+and the [build optimization task](tasks/build-optimization.md) for compiler-selfbuild
+issue scope, conditional native PGO, BOLT/PE limits, checks and remaining evidence.
+Use the admitted commands below rather than ambient `RUSTFLAGS` or a host-build
+fallback. A configured profile, cross-link or fixture pass establishes no native
+performance, complete mitigation, installation or release result.
+
+The admitted Rust 1.99.1 compiler embeds LLVM 23.1.1. Its optimized pass pipeline
+and rustc-managed MSVC linker defaults remain selected; no extra raw LLVM flags,
+forced inlining/unrolling/SIMD widths or relaxed floating-point assumptions are
+adopted. [Hardening section 6.6](docs/windows-time-development-hardening.md#66-llvm-settings-for-this-workload)
+records the source-backed choices. Recheck the actual bundled backend after a
+toolchain update instead of installing an unrelated LLVM or copying Clang options
+into `RUSTFLAGS`. Diagnostics and comparison profiles require their own admitted
+scope; a compiler accepting an option establishes no performance benefit.
+
 ## Starting implementation
 
-Start with [docs/README.md](docs/README.md), architecture §16.5 and
-[the UI-M0 task record](tasks/ui-m0.md). The minimal [workspace](Cargo.toml)
-contains one [nevrotick-ui crate](crates/nevrotick-ui/Cargo.toml): a portable,
+Start with [docs/README.md](docs/README.md) and the selected task. UI work uses
+architecture §16.5 and [the UI-M0 task record](tasks/ui-m0.md); pure wire work
+uses [S1.1a](tasks/s1.1-header.md) and [S1.1b](tasks/s1.1-framing.md);
+checked numerical/domain work uses [S1.1c](tasks/s1.1-time-domain.md).
+The minimal [workspace](Cargo.toml)
+contains [nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a portable,
 checked preview model and a Windows-only native adapter. Its fixture data and
 edits are in memory only. There is no live network/DNS, production IPC,
 persistence, service, elevation or clock effect. D1 display/theme, D2 production
 state and D3 full accessibility remain deferred at the canonical re-entry gates.
+The second member, [ntp-wire](crates/ntp-wire/Cargo.toml), owns inert exactly
+48-byte fixed-header representation and the bounded no-legacy-MAC framing
+implementation. It has no external dependencies. Candidate-specific framing
+results belong to S1.1b. The third member,
+[time-domain](crates/time-domain/Cargo.toml), owns explicit checked coordinates,
+numeric era windows/resolution, exact offset/signed RTT and checked rounding,
+plus distinct elapsed-clock units. Its sole external dependency is the existing
+minimal garde declaration. Numeric arithmetic grants no accepted-exchange,
+source/authentication, date-truth or correction authority; those owners and NTS
+remain future work. Its qualified bounded candidate and evidence limits belong
+to S1.1c. The fourth member,
+[ntp-exchange](crates/ntp-exchange/Cargo.toml), joins the two pure owners for the
+[S1.1d single-slot fixture task](tasks/s1.1-exchange-association.md). Its local-only
+graph and extended runner have separate admission; checked inputs and rejecting
+transition stubs are the initial test baseline. Candidate-specific behavioral
+results belong to that task.
 
 The exact [lockfile](Cargo.lock), manifest/feature identities, sixteen external
 packages, selected license grants and source-file maps are recorded in
@@ -696,6 +758,60 @@ under `%LOCALAPPDATA%\NevroTick\ui-m0`; this proves that graph at its recorded
 snapshot, not future advisory freshness or native UI behavior. Current application
 results and unresolved observations belong in the task record.
 
+The pure wire owners' additional evidence uses
+[verify-wire-analysis.py](scripts/verify-wire-analysis.py) and
+[its scoped policy](policy/ntp-wire-analysis.json), after the ordinary graph and
+portable rows. Select `--lane contracts`, `coverage`, `mutation`, `fuzz` or `all`,
+and `--subject header`, `datagram` or `all` (default) for coverage/mutation scope,
+with `--output-dir /new/private/Linux/output` and, when selecting another copy,
+`--vendor-dir /admitted/vendor`. The output path must be new. These are owned
+isolated analyses with explicit source/tool/graph inventories, not host Cargo
+fallbacks or installation commands. The repository's existing analysis installation
+and matching payload inventories are required.
+
+The coverage row reports each selected security file's executable-line denominator
+from one actual package run. Mutation reconciles separate complete nonempty
+per-file enumerations and treats build failures as unviable; the selected campaign
+shares the fixed total mutant/time budgets. External consumer checks require a
+compiling legal caller and exact privacy/borrow error causes. Contracts and fuzz
+always cover both wire owners; `--subject` never narrows those lanes. The fixed
+GNU-host fuzz harness separately admits
+its locked source/features and native LLVM-exception notice, uses archive-verified
+vendor metadata and retains the 256-run sanitizer profile plus seeded fault
+control. This test-only graph is not production NTS/TLS or distribution admission.
+Current successes, first failures and incomplete rows remain in
+[S1.1a's candidate record](tasks/s1.1-header.md) and
+[S1.1b's execution record](tasks/s1.1-framing.md); the CLI's existence is no pass.
+
+The domain owner's equivalent explicit-scope entry point is
+[verify-time-domain-analysis.py](scripts/verify-time-domain-analysis.py), with
+[its policy](policy/time-domain-analysis.json). It accepts the same five lanes,
+and `--subject coordinate`, `era`, `exchange`, `clock`, `rounding` or `all`.
+Contracts and fuzz cover the complete domain scope; selected subjects narrow
+only coverage/mutation. Its standalone test-only fuzz graph independently admits
+garde's exact closure and libFuzzer, without adding shipping dependencies.
+Use a new private Linux output and the admitted vendor; actual results belong to
+S1.1c. Tooling admission alone establishes no numerical or Windows behavior.
+
+The separate [time-domain allocation observer](scripts/verify-time-domain-windows-allocation.py)
+has two explicit lanes. Build with `--lane build --profile release`, the admitted
+`--vendor-dir`, `--toolchain-dir`, `--xwin-config`, `--xwin-inventory` and a new
+private Linux `--output-dir`. This retains the guarded MSVC library build,
+observer format/Clippy/link results, immutable emitted dependencies and exact
+artifact/source/runtime inputs. Then select `--lane native --build-receipt
+/path/to/build/verification.json --native-dir /mnt/c/Users/USER/AppData/Local/NevroTick/NEW
+--output-dir /new/private/Linux/native-receipt`. Both destinations must be new;
+the native lane rejects stale build/source/helper bindings.
+
+This test-only Windows workload checks ordinary supervisor/child tokens before
+releasing its exact startup gate, and records 25 samples covering 22,282 era-window
+constructor calls with allocation controls. It observes requested payload and
+retention before process teardown, separately requiring stream/process release
+and an empty owned job. It does not alter AppVerifier/PageHeap/registry settings
+or establish native heap overhead, RSS, universal allocation counts, absence of
+leaks, clock behavior or release qualification. Actual failures and completed
+measurements belong to [S1.1c](tasks/s1.1-time-domain.md).
+
 Use [scripts/verify.py](scripts/verify.py) from the checkout root. With the external
 inputs configured, the default command is the portable row:
 
@@ -705,9 +821,9 @@ python3 -B scripts/verify.py
 
 | Row | Work and evidence limit |
 | --- | --- |
-| `--lane portable` (default) | Format, compiler, Clippy, rustdoc, actual library/integration tests and separate doctests. Empty or skipped required test selections fail. |
+| `--lane portable` (default) | Format, compiler, Clippy and rustdoc for all four admitted members; separate per-package library/integration tests and doctests, plus optimized time-domain and ntp-exchange tests with their release-only discriminators. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows graph checks using a separately acquired RustSec/index snapshot, bound to the lockfile and at most 24 hours old. |
-| `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and actual binary linking; copies the executable and receipt to a new external directory. Native execution remains a separate observation. |
+| `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and release binary linking; copies the executable, matching PDB and receipt to a new external directory. Native execution remains a separate observation. |
 
 Rows run with a read-only source snapshot, cleared environment, isolated network
 and owned output inside bubblewrap. The verifier admits pinned tools and source

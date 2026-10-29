@@ -40,6 +40,15 @@ The root `deny.toml` retains the bootstrap policy and rejects the UI-M0 graph;
 the dependency row applies the exact admitted graph policy inside its snapshot.
 Native observations remain separate in [the task record](../../../../tasks/ui-m0.md).
 
+For the selected Windows release candidate, retain the Windows lane's debug
+compiler/all-target Clippy checks and its explicit release UI link. Inspect the
+current runner and receipt for the actual profile, CPU/mitigation flags, tools
+and artifact; an earlier debug link does not qualify a changed release profile.
+Use [build-optimization guidance](../../implementation/optimize-rust-performance/references/measurement.md#build-optimization-and-windows-x64)
+for LTO/CPU changes or separately admitted native PGO. Configuration and cross
+linking establish no native performance result. Preserve isolated entrypoints;
+raw Cargo/RUSTFLAGS examples are not a qualification fallback.
+
 For an ordinary Rust change, select format, compiler/Clippy and focused regression
 checks for affected packages and actual callers. Use the adopted workspace policy
 from [rust-workspace.toml](../../../../policy/rust-workspace.toml); every member

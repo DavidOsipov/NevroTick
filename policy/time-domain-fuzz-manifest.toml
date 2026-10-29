@@ -1,0 +1,24 @@
+[package]
+name = "time-domain-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[features]
+seeded-defect = []
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+time-domain = { path = "../source/crates/time-domain" }
+
+[[bin]]
+name = "numeric"
+path = "target.rs"
+test = false
+doc = false
+bench = false

@@ -1,7 +1,16 @@
 # Keep portable-core checks on the host; select the native target explicitly.
 # Use admitted native MSVC inputs or the explicit bundled-LLD/xwin cross lane.
+# Release optimization lives in Cargo.toml. Preserve generic x64 compatibility:
+# target-cpu=native depends on the build host; v2/v3/AVX2 would raise the CPU floor.
+# Higher-ISA experiments need a separate admitted candidate and Windows evidence.
+# RUSTFLAGS/encoded flags REPLACE this vector: an ad-hoc CPU or PGO setting can
+# silently remove CFG/ASLR/DEP. Keep the complete vector under the guarded runner.
+# LLVM uses the O3/ThinLTO pipeline selected by Cargo: no raw llvm-args/pass list,
+# forced inline/unroll/SIMD widths or fast-math overrides. Keep MSVC ABI defaults.
+# See hardening section 6.6 for the pinned LLVM defaults and measured-only options.
 [target.x86_64-pc-windows-msvc]
 rustflags = [
+    "-C", "target-cpu=x86-64",
     "-C", "control-flow-guard=yes",
     "-C", "link-arg=/GUARD:CF",
     "-C", "link-arg=/DYNAMICBASE",

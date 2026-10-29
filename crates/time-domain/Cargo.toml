@@ -1,0 +1,15 @@
+[package]
+name = "time-domain"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pure checked NevroTick time coordinates, era resolution and exact arithmetic"
+
+[dependencies]
+garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
+
+[lints]
+workspace = true

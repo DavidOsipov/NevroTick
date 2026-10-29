@@ -3,7 +3,7 @@ name: "optimize-rust-performance"
 description: "Profile and optimize NevroTick Rust/Windows CPU, allocation, latency, wakeups, startup or binary-size bottlenecks with comparable before/after measurements and preserved correctness/security contracts. Use for a performance regression or explicit optimization task; resource assessment alone belongs to qa-performance-resources."
 ---
 
-# Optimize measured Rust and Windows costs
+# Optimize Rust and Windows costs
 
 Read [the implementation contract](../CONTRACT.md). Preserve requested
 implementation, planning or review scope. Use
@@ -16,6 +16,21 @@ For benchmark/profiler selection and comparison design, read
 [resource QA](../../testing/qa-performance-resources/SKILL.md) for independent
 measurement and acceptance; optimization and resource qualification answer
 different questions.
+
+An explicit request may prepare or select build settings before a benchmark.
+Record this as configuration work with unmeasured performance, then verify the
+affected builds and correctness. For profile, CPU, LTO or PGO work, read
+[Windows x64 build optimization](references/measurement.md#build-optimization-and-windows-x64)
+and canonical hardening §6. Preserve the admitted CPU floor, mitigations,
+arithmetic checks, panic policy and symbols. The measurement workflow below
+governs claimed improvements; it does not block authorized setting preparation.
+
+For LLVM-specific work, use the reference's
+[LLVM policy and native screening matrix](references/measurement.md#llvm-policy-and-native-screening)
+and [hardening §6.6](../../../../docs/windows-time-development-hardening.md#66-llvm-settings-for-this-workload).
+Keep the standard compiler pipeline and ordinary floating-point semantics unless
+a bounded, independently checked experiment justifies a change. Raw LLVM flags,
+extra pass lists and numerical shortcuts are not a default optimization recipe.
 
 ## Establish the cause before changing it
 
@@ -79,9 +94,11 @@ trade-offs. A microbenchmark improvement must reach the affected real workload
 before claiming a product improvement. Noise, missing observations or changed
 conditions can leave the result inconclusive.
 
-Keep an optimization only when the declared decision rule and correctness checks
-support its benefit. Otherwise revert only task-owned experimental edits or
-report the unresolved comparison; do not label an unmeasured refactor faster.
+For measured experiments, keep an optimization only when the declared decision
+rule and correctness checks support its benefit. Otherwise revert only task-owned
+experimental edits or report the unresolved comparison. Explicitly selected build
+settings may remain pending measurement; do not label them or an unmeasured
+refactor faster.
 Stop the bounded experiment when its question is resolved or its budget is
 consumed. Record hypothesis, exact compared identities, change, commands,
 measurements, regressions/trade-offs and remaining gaps in the existing task

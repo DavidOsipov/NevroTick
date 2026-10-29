@@ -10,6 +10,19 @@ Compare selection/principal/supporter/rejected membership/reasons, common-instan
 
 Keep exact NTP timestamp differences and Windows conversions in checked integer/fixed-point arithmetic before deliberately using floating point for small deltas. Declare physical error envelopes and numerical tolerances before execution. Test NaN/infinity, cancellation, saturation/overflow boundaries, quantization and signed rounding independently. Differential comparison with pinned chrony is useful but cannot be the only oracle for a ported algorithm. Record upstream revision/port-ledger identity.
 
+For a numerical kernel or threshold, use the
+[numerical procedure](../../implementation/implement-rust/references/numerical-kernels.md).
+Retain separate exact mathematical expectations and independently modeled rounded
+controls; freeze actual input bits and operation semantics where admission depends
+on them. A computed cutoff can accept a value whose exact-real counterpart is
+below the boundary. Cover conditioning/range limits and required algebraic
+identities, with output tolerances/units declared before execution. Reach the
+actual constructor/consumer: nonfinite-input rejection proves no arithmetic
+overflow, and finite output proves no accuracy. Test only failures reachable
+under that interface's admitted inputs; record why any proposed failure is
+excluded. Constant, subnormal, signed-zero and reduction-order rules come from
+the specific API contract, not a universal test recipe.
+
 Maintain independent UTC/monotonic/active-awake clocks. Wall-clock step cannot extend monotonic authorization deadline; suspend time is not delivered active slew. Configuration/association/clock generations invalidate late responses/proposals. Model actual/lost acknowledgements/ambiguous effects; retries must not duplicate step/reset cumulative budgets (CHECK-10–12).
 
 ## NTP and NTS boundaries

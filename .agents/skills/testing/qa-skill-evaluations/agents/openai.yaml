@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evaluate skill behavior"
+  short_description: "Test skill guidance through independent agent exercises"
+  default_prompt: "Use $qa-skill-evaluations to evaluate the changed NevroTick skill on isolated realistic tasks, check the resulting artifacts independently, and report outcomes and evidence limits."

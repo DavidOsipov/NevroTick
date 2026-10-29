@@ -1,0 +1,407 @@
+{
+  "schema_version": 2,
+  "package": "ntp-wire",
+  "coverage_minimum_line_percent": 90,
+  "mutation_minimum_viable_killed_percent": 95,
+  "maximum_mutants": 512,
+  "coverage_wall_seconds": 300,
+  "mutation_wall_seconds": 1200,
+  "mutation_build_seconds": 90,
+  "mutation_test_seconds": 60,
+  "jobs": 1,
+  "test_threads": 2,
+  "coverage_guided_fuzzing": {
+    "status": "admitted-test-only-source",
+    "scope": "fixed GNU-host header and complete no-legacy-MAC framing harness only; no production graph or distribution admission",
+    "metadata_discrepancy": "libfuzzer-sys metadata NCSA differs from all55 bundled SPDXheaders; select wrapperMIT and exact pinned native Apache-2.0 WITH LLVM-exception, not NCSA metadata",
+    "upstream_revision": "a47b42eb9f9b302167b4fc413e6c92798d65dd0b",
+    "upstream_url": "https://github.com/llvm/llvm-project/tree/a47b42eb9f9b302167b4fc413e6c92798d65dd0b/compiler-rt/lib/fuzzer",
+    "source_parity_evidence": "/home/david_osipov/.local/share/nevrotick/s11a-libfuzzer-grants-fw6lun6o/native-parity.json",
+    "source_parity_evidence_sha256": "5afcf8d5906032a21ef2c2977633838a0bbd3ef254832fa2d7af37f4dff55c93",
+    "compatibility_primary_source": "https://llvm.org/docs/DeveloperPolicy.html#new-llvm-project-license-framework",
+    "llvm_notice": "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt",
+    "llvm_notice_sha256": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
+    "control_lock_sha256": "945748a17cd2ccd01376b3326f9c7b37612a0bc19c725bacffeff6fdb36a333b",
+    "target_source": "policy/ntp-wire-fuzz-target.rs",
+    "target_source_sha256": "fa8e095c4f648e88ca170f8d98c8c4f6d063bf9d880027d5d78755a105af7ba7",
+    "native_files": {
+      "FuzzerBuiltins.h": {
+        "sha256": "766b0c57707d1ec953034a852b152b3f0daa35ee705bed8952b501705f0799cf",
+        "git_blob": "ce0bd5cb47f4ebc4a272cdba877744bc6d0fae9a"
+      },
+      "FuzzerBuiltinsMsvc.h": {
+        "sha256": "e1af98f02bd5aa07c90ef761ae2a04d8c8119ceedf221f0bc4d535c65c091e00",
+        "git_blob": "421dee7f66034908444a60a165817bb2f5e05743"
+      },
+      "FuzzerCommand.h": {
+        "sha256": "dcebaec18fc8d3040974748e47294d4e86972eebcc42e75380f9ce39e959e485",
+        "git_blob": "718d7e951fb1acad9cb05d1fef6538d242bdaa35"
+      },
+      "FuzzerCorpus.h": {
+        "sha256": "87396916fbd773f5ddc4f40ac3e818b36aaa77a24183c84fa2a31f4d61f929fb",
+        "git_blob": "3ea30630e18274b2702ca026da406096875e0695"
+      },
+      "FuzzerCrossOver.cpp": {
+        "sha256": "5bf910d4c8aea8a888eebddfb68250e521d0aba30c9f22bedc8624bcb3cd30c6",
+        "git_blob": "83d9f8d47cb18f88c0aa50708b4846df421a97ad"
+      },
+      "FuzzerDataFlowTrace.cpp": {
+        "sha256": "22996430dba1be545504e552eca11ad26bccf5b69ec95679316c08d0a258c828",
+        "git_blob": "c9210c78a06315f771b2deddd8def76c5ddca661"
+      },
+      "FuzzerDataFlowTrace.h": {
+        "sha256": "8398d7a7370fc908ea13c9e683a081c8c9835337e758a4cb717f3998088bf175",
+        "git_blob": "054dce1bdcb61e835536678b4cd36cfe5635c363"
+      },
+      "FuzzerDefs.h": {
+        "sha256": "2117821633a53c435a40aad1b4fb13598b3c755b2cd34f1eef8b3529d551aab8",
+        "git_blob": "db1f74a545e3605e66eb8c8b0a9a36c4286df531"
+      },
+      "FuzzerDictionary.h": {
+        "sha256": "8cec4d9cacd1d23d0b08b6629b913c88cbeaf067b056b8d366e429abab0b7ead",
+        "git_blob": "64eb35c57a5610419629d3a4b7234c787aa03ff0"
+      },
+      "FuzzerDriver.cpp": {
+        "sha256": "9f0ff17b5ede0670ea5c23e4eaef96e28af6d9744ea085c9701077968562034e",
+        "git_blob": "5928d1d96acd1d3e0b8821123f60224a82541052"
+      },
+      "FuzzerExtFunctions.def": {
+        "sha256": "679fa9342b62966b48d78e39fbcbbfe9f7d1048c8d2083469a5630298ea0c796",
+        "git_blob": "51edf8444e94d3f12b5b477e2000568a89fd687b"
+      },
+      "FuzzerExtFunctions.h": {
+        "sha256": "f8c5e034004e5c4dc2adf4ad5053f93614802f3489b0510ae4bf447bfa3e480b",
+        "git_blob": "c88aac4e67c25d408d15f0c3fa0908cfaf2fb997"
+      },
+      "FuzzerExtFunctionsDlsym.cpp": {
+        "sha256": "1f778d077c895651956fe8923f2f7601395d5c5cfd1d5bce0054db5a77a7e0fc",
+        "git_blob": "95233d2a10d37161c55c5f7baa5edde345ae62d6"
+      },
+      "FuzzerExtFunctionsWeak.cpp": {
+        "sha256": "2decf5d7713268ba720101c2387e31147a69e3ed0d3918cbe02aa5d8b80c94f2",
+        "git_blob": "3ef758daa7b695650decf3356029d91338810502"
+      },
+      "FuzzerExtFunctionsWindows.cpp": {
+        "sha256": "ec59de4c4b9ebeb9e94b65f5b8421309705810615b792edd02931145664bfb74",
+        "git_blob": "cb29af9329bb2139301c2ed29b44e758014acefd"
+      },
+      "FuzzerExtraCounters.cpp": {
+        "sha256": "bb7aa6b0319a2756a146ae2f8b8b4be78a1942e7b67cdaec727c6d3b978dccc5",
+        "git_blob": "54ecbf7c62f122d5c3a49c270d48194266e9d5fc"
+      },
+      "FuzzerExtraCountersDarwin.cpp": {
+        "sha256": "ad2e4ba43dbbc5b584771d4fc4df013498a8c8b28c4db7b4263e7b7b46aa6539",
+        "git_blob": "2321ba8a3d40c1843a07ae7dbd6196bd9e998210"
+      },
+      "FuzzerExtraCountersWindows.cpp": {
+        "sha256": "e4e6bca52b76046676f0d8db6305f649a525cc3812bfb0fcf1410d5b837f801c",
+        "git_blob": "102f5febdaec0c3b79fd7f827c4c42b30ce88409"
+      },
+      "FuzzerFlags.def": {
+        "sha256": "fd1bb22acad5dd8d4c45c993f4ac5d1c7606de5c846d2df455a537a239448f6c",
+        "git_blob": "96282b8f72a4f6753fc6303aec23cc8ea2ba4301"
+      },
+      "FuzzerFork.cpp": {
+        "sha256": "f4c53e469aefef482f0614cf59a0b818e77cfacc4c4f43b80f58cb3c61ab39d2",
+        "git_blob": "e544cd846e4db520aa9502e5432044b5d19b9cc0"
+      },
+      "FuzzerFork.h": {
+        "sha256": "94c5a6ceedd1922784999a7e36a08c7d044425b4b5c5c04602d570b6e094764a",
+        "git_blob": "fc3e9d636cbc69da4b8c2729119d46d50a59d9c7"
+      },
+      "FuzzerIO.cpp": {
+        "sha256": "ab62b3b4c2af6ca8126deed6481f3edb55d69e95007c761ed5797d2bc8d30814",
+        "git_blob": "54cc4ee54be0a61a40ed06bdb22ef2197b6dbf69"
+      },
+      "FuzzerIO.h": {
+        "sha256": "872b100d87f28ef136eed1f19e1f2435ee625223e5ab6fc7ca132418301513d7",
+        "git_blob": "874caad1baedbdcf3f876b38a3c893e3bad913e1"
+      },
+      "FuzzerIOPosix.cpp": {
+        "sha256": "6ab501ca1d35a731542ac01bf0ab28d27f13d393fd221f16641829060fb44dbd",
+        "git_blob": "f145dddcbb29c9a63cae7d7f18fa4bfaf8467b9d"
+      },
+      "FuzzerIOWindows.cpp": {
+        "sha256": "464a596346443ec5b3abe55080a8efc4ef07cab4dd834cbe02bba64d16559a31",
+        "git_blob": "6771fc173c91327e08ccbc01bc206568cae4be6f"
+      },
+      "FuzzerInterceptors.cpp": {
+        "sha256": "9f6a427e5eb498416a969dcffa65e53205615e0a69cb115227f46fd437b36b66",
+        "git_blob": "d5b0a42fd3fb4e79f7f4fbacf82ce9fb2e2fbea5"
+      },
+      "FuzzerInterface.h": {
+        "sha256": "79d35cc74761177495f1c9490f86cc394895c51d10442f7ba8fd3658d34d1f46",
+        "git_blob": "4f62822eac0512b8319665a873054e5cd3e643f4"
+      },
+      "FuzzerInternal.h": {
+        "sha256": "12a6a94d51e34096f165babe341354ba5e3831a3bfb384c67c048e4d361d1734",
+        "git_blob": "88504705137a8f2f2ac788c521cfc03da9f3b81e"
+      },
+      "FuzzerLoop.cpp": {
+        "sha256": "40a274123c4a391316155c2d0d93502a9db9a9df6833af854a6d19030a69f784",
+        "git_blob": "a93cd16b879348b7d45e56dc1cf1f6f0c502ec4f"
+      },
+      "FuzzerMain.cpp": {
+        "sha256": "273d432cac2fb564ca05760ee776503e26bfa35d0f06f263a4fb2493ad1d58be",
+        "git_blob": "75f2f8e75c9bd69e999c813662f64b0341a6b164"
+      },
+      "FuzzerMerge.cpp": {
+        "sha256": "4866a3a40c17772dcc02bdbe985c8bb9e4a780b03dd2278e56d5bb20f6e8b4ae",
+        "git_blob": "8c8806e8aafd3d547baae32be85c888904e89b56"
+      },
+      "FuzzerMerge.h": {
+        "sha256": "957b1fd91416eec6f66fb5da0306b13bd91934582e9bd2ece77af4e6f05d599b",
+        "git_blob": "42f798e1da18ade6ad02e0c47dbfe3f8b66e0d99"
+      },
+      "FuzzerMutate.cpp": {
+        "sha256": "5762ce216a70ed36160c7ec455e5c29d9a7da700f17fcdda362d0106e8e675b6",
+        "git_blob": "4587f8616b0196b1a03965d4b0a1ad9abc094e69"
+      },
+      "FuzzerMutate.h": {
+        "sha256": "5355d2d89d3ae68e829d16d358c8e65c11c842ab4c3b17baed8ef2c7053a2a4b",
+        "git_blob": "97704e2160aa42c852ab675403eec7913cff0e02"
+      },
+      "FuzzerOptions.h": {
+        "sha256": "61d06401d6cf12ab2b9ba8e2e34e9ceca4daa4a9a2eae6dbd6709693efec82a2",
+        "git_blob": "6478b63ad69358a035eca73683c308cbb3c59db3"
+      },
+      "FuzzerPlatform.h": {
+        "sha256": "2d76795e56398779dcde4d3bcd85d835141ab471eab2c46fcc70a33f82a75094",
+        "git_blob": "1602e67895004a52d8127f3e56ccb80f0b9a1714"
+      },
+      "FuzzerRandom.h": {
+        "sha256": "9648af77dae937ac37f8cc0be5df500c8259b9220ef4ae3be84c9e5706296186",
+        "git_blob": "b12fc21a1855eda922d6a6b2a4019bf6f386b6e2"
+      },
+      "FuzzerSHA1.cpp": {
+        "sha256": "18296f57c7342d6952d37266031b60036220645db8dbb0c70f6b1e602c97150f",
+        "git_blob": "b05655c8ef4da2dcfdf6184de95b02a62d41a5bd"
+      },
+      "FuzzerSHA1.h": {
+        "sha256": "29334b9aca30a5a51bcd0f8f958ac6bbabd5984235bf53bca24eac87bedc5fe8",
+        "git_blob": "05cbacda87d07c51d87358f4bed199efcde5fad2"
+      },
+      "FuzzerTracePC.cpp": {
+        "sha256": "04d0f8adddac269564d91ba155964bfcc0dd232b617e3f7235a01fe86593618e",
+        "git_blob": "7bd1a0870c5933d88a570e284e09cd7405981733"
+      },
+      "FuzzerTracePC.h": {
+        "sha256": "f076d558a97ff07e9f782ea3b74d7b1f8e4c944155b55ea5465cf24bf6a95bd1",
+        "git_blob": "af1f9d81e9509fb6e2676417f08b0d675cabe301"
+      },
+      "FuzzerUtil.cpp": {
+        "sha256": "cf0e9217539c77117a739e47e9e9f35e43141db291ab6167deae365b3ef496be",
+        "git_blob": "aeab70f20c28e87bc70e8f4d5fdcb13337ff02af"
+      },
+      "FuzzerUtil.h": {
+        "sha256": "e2efd3959787d1c21780881b3c6c318cd84626fa55bae3841e56b3b9846770d2",
+        "git_blob": "554567e1b8fcb3677b64583480fe3e2e974b102b"
+      },
+      "FuzzerUtilDarwin.cpp": {
+        "sha256": "a47741b0a0aa90b3232eb955cacbb9340f79301a82709ea8249cc1888b762f01",
+        "git_blob": "6c3ece30f67bdff075066e325a2dbf0125e66f95"
+      },
+      "FuzzerUtilFuchsia.cpp": {
+        "sha256": "aca42134cf54d5f8e5a0c38fab2e82d401d5631854a23ca652b98e8ddb9a94c7",
+        "git_blob": "1ae8e663505393fe8220ad2e72be00b82779add3"
+      },
+      "FuzzerUtilLinux.cpp": {
+        "sha256": "5885dd9462a62d09e9cf5c627b68d80b53a694d0f69e380d607058a13fa1a4ec",
+        "git_blob": "e5409f22f0e3a2c98911c2bb5a15589af7288da3"
+      },
+      "FuzzerUtilPosix.cpp": {
+        "sha256": "36841be411c3305102a14dc4942ac459a865d43bcdab5ad55a1751c4dd36daef",
+        "git_blob": "ae22ecf108420c88f93245951552847f98728e3b"
+      },
+      "FuzzerUtilWindows.cpp": {
+        "sha256": "13f754e2e7553cf9aae245620d15a3cebd6451ffd4529ef4d380a8bf9af30362",
+        "git_blob": "45ee15526b275012ff71e3e0e4cfcb1aa48978b1"
+      },
+      "FuzzerValueBitMap.h": {
+        "sha256": "785a4131a3ff36c455469375092a87efc165eb926b53dad9851b53cc034a09e9",
+        "git_blob": "ddbfe200af9c669f874a009fa070bd2c19f92180"
+      },
+      "README.txt": {
+        "sha256": "f1d3f05793b5ea2993be318f882afba3d4035442ed8fdffee841603ae3ea944d",
+        "git_blob": "3eee01c77672345d94b779dda3fe3933c7394626"
+      },
+      "afl/afl_driver.cpp": {
+        "sha256": "9bd8a0213c2e57edc8b3940c02f45dee724fe3d0f5f4f225a17d7c139fc5d975",
+        "git_blob": "52aede7e078dc35bd9dc0bc14703185958729891"
+      },
+      "dataflow/DataFlow.cpp": {
+        "sha256": "2401b8d16c784c7c2d2ece598b13084125e0227515d126b32bf31c9f693e1068",
+        "git_blob": "7e5f041c91f21a588d1daac9e9bdcd9a6dce6f23"
+      },
+      "dataflow/DataFlow.h": {
+        "sha256": "62ba10dec5ab8451e9a35a91565a4fa20e2fa2fa8c1992bd2de2f490a846d578",
+        "git_blob": "35849fd8d8e6c23eb1cdeab89f449e3fa36fc7d1"
+      },
+      "dataflow/DataFlowCallbacks.cpp": {
+        "sha256": "cb2cdd57ceefdfc90086a73b6b6ac7eeb44e9b272ca1b5aa607560e6fa372d9e",
+        "git_blob": "170b4d891d7587c354249ff165cbae77f67f1c37"
+      },
+      "tests/FuzzedDataProviderUnittest.cpp": {
+        "sha256": "ceae621f1d2c29c15e00292cb2064d1bce409202ed12751e1749786cf2fa31c5",
+        "git_blob": "ea6774e5a5cda654b99f52565cde00eb9268daee"
+      },
+      "tests/FuzzerUnittest.cpp": {
+        "sha256": "03880b4acf2cb843f73ce01251914c09999aea15a086349674bb28f7569e85d3",
+        "git_blob": "5315a8ec0167d45eadbe25d1f58459a988864b46"
+      }
+    },
+    "locked_registry_packages": [
+      {
+        "name": "arbitrary",
+        "version": "1.5.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed",
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "a2250f2af9c70840ca182124a14aa73d4f78b63ed74b9da3f89306246d55a5fe",
+        "build_script": false
+      },
+      {
+        "name": "cc",
+        "version": "1.10.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "86e055fa6e3e40ad6187ba25b6855eeb635d5271f8e0f0e1e9a5826b8d75bea0",
+        "dependencies": [
+          "find-msvc-tools",
+          "jobserver",
+          "libc",
+          "shlex"
+        ],
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "6a896bbddaa698a46cd1b80491396036dc8de562ba3fcfff2c006bf7d2d63a6b",
+        "build_script": false
+      },
+      {
+        "name": "cfg-if",
+        "version": "1.0.5",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600",
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "eb5d7b35f7740950ccc175fb67864d77729b2e5b75939c42d45b679057f8fa3d",
+        "build_script": false
+      },
+      {
+        "name": "find-msvc-tools",
+        "version": "0.1.15",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48",
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "2a6fae5b7c93f1130c1461b39935a89b25e04f62e06c685366299ac46a04848f",
+        "build_script": false
+      },
+      {
+        "name": "getrandom",
+        "version": "0.4.3",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099",
+        "dependencies": [
+          "cfg-if",
+          "libc",
+          "r-efi"
+        ],
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "685c39b72845fda45b8c89c69e4e219142fcfc81c5477afdab71549d55faf2a3",
+        "build_script": "build.rs"
+      },
+      {
+        "name": "jobserver",
+        "version": "0.1.35",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3",
+        "dependencies": [
+          "getrandom",
+          "libc"
+        ],
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "abd68a0c2d335e3ae6b19bfb4eb747bf0b94f90e7710d6d3a80eb892ea8f2349",
+        "build_script": false
+      },
+      {
+        "name": "libc",
+        "version": "0.2.191",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a",
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "f70117e04d0fb78eb1efc816de51190e51f7a25d3b31e4845d53e412da221fda",
+        "build_script": "build.rs"
+      },
+      {
+        "name": "libfuzzer-sys",
+        "version": "0.4.13",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "a9fd2f41a1cba099f79a0b6b6c35656cf7c03351a7bae8ff0f28f25270f929d2",
+        "dependencies": [
+          "arbitrary",
+          "cc"
+        ],
+        "declared_license": "(MIT OR Apache-2.0) AND NCSA",
+        "selected_license": "MIT; bundled native Apache-2.0 WITH LLVM-exception",
+        "source_files_sha256": "a44ba7963b2a48054734c7f8a300816a7d5031995520aa502149c7f4b49f7845",
+        "build_script": "build.rs"
+      },
+      {
+        "name": "r-efi",
+        "version": "6.0.0",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf",
+        "declared_license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+        "selected_license": "MIT",
+        "source_files_sha256": "69a0a6247606524b56c48140eb66c8966891193a68940d75a0cd0947e9f61fc5",
+        "build_script": false
+      },
+      {
+        "name": "shlex",
+        "version": "2.0.1",
+        "source": "registry+https://github.com/rust-lang/crates.io-index",
+        "checksum": "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba",
+        "declared_license": "MIT OR Apache-2.0",
+        "selected_license": "MIT",
+        "source_files_sha256": "8d9f882002f18f9d87c3076ce3e50498254a196e0b76a2e65a6e6caf604074b5",
+        "build_script": false
+      }
+    ],
+    "gnu_reachable_features": {
+      "arbitrary": [],
+      "cc": [
+        "parallel"
+      ],
+      "find-msvc-tools": [],
+      "jobserver": [],
+      "libc": [
+        "default",
+        "std"
+      ],
+      "libfuzzer-sys": [
+        "default",
+        "link_libfuzzer"
+      ],
+      "shlex": [
+        "default",
+        "std"
+      ]
+    },
+    "fuzzer_flags": [
+      "-runs=256",
+      "-max_len=4096",
+      "-timeout=2",
+      "-rss_limit_mb=512",
+      "-malloc_limit_mb=256",
+      "-max_total_time=30"
+    ]
+  },
+  "critical_files": [
+    "crates/ntp-wire/src/header.rs",
+    "crates/ntp-wire/src/datagram.rs"
+  ]
+}

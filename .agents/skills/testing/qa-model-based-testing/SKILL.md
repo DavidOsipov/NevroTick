@@ -11,6 +11,8 @@ Define small requirements-derived model; no production reducer helpers. Specify 
 
 Run bounded explicit/generated command sequences through production entry point. Compare model/application after every action; invalid commands must exercise documented rejection/no-state-change, never silently skip. Track eligible/executed actions; empty path cannot pass.
 
+When creating/changing the driver or trace comparator, use [harness qualification](../references/harness-qualification.md) for independently specified input identity, clock, ordinal and comparison controls. Agreement with the model is insufficient if the driver delivered a different action.
+
 Model acknowledgement loss, stale late completion, reconnect/restart/suspend/successor ownership. Separate UTC/monotonic/active-awake clocks. Minimize/replay failing concrete sequences from fresh state; preserve failure seam.
 
 A sequential state model does not prove thread schedules or Windows OS behavior. Combine necessary [concurrency](../qa-state-concurrency-lifecycle/SKILL.md) and [native evidence](../references/windows-evidence.md) explicitly. Read [Rust techniques](../references/rust-techniques.md) for optional instrumented models and limits.

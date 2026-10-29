@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run an admitted UI-M0 product row in an isolated Linux/WSL sandbox.
+"""Run the admitted UI-M0, wire, time-domain and exchange rows in an isolated sandbox.
 
 Acquisition is separate. Missing tools, vendor bytes or product tests fail closed.
 Windows cross-linking supplies no native UI, service or release qualification.
@@ -30,6 +30,12 @@ STRICT = importlib.util.module_from_spec(STRICT_SPEC)
 STRICT_SPEC.loader.exec_module(STRICT)
 PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
+PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
+            "ntp-exchange": "crates/ntp-exchange"}
+OPTIMIZED_DISCRIMINATORS = {
+    "time-domain": "release_build_preserves_checked_admission",
+    "ntp-exchange": "release_build_preserves_exchange_admission",
+}
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
@@ -61,33 +67,53 @@ def inventory(directory: Path) -> dict[str, str]:
 
 
 def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
-    """Admit exactly the initial UI member, policy inheritance and locked graph."""
+    """Admit the four reviewed members, policy inheritance and exact locked graph."""
     try:
         STRICT.read_configuration(root)
     except STRICT.ENV.Incomplete as error:
         raise ENV.Incomplete(str(error)) from error
-    member_path = root / MEMBER
-    if (not member_path.resolve().is_relative_to(root.resolve())
-            or any(path.is_symlink() for path in (root / "crates", member_path))):
-        raise ENV.Incomplete("Linked product ancestors are not admitted.")
+    for member_path in (root / member for member in PACKAGES.values()):
+        if (not member_path.resolve().is_relative_to(root.resolve())
+                or any(path.is_symlink() for path in (root / "crates", member_path))):
+            raise ENV.Incomplete("Linked product ancestors are not admitted.")
     for name in SOURCE_FILES:
         sha256(root / name)
     workspace = tomllib.loads((root / "Cargo.toml").read_text())
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
-    if workspace.get("workspace", {}).get("members") != [MEMBER]:
-        raise ENV.Incomplete("Expected the single reviewed UI-M0 workspace member.")
+    if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):
+        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, NTP-wire, time-domain and exchange workspace members.")
     if (workspace["workspace"].get("lints") != fragment["workspace"]["lints"]
             or workspace.get("profile") != fragment["profile"]):
         raise ENV.Incomplete("Workspace lint/profile policy differs from its owner.")
-    member = tomllib.loads((root / MEMBER / "Cargo.toml").read_text())
-    if member.get("package", {}).get("name") != PACKAGE or member.get("lints") != {"workspace": True}:
-        raise ENV.Incomplete("UI member identity or inherited lints are missing.")
-    if member["package"].get("build") not in (None, False) or (root / MEMBER / "build.rs").exists():
-        raise ENV.Incomplete("An unadmitted first-party build script is present.")
+    local_packages = set()
+    for package, directory in PACKAGES.items():
+        member = tomllib.loads((root / directory / "Cargo.toml").read_text())
+        if (member.get("package", {}).get("name") != package
+                or member.get("lints") != {"workspace": True}):
+            raise ENV.Incomplete("A member identity or inherited lints are missing.")
+        if member["package"].get("build") not in (None, False) or (root / directory / "build.rs").exists():
+            raise ENV.Incomplete("An unadmitted first-party build script is present.")
+        if package == "ntp-wire" and set(member) != {"package", "lints"}:
+            raise ENV.Incomplete("The pure NTP-wire member may not add dependencies, features or targets.")
+        if package == "time-domain":
+            required = {"garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]}}
+            if (set(member) != {"package", "lints", "dependencies"}
+                    or member.get("dependencies") != required
+                    or type(member.get("dependencies", {}).get("garde", {}).get("default-features")) is not bool):
+                raise ENV.Incomplete("The time-domain member requires only exact garde 0.23.0, defaults off and derive.")
+        if package == "ntp-exchange":
+            required = {"ntp-wire": {"version": "=0.0.0", "path": "../ntp-wire"},
+                        "time-domain": {"version": "=0.0.0", "path": "../time-domain"}}
+            if (set(member) != {"package", "lints", "dependencies"}
+                    or member["package"].get("version") != "0.0.0"
+                    or member.get("dependencies") != required):
+                raise ENV.Incomplete("The ntp-exchange member requires only exact local ntp-wire and time-domain 0.0.0 dependencies.")
+        local_packages.add((package, member["package"]["version"]))
     policy = json.loads((root / "policy/ui-m0-dependencies.json").read_text())
     if policy.get("schema_version") != 1 or policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
         raise ENV.Incomplete("The product lockfile differs from its dependency admission.")
-    manifests = {name: sha256(root / name) for name in ("Cargo.toml", MEMBER + "/Cargo.toml")}
+    manifests = {name: sha256(root / name)
+                 for name in ("Cargo.toml", *(member + "/Cargo.toml" for member in PACKAGES.values()))}
     if policy.get("manifests_sha256") != manifests:
         raise ENV.Incomplete("Product manifest/features differ from the reviewed dependency admission.")
     expected = {(p["name"], p["version"], p["checksum"]) for p in policy["packages"]}
@@ -96,17 +122,23 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     packages = tomllib.loads((root / "Cargo.lock").read_text()).get("package", [])
     external = {(p["name"], p["version"], p.get("checksum")) for p in packages if "source" in p}
     local = [p for p in packages if "source" not in p]
-    if external != expected or len(local) != 1 or local[0]["name"] != PACKAGE:
+    if (external != expected or len(local) != len(local_packages)
+            or {(p["name"], p["version"]) for p in local} != local_packages
+            or any(p.get("dependencies") for p in local if p["name"] == "ntp-wire")
+            or any(p.get("dependencies") != ["garde"] for p in local if p["name"] == "time-domain")
+            or any(p.get("dependencies") != ["ntp-wire", "time-domain"] for p in local if p["name"] == "ntp-exchange")
+            or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):
         raise ENV.Incomplete("Unadmitted dependency origin.")
     inputs = {name: sha256(root / name) for name in SOURCE_FILES}
-    for name, digest in inventory(root / MEMBER).items():
-        if (name.endswith("Cargo.toml") and name != "Cargo.toml") or ".cargo" in Path(name).parts:
-            raise ENV.Incomplete("Unexpected nested manifest or Cargo configuration.")
-        inputs[f"{MEMBER}/{name}"] = digest
-    if f"{MEMBER}/src/lib.rs" not in inputs:
-        raise ENV.Incomplete("The product model library is absent.")
+    for member in PACKAGES.values():
+        for name, digest in inventory(root / member).items():
+            if (name.endswith("Cargo.toml") and name != "Cargo.toml") or ".cargo" in Path(name).parts:
+                raise ENV.Incomplete("Unexpected nested manifest or Cargo configuration.")
+            inputs[f"{member}/{name}"] = digest
+        if f"{member}/src/lib.rs" not in inputs:
+            raise ENV.Incomplete("A required product library is absent.")
     for name in (*STRICT.CONFIG_FILES, *CHECKER_FILES, "policy/ui-m0-dependencies.json", "policy/tool-manifest.json"):
         inputs[name] = sha256(root / name)
     return policy, inputs
@@ -205,23 +237,32 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
     """Select explicit product commands; never replace execution by bootstrap controls."""
     cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
              "--config", 'source.reviewed.directory="/vendor"']
-    base = ["--package", PACKAGE, "--frozen", "--jobs", "1"]
+    base = ["--workspace", "--frozen", "--jobs", "1"]
     if lane == "portable":
         return [
             ("format", ["cargo", "fmt", "--all", "--", "--check"]),
             ("compiler", [*cargo, "check", *base, "--lib", "--tests"]),
             ("clippy", [*cargo, "clippy", *base, "--lib", "--tests", "--", "-D", "warnings"]),
             ("rustdoc", [*cargo, "doc", *base, "--lib", "--no-deps"]),
-            ("product-tests", [*cargo, "nextest", "run", "--package", PACKAGE, "--frozen", "--build-jobs", "1",
-                               "--lib", "--tests", "--user-config-file", "none", "--no-tests=fail"]),
-            ("doctests", [*cargo, "test", *base, "--doc"]),
-        ]
+        ] + [
+            ("product-tests:" + package, [*cargo, "nextest", "run", "--package", package,
+                                         "--frozen", "--build-jobs", "1", "--lib", "--tests",
+                                         "--user-config-file", "none", "--no-tests=fail"])
+            for package in PACKAGES
+        ] + [("doctests:" + package, [*cargo, "test", "--package", package,
+                                      "--frozen", "--jobs", "1", "--doc"])
+             for package in PACKAGES] + [
+            ("optimized-tests:" + package, [*cargo, "nextest", "run", "--package", package,
+                                           "--cargo-profile", "release", "--frozen", "--build-jobs", "1",
+                                           "--lib", "--tests", "--user-config-file", "none", "--no-tests=fail"])
+            for package in OPTIMIZED_DISCRIMINATORS]
     if lane == "windows":
         target = [*base, "--target", ENV.WINDOWS_TARGET]
         return [("windows-compiler", [*cargo, "check", *target, "--all-targets"]),
                 ("windows-clippy", [*cargo, "clippy", *target, "--all-targets", "--", "-D", "warnings"]),
-                ("windows-link", [*cargo, "--config", f'target.{ENV.WINDOWS_TARGET}.linker="/work/linker"',
-                                  "build", *target, "--bin", PACKAGE])]
+                 ("windows-link", [*cargo, "--config", f'target.{ENV.WINDOWS_TARGET}.linker="/work/linker"',
+                                   "build", "--release", "--package", PACKAGE, "--frozen", "--jobs", "1",
+                                   "--target", ENV.WINDOWS_TARGET, "--bin", PACKAGE])]
     if lane == "dependencies":
         return [("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
                                          "check", "--deny", "warnings"])
@@ -229,23 +270,94 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
     raise ENV.Incomplete("Unknown product verification row.")
 
 
+def export_windows_artifacts(work: Path, output: Path) -> dict:
+    """Export the release executable and its unique matching PDB to fresh output.
+
+    Admit both regular files before copying; missing/ambiguous symbols or existing
+    destinations fail. Cargo may use the binary name or normalized crate name for
+    the PDB. This records cross-linked artifacts, not native Windows execution.
+    """
+    build = work / "target" / ENV.WINDOWS_TARGET / "release"
+    binary = build / f"{PACKAGE}.exe"
+    names = {f"{PACKAGE}.pdb", f"{PACKAGE.replace('-', '_')}.pdb"}
+    symbols = [build / name for name in sorted(names) if (build / name).is_file()]
+    if len(symbols) != 1:
+        raise ENV.Incomplete("Release Windows artifact needs exactly one matching PDB.")
+    pdb = symbols[0]
+    identities = {source: sha256(source) for source in (binary, pdb)}
+    if any((output / source.name).exists() or (output / source.name).is_symlink()
+           for source in identities):
+        raise ENV.Incomplete("Windows artifact export refuses existing destinations.")
+    for source in identities:
+        shutil.copyfile(source, output / source.name)
+    return {"path": str(output / binary.name), "sha256": identities[binary],
+            "profile": "release", "target": ENV.WINDOWS_TARGET,
+            "symbols": {"path": str(output / pdb.name), "sha256": identities[pdb]}}
+
+
 def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
-    """Reject empty or skipped behavior even if the runner returned zero."""
-    if lane == "product-tests":
+    """Reject empty, wrong-package or skipped behavior despite a zero runner exit."""
+    kind, _, package = lane.partition(":")
+    if kind not in {"product-tests", "doctests", "optimized-tests"}:
+        return None
+    if package not in PACKAGES:
+        raise ENV.Incomplete("Test accounting identifies an unreviewed package.")
+    if kind == "optimized-tests" and package not in OPTIMIZED_DISCRIMINATORS:
+        raise ENV.Incomplete("Optimized test accounting identifies an unreviewed package/profile.")
+    if kind in {"product-tests", "optimized-tests"}:
         report = work / "target/nextest/default/junit.xml"
         if not report.is_file():
             raise ENV.Incomplete("Product test execution lacks its JUnit accounting.")
         root = ET.parse(report).getroot()
-        cases = list(root.iter("testcase"))
-        if not cases or any(list(case) and any(child.tag in {"skipped", "failure", "error"} for child in case) for case in cases):
+        suites = list(root.iter("testsuite"))
+        cases = [case for suite in suites for case in suite.findall("testcase")]
+        if (not cases or len(cases) != len(list(root.iter("testcase")))
+                or any(suite.get("name") != package
+                       and not suite.get("name", "").startswith(package + "::") for suite in suites)
+                or any(any(child.tag in {"skipped", "failure", "error"} for child in case) for case in cases)):
             raise ENV.Incomplete("Required product tests are empty, skipped or failed.")
-        return {"executed": len(cases), "test_names": [case.get("name") for case in cases]}
-    if lane == "doctests":
+        names = [case.get("name") for case in cases]
+        if kind == "optimized-tests" and OPTIMIZED_DISCRIMINATORS[package] not in names:
+            raise ENV.Incomplete("Optimized tests did not execute the release admission discriminator.")
+        return {"package": package, "executed": len(cases), "test_names": names}
+    if kind == "doctests":
         counts = re.findall(r"test result: ok\. (\d+) passed; 0 failed; (\d+) ignored;", output)
         if not counts or sum(int(passed) for passed, _ in counts) == 0 or any(int(ignored) for _, ignored in counts):
             raise ENV.Incomplete("Required doctests did not execute a nonempty passing selection.")
-        return {"executed": sum(int(passed) for passed, _ in counts)}
+        return {"package": package, "executed": sum(int(passed) for passed, _ in counts)}
     return None
+
+
+def clear_test_report(lane: str, work: Path) -> None:
+    """Remove a prior package's report so it cannot stand in for a missing run."""
+    if lane.startswith(("product-tests:", "optimized-tests:")):
+        report = work / "target/nextest/default/junit.xml"
+        if report.is_symlink():
+            raise ENV.Incomplete("A linked product test report is not admitted.")
+        report.unlink(missing_ok=True)
+
+
+def summarize_test_counts(records: list[dict]) -> dict:
+    """Require ordinary, doctest and selected optimized evidence before aggregating."""
+    counts = {package: {} for package in PACKAGES}
+    for record in records:
+        kind, _, package = record["lane"].partition(":")
+        if kind not in {"product-tests", "doctests", "optimized-tests"}:
+            continue
+        result = record.get("tests", {})
+        if (package not in counts or kind in counts[package] or result.get("package") != package
+                or type(result.get("executed")) is not int or result["executed"] <= 0
+                or kind == "optimized-tests" and package not in OPTIMIZED_DISCRIMINATORS):
+            raise ENV.Incomplete("Per-package product test accounting is incomplete or duplicated.")
+        counts[package][kind] = result["executed"]
+    for package, result in counts.items():
+        required = {"product-tests", "doctests"} | ({"optimized-tests"} if package in OPTIMIZED_DISCRIMINATORS else set())
+        if set(result) != required:
+            raise ENV.Incomplete("Every package requires ordinary tests/doctests and each selected owner requires optimized tests.")
+    return {"by_package": counts,
+            "tests_executed": sum(result["product-tests"] for result in counts.values()),
+            "doctests_executed": sum(result["doctests"] for result in counts.values()),
+            "optimized_tests_executed": sum(counts[package]["optimized-tests"] for package in OPTIMIZED_DISCRIMINATORS)}
 
 
 def sandbox(toolchain: Path, work: Path, source: Path, vendor: Path,
@@ -412,6 +524,7 @@ def execute(root: Path, args, report: dict) -> None:
         report["effective_nextest_sha256"] = sha256(source / ".config/nextest.toml")
         report["checker_sha256"] = {name: source_identity[name] for name in CHECKER_FILES}
         def run(label, command):
+            clear_test_report(label, work)
             result = ENV.run(sandbox(toolchain, work, source, vendor, command, extension, libraries,
                                     "cargo-deny" if args.lane == "dependencies" else "cargo-nextest"),
                              cwd=root, timeout=300,
@@ -428,6 +541,8 @@ def execute(root: Path, args, report: dict) -> None:
         boundary_control(run)
         for label, command in commands(args.lane):
             run(label, command)
+        if args.lane == "portable":
+            report["test_counts"] = summarize_test_counts(report["lanes"])
         if admit_product(root)[1] != source_identity or admit_vendor(vendor, policy) != vendor_identity:
             raise ENV.Incomplete("Source or dependency inputs changed during product verification.")
         if library_inputs and (library_inventory(libraries) != library_inputs[1]
@@ -446,10 +561,7 @@ def execute(root: Path, args, report: dict) -> None:
                 raise ENV.Incomplete("Artifact output must be outside the checkout.")
             output.mkdir(mode=0o700)
             if args.lane == "windows":
-                binary = work / "target" / ENV.WINDOWS_TARGET / "debug" / f"{PACKAGE}.exe"
-                sha256(binary)
-                shutil.copyfile(binary, output / binary.name)
-                report["artifact"] = {"path": str(output / binary.name), "sha256": sha256(binary)}
+                report["artifact"] = export_windows_artifacts(work, output)
             (output / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
 
 
@@ -461,7 +573,7 @@ def main(argv=None) -> int:
                  "advisory-receipt", "output-dir", "json"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
-    report = {"scope": f"UI-M0 {args.lane} product verification", "status": "incomplete",
+    report = {"scope": f"UI-M0, NTP-wire, time-domain and exchange {args.lane} product verification", "status": "incomplete",
               "native_windows_execution": "not performed", "advisory_freshness": "not checked by this row"}
     try:
         defaults = json.loads(POINTER.read_text()) if POINTER.is_file() else {}

@@ -1,6 +1,6 @@
 ---
 name: "implement-rust"
-description: "Implement, refactor or review NevroTick Rust logic, ownership, errors, state, concurrency and Windows adapter boundaries."
+description: "Implement, refactor or review NevroTick Rust logic, ownership, typed errors, safe diagnostics, recovery, state, concurrency and Windows adapter boundaries."
 ---
 
 # Implement Rust
@@ -35,6 +35,18 @@ Choose smallest model that makes meaningful mistakes hard to express:
   Locks must cover complete invariant-bearing transactions.
 - Never erase operational failure into `None`, empty results or stale success.
   Redact secrets; retain structured context sufficient to diagnose rejection.
+
+For floating-point estimation, exact-to-floating seams or numerical admission
+thresholds, use [numerical kernels](references/numerical-kernels.md). Separate
+independent mathematical results from rounded execution controls; freeze the
+supported conditioning/range envelope and comparison semantics before coding.
+
+When changing error types/propagation, error-to-output mappings, retry/recovery,
+fallible cleanup or panic boundaries, read and apply
+[error handling and safe diagnostics](references/error-handling.md). Enforce the
+shared `diagnostics`/`windows-platform` responsibilities while keeping domain
+failures and recovery at their owners. Project permitted typed fields before
+formatting/buffering; verify the real failure, output and effect paths.
 
 For FFI, handles, panic policy, async work, cancellation or lifecycle changes, use
 [Rust and Windows boundaries](references/rust-windows.md). Pure core forbids unsafe;

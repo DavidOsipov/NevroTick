@@ -53,6 +53,13 @@ invariants before publication. Required rejection must work in release builds;
 
 ## Preserve meaning and failure atomicity
 
+Changes to error propagation, diagnostic projection, retry/recovery, fallible
+cleanup or panic boundaries must follow
+[error handling](implement-rust/references/error-handling.md). Keep reusable
+native capture in `windows-platform`, shared safe-field policy in `diagnostics`,
+and domain failures/current recovery decisions at their owners. Error formatting
+is not sanitization; uncertain effects require reconciliation before retry.
+
 Specify units, sign, ranges, identity, source/provenance, presence/null semantics,
 version, normalization, output guarantees and consumers. Keep UTC, monotonic,
 active-awake time, NTP timestamps, phase and frequency distinct. Public positive

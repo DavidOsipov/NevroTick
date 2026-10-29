@@ -15,6 +15,10 @@ thread/apartment, aliasing, ownership and lifetime obligations. Check selected A
 success/error convention: Win32 errors are not uniformly HRESULT or `GetLastError`.
 Capture last-error only where API defines it.
 
+For native error mapping, uncertain effects, cleanup failures or panic boundaries,
+apply [error handling and safe diagnostics](error-handling.md). Capture the
+documented status before intervening work; formatted OS errors are not safe fields.
+
 Wrap actually owned resources; release exactly once through matching API.
 Borrowed/sentinel handles are not automatically owned. Numeric handle/process IDs
 prove no enduring caller identity. Check capacities, UTF-16 terminators and byte/
