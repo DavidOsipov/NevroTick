@@ -140,9 +140,11 @@ Differentiate observed facts from hypotheses. For example: **No reply from the c
 
 Provide **Copy summary** and **Export diagnostics** with a preview. Default export redacts private endpoints and usernames and never contains NTS cookies/keys, TLS secrets, credentials or arbitrary memory. Export is initiated and written by the ordinary UI from bounded redacted data; a caller's filename never becomes an arbitrary privileged service write. No automatic upload or telemetry is enabled.
 
+Normal application logging uses INFO with admitted dependency messages at WARN or stricter. Troubleshooting uses a temporary, scoped DEBUG session under [architecture section 12.3](windows-time-architecture.md#123-logging-and-support): service collection requires administrative authorization; users control only their own UI diagnostics without elevation. Show the effective component scope, remaining duration and partial/failed collection honestly, with a stop action for the authorized owner. Required security/service events remain independent of optional verbosity. This belongs to production F-09/P3/P5; UI-M0 gains no live switch.
+
 Use event ordering that remains intelligible when wall time is wrong. Full/unavailable logs must not obstruct safe cleanup. If a service is confirmed unavailable after recovery attempts, explain the standard complete-package repair route; a bespoke restart/service-control button is not part of this v1 command surface.
 
-**Acceptance:** representative failures produce accurate causes/actions; hostile input and log flooding remain bounded; a useful ordinary event survives redaction. Export does not reveal protected state. [Architecture §§5.3, 12, 16; CHECK-14/17/22]
+**Acceptance:** representative failures produce accurate causes/actions; hostile input and log flooding remain bounded; a useful ordinary event survives redaction. Export does not reveal protected state. Unauthorized service-profile changes fail; temporary collection expires across UTC changes/restart/resume, and unavailable sinks do not misrepresent synchronization or suppress required-event routing. [Architecture §§5.3, 12, 16; CHECK-14/17/22]
 
 ### F-10 — Provide a small accessible native UI and optional tray
 
@@ -259,7 +261,7 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Tray at sign-in | Off; separate opt-in while tray is enabled | Per-user fixed installed UI path; no service-policy change |
 | Appearance | Follow supported Windows system preferences | Per-user; no custom theme engine required |
 | Language | English | Other locales require explicit adoption and QA |
-| Diagnostics | Bounded local logs; redacted previewable export | No secret data or privileged arbitrary export path |
+| Diagnostics | INFO application output; reviewed dependency messages WARN or stricter; bounded redacted export | Shared contract in architecture section 12.3; finite scoped DEBUG, administrative service control, per-user UI control; no secret data or privileged arbitrary export path |
 | Remote telemetry/crash upload | Off | No account or automatic support upload required |
 | Updates | User-initiated complete MSI under declared release profile | OD-05/architecture section 19.5; no silent downgrade of release trust |
 
@@ -326,7 +328,7 @@ This AC catalog describes the full product. UI-M0 uses the restricted M0-01–08
 | AC-13 | F-01/07 | Kill engine and broker during correction. Recover only with current ownership; ambiguous/successor state blocks resets. Crash loops preserve consumed budgets. | CHECK-10/12/27 |
 | AC-14 | F-01/06 | Managed-policy takeover defaults to observation; later GPO/controller activation causes honest conflict handling without fighting the owner. | CHECK-5/13 |
 | AC-15 | F-01 | Update/repair/uninstall with UI closed and old sessions; inject interruption. No partial product, permissive reset, stale-owner restoration or false completion. | CHECK-13/18/23 |
-| AC-16 | F-09 | Trust/network/policy failure yields useful bounded evidence; exports redact protected data; log flooding/full storage cannot block cleanup or create success. | CHECK-14/17/27 |
+| AC-16 | F-09 | Failures yield useful redacted evidence; required events survive optional filters; authorized temporary DEBUG expires; floods/full storage cannot block cleanup or create success. | CHECK-2/14/17/27 |
 | AC-17 | F-04/06/08/09/10 | Complete status, editing, UAC cancellation, correction review and export using keyboard/Narrator, contrast and 200% scaling. Focus/announcements remain usable. | CHECK-22 |
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
 | AC-19 | F-02/03/07 | Independently generated offset/drift/asymmetry cases and real clock measurements establish convergence/holdover behavior within the declared test envelope. | CHECK-7/8/10/11/24 |
