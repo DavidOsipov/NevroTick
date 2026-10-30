@@ -1,6 +1,7 @@
 # Signing the Windows time client: a practical MSI guide
 
-**Revision:** 1.0 with owner-decision amendment, 29 October 2026  
+**Revision:** 1.0 with owner-decision and trust-lifecycle amendments, 30 October 2026
+
 **Research date:** 28 October 2026  
 **Status:** Implementation guide; provider approval, production signing and clean-machine verification are **not completed**.  
 **Applies to:** The Chrony-derived Rust time client for Windows 11, delivered as one complete MSI containing its services, ordinary-user UI and administrative helper.
@@ -144,7 +145,7 @@ if ($LASTEXITCODE -ne 0) { throw "Broker signature verification failed or warned
 
 Repeat the payload check for every file required by the signed inventory. `/pa` selects Authenticode verification policy, `/all` verifies all signatures present and `/tw` warns about a missing timestamp. Treat warnings as a release failure requiring investigation. Verifying the MSI does **not** recursively prove every embedded executable's signature. [S7]
 
-The release checker must also enforce our intended identity and package manifest: a successful generic trust check alone can accept a valid signature from an unintended publisher. Design publisher/certificate renewal handling explicitly rather than permanently pinning a single leaf certificate without a rotation plan.
+The release checker must also enforce our intended identity and package manifest: a successful generic trust check alone can accept a valid signature from an unintended publisher. The accepted Foundation publisher display is not sufficient NevroTick project identity: qualify rejection of an unrelated, legitimately Foundation-signed artifact alongside acceptance of the approved NevroTick artifact. Bind admission to the approved project/artifact lineage and protected manifest, not display text or editable version resources alone. Design publisher/certificate renewal handling explicitly rather than permanently pinning a single leaf certificate without a rotation plan. [S2]
 
 The release evidence must establish:
 
@@ -156,6 +157,35 @@ The release evidence must establish:
 6. **Publication identity:** checksums and any release metadata describe the final signed bytes. Every published version attaches its prepared, validated SBOM assets alongside the complete MSI and final checksums. Reconcile Rust, native/generated/resources and actual MSI payload inventory against the exact version/source candidate and final signed hashes before publication; see [the repository SBOM tooling and handoff](../TOOLING.md#release-sbom-tooling). Attestations and an SBOM supplement that record; they do not replace Authenticode.
 
 Clock-dependent verification is particularly relevant for this application. Qualify the architecture's extreme-date, certificate-time and revocation behavior using controlled fixtures and disposable machines. Do not weaken TLS or executable-signature validation to get through a test with a wrong system clock. TUF is still a separate, unadopted update proposal; this guide does not add an automatic updater or accept a new time-bootstrap exception.
+
+### 5.1 Wrong-clock and offline activation matrix
+
+CHECK-9/18/23 must cover the code needed to reach recovery, including signature
+checks before elevated-helper activation. This is an availability qualification
+question, not evidence that Windows necessarily rejects every wrong-date launch.
+Timestamping can preserve Authenticode verifiability after the signer certificate
+expires; the selected chain, timestamp and revocation policy still governs. [S16]
+
+| Operation | Required conditions and observations |
+| --- | --- |
+| Installed startup and helper activation | Grossly incorrect past/future date, offline state and absent/stale trust caches; identify whether approved code can start, refusal reason and supported recovery route |
+| Initial complete MSI installation | Date before signing or key creation and far-future date; observe package and payload admission, without relying on recovery code that is not yet installed |
+| Update and repair | Unavailable trust infrastructure, stale caches and interrupted bounded verification; preserve installed-code identity and the prior usable product where authorized |
+| Uninstall and W32Time restoration | Required recovery code remains callable or an explicit supported administrator remedy exists; no signature failure silently authorizes an unverified helper |
+
+For each row and selected release profile, record the actual verifier/version,
+calling process and any delegated Windows execution owner, trust inputs/time
+basis, permitted retrieval, finite native-work budget, timeout/completion custody,
+refusal behavior and recovery route. A deadline on the awaiting UI task does not
+prove a native verification operation stopped. The TLS provider's execution and
+egress qualification does not automatically cover the UI, helper or MSI verifier.
+
+When using `WinVerifyTrust`, freeze the action and flags as part of that policy.
+`WTD_REVOKE_NONE` alone does not prohibit network retrieval for code-signature
+verification; Microsoft separately specifies `WTD_CACHE_ONLY_URL_RETRIEVAL`.
+Qualify the required cache-only or admitted online mode, including stale/missing
+cache behavior. Selecting cache-only operation does not prove fresh revocation
+information, and this amendment does not approve disabling required checks. [S17]
 
 ## 6. What the other routes do and do not solve
 
@@ -184,6 +214,15 @@ That experiment does not satisfy the public publisher-trust portion of CHECK-18 
 
 Before this profile can ship, establish a trusted full release-key fingerprint and key-custody/expiry/revocation/rotation process. Produce a detached signature over the exact final MSI and an OpenPGP-signed manifest binding version, source/build identity, package hash, corresponding-source and SBOM artifacts. Authenticate the expected key, not just a matching name or short key ID. No key has been selected or generated by this guide. [S12]
 
+Select the exact verifier and its key-policy enforcement separately from
+cryptographic signature validity. The `gpgv` manual says its keyring is trusted
+and expired/revoked keys are not checked. Therefore a successful `gpgv` exit plus
+the expected fingerprint alone cannot establish this profile's expiry/revocation
+requirements. Define protected trusted-key distribution, freshness evidence,
+rotation/revocation authorization and offline/unknown-age behavior; qualify
+revoked, expired, superseded and stale-keyring cases with a valid control. This
+does not adopt `gpgv`, a runtime dependency or a time-check bypass. [S18]
+
 Qualify valid, tampered, wrong-signer and mismatched-version/manifest cases. Preserve upstream signatures where present. Review the complete path from verified download and approved package to protected installed code, helper/IPC identity, DLL loading, repair and update lineage. Missing Authenticode must not become unconditional acceptance; a hash beside attacker-writable code is not an independent trust anchor. Research R-06 must resolve the signed-helper assumptions before qualifying this route.
 
 OpenPGP verification supplies no Windows verified-publisher identity. Unknown unsigned code can be blocked by Smart App Control or organizational policy; test the installer and each payload under the supported security configurations, disclose restrictions, and do not recommend disabling protections or installing a development root. [S13, S14]
@@ -203,6 +242,7 @@ See [NV-DEC-001 section 7](nevrotick-owner-decisions.md#7-od-05--signing-and-rel
 | Enforced binary metadata and public signing policy | Build/release owner | Not implemented or published |
 | Protected build, submission and human approval | Release/security owner | Planned; not implemented |
 | Valid/tampered/wrong-publisher signing checks | Release verifier | Not executed |
+| Wrong-clock/offline activation and profile-specific key policy | Windows/release/security verifier | Section 5.1 and section 7 cases required; not executed |
 | Complete MSI lifecycle for declared release profile on supported Windows | Installer/Windows verifier | Not executed; OpenPGP and Authenticode trust evidence remain distinct |
 | Renewal, revocation, access removal and recovery | Release/security owner | Must be written and rehearsed before public release |
 
@@ -216,6 +256,12 @@ Additional primary sources for the 29 October amendment:
 - **S13:** [Microsoft UAC behavior](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/how-it-works).
 - **S14:** [Microsoft Smart App Control](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/overview).
 - **S15:** [Microsoft unsigned MSIX testing feature](https://learn.microsoft.com/en-us/windows/msix/package/unsigned-package).
+- **S16:** [Microsoft Authenticode timestamp semantics](https://learn.microsoft.com/en-us/windows/win32/seccrypto/time-stamping-authenticode-signatures).
+- **S17:** [Microsoft WINTRUST_DATA action, retrieval and revocation controls](https://learn.microsoft.com/en-us/windows/win32/api/wintrust/ns-wintrust-wintrust_data).
+- **S18:** [GnuPG gpgv trust and key-policy limitations](https://www.gnupg.org/documentation/manuals/gnupg/gpgv.html).
+
+S16–S18 and the project-identity implication of S2 were checked on 30 October
+2026. These are documentation findings; no Windows/signing experiment was run.
 
 
 Primary provider and Microsoft pages were checked on 28 October 2026. Eligibility and service rules can change; recheck before application and release. The project-specific pipeline controls and acceptance criteria above are proposed engineering policy, not statements that a provider has accepted our implementation.

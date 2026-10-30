@@ -623,7 +623,8 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
     The caller admits source/graph/tool bytes and supplies the unchanged absolute
     wall deadline plus explicit finite listing allowances. Each command contains
     only `--list --json`, with at most 120 seconds remaining from that deadline;
-    this helper launches neither a baseline nor a campaign and creates no files.
+    this helper launches neither a baseline nor a campaign. It performs no direct
+    filesystem writes; the supplied custodian/tool may retain owned output.
     Raw output and warning observations remain in `report` even on parse failure.
 
     Listing discovery may reserve a larger aggregate than the current campaign

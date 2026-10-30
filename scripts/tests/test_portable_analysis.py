@@ -491,6 +491,34 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(set(report["mutation_enumeration"]), set(subjects))
         self.assertNotIn("mutation", report)
 
+    def test_inventory_only_consumes_one_unchanged_deadline(self):
+        subjects = dict(FILES[:2])
+        for clocks, expected_timeouts, exhausted in [([90.25, 98.1], [9, 1], False),
+                                                      ([90.25, 100.1], [9], True)]:
+            with self.subTest(clocks=clocks):
+                timeouts, calls, report = [], [], {}
+                def run(label, command, timeout):
+                    calls.append(label)
+                    timeouts.append(timeout)
+                    self.assertEqual(command[-2:], ["--list", "--json"])
+                    name = label.split(":")[1]
+                    return json.dumps([{"name": name, "file": subjects[name], "package": "time-domain"}])
+                with patch.object(MODULE.time, "monotonic", side_effect=clocks):
+                    if exhausted:
+                        with self.assertRaises(MODULE.Incomplete):
+                            MODULE.enumerate_mutation_inventories(SCOPE, subjects, {"maximum_mutants": 2},
+                                Path("/tools"), run, report, deadline=100.0, maximum_per_file=1, maximum_total=2)
+                    else:
+                        found = MODULE.enumerate_mutation_inventories(SCOPE, subjects, {"maximum_mutants": 2},
+                            Path("/tools"), run, report, deadline=100.0, maximum_per_file=1, maximum_total=2)
+                        self.assertEqual(found.total, 2)
+                        self.assertFalse(found.campaign_budget_exceeded)
+                self.assertEqual(timeouts, expected_timeouts)
+                self.assertEqual(calls, ["mutation-enumeration:" + name
+                                         for name in list(subjects)[:len(expected_timeouts)]])
+                if exhausted:
+                    self.assertNotIn("mutation_enumerated_total", report)
+
     def test_campaign_lanes_keep_the_aggregate_gate_before_every_campaign(self):
         subjects = dict(FILES[:2])
         for lane in ("mutation", "all"):

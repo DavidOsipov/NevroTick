@@ -82,3 +82,12 @@ records no donor/upstream implementation. Its researched technical sources live
 in the implementation source register and maintained CPU research; `LOCAL.json`
 registers the leaf. Links to Rust and processor specifications grant no new
 runtime dependency or product licence permission.
+
+## Contract-review amendment — 30 October 2026
+
+The [critical architecture assessment](../../docs/supporting-reviews/architecture-contract-review.md)
+refines existing local planning, service-adapter, crypto, fault-recovery and mutation
+guidance. Primary sources and their scope are retained in architecture S114–S120;
+no upstream skill leaf was copied or modified. These instructions add explicit
+owner-rights, durable-effect, trust-lifetime and mutation-denominator obligations,
+without changing accepted limits or claiming native qualification.

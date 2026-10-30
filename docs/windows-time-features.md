@@ -89,6 +89,11 @@ The existing starting proposal is four independently operated NTS identities, wi
 
 **Acceptance:** controlled agreeing, disagreeing, stale and duplicate sources yield the expected membership and reasons; a fast wrong source is rejected. Loss of agreement does not silently reduce the minimum or enter single-source mode. [Architecture §7; CHECK-7/8]
 
+Before production integration, freeze the majority population, independent groups,
+timeout behavior and observation-age limits under [architecture §7.2](windows-time-architecture.md#72-sample-to-clock-pipeline).
+An older usable predictor is not fresh independent corroboration. Authentication,
+cookie renewal and reachability do not by themselves refresh a time measurement.
+
 ### F-04 — Show truthful status immediately
 
 The main window answers four questions: **Is the product operating? Is the current reference authenticated? How fresh and usable is the evidence? Is action needed?**
@@ -144,6 +149,14 @@ The hints affect only the isolated certificate-time recovery path. They cannot s
 If the accepted result lies outside tested automatic correction limits, show **Review clock correction — Administrator required**. Display the direction, magnitude/target interval, evidence freshness, consequence and single-use nature. A changed generation, policy, estimate or expired proposal requires a new review. Declining leaves the clock unchanged by that proposal.
 
 **Owner goal OD-02:** include approximately 100-year local-date errors in recovery qualification. Exact true-date/era bounds, authenticated quorum and direction/runtime correction policy remain open. The tentative 12-hour plain-NTP limit is not an adopted value; preserve separate acquisition and broker authority.
+
+Cached authentication must also meet the [association lifetime contract](windows-time-architecture.md#74-nts-implementation-contract);
+a fresh packet need not mean a fresh full authentication decision. A wrong but
+intact saved time floor needs the qualified narrow supersession route in
+[§8.1](windows-time-architecture.md#81-recovery-order), preserving prior evidence
+and all correction/ownership budgets. The supported recovery journey includes
+wrong-clock/offline helper activation and repair/restoration under the selected
+signing profile. No generic security-state reset or signature bypass is added.
 
 **Acceptance:** a qualified recovery succeeds while the clock remains unchanged until all gates and correction authority pass. Wrong-name certificates, forged NTS messages, disagreeing helpers and stale approvals fail safely. Successful NTS acquisition alone cannot bypass the correction gate. [CHECK-3/9/10; OPEN-5/6/8]
 
@@ -325,6 +338,13 @@ A compulsory watcher, an independent watchdog service and always-on notification
 Every row below is **planned / not executed**. Test valid behavior and a relevant failure/forbidden effect through the actual entry point. Use independent timestamp fixtures and controlled time/network sources; implementation-produced expected output is not an independent oracle. Native authority, service lifecycle, clock trajectory and assistive-technology claims require the real supported Windows environment.
 
 This AC catalog describes the full product. UI-M0 uses the restricted M0-01–08 checks in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0); sample-data observations do not complete full-product cases, and D1–D3 remain Deferred without blocking UI-M0.
+
+Apply the [contract-review refinements](windows-time-architecture.md#2021-contract-review-acceptance-refinements)
+to AC-02/03/04/05/09/11/12/13/15: fresh votes versus retained predictors, full
+authentication age, intact-floor supersession, durable correction uncertainty,
+actuator mode/value, Fast Startup epochs, queued recovery and wrong-clock/offline
+maintenance. A lost reply never permits a duplicate correction or a success label;
+retaining product ownership never implicitly hands synchronization to Windows.
 
 | Case | Features | Scenario and required observation | Existing checks |
 | --- | --- | --- | --- |

@@ -1,4 +1,4 @@
-# UI-M0, pure wire, checked time-domain, fixture exchange, numerical owners and atomic fixture-history ownership.
+# UI-M0, pure wire, checked time-domain, fixture exchange and six pure core owners.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
 status = "five-member-scope-recorded-qualification-candidate-specific"
@@ -20,6 +20,7 @@ security_modules = [
     { name = "fixture-observation-normalization", package = "time-core", files = ["crates/time-core/src/regression/normalization.rs"], scope = "checked fixture context/Q33 admission and exact newest-reference normalization to a fresh owned FitInput; bounded read-only point observation; no history, eligible sample, native clock or authenticated provenance" },
     { name = "fixture-history-atomic-append-and-report", package = "time-core", files = ["crates/time-core/src/regression/history.rs"], scope = "exclusive bounded fixture append, context/order admission, staged oldest-only replacement and failure-atomic same-input report commit; no production retention, prune/reset/freshness, provenance, native clock or correction authority" },
     { name = "fixture-residual-runs-and-suffix-selection", package = "time-core", files = ["crates/time-core/src/regression/runs.rs"], scope = "bounded immutable fixture suffix search, extended residual runs, checked stage/position errors and associated same-fit diagnostics; no history pruning, source selection, physical uncertainty or clock authority" },
+    { name = "fixture-closed-real-interval-majority", package = "time-core", files = ["crates/time-core/src/selection.rs"], scope = "checked synthetic labels and closed-real interval-majority fixture, independent minimum, complete common witness and fixed-capacity results; no source eligibility, identity, trust, principal, freshness or clock authority" },
 ]
 critical_files = [
     "crates/nevrotick-ui/src/model.rs",
@@ -40,6 +41,7 @@ critical_files = [
     "crates/time-core/src/regression/normalization.rs",
     "crates/time-core/src/regression/history.rs",
     "crates/time-core/src/regression/runs.rs",
+    "crates/time-core/src/selection.rs",
 ]
 feature_matrix = [
     { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
@@ -50,6 +52,6 @@ feature_matrix = [
     { package = "time-domain", target = "x86_64-pc-windows-msvc", scope = "pure domain library and test-consumer compilation; native mappings and clock effects remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "ntp-exchange", target = "x86_64-unknown-linux-gnu", scope = "pure fixture association and test-only time-core composition; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "ntp-exchange", target = "x86_64-pc-windows-msvc", scope = "pure association library and test-only time-core consumer compilation; no native transport or clock qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "time-core", target = "x86_64-unknown-linux-gnu", scope = "checked fixture history/normalization, coefficient, associated residual-statistics and residual-runs owners; ordinary and optimized tests plus independently audited doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "pure fixture history/normalization/coefficient/residual/runs owners and external test-consumer compilation; no native clock, uncertainty or statistical eligibility qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "time-core", target = "x86_64-unknown-linux-gnu", scope = "checked fixture history/normalization, coefficient, residual-statistics, runs and closed-real interval-majority owners; ordinary and optimized tests plus independently audited doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "six pure fixture core owners and external test-consumer compilation; no native clock, uncertainty, production source eligibility or statistical qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
 ]

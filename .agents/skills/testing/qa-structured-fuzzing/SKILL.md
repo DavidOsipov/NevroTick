@@ -9,6 +9,13 @@ Read [the testing contract](../CONTRACT.md).
 
 Select one target/invariant: raw framed JSON admission, DTO-to-domain conversion, migration, numeric conversion, safe error projection, NTP wire, NTS/crypto. Separate targets; earlier parser rejection proves no later-guard coverage.
 
+When reusing Chrony scenarios/corpora, read the
+[upstream tools reference](../references/chrony-upstream-tools.md): chrony-fuzz's
+AFL++ patches simplify protocol checks and bypass SIV/TLS for reachability. Keep
+the admitted Rust engine and actual production guards; qualify seed rights,
+outer-record versus payload framing, target forwarding, state reset and finite
+resources. Patched acceptance supplies no independent security oracle.
+
 Start accepted seeds/independent expected facts/named malformed boundaries. Preserve duplicate keys/raw malformed bytes through actual production decoder. Coverage-guided/structure-aware generation requires qualified runner; deterministic byte/transition cases remain useful without it.
 
 For a new/changed adapter, use [harness qualification](../references/harness-qualification.md) to check actual forwarding with a finite accepted seed and an intended fault. An adapter that changes the selected bytes or rejects everything can hide the boundary despite a successful runner.

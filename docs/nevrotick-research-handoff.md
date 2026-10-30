@@ -6,6 +6,8 @@
 **Input:** [Owner decisions NV-DEC-001](nevrotick-owner-decisions.md), [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md)  
 **Repository integration base:** `DavidOsipov/NevroTick@77ad8c416db32d5edfdc9e6a538d76637eaf44f0`. This maintained assignment accompanies the integrated owner-decision record; retrieve the current checkout and relevant updates before acting.
 
+**30 October 2026 trust-lifecycle amendment:** R-02/R-04/R-05 now require explicit authentication ages, semantic time-floor recovery and vote/freshness rules before the dependent production interfaces are frozen. These refine existing open gates; they adopt no key lifetime, stronger quorum, floor-reset privilege or new source preset. Source review and controlled-case specifications below establish no implemented NTS or Windows behavior.
+
 ## 1. Assignment and limits
 
 Investigate the unresolved questions below and produce concrete options with evidence. This assignment is research and planning. It does not authorize provider contact, accepting terms, submitting vendor/signing applications, spending money, generating release credentials, public releases or changes to the user's Windows clock/services/trust stores.
@@ -58,13 +60,27 @@ Specify:
 
 Study [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html#section-6), [RFC 8915](https://www.rfc-editor.org/rfc/rfc8915.html#section-8), and the selected Chrony [configure](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/configure) / [util.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/util.c) era mapping. Do not derive the era solely from the broken OS clock. Do not claim a lower-bound date, NTS label, fresh handshake or multiple aliases alone proves UTC.
 
+### Floor construction and supersession
+
+Identify the exact uncertainty quantity, fault/delay assumptions, model version and supporting source evidence used to derive a saved floor. A regression standard error, confidence interval, root distance and conservative bound are not interchangeable. An authenticated, intact record can still contain a floor ahead of true UTC after previously accepted bad evidence; strict decoding and corruption recovery do not address that case.
+
+R-02 must propose a narrowly authorized supersession procedure, its independent evidence and refusal behavior. Retain the old record and provenance, identify dependent models/associations to invalidate, and preserve broker correction budgets, consumed step authority and installer ownership. Until the procedure is approved and qualified, contradictions block the dependent automatic recovery; deleting all security state is not an accepted remedy. Bring material authority choices through NV-DEC-001 rather than inferring approval from this requirement.
+
+### Votes, prediction and fresh agreement
+
+R-02/R-04 must freeze a decision table naming the majority denominator, configured minimum, operator/endpoint grouping, timeout and statistical-rejection effects, accepted-observation age and uncertainty growth, separately for routine selection and exceptional recovery. Include four fresh groups, two unavailable groups, duplicate operators, a 2–2 split and one fresh source plus usable historical predictors. State the assumed faulty-group/path model and availability tradeoff; two malicious agreeing groups with two honest groups blocked does not disprove a one-fault guarantee.
+
+[Chrony's FAQ §3.7](https://chrony-project.org/faq.html#_an_unreachable_source_is_selected) explains that an unreachable predictor may remain selected for hours. Its usefulness for prediction is not fresh independent corroboration or exceptional-correction authority. KE completion, cookie replacement, NAK and reachability changes must not refresh the last accepted time-observation timestamp. Preserve useful history without claiming renewed agreement.
+
 ### Required controlled cases
 
 | Case family | Expected property |
 | --- | --- |
 | Local date ±100 years; true date inside/outside supported interval; 2036 rollover; era boundaries | Correct independent interpretation when supported; explicit rejection when ambiguous or out of range |
 | No trusted floor, stale build, corrupted state, restored old snapshot | No permissive default or unearned date trust |
+| Intact future floor from previously accepted bad evidence; correct independent sources return | Execute only the approved supersession/refusal path; retain provenance and consumed broker authority |
 | One malicious NTS source, duplicate operator aliases, contradictory intervals, loss of quorum | No duplicate votes, no silent minimum reduction, no unauthenticated substitute |
+| Historical predictors remain usable while fresh corroboration is lost | Selection, reported agreement and exceptional correction follow their distinct frozen eligibility rules |
 | One/two bad helpers, disagreement, timeout, replay, no NTS completion | Hints cannot change Windows time or enter ordinary selection |
 | Expired/not-yet-valid or revoked certificates; compromised old key made valid at the hinted date | Normal identity/signature policy retained; residual bootstrap attack represented honestly |
 | Repeated small shifts, frequency abuse, sleep/resume, service crashes, acknowledgment loss | Real effects consume persistent authority; no repeated step or cleanup that changes a successor's clock policy |
@@ -126,6 +142,14 @@ Produce one admission record per selected provider: official identity and ports,
 Qualify the exact Rust TLS provider, verifier, native dependencies and selected Windows service context. A provisional time argument does not establish that every Windows trust/revocation operation uses that time.
 
 Document trust-store ownership, enterprise policy and explicit distrust, chain/hostname/EKU/algorithm checks, known-revoked versus unknown status, offline semantics, validity at candidate time, Windows API date range, resumption isolation and cached-association policy. Trace direct and delegated DNS/AIA/CRL/OCSP/network work, redirects and native cancellation/resource ownership. Preserve the existing conditional ASVS retrieval analysis.
+
+### Association and full-authentication lifetime
+
+Track separately the latest accepted time observation, cookie receipt, C2S/S2C key establishment, original full certificate-authenticated handshake and applicable trust-policy revision. Packet/cookie renewal and resumed TLS cannot silently renew full-authentication age. Specify bounded association/key lifetimes and jittered full reauthentication, including when resumption is forbidden, age measurement across restart/suspend/wrong UTC, and refusal or explicit recovery when age is unknown. Define source/algorithm removal, known-compromise and detected trust-store/policy invalidation, the detection owner and maximum reaction delay. Detection is not instantaneous merely because the policy has a revision.
+
+[RFC 8915 §8.2](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.2) describes impersonation using a compromised cookie-encryption key, including an interception case not remedied solely by genuine-server rotation. [RFC 8446 §4.6.1](https://www.rfc-editor.org/rfc/rfc8446.html#section-4.6.1) recommends a cumulative lifetime bound for resumed key material. Conversely, [RFC 8915 §8.5](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.5) says original certificate expiry alone normally need not trigger KE; do not equate certificate `notAfter` with association expiry. Chrony 4.9's [manual](https://chrony-project.org/doc/4.9/chrony.conf.html#ntsrefresh) and [pinned default](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/conf.c#L264) give `ntsrefresh` as 2,419,200 seconds (four weeks). Record it in the port ledger as comparison evidence, not an adopted NevroTick constant.
+
+CHECK-8/9/15 cases must keep protected UDP responses arriving while full reauthentication fails, policy changes or age becomes unknown. Verify the selected expiry/refusal behavior, genuine accepted-neighbor recovery, preserved observation timestamps and no plain-NTP downgrade. OPEN-8/R-05 owns the policy proposal; dependent cached-association support remains gated until its choice and actual provider behavior qualify.
 
 Test wrong name, expired/future certificates, revoked intermediates, unavailable responders, untrusted roots and extreme date conversions with valid neighboring controls. Reconcile OPEN-8's previously pinned source lead against the actual selected version. If the necessary policy cannot be enforced, report the blocked path and alternatives rather than disabling checks. A residual-risk change requires an OD-04 decision card.
 

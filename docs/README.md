@@ -4,7 +4,7 @@
 **Snapshot date:** 29 October 2026  
 **Canonical architecture:** RWTC-ARCH-001, revision 1.4
 
-The maintained set contains ten principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report and an x64 runtime-optimization research report. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
+The maintained set contains ten principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report and a critical architecture-contract assessment. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
 
 ## Plans, acceptance and execution evidence
 
@@ -46,11 +46,31 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
+**Architecture contract assessment, 30 October 2026:** the [critical review](supporting-reviews/architecture-contract-review.md) distinguishes valid specification gaps from existing controls and stale external snapshots. [Canonical acceptance refinements](windows-time-architecture.md#2021-contract-review-acceptance-refinements), [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix) and [the execution workstream](plans/development-plan.md#82-contract-review-workstream-and-interface-gates) cover ownership, durable correction, adjustment modes, trust lifetimes, fresh agreement and lifecycle/tooling evidence. Unresolved numerical and trust-policy decisions remain held; no native qualification is claimed.
+
 **UI toolkit comparison, 30 October 2026:** the [Win32 versus egui report](supporting-reviews/ui-toolkit-comparison.md) summarizes measurements, tradeoffs and evidence limits; the [S0.5 execution record](../tasks/s0.5-ui-comparison.md#results) retains detailed inputs and receipts. David rejected the tested egui Glow/AccessKit configuration on memory consumption and closed the comparison; retain Win32 and the existing resource targets. This pilot establishes no full accessibility, sustained performance or product-graph admission.
 
 **Protocol follow-up, 30 October 2026:** [NTP client behavior](windows-time-architecture.md#73-ntp-client-behavior) makes KoD support explicit through pinned Chrony/independent-codebase analysis and reuse. The [existing protocol task](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) records RFC 8915 alignment and remaining implementation checks; [TLS policy](windows-time-architecture.md#1871-license-gate-and-finite-provider-choice) prioritizes AES-GCM while retaining provider/CPU qualification. These are P2 requirements, not implemented NTS/KoD support or measured AES speedup.
 
 **Upstream code is not presumed bug-free or vulnerability-free.** Chrony and other reused projects, libraries and tools require independent verification of the behavior NevroTick relies on. See [architecture section 20.1](windows-time-architecture.md#201-independent-numerical-truth) and [the test and stress matrix](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing).
+
+**Upstream testing tools, 30 October 2026:** the [clknetsim/chrony-fuzz reference](../.agents/skills/testing/references/chrony-upstream-tools.md)
+adds pinned scenario/seed reuse to the existing plan and skills. clknetsim supplies
+reference trajectories through an explicit seam; chrony-fuzz supplies testcase
+ideas from an AFL++ harness that deliberately simplifies protocol/crypto checks.
+Neither is a native Windows harness or an independent authentication oracle.
+The [protocol task follow-up](../tasks/s0.1-protocol-comparison.md#upstream-simulation-and-fuzz-tool-follow-up)
+records source-only inspection and the next bounded qualification work.
+
+**Chrony/NTPsec mechanism assessment, 30 October 2026:** the
+[critical source assessment](../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment)
+supports targeted refinements for estimate lifecycle, bounded scheduling, route
+relearning, atomic NTS publication/send enforcement and restoration validity.
+The [existing workstream map](plans/development-plan.md#41-apply-the-chrony-and-ntpsec-mechanism-assessment)
+keeps current S1.3 qualification before dependent controller integration. Chrony
+remains the numerical reference; NTPsec supplements protocol comparison alongside
+ntpd-rs. No upstream constants, additional controller or implementation pass follows
+from this review; the relevant implementation/security/testing skills carry the checks.
 
 **Development baseline, 30 October 2026:** The [Cargo workspace](../Cargo.toml) contains the fixture-only `nevrotick-ui`, dependency-free `ntp-wire`, checked numerical `time-domain`, single-slot `ntp-exchange` and pure fixture-regression `time-core` owners. [The tooling record](../TOOLING.md#starting-implementation) describes the verification entry points; [UI-M0](../tasks/ui-m0.md), [S1.1a fixed headers](../tasks/s1.1-header.md), [S1.1b framing](../tasks/s1.1-framing.md), [S1.1c arithmetic](../tasks/s1.1-time-domain.md), [S1.1d exchange association](../tasks/s1.1-exchange-association.md) and [S1.2 regression](../tasks/s1.2-regression-readiness.md) own candidate-specific results and gaps. The five-member graph retains the sixteen external package records from the UI-M0 cohort; it admits no production networking or TLS. The [planned runtime dependency refresh](windows-time-architecture.md#186-runtime-dependency-register) still leaves held AWS-LC/Schannel providers and the production graph unresolved.
 
@@ -129,6 +149,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [basic-features-review.md](supporting-reviews/basic-features-review.md): integrated product feature, UX, authority and acceptance review.
 - [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): measured Win32/egui pilot, dependency concerns and the owner's decision to retain Win32; detailed execution stays in the S0.5 task.
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
+- [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 

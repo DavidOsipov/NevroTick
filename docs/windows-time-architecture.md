@@ -15,6 +15,12 @@ selects an intended v3 baseline and required runtime-optimization workstream.
 Section 18.2 and hardening §6.7 distinguish that decision from the unchanged
 current compiler configuration and pending native/performance qualification.
 
+**30 October contract review:** the [critical assessment](supporting-reviews/architecture-contract-review.md)
+records verified specification gaps, existing controls and unresolved policy choices.
+Sections 4, 7–12, 18–20 and the OPEN register refine ownership, correction durability,
+adjustment modes, trust lifetime and qualification. These amendments establish no
+new implementation, Windows test result or accepted risk exception.
+
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
 The selected v1 design is **one complete per-machine MSI** under the Authenticode or initial OpenPGP release profile in section 19.5 containing a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker, and the administration helper. The user installs, updates, repairs and removes one product. The installer owns service installation and reversible Windows Time Service handover. A future MSIX, if qualified, must contain the same complete product with an equivalent lifecycle; separate UI and service distributions are excluded.
@@ -184,17 +190,19 @@ sequenceDiagram
     E->>B: Typed bounded correction proposal
     B->>B: Check identity, ownership, epochs and total budget
     alt Current proposal is authorized and within bounds
+        B->>B: Durably reserve operation identity and authority
         B->>W: Apply permitted correction
         W-->>B: API result and adjustment readback
-        B-->>E: Acknowledge applied state and generation
-        E->>E: Reconcile model with acknowledged actuation
+        B->>B: Persist known outcome; retain unknown on failure
+        B-->>E: Return confirmed outcome or explicit unknown
+        E->>E: Reconcile confirmed actuation; hold unknown
     else Admission or ownership fails
         B-->>E: Reject with no new clock write
     end
     B-->>U: Coherent status, freshness and reason
 ```
 
-An API success/readback acknowledges what the backend applied or accepted; it does not itself measure end-to-end UTC accuracy. An unknown acknowledgement is reconciled against broker state before retry. The UI request carries no target timestamp or destination. Both diagrams describe required future behavior, not tested implementation.
+An API success/readback acknowledges what the backend applied or accepted; it does not itself measure end-to-end UTC accuracy. Publish successful applied-state acknowledgement only after its durable outcome is recorded. Lost acknowledgements and crash-unknown effects follow section 10.2.1; they never authorize a duplicate relative correction. The UI request carries no target timestamp or destination. Both diagrams describe required future behavior, not tested implementation.
 
 ### 3.1 Component responsibilities
 
@@ -262,6 +270,17 @@ Use service SID restrictions, explicit process/token object security and non-inh
 
 The exact token/ACL configuration is a P0 proof gate. If the LocalService/service-SID combination cannot meet isolation tests, use a distinct engine virtual account with restricted privileges and a reviewed outbound policy. This is a constrained fallback, not permission to run both services as LocalSystem.
 
+Object ownership is part of that proof. A service SID in a DACL does not by itself
+change the default owner: a LocalService-created file can remain owned by the
+shared account. Owner-mediated DACL changes can defeat an otherwise narrow allow
+list, subject to the actual token and access checks. Qualify a per-service default
+owner, an appropriate `OWNER RIGHTS` descriptor, or the permitted distinct-account
+alternative. Record owner SID, DACL, effective rights and inheritance for runtime
+creation, staging/replacement, logs and relevant process/token/kernel objects.
+Use a second LocalService service to challenge owner-mediated access after creation
+and replacement, alongside intended-service positive controls. Do not assume every
+restricted token can exploit this, or that DPAPI cures shared-account access. [S115]
+
 ### 4.2 Operation authorization
 
 | Operation | Default authority | Required protection |
@@ -314,6 +333,12 @@ The broker clamps or rejects proposals against hard product ceilings and active 
 The broker also enforces **cumulative correction accounting**, not just a per-message ceiling. Repeated individually valid phase requests must consume a rolling budget measured by the broker's monotonic clocks. Account for the actual integrated rate contribution, including a malicious proposal relabelled as stable frequency; cancelling, reconnecting, restarting the engine, or flipping sign must not refund consumed authority. Separate instantaneous rate, absolute accumulated phase movement, signed net displacement, authorized steps and changes to the retained base estimate. Counting only net displacement permits alternating-sign abuse. Conservative restart recovery must not clear consumed budgets, and an unknown ledger blocks new corrections until safely reconciled.
 
 These bounds limit how quickly damage can accumulate; they do **not** prove UTC or impose a permanent absolute-error limit against an engine that paces its lies below the limits. Legitimate oscillator correction also consumes relevant rate/phase allowances. S0.7 must define defensible windows, units, hard ceilings, restart/boot semantics and a constrained recovery procedure using measured oscillator behavior. No invented permissive defaults are authorized by the requirement. See THR-19 and CHECK-3/10/12.
+
+For scale, a constant 100 ppm contribution integrates to 8.64 seconds per day;
+this is arithmetic, not an adopted oscillator allowance. OPEN-5 must record the
+measured legitimate-drift envelope and the residual authority available to a
+compromised engine. Budget policy needs an evidence-backed owner decision. Apply
+the durable reservation protocol in section 10.2.1 before budget-consuming effects.
 
 The administrative interface also admits the finite start/stop diagnostic-session operations in section 12.3.3. Only current administrative authority can change service collection; ordinary status readers may inspect its redacted effective state. These operations accept no filter expressions, sink paths or service-control commands and grant no time-setting authority.
 
@@ -377,9 +402,9 @@ Represent UTC, monotonic time, active-awake time, NTP wire timestamps, durations
 | SourceEstimate | Pure core | Offset at a stated common instant, frequency/skew, uncertainty interval, aged statistics and reason for eligibility/rejection |
 | SelectionSnapshot | Pure core | Eligible set, interval majority, principal, supporters, rejected set, configured minimum and generation |
 | CorrectionProposal | Engine; authorized by broker | Finite phase/rate request, expected revision/generation, deadline, source evidence reference and step permission |
-| AppliedCorrection | Broker | Actual applied rate/phase, quantization, application instant, remaining budget, new generation or explicit error |
+| AppliedCorrection | Broker | Operation identity, durable outcome or explicit uncertainty, actual mode/rate/phase, quantization, application instant, remaining budget and generation |
 | StatusSnapshot | Broker publication owner | Coherent versioned view with freshness, authentication, agreement, uncertainty, next action and last failure |
-| TrustState | Protected persistence | Authenticated-time floor/model, drift prior, NTS association provenance, version and validation bounds |
+| TrustState | Protected persistence | Floor/model with uncertainty assumptions, evidence and supersession history; drift prior; separate NTS key/full-authentication ages and trust-policy revision; version/validation bounds |
 
 Network samples, administrator policy and measured actuation are different authorities. Status is a projection, not an alternative controller state. A cached observation has its own age/provenance and does not become fresh when the UI reloads.
 
@@ -515,6 +540,15 @@ Key reference functions include `SRC_SelectSource`, `combine_sources`, `SST_DoNe
 
 Chrony is a fallible reference. Do not preserve a confirmed upstream defect merely to achieve behavioral parity. Establish the correct result from an independent requirement, protocol contract or numerical oracle; add a regression test and record the correction, affected upstream revision and upstream fix/report disposition in the port ledger and deviation register. Apply the verification policy in sections 20.1 and 20.3 to retained algorithms and their Windows integration.
 
+Use pinned NTPsec as an additional comparison for packet admission, send guards,
+failure transitions and diagnostics, alongside the existing ntpd-rs reference.
+This role neither replaces OD-01's Chrony-derived controller nor establishes an
+independent truth oracle: upstream implementations can share ancestry and defects.
+Do not prepend NTPsec's eight-stage filter or add its PLL/FLL without a separately
+reviewed algorithm change and full trajectory evidence. The
+[mechanism assessment](../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment)
+records inspected behavior, limits and retained source pins. [S122]
+
 ### 7.2 Sample-to-clock pipeline
 
 1. **Admit the response.** Check bounds, association, endpoint, request correlation, authentication and clock continuity before any time-bearing state mutation.
@@ -528,9 +562,63 @@ Chrony is a fallible reference. Do not preserve a confirmed upstream defect mere
 
 A strict default targets four independently operated NTS identities, with a configured minimum of two agreeing eligible identities and the majority rule still required. Four hostnames or IPs do not prove independence; allow explicit operator grouping and deduplicate identities/endpoints. A deliberate single-source profile is possible but must be labelled, never entered automatically after agreement fails. RFC 8633 motivates diverse sources; the selected minimum is a product proposal. [S17, S18]
 
+Before production admission, freeze the vote population: configured identities,
+eligible estimates and independently operated groups are distinct sets. Specify
+the majority denominator, treatment of timeout/statistical rejection, deduplication,
+maximum observation age and uncertainty growth, separately for routine tracking
+and exceptional recovery. Preserve the configured minimum through source loss.
+Qualify four fresh sources, two missing, duplicate operators, a 2–2 split and one
+fresh source with older usable models under the declared fault assumptions.
+Two malicious agreeing sources with two honest sources blocked illustrates a
+policy/fault-model question, not a disproof of a one-fault guarantee. [S117]
+
+Keep model eligibility for prediction/holdover, fresh independent corroboration
+and exceptional-correction authority separate. An older selectable Chrony model
+does not establish a fresh vote. NTS-KE, cookie renewal, NAK and reachability alone
+never refresh the last accepted-time-observation timestamp. Existing S1.3 fixture
+selection does not settle the production denominator or exceptional quorum;
+OPEN-5/6 and research R-02 own the dependent choices.
+
+#### 7.2.1 Estimate lifecycle and anomaly evidence
+
+Carry each estimate's reference instant, last accepted observation identity/time,
+clock/source generations, offset/frequency and their distinct uncertainty terms to
+the actual consumer. Re-evaluation, projection, reselection and a restored prior
+cannot manufacture a new observation or fresh independent corroboration. With no
+new evidence, grow uncertainty under the declared model and expire quality claims
+under the adopted age/uncertainty policy even if the service remains responsive.
+Model uncertainty is conditional on its delay/fault assumptions, not a guaranteed
+UTC error bound. [S17, S122]
+
+Complete the source-statistics and reference-control callers as well as their
+numerical kernels: retained-history adaptation and confidence-weighted frequency
+updates answer different questions. Preserve disagreement in the updated
+uncertainty; an uncertain new fit must not erase a sound prior merely because it
+is newer. Follow actual correction notifications through every dependent history
+and estimate, with effective time, achieved effect and generation. A refusal
+leaves coordinates unchanged; an unknown outcome follows section 10.2.1, and an
+unexplained clock discontinuity invalidates affected history. Qualify equivalent
+physical conclusions in stable and correctly remapped coordinates. [S17]
+
+Treat an anomalous observation as evidence to assess within the existing runtime
+states. Freeze how fresh observations, independent agreement and known clock
+events distinguish a transient spike, route change, disagreement and sustained
+local error. Replaying or selecting the same observation is not confirmation.
+Hysteresis cannot retain an ineligible principal, and persistence of an error
+alone grants no exceptional correction authority. Borrow transition discipline
+without importing upstream spike/step thresholds or a second controller. [S122]
+
 ### 7.3 NTP client behavior
 
 Version 1 sends NTPv4 client-mode requests and accepts server-mode replies for current configured associations. Use ephemeral randomized client ports; do not open an NTP server listener. Associate a response with the saved real transmit timestamp even if the wire token uses anti-spoofing randomization. Validate era interpretation, essential timestamps, synchronized leap state, valid time stratum, root properties, local clock continuity and one-response-per-request behavior. A stratum-zero Kiss-o'-Death response is control information, never a time sample. [S16, S19]
+
+Before S2.1 socket admission, qualify RFC 9109's recommendation that a randomized
+client port **SHOULD NOT** be shared across associations. Choose per-association
+or per-request randomization explicitly, accounting for path changes and measurement
+stability. If using per-request ports, define bounded socket closure and any
+delayed-response grace period; the RFC's example duration is not a product constant.
+Test the actual Windows socket lifecycle, association isolation and stale replies.
+Port isolation supplies neither authentication nor source independence. [S19]
 
 **Kiss-o'-Death support is required in S2.1/S2.2.** Extend the existing [protocol comparison](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) and Chrony port ledger before implementation: inspect pinned Chrony and at least one independent implementation, then reuse/adapt their qualified algorithms. Cover `RATE`, `DENY`/`RSTR`, unknown/experimental codes, correlation/replay, NTS KoD/`NTSN`, polling and source lifecycle. Reconcile differences against RFC 5905 section 7.4, verified erratum 3007 and RFC 8633 section 5.4; `RATE` increases the interval (reduces request frequency). KoD receive/transmit timestamps supply no time observation. Freeze bounds and recovery/re-enable behavior from that review rather than inventing a scheduler here. The current opaque stratum-zero fixture result is not implemented KoD policy. [S16, S18, S20]
 
@@ -540,17 +628,75 @@ Inventory the unpredictability and actual entropy of every anti-spoofing value. 
 
 The ordinary four-timestamp delay expression is `(T4 - T1) - (T3 - T2)`, but the port must preserve chrony's treatment of precision and frequency error rather than adding an unjustified “negative delay always invalid” shortcut. Delay checks, root distance, jitter and chronology checks have different purposes. Advertised source uncertainty is a source claim, not independent proof against a malicious server. [S16, S17]
 
+Qualify a permanent increase in path delay with intermittent spikes. The delay
+model needs an explicit bounded aging/relearning or reacquisition policy so an
+obsolete low-delay baseline cannot reject every otherwise eligible future sample
+indefinitely. Retain absolute delay, authentication, agreement and uncertainty
+limits; a path outside those limits remains diagnosed as unavailable. A route
+change does not prove symmetric delay or accurate time. Chrony's `maxdelayquant`
+is a specialized, default-disabled alternative for mostly static short-poll LANs,
+not an adopted mobile-client default. [S17]
+
+The engine owns one scheduling policy across acquisition, ordinary polls, resume,
+network changes, user refresh, DNS/KE retries and admitted KoD responses. Separate
+operations retain their own deadlines and budgets, but all triggers pass current
+generation, earliest-permitted-operation, per-source and aggregate guards.
+Coalesce refresh/events; reconnect and repeated online notifications cannot
+replenish unrestricted bursts. Adaptive polling consumes estimator quality and
+history without overriding these limits. Reset KE backoff only after successful
+KE and a subsequent authenticated NTP exchange using that transaction's keys and
+data; an old association's success cannot reset a failing replacement's retry.
+This policy requires no shared timer or blocking DNS/TLS work in the core.
+[S17, S20, S122]
+
 Define an explicit NTP-era pivot and plausible date range. The 32-bit seconds field wraps in 2036; a grossly wrong OS date cannot safely serve as the only era anchor. A persisted authenticated floor, operator date anchor and release policy can constrain interpretation. If interpretation remains ambiguous, block automatic stepping and explain the required remedy.
 
 ### 7.4 NTS implementation contract
 
 NTS requires a TLS 1.3-or-later KE channel with `ntske/1`, verified server identity, bounded record parsing and exporter-derived direction-specific keys. Implement the interoperable AES-SIV-CMAC-256 profile using a maintained compatible library. Each protected request uses a fresh UID containing at least 32 CSPRNG-generated octets, cookie handling and authenticated response validation. NTS authenticates time data; it does not make an inaccurate server correct or remove network delay attacks. [S20]
 
+Track accepted-observation freshness, cookie issuance/receipt age, C2S/S2C key age,
+the last full certificate-authentication time and the trust-policy revision
+separately. Fresh UDP authentication, cookies and resumed TLS do not reset the
+original full-authentication age. Before cached association support, freeze maximum
+key/association and cumulative resumption lifetimes, jittered full reauthentication,
+which refreshes forbid resumption, invalidation for source/algorithm changes or
+known compromise, and detection/reaction bounds for trust-store changes. Unknown
+age after reboot or a broken date requires an explicit conservative policy; wall
+time being repaired cannot manufacture a trustworthy age. OPEN-8/R-05 hold the
+values and verifier integration. [S20, S116]
+
+RFC 8915 section 8.2's cookie-key compromise can permit an intercepting attacker
+to continue impersonation after genuine-server key rotation; cookie renewal alone
+does not resolve it. Section 8.5 does not normally require fresh KE solely because
+the original certificate reaches `notAfter`. Qualify a deliberate lifetime policy
+rather than that blanket expiry rule. Chrony 4.9's four-week `ntsrefresh` default
+is a port-ledger reference, not a NevroTick constant. [S20, S116, S117]
+
 The KE parser has explicit cardinality/length/end-of-message rules, rejects unknown critical records, and accepts only an offered supported protocol/AEAD. Support authenticated NTP endpoint/port delegation within the configured destination policy. Do not concatenate unchecked hostnames, file paths or shell commands. Bounded DNS re-resolution revalidates destinations; broadcast/multicast and unintended local/private destinations are rejected unless a managed local-source policy explicitly permits them.
 
 Proposed KE qualification limits are an overall 128 KiB response budget, acceptance of at least 65,536 bytes, a 20-second connection/handshake budget and at most two simultaneous KE operations. These values require interoperability testing and cannot override mandatory protocol acceptance. UDP receive buffers remain bounded; outbound requests target a path-MTU-friendly size and reduce cookie requests instead of depending on fragmentation.
 
 For ordinary NTS replies, stage all cookie and association changes until the complete protected response validates; the control-only KoD/NAK exception below has its own admission and permitted effects. Never disclose keys/cookies in status, logs, debug formatting or crash uploads. Correlate NTS NAK with an outstanding request, back off re-establishment, and never interpret it as authorization for plain NTP tracking.
+
+Construct a replacement KE association privately from the complete validated
+negotiation, exporter keys, cookies, admitted endpoint and current policy/generation;
+publish it atomically only when the complete contract succeeds. Failed replacement
+preserves a still-valid existing association, unless a separate current trust or
+lifetime rule invalidates it. Incremental parser writes into active state do not
+establish this contract. Test every split point of bounded representative KE
+messages, coalesced records and truncation; separately test permitted NTP packet
+nonce/padding/cookie alternatives under the negotiated AEAD.
+
+At the actual normal-time-query sender, require a current usable NTS association
+and successful protected-packet construction. Cookie exhaustion, incomplete KE,
+cancellation, expired/invalid state and restart enter bounded recovery or
+unavailability; none may emit a plain request as a shortcut. Recheck invalidated
+policy/generation facts between construction and send. Explicit plain-NTP profiles
+and authorized bootstrap hints use their separate authority paths. Preserve the
+real local T1 separately from the correlation token and minimize unnecessary
+client header disclosure within the protocol contract. Qualify emitted datagrams,
+not merely configuration or constructor tests. [S20, S122]
 
 RFC 8915 section 5.7 permits trailing unauthenticated extension fields and requires discarding those fields. Accept an otherwise valid protected response with well-framed trailing fields while giving them no semantic effect; malformed framing remains a separate rejection. The inspected Chrony 4.9 authenticator-last behavior is a recorded upstream difference, not an alternative RFC-alignment claim. Test the protected prefix and forbidden influence of trailing fields independently. [S17, S20]
 
@@ -576,8 +722,8 @@ Do not add mixed authenticated/unauthenticated voting in version 1. It complicat
 
 The requested one or two NTP backup servers are supported as **bootstrap-only time hints**. This is an explicit administrator-enabled recovery policy, disabled in the strict default profile. They are not fallback members of the normal NTS source set.
 
-1. Load protected state and assess whether there is a usable authenticated time model or floor. Derive the saved floor conservatively from an accepted estimate minus its stated uncertainty, not from an arbitrary OS timestamp or an estimate's center. It is a lower-bound hint under the model's assumptions across an unknown powered-off interval, not proof of the current date.
-2. Try cached NTS cookies and keys with fresh request UIDs. Packet authentication can work without a new certificate-time check. A server may reject old cookies; that causes bounded re-establishment, not plain tracking.
+1. Load protected state and assess whether there is a usable authenticated time model or floor. Derive the saved floor conservatively from an accepted estimate minus a precisely defined uncertainty quantity, not from an arbitrary OS timestamp or an estimate's center. Record the model/version, source evidence, provenance and delay/fault assumptions. Regression standard error, a confidence interval and root distance are not interchangeable hard bounds. The floor is a lower-bound hint under the declared assumptions across an unknown powered-off interval, not proof of current UTC or infallible accepted evidence.
+2. Try cached NTS cookies and keys with fresh request UIDs only when section 7.4's lifetime/current-trust policy permits. Packet authentication can work without a new certificate-time check. A server may reject old cookies; that causes bounded re-establishment, not plain tracking.
 3. Try normal NTS-KE with ordinary validation. Successful strict or cached NTS acquisition takes precedence over the hint branch.
 4. Only if an unreliable date and certificate-time validity are the blocker, and bootstrap policy is enabled, collect bounded samples from the configured one or two plain servers.
 5. Build a provisional time interval. Check its configured absolute date range, NTP-era interpretation, persisted authenticated floor, delay limits and agreement rule. Never compare solely against a narrow range around an OS clock already assumed to be years wrong.
@@ -625,6 +771,17 @@ flowchart TD
 
 The operating-system clock is unchanged throughout candidate-time TLS work. Plain hints never enter the ordinary source population or authorize a clock write. Two-helper mode requires both helpers and does not silently become one-helper mode. Agreement and a subsequent fresh handshake improve consistency; they cannot erase the residual expired-compromised-key attack or manufacture trusted UTC from unauthenticated hints. The detailed admission rules in sections 8.1-8.4 remain authoritative.
 
+An intact protected floor can nevertheless be ahead of true UTC after previously
+accepted bad evidence. Before enabling persisted-floor recovery, define a narrowly
+authorized re-anchor/supersession operation with suitable independent evidence,
+current authority and a durable audit trail preserving the superseded record.
+Specify dependent model/association invalidation. Re-anchoring grants no clock
+write and resets no correction budget, step count or installation ownership.
+Until that route and its policy are qualified under OPEN-6/R-02, contradictory
+evidence produces a visible recovery requirement; neither silent floor deletion
+nor permanent unexplained lockout is an acceptable completed recovery design.
+CHECK-9/15 must exercise a wrong but intact future floor followed by correct sources.
+
 ### 8.2 One-server and two-server policies
 
 In two-server mode, both configured sources must produce compatible bounded intervals. One timeout, disagreement or duplicate endpoint cannot silently reduce the policy to one. Repeated samples from one endpoint are not independent sources.
@@ -667,6 +824,17 @@ Service health and clock trust are independent. Retry deadlines use a monotonic 
 
 Events may arrive more than once or after cancellation. Stop, power, network and service-restart transitions must be idempotent. A fresh valid request after the fault is removed must succeed; permanent self-disablement is not acceptable recovery unless required by an unresolved security condition.
 
+Runtime trust state and actuator mode are separate. Initializing, bootstrap and
+acquisition never acquire clock ownership implicitly; without current ownership
+they observe only. Tracking uses the owned base plus at most one admitted
+transient plan. Holdover/Conflict retain only the allowed base and any explicitly
+permitted bounded residual; Reacquiring cancels transient work while ownership is
+valid. Expired uses the qualified conservative owned base. Blocked/observe-only
+never reset a foreign or ambiguous adjustment. Stopping cancels owned transient
+work, then retains the base until explicit handover. Section 10.1 defines the
+independent mode/value fields and their qualification; no state name alone
+authorizes release to Windows.
+
 ---
 
 ## 10. Windows clock backend
@@ -683,6 +851,23 @@ Keep stable oscillator compensation separate from transient phase correction. A 
 
 The intended backend uses `GetSystemTimePreciseAsFileTime`, `QueryPerformanceCounter`, `GetSystemTimeAdjustmentPrecise`, `SetSystemTimeAdjustmentPrecise` and policy-authorized `SetSystemTime`. The exact semantics and achievable rate resolution must be qualified on supported Windows builds and hardware. Do not reuse Linux `adjtimex` constants or assume chrony's Linux slew limits transfer. [S07, S22, S23]
 
+Model these actuator states explicitly, independently of the numerical adjustment:
+
+| Actuator state | Mode and transition contract |
+| --- | --- |
+| Product-owned base | Programmed application control with the qualified stable/conservative base; no transient phase plan |
+| Product-owned base plus transient | Same application-control mode, with one budgeted temporary contribution |
+| Released to Windows management | Authorized handover permits Windows internal synchronization |
+
+For `SetSystemTimeAdjustmentPrecise`, `bTimeAdjustmentDisabled=TRUE` ignores the
+numeric argument and returns synchronization to Windows internal mechanisms;
+the getter documents possible wall-clock jumps in that mode. It is not a synonym
+for cancelling the transient part. Retaining product ownership normally retains
+programmed mode (`FALSE`), with a separately qualified base value. Neither stopping
+W32Time nor observing a matching number proves that mode or ownership is correct.
+Read back and test both mode and value, then observe the trajectory. No universal
+neutral adjustment constant is selected here. [S114]
+
 ### 10.2 Steps and large errors
 
 Normal operation should prefer bounded slewing. An initial or exceptional step is governed by explicit fields: threshold, maximum magnitude or accepted target-date interval, direction permissions, count budget, boot/acquisition window and required evidence. After normal tracking, a surprising large offset first triggers reacquisition and conflict checks.
@@ -691,11 +876,52 @@ The bootstrap feature can recover a usable NTS association even when a subsequen
 
 Persist step-budget consumption across SCM restarts within the same Windows boot. A crash loop must not reopen unlimited “first three updates” opportunities. Bind a one-time approval to a generation, evidence snapshot, target interval and expiry, not a reusable “allow all future steps” flag.
 
+#### 10.2.1 Durable authority reservation and uncertain outcomes
+
+The broker serializes each budget-consuming operation with durable accounting:
+
+1. Validate current identity, ownership, policy, clock/boot generations and remaining
+   allowances. Durably reserve the uniquely identified operation and its bounded
+   authority before issuing its Windows effect. Failed/uncertain reservation
+   persistence permits no clock call.
+2. Recheck current mutable guards before the call. Apply at most the reserved
+   operation; Windows APIs provide no transaction shared with this journal.
+3. Persist the known outcome, actual mode/rate/step result and generation before
+   publishing successful applied-state acknowledgement. A persistence failure after
+   the call leaves an explicit uncertain operation; it is not a successful receipt.
+4. Reconcile duplicates and reconnects by the same operation identity. An absent
+   acknowledgement never authorizes another relative step or refunds consumption.
+
+After an effect/outcome crash window, rereading the moving wall clock cannot
+generally prove whether that specific operation ran. Keep unresolved reservations
+conservatively charged and block unsafe follow-on effects until current ownership,
+actuator state and ledger permit reconciliation. A proven no-effect result may
+settle a reservation only through a defined durable transition; an interrupted
+record or missing reply is not such proof. This provides at-most-once use of a
+reserved authority with explicit unknown outcomes, not guaranteed exactly-once
+successful clock effects. [S07, S114]
+
+For slews distinguish authority reserved, delivered integrated contribution,
+cancellation and durable settlement. Reconcile actual active-time intervals and
+uncertainty conservatively; no reset/reconnect or sign change refunds delivery.
+A finite reservation cannot expire a still-programmed Windows rate after broker
+death. Qualify filesystem write/flush/replacement semantics and retain section
+10.4's external recovery requirement. CHECK-10/12/15 inject failures before/after
+reservation write and flush, the API call, outcome write and flush, and reply.
+Test duplicate replay and a healthy operation beside every rejected/unknown case.
+
 ### 10.3 Sleep, resume and external steps
 
 QPC includes standby/hibernation time, while `QueryUnbiasedInterruptTimePrecise` excludes sleep. Consequently, elapsed QPC alone is not proof that a temporary frequency correction was actively delivered throughout an interval. Use explicit power events, an active-time domain and measured backend behavior; qualify Modern Standby as well as ordinary sleep. [S22, S24]
 
 On suspend notification, promptly cancel transient slew; do not perform slow network or storage operations inside the short notification deadline. On resume, increment clock generation, discard exchanges crossing sleep, rebuild the UTC/monotonic mapping, retain only a bounded drift prior and collect fresh samples. Windows time-change events and sampled discontinuity detection cover manual adjustments, VM restoration and external controllers. Self-induced changes are correlated with broker operations so they are not misclassified as attacks. [S25]
+
+Define the persisted budget/boot epoch across cold boot, explicit restart, sleep,
+hibernation, Fast Startup and VM restore. Fast Startup restores kernel state;
+user-visible shutdown/startup does not establish a new trustworthy budget epoch.
+Qualify the chosen identity/clock sources and conservative unknown-epoch behavior;
+these transitions must not silently replenish consumed authority. This selects
+neither a new driver nor a specific boot-identifier API. [S114]
 
 ### 10.4 Crash semantics and residual error
 
@@ -739,6 +965,15 @@ The complete MSI owns UI, helper and both services as one installation. Custom a
 
 Automatic fallback to W32Time on NTS outage is excluded. That would change authentication policy and could create simultaneous control. Use holdover and clear failure reporting. A future explicit “release ownership to Windows” action is an elevated transaction with the same cancellation/restoration guarantees.
 
+Quiescence includes previously queued SCM recovery. A pending restart cannot be
+cancelled merely by stopping a service. Qualify transactional disabling of the
+product-owned services and a protected durable maintenance-startup inhibition;
+every startup checks maintenance and current ownership before protected work.
+Restore the exact permitted configuration with administrator/GPO/successor guards.
+Exercise delayed restart during update, rollback, repair and removal, including
+interruption and re-enable. The existing service adapter guide already requires
+queued-restart handling; this makes its startup interlock explicit. [S120]
+
 ---
 
 ## 12. Configuration, persistence and diagnostics
@@ -757,9 +992,35 @@ Automatic fallback to W32Time on NTS outage is excluded. That would change authe
 
 Use atomic replace with validated staging, appropriate flush behavior and tested crash semantics on the selected filesystem. Guard against reparse points, symlinks/hardlinks, path traversal and time-of-check/time-of-use replacement when privileged code opens files. Prefer fixed installer-owned paths and already-open validated handles over accepting paths from IPC.
 
+Replacement must preserve the intended owner-rights isolation from section 4.1,
+not just the visible allow ACEs. The correction journal implements section
+10.2.1's reservation/outcome ordering. NTS persistence retains section 7.4's key,
+full-authentication and policy ages; the saved floor retains section 8.1's evidence
+and supersession history. An authentic record can be semantically wrong; neither
+integrity protection nor atomic replacement proves the underlying time evidence.
+
 DPAPI under the engine identity is a candidate for protecting cached association secrets, combined with narrow file ACLs. It is not a substitute for authorization, hardware-backed key custody or full-memory encryption. Machine-wide DPAPI alone does not establish per-service secrecy. Test service-account profile availability, reboot, upgrade and recovery; if using shared LocalService identity, never assume encryption alone isolates every process with that identity. [S28]
 
 A protected file MAC/encryption detects corruption or tampering within its threat model; it does not make an old valid state impossible to restore. VM snapshots, offline disk rollback and a malicious administrator can roll back the authenticated floor. Record that residual risk. Hardware-backed monotonic/rollback protection is a separate scope decision, not a claim supplied by ACLs.
+
+#### 12.1.1 Restoration validity
+
+Before enabling a saved-state class, qualify this matrix at its actual loading
+and consuming owners (CHECK-9/11/15/25). A bounded validated drift prior is the
+initial warm-start mechanism. Full sample-history persistence is not adopted by
+this matrix; it needs a separate continuity contract and evidence. Neither prior
+nor cached secrets establish current synchronization or clock-write authority.
+
+| Event | Drift prior / optional history | NTS association |
+| --- | --- | --- |
+| Same-boot service restart | Revalidate provenance, units, age/uncertainty and clock continuity. Reuse a bounded prior where qualified; same boot alone cannot qualify full history. | Load privately, validate complete state and section 7.4's ages/source/trust binding before publication. |
+| Reboot, Fast Startup, suspend/resume | Apply the qualified epoch/power policy; invalidate crossing exchanges and affected coordinates. Retain only an applicable bounded prior. | Recheck elapsed-age basis and current identity/trust; unknown age follows the conservative lifetime policy. Cookies do not make observations fresh. |
+| External clock change or VM/hardware change | Invalidate affected histories; reassess oscillator-prior applicability and uncertainty. A restored clock or file is no continuity proof. | Reassess time/trust/age and generation dependencies; a clock change alone neither authenticates nor cryptographically invalidates a key. |
+| Source/security configuration change | Revalidate affected source histories and provenance against the new revision. | Enforce source/algorithm/trust invalidation; an old record cannot bypass the new policy. |
+| Corrupt, truncated, incompatible or interrupted state | Discard optional prior and reacquire. Mandatory journals/policy retain their fail-closed rules. | No partially usable association; bounded recovery must retain the NTS requirement. |
+
+Record the successful compatible-restart control as well as rejection cases.
+Restoration never resets durable correction authority from section 10.2.1.
 
 ### 12.2 Configuration semantics
 
@@ -1641,6 +1902,16 @@ Maintain a reviewed critical-file manifest covering packet/KE parsers, authentic
 
 Surviving mutants require stronger tests or independently justified equivalence/exclusion. Compile-failing mutants are unviable, not killed; timeouts require diagnosis; an empty mutant set is not a pass. Unsupported mutation tooling for a critical Windows path is an unresolved gate, not proof that the path is noncritical. [S39]
 
+For every critical file also reconcile requirement-bearing functions/guards with
+generated mutants, automatically skipped or unmodeled behavior, and independent
+alternative evidence. cargo-mutants 27.1.0 skips `unsafe fn` and cannot generally
+see macro/build-generated bodies. A nonempty mixed file can score 100% while a
+critical callback or derived validator generates none. Such absent code is neither
+a test kill nor an equivalent missed mutant. Use independently specified raw
+handler/Serde/garde tests, fault injection and reached native memory/lifecycle
+checks as applicable; identify remaining gaps. Preserve the 95% threshold and
+historical pure-core receipts within their actual safe-code scope. [S118]
+
 Coverage and mutation are evidence aids, not substitutes for actual protected-effect tests, Windows integration or accessibility observations. Apply the smallest relevant verification campaign to each change; full release qualification belongs to a candidate release, not every documentation edit.
 
 ### 18.5 Validation-library selection and admission gates
@@ -1755,6 +2026,11 @@ Windows chain validation may retrieve intermediates, roots or revocation materia
 
 `rustls-native-certs` 0.8.5 is a different held alternative: it loads roots for a Rust verifier and does not reproduce Windows chain-policy/revocation semantics. Do not silently enable certificate-file environment overrides in a service. Choosing a controlled root snapshot for bootstrap would require its own trust-update and revocation specification, not an unreviewed fallback after normal validation fails. Normal and provisional sessions/tickets remain isolated, with bootstrap resumption disabled initially. [S80]
 
+The normal/provisional session split does not settle association authentication
+lifetime. Section 7.4 and R-05 require an explicit full-authentication versus
+resumption contract, current trust-policy binding and unknown-age behavior before
+S2.3 cache reuse. Certificate expiry alone is not that policy. [S116]
+
 #### 18.7.3 NTS packet AEAD, entropy and parser reuse
 
 NTS algorithm 15 is `AES-SIV-CMAC-256`. The candidate `aes-siv` 0.8.0 uses `Aes128Siv` with a **32-byte total key**, comprising two AES-128 keys. `Aes256Siv` uses a different total key length, and AES-GCM-SIV is a different algorithm. Qualify the low-level SIV associated-data/nonce mapping and permitted nonce lengths against RFC 8915 and independent vectors. For NTPv4, test the exporter label `EXPORTER-network-time-security`, the five-byte protocol/AEAD/direction context, and distinct 32-byte C2S/S2C keys. TLS cipher suites and NTS packet AEAD are separate choices. [S20, S82]
@@ -1866,6 +2142,10 @@ The removal node is a transaction, not an instruction to delete recovery code fi
 
 ### 19.3 MSI implementation and maintenance security
 
+Apply section 11.2's durable maintenance-startup inhibition and queued SCM restart
+qualification throughout install/update/repair/rollback/removal. A stopped-status
+observation alone does not establish maintenance quiescence. [S120]
+
 Prefer Windows Installer's declarative service registration/configuration tables where they express the intended operation. `MsiServiceConfig` supports required-privilege and service-SID settings; these do not grant a missing user right and do not prove the resulting token is correct. Any additional service-right/ACL/W32Time action is narrow, typed and reversible. Actual tokens are checked before actuation. [S58]
 
 Direct system-changing custom actions need deliberately authored rollback. Schedule the corresponding rollback action before its deferred action, handle interruption midway, and combine it with the protected product journal. Windows Installer does not automatically undo every direct external effect. If required rollback is disabled, reject installation before ownership or other dependent machine-state changes; do not continue and hope the journal is enough. [S57]
@@ -1899,6 +2179,22 @@ An AppContainer UI/worker remains a separate experiment if it improves the measu
 
 ### 19.5 Free signing plan
 
+Qualify the [signing guide's broken-clock lifecycle matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
+for installed startup/helper activation, first installation, update/repair and
+removal/restoration under CHECK-9/18/23. Name the actual verifier, execution owner,
+allowed retrieval, time basis, finite native-work custody/deadline and supported
+refusal/recovery route. TLS-only work limits do not cover UI/helper/MSI verification.
+Timestamped Authenticode can survive signer-certificate expiry; this does not
+settle the selected trust/revocation policy. `WTD_REVOKE_NONE` alone is not a
+no-network guarantee. [S119]
+
+OpenPGP admission also needs current trusted-key distribution, revocation/expiry
+and rotation policy: `gpgv` success and a matching fingerprint alone do not supply
+those checks. A valid Foundation publisher display alone does not identify the
+NevroTick project; reject an unrelated legitimately Foundation-signed artifact.
+Preserve OD-05's accepted publisher and initial OpenPGP option while qualifying
+the project-specific admission path. [S119]
+
 Apply to **SignPath Foundation** once the project meets its eligibility conditions. It is a plausible free OSS signing route, not an entitlement. Its conditions include suitable open-source licensing, maintained/released/documented software and controlled signing roles/review. Confirm treatment of chrony-derived code and all bundled components with the provider. Publisher identity must be settled before freezing any future MSIX identity. [S46]
 
 The **Microsoft Store signs accepted MSIX packages** without a separately purchased signing certificate; MSI/EXE submissions still need publisher signing. Store signing is useful only if the complete product and its restricted capabilities are accepted. Azure Artifact Signing is a paid fallback, not a free OSS guarantee. [S47]
@@ -1930,6 +2226,20 @@ For example, with millisecond-relative readings `T1=0, T2=70, T3=80, T4=110`, th
 Compare selected/supporting/rejected membership, reason codes, polling, uncertainty and full correction trajectories, not only the final offset. Floating-point results use predeclared tolerances and physical error envelopes; protocol encoding/crypto vectors use exact values. Include independent checks so the Rust port and chrony cannot validate the same copied bug merely by agreeing.
 
 clknetsim is useful for reference trajectories, but its Linux syscall interception is not a Windows service harness. Pin its revision and prove that the Rust adapter's I/O/timer paths are actually intercepted, or use an explicit simulation interface and compare captured chrony trajectories. Real Windows tests remain mandatory. [S53]
+
+Use the [upstream testing-tool reference](../.agents/skills/testing/references/chrony-upstream-tools.md)
+for the pinned clknetsim/Chrony simulation cohort and chrony-fuzz testcase ideas.
+Start with captured Chrony trajectories through the existing pure event seam;
+qualify nonzero seeds, replay and per-event comparisons. clknetsim's simplified
+kernel/CPU model supplies neither resource measurements nor native enforcement.
+
+chrony-fuzz uses an AFL++/clknetsim patch-based harness. Some patches deliberately
+simplify origin/authentication/UID checks and bypass SIV/TLS; its accepted outputs
+are not security or protocol-semantic truth. Pin its complete source/patch/tool
+tuple, review seed rights/framing and qualify forwarding/reset before adapting
+cases to existing Rust targets. Keep independent numerical and real-provider
+crypto expectations, the admitted libFuzzer lanes and existing CHECK scopes.
+Neither project is installed or executed by this research amendment. [S121]
 
 ### 20.2 Acceptance catalog
 
@@ -1966,6 +2276,25 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-25 | Actual strict decoder, mandatory garde-backed construction and function/module invariant preservation: nested object/array shape, unknown/duplicate/escaped keys, null/missing/defaults, trailing data, exact integer neighbors, transformed-output/finite arithmetic, collection/depth/error bounds and construction/mutation bypass attempts | Invalid input produces no protected effect or secret-bearing output; valid neighbors and exact integer round trips succeed; valid-shaped unauthorized/stale requests still fail current guards | P1/P3/P4, domain/IPC/security; real Windows effects remain CHECK-2/3/10 |
 | CHECK-26 | Exact dependency/native/build/proc-macro graph, package parity/checksums, selected licenses, feature closure, advisory remediation, generated-code provenance and final binary inventory | Deliberately incompatible/unexpected/outdated/feature-expanded fixtures fail the actual release gate; the approved graph succeeds. No crypto license assumption or native component omission; embedded metadata, SBOM and shipped artifacts reconcile | P0/P1/P2/P6/P7, dependency/license/release; graph remains unbuilt in this plan |
 | CHECK-27 | Real service-wrapper/native adapter lifetimes, failed startup/status, late controls, correct destructors, stuck DNS/certificate work, cancellation, generation changes and stop/restart | Callback and resource ownership remain valid; permits stay with actual jobs, queue/byte/thread limits hold, stale results have no effect, required retrieval policy holds, bounded diagnosed shutdown/recovery works and a valid neighboring request succeeds | P0/P2/P3/P4, platform/engine/security; combine with CHECK-1/2/8/9/11/12/15/17/21 |
+
+#### 20.2.1 Contract-review acceptance refinements
+
+Apply these scenarios alongside the catalog; they refine existing IDs and do not
+record execution. [Hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix)
+owns the corresponding evidence instructions.
+
+| Checks | Added discriminating case and required result |
+| --- | --- |
+| CHECK-1/15 | A second LocalService service attempts owner-mediated `WRITE_DAC` and data/process access after runtime creation and atomic replacement. Actual owner/effective rights enforce isolation; the intended service still works. |
+| CHECK-10/12/15 | Fail around reservation write/flush, effect, outcome write/flush and acknowledgement. Duplicates/unknown results cannot repeat a step or replenish authority; durable current-owner recovery permits a healthy subsequent operation. |
+| CHECK-10/11/12 | Inspect adjustment mode and numeric value, then trajectory, across cancellation, holdover, expiry and handover. Retaining ownership does not silently release Windows control. |
+| CHECK-8/9/15 | Fresh protected UDP continues while full authentication expires/fails or trust policy changes; cookie/ticket renewal cannot launder the original authentication age. Exercise unknown age after restart and a permitted fresh full-authentication control. |
+| CHECK-9/15 | Persist an intact future floor derived from bad accepted evidence; correct sources return. The qualified narrow supersession preserves history, budgets and ownership; unauthorized reset fails. |
+| CHECK-7/8/14 | Four fresh sources, two missing, duplicate operators, 2–2 disagreement and one fresh source plus old predictors follow the frozen denominator/freshness table; historical predictability creates no fresh corroboration. |
+| CHECK-11/12 | Cold boot, restart, Fast Startup, hibernation, sleep and VM restore follow the qualified epoch policy without implicit allowance resets. |
+| CHECK-13/23 | Queued delayed SCM recovery fires during update/repair/rollback/removal and interrupted re-enable. Maintenance inhibition prevents protected work; authorized recovery restores only owned configuration. |
+| CHECK-19/25 | A mixed file has killed safe-function mutants but no generated mutants for a critical unsafe/generated path. Reporting preserves the missing behavior and its alternative evidence; a passing percentage alone cannot qualify it. |
+| CHECK-9/18/23 | Wrong-clock/offline startup/helper/install/repair/removal reaches the declared verifier/retrieval/deadline/refusal/recovery behavior. Reject revoked/unapproved OpenPGP key policy and unrelated Foundation-signed artifacts; supported valid candidates succeed. |
 
 ### 20.3 Test layers and execution safety
 
@@ -2115,18 +2444,18 @@ These decisions have proposed directions, not missing research disguised as impl
 | --- | --- | --- | --- |
 | OPEN-1 | Future repository license, crypto-provider artifact parity and exact compatible dependency/native graph | Preserve GPL-2.0-only chrony derivation; AWS-LC/ring graphs blocked pending authoritative resolution. Qualify MIT CNG-provider route first, Schannel second; record compatible grants and all transitive obligations | Product/license/security owners, S0.1/CHECK-26 |
 | OPEN-2 | Exact supported Windows builds, x64 baseline and ARM64 scope | Supported Windows 11 x64 first; qualify ARM64 separately | Platform owner, S0.4 |
-| OPEN-3 | Final account/token/process-DACL topology | Virtual-account broker plus restricted LocalService engine | Security/platform, S0.2 |
+| OPEN-3 | Final account/token/object-owner/DACL topology, including runtime replacement | Virtual-account broker plus restricted LocalService engine | Security/platform, S0.2 |
 | OPEN-4 | Race-safe mutual IPC authentication and revocation semantics | Named pipes with OS identity proof; local RPC fallback | Security/platform, S0.3 |
-| OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings and holdover budgets | OD-02 accepts very large authenticated recovery as a goal; qualify era/target bounds, quorum and effects. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |
-| OPEN-6 | Bootstrap absolute date/era range and one/two-helper default; Pool role and NTS preset | Existing opt-in baseline pending OD-03 resolution; two helpers preferred, explicit weaker one; protected floor. Pool vendor zone/provider qualification required | Product/security, S0.7/P2 |
+| OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings, durable reservation/settlement, boot epochs, production quorum/freshness and holdover budgets | OD-02 accepts very large authenticated recovery as a goal; qualify era/target bounds, quorum and effects. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |
+| OPEN-6 | Bootstrap absolute date/era range and one/two-helper default; Pool role and NTS preset | Existing opt-in baseline pending OD-03 resolution; two helpers preferred, explicit weaker one; evidence-defined protected floor and narrowly authorized supersession without budget resets. Pool vendor zone/provider qualification required | Product/security, S0.7/P2 |
 | OPEN-7 | Windows leap ownership and actual finite-slew failure envelope | Single owner, bounded transient component, measured recovery | Platform/core, S0.4/P4 |
-| OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
+| OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
 | OPEN-10 | Native UI accessibility and measured resource fit | Win32 controls through audited Rust adapter | UI/accessibility, S0.5 |
-| OPEN-11 | Free signing eligibility, stable publisher/key/package identity and qualified initial OpenPGP trust path | OD-05 settles Foundation display, David as human approver and initial OpenPGP alternative. Provider acceptance, brand/port treatment, key/workflow and installed-artifact evidence remain open | David/release/security/provider, P0/P6 |
+| OPEN-11 | Free signing eligibility, stable publisher/key/package identity and qualified initial OpenPGP trust path | OD-05 settles Foundation display, David as human approver and initial OpenPGP alternative. Provider acceptance, brand/port treatment, key lifecycle/project-specific admission, wrong-clock/offline activation and installed-artifact evidence remain open | David/release/security/provider, P0/P6 |
 | OPEN-12 | Future complete MSIX privilege/lifecycle feasibility | Complete MSI is v1; MSIX requires all section 19.4 gates and no external MSI prerequisite | Packaging/platform, separate future gate |
 | OPEN-13 | Final runtime/native-work/stop budgets and permitted deliberate chrony deviations | Measure first slice with Windows protections active; keep permits with actual work, no replacement-pool growth, traceable changes | Core/platform/performance/product, P0/P1/P4 |
-| OPEN-14 | MSI tool version/license/eligibility, maintenance inputs, transaction/rollback schema and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict public-property policy, hostile repair tests and no unintended downgrade | Installer/security/license owners, S0.6/P6 |
+| OPEN-14 | MSI tool version/license/eligibility, maintenance inputs, transaction/rollback schema, durable maintenance inhibition/queued restart handling and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict public-property policy, hostile repair tests and no unintended downgrade | Installer/security/license owners, S0.6/P6 |
 
 Use [NV-DEC-001](nevrotick-owner-decisions.md) for owner decisions and [NV-RESEARCH-001](nevrotick-research-handoff.md) for future research. Bring concrete decisions to David only when the next dependent action needs them; preserve accepted choices and record supersession explicitly.
 
@@ -2252,7 +2581,7 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S50 - Rust Windows bindings.** [microsoft/windows-rs](https://github.com/microsoft/windows-rs), including its exact selected version's license files.
 - **S51 - rustls licensing.** [rustls license](https://github.com/rustls/rustls/blob/main/LICENSE); inspect the selected provider and all transitive licenses separately.
 - **S52 - Slint licensing.** [Framework license choices](https://github.com/slint-ui/slint/blob/master/LICENSE.md).
-- **S53 - Clock/network simulation.** [clknetsim](https://github.com/mlichvar/clknetsim), checked reference revision e9f11e60c72f2c0674a072c4ddcfe343f8634e58; verify harness compatibility before use.
+- **S53 - Clock/network simulation.** [clknetsim on GitLab](https://gitlab.com/chrony/clknetsim) and [maintainer mirror](https://github.com/mlichvar/clknetsim), checked reference revision `e9f11e60c72f2c0674a072c4ddcfe343f8634e58`; both advertise the same pin on 30 October 2026. Verify harness compatibility before use; reference scenarios do not establish native Windows behavior.
 - **S54 - Chrony configuration defaults.** [chrony.conf 4.9](https://chrony-project.org/doc/4.9/chrony.conf.html).
 - **S55 - ASVS attribution/license.** [Pinned ASVS license](https://github.com/OWASP/ASVS/blob/5cf9b032440be53ce345ab3c130fda46ba1ce7a2/LICENSE.md), Creative Commons Attribution-ShareAlike 4.0.
 
@@ -2320,6 +2649,18 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S112 - Windows x64 optimization scope.** [Cargo profile controls](https://doc.rust-lang.org/cargo/reference/profiles.html), [optimized builds of rustc itself](https://rustc-dev-guide.rust-lang.org/building/optimized-build.html), [open unstable Windows dylib ThinLTO issue #109114](https://github.com/rust-lang/rust/issues/109114), and [Rust 1.99.1 Windows x64 target source](https://github.com/rust-lang/rust/blob/1.99.1/compiler/rustc_target/src/spec/targets/x86_64_pc_windows_msvc.rs). Checked 29 October 2026; selected application settings establish no measured improvement or native/release qualification. Additional PGO, format and toolchain sources are recorded in development hardening section 14, C26–C29.
 
 - **S113 - TLS cipher preference and AES dispatch, checked 30 October 2026.** [RFC 8446 §9.1](https://www.rfc-editor.org/rfc/rfc8446.html#section-9.1), pinned [Rustls 0.23.46 CryptoProvider](https://github.com/rustls/rustls/blob/f04804fa13341a9b1dc02b5d1dd8a746f2c4b7fb/rustls/src/crypto/mod.rs), and [RustCrypto aes 0.9.0 backend documentation](https://docs.rs/aes/0.9.0/aes/#supported-backends). The latter illustrates runtime detection and software fallback in the prospective AES-SIV graph; it proves neither CNG dispatch nor the final resolved package version. Context7 returned newer Rustls main APIs; the pinned source controls the 0.23 configuration.
+
+- **S114 - Clock effects, adjustment modes and startup epochs, checked 30 October 2026.** Microsoft [SetSystemTime](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtime), [SetSystemTimeAdjustmentPrecise](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [GetSystemTimeAdjustmentPrecise](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise) and [Fast Startup](https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/distinguishing-fast-startup-from-wake-from-hibernation). Journal/effect atomicity limitations are a design inference from separate interfaces, not an observed NevroTick failure.
+- **S115 - Object ownership and owner rights.** Microsoft [owner of a new object](https://learn.microsoft.com/en-us/windows/win32/secauthz/owner-of-a-new-object) and [security identifiers, including OWNER RIGHTS](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-identifiers). Actual service-token, owner and descriptor behavior remains native qualification.
+- **S116 - Authentication lifetime.** [RFC 8915 §8.2](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.2), [§8.5](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.5) and [RFC 8446 §4.6.1](https://www.rfc-editor.org/rfc/rfc8446.html#section-4.6.1). These distinguish cookie-key compromise, original certificate expiry and cumulative resumed authentication age.
+- **S117 - Chrony lifecycle comparison.** [Chrony 4.9 ntsrefresh](https://chrony-project.org/doc/4.9/chrony.conf.html#ntsrefresh), [pinned configuration source](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/conf.c#L264) and [unreachable-source FAQ](https://chrony-project.org/faq.html#_an_unreachable_source_is_selected). Reference defaults and retained predictors do not choose NevroTick lifetime or fresh-vote policy.
+- **S118 - Mutation generation limits, cargo-mutants 27.1.0.** Pinned [excluded functions](https://github.com/sourcefrog/cargo-mutants/blob/v27.1.0/book/src/mutants.md#functions-that-are-excluded-from-mutation), [macros](https://github.com/sourcefrog/cargo-mutants/blob/v27.1.0/book/src/macros.md) and [limitations](https://github.com/sourcefrog/cargo-mutants/blob/v27.1.0/book/src/limitations.md). Enumeration completeness is separate from function/guard coverage.
+- **S119 - Signing-policy dependencies.** Microsoft [Authenticode timestamps](https://learn.microsoft.com/en-us/windows/win32/seccrypto/time-stamping-authenticode-signatures) and [WINTRUST_DATA](https://learn.microsoft.com/en-us/windows/win32/api/wintrust/ns-wintrust-wintrust_data), [GnuPG gpgv](https://www.gnupg.org/documentation/manuals/gnupg/gpgv.html) and [SignPath Foundation terms](https://signpath.org/terms.html). Profile-specific key policy, retrieval and project identity need implementation evidence.
+- **S120 - Queued SCM recovery.** Microsoft [ChangeServiceConfig2W](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w). Disabling and later re-enabling services needs transactional ownership-aware qualification, not a stopped-state assumption.
+
+- **S121 - Chrony fuzzing support, checked 30 October 2026.** [chrony-fuzz](https://gitlab.com/chrony/chrony-fuzz), revision `904a8789164ac294ab7e85523792ed906a7b5a57`, [README](https://gitlab.com/chrony/chrony-fuzz/-/blob/904a8789164ac294ab7e85523792ed906a7b5a57/README.adoc), invasive protocol/crypto patches and source preparation. The [tool reference](../.agents/skills/testing/references/chrony-upstream-tools.md) records full-tuple pinning, rights/framing/reset/resource gates and the distinction between reachability and production semantics. Source inspection is not execution or tool admission.
+
+- **S122 - NTPsec mechanism comparison, checked 30 October 2026.** Revision `097ea276d9e1b860aac548830a8bc03f1ceb6889`: [packet/filter/polling paths](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/ntpd/ntp_proto.c), [loop-filter transitions](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/ntpd/ntp_loopfilter.c), [NTS client](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/ntpd/nts_client.c), [extension tests](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/tests/ntpd/nts_extens.c) and [file-specific licensing](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/docs/copyright.adoc). The [assessment](../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment) distinguishes reusable invariants from buffer/state/tuning choices; no source, dependency graph or execution is admitted by inspection.
 
 ## Appendix B. Worksheet attribution and use
 

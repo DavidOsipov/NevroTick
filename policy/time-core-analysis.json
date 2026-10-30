@@ -1,12 +1,13 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "package": "time-core",
   "critical_files": [
     "crates/time-core/src/regression.rs",
     "crates/time-core/src/regression/residuals.rs",
     "crates/time-core/src/regression/normalization.rs",
     "crates/time-core/src/regression/history.rs",
-    "crates/time-core/src/regression/runs.rs"
+    "crates/time-core/src/regression/runs.rs",
+    "crates/time-core/src/selection.rs"
   ],
   "coverage_minimum_line_percent": 90,
   "mutation_minimum_viable_killed_percent": 95,
@@ -26,11 +27,11 @@
     "point_admissions_upper": 108000
   },
   "global_limits": {
-    "charged_fit_work_upper": 2500000,
-    "point_admissions_upper": 100000000
+    "charged_fit_work_upper": 4000000,
+    "point_admissions_upper": 150000000
   },
-  "admission_status": "admitted-final-source",
-  "scope": "Source and prospective finite-budget admission for the exact five-owner fixture candidate and 360 reviewed single mutants. Coverage, contract, mutation and history-sanitizer results remain separate executed evidence; no product, native Windows or release qualification.",
+  "admission_status": "pending-final-source-binding",
+  "scope": "Fresh six-owner fixture candidate: 500 enumerated single mutants, six independent package baselines, coverage, ten legal consumers and at most 98 diagnostic-specific negative consumers, plus unchanged history-only sanitizer work. Coordinator must refresh all source/cohort bindings and admit the complete finite reservation before execution. No executed six-owner, selector-fuzz, product, native Windows or release qualification.",
   "mutation_equivalences": [],
   "inputs_sha256": {
     "Cargo.toml": "1ff169cd1e5ef9eea5df503b706c52938e1793201dfaf1aa014449eae07ca6a8",
@@ -91,6 +92,7 @@
     "crates/time-core/src/regression/residuals.rs": "d2acc6b8d41f047e95d6a0a670e4a80facd74e612457ef0ba6f9485a8b9f4aaa",
     "crates/time-core/src/regression/runs.rs": "4c01e5c795c765cb555a87706f5b6f0bf31f2009870ad3bf290bc9b6a7b7d8e6",
     "crates/time-core/src/regression.rs": "40123e34f0390412b648c38d4545f415225c969b79ca3be78efb66ede6727de3",
+    "crates/time-core/src/selection.rs": null,
     "crates/time-core/tests/history.rs": "d50716c686b9bd8888b5324b203b5756e7d104af83291d21b7e0f12f3af5a095",
     "crates/time-core/tests/normalization.rs": "323be5e7b5f63913af12c624bfa4c1e4a2181d99ac4579db2314fdd1d53db5e1",
     "crates/time-core/tests/private/normalization_guards.rs": "92bc46d8f467720426d4d60c7a47cdb25fb3aa12ddb588597b212f7f6cbca580",
@@ -101,6 +103,8 @@
     "crates/time-core/tests/regression.rs": "d8718a3894540c9acf89980022462af8ca15215c0f1d55711b1b59491bc97dca",
     "crates/time-core/tests/residuals.rs": "da676d12dba759e3d1b8b3ba998d640d8fc5fcd782ae7d6267634a2bec98728f",
     "crates/time-core/tests/runs.rs": "8e6298c0553dbc7e8e74e2af8146c68d637c43e2161c30fa6fa9f700e99e112f",
+    "crates/time-core/tests/selection.rs": null,
+    "crates/time-core/tests/private/selection_guards.rs": null,
     "crates/time-core/tests/support/history_facts.rs": "0124afaa33eabeaf5ba83504b153eb760bf1d407da648a6c79ec87cc8514e722",
     "crates/time-core/tests/support/normalization_facts.rs": "f537b6f805f7eabbf689c49063eb422a66ed8adcbea7618f6885677b4a172d04",
     "crates/time-core/tests/support/residual_facts.rs": "264e368d9c4f817423f957e3c6c6d9a65bb4a1846fcd6d4611fbfd4693cf4ce9",
@@ -511,7 +515,7 @@
     "target_contract": "FixtureHistory::try_append-and-committed-observation-report-public-entrypoints",
     "runtime_profile_reuse_review": "reviewed-history-source-and-resource-envelope"
   },
-  "source_file_count": 80,
+  "source_file_count": 83,
   "literal_doctest_limits": {
     "total_source_doctests_maximum": 2,
     "legal_source_doctests_maximum": 1,
@@ -536,8 +540,8 @@
     "history_statistics_inner_fit_upper": 0
   },
   "external_consumer_limits": {
-    "legal_executions": 9,
-    "negative_compilations": 72
+    "legal_executions": 10,
+    "negative_compilations": 98
   },
   "normalization_telemetry": {
     "status": "admitted-source-owned-observer",
@@ -639,6 +643,19 @@
     "runs": {
       "count": 116,
       "sha256": "74d6761a97caea2bc46114d2e6b80443c60b47a5a8d770906bcff915eaca7ed4"
+    },
+    "selection": {
+      "count": 140,
+      "sha256": "e81ec6bc254a4bab6a11c781f361fe6969ebb21c5aa54643bde67765e1b56aa2"
     }
+  },
+  "selection_telemetry": {
+    "status": "admitted-source-owned-observer",
+    "counter_families": ["S13_SELECTION_PROFILE", "S13_BATCH_GUARD_PROFILE", "SELECTION_HELPER_PROFILE", "CORE_SELECTION_EXTERNAL_PROFILE"],
+    "package_tests": {"ordinary": 94, "doctests": 2, "baseline": 96},
+    "package_reservation": {"intervals": 492, "minima": 72, "batches": 77, "selections": 66, "garde_validator_invocations_upper": 1056},
+    "helper_reservation": {"read_adapters": 2, "prefix_sorts": 3, "cell_depths": 2, "label_projections": 5},
+    "global_limits": {"intervals": 249450, "minima": 36507, "batches": 39043, "selections": 33464, "garde_validator_invocations_upper": 535407},
+    "helper_global_limits": {"read_adapters": 1014, "prefix_sorts": 1521, "cell_depths": 1014, "label_projections": 2535}
   }
 }

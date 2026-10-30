@@ -556,6 +556,18 @@ For each file, retain generated/admitted mutants and these separate outcomes:
 
 Report raw `K / (K + M)` and adjusted `K / (K + M - E)`. Require at least **95% adjusted for every file** and complete accounting. Every survivor requires stronger tests or independently justified equivalence/exclusion, as the architecture already requires. A backlog entry, generic risk acceptance or a passing numerical score does not discharge that obligation. An empty denominator is unresolved. A known non-equivalent security defect cannot be accepted merely because the percentage passes. Do not add build failures or timeouts to K or hide functions to improve the score. [Architecture §18.4; V03–V09]
 
+Reconcile a second inventory: each critical requirement-bearing function/guard,
+whether it generated mutants, why any behavior was skipped/unmodeled and the
+independent alternative evidence. cargo-mutants 27.1.0 automatically skips
+`unsafe fn` and generally cannot inspect macro/build-generated bodies; a mixed
+file can have a nonempty 100% score while its critical callback generated none.
+Absence from generation is outside K/M/E, not an equivalent missed mutant. Observe
+derived Serde/garde admission and native callbacks through independently specified
+raw inputs, handler/fault controls and reached native checks as applicable. Keep
+unsupported obligations visible beside the score; do not retroactively invalidate
+unchanged pure safe-core receipts based on a hypothetical unsafe callback.
+See architecture S118 and the [mutation skill](../.agents/skills/testing/qa-mutation-testing/SKILL.md).
+
 cargo-mutants' exit code does not implement this custom gate: retain the native result, parse its admitted report schema, and distinguish missed mutants from failed baseline/timeouts/tool errors. A complete missed-mutant report may be evaluated under the explicit threshold; arbitrary nonzero results must never become success through `|| true`. Windows-only campaigns need appropriate native hosts; enumeration of a `cfg(windows)` mutant on Linux is not execution. [V04, V05, V08]
 
 Strict warnings can make useful mutations unviable. Upstream documents mutation-only `--cap-lints=true`; qualify that separate instrumented subprocess with an external build timeout because lint capping also suppresses long-running const-evaluation warnings. Ordinary lint/release policy stays strict. Record effective flags and prove that an injected behavioral defect compiles and is caught. This is a test instrument, not a production lint waiver. [V06, V07]
@@ -654,6 +666,30 @@ Apply [architecture section 5.4](windows-time-architecture.md#54-native-ipc-impl
 | Compromised authorized engine — CHECK-3/25 | Actual engine identity submits oversize/truncated frames, wrong verbs, stale/replayed and overbudget proposals; bounds apply before forbidden allocation/effect | Current bounded engine request still receives the proper acknowledgement |
 
 Pure tests can establish framing progress, strict decoding and substituted-token decisions. Tokens/DACLs, actual pipe peer attribution, pending-instance ownership, native cancellation and fatal reversion need isolated Windows fixtures. Real clock/fatal-broker cases obey section 14.9's disposable-VM limits and external observation/restoration plan; no experiments on the user's workstation or public services. Keep exact source/configuration, reached boundary, native outcomes, valid controls and remaining P0/native gaps. Do not call IPC hardened until the affected proofs pass; UI-M0 remains fixture-only.
+
+### 9.10 Contract-review qualification matrix
+
+The [30 October assessment](supporting-reviews/architecture-contract-review.md)
+refines existing requirements; no rows below are executed product evidence.
+Apply [architecture §20.2.1](windows-time-architecture.md#2021-contract-review-acceptance-refinements)
+and freeze each policy/representation before its dependent interface is enabled.
+
+| Owner and gate | Required independent evidence |
+| --- | --- |
+| Platform/security, S0.2/P3, CHECK-1/15 | Actual default owner, descriptor/inheritance and effective rights after runtime file creation/staging/replacement and relevant object creation. A second LocalService service cannot use owner rights to widen access; intended service access succeeds. |
+| Broker/storage, S0.4/P4, CHECK-10/12/15 | Reservation write/flush → guarded clock call → outcome write/flush → acknowledgement. Inject faults on both sides of every seam, replay the same identity and inspect durable ledger plus external effects. Unknown outcomes stay conservatively charged; no duplicate step or refund from missing reply. Slew reservation, delivery and settlement remain separate. |
+| Clock adapter, S0.4/P4, CHECK-10/11/12 | Read back mode and value and measure trajectories for owned base, owned transient and explicit handover. Cancellation/holdover/expiry retains the qualified owned mode; foreign/ambiguous ownership prevents resets. |
+| Protocol/security, S0.7/P2, CHECK-8/9/15 | Fresh UDP/cookies/resumed tickets cannot reset full-authentication age. Exercise expired/unknown association age, failed full reauthentication, trust-policy changes and healthy full authentication under frozen lifetime/detection rules. |
+| Core/security, S0.7/P2/P4, CHECK-9/15 | Wrong but intact persisted floor, followed by correct independent evidence, reaches the qualified narrowly authorized supersession. Preserve old record, budgets, step counts and installation ownership; unauthorized reset is rejected. |
+| Core/protocol, P1/P2, CHECK-7/8/14 | Freeze independent groups, configured/eligible vote denominator, timeouts, fresh observation limits and exceptional quorum. Four fresh, two missing, duplicate operators, 2–2 disagreement and one fresh plus old predictors produce independently expected decisions. |
+| Platform/installer, S0.4/P4/P6, CHECK-11/12/13/23 | Distinguish cold boot/restart, sleep/hibernate, Fast Startup and VM restore epochs. Queued SCM restarts during maintenance/re-enable do not bypass durable startup inhibition or silently replenish allowances. Restore only owned settings. |
+| Tooling/QA, P1/P7, CHECK-19/25 | Mixed safe and unsafe/generated critical behavior proves that generated-mutant accounting cannot conceal missing functions/guards. Retain the required alternative behavioral evidence and unchanged 95% threshold. |
+| Release/security, S0.6/P6, CHECK-9/18/23 | Execute the [signing matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix): installed startup/helper, first install, update/repair and uninstall/restoration under wrong dates, offline/stale caches and bounded native verification. Enforce key policy and project-specific identity independently of signature success/publisher text. |
+
+Pure fixtures can qualify transition logic and fault-seam expectations. Filesystem
+durability, actual token/owner access, SCM, clock mode/trajectory and signing
+retrieval require supported Windows observations in owned disposable fixtures.
+No production TTL, quorum or recovery allowance is supplied by this matrix.
 
 ## 10. Native Windows qualification and safe experiment ownership
 

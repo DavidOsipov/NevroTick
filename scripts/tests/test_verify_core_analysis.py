@@ -81,8 +81,24 @@ class CoreAnalysisTests(unittest.TestCase):
                 '--verbose', '--package=time-core@0.0.0', '--message-format=json', '--frozen']
         return '*** ' + ' '.join(argv) + '\n'
 
-    def completed_mutation_log(self, test_output):
+    @staticmethod
+    def complete_selection_rows():
+        """Literal independent package marker recipes; no Rust execution claim."""
+        return ('S13_SELECTION_PROFILE scope=interval intervals=8 minima=0 batches=0 selections=0\n'
+                'S13_SELECTION_PROFILE scope=minimum intervals=0 minima=6 batches=0 selections=0\n'
+                'S13_SELECTION_PROFILE scope=batch intervals=19 minima=1 batches=8 selections=1\n'
+                'S13_SELECTION_PROFILE scope=literal_permutations intervals=446 minima=65 batches=65 selections=65\n'
+                'S13_BATCH_GUARD_PROFILE {"case":"capacity","intervals":1,"batches":1}\n'
+                'S13_BATCH_GUARD_PROFILE {"case":"capacity_neighbor","intervals":16,"batches":1}\n'
+                'S13_BATCH_GUARD_PROFILE {"case":"duplicate_recovery","intervals":2,"batches":2}\n'
+                'SELECTION_HELPER_PROFILE read_adapters=2 prefix_sorts=3 cell_depths=2 label_projections=5\n')
+
+    def completed_mutation_log(self, test_output, *, include_selection=True):
         finished = '{"reason":"build-finished","success":true}\n'
+        if include_selection:
+            test_output += self.complete_selection_rows()
+        if 'test result:' not in test_output:
+            test_output += 'test result: ok. 96 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n'
         return (self.mutation_phase_header('Build') + finished
                 + self.mutation_phase_header('Test') + finished + test_output)
 
@@ -129,7 +145,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.object(MODULE, 'RUNS_TELEMETRY_STATUS', 'pending-reviewed-runs-telemetry-and-campaign-budget'):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.read_policy(root, 'contracts')
-            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 80)
+            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 83)
 
     def test_runs_counter_families_require_exact_complete_scopes_and_charge_prefixes(self):
         text = self.complete_runs_rows()
@@ -250,12 +266,130 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertTrue(cases[name]['tokens'])
             self.assertTrue(cases[name]['source'].splitlines()[cases[name]['line']-1].strip())
 
+    def test_six_owner_prospective_scope_reserves_complete_matrix_before_effects(self):
+        proof = MODULE.prospective_scope_reservation('all', dict(MODULE.SUBJECTS))
+        self.assertEqual(proof['mutation_package_invocations_upper'], 506)
+        self.assertEqual(proof['coverage_package_invocations_upper'], 1)
+        self.assertEqual(proof['package_invocations_upper'], 507)
+        self.assertEqual(proof['package_test_count_upper_each'], 96)
+        self.assertEqual((proof['legal_consumer_executions_upper'],
+                          proof['negative_consumer_compilations_upper'],
+                          proof['history_fuzz_invocations_upper']), (10, 98, 2))
+        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 3170467,
+                                                  'point_admissions_upper': 129524721})
+        self.assertEqual(proof['selection_call_upper'], {
+            'intervals': 249450, 'minima': 36507, 'batches': 39043,
+            'selections': 33464, 'garde_validator_invocations_upper': 535407})
+        self.assertEqual(proof['selection_direct_helper_call_upper'], {
+            'read_adapters': 1014, 'prefix_sorts': 1521, 'cell_depths': 1014, 'label_projections': 2535})
+        for lane, subjects in [('host', dict(MODULE.SUBJECTS)), ('all', {}),
+                               ('all', {'selection': 'crates/time-core/src/regression.rs'})]:
+            with self.subTest(lane=lane, subjects=subjects), self.assertRaises(MODULE.Incomplete):
+                MODULE.prospective_scope_reservation(lane, subjects)
+        with patch.dict(MODULE.GLOBAL_LIMITS, {'point_admissions_upper': 129524720}):
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.prospective_scope_reservation('all', dict(MODULE.SUBJECTS))
+
+    def test_selection_complete_package_and_missing_private_recipe_remain_distinct(self):
+        full = self.complete_runs_rows() + self.complete_selection_rows()
+        counts = MODULE.profile_counts(full, require_runs=True, require_selection=True)
+        self.assertEqual(counts['selection_observed_calls'],
+                         {'intervals': 492, 'minima': 72, 'batches': 77, 'selections': 66})
+        self.assertEqual(counts['selection_helper_observed_calls'],
+                         {'read_adapters': 2, 'prefix_sorts': 3, 'cell_depths': 2, 'label_projections': 5})
+        missing = full.replace('SELECTION_HELPER_PROFILE read_adapters=2 prefix_sorts=3 cell_depths=2 label_projections=5\n', '')
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.profile_counts(missing, require_selection=True)
+        partial = MODULE.profile_counts(missing)
+        self.assertIsNone(partial['selection_helper_observed_calls'])
+        self.assertTrue(partial['selection_helper_observation_pending'])
+        malformed = full + '{"reason":"compiler-message","message":{"rendered":"S13_SELECTION_PROFILE scope=interval intervals=8 minima=0 batches=0 selections=0"}}\n'
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.profile_counts(malformed)
+
+    def test_selection_external_consumer_rows_are_closed_separate_and_bounded(self):
+        row = 'CORE_SELECTION_EXTERNAL_PROFILE intervals=6 minima=3 batches=4 selections=2\n'
+        counts = MODULE.profile_counts(row)
+        self.assertEqual(counts['selection_external_consumer_calls'],
+                         {'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2})
+        self.assertEqual(counts['direct_fit_calls'], 0)
+        self.assertIsNone(counts['selection_observed_calls'])
+        self.assertEqual(MODULE.selection_external_counts('')['selection_external_consumer_calls'], None)
+        for wrong in [row+row, row.rstrip('\n'), row.replace('6', '06', 1),
+                      row.replace('intervals=6', 'intervals=7'), row.replace('minima=3', 'minima=4'),
+                      row.replace('batches=4', 'batches=3'), row.replace('selections=2', 'selections=true'),
+                      row.replace(' selections=', ' extra=0 selections='), 'prefix '+row,
+                      '{"rendered":'+json.dumps(row)+'}\n']:
+            with self.subTest(wrong=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.selection_external_counts(wrong)
+        prefix = MODULE.selection_external_counts('CORE_SELECTION_EXTERNAL_PROFILE intervals=1 minima=0 batches=0 selections=0\n')
+        self.assertEqual(prefix['selection_external_consumer_calls']['intervals'], 1)
+
+    def test_selection_reservation_retains_missing_observations_without_zeroing(self):
+        report = {}
+        MODULE.record_counts(report, 'package', {
+            'charged_fit_work_upper': 5233, 'point_admissions_upper': 220797,
+            **MODULE.selection_reservation(package=True), 'observation_pending': True})
+        self.assertEqual(report['core_selection_reserved_totals']['intervals'], 492)
+        self.assertIsNone(report['core_selection_package_observed_calls'])
+        self.assertEqual(report['core_observation_pending_invocations'], ['package'])
+        row = report['core_invocations'][0]
+        row['observed_counts'] = MODULE.profile_counts(
+            'S13_SELECTION_PROFILE scope=interval intervals=8 minima=0 batches=0 selections=0\n',
+            require_fit=False)
+        row['observation_pending'] = False
+        MODULE.refresh_accounting(report)
+        self.assertEqual(report['core_observation_pending_invocations'], [])
+        self.assertEqual(report['core_selection_pending_observation_invocations'], ['package'])
+        self.assertIsNone(report['core_selection_package_observed_calls'])
+        self.assertEqual(report['core_selection_reserved_totals']['intervals'], 492)
+        self.assertEqual(report['core_selection_reported_record_subtotals']['intervals'], 8)
+        bad = {**MODULE.selection_reservation(package=True), 'charged_fit_work_upper': 0,
+               'point_admissions_upper': 0}
+        bad['selection_reserved_calls']['intervals'] = 0
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.record_counts({}, 'bad', bad)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.selection_reservation(external={'intervals': True, 'minima': 3, 'batches': 4, 'selections': 2})
+
+    def test_selection_external_catalog_pins_intended_causes_and_receiving_operations(self):
+        cases = MODULE.SELECTION_CONTRACTS.contract_examples()
+        self.assertEqual(len(cases), 27)
+        legal = cases['legal_selection_construction_and_output']
+        self.assertIsNone(legal['code'])
+        self.assertEqual(legal['selection_calls'], {'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2})
+        self.assertEqual(sum(item['code'] is None for item in MODULE.contract_examples().values()), 10)
+        for name, specimen in cases.items():
+            if specimen['code'] is not None:
+                line = specimen['source'].splitlines()[specimen['line']-1]
+                self.assertTrue(line.strip(), name)
+                self.assertIn(specimen['code'], {'E0277', 'E0451', 'E0616', 'E0603', 'E0308'})
+                self.assertTrue(specimen['tokens'])
+
+    def test_healthy_mutation_package_requires_exact_96_tests_and_all_selection_records(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp)
+            outcome = {'scenario': 'Baseline', 'summary': 'Success', 'log_path': 'baseline.log',
+                       'phase_results': self.phase_results('Success')}
+            complete = self.completed_mutation_log(self.complete_runs_rows())
+            for text, message in [(complete.replace('96 passed', '95 passed'), '96'),
+                                  (self.completed_mutation_log(self.complete_runs_rows(), include_selection=False), 'Selection')]:
+                (output/'baseline.log').write_text(text)
+                report = {}
+                MODULE.record_counts(report, 'selection:mutation-baseline', {
+                    'charged_fit_work_upper': 5233, 'point_admissions_upper': 220797,
+                    **MODULE.selection_reservation(package=True), 'observation_pending': True})
+                with self.subTest(message=message), self.assertRaisesRegex(MODULE.Incomplete, message):
+                    MODULE.observe_mutation_outcome(report, output/'outcomes.json',
+                        'selection:mutation-baseline', outcome, report['core_invocations'][0])
+                self.assertTrue(report['core_invocations'][0]['observation_pending'])
+
     def inert_product(self, root):
         """Return the synthetic product inventory; never qualify a real graph."""
         return {}, {name: MODULE.PRODUCT.sha256(root / name) for name in MODULE.BOUND_INPUTS}
 
     def fixture(self, root):
-        """Create the complete 80-file synthetic shape and five-file manifest."""
+        """Create the complete 83-file synthetic shape and six-file manifest."""
         for name in MODULE.BOUND_INPUTS:
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -306,7 +440,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(MODULE.SCOPE.select('regression'), {'regression': MODULE.SUBJECTS['regression']})
             self.assertEqual(MODULE.SCOPE.select('residuals'), {'residuals': MODULE.SUBJECTS['residuals']})
             self.assertEqual(MODULE.SCOPE.select('all'), MODULE.SUBJECTS)
-            self.assertEqual(len(admitted['inputs_sha256']), 80)
+            self.assertEqual(len(admitted['inputs_sha256']), 83)
             policy['admission_status'] = 'pending-final-source-binding'
             self.write_policy(root, policy)
             with self.assertRaises(MODULE.Incomplete):
@@ -476,10 +610,10 @@ class CoreAnalysisTests(unittest.TestCase):
             self.write_policy(root, changed)
             with self.assertRaises(MODULE.Incomplete): MODULE.read_policy(root, 'fuzz')
 
-    def test_real_consumer_specimens_have_six_legal_controls_and_exact_declared_causes(self):
+    def test_real_consumer_specimens_have_ten_legal_controls_and_exact_declared_causes(self):
         cases = MODULE.contract_examples(); legal = [v for v in cases.values() if v['code'] is None]
-        self.assertEqual(len(legal), 9)
-        self.assertLessEqual(sum(v['code'] is not None for v in cases.values()), 72)
+        self.assertEqual(len(legal), 10)
+        self.assertLessEqual(sum(v['code'] is not None for v in cases.values()), 98)
         self.assertEqual({k: sum(v['calls'][k] for v in legal) for k in ['direct_fit_calls', 'stats_calls', 'point_admissions']},
                          {'direct_fit_calls': 2, 'stats_calls': 2, 'point_admissions': 15})
         for name in ['point_construction', 'line_construction', 'residual_raw_update']:
@@ -531,22 +665,22 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertTrue(report['mutation_full_manifest_selected'])
-            self.assertEqual(report['mutation_baselines_required'], 5)
-            self.assertEqual(report['mutation_baselines_observed'], 5)
+            self.assertEqual(report['mutation_baselines_required'], 6)
+            self.assertEqual(report['mutation_baselines_observed'], 6)
             self.assertEqual(report['mutation_missing_selected_files'], [])
             for subject in MODULE.SUBJECTS:
                 row = report['mutation_full_accounting'][subject]
                 self.assertEqual(row['counts'], {'K': 1, 'M': 1, 'U': 1, 'T': 0, 'X': 0, 'E': 0})
                 self.assertEqual(row['accounted'], 3)
-            self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 78495, 'point_admissions_upper': 3311955})
-            self.assertEqual(report['core_direct_and_stats_observations'], {'direct_fit_calls': 15, 'stats_calls': 15, 'point_admissions': 90})
-            self.assertEqual(report['core_runs_external_observations']['runs_selections'], 300)
+            self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 94194, 'point_admissions_upper': 3974346})
+            self.assertEqual(report['core_direct_and_stats_observations'], {'direct_fit_calls': 18, 'stats_calls': 18, 'point_admissions': 108})
+            self.assertEqual(report['core_runs_external_observations']['runs_selections'], 360)
             self.assertTrue(report['core_recorded_observations_parsed'])
             self.assertFalse(report['mutation_counter_observation_complete'])
             self.assertEqual(report['core_invocations'][0]['observed_counts']['runs_selections'],20)
             baseline = work / 'mutation/regression/mutants.out/baseline.log'
             original = baseline.read_text(); baseline.write_text(self.completed_mutation_log(
-                'test result: ok. 1 passed; 0 failed; 0 ignored;'))
+                'test result: ok. 96 passed; 0 failed; 0 ignored;'))
             incomplete = {}
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 with self.assertRaises(MODULE.Incomplete): MODULE.mutation_accounting(incomplete, work)
@@ -1181,7 +1315,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 with self.assertRaises(MODULE.Incomplete): MODULE.COMMON.mutation_counts(MODULE.SCOPE, changed, expected, filename)
             with self.assertRaises(MODULE.Incomplete): MODULE.COMMON.mutation_counts(MODULE.SCOPE, healthy, {}, filename)
 
-    def test_complete_mutation_loop_has_four_package_baselines_and_one_shared_deadline(self):
+    def test_complete_mutation_loop_has_six_package_baselines_and_one_shared_deadline(self):
         with tempfile.TemporaryDirectory() as temp:
             work = Path(temp); report = {}; clock = [100.0]; launches = []
             def run(label, command, timeout, **options):
@@ -1194,15 +1328,15 @@ class CoreAnalysisTests(unittest.TestCase):
                 out = work / 'mutation' / subject / 'mutants.out'; out.mkdir(parents=True)
                 (out / 'outcomes.json').write_text(json.dumps(raw))
                 (out / 'baseline.log').write_text('test result: ok. 2 passed; 0 failed; 0 ignored;\n')
-                clock[0] += 200
+                clock[0] += 100
                 return {'exit_code': 0, 'failure': None, 'output': 'inert actual-loop control'}
             with patch.object(MODULE.COMMON.time, 'monotonic', side_effect=lambda: clock[0]):
                 MODULE.COMMON.run_analysis_lanes(MODULE.SCOPE, MODULE.SUBJECTS,
                     {'mutation_equivalences': [], 'maximum_mutants': 512, 'mutation_wall_seconds': 1200},
                     work, Path('/inert-tools'), run, report, 'mutation')
             campaigns = [row for row in launches if row[0].startswith('mutation-campaign:')]
-            self.assertEqual([row[0] for row in campaigns], ['mutation-campaign:regression', 'mutation-campaign:residuals', 'mutation-campaign:normalization', 'mutation-campaign:history', 'mutation-campaign:runs'])
-            self.assertEqual([row[2] for row in campaigns], [950, 750, 550, 350, 150])
+            self.assertEqual([row[0] for row in campaigns], ['mutation-campaign:regression', 'mutation-campaign:residuals', 'mutation-campaign:normalization', 'mutation-campaign:history', 'mutation-campaign:runs', 'mutation-campaign:selection'])
+            self.assertEqual([row[2] for row in campaigns], [900, 800, 700, 600, 500, 400])
             for _, command, _, _ in campaigns:
                 self.assertEqual(command[command.index('--baseline') + 1], 'run')
                 self.assertEqual(command[command.index('--build-timeout') + 1], '90')
@@ -1240,8 +1374,8 @@ class CoreAnalysisTests(unittest.TestCase):
         self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 908, 'point_admissions_upper': 5318})
         self.assertEqual(report['core_direct_and_stats_observations'], {'direct_fit_calls': 570, 'stats_calls': 338, 'point_admissions': 5318})
         self.assertIn('Coordinator', report['global_campaign_custody'])
-        for changed in [{'charged_fit_work_upper': 2500000, 'point_admissions_upper': 0},
-                        {'charged_fit_work_upper': 0, 'point_admissions_upper': 100000000},
+        for changed in [{'charged_fit_work_upper': 4000000, 'point_admissions_upper': 0},
+                        {'charged_fit_work_upper': 0, 'point_admissions_upper': 150000000},
                         {'fit_calls': 1, 'point_admissions': 3},
                         {'charged_fit_work_upper': True, 'point_admissions_upper': 0}]:
             with self.subTest(counts=changed), self.assertRaises(MODULE.Incomplete):
@@ -1259,7 +1393,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 self.assertEqual(MODULE.main(args + ['--subject', 'residuals']), 1)
                 self.assertEqual(MODULE.main(args + ['--subject', 'normalization']), 1)
         self.assertEqual(selected, ['all', 'residuals', 'normalization'])
-        self.assertEqual(len(MODULE.SCOPE.select('all')), 5)
+        self.assertEqual(len(MODULE.SCOPE.select('all')), 6)
         self.assertEqual(len(MODULE.SCOPE.select('regression')), 1)
         with self.assertRaises(MODULE.Incomplete): MODULE.SCOPE.select('../residuals')
 
@@ -1656,7 +1790,7 @@ class CoreAnalysisTests(unittest.TestCase):
     def test_history_pending_and_fully_bound_synthetic_schema_have_causal_neighbors(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);policy=self.fixture(root)
-            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],80)
+            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],83)
             self.assertEqual(MODULE.SUBJECTS['history'],'crates/time-core/src/regression/history.rs')
             self.assertEqual(list(MODULE.SCOPE.select('all')),['regression','residuals','normalization','history','runs'])
             for key in ['history_telemetry','normalization_telemetry']:
@@ -1706,6 +1840,254 @@ class CoreAnalysisTests(unittest.TestCase):
                     self.assertEqual(report['mutation_global_variant_ceiling'],512)
                 else:
                     with self.assertRaises(MODULE.Incomplete): MODULE.mutation_accounting({},work)
+
+
+class InventoryAdmissionTests(unittest.TestCase):
+    """Synthetic discovery admission/receiving controls; no tool or Rust runs."""
+
+    NOW = 1700000100
+    SUBJECTS = {
+        'regression': 'crates/time-core/src/regression.rs',
+        'residuals': 'crates/time-core/src/regression/residuals.rs',
+        'normalization': 'crates/time-core/src/regression/normalization.rs',
+        'history': 'crates/time-core/src/regression/history.rs',
+        'runs': 'crates/time-core/src/regression/runs.rs',
+        'selection': 'crates/time-core/src/selection.rs',
+    }
+
+    def fixture(self, root):
+        """Create inert bytes and literal admission limits, not an admitted graph."""
+        names = set(MODULE.BOUND_INPUTS) | {
+            'crates/time-core/src/selection.rs', 'crates/time-core/tests/selection.rs',
+            'crates/time-core/tests/private/selection_guards.rs'}
+        tools = {
+            'scripts/verify-core-analysis.py', 'scripts/portable-analysis.py',
+            'scripts/verify-time-domain-analysis.py', 'scripts/analysis-runtime.py',
+            'scripts/check-analysis.py', 'scripts/analysis-controls.py',
+            'scripts/prepare-product.py', 'scripts/verify.py',
+            'scripts/check-environment.py', 'scripts/check-strict.py',
+            'policy/analysis-tools.json'}
+        for name in names | tools:
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('inert input ' + name + '\n')
+        product = {name: MODULE.PRODUCT.sha256(root / name) for name in names}
+        policy = {
+            'schema_version': 1, 'admission_status': 'admitted-six-owner-inventory-only',
+            'package': 'time-core', 'source_file_count': 83, 'subjects': dict(self.SUBJECTS),
+            'maximum_mutants': 512, 'listing_maximum_per_file': 512,
+            'listing_maximum_total': 3072, 'inventory_wall_seconds': 600,
+            'mutation_jobs': 10, 'mutation_process_limit': 512, 'listing_process_limit': 128,
+            'mutation_message_format': 'json', 'mutation_equivalences': [],
+            'native_test_invocations': 0, 'campaigns_admitted': False,
+            'root': str(root), 'created_unix_seconds': 1700000000,
+            'expires_unix_seconds': 1700003600, 'product_inputs_sha256': product,
+            'tool_inputs_sha256': {name: MODULE.PRODUCT.sha256(root / name) for name in tools},
+        }
+        path = root / 'tasks/s1.3-inventory-admission.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(policy, indent=2) + '\n')
+        return policy, path
+
+    def read(self, root, path, policy):
+        with patch.object(MODULE.PRODUCT, 'admit_product', return_value=({}, policy['product_inputs_sha256'])), \
+             patch.object(MODULE.time, 'time', return_value=self.NOW):
+            return MODULE.read_inventory_admission(root, path)
+
+    def test_exact_current_source_and_tools_admit_discovery_without_campaign_permission(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); policy, path = self.fixture(root)
+            self.assertEqual(self.read(root, path, policy), policy)
+            self.assertEqual(MODULE.INVENTORY_SUBJECTS, self.SUBJECTS)
+            self.assertEqual(len(policy['product_inputs_sha256']), 83)
+            self.assertEqual(len(MODULE.SUBJECTS), 6)
+            self.assertIn('selection', MODULE.SUBJECTS)
+            self.assertFalse(policy['campaigns_admitted'])
+            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 83)
+
+    def test_unknown_fields_duplicate_fields_and_nonfinite_json_reject(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); policy, path = self.fixture(root)
+            original = path.read_text()
+            invalid = [json.dumps({**policy, 'unknown': 1}),
+                       original.replace('"schema_version": 1', '"schema_version": 1, "schema_version": 1', 1),
+                       original.replace('"schema_version": 1', '"schema_version": NaN', 1),
+                       '[]', 'null']
+            for text in invalid:
+                path.write_text(text)
+                with self.subTest(text=text[:60]), self.assertRaises(MODULE.Incomplete):
+                    self.read(root, path, policy)
+            path.write_text(original)
+            self.assertEqual(self.read(root, path, policy), policy)
+
+    def test_fixed_limits_scope_status_and_timestamp_types_cannot_widen(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); healthy, path = self.fixture(root)
+            changes = [('listing_maximum_per_file', True), ('listing_maximum_per_file', 513),
+                       ('listing_maximum_total', 0), ('listing_maximum_total', 3073),
+                       ('inventory_wall_seconds', 601), ('mutation_jobs', 8),
+                       ('mutation_process_limit', 128), ('listing_process_limit', 512),
+                       ('native_test_invocations', True), ('campaigns_admitted', 0),
+                       ('source_file_count', 80), ('mutation_equivalences', [{}]),
+                       ('admission_status', 'admitted-final-source'), ('subjects', {}),
+                       ('root', str(root / 'different')), ('created_unix_seconds', True),
+                       ('created_unix_seconds', self.NOW + 1), ('expires_unix_seconds', self.NOW),
+                       ('expires_unix_seconds', 1700003601)]
+            for name, value in changes:
+                changed = copy.deepcopy(healthy); changed[name] = value
+                path.write_text(json.dumps(changed))
+                with self.subTest(name=name, value=value), self.assertRaises(MODULE.Incomplete):
+                    self.read(root, path, healthy)
+
+    def test_product_tool_drift_missing_hash_extra_closure_and_redirect_reject(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); healthy, path = self.fixture(root)
+            for field, name in [('product_inputs_sha256', 'crates/time-core/src/selection.rs'),
+                                ('tool_inputs_sha256', 'scripts/portable-analysis.py')]:
+                for value in (None, '0' * 63, 'A' * 64, '0' * 64):
+                    changed = copy.deepcopy(healthy); changed[field][name] = value
+                    path.write_text(json.dumps(changed))
+                    with self.subTest(field=field, value=value), self.assertRaises(MODULE.Incomplete):
+                        self.read(root, path, healthy)
+                changed = copy.deepcopy(healthy); del changed[field][name]
+                path.write_text(json.dumps(changed))
+                with self.assertRaises(MODULE.Incomplete): self.read(root, path, healthy)
+            path.write_text(json.dumps(healthy))
+            source = root / 'crates/time-core/src/selection.rs'
+            original = source.read_bytes(); source.write_bytes(original + b'changed')
+            with self.assertRaises(MODULE.Incomplete): self.read(root, path, healthy)
+            source.write_bytes(original)
+            extra = root / 'scripts/new-tool.py'; extra.write_text('inert extra tooling')
+            with self.assertRaises(MODULE.Incomplete): self.read(root, path, healthy)
+            extra.unlink()
+            redirect = root / 'tasks/redirect.json'; redirect.write_text(path.read_text())
+            with self.assertRaises(MODULE.Incomplete): self.read(root, redirect, healthy)
+            path.unlink(); path.symlink_to(redirect)
+            with self.assertRaises(MODULE.Incomplete): self.read(root, path, healthy)
+
+    def test_inventory_execution_only_lists_all_six_and_reports_campaign_overflow(self):
+        for per_file, total, exceeded in [(1, 6, False), (100, 600, True)]:
+            with self.subTest(per_file=per_file), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); policy, path = self.fixture(root)
+                session = Mock(tools=Path('/inert-sealed-tools'), source=root,
+                               product_identity=dict(policy['product_inputs_sha256']),
+                               identity=dict(policy['tool_inputs_sha256']))
+                def listing(label, command, timeout):
+                    name = label.removeprefix('mutation-enumeration:')
+                    self.assertEqual(command[-2:], ['--list', '--json'])
+                    self.assertNotIn('--baseline', command)
+                    self.assertLessEqual(timeout, 120)
+                    items = [{'package': 'time-core', 'file': self.SUBJECTS[name],
+                              'name': name + '-' + str(index)} for index in range(per_file)]
+                    return MODULE.COMMON.mutation_listing_warning(10) + json.dumps(items)
+                session.run.side_effect = listing
+                args = SimpleNamespace(lane='inventory', subject='all', inventory_admission=path,
+                                       vendor_dir=root / 'unused-vendor', output_dir=root.parent / 'inert-output')
+                report = {}
+                with patch.object(MODULE, 'ROOT', root), \
+                     patch.object(MODULE.PRODUCT, 'admit_product', return_value=({}, policy['product_inputs_sha256'])), \
+                     patch.object(MODULE.time, 'time', return_value=self.NOW), \
+                     patch.object(MODULE.COMMON, 'Session', return_value=session) as factory, \
+                     patch.object(MODULE, 'read_policy', side_effect=AssertionError('ordinary policy used')), \
+                     patch.object(MODULE.COMMON, 'run_analysis_lanes', side_effect=AssertionError('campaign used')), \
+                     patch.object(MODULE, 'contracts', side_effect=AssertionError('contracts used')), \
+                     patch.object(MODULE, 'fuzz', side_effect=AssertionError('fuzz used')):
+                    MODULE.execute(args, report)
+                self.assertEqual(factory.call_args.args[1].lane, 'mutation')
+                self.assertEqual(factory.call_args.args[3].policy, 'tasks/s1.3-inventory-admission.json')
+                self.assertEqual(session.run.call_count, 6)
+                self.assertTrue(all(not call.kwargs for call in session.run.call_args_list))
+                session.finish.assert_called_once()
+                self.assertEqual(report['inventory_discovery']['total'], total)
+                self.assertEqual(report['inventory_discovery']['exceeds_current_campaign_cap'], exceeded)
+                self.assertEqual(set(report['inventory_discovery']['inventories']), set(self.SUBJECTS))
+                self.assertIs(report['campaigns_admitted'], False)
+                self.assertEqual(report['native_test_invocations'], 0)
+                self.assertNotIn('mutation', report)
+
+    def test_listing_receiving_guard_refuses_campaign_wrong_owner_and_profile_options(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); policy, path = self.fixture(root)
+            for change in ('campaign', 'wrong-label', 'wrong-file', 'profile'):
+                session = Mock(tools=Path('/inert-sealed-tools'), source=root,
+                               product_identity=dict(policy['product_inputs_sha256']),
+                               identity=dict(policy['tool_inputs_sha256']))
+                args = SimpleNamespace(lane='inventory', subject='all', inventory_admission=path)
+                def attempt(scope, subjects, admitted, tools, run, report, **_kwargs):
+                    name = 'selection'; label = 'mutation-enumeration:' + name
+                    command = [str(tools / 'cargo-mutants'), 'mutants', '--package', 'time-core',
+                               '--file', self.SUBJECTS[name], '--test-workspace', 'false',
+                               '--cap-lints', 'false', '--jobs', '10', '--jobserver', 'true',
+                               '--jobserver-tasks', '10', '--cargo-arg=--message-format=json', '--list', '--json']
+                    options = {}
+                    if change == 'campaign': command[-2:] = ['--baseline', 'run']
+                    if change == 'wrong-label': label = 'mutation-campaign:selection'
+                    if change == 'wrong-file': command[5] = 'crates/other.rs'
+                    if change == 'profile': options['mutation_subject'] = 'selection'
+                    run(label, command, 5, **options)
+                with patch.object(MODULE, 'ROOT', root), \
+                     patch.object(MODULE, 'read_inventory_admission', return_value=policy), \
+                     patch.object(MODULE.time, 'time', return_value=self.NOW), \
+                     patch.object(MODULE.COMMON, 'Session', return_value=session), \
+                     patch.object(MODULE.COMMON, 'enumerate_mutation_inventories', side_effect=attempt):
+                    with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                        MODULE.execute(args, {})
+                session.run.assert_not_called()
+                session.finish.assert_called_once()
+
+    def test_reader_to_session_handoff_rejects_changed_document_product_and_tool_maps(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); policy, path = self.fixture(root)
+            original = path.read_text()
+            for change in ('document', 'duplicate-document', 'product', 'tool', 'expiry'):
+                path.write_text(original)
+                session = Mock(tools=Path('/inert-sealed-tools'), source=root,
+                               product_identity=dict(policy['product_inputs_sha256']),
+                               identity=dict(policy['tool_inputs_sha256']))
+                args = SimpleNamespace(lane='inventory', subject='all', inventory_admission=path)
+                if change == 'document':
+                    changed = copy.deepcopy(policy); changed['created_unix_seconds'] += 1
+                    path.write_text(json.dumps(changed))
+                if change == 'duplicate-document':
+                    path.write_text(original.replace('"schema_version": 1',
+                        '"schema_version": 1, "schema_version": 1', 1))
+                if change == 'product': session.product_identity['Cargo.lock'] = '0' * 64
+                if change == 'tool': session.identity['scripts/portable-analysis.py'] = '0' * 64
+                now = policy['expires_unix_seconds'] if change == 'expiry' else self.NOW
+                with patch.object(MODULE, 'ROOT', root), \
+                     patch.object(MODULE, 'read_inventory_admission', return_value=policy), \
+                     patch.object(MODULE.time, 'time', return_value=now), \
+                     patch.object(MODULE.COMMON, 'Session', return_value=session), \
+                     patch.object(MODULE.COMMON, 'enumerate_mutation_inventories') as listing:
+                    with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                        MODULE.execute(args, {})
+                listing.assert_not_called(); session.run.assert_not_called()
+                session.finish.assert_called_once()
+
+    def test_invalid_admission_and_old_lane_fail_before_inventory_or_session(self):
+        session = Mock()
+        with patch.object(MODULE, 'read_inventory_admission', side_effect=MODULE.Incomplete('bad inventory admission')), \
+             patch.object(MODULE.COMMON, 'Session', session), \
+             patch.object(MODULE.COMMON, 'enumerate_mutation_inventories') as listings:
+            with self.assertRaisesRegex(MODULE.Incomplete, 'bad inventory admission'):
+                MODULE.execute(SimpleNamespace(lane='inventory', subject='all', inventory_admission=Path('bad')), {})
+        session.assert_not_called(); listings.assert_not_called()
+        with patch.object(MODULE, 'read_policy', side_effect=MODULE.Incomplete('old five-owner gate')), \
+             patch.object(MODULE, 'read_inventory_admission') as admission:
+            with self.assertRaisesRegex(MODULE.Incomplete, 'old five-owner gate'):
+                MODULE.execute(SimpleNamespace(lane='mutation', subject='all'), {})
+        admission.assert_not_called()
+
+    def test_cli_requires_explicit_inventory_admission_and_complete_subjects(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = ['--output-dir', temporary, '--vendor-dir', temporary]
+            for options in (['--lane', 'inventory'],
+                            ['--lane', 'inventory', '--inventory-admission', 'tasks/s1.3-inventory-admission.json', '--subject', 'runs'],
+                            ['--lane', 'coverage', '--inventory-admission', 'tasks/s1.3-inventory-admission.json']):
+                with self.subTest(options=options), contextlib.redirect_stderr(io.StringIO()), \
+                     self.assertRaises(SystemExit) as error:
+                    MODULE.main(base + options)
+                self.assertEqual(error.exception.code, 2)
 
 
 if __name__ == '__main__':

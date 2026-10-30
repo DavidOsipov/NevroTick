@@ -14,6 +14,34 @@ Read [the security contract](../CONTRACT.md), architecture sections 7–8, 12 an
 5. Keep secrets in association owner with restricted service-SID ACLs and qualified Windows-protected persistence. Machine-scoped DPAPI alone provides no per-service isolation: other machine users with blob access can decrypt under documented scope. Inspect restart/account/machine migration and recovery. Minimize clones/plaintext lifetime; use reviewed redacted wrappers and selected zeroization, claiming no elimination of all prior copies/crash dumps.
 6. Exclude keys, cookies, bearer approvals and raw sensitive packets from `Debug`, errors, traces, diagnostics and exports. Test negative decryption/trust/AEAD cases and valid neighbors without logging test secrets.
 
+For cached associations, keep accepted-observation freshness, cookie receipt,
+directional-key age, original full certificate-authentication age and trust-policy
+revision distinct. Cookie renewal and TLS resumption do not reset full-auth age.
+Use the explicit lifetime/invalidation policy, bounded trust-change detection and
+qualified elapsed-age basis; unknown age is not fresh authentication. Research
+R-05 owns unresolved limits and reauthentication/resumption choices; never import
+Chrony's four-week default or certificate `notAfter` as an unreviewed product
+constant. Test fresh protected UDP continuing while required reauthentication or
+current trust policy fails, with no downgrade. See [the research contract](../../../../docs/nevrotick-research-handoff.md#association-and-full-authentication-lifetime).
+
+A saved time floor also needs its uncertainty assumptions and provenance. An
+intact authenticated floor may be semantically wrong; follow only the approved
+[supersession procedure](../../../../docs/nevrotick-research-handoff.md#floor-construction-and-supersession),
+preserving consumed correction authority. A historical predictor or successful
+KE/cookie exchange grants no fresh independent vote. Keep that distinction in
+tests, status and downstream broker proposals.
+
+Enforce the NTS requirement at the actual ordinary-time-query sender: usable
+current association, required cookies/keys and successful protected encoding are
+necessary; constructor success alone cannot survive invalidated policy/generation.
+Exhaust cookies, fail/cancel KE, restore partial state and invalidate trust between
+construction and send. Inspect outgoing datagrams to prove there is no plain-query
+fallback and that a healthy protected exchange succeeds. Explicit plain profiles
+and authorized bootstrap hints retain separate roles. Use architecture
+[section 7.4](../../../../docs/windows-time-architecture.md#74-nts-implementation-contract)
+and its complete-association publication contract; no expiry threshold is adopted
+from an upstream default (CHECK-6/9/27).
+
 Route needed changes through [dependency-updates](../../environment/dependency-updates/SKILL.md); use [qa-security-boundaries](../../testing/qa-security-boundaries/SKILL.md) for actual trust/cipher/provider paths. Report trust/nonce/lifetime contract, changed consumers, executed cases and unresolved OS/provider limits. NTS authenticates packets under its trust basis; it removes no delay attacks and proves no exact UTC.
 
 When secret copies or trust-state consumers are uncertain, use

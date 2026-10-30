@@ -104,6 +104,13 @@ prove queue deletion. Restore only the authorized intended configuration, with
 product-generation and later administrator/GPO/successor checks; never blindly
 restore Automatic or modify unrelated services.
 
+Keep maintenance inhibition and captured configuration in the protected durable
+lifecycle transaction. Startup admission must honor incomplete maintenance before
+admitting workers or clock effects, including after interruption/reboot. This
+admission guard supplements service disabling; it does not cancel a queued SCM
+action or prove process quiescence. Pair completion/rollback with the authorized
+configuration restoration and qualify a queued action firing at each boundary.
+
 | Native scenario | Required observation |
 | --- | --- |
 | Unexpected engine or broker termination | Correct configured delayed action and new process generation; no old results or renewed correction allowances. Broker re-establishes ownership before any write/reset. |
@@ -180,6 +187,32 @@ allowed effect → denied neighboring effect → native evidence**. Include obje
 owner, DACL/inheritance, service/restricted/logon SIDs, handle lifetime and any
 impersonation state. Distinguish access requested, access granted and a successful
 effect; source constants or a copied SDDL string prove none of them.
+
+For runtime-created objects, distinguish a service SID in the token/DACL from the
+token's **default owner**. A service SID does not automatically become object
+owner, and an owner normally receives implicit `WRITE_DAC`. A narrow allow-ACE
+list alone therefore does not qualify separation from another service sharing
+LocalService. Inspect the actual primary/impersonation token and restricted SID
+access semantics; do not claim every LocalService token can bypass every DACL.
+[Owner/default-owner contract](https://learn.microsoft.com/en-us/windows/win32/secauthz/owner-of-a-new-object).
+
+Before freezing storage/process security, qualify a concrete owner-isolation
+mechanism: a valid per-service default owner, an appropriate `OWNER RIGHTS` ACE
+policy, or the architecture's distinct engine virtual-account fallback. The
+`OWNER RIGHTS` policy controls implicit owner permissions; its presence and inheritance must
+be inspected on each relevant object rather than inferred from a parent.
+[Microsoft OWNER RIGHTS definition](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-identifiers).
+Cover initial creation, staging, log rotation and atomic replacement of secret,
+journal and diagnostic files, plus relevant process/token/kernel objects. Avoid
+an externally accessible creation-to-security-fixup interval. An ACL inherited
+by one file or an installer-created original is no proof about a replacement.
+
+For CHECK-1/15, use a second service under the shared account to attempt
+owner-mediated `WRITE_DAC`/data access after runtime creation and replacement.
+Retain actual owner/DACL/inheritance, effective tokens, requested/granted rights
+and effects. Pair denial with the intended service's successful create/read/
+replace path. DPAPI under a shared account supplies no assumed isolation from
+that account. Exact security descriptors remain native proof outputs.
 
 | Object boundary | Required per-operation entry and separation |
 | --- | --- |

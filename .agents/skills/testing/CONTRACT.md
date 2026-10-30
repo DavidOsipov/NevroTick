@@ -35,6 +35,8 @@ Apply the current [UI-M0 scope](../../../docs/windows-time-architecture.md#165-r
 
 The architecture retains **90% executable-line coverage for security-primitive modules** and **95% mutation score for each critical source file**. Branch evidence and named adversarial cases remain separate. Preserve the reviewed critical-file manifest and denominator; no favorable repository average, empty selection or unviable mutant counts as a pass. These are implementation/release obligations. A skill/documentation edit does not require nonexistent application gates.
 
+Mutation qualification also reconciles requirement-bearing functions/guards with generated faults, including automatically skipped unsafe functions and macro/build-generated behavior. Record uncovered scope and its independent alternative evidence through [mutation testing](qa-mutation-testing/SKILL.md). A complete nonempty generated inventory and passing percentage do not establish coverage of every critical function; never add ungenerated behavior to kills or equivalent-mutant exclusions.
+
 ## Coordination and closeout
 
 For substantial multi-worker/interrupted work, keep one discoverable coordinator record: source/candidate identity, scope, owners, consumed budgets, live processes, evidence paths, unresolved gaps; use [context continuity](qa-context-checkpoint/SKILL.md). Small local work: existing task record suffices.

@@ -2,6 +2,31 @@
 
 Research checked **28 October 2026**. Provenance/selection reasoning; no executed product verification. Canonical [architecture](../../../docs/windows-time-architecture.md), especially sections 6, 16, 18 and 20, controls requirements. CHECK-1–27 catalog planned; no retained passing run. Tools remain candidates unless adopted.
 
+## Chrony testing-tool references — 30 October 2026
+
+The [upstream tools reference](references/chrony-upstream-tools.md) records inspected
+clknetsim `e9f11e60c72f2c0674a072c4ddcfe343f8634e58` and chrony-fuzz
+`904a8789164ac294ab7e85523792ed906a7b5a57`, their primary sources, file-specific
+rights and harness limits. Existing port/fuzz skills route scenario and seed
+reuse without importing code/corpus, switching engines or admitting the C/build
+graphs. Invasive protocol/crypto bypasses preclude treating patched outputs as
+independent security truth. Source inspection runs no upstream campaign.
+
+## Chrony and NTPsec mechanisms — 30 October 2026
+
+The [source-task assessment](../../../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment)
+records Chrony 4.9 `8df4f1263e206585e6c4e61352d042c2dd12916a` and NTPsec
+`097ea276d9e1b860aac548830a8bc03f1ceb6889`, exact functions and file-specific rights.
+The port recipe, numerical/protocol truth and security leaves add consumer-level
+aging/correction, scheduling, atomic KE publication, send-guard and restoration
+checks. Shared lineage and implementation-derived tests are not independent truth.
+This original local guidance imports no source/test bodies, tuning constants,
+second controller or dependency graph; no upstream/native execution is claimed.
+
+The repeated-proposal review also checks [RFC 9109 §§3.2–4](https://www.rfc-editor.org/rfc/rfc9109.html#section-4)
+and [RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
+for port-lifecycle qualification and the control-only KoD/NAK test distinction.
+
 ## Skill-quality procedures — 30 October 2026
 
 Original local procedures extend existing numerical, harness, mutation and

@@ -1,13 +1,15 @@
 # Rust Windows Time Client — Architecture diagrams
 
 **Plan:** RWTC-ARCH-001, revision 1.4, 28 October 2026  
-**Status:** selected design with 29 October owner-decision amendment; no application or Windows runtime has been qualified
+**Status:** selected design with 29 October owner-decision and 30 October contract amendments; diagrams establish no runtime qualification
 
 These editable Mermaid views are extracted from the [canonical architecture and threat model](windows-time-architecture.md). Keep each diagram in that plan authoritative and regenerate this companion when the architecture changes. GitHub and other Mermaid-capable Markdown renderers display the diagrams directly; the fenced source is also available to edit.
 
 **Distribution contract:** one complete MSI per supported architecture, authenticated under the declared release profile in architecture section 19.5, contains the native UI, engine service, privileged clock broker, helper and required payloads. One product owns install/update/repair/removal. Runtime process separation restricts authority; it does not require separate packages. Any future MSIX must satisfy the same complete-product contract.
 
 **Release-profile amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) permits an initial OpenPGP release alternative when free Authenticode is unavailable. This changes release-policy evidence, not process authority or package count. OpenPGP supplies no Windows publisher trust; installed-file integrity and native lifecycle remain qualification gates.
+
+**30 October contract amendment:** the correction sequence now reserves authority durably before the clock effect and records the known outcome before successful acknowledgement. Crash-unknown outcomes follow [architecture §10.2.1](windows-time-architecture.md#1021-durable-authority-reservation-and-uncertain-outcomes); the [critical assessment](supporting-reviews/architecture-contract-review.md) records scope and limitations.
 
 ## Reading the views
 
@@ -63,17 +65,19 @@ sequenceDiagram
     E->>B: Typed bounded correction proposal
     B->>B: Check identity, ownership, epochs and total budget
     alt Current proposal is authorized and within bounds
+        B->>B: Durably reserve operation identity and authority
         B->>W: Apply permitted correction
         W-->>B: API result and adjustment readback
-        B-->>E: Acknowledge applied state and generation
-        E->>E: Reconcile model with acknowledged actuation
+        B->>B: Persist known outcome; retain unknown on failure
+        B-->>E: Return confirmed outcome or explicit unknown
+        E->>E: Reconcile confirmed actuation; hold unknown
     else Admission or ownership fails
         B-->>E: Reject with no new clock write
     end
     B-->>U: Coherent status, freshness and reason
 ```
 
-An API success/readback acknowledges what the backend applied or accepted; it does not itself measure end-to-end UTC accuracy. An unknown acknowledgement is reconciled against broker state before retry. The UI request carries no target timestamp or destination. Both diagrams describe required future behavior, not tested implementation.
+An API success/readback acknowledges what the backend applied or accepted; it does not itself measure end-to-end UTC accuracy. Publish successful applied-state acknowledgement only after its durable outcome is recorded. Lost acknowledgements and crash-unknown effects follow section 10.2.1; they never authorize a duplicate relative correction. The UI request carries no target timestamp or destination. Both diagrams describe required future behavior, not tested implementation.
 
 ## 3. 6.1.1 Input-to-effect validation flow
 

@@ -189,6 +189,17 @@ Priority order:
 
 The proprietary-artwork/free-signing question is **unresolved**. This work neither concludes SignPath rejects the project nor changes the brand licence. Research and any later authorized provider clarification must answer it.
 
+The [30 October contract assessment](supporting-reviews/architecture-contract-review.md)
+adds specificity to that queue, without recording new owner approvals. OPEN-5
+needs the measured legitimate-drift versus residual compromised-engine authority
+tradeoff (100 ppm integrates to 8.64 seconds/day), durable settlement and boot
+semantics. OPEN-5/6 retain production quorum/freshness and floor-supersession
+authority; OPEN-8 retains association/full-authentication lifetime and trust-change
+policy; OPEN-11/14 retain signing key policy, wrong-clock recovery and maintenance
+qualification. Prepare a decision card when evidence makes the dependent choice
+ready. No TTL, additional reset power, wider correction budget or weaker trust
+rule is approved by this review; unaffected implementation continues.
+
 ## 9. Integration and evidence
 
 The maintained architecture integrates these instructions into requirements, decisions, large-error policy, packaging/release branches, relevant checks and the OPEN register. The feature/signing/hardening guides and diagram companion are aligned. Start from `AGENTS.md`, the root README or `docs/README.md`; the semantic context registry also lists this record and the research assignment. Existing numbering, earlier review history, UI-M0, independent upstream-verification policy and subsequent tooling/dependency updates are preserved.

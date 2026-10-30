@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded normalization/coefficient/residual harness; root bindings stay pending.
+"""Bounded six-owner pure fixture analysis; execution needs current source binding.
 
 GPL-2.0-only, David Osipov with AI assistance, 29 October 2026.
 Adapts existing C/D wrappers; portable-analysis owns execution/custody. Admission
@@ -25,6 +25,9 @@ SPEC = importlib.util.spec_from_file_location("core_shared", ROOT / "scripts/por
 COMMON = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(COMMON)
 DOMAIN = COMMON.load_module("core_cohort_helpers", ROOT / "scripts/verify-time-domain-analysis.py")
+SELECTION = COMMON.load_module("core_selection_accounting", ROOT / "scripts/core-selection-accounting.py")
+SELECTION_CONTRACTS = COMMON.load_module("core_selection_contracts", ROOT / "scripts/core-selection-contracts.py")
+SELECTION_INPUTS = ("scripts/core-selection-accounting.py", "scripts/core-selection-contracts.py")
 PRODUCT, ANALYSIS, PREPARE = COMMON.PRODUCT, COMMON.ANALYSIS, COMMON.PREPARE
 Incomplete = COMMON.Incomplete
 REPORT_FAILURES = (Incomplete, PRODUCT.ENV.Incomplete, OSError, ValueError,
@@ -33,7 +36,8 @@ SUBJECTS = {"regression": "crates/time-core/src/regression.rs",
             "residuals": "crates/time-core/src/regression/residuals.rs",
             "normalization": "crates/time-core/src/regression/normalization.rs",
             "history": "crates/time-core/src/regression/history.rs",
-            "runs": "crates/time-core/src/regression/runs.rs"}
+            "runs": "crates/time-core/src/regression/runs.rs",
+            "selection": "crates/time-core/src/selection.rs"}
 POLICY = "policy/time-core-analysis.json"
 SCOPE = COMMON.Scope("time-core", tuple(SUBJECTS.items()), POLICY)
 BOUND_INPUTS = (
@@ -80,16 +84,19 @@ BOUND_INPUTS = (
     'crates/time-core/src/regression/normalization.rs',
     'crates/time-core/src/regression/history.rs',
     'crates/time-core/src/regression/runs.rs',
+    'crates/time-core/src/selection.rs',
     'crates/time-core/tests/private/residual_guards.rs',
     'crates/time-core/tests/private/normalization_guards.rs',
     'crates/time-core/tests/private/unit_guards.rs',
     'crates/time-core/tests/private/runs_guards.rs',
     'crates/time-core/tests/private/runs_sign_observer.rs',
+    'crates/time-core/tests/private/selection_guards.rs',
     'crates/time-core/tests/regression.rs',
     'crates/time-core/tests/residuals.rs',
     'crates/time-core/tests/normalization.rs',
     'crates/time-core/tests/history.rs',
     'crates/time-core/tests/runs.rs',
+    'crates/time-core/tests/selection.rs',
     'crates/time-core/tests/support/residual_facts.rs',
     'crates/time-core/tests/support/normalization_facts.rs',
     'crates/time-core/tests/support/history_facts.rs',
@@ -118,13 +125,37 @@ BOUND_INPUTS = (
     'scripts/check-strict.py',
     'scripts/verify.py',
 )
-SOURCE_FILE_COUNT = 80
+SOURCE_FILE_COUNT = 83
+# Discovery remains separately admitted and never grants a campaign.
+INVENTORY_ADMISSION = "tasks/s1.3-inventory-admission.json"
+INVENTORY_SUBJECTS = dict(SUBJECTS)
+INVENTORY_BOUND_INPUTS = BOUND_INPUTS
+INVENTORY_SOURCE_FILE_COUNT = 83
+INVENTORY_FIXED = {
+    "schema_version": 1, "admission_status": "admitted-six-owner-inventory-only",
+    "package": "time-core", "source_file_count": INVENTORY_SOURCE_FILE_COUNT,
+    "subjects": INVENTORY_SUBJECTS, "maximum_mutants": 512,
+    "listing_maximum_per_file": 512, "listing_maximum_total": 3072,
+    "inventory_wall_seconds": 600, "mutation_jobs": 10,
+    "mutation_process_limit": 512, "listing_process_limit": 128,
+    "mutation_message_format": "json", "mutation_equivalences": [],
+    "native_test_invocations": 0, "campaigns_admitted": False,
+}
+INVENTORY_REQUIRED_TOOLS = frozenset({
+    "scripts/verify-core-analysis.py", "scripts/portable-analysis.py",
+    "scripts/verify-time-domain-analysis.py", "scripts/analysis-runtime.py",
+    "scripts/check-analysis.py", "scripts/analysis-controls.py",
+    "scripts/prepare-product.py", "scripts/verify.py",
+    "scripts/check-environment.py", "scripts/check-strict.py",
+    "policy/analysis-tools.json",
+})
 # Exact reviewed single-mutant set; source changes require fresh admission.
 MUTATION_INVENTORIES = {'history': {'count': 20, 'sha256': '1acac35ade9b5595000b8e9300bb528e1c6de81abb549c8f86b48d84e63b1013'},
  'normalization': {'count': 75, 'sha256': '65a08b84c5fb51dc26448eb062085b7091ad545fee1533b4461c29a7f948d605'},
  'regression': {'count': 110, 'sha256': '27b659a1c75c63bdc1ad6411185fc52efd3321bc5aad3851ae59eaf8bf353d29'},
  'residuals': {'count': 39, 'sha256': '8ec028d0ef3e363138b3fe0ec8779062f716e566efe3a044a68d14f482fd29bb'},
- 'runs': {'count': 116, 'sha256': '74d6761a97caea2bc46114d2e6b80443c60b47a5a8d770906bcff915eaca7ed4'}}
+ 'runs': {'count': 116, 'sha256': '74d6761a97caea2bc46114d2e6b80443c60b47a5a8d770906bcff915eaca7ed4'},
+ 'selection': {'count': 140, 'sha256': 'e81ec6bc254a4bab6a11c781f361fe6969ebb21c5aa54643bde67765e1b56aa2'}}
 FUZZ_PATHS = {"manifest": "policy/time-core-fuzz-manifest.toml", "lockfile": "policy/time-core-fuzz.lock",
               "target_source": "policy/time-core-fuzz-target.rs"}
 FUZZ_INPUTS = (*FUZZ_PATHS.values(), "policy/time-domain-analysis.json", "policy/time-domain-fuzz.lock",
@@ -161,8 +192,29 @@ LITERAL_DOCTEST_LIMITS = {
     'history_normalization_entries_upper': 0, 'history_statistics_entries_upper': 0,
     'history_statistics_inner_fit_upper': 0,
 }
-EXTERNAL_CONSUMER_LIMITS = {"legal_executions": 9, "negative_compilations": 72}
-GLOBAL_LIMITS = {'charged_fit_work_upper': 2500000, 'point_admissions_upper': 100000000}
+EXTERNAL_CONSUMER_LIMITS = {"legal_executions": 10, "negative_compilations": 98}
+GLOBAL_LIMITS = {'charged_fit_work_upper': 4000000, 'point_admissions_upper': 150000000}
+SELECTION_PACKAGE_RESERVATION = {"intervals": 492, "minima": 72, "batches": 77,
+                                 "selections": 66, "garde_validator_invocations_upper": 1056}
+SELECTION_HELPER_RESERVATION = {"read_adapters": 2, "prefix_sorts": 3,
+                                "cell_depths": 2, "label_projections": 5}
+# One fresh integrated scope: 500 variants + six baselines + coverage, plus
+# one legal selection consumer. These reserve source calls, not actual CPU/RSS
+# or arbitrary work inside a defective variant; native limits remain separate.
+SELECTION_GLOBAL_LIMITS = {"intervals": 249450, "minima": 36507, "batches": 39043,
+                           "selections": 33464, "garde_validator_invocations_upper": 535407}
+SELECTION_HELPER_GLOBAL_LIMITS = {"read_adapters": 1014, "prefix_sorts": 1521,
+                                  "cell_depths": 1014, "label_projections": 2535}
+SELECTION_TELEMETRY = {
+    "status": "admitted-source-owned-observer",
+    "counter_families": ["S13_SELECTION_PROFILE", "S13_BATCH_GUARD_PROFILE",
+                           "SELECTION_HELPER_PROFILE", "CORE_SELECTION_EXTERNAL_PROFILE"],
+    "package_tests": {"ordinary": 94, "doctests": 2, "baseline": 96},
+    "package_reservation": SELECTION_PACKAGE_RESERVATION,
+    "helper_reservation": SELECTION_HELPER_RESERVATION,
+    "global_limits": SELECTION_GLOBAL_LIMITS,
+    "helper_global_limits": SELECTION_HELPER_GLOBAL_LIMITS,
+}
 # Source-authored observer schema; actual controls and admission are root-owned.
 NORMALIZATION_TELEMETRY = {
     'status': 'admitted-source-owned-observer',
@@ -192,10 +244,11 @@ NORMALIZATION_TELEMETRY = {
         'additional_downstream_stats_calls_upper': 16
     }
 }
-FIXED = {"schema_version": 5, "source_file_count": SOURCE_FILE_COUNT,
+FIXED = {"schema_version": 6, "source_file_count": SOURCE_FILE_COUNT,
          "mutation_inventories": MUTATION_INVENTORIES,
          "history_telemetry": HISTORY_TELEMETRY,
          "normalization_telemetry": NORMALIZATION_TELEMETRY,
+         "selection_telemetry": SELECTION_TELEMETRY,
          "literal_doctest_limits": LITERAL_DOCTEST_LIMITS,
          "external_consumer_limits": EXTERNAL_CONSUMER_LIMITS, "package": "time-core", "critical_files": list(SUBJECTS.values()),
          "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
@@ -214,6 +267,93 @@ def exact(value, expected):
     return json.dumps(value, sort_keys=True) == json.dumps(expected, sort_keys=True)
 
 
+def inventory_tool_inputs(root):
+    """Name the complete bounded Python tooling closure, without executing it."""
+    scripts = root / "scripts"
+    if scripts.is_symlink() or not scripts.is_dir():
+        raise Incomplete("Inventory tooling directory is missing or linked.")
+    names = {"policy/analysis-tools.json"}
+    for path in scripts.rglob("*.py"):
+        if "__pycache__" in path.parts:
+            continue
+        if path.resolve(strict=True) != path or not path.is_file():
+            raise Incomplete("Inventory tooling contains a linked or nonregular input.")
+        names.add(path.relative_to(root).as_posix())
+        if len(names) > 128:
+            raise Incomplete("Inventory tooling closure exceeds its fixed input allowance.")
+    if not INVENTORY_REQUIRED_TOOLS <= names:
+        raise Incomplete("Inventory tooling closure omits a required entry point.")
+    return names
+
+
+def inventory_admission_live(policy):
+    """Reject future, expired or widened one-hour discovery admissions."""
+    created, expires = policy.get("created_unix_seconds"), policy.get("expires_unix_seconds")
+    if (type(created) is not int or type(expires) is not int or created <= 0
+            or expires - created != 3600 or not created <= time.time() < expires):
+        raise Incomplete("Inventory admission is not within its fixed one-hour validity window.")
+
+
+def inventory_document(path):
+    """Decode one bounded regular JSON document, rejecting duplicate fields."""
+    if path.resolve(strict=True) != path or not path.is_file():
+        raise Incomplete("Inventory document is linked or nonregular.")
+    with path.open("rb") as stream:
+        data = stream.read(512 * 1024 + 1)
+    if len(data) > 512 * 1024:
+        raise Incomplete("Inventory admission exceeds its fixed byte allowance.")
+    def pairs(items):
+        result = {}
+        for name, value in items:
+            if name in result:
+                raise Incomplete("Inventory admission contains a duplicate JSON field.")
+            result[name] = value
+        return result
+
+    def constant(_value):
+        raise Incomplete("Inventory admission contains a non-finite JSON number.")
+
+    return json.loads(data, object_pairs_hook=pairs, parse_constant=constant)
+
+
+def read_inventory_admission(root, path):
+    """Bind one strict discovery document and all 83 product/tool input bytes.
+
+    This accepts no campaign, coverage, contract or fuzz admission. The ordinary
+    five-owner policy and its source-count/critical-manifest checks remain intact.
+    """
+    root = Path(root).resolve(strict=True)
+    path = Path(path)
+    path = path if path.is_absolute() else root / path
+    expected = root / INVENTORY_ADMISSION
+    if path != expected or path.resolve(strict=True) != expected or not path.is_file():
+        raise Incomplete("Use the exact canonical in-checkout inventory admission path.")
+    policy = inventory_document(path)
+    fields = {*INVENTORY_FIXED, "root", "created_unix_seconds", "expires_unix_seconds",
+              "product_inputs_sha256", "tool_inputs_sha256"}
+    if (not isinstance(policy, dict) or set(policy) != fields
+            or any(not exact(policy.get(name), value) for name, value in INVENTORY_FIXED.items())
+            or policy["root"] != str(root)):
+        raise Incomplete("Unreviewed inventory-only schema, scope, root or allowance.")
+    inventory_admission_live(policy)
+    maps = ((policy["product_inputs_sha256"], set(INVENTORY_BOUND_INPUTS)),
+            (policy["tool_inputs_sha256"], inventory_tool_inputs(root)))
+    for identities, names in maps:
+        if not isinstance(identities, dict) or set(identities) != names:
+            raise Incomplete("Inventory-only input binding set differs from the complete admitted scope.")
+        for name, digest in identities.items():
+            source = root / name
+            if (not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
+                    or source.resolve(strict=True) != source or PRODUCT.sha256(source) != digest):
+                raise Incomplete("Inventory-only source/tool input is unbound, linked or changed.")
+    _, product = PRODUCT.admit_product(root)
+    if (len(product) != INVENTORY_SOURCE_FILE_COUNT
+            or set(product) != set(INVENTORY_BOUND_INPUTS)
+            or product != policy["product_inputs_sha256"]):
+        raise Incomplete("Inventory requires the exact current 83-file product and dependency graph.")
+    return policy
+
+
 def read_policy(root, lane="all"):
     """Admit fixed scope/budgets and current bindings before any code executes."""
     policy = json.loads((root / POLICY).read_text())
@@ -222,6 +362,9 @@ def read_policy(root, lane="all"):
         raise Incomplete("Unreviewed core analysis scope, threshold or budget.")
     if policy["admission_status"] != "admitted-final-source":
         raise Incomplete("Core analysis awaits coordinator final-source/graph binding.")
+    if (not exact(SELECTION.full_package_reservation(), SELECTION_PACKAGE_RESERVATION)
+            or not exact(SELECTION.full_package_helper_reservation(), SELECTION_HELPER_RESERVATION)):
+        raise Incomplete("Selection source-call or raw-helper reservation differs from review.")
     if RUNS_TELEMETRY_STATUS != 'admitted-reviewed-runs-telemetry-and-campaign-budget':
         raise Incomplete('Runs telemetry and complete campaign budget remain pending.')
     if policy['history_telemetry']['status'] != 'admitted-source-owned-observer':
@@ -405,7 +548,75 @@ def runs_counts(output, *, require_complete=False, validate_receipt=True):
             'runs_checked_float_upper': selections * 53540 + candidates * (21 * 64 + 7 + 3 * 64)}
 
 
-def profile_counts(output, *, require_fit=True, require_runs=False, validate_runs_receipt=True):
+def selection_external_counts(output):
+    """Parse only the bounded standalone legal consumer's native counter line.
+
+    This is a different execution scope from the package's S13 test records.
+    An absent record is None, not zero; native exit/sentinel/source checks and
+    the complete expected recipe remain contracts() obligations.
+    """
+    marker = 'CORE_SELECTION_EXTERNAL_PROFILE'
+    expected = {'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2}
+    if marker not in output:
+        return {'selection_external_consumer_records': 0,
+                'selection_external_consumer_calls': None}
+    decimal = r'(0|[1-9][0-9]{0,19})'
+    pattern = re.compile(marker + ''.join(' ' + field + '=' + decimal for field in expected))
+    records = []
+    lines = output.split('\n')
+    for index, raw in enumerate(lines):
+        if marker not in raw:
+            continue
+        if index == len(lines)-1 or len(raw) > 512:
+            raise Incomplete('Selection legal consumer counter is truncated or oversized.')
+        match = pattern.fullmatch(raw[:-1] if raw.endswith('\r') else raw)
+        if match is None:
+            raise Incomplete('Selection legal consumer counter is outside its exact native line.')
+        values = tuple(int(value) for value in match.groups())
+        if (not any(values) or any(value > maximum for value, maximum in zip(values, expected.values(), strict=True))
+                or (values[1] and values[0] != 6) or (values[2] and values[1] != 3)
+                or (values[3] and values[2] != 4)):
+            raise Incomplete('Selection legal consumer counter differs from its finite call order.')
+        records.append(dict(zip(expected, values, strict=True)))
+    if len(records) != 1:
+        raise Incomplete('Selection legal consumer counter is duplicated.')
+    return {'selection_external_consumer_records': 1,
+            'selection_external_consumer_calls': records[0]}
+
+
+def selection_package_counts(output, *, require_complete=False):
+    """Preserve missing/partial package observations separately from outcomes."""
+    try:
+        return {**SELECTION.selection_counts(output, require_complete=require_complete),
+                **SELECTION.helper_counts(output, require_complete=require_complete)}
+    except SELECTION.Incomplete as error:
+        raise Incomplete(str(error)) from error
+
+
+def selection_reservation(*, package=False, external=None):
+    """Return a fresh pre-effect source-call reservation with explicit scope."""
+    if type(package) is not bool or (package and external is not None):
+        raise Incomplete('Selection reservation scope is ambiguous.')
+    if package:
+        calls = dict(SELECTION_PACKAGE_RESERVATION)
+        helpers = dict(SELECTION_HELPER_RESERVATION)
+    else:
+        if (not isinstance(external, dict) or set(external) != {'intervals', 'minima', 'batches', 'selections'}
+                or any(type(v) is not int or not 0 <= v <= SELECTION.U64_MAX for v in external.values())
+                or external != {'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2}):
+            raise Incomplete('Selection external reservation requires exact nonnegative call fields.')
+        calls = dict(external)
+        calls['garde_validator_invocations_upper'] = 2*calls['intervals'] + calls['minima']
+        helpers = {key: 0 for key in SELECTION_HELPER_RESERVATION}
+    return {'selection_expected': 'package' if package else 'external-consumer',
+            'selection_reserved_calls': calls,
+            'selection_reserved_helper_calls': helpers,
+            'selection_reserved_canonical_source_work_uppers': SELECTION.source_work_uppers(calls['selections'], calls['batches']),
+            'selection_reservation_scope': 'Full source recipe charged before the effect; no measured internal work or arbitrary-mutant bound.'}
+
+
+def profile_counts(output, *, require_fit=True, require_runs=False, validate_runs_receipt=True,
+                   require_selection=False):
     """Observe disjoint external owners; charge hidden history work only as uppers.
 
     Raw text has complete exact-u64 rows. History fields denote external public
@@ -425,8 +636,12 @@ def profile_counts(output, *, require_fit=True, require_runs=False, validate_run
     history_fields = tuple(HISTORY_TELEMETRY['observed_fields'])
     history = counter_rows(output, 'CORE_HISTORY_PROFILE_COUNTS', history_fields)
     runs = runs_counts(output, require_complete=require_runs, validate_receipt=validate_runs_receipt)
+    selection = selection_package_counts(output, require_complete=require_selection)
+    selection_external = selection_external_counts(output)
+    selection_records = (selection['selection_external_records'] + selection['selection_guard_records']
+                         + selection['selection_helper_records'] + selection_external['selection_external_consumer_records'])
     if not direct and not stats and not normalization and not history and not (
-            runs['runs_external_records'] or runs['runs_sign_records'] or runs['runs_guard_records']):
+            runs['runs_external_records'] or runs['runs_sign_records'] or runs['runs_guard_records'] or selection_records):
         raise Incomplete("Core profile lacks complete public counter records.")
     actual = dict(zip(fields, (sum(row[index] for row in normalization) for index in range(len(fields))), strict=True))
     h = dict(zip(history_fields, (sum(row[index] for row in history) for index in range(len(history_fields))), strict=True))
@@ -459,9 +674,12 @@ def profile_counts(output, *, require_fit=True, require_runs=False, validate_run
             or points + generated + runs['runs_point_copy_upper'] > PROFILE_LIMITS["point_admissions_upper"]
             or (require_fit and observed_work == 0 and actual['normalizations'] == 0
                 and h['histories'] == 0 and h['appends'] == 0
-                and runs['runs_selections'] == 0 and runs['runs_guard_candidates'] == 0)):
+                and runs['runs_selections'] == 0 and runs['runs_guard_candidates'] == 0
+                and not (selection.get('selection_recorded_call_subtotals') or {}).get('selections')
+                and not (selection_external['selection_external_consumer_calls'] or {}).get('selections'))):
         raise Incomplete("Core profile exceeded its fixed charged-work/point budget or reached no work.")
-    return {**runs, "fit_calls": fits, "direct_fit_calls": fits, "stats_calls": calls,
+    return {**runs, **selection, **selection_external,
+            "fit_calls": fits, "direct_fit_calls": fits, "stats_calls": calls,
             "legacy_point_admissions": legacy_points,
             "legacy_charged_fit_work_upper": legacy_work,
             "legacy_point_admissions_upper": legacy_point_upper,
@@ -498,7 +716,8 @@ def profile_counts(output, *, require_fit=True, require_runs=False, validate_run
             "history_fit_input_constructions_upper": h['appends'],
             "history_staging_Copy_assignments_upper": 127*h['appends'],
             "counter_records": len(direct) + len(stats) + len(normalization) + len(history)
-                               + runs['runs_external_records'] + runs['runs_sign_records'] + runs['runs_guard_records'],
+                               + runs['runs_external_records'] + runs['runs_sign_records'] + runs['runs_guard_records']
+                               + selection_records,
             "direct_counter_records": len(direct), "stats_counter_records": len(stats),
             "normalization_counter_records": len(normalization), "history_counter_records": len(history)}
 
@@ -724,6 +943,17 @@ def record_counts(report, label, counts):
     """Retain observed operations and conservative charged bounds without conflation."""
     if any(type(counts.get(key)) is not int or counts[key] < 0 for key in GLOBAL_LIMITS):
         raise Incomplete("Core count record omits an exact nonnegative charged bound.")
+    selection_kind = counts.get('selection_expected')
+    if selection_kind is not None:
+        expected = selection_reservation(package=True) if selection_kind == 'package' else selection_reservation(
+            external={'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2}) if selection_kind == 'external-consumer' else None
+        if expected is None or any(not exact(counts.get(key), expected[key]) for key in (
+                'selection_reserved_calls', 'selection_reserved_helper_calls',
+                'selection_reserved_canonical_source_work_uppers')):
+            raise Incomplete('Selection pre-effect reservation is missing or differs from its source-owned scope.')
+    elif any(key in counts for key in ('selection_reserved_calls', 'selection_reserved_helper_calls',
+                                       'selection_reserved_canonical_source_work_uppers')):
+        raise Incomplete('Selection reservation has no declared source scope.')
     report.setdefault("core_invocations", []).append({"invocation": label, **counts})
     refresh_accounting(report)
 
@@ -790,9 +1020,52 @@ def refresh_accounting(report):
         for key in ('runs_fit_upper', 'runs_point_copy_upper', 'runs_decision_residual_upper',
                     'runs_checked_float_upper', 'runs_input_slots_upper', 'runs_residual_slots_upper',
                     'runs_observer_hooks_upper', 'runs_observer_pair_comparisons_upper')}
+    selection_reserved = {key: sum(row.get('selection_reserved_calls', {}).get(key, 0) for row in invocations)
+                          for key in SELECTION_GLOBAL_LIMITS}
+    helper_reserved = {key: sum(row.get('selection_reserved_helper_calls', {}).get(key, 0) for row in invocations)
+                       for key in SELECTION_HELPER_GLOBAL_LIMITS}
+    report['core_selection_reserved_totals'] = selection_reserved
+    report['core_selection_helper_reserved_totals'] = helper_reserved
+    package_calls, helper_calls, external_calls, selection_pending = [], [], [], []
+    partial_subtotals = []
+    for row in invocations:
+        observed = row.get('observed_counts', row)
+        if (row.get('observation_status') == 'unviable-compile-only'
+                or not isinstance(observed, dict)):
+            continue
+        if row.get('selection_expected') == 'package':
+            if observed.get('selection_observed_calls') is not None:
+                package_calls.append(observed['selection_observed_calls'])
+            if observed.get('selection_recorded_call_subtotals') is not None:
+                partial_subtotals.append(observed['selection_recorded_call_subtotals'])
+            if observed.get('selection_helper_observed_calls') is not None:
+                helper_calls.append(observed['selection_helper_observed_calls'])
+            if (observed.get('selection_observation_pending', True)
+                    or observed.get('selection_helper_observation_pending', True)):
+                selection_pending.append(row['invocation'])
+        elif row.get('selection_expected') == 'external-consumer':
+            if observed.get('selection_external_consumer_calls') is not None:
+                external_calls.append(observed['selection_external_consumer_calls'])
+            else:
+                selection_pending.append(row['invocation'])
+    def reported_sum(rows, keys):
+        return {key: sum(row[key] for row in rows) for key in keys} if rows else None
+    report['core_selection_package_observed_calls'] = reported_sum(package_calls, SELECTION.CALL_FIELDS)
+    report['core_selection_helper_observed_calls'] = reported_sum(helper_calls, SELECTION_HELPER_RESERVATION)
+    report['core_selection_external_observed_calls'] = reported_sum(external_calls, SELECTION.CALL_FIELDS)
+    report['core_selection_reported_record_subtotals'] = reported_sum(partial_subtotals, SELECTION.CALL_FIELDS)
+    report['core_selection_pending_observation_invocations'] = selection_pending
+    report['core_selection_observation_scope'] = (
+        'Missing marker families remain None/pending, never zero. Caught-Test prefixes may remain partial; '
+        'this is separate from missing native invocations and never reduces the prior full reservation.')
+    report['core_selection_source_work_scope'] = (
+        'Canonical source projections only; neither arbitrary mutant internals nor CPU/RSS are measured.')
     report["global_campaign_custody"] = "Coordinator must reconcile all invocations, literal doctest upper calls, inherited E events and retries; wrapper records its selected subset only."
     if any(totals[key] > maximum for key, maximum in GLOBAL_LIMITS.items()):
         raise Incomplete("Core selected subset already exceeds the global charged allowance.")
+    if (any(selection_reserved[key] > maximum for key, maximum in SELECTION_GLOBAL_LIMITS.items())
+            or any(helper_reserved[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())):
+        raise Incomplete('Selection selected subset already exceeds the global charged allowance.')
 
 
 def caught_native_test_failure(outcome, output):
@@ -810,8 +1083,8 @@ def caught_native_test_failure(outcome, output):
         r'\r?\ntest result: FAILED\. ([0-9]{1,2}) passed; ([0-9]{1,2}) failed; 0 ignored;',
         output)
     if not blocks or any(int(failed) != len(names.splitlines())
-                         or not 1 <= int(failed) <= 87
-                         or int(passed) + int(failed) > 87
+                         or not 1 <= int(failed) <= SELECTION.PACKAGE_ORDINARY_TESTS
+                         or int(passed) + int(failed) > SELECTION.PACKAGE_ORDINARY_TESTS
                          for names, passed, failed in blocks):
         raise Incomplete('Caught outcome has no complete actual native failed-test evidence.')
 
@@ -1139,8 +1412,10 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
         raise Incomplete('Successful Cargo build receipt conflicts with an error diagnostic.')
     if caught:
         caught_native_test_failure(outcome, test_output)
+    elif COMMON.test_count(test_output) != SELECTION.PACKAGE_BASELINE_TESTS:
+        raise Incomplete('Successful core package invocation did not execute all 96 admitted tests/doctests.')
     observed = profile_counts(test_output, require_fit=baseline, require_runs=not caught,
-                              validate_runs_receipt=not caught)
+                              validate_runs_receipt=not caught, require_selection=not caught)
     reserved['observed_counts'] = account_literal_doctests(observed)
     reserved['observation_pending'] = False
     reserved['raw_log_sha256'] = PRODUCT.sha256(log)
@@ -1211,10 +1486,12 @@ def mutation_accounting(report, work):
             try:
                 record_counts(report, label, {
                     'charged_fit_work_upper': 5233, 'point_admissions_upper': 220797,
+                    **selection_reservation(package=True),
                     'observation_pending': True,
                     'execution': 'pessimistic post-run invocation charge; observed counts pending'})
             except Incomplete as error:
-                if str(error) != "Core selected subset already exceeds the global charged allowance.":
+                if str(error) not in ("Core selected subset already exceeds the global charged allowance.",
+                                      "Selection selected subset already exceeds the global charged allowance."):
                     raise
                 # record_counts has retained and refreshed the over-limit row.
                 # Keep recording every already-present outcome before failing.
@@ -1292,6 +1569,7 @@ def contract_examples():
     cases.update(normalization_contract_examples())
     cases.update(history_contract_examples())
     cases.update(runs_contract_examples())
+    cases.update(SELECTION_CONTRACTS.contract_examples())
     return cases
 
 
@@ -1888,6 +2166,14 @@ def contracts(session, policy, report):
         run("external-consumer-" + name, command, COMMON.remaining_timeout(deadline, 60),
             sealed=[consumers, dependency_copy], specimen=specimen if specimen["code"] else None)
         if specimen["code"] is None:
+            selection_reserved = None
+            if 'selection_calls' in specimen:
+                record_counts(report, name, {
+                    'charged_fit_work_upper': 0, 'point_admissions_upper': 0,
+                    **selection_reservation(external=specimen['selection_calls']),
+                    'observation_pending': True,
+                    'execution': 'Legal selection consumer source calls reserved before execution.'})
+                selection_reserved = report['core_invocations'][-1]
             text = run("external-legal-execution", ["/work/contracts/" + name], COMMON.remaining_timeout(deadline, 30),
                        sealed=[consumers, dependency_copy])
             if "legal-core-contract" not in text:
@@ -1897,6 +2183,12 @@ def contracts(session, policy, report):
             if (not isinstance(expected_calls, dict)
                     or any(counts.get(key) != value for key, value in expected_calls.items())):
                 raise Incomplete("Legal external consumer reached an unexpected literal call recipe.")
+            if ('selection_calls' in specimen and (
+                    counts['selection_external_consumer_records'] != 1
+                    or counts['selection_external_consumer_calls'] != specimen['selection_calls']
+                    or counts['selection_external_records'] or counts['selection_guard_records']
+                    or counts['selection_helper_records'])):
+                raise Incomplete('Legal selection consumer omitted its exact standalone source recipe.')
             if counts['direct_fit_calls'] + counts['stats_calls'] > 1:
                 raise Incomplete("Legal consumer exceeds its one charged fit/stat recipe.")
             if counts['normalization_requests']:
@@ -1941,7 +2233,12 @@ def contracts(session, policy, report):
                     raise Incomplete('Legal consumer exceeds three combined direct/derived charged calls.')
                 if counts['point_admissions_upper'] > 3:
                     raise Incomplete("Legal consumer exceeds three combined direct/generated points.")
-            record_counts(report, name, counts)
+            if selection_reserved is None:
+                record_counts(report, name, counts)
+            else:
+                selection_reserved['observed_counts'] = counts
+                selection_reserved['observation_pending'] = False
+                refresh_accounting(report)
     report["contracts"] = {"legal_consumers_compiled_and_executed": EXTERNAL_CONSUMER_LIMITS["legal_executions"], "library_artifact": artifact,
                            "domain_library_artifact": domain_artifact,
                            "immutable_dependencies_sha256": PRODUCT.inventory(dependency_copy),
@@ -2110,23 +2407,142 @@ def fuzz(session, selected, report):
 
 
 
+def execute_inventory(args, report):
+    """Collect six listings under one deadline; admit no native product call."""
+    if args.subject != "all" or getattr(args, "inventory_admission", None) is None:
+        raise Incomplete("Inventory discovery requires all six owners and its explicit admission.")
+    deadline = time.monotonic() + INVENTORY_FIXED["inventory_wall_seconds"]
+    policy = read_inventory_admission(ROOT, args.inventory_admission)
+    admission_sha256 = PRODUCT.sha256(ROOT / INVENTORY_ADMISSION)
+    scope = COMMON.Scope("time-core", tuple(INVENTORY_SUBJECTS.items()), INVENTORY_ADMISSION)
+    # Session uses the mutation lane solely to seal the cargo-mutants executable.
+    # Each command below is a listing without mutation_subject, retaining the
+    # runtime's ordinary 128-task profile rather than the 512 campaign profile.
+    session_args = argparse.Namespace(**{**vars(args), "lane": "mutation"})
+    session = COMMON.Session(ROOT, session_args, report, scope, policy,
+                             tuple(policy["tool_inputs_sha256"]))
+    report.update(subjects=dict(INVENTORY_SUBJECTS),
+                  qualification_scope="six-owner inventory discovery only; no campaign or quality score",
+                  campaigns_admitted=False, native_test_invocations=0,
+                  listing_process_limit=128, inventory_admission_sha256=admission_sha256)
+
+    def run(label, command, timeout, **options):
+        inventory_admission_live(policy)
+        subject = label.removeprefix("mutation-enumeration:")
+        if subject not in INVENTORY_SUBJECTS or label != "mutation-enumeration:" + subject:
+            raise Incomplete("Inventory-only execution has an unadmitted listing label.")
+        expected = [str(session.tools / "cargo-mutants"), "mutants", "--package", "time-core",
+                    "--file", INVENTORY_SUBJECTS[subject], "--test-workspace", "false",
+                    "--cap-lints", "false", "--jobs", "10", "--jobserver", "true",
+                    "--jobserver-tasks", "10", "--cargo-arg=--message-format=json", "--list", "--json"]
+        if options or command != expected:
+            raise Incomplete("Inventory-only execution attempted a non-listing command or effect profile.")
+        return session.run(label, command, timeout)
+
+    try:
+        if (not exact(inventory_document(session.source / INVENTORY_ADMISSION), policy)
+                or session.product_identity != policy["product_inputs_sha256"]
+                or any(session.identity.get(name) != digest
+                       for name, digest in policy["tool_inputs_sha256"].items())):
+            raise Incomplete("Inventory session copied different admission, product or tool inputs.")
+        inventory_admission_live(policy)
+        result = COMMON.enumerate_mutation_inventories(
+            scope, INVENTORY_SUBJECTS, policy, session.tools, run, report, deadline=deadline,
+            maximum_per_file=policy["listing_maximum_per_file"],
+            maximum_total=policy["listing_maximum_total"])
+        summaries = {}
+        for name, descriptors in result.inventories.items():
+            normalized = {identifier: {key: value for key, value in item.items() if key != "diff"}
+                          for identifier, item in descriptors.items()}
+            summaries[name] = {"count": len(descriptors), "sha256": COMMON.canonical_sha256(normalized)}
+        report["inventory_discovery"] = {
+            "inventories": summaries, "total": result.total,
+            "exceeds_current_campaign_cap": result.campaign_budget_exceeded,
+            "campaign_cap": policy["maximum_mutants"], "campaign_admission": "not granted",
+            "reservation_next_action": "review exact inventories and reserve the complete six-owner campaign before execution",
+        }
+    finally:
+        primary = sys.exception()
+        try:
+            session.finish()
+        except REPORT_FAILURES as error:
+            if primary is None:
+                raise
+            retain_secondary_error(report, "inventory_session_finish", error)
+
+
+def prospective_scope_reservation(lane, subjects):
+    """Admit the full finite selected scope before any product command.
+
+    Exact reviewed inventories and source recipes determine this matrix, never
+    favorable post-run outcomes. It is no hard CPU/RSS/filesystem quota or bound
+    on arbitrary mutant internals; later observations retain their own scope.
+    """
+    if (lane not in {'contracts', 'coverage', 'mutation', 'fuzz', 'all'}
+            or not isinstance(subjects, dict) or not subjects
+            or any(name not in SUBJECTS or SUBJECTS[name] != filename for name, filename in subjects.items())):
+        raise Incomplete('Prospective core scope is outside the exact admitted lanes/owners.')
+    mutation_invocations = (sum(MUTATION_INVENTORIES[name]['count']+1 for name in subjects)
+                            if lane in {'mutation', 'all'} else 0)
+    coverage_invocations = int(lane in {'coverage', 'all'})
+    packages = mutation_invocations + coverage_invocations
+    legal = int(lane in {'contracts', 'all'})
+    fuzz = int(lane in {'fuzz', 'all'})
+    charged = {'charged_fit_work_upper': packages*5233 + legal*10*124 + fuzz*516096,
+               'point_admissions_upper': packages*220797 + legal*10*4157 + fuzz*17539072}
+    selection = {key: maximum*packages for key, maximum in SELECTION_PACKAGE_RESERVATION.items()}
+    for key, value in {'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2,
+                       'garde_validator_invocations_upper': 15}.items():
+        selection[key] += legal*value
+    helpers = {key: maximum*packages for key, maximum in SELECTION_HELPER_RESERVATION.items()}
+    if (any(charged[key] > maximum for key, maximum in GLOBAL_LIMITS.items())
+            or any(selection[key] > maximum for key, maximum in SELECTION_GLOBAL_LIMITS.items())
+            or any(helpers[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())):
+        raise Incomplete('Complete prospective core scope exceeds its admitted finite reservation.')
+    return {'mutation_package_invocations_upper': mutation_invocations,
+            'coverage_package_invocations_upper': coverage_invocations,
+            'package_invocations_upper': packages,
+            'package_test_count_upper_each': SELECTION.PACKAGE_BASELINE_TESTS,
+            'legal_consumer_executions_upper': legal*EXTERNAL_CONSUMER_LIMITS['legal_executions'],
+            'negative_consumer_compilations_upper': legal*EXTERNAL_CONSUMER_LIMITS['negative_compilations'],
+            'history_fuzz_invocations_upper': fuzz*2,
+            'charged_upper': charged, 'selection_call_upper': selection,
+            'selection_direct_helper_call_upper': helpers,
+            'scope': 'Pre-effect source reservation for this fresh scope; historical attempts are retained, never erased or asserted as observations.'}
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
+    if args.lane == "inventory":
+        return execute_inventory(args, report)
     policy = read_policy(ROOT, args.lane)
-    extra = ("scripts/verify-core-analysis.py", "scripts/verify-time-domain-analysis.py", *BOUND_INPUTS,
+    subjects = SCOPE.select(args.subject)
+    report['core_prospective_scope_reservation'] = prospective_scope_reservation(args.lane, subjects)
+    extra = ("scripts/verify-core-analysis.py", "scripts/verify-time-domain-analysis.py", *SELECTION_INPUTS, *BOUND_INPUTS,
              *(FUZZ_INPUTS if args.lane in {"fuzz", "all"} else ()))
     session = COMMON.Session(ROOT, args, report, SCOPE, policy, extra)
-    report["subjects"] = SCOPE.select(args.subject)
+    report["subjects"] = subjects
     report["critical_manifest_complete_selection"] = set(report["subjects"]) == set(SUBJECTS)
     report["qualification_scope"] = (
-        "five-file fixture manifest selected; actual evidence is limited to the selected lane"
+        "six-file fixture manifest selected; actual evidence is limited to the selected lane"
         if report["critical_manifest_complete_selection"] else "focused diagnostic subject only")
     report["resource_scope"] = "Logical operation counters and existing per-process rlimits; no hard RAM/disk/cgroup or whole-product claim."
     report["doctest_accounting"] = "Literal source doctests must be audited before execution. Coverage selects lib/tests; mutation cargo-test logs charge the separate frozen doctest upper allowance."
     def run(label, command, timeout, **options):
-        result = session.run(label, command, timeout, **options)
         if label == "coverage":
-            record_counts(report, label, profile_counts(result, require_runs=True))
+            record_counts(report, label, {
+                'charged_fit_work_upper': 5233, 'point_admissions_upper': 220797,
+                **selection_reservation(package=True), 'observation_pending': True,
+                'execution': 'Full package source recipe reserved before coverage execution.'})
+            reserved = report['core_invocations'][-1]
+            result = session.run(label, command, timeout, **options)
+            if COMMON.test_count(result) != SELECTION.PACKAGE_ORDINARY_TESTS:
+                raise Incomplete('Coverage did not execute all 94 admitted ordinary core tests.')
+            reserved['observed_counts'] = profile_counts(result, require_runs=True, require_selection=True)
+            reserved['observation_pending'] = False
+            refresh_accounting(report)
+            return result
+        result = session.run(label, command, timeout, **options)
         return result
     try:
         if args.lane in {"contracts", "all"}:
@@ -2169,13 +2585,18 @@ def retain_secondary_error(report, phase, error):
 def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("contracts", "coverage", "mutation", "fuzz", "all"), default="all")
+    parser.add_argument("--lane", choices=("inventory", "contracts", "coverage", "mutation", "fuzz", "all"), default="all")
     parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.lane == "inventory" and (args.inventory_admission is None or args.subject != "all"):
+        parser.error("--lane inventory requires --subject all and --inventory-admission")
+    if args.lane != "inventory" and args.inventory_admission is not None:
+        parser.error("--inventory-admission is accepted only by --lane inventory")
     report = {"status": "incomplete", "selected_lane": args.lane,
-              "scope": "Fixture history/normalization/coefficient/residual/runs time-core " + args.lane, "native_qualification": "not performed"}
+              "scope": "Six-owner fixture history/normalization/coefficient/residual/runs/selection time-core " + args.lane, "native_qualification": "not performed"}
     try:
         if args.vendor_dir is None:
             args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])

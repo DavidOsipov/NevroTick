@@ -12,6 +12,15 @@ The [architecture and threat model](windows-time-architecture.md) owns product d
 
 ## Common provenance fields
 
+**30 October contract refinement:** [architecture §20.2.1](windows-time-architecture.md#2021-contract-review-acceptance-refinements)
+and [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix)
+add evidence cases for native owner-rights isolation, durable correction accounting,
+adjustment modes, authentication lifetime, semantic-floor recovery, fresh quorum,
+SCM maintenance, mutation omissions and broken-clock signing. Apply these to
+affected row plans through their existing CHECK/native mappings. All 345 IDs,
+dispositions, prior notes and unexecuted statuses remain; this amendment accepts
+no ASVS exception and establishes no additional conformity.
+
 Every requirement record inherits these exact fields:
 
 | Field | Value |

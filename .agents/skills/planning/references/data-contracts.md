@@ -17,3 +17,10 @@ by signatures, and give QA independent invalid/bypass and valid controls.
 Define signed/unsigned time, offset/frequency units, UTC versus monotonic/active time, source identity/independence, generation, evidence provenance. Wall time moves and is product repair target; untrusted wall timestamps cannot supply freshness/lease budgets. Check transformation guarantees/serialized consumer parity separately.
 
 Name owners for stale/duplicate-request rejection, policy revision comparison, one-time approval consumption, cumulative correction accounting, ambiguous-effect reconciliation. Timeless `Validated<T>` cannot encode revocation/current ownership/remaining correction budget. Corrupt optional drift may trigger reacquisition; corrupt required policy/journals must not become permissive defaults. Transitions need compatible reads, atomic replacement, rollback/state-version policy, clear mixed-version behavior.
+
+Clock effects follow [architecture §10.2.1](../../../../docs/windows-time-architecture.md#1021-durable-authority-reservation-and-uncertain-outcomes):
+durable identity/authority reservation before the call, durable known outcome before
+success acknowledgement, explicit charged unknowns and no blind duplicate step.
+Separate actuator mode from rate, model prediction from fresh votes, and NTS key/full
+authentication age from packet freshness. A protected but semantically wrong time
+floor needs the narrow supersession contract, without clearing unrelated budgets.

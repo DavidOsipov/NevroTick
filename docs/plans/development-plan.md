@@ -153,6 +153,17 @@ and [upstream verification/stress policy](../windows-time-development-hardening.
 | Discipline/accounting | `reference.c`, `local.c`, `sys_generic.c` | Compare requested versus acknowledged corrections; replace Unix integration with qualified Windows adapters. |
 | Source lifecycle | `ntp_sources.c`, scheduler/resolver paths | Inspect endpoint changes, cancellation, retry, identity and generation ownership. |
 
+Use the [pinned upstream testing-tool reference](../../.agents/skills/testing/references/chrony-upstream-tools.md)
+alongside that process. P1/S1.4–S1.5 can select a small clknetsim/Chrony trajectory
+cohort through the existing pure event seam; compare healthy/asymmetric-delay/
+majority-loss cases with independent truth and a challenged comparator. P1/P2
+can adapt relevant chrony-fuzz testcase ideas to existing Rust targets after
+rights, framing, forwarding/reset and finite-resource qualification. Its patched
+origin/authentication/SIV/TLS outcomes supply no acceptance oracle. Keep the
+current Chrony pin, admitted libFuzzer lanes, 12-core tool budget and narrower
+lane limits. CHECK-6/7/8/10/19/20/25/26/27 keep their existing stage meanings;
+source-only review neither runs these tools nor closes an implementation gate.
+
 For each bounded component, the implementer must:
 
 1. Read the exact source bodies, relevant callers, tests, notices, known issues
@@ -192,6 +203,28 @@ Primary reading for protocol facts: [RFC 5905](https://www.rfc-editor.org/rfc/rf
 [ntpd-rs documentation](https://docs.ntpd-rs.pendulum-project.org/).
 Pin actual implementation sources during each evaluation. This plan's reference
 check is not a source audit or dependency admission.
+
+### 4.1 Apply the Chrony and NTPsec mechanism assessment
+
+The [source assessment](../../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment)
+retains Chrony for the coherent estimator/controller and adds NTPsec as a bounded
+protocol/operational comparator alongside ntpd-rs. Agreement among these projects
+is supplemental evidence, not independent numerical or RFC truth. Keep current
+S1.3 qualification first; the external proposal's priority order does not move
+discipline ahead of its selection prerequisites or reopen qualified pure kernels.
+
+| Existing workstream / owner | Added integration obligation and independent observation |
+| --- | --- |
+| S1.2 consumers → S1.3/S1.4, numerical owner | Carry estimate reference time, observation identity/age and distinct uncertainty terms through common-time projection. Repeated selection creates no fresh evidence; uncertain updates and drift changes have declared trajectories. CHECK-7/8/14. |
+| S1.3 selection, then S1.4 discipline | Finish eligibility/majority → principal hysteresis → compatible combination before correction. Compare stable and remapped physical traces for known/refused/unknown effects; distinguish isolated anomalies from fresh sustained agreement without adopting another controller. CHECK-7/8/10. |
+| P1 model → S2.1 transport, numerical/engine owners | A permanent admissible route-delay increase plus spikes reaches bounded relearning/reacquisition; a route exceeding fixed limits stays diagnosed unavailable. Qualify association port isolation/lifecycle under §7.3. No threshold relaxation or copied quantile default. CHECK-6/7/11/27. |
+| S2.1–S2.4, engine/protocol owners | One scheduling policy enforces per-operation earliest times, per-source/aggregate budgets and current generations. Flapping/refresh/KE success with failed protected UDP cannot create storms or reset retry success incorrectly. CHECK-6/9/21/27. |
+| S2.2–S2.4, protocol/security owners | Fragment/coalesce KE records, preserve complete-message atomic publication, and inspect actual outgoing packets through cookie exhaustion, failed/cancelled KE and restart. A failed replacement preserves only still-valid old state; an NTS-required sender cannot emit plain fallback. CHECK-6/9/17/27. |
+| S2.3/P3/P4, persistence/platform owners | Qualify [restoration validity](../windows-time-architecture.md#1211-restoration-validity) independently for drift, optional history and NTS state, including a healthy warm restart. Existing bounded status and diagnostic budgets remain required. CHECK-9/11/14/15/17/25. |
+
+Before each dependent implementation, freeze scenario bounds, expected transitions
+and source/function provenance in its existing task. This amendment selects no
+new numerical constants, crypto graph, full-history persistence or Windows effect.
 
 ## 5. Required skill reading and use by phase
 
@@ -591,6 +624,30 @@ named stage incomplete; do not count unsupported execution, source-only feature
 lists or repeated compile success as optimization evidence. A non-beneficial
 specialization stays disabled with its evidence and revisit trigger; it does not
 justify a performance claim or silently removing the required workstream.
+
+### 8.2 Contract-review workstream and interface gates
+
+The [30 October critical assessment](../supporting-reviews/architecture-contract-review.md)
+and [canonical acceptance refinements](../windows-time-architecture.md#2021-contract-review-acceptance-refinements)
+extend this existing plan. They do not restart P0–P7, qualify the product or block
+independent current S1.3 fixture work. Close the relevant contracts before freezing
+or enabling the dependent production interfaces:
+
+| Existing stage/owner | Contract and exit |
+| --- | --- |
+| S0.2/P3, platform/security | Choose and demonstrate object-owner isolation through runtime creation/replacement, not DACL allow-list inspection alone; CHECK-1/15. |
+| S0.4/P4, broker/storage | Freeze durable reservation/outcome protocol, explicit unknowns, mode/value transitions, slew settlement and boot/Fast Startup epochs. Fault each persistence/effect/acknowledgement seam; CHECK-10/11/12/15. |
+| S0.7/P2, protocol/security | R-05 freezes association/key/full-authentication/resumption ages, trust-change detection and unknown-age behavior before S2.3 reuse; CHECK-8/9/15. |
+| S0.7/P1/P2/P4, core/security | R-02 freezes uncertainty/floor provenance and narrow supersession; production vote/freshness/independence tables distinguish retained prediction from fresh routine or exceptional agreement; CHECK-7/8/9/14/15. Existing pure selection fixtures remain bounded evidence. |
+| S0.6/P6, installer/release | Qualify durable maintenance startup inhibition against queued SCM recovery; wrong-clock/offline signing, key policy and project-specific admission through repair/removal/restoration; CHECK-9/13/18/23. |
+| P1/P7, tooling/QA | Reconcile per-critical-file functions/guards with generated and automatically absent mutants and alternative evidence. Keep the 95% gate and scoped historical receipts; CHECK-19/25. |
+
+OPEN-5/6/8/11/14 retain unresolved policy ownership. Prepare NV-DEC-001 cards when
+evidence makes a dependent material choice concrete; this assessment accepts no
+new TTL, source count, correction allowance, trust exception or reset privilege.
+Freeze the relevant docs, configuration and source at one commit plus identified
+dirty bytes for handoff. Archived design copies and older review snapshots retain
+their historical status; the current maintained authorities control.
 
 ## 9. Verification commands, phase records and stop rules
 

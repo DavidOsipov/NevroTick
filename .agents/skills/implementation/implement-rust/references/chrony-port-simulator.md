@@ -49,7 +49,7 @@ when choosing another slice/pin.
 | [regress.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c), `RGR_WeightedRegression`, `RGR_FindBestRegression` | Both use inverse-divisor equations; larger `w` reduces influence. The source-statistics caller uses `RGR_FindBestRegression`, whose runs/start-index/statistics behavior exceeds a coefficient kernel. Preserve the actual caller's preconditions. |
 | [sourcestats.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sourcestats.c), `SST_DoNewRegression`, `SST_GetSelectionData`, `SST_SlewSamples` | Bound history, retain aging/pruning and uncertainty semantics, and account for coordinate changes caused by applied corrections. |
 | [sources.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c), `SRC_SelectSource`, `combine_sources` | Separate eligibility/majority, principal hysteresis and supporter compatibility. Offset weighting uses inverse root distance; frequency weighting uses inverse squared frequency standard deviation. |
-| [reference.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c), `REF_SetReference` | Separate oscillator learning, phase error and abstract correction decisions; preserve relevant elapsed-time and uncertainty semantics. |
+| [reference.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c), `get_clock_estimates`, `REF_SetReference`, `get_correction_rate` | Separate history adaptation, confidence-weighted oscillator updates and temporary phase correction; preserve uncertainty from disagreement and actual elapsed/effect semantics. |
 | [local.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/local.c), `LCL_AccumulateFrequencyAndOffset` | Map requested versus driver-returned frequency and sample-coordinate notifications into explicit domain events. |
 | [sys_generic.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sys_generic.c), `update_slew`, `apply_step_offset` | Learn from achieved-correction accounting, not Unix calls/constants. Its step-offset convention must be mapped explicitly to NevroTick's positive-behind convention. |
 
@@ -182,6 +182,45 @@ successor/ambiguous clock owner blocks writes and global resets; an old journal
 or matching numeric rate is not current ownership. Model that decision without
 claiming the simulation proves Windows ownership detection.
 
+## Carry mechanisms through their consumers
+
+Apply architecture [estimate lifecycle](../../../../../docs/windows-time-architecture.md#721-estimate-lifecycle-and-anomaly-evidence),
+[network policy](../../../../../docs/windows-time-architecture.md#73-ntp-client-behavior)
+and [restoration matrix](../../../../../docs/windows-time-architecture.md#1211-restoration-validity).
+Keep current S1.3 qualification before dependent S1.4 work; complete pure kernels
+do not establish the source-statistics or controller policy that consumes them.
+
+- Track reference instant separately from accepted observation identity/time.
+  Projecting or selecting an old model must age uncertainty without refreshing
+  evidence. Frequency standard error, skew, root distance and hard error bounds
+  have different meanings. Do not assume independent source errors or a universal
+  monotonic uncertainty law while new observations are arriving.
+- Trace achieved-effect notifications through every dependent history/estimate.
+  Compare one physical trajectory in stable coordinates and after correct remaps;
+  include refusal, quantization, lost/duplicate acknowledgement and external step.
+  Verify temporary phase rate ends without becoming learned oscillator drift.
+- Challenge stable drift plus noise, actual drift change, a weak new fit, an
+  ineligible principal and a single versus sustained anomaly. Confirmation needs
+  new admitted evidence; repeated evaluation and elapsed time alone grant no
+  correction. Use current agreement and authority rules, not NTPsec step constants.
+- For delay-filter adaptation, model a permanent admissible route change plus
+  spikes, and an out-of-policy route as a rejection control. Freeze relearning/
+  expiry/reacquisition before execution. Inspect which upstream rejected samples
+  can update which auxiliary statistic; do not let raw or unauthenticated traffic
+  contaminate trusted history. Chrony's `maxdelayquant` replaces a different test
+  and is specialized/default-disabled; no automatic policy transplant.
+- Separate drift prior, optional sample-history persistence and NTS restoration.
+  Follow their actual discontinuity/age/provenance consumers; no saved state can
+  reset correction budgets or claim present synchronization by itself.
+
+NTPsec is a supplemental comparator with shared NTP lineage, not the independent
+oracle or a replacement numerical pipeline. Its inspected functions, file-specific
+rights, buffer/state limits and reusable acceptance cases are recorded in the
+[existing source task](../../../../../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment).
+Retain attribution for adapted code/test material; linking a source admits no
+graph. Do not stack its eight-stage filter/PLL/FLL onto Chrony regression without
+the architecture's reviewed algorithm-change procedure.
+
 ## Complete one slice with bounded evidence
 
 1. Freeze the slice contract, upstream ledger, scenario inputs, expectations,
@@ -213,6 +252,14 @@ For clknetsim follow architecture section 20.1: pin revision; prove exercised
 I/O/timer interception or compare captured chrony trajectories through explicit
 simulation interface. Linux interception is no Windows service harness. Never
 install/build imported source merely for documentation/planning completion.
+
+Read the [upstream tools reference](../../../testing/references/chrony-upstream-tools.md)
+when choosing clknetsim scenarios or chrony-fuzz seeds. Begin with captured Chrony
+trajectories and independent facts, explicit nonzero seeds and challenged replay/
+comparison. Direct Rust/Tokio interception remains unqualified; the simulator's
+CPU/kernel simplifications prove no resource or native enforcement result.
+chrony-fuzz's deliberately weakened protocol/crypto paths are reachability aids,
+not production acceptance rules or an independent numerical oracle.
 
 Report exact qualified scope. Pure algorithm/simulator slices may pass while
 differential evidence, prerequisites/native Windows checks remain blocked/unassessed.
