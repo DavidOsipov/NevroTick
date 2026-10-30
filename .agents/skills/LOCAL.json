@@ -21,6 +21,11 @@
       "name": "qa-skill-evaluations",
       "target": "testing/qa-skill-evaluations/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "implement-cpu-dispatch",
+      "target": "implementation/implement-cpu-dispatch/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

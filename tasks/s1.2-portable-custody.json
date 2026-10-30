@@ -1,0 +1,23 @@
+{
+  "status": "exact current portable and dependent main proof reconciled",
+  "timing": "during already-running analysis; missing automatic predecessor hash guard found by independent review; launcher not edited in flight",
+  "checks": {
+    "portable_native_success": true,
+    "portable_reservation": true,
+    "portable_attempt_hash": true,
+    "portable_receipt_hash": true,
+    "portable_log_hash": true,
+    "portable_source_map": true,
+    "portable_product_map": true,
+    "portable_launcher": true,
+    "portable_receipt_pass": true,
+    "dependent_reservation": true,
+    "dependent_source_map": true,
+    "dependent_launcher": true,
+    "current_source_map": true
+  },
+  "portable_native_sha256": "5a182510f047c22cf6f4ede46d49235d854d23173ba62bf50714a7ec603bb476",
+  "dependent_attempt_sha256": "983e3dd2e470141ba003427d99805ba90a08e9fdec26b9d4928680637e50dbbe",
+  "reservation_sha256": "8804cc393a6de5991da7e9700fb8e487d5a85ebafcd2aa83bee2289e76af1601",
+  "remedy_before_further_dependent_launch": "guard portable attempt/receipt/source/reservation and launcher explicitly; no stale receipt borrowed in this run"
+}

@@ -14,6 +14,7 @@ use ntp_exchange::{
     ContextError, ExpireError, Generations, ReceiveError, SocketId, SourceId,
 };
 use ntp_wire::FrameError;
+use time_core::{FixtureContext, HistoryError};
 
 use super::scenario_driver::{
     self as driver, Capture, CaseId, ClockReading, Completed, EventKind, Fraction, HarnessError,
@@ -1131,6 +1132,7 @@ fn check_report(run_id: RunId, report: &RunReport) -> Result<(), &'static str> {
     let (case, reset) = match run_id {
         RunId::Baseline(case) => (case, false),
         RunId::ResetRecovery => (CaseId::R19, true),
+        RunId::Composition => return Err("composition has its own independent oracle"),
     };
     require(
         report.event_count > 0 && report.event_count <= 32,
@@ -1487,6 +1489,7 @@ fn check_length_discrimination(run_id: RunId, report: &mut RunReport) -> Result<
         RunId::Baseline(CaseId::R19) => [1, 3],
         RunId::ResetRecovery => [2, 4],
         RunId::Baseline(_) => return Err("run has no declared malformed-length sentinel"),
+        RunId::Composition => return Err("composition has its own independent oracle"),
     };
     for ordinal in ordinals {
         for length in [0, 46] {
@@ -1570,6 +1573,786 @@ literal_case!(scenario_r19_hostile_control_recovery, R19);
 #[test]
 fn scenario_inventory_is_exactly_nineteen() {
     assert_eq!(driver::ALL_CASES, CASES);
+}
+
+/// The slot guard accepts the last index and rejects the next index against an
+/// empty ledger, without invoking any product owner or mutating that ledger.
+/// # Panics
+/// Fails if the guard rejects the valid index or accepts the out-of-range index.
+#[test]
+fn composition_ledger_capacity_guard_has_a_valid_neighbor() {
+    assert_eq!(
+        driver::composition_ledger_capacity_control(),
+        (Ok(()), Err(HarnessError::TraceCapacity)),
+    );
+}
+
+/// Each guard case uses one fresh association and independently checks that
+/// exactly one changed expected role rejects the actual second completion.
+/// # Errors
+/// Propagates fixture or association failures without substituting a result.
+/// # Panics
+/// The frozen identities, retained rows and recovery outcomes must match.
+#[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "The seven role controls and their frozen complete observations form one audit."
+)]
+fn composition_identity_roles_reject_without_mutating_history_and_recover() -> TestResult {
+    use driver::{DeliveryResult, GuardRole};
+    let cases = [
+        GuardRole::Source,
+        GuardRole::Socket,
+        GuardRole::Endpoint,
+        GuardRole::Configuration,
+        GuardRole::Association,
+        GuardRole::Clock,
+        GuardRole::Mapping,
+    ];
+    let labels = FixtureContext::new(
+        NonZeroU64::new(17).ok_or("label")?,
+        NonZeroU64::new(23).ok_or("label")?,
+        NonZeroU64::new(29).ok_or("label")?,
+    );
+    let original_binding = expected_binding(false)?;
+    let original_generations = expected_generations(ORIGINAL);
+    let original_context = AssociationContext::new(original_binding, original_generations);
+    for role in cases {
+        let report = driver::run_guard_case(role)?;
+        assert_eq!(report.role, role);
+        assert_eq!(
+            report.ledger_controls,
+            (
+                Err(HarnessError::InvalidFixture),
+                Err(HarnessError::TraceCapacity)
+            )
+        );
+        for (index, step) in report.steps.iter().enumerate() {
+            let request = [1_u64, 2, 3][index];
+            let send = [16_u64, 32, 48][index];
+            let arrival = [21_u64, 37, 53][index];
+            let local_t1 = [0_i128, 16, 32][index];
+            assert_eq!(step.armed, request);
+            assert_eq!(step.state.context, original_context);
+            assert_eq!(
+                (step.state.pending, step.state.next_request),
+                (None, Some(request + 1))
+            );
+            let facts = step.time.facts;
+            assert_eq!(facts.request, request);
+            assert_eq!(facts.binding, original_binding);
+            assert_eq!(facts.generations, original_generations);
+            assert_eq!(facts.mapping_generation, 1);
+            assert_eq!(
+                (
+                    facts.send_ns,
+                    facts.deadline_ns,
+                    facts.arrival_ns,
+                    facts.processing_ns
+                ),
+                (
+                    send * 62_500_000,
+                    (send + 16) * 62_500_000,
+                    arrival * 62_500_000,
+                    arrival * 62_500_000
+                ),
+            );
+            assert_eq!(
+                (step.time.t1, step.time.t2, step.time.t3, step.time.t4),
+                (
+                    BASE + local_t1 * 0x1000_0000,
+                    BASE + (local_t1 + 3) * 0x1000_0000,
+                    BASE + (local_t1 + 4) * 0x1000_0000,
+                    BASE + (local_t1 + 5) * 0x1000_0000
+                ),
+            );
+            assert_eq!(
+                (step.time.offset, step.time.rtt),
+                (536_870_912, 1_073_741_824)
+            );
+            let changed = index == 1;
+            let expected_binding = step.expected_context.binding();
+            let expected_generations = step.expected_context.generations();
+            assert_eq!(
+                expected_binding.source_id().value().get(),
+                if changed && role == GuardRole::Source {
+                    2
+                } else {
+                    1
+                }
+            );
+            assert_eq!(
+                expected_binding.socket_id().value().get(),
+                if changed && role == GuardRole::Socket {
+                    2
+                } else {
+                    1
+                }
+            );
+            assert_eq!(
+                expected_binding.endpoint(),
+                if changed && role == GuardRole::Endpoint {
+                    SocketAddr::from(([192, 0, 2, 2], 123))
+                } else {
+                    SocketAddr::from(([192, 0, 2, 1], 123))
+                }
+            );
+            assert_eq!(
+                expected_generations.configuration().value(),
+                if changed && role == GuardRole::Configuration {
+                    2
+                } else {
+                    1
+                }
+            );
+            assert_eq!(
+                expected_generations.association().value(),
+                if changed && role == GuardRole::Association {
+                    2
+                } else {
+                    1
+                }
+            );
+            assert_eq!(
+                expected_generations.clock().value(),
+                if changed && role == GuardRole::Clock {
+                    2
+                } else {
+                    1
+                }
+            );
+            assert_eq!(
+                step.expected_mapping.value(),
+                if changed && role == GuardRole::Mapping {
+                    2
+                } else {
+                    1
+                }
+            );
+            let delivery = report.deliveries[index].ok_or("guard delivery")?;
+            assert_eq!(delivery.facts, facts);
+            assert_eq!(
+                delivery.result,
+                if changed {
+                    DeliveryResult::BindingMismatch
+                } else {
+                    DeliveryResult::Committed
+                }
+            );
+            let snapshot = report.snapshots[index].ok_or("guard history")?;
+            let count = [1, 1, 2][index];
+            assert_eq!(snapshot.context, labels);
+            assert_eq!(
+                (
+                    snapshot.count,
+                    snapshot.constructions,
+                    snapshot.appends,
+                    snapshot.commits,
+                    snapshot.history_rejections
+                ),
+                (count, count, count, count, 0)
+            );
+            assert_eq!(snapshot.row_getters, [1, 2, 4][index]);
+            assert_eq!(snapshot.present_reports, 0);
+            assert_eq!(snapshot.report, None);
+            assert_eq!(
+                snapshot.reference_ns,
+                Some(if index == 2 {
+                    3_312_500_000
+                } else {
+                    1_312_500_000
+                })
+            );
+            let first = snapshot.rows[0].ok_or("first guard row")?;
+            assert_eq!(
+                (
+                    first.context,
+                    first.arrival_ns,
+                    first.phase,
+                    first.divisor_bits
+                ),
+                (labels, 1_312_500_000, 536_870_912, 0x3ff0_0000_0000_0000)
+            );
+            if index == 2 {
+                let second = snapshot.rows[1].ok_or("recovery guard row")?;
+                assert_eq!(
+                    (
+                        second.context,
+                        second.arrival_ns,
+                        second.phase,
+                        second.divisor_bits
+                    ),
+                    (labels, 3_312_500_000, 536_870_912, 0x3ff0_0000_0000_0000)
+                );
+            } else {
+                assert_eq!(snapshot.rows[1], None);
+            }
+            assert_eq!((snapshot.rows[2], snapshot.rows[3]), (None, None));
+        }
+        let before = report.snapshots[0].ok_or("before mismatch")?;
+        let rejected = report.snapshots[1].ok_or("after mismatch")?;
+        assert_eq!(
+            (
+                rejected.context,
+                rejected.count,
+                rejected.reference_ns,
+                rejected.rows,
+                rejected.report,
+                rejected.constructions,
+                rejected.appends,
+                rejected.commits,
+                rejected.history_rejections
+            ),
+            (
+                before.context,
+                before.count,
+                before.reference_ns,
+                before.rows,
+                before.report,
+                before.constructions,
+                before.appends,
+                before.commits,
+                before.history_rejections
+            )
+        );
+    }
+    Ok(())
+}
+
+/// Complete independently frozen packets, expressed as big-endian words.
+const COMPOSITION_PACKETS: [[u32; 12]; 7] = [
+    [
+        0x2402_06ec,
+        0,
+        0,
+        0x4750_5300,
+        0xdfff_ffff,
+        0,
+        0,
+        1,
+        0xe000_0000,
+        0x3000_0000,
+        0xe000_0000,
+        0x4000_0000,
+    ],
+    [
+        0xe400_06ec,
+        0,
+        0,
+        0x5241_5445,
+        0xdfff_ffff,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0xffff_ffff,
+        0xffff_ffff,
+    ],
+    [
+        0x2402_06ec,
+        0,
+        0,
+        0x4750_5300,
+        0xdfff_ffff,
+        0,
+        0,
+        3,
+        0xe000_0002,
+        0x3000_0000,
+        0xe000_0002,
+        0x4000_0000,
+    ],
+    [
+        0x2402_06ec,
+        0,
+        0,
+        0x4750_5300,
+        0xdfff_ffff,
+        0,
+        0,
+        4,
+        0xe000_0003,
+        0x3000_0000,
+        0xe000_0003,
+        0x4000_0000,
+    ],
+    [
+        0x2402_06ec,
+        0,
+        0,
+        0x4750_5300,
+        0xdfff_ffff,
+        0,
+        0,
+        5,
+        0xe000_0004,
+        0x3000_0000,
+        0xe000_0004,
+        0x4000_0000,
+    ],
+    [
+        0x2402_06ec,
+        0,
+        0,
+        0x4750_5300,
+        0xdfff_ffff,
+        0,
+        0,
+        6,
+        0xe000_0004,
+        0x6000_0000,
+        0xe000_0004,
+        0x6000_0000,
+    ],
+    [
+        0x2402_06ec,
+        0,
+        0,
+        0x4750_5300,
+        0xdfff_ffff,
+        0,
+        0,
+        7,
+        0xe000_0005,
+        0x2000_0000,
+        0xe000_0005,
+        0x3000_0000,
+    ],
+];
+
+/// Compare every held bit and the independent report facts after each action.
+/// # Errors
+/// Rejects an absent committed row or report.
+/// # Panics
+/// Fails if actual committed row, context, reference, or numerical facts differ.
+fn check_composition_history(
+    snapshot: &driver::HistorySnapshot,
+    expected_count: usize,
+    attempts: usize,
+    labels: FixtureContext,
+) -> TestResult {
+    let arrivals = [1_312_500_000, 4_312_500_000, 5_312_500_000, 6_312_500_000];
+    let phases = [536_870_912, 536_870_912, 536_870_912, 0];
+    assert_eq!(snapshot.context, labels);
+    assert_eq!(snapshot.count, expected_count);
+    assert_eq!(
+        snapshot.reference_ns,
+        expected_count.checked_sub(1).map(|i| arrivals[i])
+    );
+    assert_eq!(snapshot.constructions, attempts);
+    assert_eq!(snapshot.appends, attempts);
+    assert_eq!(snapshot.commits, expected_count);
+    assert_eq!(snapshot.history_rejections, attempts - expected_count);
+    for index in 0..4 {
+        if index < expected_count {
+            let row = snapshot.rows[index].ok_or("missing committed row")?;
+            assert_eq!(row.context, labels);
+            assert_eq!(row.arrival_ns, arrivals[index]);
+            assert_eq!(row.phase, phases[index]);
+            assert_eq!(row.divisor_bits, 0x3ff0_0000_0000_0000);
+        } else {
+            assert_eq!(snapshot.rows[index], None);
+        }
+    }
+    if expected_count < 3 {
+        assert_eq!(snapshot.report, None);
+    } else {
+        let report = snapshot.report.ok_or("missing sufficient report")?;
+        assert_eq!(report.context, labels);
+        assert_eq!(report.reference_ns, arrivals[expected_count - 1]);
+        assert_eq!(report.frame, 23);
+        assert_eq!(report.count, expected_count);
+        assert_eq!(report.degrees, expected_count - 2);
+        let (phase, rate, sse, scale) = if expected_count == 3 {
+            (1.0 / 16.0, 0.0, 0.0, 0.0)
+        } else {
+            (13.0 / 448.0, -1.0 / 112.0, 13.0 / 7168.0, 13.0 / 14336.0)
+        };
+        for (bits, wanted) in [
+            (report.phase_bits, phase),
+            (report.rate_bits, rate),
+            (report.sse_bits, sse),
+            (report.scale_bits, scale),
+            (report.variance_bits, scale),
+        ] {
+            let actual = f64::from_bits(bits);
+            assert!(actual.is_finite() && (actual - wanted).abs() <= 1e-14);
+        }
+    }
+    Ok(())
+}
+
+/// Exercise the single real event-to-history path with independently frozen facts.
+/// # Errors
+/// Propagates fixture setup or absent observed evidence.
+/// # Panics
+/// Fails if any frozen action, completion, history, or packet fact differs.
+#[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "The complete ordered 27-action trace and its independent literal checks stay together."
+)]
+fn scenario_composition_retains_real_arrivals_and_rejects_duplicate() -> TestResult {
+    use driver::{DeliveryResult, EventKind as K};
+    let report = driver::run_composition()?;
+    let run = &report.run;
+    assert_eq!(run.run_id, RunId::Composition);
+    assert_eq!(
+        (
+            run.event_count,
+            run.charged_event_count,
+            run.product_action_count
+        ),
+        (27, 32, 18)
+    );
+    assert!(report.history_trace_bytes <= 32 * 1024);
+    assert!(report.history_owner_bytes <= 64 * 1024);
+    assert_eq!(
+        report.timeline,
+        driver::FixtureTimeline {
+            base: BASE,
+            initial_monotonic_ns: 1_000_000_000,
+            initial_awake_ns: 250_000_000,
+            oscillator: false,
+        }
+    );
+    assert_eq!(run.final_queue_len, 0);
+    assert_eq!(report.delivery_count, 5);
+    let labels = FixtureContext::new(
+        NonZeroU64::new(17).ok_or("label")?,
+        NonZeroU64::new(23).ok_or("label")?,
+        NonZeroU64::new(29).ok_or("label")?,
+    );
+    let expected_context =
+        AssociationContext::new(expected_binding(false)?, expected_generations(ORIGINAL));
+    let kinds = [
+        K::Construct,
+        K::Arm,
+        K::Capture,
+        K::Receive,
+        K::Receive,
+        K::Receive,
+        K::Release,
+        K::Arm,
+        K::CaptureReceive,
+        K::Release,
+        K::Arm,
+        K::Capture,
+        K::Drop,
+        K::Expire,
+        K::Arm,
+        K::CaptureReceive,
+        K::Release,
+        K::Arm,
+        K::CaptureReceive,
+        K::Release,
+        K::Arm,
+        K::CaptureReceive,
+        K::Receive,
+        K::Release,
+        K::Arm,
+        K::CaptureReceive,
+        K::Release,
+    ];
+    let times = [
+        16, 16, 21, 22, 22, 22, 22, 32, 37, 37, 48, 53, 53, 64, 64, 69, 69, 80, 85, 85, 85, 85, 85,
+        85, 96, 101, 101,
+    ];
+    let ordinals = [
+        1, 2, 1, 1, 2, 3, 4, 1, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 1, 2, 3, 4, 5, 6, 1, 1, 2,
+    ];
+    let pending = [
+        None,
+        Some(1),
+        Some(1),
+        Some(1),
+        Some(1),
+        None,
+        None,
+        Some(2),
+        None,
+        None,
+        Some(3),
+        Some(3),
+        Some(3),
+        None,
+        Some(4),
+        None,
+        None,
+        Some(5),
+        None,
+        None,
+        Some(6),
+        None,
+        None,
+        None,
+        Some(7),
+        None,
+        None,
+    ];
+    let next = [
+        1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8,
+    ];
+    let counts = [
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4,
+    ];
+    let attempts = [
+        0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5,
+    ];
+    let mut observed_row_getters = 0;
+    let mut observed_reports = 0;
+    for index in 0..27 {
+        let item = run.observations[index].ok_or("missing action")?;
+        assert_eq!((item.kind, item.ordinal), (kinds[index], ordinals[index]));
+        assert_eq!(item.clocks.monotonic_ns, times[index] * 62_500_000);
+        assert_eq!(
+            item.clocks.active_awake_ns,
+            (times[index] - 12) * 62_500_000
+        );
+        assert_eq!(item.clocks.mapping_generation, 1);
+        check_fraction(item.clocks.true_utc, i128::from(times[index] - 15), 16)?;
+        check_fraction(item.clocks.local_utc, i128::from(times[index] - 16), 16)?;
+        assert_eq!(item.after.context, expected_context);
+        assert_eq!(
+            (item.after.pending, item.after.next_request),
+            (pending[index], Some(next[index]))
+        );
+        if index == 0 {
+            assert_eq!(item.before, None);
+            assert_eq!(item.outcome, Outcome::Constructed);
+        } else {
+            assert_eq!(
+                item.before,
+                Some(run.observations[index - 1].ok_or("prior action")?.after)
+            );
+        }
+        if matches!(item.kind, K::Capture | K::Drop | K::Release) {
+            assert_eq!(item.outcome, Outcome::None);
+        }
+        let snapshot = report.snapshots[index].ok_or("missing history")?;
+        observed_row_getters += counts[index];
+        observed_reports += usize::from(counts[index] >= 3);
+        assert_eq!(snapshot.row_getters, observed_row_getters);
+        assert_eq!(snapshot.present_reports, observed_reports);
+        check_composition_history(&snapshot, counts[index], attempts[index], labels)?;
+    }
+    assert_eq!((observed_row_getters, observed_reports), (45, 9));
+    assert!(run.observations[27..].iter().all(Option::is_none));
+    assert!(report.snapshots[27..].iter().all(Option::is_none));
+    for index in 1..27 {
+        if [5, 15, 18, 25].contains(&index) {
+            continue;
+        }
+        let previous = report.snapshots[index - 1].ok_or("before")?;
+        let actual = report.snapshots[index].ok_or("after")?;
+        assert_eq!(
+            (
+                actual.context,
+                actual.count,
+                actual.reference_ns,
+                actual.rows,
+                actual.report
+            ),
+            (
+                previous.context,
+                previous.count,
+                previous.reference_ns,
+                previous.rows,
+                previous.report
+            )
+        );
+    }
+    assert_eq!(
+        run.observations[3].ok_or("malformed")?.outcome,
+        Outcome::Received(Err(ReceiveError::Framing(FrameError::HeaderTooShort)))
+    );
+    assert_eq!(
+        run.observations[4].ok_or("origin")?.outcome,
+        Outcome::Received(Err(ReceiveError::OriginMismatch))
+    );
+    assert_eq!(
+        run.observations[13].ok_or("expiry")?.outcome,
+        Outcome::Expired(Ok(3))
+    );
+    assert_eq!(
+        run.observations[22].ok_or("replay")?.outcome,
+        Outcome::Received(Err(ReceiveError::NoPending))
+    );
+    let control_outcome = run.observations[8].ok_or("control")?.outcome;
+    let Outcome::Received(Ok(Completed::Control(control))) = control_outcome else {
+        return Err("expected completed control".into());
+    };
+    assert_eq!(control.code, 0x5241_5445);
+    assert_eq!(control.facts.binding, expected_binding(false)?);
+    assert_eq!(control.facts.generations, expected_generations(ORIGINAL));
+    assert_eq!(control.facts.mapping_generation, 1);
+    assert_eq!(control.facts.request, 2);
+    assert_eq!(
+        (
+            control.facts.send_ns,
+            control.facts.deadline_ns,
+            control.facts.arrival_ns,
+            control.facts.processing_ns
+        ),
+        (2_000_000_000, 3_000_000_000, 2_312_500_000, 2_312_500_000),
+    );
+    for (index, request) in [(1, 1), (7, 2), (10, 3), (14, 4), (17, 5), (20, 6), (24, 7)] {
+        assert_eq!(
+            run.observations[index].ok_or("arm")?.outcome,
+            Outcome::Armed(Ok(request))
+        );
+    }
+    for (position, request, arrival) in
+        [(0, 1, 21), (1, 4, 69), (2, 5, 85), (3, 6, 85), (4, 7, 101)]
+    {
+        let delivery = report.deliveries[position].ok_or("missing delivery")?;
+        assert_eq!(delivery.facts.request, request);
+        assert_eq!(delivery.facts.binding, expected_binding(false)?);
+        assert_eq!(delivery.facts.generations, expected_generations(ORIGINAL));
+        assert_eq!(delivery.facts.mapping_generation, 1);
+        assert_eq!(delivery.facts.arrival_ns, arrival * 62_500_000);
+        assert_eq!(
+            delivery.result,
+            if request == 6 {
+                DeliveryResult::History(HistoryError::DuplicateTime)
+            } else {
+                DeliveryResult::Committed
+            }
+        );
+    }
+    for (index, request, send, deadline, arrival, processing, t1, t2, t3, t4, phase, rtt) in [
+        (5, 1, 16, 32, 21, 22, 0, 3, 4, 5, 536_870_912, 1_073_741_824),
+        (
+            15,
+            4,
+            64,
+            80,
+            69,
+            69,
+            48,
+            51,
+            52,
+            53,
+            536_870_912,
+            1_073_741_824,
+        ),
+        (
+            18,
+            5,
+            80,
+            96,
+            85,
+            85,
+            64,
+            67,
+            68,
+            69,
+            536_870_912,
+            1_073_741_824,
+        ),
+        (21, 6, 85, 96, 85, 85, 69, 70, 70, 69, 536_870_912, 0),
+        (25, 7, 96, 112, 101, 101, 80, 82, 83, 85, 0, 1_073_741_824),
+    ] {
+        let outcome = run.observations[index].ok_or("time")?.outcome;
+        let Outcome::Received(Ok(Completed::Time(time))) = outcome else {
+            return Err("expected completed time".into());
+        };
+        assert_eq!(time.facts.request, request);
+        assert_eq!(time.facts.binding, expected_binding(false)?);
+        assert_eq!(time.facts.generations, expected_generations(ORIGINAL));
+        assert_eq!(time.facts.mapping_generation, 1);
+        assert_eq!(
+            (
+                time.facts.send_ns,
+                time.facts.deadline_ns,
+                time.facts.arrival_ns,
+                time.facts.processing_ns
+            ),
+            (
+                send * 62_500_000,
+                deadline * 62_500_000,
+                arrival * 62_500_000,
+                processing * 62_500_000
+            )
+        );
+        assert_eq!(
+            (time.t1, time.t2, time.t3, time.t4),
+            (
+                BASE + t1 * 0x1000_0000,
+                BASE + t2 * 0x1000_0000,
+                BASE + t3 * 0x1000_0000,
+                BASE + t4 * 0x1000_0000
+            )
+        );
+        assert_eq!((time.offset, time.rtt), (phase, rtt));
+        assert_eq!(
+            (time.leap, time.stratum, time.poll, time.precision),
+            (0, 2, 6, -20)
+        );
+        assert_eq!(
+            (
+                time.root_delay,
+                time.root_dispersion,
+                time.reference_id,
+                time.reference_timestamp
+            ),
+            (0, 0, 0x4750_5300, 0xdfff_ffff_0000_0000)
+        );
+    }
+    for (index, request, arrival, local_t4) in [
+        (2, 1, 21, 5),
+        (8, 2, 37, 21),
+        (11, 3, 53, 37),
+        (15, 4, 69, 53),
+        (18, 5, 85, 69),
+        (21, 6, 85, 69),
+        (25, 7, 101, 85),
+    ] {
+        let capture = run.observations[index]
+            .ok_or("capture action")?
+            .capture
+            .ok_or("capture")?;
+        assert_eq!(capture.length, 48);
+        assert_eq!(capture.binding, expected_binding(false)?);
+        assert_eq!(capture.mapping_generation, 1);
+        assert_eq!(capture.arrival_ns, arrival * 62_500_000);
+        assert_eq!(capture.local_t4, BASE + local_t4 * 0x1000_0000);
+        let (words, remainder) = capture.packet.as_chunks::<4>();
+        assert_eq!(remainder, []);
+        assert_eq!(words.len(), 12);
+        for (word, expected) in words.iter().zip(COMPOSITION_PACKETS[request - 1]) {
+            assert_eq!(u32::from_be_bytes(*word), expected);
+        }
+    }
+    let saved = run.observations[2]
+        .ok_or("saved")?
+        .capture
+        .ok_or("saved capture")?;
+    let short = run.observations[3]
+        .ok_or("short")?
+        .capture
+        .ok_or("short capture")?;
+    let wrong = run.observations[4]
+        .ok_or("wrong")?
+        .capture
+        .ok_or("wrong capture")?;
+    assert_eq!((short.length, short.packet), (47, saved.packet));
+    let mut expected_wrong = saved.packet;
+    expected_wrong[31] = 2;
+    assert_eq!((wrong.length, wrong.packet), (48, expected_wrong));
+    let replay = run.observations[22]
+        .ok_or("replay")?
+        .capture
+        .ok_or("replay capture")?;
+    assert_eq!(
+        replay,
+        run.observations[21]
+            .ok_or("duplicate")?
+            .capture
+            .ok_or("duplicate capture")?
+    );
+    Ok(())
 }
 
 /// Reject a changed semantic sentinel through the actual comparison owner.

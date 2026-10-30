@@ -1,0 +1,25 @@
+[package]
+name = "time-core-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[features]
+seeded-defect = []
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+time-core = { path = "../source/crates/time-core" }
+time-domain = { version = "=0.0.0", path = "../source/crates/time-domain" }
+
+[[bin]]
+name = "fit"
+path = "target.rs"
+test = false
+doc = false
+bench = false

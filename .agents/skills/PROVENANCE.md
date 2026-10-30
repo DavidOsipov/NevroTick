@@ -76,3 +76,9 @@ without copying their implementations.
 When copying a skill outside this repository, include the shared contract and
 references it actually needs and retain applicable copyright and permission
 notices. Do not describe an isolated leaf as self-contained without its links.
+
+The original local `implement-cpu-dispatch` workflow, added 30 October 2026,
+records no donor/upstream implementation. Its researched technical sources live
+in the implementation source register and maintained CPU research; `LOCAL.json`
+registers the leaf. Links to Rust and processor specifications grant no new
+runtime dependency or product licence permission.

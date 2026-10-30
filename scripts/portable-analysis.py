@@ -28,6 +28,11 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
 FUZZ_CARGO_CONFIG = ('[source.crates-io]\nreplace-with="fuzz-reviewed"\n'
                      '[source.fuzz-reviewed]\ndirectory="/work/fuzz-vendor"\n')
+MUTATION_LIST_WARNING = (
+    " WARN --jobs=12 is probably too high and may overload your machine: each job runs a separate "
+    "`cargo` process, and cargo may internally start many threads and subprocesses; values <= 8 "
+    "are usually safe\n"
+)
 
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
@@ -98,6 +103,51 @@ def coverage_counts(scope: Scope, report: dict, expected_file: str) -> dict:
             "line_percent": percent, "branch_evidence": files[0].get("summary", {}).get("branches")}
 
 
+def mutation_listing_warning(expected_jobs: int) -> str | None:
+    """Return only the pinned warning for the admitted high worker count."""
+    jobs = mutation_jobs({"mutation_jobs": expected_jobs})
+    return MUTATION_LIST_WARNING.replace("--jobs=12", "--jobs=" + str(jobs)) if jobs > 8 else None
+
+
+def parse_mutation_listing(output: str, *, expected_jobs=RUNTIME.MAX_JOBS) -> tuple[list, str | None]:
+    """Admit one optional exact known warning followed by one strict JSON array.
+
+    Native status and raw output custody remain owned by the session. No other
+    diagnostic, duplicate key, nonfinite token or trailing JSON is discarded.
+    """
+    if not isinstance(output, str):
+        raise Incomplete("Mutation listing is not a text result.")
+    expected_warning = mutation_listing_warning(expected_jobs)
+    warning = expected_warning if expected_warning is not None and output.startswith(expected_warning) else None
+    payload = output[len(warning):] if warning else output
+
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON object member")
+            result[key] = value
+        return result
+
+    def invalid_constant(_value):
+        raise ValueError("nonfinite JSON number")
+
+    def finite_float(value):
+        number = float(value)
+        if not math.isfinite(number):
+            raise ValueError("JSON number outside finite float range")
+        return number
+
+    try:
+        items = json.loads(payload, object_pairs_hook=unique_object, parse_constant=invalid_constant,
+                           parse_float=finite_float)
+    except (ValueError, RecursionError) as error:
+        raise Incomplete("Mutation listing is not one complete strict JSON value.") from error
+    if not isinstance(items, list):
+        raise Incomplete("Mutation listing must be a JSON array.")
+    return items, warning
+
+
 def mutation_inventory(scope: Scope, items: list, maximum: int, expected_file: str) -> dict[str, dict]:
     """Admit a finite, unique full parser enumeration before testing mutants."""
     filename = scope.selected_file(expected_file)
@@ -116,6 +166,43 @@ def mutation_inventory(scope: Scope, items: list, maximum: int, expected_file: s
 def canonical_sha256(value: dict) -> str:
     """Bind complete input/identity dictionaries using one stable JSON encoding."""
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def admit_reviewed_mutation_inventories(scope: Scope, policy: dict, inventories: dict) -> dict | None:
+    """Check an optional complete scope map against every selected actual inventory.
+
+    Hash the name-keyed admitted descriptors, preserving every member except the
+    optional top-level rendered diff. No campaign is launched by this check.
+    """
+    if "mutation_inventories" not in policy:
+        return None
+    reviewed = policy["mutation_inventories"]
+    maximum = policy.get("maximum_mutants")
+    scope_names = set(scope.select("all"))
+    if (not isinstance(reviewed, dict) or set(reviewed) != scope_names
+            or type(maximum) is not int or not 0 < maximum <= 512
+            or not isinstance(inventories, dict) or not inventories
+            or not set(inventories) <= scope_names):
+        raise Incomplete("Reviewed mutation inventory map or scope is invalid.")
+    for spec in reviewed.values():
+        if (not isinstance(spec, dict) or set(spec) != {"count", "sha256"}
+                or type(spec["count"]) is not int or not 0 < spec["count"] <= maximum
+                or not isinstance(spec["sha256"], str)
+                or not re.fullmatch(r"[a-f0-9]{64}", spec["sha256"])):
+            raise Incomplete("Reviewed mutation inventory specification is invalid.")
+    admitted = {}
+    for name, inventory in inventories.items():
+        if not isinstance(inventory, dict) or any(
+                not isinstance(item, dict) or item.get("name") != key
+                for key, item in inventory.items()):
+            raise Incomplete("Observed mutation inventory is invalid.")
+        normalized = {key: {field: value for field, value in item.items() if field != "diff"}
+                      for key, item in inventory.items()}
+        actual = {"count": len(normalized), "sha256": canonical_sha256(normalized)}
+        if actual != reviewed[name]:
+            raise Incomplete("Observed mutation inventory differs from its reviewed count or hash.")
+        admitted[name] = actual
+    return admitted
 
 
 def exact_mutant_span(value) -> bool:
@@ -208,14 +295,21 @@ def mutation_phases(scope: Scope, outcome: dict) -> None:
     if (not isinstance(phases, list) or any(not isinstance(phase, dict) for phase in phases)
             or [phase.get("phase") for phase in phases] != expected):
         raise Incomplete("Mutation outcome lacks its exact actual build/test phases.")
+    observed_format = None
     for phase in phases:
         arguments = ["cargo", "test", *(["--no-run"] if phase["phase"] == "Build" else []),
                      "--verbose", "--package=" + scope.package + "@0.0.0", "--frozen"]
+        json_arguments = [*arguments[:-1], "--message-format=json", arguments[-1]]
+        actual_format = ("human" if phase.get("argv") == arguments else
+                         "json" if phase.get("argv") == json_arguments else None)
+        if actual_format is None or (observed_format is not None and actual_format != observed_format):
+            raise Incomplete("Mutation phases do not use one exact admitted Cargo message format.")
+        observed_format = actual_format
         failed = summary == "Unviable" or (summary == "CaughtMutant" and phase["phase"] == "Test")
         expected_status = {"Failure": 101} if failed else "Success"
         duration = phase.get("duration")
         status = phase.get("process_status")
-        if (phase.get("argv") != arguments or status != expected_status
+        if (status != expected_status
                 or (failed and (not isinstance(status, dict) or type(status.get("Failure")) is not int))
                 or type(duration) not in (int, float) or not math.isfinite(duration) or duration < 0):
             raise Incomplete("Mutation summary, selected Cargo phase or native phase result disagree.")
@@ -309,23 +403,56 @@ def mutation_counts(scope: Scope, report: dict, expected: dict[str, dict], expec
             "native_exit_code": native_exit_code, "gate_passed": passed}
 
 
-def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: list) -> None:
+def mutation_jobs(policy: dict) -> int:
+    """Admit an exact bounded mutation-worker count, defaulting to twelve."""
+    value = policy.get("mutation_jobs", RUNTIME.MAX_JOBS)
+    if type(value) is not int or not 1 <= value <= RUNTIME.MAX_JOBS:
+        raise Incomplete("Mutation jobs must be an integer between 1 and 12.")
+    return value
+
+
+def mutation_process_limit(policy: dict) -> int:
+    """Admit a fixed mutation-only task profile, preserving the 128 default."""
+    value = policy.get("mutation_process_limit", 128)
+    if type(value) is not int or value not in (128, 512):
+        raise Incomplete("Mutation process limit must be exactly 128 or 512 tasks.")
+    return value
+
+
+def mutation_message_format(policy: dict) -> str:
+    """Admit the reviewed Cargo diagnostic formats, defaulting to human."""
+    value = policy.get("mutation_message_format", "human")
+    if type(value) is not str or value not in ("human", "json"):
+        raise Incomplete("Unknown mutation Cargo message format.")
+    return value
+
+
+def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: list,
+                              *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human") -> None:
     """Reject command substitution before a mutation subprocess may be launched."""
+    jobs = mutation_jobs({"mutation_jobs": expected_jobs})
+    message_format = mutation_message_format({"mutation_message_format": expected_message_format})
     filename = scope.select(subject)[subject]
     expected = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
-                "--test-workspace", "false", "--cap-lints", "false", "--jobs", "1", "--baseline", "run",
-                "--build-timeout", "90", "--timeout", "60", "--output", "/work/mutation/" + subject]
+                "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(jobs),
+                "--jobserver", "true", "--jobserver-tasks", str(jobs)]
+    if message_format == "json":
+        expected.append("--cargo-arg=--message-format=json")
+    expected.extend(["--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                     "--output", "/work/mutation/" + subject])
     if command != expected:
         raise Incomplete("Mutation command is not the exact admitted campaign invocation.")
 
 
-def mutation_campaign_result(scope: Scope, tools: Path, subject: str, command: list, result: dict) -> dict:
+def mutation_campaign_result(scope: Scope, tools: Path, subject: str, command: list, result: dict,
+                             *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human") -> dict:
     """Retain provisional native 0/2 only for complete-report reconciliation.
 
     Exit 2 is never a command success. Setup/errors/baseline/timeout/signal
     statuses remain immediate incomplete results.
     """
-    mutation_campaign_command(scope, tools, subject, command)
+    mutation_campaign_command(scope, tools, subject, command, expected_jobs=expected_jobs,
+                              expected_message_format=expected_message_format)
     if (not isinstance(result, dict) or not {"exit_code", "failure", "output"} <= result.keys()
             or not isinstance(result["output"], str) or result["failure"] is not None
             or type(result.get("exit_code")) is not int or result["exit_code"] not in (0, 2)):
@@ -482,9 +609,13 @@ def compiler_cause(result: dict, specimen: dict, source_path: str) -> None:
 
 def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
     """Execute finite coverage and complete per-file mutation through a supplied custodian."""
+    workers = mutation_jobs(policy) if lane in {"mutation", "all"} else None
+    if workers is not None:
+        mutation_process_limit(policy)
+    message_format = mutation_message_format(policy) if lane in {"mutation", "all"} else None
     if lane in {"coverage", "all"}:
         command = [str(tools / "cargo-llvm-cov"), "llvm-cov", "--package", scope.package,
-                   "--frozen", "--jobs", "1", "--lib", "--tests", "--json",
+                   "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--tests", "--json",
                    "--output-path", "/work/coverage.json", "--failure-mode", "any",
                    "--ignore-filename-regex", "(^|/)tests/", "--fail-under-file-lines", "90"]
         text = run("coverage", command, policy["coverage_wall_seconds"])
@@ -500,14 +631,30 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
         (work / "mutation").mkdir()
         deadline = time.monotonic() + policy["mutation_wall_seconds"]
         inventories, commands = {}, {}
+        report["mutation_enumeration"] = {}
         for name, filename in subjects.items():
+            # --jobs bounds mutant copies; the independent GNU jobserver budget
+            # also needs an explicit limit instead of its all-CPU default.
             common = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
-                      "--test-workspace", "false", "--cap-lints", "false", "--jobs", "1"]
+                      "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(workers),
+                      "--jobserver", "true", "--jobserver-tasks", str(workers)]
+            if message_format == "json":
+                common.append("--cargo-arg=--message-format=json")
             commands[name] = common
             listed = run("mutation-enumeration:" + name, [*common, "--list", "--json"],
                          remaining_timeout(deadline, 120))
-            inventories[name] = mutation_inventory(scope, json.loads(listed), policy["maximum_mutants"], filename)
+            expected_warning = mutation_listing_warning(workers)
+            observed_warning = (expected_warning if expected_warning is not None
+                                and isinstance(listed, str) and listed.startswith(expected_warning) else None)
+            report["mutation_enumeration"][name] = {"raw_output": listed, "warning": observed_warning}
+            items, warning = parse_mutation_listing(listed, expected_jobs=workers)
+            if warning != observed_warning:
+                raise Incomplete("Mutation listing warning observation disagrees with parser admission.")
+            inventories[name] = mutation_inventory(scope, items, policy["maximum_mutants"], filename)
         report["mutation_enumerated_total"] = combined_mutant_count(inventories, policy["maximum_mutants"])
+        reviewed = admit_reviewed_mutation_inventories(scope, policy, inventories)
+        if reviewed is not None:
+            report["mutation_reviewed_inventories"] = reviewed
         for entry in equivalences:
             filename, mutant = entry["mutant"]["file"], entry["mutant"]
             selected_name = next((name for name, selected in subjects.items() if selected == filename), None)
@@ -617,22 +764,29 @@ class Session:
                 raise Incomplete("A sealed tool, dependency or input island changed.")
 
     def run(self, label, command, timeout, *, sealed=(), compiler=None, extra_tools=None,
-            mode="ordinary", negative=None, expected_error=None, cwd=None, specimen=None, mutation_subject=None):
+            mode="ordinary", negative=None, expected_error=None, cwd=None, specimen=None, mutation_subject=None,
+            sanitizer_profile="legacy"):
         """Keep command execution under unchanged admission, namespace and resource custody."""
         self.check()
         if mutation_subject is not None:
             if (label != "mutation-campaign:" + mutation_subject or specimen or expected_error or negative
-                    or compiler is not None or extra_tools is not None or mode != "ordinary" or cwd is not None):
+                    or compiler is not None or extra_tools is not None or mode != "ordinary" or cwd is not None
+                    or sanitizer_profile != "legacy"):
                 raise Incomplete("Mutation campaign cannot borrow another execution mode or failure handler.")
-            mutation_campaign_command(self.scope, self.tools, mutation_subject, command)
+            mutation_campaign_command(self.scope, self.tools, mutation_subject, command,
+                                      expected_jobs=mutation_jobs(self.policy),
+                                      expected_message_format=mutation_message_format(self.policy))
         compiler = compiler or self.stable
         night = self.base / self.admitted["policy"]["common_nightly"]
         if compiler not in (self.stable, night):
             raise Incomplete("Unadmitted analysis compiler.")
         if extra_tools is not None and extra_tools not in self.protected_tools:
             raise Incomplete("Unadmitted extra tool island.")
+        # Mutants parallelize independent copies; each nested Cargo/test process
+        # gets one slot rather than multiplying twelve workers by twelve jobs.
+        inner_jobs = 1 if label.startswith("mutation-") else RUNTIME.MAX_JOBS
         environment = {"RUSTC": str(compiler / "bin/rustc"), "RUSTDOC": str(compiler / "bin/rustdoc"),
-                       "RUST_TEST_THREADS": "2"}
+                       "RUST_TEST_THREADS": str(inner_jobs)}
         if compiler != self.stable:
             environment.update(RUSTUP_HOME=str(self.base / "common/rustup"), RUSTUP_TOOLCHAIN=ANALYSIS.NIGHTLY)
         readonly = [self.base, self.stable, self.vendor, self.tools, *([extra_tools] if extra_tools else [])]
@@ -643,15 +797,23 @@ class Session:
                 continue
             islands = [other for other in islands if not other.is_relative_to(path)]
             islands.append(path)
+        profile_options = {} if sanitizer_profile == "legacy" else {"sanitizer_profile": sanitizer_profile}
+        if mutation_subject is not None:
+            # Each copied mutant worker must own its Cargo artifacts.
+            profile_options["cargo_target_mode"] = "worker"
+            profile_options["process_limit"] = mutation_process_limit(self.policy)
         result = RUNTIME.run(self.root, self.work, command, readonly=readonly,
                              sealed=islands, path_dirs=paths,
                              cwd=cwd or self.source, environment=environment, mode=mode,
-                             timeout=timeout, cpu_seconds=min(timeout, 600))
+                             timeout=timeout, cpu_seconds=min(timeout, 600), build_jobs=inner_jobs,
+                             **profile_options)
         self.report["lanes"].append({"lane": label, "command": command, **result})
         (self.output / "progress.json").write_text(json.dumps(self.report, indent=2) + "\n")
         self.check()
         if mutation_subject is not None:
-            return mutation_campaign_result(self.scope, self.tools, mutation_subject, command, result)
+            return mutation_campaign_result(self.scope, self.tools, mutation_subject, command, result,
+                                            expected_jobs=mutation_jobs(self.policy),
+                                            expected_message_format=mutation_message_format(self.policy))
         if specimen:
             compiler_cause(result, specimen, command[command.index("--error-format=json") + 1])
             return result["output"]
@@ -661,6 +823,11 @@ class Session:
         if negative:
             if result["failure"] or result["exit_code"] == 0 or negative not in result["output"]:
                 raise Incomplete("Seeded control did not reach its intended actual failure.")
+            return result["output"]
+        if label.startswith("mutation-enumeration:") or label == "external-legal-execution":
+            # Strict counter/receipt records need the child's actual delimiters.
+            # Admission still requires a successful native result before exposure.
+            PRODUCT.ENV.require_ok(result)
             return result["output"]
         return PRODUCT.ENV.require_ok(result)
 

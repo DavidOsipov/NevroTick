@@ -17,10 +17,15 @@ SPEC.loader.exec_module(VERIFY)
 EXPECTED_PACKAGES = {
     "nevrotick-ui": "crates/nevrotick-ui", "ntp-wire": "crates/ntp-wire",
     "time-domain": "crates/time-domain", "ntp-exchange": "crates/ntp-exchange",
+    "time-core": "crates/time-core",
 }
-EXPECTED_MEMBERS = 'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange"]'
+EXPECTED_MEMBERS = 'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core"]'
 EXCHANGE_LOCK = ('[[package]]\nname="ntp-exchange"\nversion="0.0.0"\n'
-                 'dependencies=["ntp-wire","time-domain"]\n')
+                 'dependencies=["ntp-wire","time-core","time-domain"]\n')
+
+
+CORE_LOCK = ('[[package]]\nname="time-core"\nversion="0.0.0"\n'
+             'dependencies=["garde","time-domain"]\n')
 
 
 def digest(data):
@@ -50,17 +55,20 @@ class ProductAdmissionTests(unittest.TestCase):
             (member / "src").mkdir(parents=True)
             (member / "Cargo.toml").write_text(
                 f'[package]\nname="{package}"\nversion="0.0.0"\n[lints]\nworkspace=true\n')
-            if package == "time-domain":
+            if package in {"time-domain", "time-core"}:
                 with (member / "Cargo.toml").open("a") as stream:
                     stream.write('[dependencies]\ngarde={version="=0.23.0",default-features=false,features=["derive"]}\n')
+                    if package == "time-core":
+                        stream.write('time-domain={version="=0.0.0",path="../time-domain"}\n')
             if package == "ntp-exchange":
                 with (member / "Cargo.toml").open("a") as stream:
                     stream.write('[dependencies]\nntp-wire={version="=0.0.0",path="../ntp-wire"}\n'
-                                 'time-domain={version="=0.0.0",path="../time-domain"}\n')
+                                 'time-domain={version="=0.0.0",path="../time-domain"}\n'
+                                 '[dev-dependencies]\ntime-core={version="=0.0.0",path="../time-core"}\n')
             (member / "src/lib.rs").write_text('//! Test control; never compiled.\n')
         self.archive_hash = "1" * 64
         (self.root / "Cargo.lock").write_text(
-            'version = 4\n[[package]]\nname="nevrotick-ui"\nversion="0.0.0"\n'
+            'version = 4\n' + CORE_LOCK + '[[package]]\nname="nevrotick-ui"\nversion="0.0.0"\n'
             '[[package]]\nname="ntp-wire"\nversion="0.0.0"\n'
             '[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n' + EXCHANGE_LOCK +
             '[[package]]\nname="garde"\nversion="0.23.0"\n'
@@ -74,7 +82,7 @@ class ProductAdmissionTests(unittest.TestCase):
                        "manifests_sha256": {name: VERIFY.sha256(self.root / name)
                                             for name in ("Cargo.toml", "crates/nevrotick-ui/Cargo.toml",
                                                          "crates/ntp-wire/Cargo.toml", "crates/time-domain/Cargo.toml",
-                                                         "crates/ntp-exchange/Cargo.toml")},
+                                                         "crates/ntp-exchange/Cargo.toml", "crates/time-core/Cargo.toml")},
                        "packages": [{"name": "fixture-dependency", "version": "1.0.0",
                                      "checksum": self.archive_hash},
                                     {"name": "garde", "version": "0.23.0", "checksum": "2" * 64}]}
@@ -82,6 +90,15 @@ class ProductAdmissionTests(unittest.TestCase):
 
     def write_policy(self):
         (self.root / "policy/ui-m0-dependencies.json").write_text(json.dumps(self.policy))
+
+    def test_build_and_lint_rows_use_the_twelve_job_budget(self):
+        for lane in ("portable", "windows"):
+            for label, command in VERIFY.commands(lane):
+                if label == "format":
+                    continue
+                with self.subTest(lane=lane, row=label):
+                    flag = "--build-jobs" if "nextest" in command else "--jobs"
+                    self.assertEqual(command[command.index(flag) + 1], "12")
 
     def test_prior_single_member_graph_no_longer_hides_missing_protocol_member(self):
         path = self.root / "Cargo.toml"
@@ -105,12 +122,49 @@ class ProductAdmissionTests(unittest.TestCase):
         self.assertIn("crates/ntp-wire/src/lib.rs", files)
         self.assertIn("crates/nevrotick-ui/src/lib.rs", files)
 
-    def test_reviewed_four_member_graph_is_accepted(self):
+    def test_reviewed_five_member_graph_is_accepted(self):
         with patch.object(VERIFY.ENV, "run") as run:
             _, files = VERIFY.admit_product(self.root)
             run.assert_not_called()
         for directory in EXPECTED_PACKAGES.values():
             self.assertIn(directory + "/src/lib.rs", files)
+
+    def test_prior_four_member_graph_cannot_hide_the_kernel(self):
+        path = self.root / "Cargo.toml"
+        path.write_text(path.read_text().replace(EXPECTED_MEMBERS,
+            'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange"]'))
+        with patch.object(VERIFY.ENV, "run") as run:
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed.*workspace members"):
+                VERIFY.admit_product(self.root)
+            run.assert_not_called()
+
+    def test_kernel_manifest_faults_reject_even_with_updated_hash(self):
+        path = self.root / "crates/time-core/Cargo.toml"
+        healthy = path.read_text()
+        changes = [healthy.replace('default-features=false', 'default-features=true'),
+                   healthy.replace('features=["derive"]', 'features=["full"]'),
+                   healthy + '\n[dev-dependencies]\nextra="=1.0.0"\n',
+                   healthy.replace('workspace=true', 'workspace=false')]
+        for text in changes:
+            path.write_text(text)
+            self.policy["manifests_sha256"]["crates/time-core/Cargo.toml"] = VERIFY.sha256(path)
+            self.write_policy()
+            with self.subTest(text=text), patch.object(VERIFY.ENV, "run") as run:
+                with self.assertRaises(VERIFY.ENV.Incomplete): VERIFY.admit_product(self.root)
+                run.assert_not_called()
+
+    def test_kernel_local_lock_record_is_required_and_exact(self):
+        path = self.root / "Cargo.lock"
+        healthy = path.read_text()
+        for text in [healthy.replace(CORE_LOCK, ''),
+                     healthy.replace(CORE_LOCK, CORE_LOCK.replace('["garde","time-domain"]', '[]'))]:
+            path.write_text(text)
+            self.policy["lockfile_sha256"] = VERIFY.sha256(path)
+            self.write_policy()
+            with self.subTest(text=text), patch.object(VERIFY.ENV, "run") as run:
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "lock graph"):
+                    VERIFY.admit_product(self.root)
+                run.assert_not_called()
 
     def test_prior_three_member_graph_cannot_hide_the_exchange(self):
         path = self.root / "Cargo.toml"
@@ -303,6 +357,8 @@ class ProductAdmissionTests(unittest.TestCase):
         path = self.root / "crates/ntp-exchange/Cargo.toml"
         original = path.read_text()
         wire = 'ntp-wire={version="=0.0.0",path="../ntp-wire"}'
+        core = 'time-core={version="=0.0.0",path="../time-core"}'
+        dev_table = '[dev-dependencies]\n' + core + '\n'
         variants = [original.replace(wire, value) for value in (
             'ntp-wire="=0.0.0"',
             'ntp-wire={version="=0.0.1",path="../ntp-wire"}',
@@ -314,10 +370,27 @@ class ProductAdmissionTests(unittest.TestCase):
             '')]
         variants.extend((original.replace('path="../time-domain"', 'path="../ntp-wire"'),
                          original.replace('name="ntp-exchange"\nversion="0.0.0"',
-                                          'name="ntp-exchange"\nversion="0.1.0"')))
+                                          'name="ntp-exchange"\nversion="0.1.0"'),
+                         original.replace(dev_table, ''),
+                         original.replace(dev_table, core + '\n'),
+                         original.replace('[dev-dependencies]\n', core + '\n[dev-dependencies]\n'),
+                         original.replace('[dev-dependencies]', '[build-dependencies]'),
+                         original.replace('[dev-dependencies]', "[target.'cfg(windows)'.dev-dependencies]")))
+        variants.extend(original.replace(core, value) for value in (
+            'time-core="=0.0.0"',
+            'time-core={path="../time-core"}',
+            'time-core={version="=0.0.1",path="../time-core"}',
+            'time-core={version="=0.0.0",path="../time-domain"}',
+            'time-core={version="=0.0.0",path="/outside/time-core"}',
+            'time-core={version="=0.0.0",path="../time-core",package="time-domain"}',
+            'time-core={version="=0.0.0",path="../time-core",optional=true}',
+            'time-core={version="=0.0.0",path="../time-core",default-features=false}',
+            'time-core={version="=0.0.0",path="../time-core",features=[]}',
+            'time-core={workspace=true}',
+            ''))
         variants.extend(original + extra for extra in (
             '\ngarde="=0.23.0"\n', '\n[features]\nother=[]\n',
-            '\n[dev-dependencies]\nserde="1"\n', '\n[build-dependencies]\nserde="1"\n',
+            '\nserde="1"\n', '\n[build-dependencies]\nserde="1"\n',
             '\n[target.\'cfg(windows)\'.dependencies]\nserde="1"\n', '\n[lib]\nproc-macro=true\n'))
         VERIFY.admit_product(self.root)
         for candidate in variants:
@@ -333,7 +406,9 @@ class ProductAdmissionTests(unittest.TestCase):
         original = path.read_text()
         for edges in ('', 'dependencies=[]\n', 'dependencies=["ntp-wire"]\n',
                       'dependencies=["time-domain"]\n',
-                      'dependencies=["ntp-wire","time-domain","garde"]\n'):
+                      'dependencies=["ntp-wire","time-domain"]\n',
+                      'dependencies=["ntp-wire","time-core"]\n',
+                      'dependencies=["ntp-wire","time-core","time-domain","garde"]\n'):
             with self.subTest(edges=edges):
                 path.write_text(original.replace(EXCHANGE_LOCK,
                     '[[package]]\nname="ntp-exchange"\nversion="0.0.0"\n' + edges))
@@ -539,6 +614,23 @@ class ExecutionAccountingTests(unittest.TestCase):
         with self.assertRaises(VERIFY.ENV.Incomplete):
             VERIFY.summarize_test_counts(records)
 
+    def test_kernel_commands_and_release_discriminator_are_required(self):
+        rows = dict(VERIFY.commands("portable"))
+        for lane in ("product-tests", "doctests", "optimized-tests"):
+            command = rows[lane + ":time-core"]
+            self.assertEqual(command[command.index("--package") + 1], "time-core")
+        command = rows["optimized-tests:time-core"]
+        self.assertEqual(command[command.index("--cargo-profile") + 1], "release")
+        self.assertIn("--no-tests=fail", command)
+        self.junit.write_text('<testsuites><testsuite name="time-core">'
+                              '<testcase name="ordinary_neighbor"/></testsuite></testsuites>')
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "discriminator"):
+            VERIFY.validate_test_result("optimized-tests:time-core", "", self.work)
+        self.junit.write_text('<testsuites><testsuite name="time-core">'
+                              '<testcase name="release_build_preserves_regression_admission"/>'
+                              '</testsuite></testsuites>')
+        self.assertEqual(VERIFY.validate_test_result("optimized-tests:time-core", "", self.work)["executed"], 1)
+
     def test_exchange_commands_require_release_and_ordinary_execution(self):
         rows = dict(VERIFY.commands("portable"))
         self.assertIn("product-tests:ntp-exchange", rows)
@@ -565,7 +657,7 @@ class ExecutionAccountingTests(unittest.TestCase):
 
     def test_protocol_package_commands_are_explicit_and_nonempty(self):
         rows = dict(VERIFY.commands("portable"))
-        for package in ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange"):
+        for package in ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core"):
             with self.subTest(package=package):
                 self.assertIn("--no-tests=fail", rows["product-tests:" + package])
                 command = rows["product-tests:" + package]
@@ -646,10 +738,10 @@ class ExecutionAccountingTests(unittest.TestCase):
             self.assertIn("--doc", rows["doctests:" + package])
         self.assertEqual(set(rows), {"format", "compiler", "clippy", "rustdoc",
                                     "product-tests:nevrotick-ui", "product-tests:ntp-wire", "product-tests:time-domain",
-                                    "product-tests:ntp-exchange",
+                                    "product-tests:ntp-exchange", "product-tests:time-core",
                                     "doctests:nevrotick-ui", "doctests:ntp-wire", "doctests:time-domain",
-                                    "doctests:ntp-exchange", "optimized-tests:time-domain",
-                                    "optimized-tests:ntp-exchange"})
+                                    "doctests:ntp-exchange", "doctests:time-core", "optimized-tests:time-domain",
+                                    "optimized-tests:ntp-exchange", "optimized-tests:time-core"})
 
     def test_ui_report_is_removed_before_protocol_test_command(self):
         self.junit.write_text('<testsuites><testsuite name="nevrotick-ui"><testcase/></testsuite></testsuites>')
@@ -685,7 +777,7 @@ class ExecutionAccountingTests(unittest.TestCase):
 
     def test_package_and_aggregate_accounting_require_both_test_layers(self):
         records = [{"lane": kind + ":" + package, "tests": {"package": package, "executed": count}}
-                   for package, count in (("nevrotick-ui", 3), ("ntp-wire", 2), ("time-domain", 4), ("ntp-exchange", 6))
+                   for package, count in (("nevrotick-ui", 3), ("ntp-wire", 2), ("time-domain", 4), ("ntp-exchange", 6), ("time-core", 8))
                    for kind in ("product-tests", "doctests")]
         records.append({"lane": "optimized-tests:time-domain", "tests": {
             "package": "time-domain", "executed": 5,
@@ -693,12 +785,16 @@ class ExecutionAccountingTests(unittest.TestCase):
         records.append({"lane": "optimized-tests:ntp-exchange", "tests": {
             "package": "ntp-exchange", "executed": 7,
             "test_names": ["release_build_preserves_exchange_admission"]}})
+        records.append({"lane": "optimized-tests:time-core", "tests": {
+            "package": "time-core", "executed": 9,
+            "test_names": ["release_build_preserves_regression_admission"]}})
         self.assertEqual(VERIFY.summarize_test_counts(records),
                          {"by_package": {"nevrotick-ui": {"product-tests": 3, "doctests": 3},
                                          "ntp-wire": {"product-tests": 2, "doctests": 2},
                                          "time-domain": {"product-tests": 4, "doctests": 4, "optimized-tests": 5},
-                                         "ntp-exchange": {"product-tests": 6, "doctests": 6, "optimized-tests": 7}},
-                          "tests_executed": 15, "doctests_executed": 15, "optimized_tests_executed": 12})
+                                         "ntp-exchange": {"product-tests": 6, "doctests": 6, "optimized-tests": 7},
+                                         "time-core": {"product-tests": 8, "doctests": 8, "optimized-tests": 9}},
+                          "tests_executed": 23, "doctests_executed": 23, "optimized_tests_executed": 21})
         for incomplete in (records[:-1], records[:-2] + records[-1:], records[:2], records + records[:1],
                            [{"lane": "product-tests:ntp-wire", "tests": {"package": "nevrotick-ui", "executed": 99}}]):
             with self.subTest(records=incomplete), self.assertRaises(VERIFY.ENV.Incomplete):

@@ -75,7 +75,9 @@ def analyze(tools: dict, root: Path, scratch: Path) -> None:
     wrapper.chmod(0o700)
     # Private HOME prevents additional git/analyzer configuration discovery.
     # Explicit --offline is important: no ambient GitHub token reaches analysis.
-    environment = {"PATH": "/usr/bin:/bin", "HOME": str(scratch), "LANG": "C.UTF-8"}
+    # Bound Go's actionlint scheduler; external ShellCheck processes are separate.
+    environment = {"PATH": "/usr/bin:/bin", "HOME": str(scratch), "LANG": "C.UTF-8",
+                   "GOMAXPROCS": "12"}
     actionlint = [str(tools["actionlint"]), "-oneline", "-config-file", str(config),
                   "-shellcheck", str(wrapper), "-pyflakes="]
     zizmor = [str(tools["zizmor"]), "--offline", "--pedantic", "--no-config",

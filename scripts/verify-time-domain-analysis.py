@@ -24,6 +24,7 @@ SPEC = importlib.util.spec_from_file_location("time_domain_shared", ROOT / "scri
 COMMON = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(COMMON)
 ANALYSIS, PRODUCT, PREPARE = COMMON.ANALYSIS, COMMON.PRODUCT, COMMON.PREPARE
+RUNTIME = COMMON.RUNTIME
 Incomplete = COMMON.Incomplete
 SUBJECTS = {name: f"crates/time-domain/src/{name}.rs"
             for name in ("coordinate", "era", "exchange", "clock", "rounding")}
@@ -191,7 +192,7 @@ def read_policy(root):
                 "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
                 "maximum_mutants": 512, "coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
                 "mutation_build_seconds": 90, "mutation_test_seconds": 60, "contracts_wall_seconds": 300,
-                "jobs": 1, "test_threads": 2}
+                "jobs": RUNTIME.MAX_JOBS, "test_threads": RUNTIME.MAX_JOBS}
     if any(type(policy.get(key)) is not type(value) or policy.get(key) != value for key, value in required.items()):
         raise Incomplete("Unreviewed time-domain analysis scope, threshold or budget.")
     COMMON.admit_mutation_equivalences(root, SCOPE, policy)
@@ -314,7 +315,7 @@ def contracts(session, policy, report):
     deadline = time.monotonic() + policy["contracts_wall_seconds"]
     run = session.run
     output = run("contract-library", [str(session.stable / "bin/cargo"), "build", "--package", "time-domain",
-                 "--frozen", "--jobs", "1", "--lib", "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
+                 "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
     artifact = COMMON.library_artifact(output, "time-domain", "/work/source/crates/time-domain/Cargo.toml")
     dependency_copy = copy_contract_dependencies(session, artifact)
     consumers = session.work / "contract-inputs"; consumers.mkdir(mode=0o700)

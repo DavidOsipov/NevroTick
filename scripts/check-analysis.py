@@ -274,7 +274,7 @@ def check_inventory(base, specification, stable=None):
 
     # Directory traversal remains a single no-follow pass. Bounded parallel
     # streaming reads avoid serial Drvfs round trips without weakening hashes.
-    with ThreadPoolExecutor(max_workers=4) as workers:
+    with ThreadPoolExecutor(max_workers=12) as workers:
         for _ in workers.map(verify_file, files):
             pass
     return {"name": specification["name"], "sha256": expected_hash, "entries": len(found),

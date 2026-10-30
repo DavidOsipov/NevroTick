@@ -1,7 +1,7 @@
-# UI-M0, pure wire, checked time-domain and fixture exchange ownership.
+# UI-M0, pure wire, checked time-domain, fixture exchange, numerical owners and atomic fixture-history ownership.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
-status = "ui-m0-wire-time-domain-and-exchange-scope-recorded-qualification-candidate-specific"
+status = "five-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
@@ -15,6 +15,11 @@ security_modules = [
     { name = "time-nanosecond-rounding", package = "time-domain", files = ["crates/time-domain/src/rounding.rs"], scope = "checked ties-even signed nanosecond conversion and exact residuals; no FILETIME or clock correction" },
     { name = "exchange-context-construction", package = "ntp-exchange", files = ["crates/ntp-exchange/src/context.rs"], scope = "private checked fixture identities, generations, token and timing context; no native identity or entropy claims" },
     { name = "exchange-current-request-admission", package = "ntp-exchange", files = ["crates/ntp-exchange/src/association.rs"], scope = "single-slot current binding and request guards, receive completion and private result construction; no authentication, eligible sample or clock authority" },
+    { name = "regression-checked-construction-and-fit", package = "time-core", files = ["crates/time-core/src/regression.rs"], scope = "synthetic point/batch/private result construction and bounded coefficient fit; no eligible samples, history, confidence, selection or clock authority" },
+    { name = "residual-statistic-construction-and-publication", package = "time-core", files = ["crates/time-core/src/regression/residuals.rs"], scope = "fresh associated line plus checked weighted SSE, residual scale and normalized data variance; mandatory scalar validation and exact typed errors; no uncertainty, history, eligibility or clock authority" },
+    { name = "fixture-observation-normalization", package = "time-core", files = ["crates/time-core/src/regression/normalization.rs"], scope = "checked fixture context/Q33 admission and exact newest-reference normalization to a fresh owned FitInput; bounded read-only point observation; no history, eligible sample, native clock or authenticated provenance" },
+    { name = "fixture-history-atomic-append-and-report", package = "time-core", files = ["crates/time-core/src/regression/history.rs"], scope = "exclusive bounded fixture append, context/order admission, staged oldest-only replacement and failure-atomic same-input report commit; no production retention, prune/reset/freshness, provenance, native clock or correction authority" },
+    { name = "fixture-residual-runs-and-suffix-selection", package = "time-core", files = ["crates/time-core/src/regression/runs.rs"], scope = "bounded immutable fixture suffix search, extended residual runs, checked stage/position errors and associated same-fit diagnostics; no history pruning, source selection, physical uncertainty or clock authority" },
 ]
 critical_files = [
     "crates/nevrotick-ui/src/model.rs",
@@ -30,6 +35,11 @@ critical_files = [
     "crates/time-domain/src/rounding.rs",
     "crates/ntp-exchange/src/context.rs",
     "crates/ntp-exchange/src/association.rs",
+    "crates/time-core/src/regression.rs",
+    "crates/time-core/src/regression/residuals.rs",
+    "crates/time-core/src/regression/normalization.rs",
+    "crates/time-core/src/regression/history.rs",
+    "crates/time-core/src/regression/runs.rs",
 ]
 feature_matrix = [
     { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
@@ -38,6 +48,8 @@ feature_matrix = [
     { package = "ntp-wire", target = "x86_64-pc-windows-msvc", scope = "pure library and test-consumer compilation; native authority evidence separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-domain", target = "x86_64-unknown-linux-gnu", scope = "checked scalar/era/exchange/clock/rounding; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-domain", target = "x86_64-pc-windows-msvc", scope = "pure domain library and test-consumer compilation; native mappings and clock effects remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "ntp-exchange", target = "x86_64-unknown-linux-gnu", scope = "pure fixture association contracts and state transitions; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "ntp-exchange", target = "x86_64-pc-windows-msvc", scope = "pure association library and external test-consumer compilation; no native transport or clock qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "ntp-exchange", target = "x86_64-unknown-linux-gnu", scope = "pure fixture association and test-only time-core composition; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "ntp-exchange", target = "x86_64-pc-windows-msvc", scope = "pure association library and test-only time-core consumer compilation; no native transport or clock qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "time-core", target = "x86_64-unknown-linux-gnu", scope = "checked fixture history/normalization, coefficient, associated residual-statistics and residual-runs owners; ordinary and optimized tests plus independently audited doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "pure fixture history/normalization/coefficient/residual/runs owners and external test-consumer compilation; no native clock, uncertainty or statistical eligibility qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
 ]

@@ -8,8 +8,8 @@
   "mutation_wall_seconds": 1200,
   "mutation_build_seconds": 90,
   "mutation_test_seconds": 60,
-  "jobs": 1,
-  "test_threads": 2,
+  "jobs": 12,
+  "test_threads": 12,
   "coverage_guided_fuzzing": {
     "status": "admitted-test-only-source",
     "scope": "fixed GNU-host header and complete no-legacy-MAC framing harness only; no production graph or distribution admission",

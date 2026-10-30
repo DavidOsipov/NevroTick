@@ -72,6 +72,7 @@ name = "ntp-exchange"
 version = "0.0.0"
 dependencies = [
  "ntp-wire",
+ "time-core",
  "time-domain",
 ]
 
@@ -130,6 +131,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "time-core"
+version = "0.0.0"
+dependencies = [
+ "garde",
+ "time-domain",
 ]
 
 [[package]]

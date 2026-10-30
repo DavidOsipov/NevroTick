@@ -500,7 +500,7 @@ def build(args, report):
     run("observer-format", ["rustfmt", "--edition", "2024", "--check", "/work/fixture/" + OBSERVER])
     cargo_profile = "dev" if args.profile == "debug" else args.profile
     cargo = ["cargo", "--config", f'target.{TARGET}.linker="/work/linker"', "build",
-             "--package", "time-domain", "--lib", "--frozen", "--jobs", "1", "--target", TARGET,
+             "--package", "time-domain", "--lib", "--frozen", "--jobs", "12", "--target", TARGET,
              "--profile", cargo_profile, "--message-format=json"]
     cargo_output = run("library-build", cargo)
     actual = artifact_path(cargo_output, args.profile)

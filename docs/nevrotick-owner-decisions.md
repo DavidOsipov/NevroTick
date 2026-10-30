@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.0  
-**Decision date:** 29 October 2026, Asia/Tbilisi  
+**Document:** NV-DEC-001, revision 1.1<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -25,6 +25,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
 | OD-05 | Accept the Foundation publisher display; David Osipov is the human approver; use OpenPGP signatures initially if free Authenticode is unavailable | **Accepted release policy** | Provider eligibility or a qualified OpenPGP release process; exact artifacts, key identity, installed-file trust and Windows compatibility evidence |
 | OD-06 | Leave remaining research questions documented for another AI to investigate | **Deferred research** | The companion brief names questions, owners, evidence and stop conditions; deferral grants no implementation waiver |
+| OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -216,3 +217,42 @@ References were inspected on 29 October 2026. Mutable provider policies must be 
 - **S16:** [Microsoft unsigned MSIX testing feature](https://learn.microsoft.com/en-us/windows/msix/package/unsigned-package).
 - **S17:** [RFC 8633, source count and diversity](https://www.rfc-editor.org/rfc/rfc8633.html#section-3.2).
 - **S18:** [User-supplied NTS directory](https://github.com/jauderho/nts-servers); see the research brief for its inspected revision and operator evidence.
+
+## 11. OD-07 — x64 baseline and runtime optimization
+
+**Owner/date:** David Osipov, 30 October 2026, Asia/Tbilisi. David requested
+compilation for v2 with dynamic higher-level optimizations, then instructed agents
+to document the research and adjust the current documents and plan because this
+optimization is required. During documentation, David revised the selected
+baseline to v3. This records the final instruction without another approval round. It establishes a required workstream, not an observed performance result.
+
+**Decision and alternatives:** Select `x86-64-v3` as the intended minimum for the
+Windows x64 product and ahead-of-time, runtime-selected specialized functions.
+The previous generic `x86-64` floor remains the currently admitted implementation
+until its controlled migration. Keeping that floor indefinitely would not deliver
+the selected compatibility change; globally compiling for v4 would exclude
+the intended v3 fallback machines. Do not use `target-cpu=native` for distributed
+artifacts. Additional v4 capabilities authorize only functions whose full enabled feature
+set is available; CPU capability alone does not establish a speed benefit.
+
+**Evidence and limits:** The [research report](supporting-reviews/x86-runtime-optimization.md)
+records primary Rust and processor-level sources, the pinned compiler's feature
+queries and limitations. There are no new native Windows compatibility or
+performance results. The decision does not admit an unreviewed dependency,
+unsafe numerical shortcut, weaker mitigation, new floating-point environment or
+crypto provider. AES acceleration remains a separate per-feature provider choice.
+
+**Implementation/validation:** The build owner implements baseline admission and
+the affected checker/configuration changes; each measured kernel owner and an
+independent reviewer qualify the dispatch, fallback and mathematical contract.
+The package owner proves that a baseline-compatible prerequisite check rejects
+unsupported CPU/OS/guest combinations before any v3 payload is started. Preserve one complete
+MSI and existing process/privilege boundaries. Qualification must cover actual
+supported CPU/OS/VM rows, masked/disabled vector support, numerical and rejection
+parity, latency/resources/artifact size and existing CHECK-19/20/21/25/26 gates.
+
+Use [hardening §6.7](windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch)
+and the [execution workstream](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream).
+Independent pure work, including the current S1.3 fixture, can continue. Revisit
+only for incompatible supported-machine evidence or a material measured tradeoff;
+do not silently replace this decision with a wider CPU requirement.

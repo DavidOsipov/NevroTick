@@ -15,8 +15,9 @@ This is a bounded build-policy task under the existing
   one codegen unit; `verify-release` inherits these settings. Healthy configuration
   passes, changed/missing optimization settings and mitigation/CPU overrides fail.
 - Preserve overflow checks, explicit unwind qualification policy, nonstripped
-  matching symbols and Windows CFG/ASLR/DEP. The supported CPU floor remains
-  generic x86-64; no `native`, v2/v3, AVX2 or new platform promise is adopted.
+  matching symbols and Windows CFG/ASLR/DEP. The original qualified configuration
+  retains generic x86-64. OD-07's later v3 direction and pending migration are
+  recorded in the follow-up below; historical checks do not qualify that floor.
 - Windows compiler/Clippy and release cross-link answer build questions. CHECK-21
   native performance, effective mitigations, UI instrumentation and release gates
   remain separate. No faster-code claim, public-network training, tool installation,
@@ -160,3 +161,60 @@ all 39 scoped local link targets and whitespace checks. Parsed Cargo settings ar
 unchanged, comment-affected manifest input hashes match, and the Git index digest
 is unchanged. No application/native test or benchmark was rerun for these prose
 and input-identity changes.
+
+## Required v3 baseline and runtime-dispatch follow-up — 30 October 2026
+
+**Status:** owner direction and implementation plan recorded; CPU configuration,
+runtime fast paths, native compatibility and performance qualification pending.
+David first proposed v2, then explicitly revised the baseline to **x86-64-v3**.
+[OD-07](../docs/nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+is the final accepted direction. Earlier generic-build observations above remain
+historical results for their exact flags.
+
+The maintained [research](../docs/supporting-reviews/x86-runtime-optimization.md)
+records Rust function multiversioning and OS-aware detection, cumulative processor
+levels, pinned compiler feature queries, mitigation-vector custody, numerical
+constraints and a supported/unsupported native matrix. The [architecture](../docs/windows-time-architecture.md#182-dependency-and-build-controls)
+and [hardening §6.7](../docs/windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch)
+now require a v3 migration and measured higher-feature optimization. The
+[execution workstream](../docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+assigns build, platform/package, kernel, independent QA and performance owners.
+
+Next action: at the next single-owner build-policy checkpoint, prepare a v3
+candidate with coordinated checker/control and input-binding changes. Preserve
+CFG/ASLR/DEP, checked arithmetic, fault policy, symbols and the current graph.
+Qualify a lower-baseline-compatible prerequisite before starting v3 payloads;
+missing AVX OS state rejects v3, while missing only AVX-512 state selects usable
+v3. Then profile a real admitted workload and compare narrowly specialized
+AVX-512 functions against the v3 path. AVX2 is already in v3. No global v4,
+unsafe pure-core exception, relaxed FP arithmetic or automatic provider admission
+follows from the decision. Existing CHECK-19/20/21/25/26 remain.
+
+The original local [implement-cpu-dispatch skill](../.agents/skills/implementation/implement-cpu-dispatch/SKILL.md)
+provides implementation/review instructions; the existing performance skill owns
+measurement. It distinguishes pure selection controls from actual supported
+instruction execution, and a feature probe from a demonstrated optimization.
+No compiler flag, Rust function, dependency, native setting or historical receipt
+is changed by this documentation/skill amendment. Record actual implementation
+and qualification here when reached; do not infer them from the plan.
+
+Documentation/skill validation: a fresh-context independent review found no
+material policy, safety or plan-consistency gap. The new leaf passed the skill
+validator; the package checker admitted all 61 leaves and its 25 regression
+controls passed. One fresh-context use exercise repaired a pure selector model:
+the original failed 80 of 128 independently checked feature/baseline/enablement
+cases, while the resulting artifact passed all 128. Fixture costs were supplied
+facts; no SIMD instructions or product benchmarks were executed, and no general
+agent-quality improvement is inferred from this one exercise. Link/anchor and
+whitespace checks cover this amendment; the root docs checksum manifest remains
+absent. Task evidence is retained under
+`~/.local/share/nevrotick/cpu-policy-20261030-ruh2q4my/`.
+
+The subsequent external-feedback review clarified full-v4 bundles versus narrow
+kernels and Rust's existing atomic feature cache. The research and skill now
+distinguish cached CPU discovery from an application's cached kernel choice;
+typed owner/optional `OnceLock` selection is preferred when useful, with measured
+lookup cost and cold/concurrent initialization checks. No blanket five-feature
+attribute rule, per-packet-syscall assumption or custom `AtomicPtr` requirement
+was adopted. The earlier 128-case exercise covers selector safety, not shared
+cache initialization or native instruction execution.

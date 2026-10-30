@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Rust CPU dispatch"
+  short_description: "Gate CPU-specific Rust paths and preserve safe fallbacks"
+  default_prompt: "Use $implement-cpu-dispatch to implement or review the selected NevroTick CPU baseline and runtime dispatch, verify exact feature and fallback safety, and qualify numerical behavior and measured benefit within the task scope."

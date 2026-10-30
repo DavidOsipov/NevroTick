@@ -32,6 +32,11 @@ Keep the standard compiler pipeline and ordinary floating-point semantics unless
 a bounded, independently checked experiment justifies a change. Raw LLVM flags,
 extra pass lists and numerical shortcuts are not a default optimization recipe.
 
+For CPU-baseline migration or per-function runtime feature selection, use
+[implement-cpu-dispatch](../implement-cpu-dispatch/SKILL.md). OD-07 selects an
+intended v3 floor; inspect the actual admitted configuration before changing it.
+That specialized workflow does not replace the measurement and acceptance below.
+
 ## Establish the cause before changing it
 
 1. Name the observed cost, useful-work outcome and affected owner/callers.

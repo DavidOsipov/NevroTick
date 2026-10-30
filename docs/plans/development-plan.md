@@ -4,7 +4,7 @@
 **Status:** reviewed; ready to assign the next bounded task; implementation phases remain open  
 **Inspected source baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`, initially clean  
 **Immediate priority:** secure, bounded and performant NTP/NTS acquisition, with independently verified algorithms  
-**Current task:** [S1.2a private weighted-fit kernel authoring](../../tasks/s1.2-regression-readiness.md), following [S1.1e's qualified private deterministic fixture harness](../../tasks/s1.1-deterministic-harness.md) and [S1.1d's exchange association](../../tasks/s1.1-exchange-association.md). Source/graph/budget authoring contracts are reviewed; dependency execution and shared changing build-policy integration remain separate gates.
+**Current task:** [S1.3 source-selection fixture](../../tasks/s1.3-source-selection-readiness.md), following the separately qualified bounded [main S1.2 runs integration](../../tasks/s1.2-regression-readiness.md#main-fixture-qualification-result-30-october-2026). Checked constructor, batch and evaluator progress belongs to the live S1.3 record; old five-owner receipts do not qualify the new owner. The required [OD-07 CPU workstream](#81-x64-baseline-and-runtime-optimization-workstream) starts at the next controlled build-policy checkpoint and continues with measured runtime specialization. Independent S1.3 work can proceed; full S1.2/P1, native Windows and release gates remain open.
 
 Agent navigation: [implementation contracts](#3-mandatory-explicit-contracts-during-implementation),
 [phase skill map](#5-required-skill-reading-and-use-by-phase),
@@ -32,11 +32,11 @@ exact-candidate approval gate.
 
 | Area | Observed repository state | Consequence for the next agent |
 | --- | --- | --- |
-| Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI crate](../../crates/nevrotick-ui/Cargo.toml), inert [wire owner](../../crates/ntp-wire/Cargo.toml) and checked [time-domain owner](../../crates/time-domain/Cargo.toml) exist. | Inspect current files and linked task evidence; numerical source does not establish the complete core. |
+| Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml) and pure [time-core](../../crates/time-core/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source does not establish the complete core. |
 | UI | `main` → native adapter → checked fixture model → standard Win32 controls. Preview edits are transient. | Keep UI-M0 isolated; no network, production IPC, persistence, service, elevation or clock effects. |
 | UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
-| Production software | Header/framing and explicit numerical arithmetic exist; current-exchange admission, estimator/selection core, network engine, broker, SCM services, production IPC and MSI remain planned. | Ownership names below are proposed modules/crates; create only what an authorized slice needs. |
-| Dependencies | Four local owners retain the sixteen-package UI-M0 external cohort; time-domain uses the existing minimal garde edge and ntp-exchange joins the two pure owners through local-only edges. Production TLS/provider/AEAD and service graphs remain subject to admission. | Current S1.1c graph evidence admits only its recorded source/features. Older “no Cargo workspace” statements in retained research are historical, not source inventory. |
+| Production software | Header/framing, checked arithmetic, fixture exchange and pure regression/history exist; production sample admission, source selection, network engine, broker, SCM services, production IPC and MSI remain planned. | Ownership names below are proposed modules/crates; create only what an authorized slice needs. |
+| Dependencies | Five local owners retain the sixteen-package UI-M0 external cohort; exchange and core use reviewed local edges and the existing minimal garde graph. Production TLS/provider/AEAD and service graphs remain subject to admission. | Integrated graph checks apply to their recorded source/features. Older “no Cargo workspace” statements in retained research are historical, not source inventory. |
 
 Keep one evidence chain: this plan records phase readiness and links to concrete
 task evidence; existing UI work stays in `tasks/ui-m0.md`. New development tasks
@@ -486,49 +486,36 @@ licensing and David's approval for the exact candidate.
 
 ## 7. Next executable task for a development agent
 
-**Task:** S0.1/R-01 source evaluation plus S1.1 contract/oracle preparation. This
-can start after a development/research instruction; it does not require UI-M0 to
-finish. The present planning turn executes no product development.
+**Implementation:** continue the existing [S1.3 fixture task](../../tasks/s1.3-source-selection-readiness.md)
+in the main checkout. S1.1 and the exchange-to-history fixture seam already exist;
+reconcile the latest S1.2/S1.3 addenda before assigning work rather than repeating
+the original S0.1/S1.1 preparation. Existing S0.1 provider/platform gates still
+block only their dependent integration and claims.
 
-1. Recheck root, HEAD, all dirty state, applicable instructions and this plan.
-   Read the common/P0 skills, section 3 contracts and Chrony port recipe. Identify
-   one owner for source/graph admission and one independent reviewer.
-2. Start with the exchange-validation files in section 4 and their callers;
-   inspect required shared types and source-lifecycle assumptions. Compare one
-   pinned independent implementation and current protocol errata. Record exact
-   source bodies/pins/notices and a bounded port ledger in the task evidence.
-3. Specify time units/sign/era, packet and extension lengths, request correlation,
-   logical source identity, generation semantics, rejection atomicity and all
-   allocation/error caps for this slice. An unspecified bound is a named blocker
-   for that admission path, not permission to choose an arbitrary permissive one.
-4. Prepare independent literal valid/malformed/replay/overflow/era cases and the
-   timestamp example in P1. Name the production entry point each future test must
-   reach. Read-only vectors can precede code; they do not establish behavioral RED.
-5. In parallel, conduct the finite TLS/AEAD feasibility investigation under
-   OPEN-1/8: exact package/source parity, feature closure, selected grants,
-   Windows verifier/exporter/native ownership and execution arrangement. Qualify
-   the CNG route first, the bounded Schannel alternative if necessary. Keep
-   AWS-LC/ring and all other unadmitted graphs held; do not invent cryptography.
-6. Return the smallest implementation-ready S1.1 card: exact proposed owner/files,
-   admitted graph, contracts, controls, commands, bounds, remaining gates and exit.
-   If the selected source/graph is admitted and the next request authorizes code,
-   implement only that slice, not the whole engine. Shared manifests, lockfile and
-   policy/runner changes remain with their single assigned owner.
+1. Recheck root, HEAD/index/working bytes, active owners and the selected task's
+   exact source/graph admission. Follow the common/P1 skills and section 3 contracts.
+2. Use the reviewed interval/minimum, batch, continuous-axis majority/witness and
+   rejection-priority contracts. Advance from the last reached owner: checked
+   constructor evidence cannot count as batch/evaluator RED or GREEN. Preserve
+   independently configured minimum agreement and no single-peer fallback.
+3. Establish independent accepted/rejected neighbors and reached behavioral
+   controls, then implement the smallest ready owner. Preserve exact source
+   provenance, private construction, capacity/duplicate rules and failure atomicity.
+4. Qualify the integrated candidate with selected contract, format/compiler/Clippy,
+   ordinary/optimized and applicable coverage/mutation evidence. Use one artifact
+   owner per worker and retain actual failures/incomplete observations. A passing
+   historical five-owner campaign is no six-owner or full P1 result.
+5. Update that task's short current status, exact evidence and next permitted
+   action. Native, production eligibility, principal/supporter policy and full
+   P1 remain separate obligations.
 
-**Allowed outputs:** source/alternative comparison, port ledger, contract/limit
-table, independent fixture specifications, dependency decision evidence, next
-slice and phase-readiness entry. **Forbidden effects:** developer clock/service/
-trust-store changes, public-server stress, executing unadmitted dependency code,
-production UI integration or publication. Controlled protocol peers replace public
-servers for routine validation. Any approved later public interoperability check
-obeys operator rate policies and cannot replace hostile local fixtures.
-
-**Exit:** independent review can trace every selected rule to its owner, input,
-output/error/effect contract, source rights, valid/fault oracle and adequate
-environment. Run the applicable P0 testing/review skills and final qualification;
-label this a source/contract readiness result. It is not P0 completion, NTS
-interoperability or Windows qualification. A missing graph/trust fact blocks its
-dependent integration only.
+**Required parallel build-policy work:** execute the baseline-admission stage in
+[section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) at the next
+owned configuration checkpoint, before claiming the new Windows x64 CPU profile.
+Keep the one writer for shared Cargo/policy/checker inputs explicit. A task may
+prepare isolated candidates while another owns the shared source; do not overwrite
+its admission or rewrite historical receipts. This planning amendment runs no
+product code, Windows mutation, signing or publication.
 
 ## 8. Performance, limits and qualification environments
 
@@ -569,6 +556,42 @@ measurements; neither alone proves leak freedom. Pure host tests, Windows
 cross-builds, native execution, package lifecycle and final artifact trust are
 separate evidence layers.
 
+### 8.1 x64 baseline and runtime optimization workstream
+
+**Required owner direction:** [OD-07](../nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+selects `x86-64-v3` as the intended Windows x64 minimum and runtime-selected
+higher-feature optimization. Read [the research](../supporting-reviews/x86-runtime-optimization.md)
+and [hardening §6.7](../windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch).
+The currently admitted flags are still generic `x86-64`; this document changes the
+planned compatibility contract, not executed configuration or measured speed.
+V3 already includes AVX2: do not create a redundant AVX2 tier just to populate a
+three-level framework. Runtime AVX-512 paths use their exact additional features;
+AES/PCLMUL/VAES remain independently qualified provider capabilities.
+
+The existing [build-optimization task](../../tasks/build-optimization.md) owns
+candidate identity, admission, observations and remaining work. Use
+[CPU dispatch implementation](../../.agents/skills/implementation/implement-cpu-dispatch/SKILL.md),
+[optimize-rust-performance] and [qa-performance-resources] when carrying out the
+changed guarantee. Scope stages to the available implementation and fixtures;
+no new product crate, runtime or generic dispatch framework is required.
+
+| Stage / owner | Next action and observable exit | Existing acceptance mapping |
+| --- | --- | --- |
+| Baseline admission / build owner, next controlled configuration checkpoint | Migrate the Windows target-specific CPU entry to v3 with the entire mitigation vector. Update exact checker/control expectations, affected policy/input bindings and skills measurement guidance together; preserve staged/concurrent work and historical results. Check actual package/feature/target/native/prebuilt inputs, portable and optimized arithmetic, Windows compiler/Clippy/link artifacts and useful failure propagation. No unreviewed global v4, `native` or ambient flag replacement. | CHECK-19/20/25/26; P1 S1.5 and Windows artifact rows |
+| Compatibility / platform and package owners | Declare CPU/OS/VM rows; implement a lower-baseline-compatible prerequisite check before starting any v3 payload. Qualify v3 CPU plus OS vector-state availability, below-v3 refusal and masked guest features. Keep one complete MSI and existing helper privilege/lifecycle constraints; coordinate its final delivery with P6. No unsupported-machine or v3 shipping claim before actual observations. | CHECK-19/20/26; S0.6 and P6 package compatibility |
+| Hotspot and kernel / affected algorithm or crypto owner | Profile a representative admitted workload and predeclare useful-work metrics, finite bounds, guard metrics and a decision rule. Inspect emitted code before adding an optimized function. Prefer an admitted provider's existing crypto dispatch. Prepare meaningful AVX-512 candidates only where data justify them, while preserving a tested v3 implementation. This stage is required evaluation work; an unused probe is no delivered optimization. | CHECK-7/17/21/25/26 as applicable; P1 numerical work or P2 real NTS workloads |
+| Dispatch safety and parity / implementation and independent QA owners | Declare each function's exact enabled features and safety preconditions. Challenge missing individual features and OS support, v3 fallback, forced baseline, and supported optimized paths. Synthetic inventories test selection only; executing a forced optimized path still requires real detected support. Preserve pure-core unsafe prohibitions, FP operation/intermediate-check order, exact integer results and failure atomicity. Reject changed rounding/underflow behavior without a separate algorithm decision. | CHECK-19/25/26 and affected contract/security scope |
+| Native adoption / performance and release owners | Compare baseline and each supported optimized path on named native Windows hardware/VMs with normal protections. Observe useful latency/CPU, wakeups/power where measurable, startup, memory and binary size; retain raw results and discarded candidates. Ship a specialization only when its predeclared benefit and all correctness/resource guards pass. Reconcile final payload CPU requirements and existing baseline/soak/package gates. | CHECK-19/20/21/25/26; P2 resource evaluation and P6/P7 final artifacts |
+
+Keep the v3 baseline prerequisite on the delivery path and execute meaningful
+hotspot evaluation before closing the affected performance scope. Independent
+pure S1.3 development may continue while build/native prerequisites are prepared.
+Missing hardware, provider admission or representative workloads leave their
+named stage incomplete; do not count unsupported execution, source-only feature
+lists or repeated compile success as optimization evidence. A non-beneficial
+specialization stays disabled with its evidence and revisit trigger; it does not
+justify a performance claim or silently removing the required workstream.
+
 ## 9. Verification commands, phase records and stop rules
 
 Use [TOOLING.md](../../TOOLING.md#starting-implementation) and
@@ -584,7 +607,8 @@ python3 -B scripts/verify.py --lane windows --output-dir /path/to/new-build-outp
 
 Paths above are placeholders for owned actual inputs/outputs, not literal ready
 commands. The current verifier/policy explicitly admits UI-M0, the pure
-`ntp-wire` header/framing owner and checked `time-domain` arithmetic owner.
+`ntp-wire` header/framing and checked `time-domain` arithmetic owners, fixture
+`ntp-exchange` and pure `time-core`.
 Further workspace expansion requires reviewed
 graph/policy/runner support and discriminating gate
 controls before execution. Do not weaken or bypass the verifier to make new crates

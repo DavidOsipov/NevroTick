@@ -187,8 +187,8 @@ class SupervisorControls(unittest.TestCase):
         self.assertEqual(forwarded, [{"warnings": "error", "dump-dil": False}] * 2)
 
     def test_call_resources_cannot_override_fixed_upper_bounds(self):
-        healthy = [{"threads": 1, "ram": 1}, {"threads": 2, "ram": 1024}]
-        rejected = [{key: value} for key, maximum in (("threads", 2), ("ram", 1024))
+        healthy = [{"threads": 1, "ram": 1}, {"threads": 12, "ram": 1024}]
+        rejected = [{key: value} for key, maximum in (("threads", 12), ("ram", 1024))
                     for value in (0, -1, maximum + 1, True, False, 1.0, "1", None)]
         messages = [request(1, "initialize")]
         messages.extend(request(index + 10, "tools/call", {"name": "inspect", "arguments": value})

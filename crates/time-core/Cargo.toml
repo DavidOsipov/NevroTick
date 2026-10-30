@@ -1,0 +1,16 @@
+[package]
+name = "time-core"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Pure bounded synthetic NevroTick weighted regression kernel"
+
+[dependencies]
+garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
+time-domain = { version = "=0.0.0", path = "../time-domain" }
+
+[lints]
+workspace = true

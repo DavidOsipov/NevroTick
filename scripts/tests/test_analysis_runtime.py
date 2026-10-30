@@ -1,6 +1,7 @@
 """Independent namespace controls for the shared bounded analysis runtime."""
 
 import importlib.util
+import inspect
 import json
 import os
 from pathlib import Path
@@ -223,6 +224,88 @@ class RuntimeControls(unittest.TestCase):
         for key in ("CARGO_NET_OFFLINE", "HOME", "PATH", "TMPDIR", "LD_PRELOAD"):
             with self.subTest(variable=key), self.assertRaises(RUNTIME.Incomplete):
                 self.build(environment={key: "untrusted"})
+
+    def test_worker_cargo_target_is_absent_and_reserved_in_both_modes(self):
+        def child_environment(argv):
+            namespace = argv[:argv.index("--")]
+            return [(namespace[index + 1], namespace[index + 2])
+                    for index, item in enumerate(namespace) if item == "--setenv"]
+
+        default = child_environment(self.build())
+        self.assertEqual([value for key, value in default if key == "CARGO_TARGET_DIR"],
+                         ["/work/target"])
+
+        # On the old API, observe its actual default child environment so the
+        # behavioral RED identifies the shared target, rather than a TypeError.
+        has_mode = "cargo_target_mode" in inspect.signature(RUNTIME.sandbox_command).parameters
+        worker_options = {"cargo_target_mode": "worker"} if has_mode else {}
+        worker = child_environment(self.build(**worker_options))
+        self.assertNotIn("CARGO_TARGET_DIR", [key for key, _ in worker])
+        self.assertEqual(child_environment(self.build(cargo_target_mode="shared")), default)
+        for key in ("PATH", "HOME", "TMPDIR", "CARGO_HOME", "CARGO_NET_OFFLINE",
+                    "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS", "CARGO_TERM_COLOR"):
+            self.assertEqual([value for name, value in worker if name == key],
+                             [value for name, value in default if name == key])
+
+        for options in ({}, {"cargo_target_mode": "shared"}, {"cargo_target_mode": "worker"}):
+            for key in ("CARGO_TARGET_DIR", "CARGO_BUILD_TARGET_DIR", "CARGO_BUILD_BUILD_DIR"):
+                with self.subTest(options=options, variable=key), self.assertRaises(RUNTIME.Incomplete):
+                    self.build(**options, environment={key: "/work/override"})
+        with patch.object(RUNTIME.ENV, "run") as execute:
+            for invalid in ("", "other", None, True):
+                with self.subTest(invalid=invalid), self.assertRaises(RUNTIME.Incomplete):
+                    RUNTIME.run(ROOT, self.work, ["/usr/bin/true"], cargo_target_mode=invalid)
+            execute.assert_not_called()
+
+    def test_build_parallelism_has_twelve_slots_and_explicit_serial_neighbor(self):
+        for options, expected in (({}, "12"), ({"build_jobs": 1}, "1")):
+            with self.subTest(options=options):
+                command = self.build(**options)
+                index = command.index("CARGO_BUILD_JOBS")
+                self.assertEqual(command[index + 1], expected)
+                self.assertIn("--nproc=128", command)
+        for invalid in (True, 0, -1, 13, "12", 1.0):
+            with self.subTest(invalid=invalid), self.assertRaises(RUNTIME.Incomplete):
+                self.build(build_jobs=invalid)
+        with self.assertRaises(RUNTIME.Incomplete):
+            self.build(environment={"CARGO_BUILD_JOBS": "99"})
+
+    def test_mutation_process_profile_changes_only_the_inside_namespace_task_limit(self):
+        options = {"cargo_target_mode": "worker", "build_jobs": 1}
+        default = self.build(**options)
+        selected = self.build(**options, process_limit=512)
+        self.assertEqual([item for item in default if item.startswith("--nproc=")], ["--nproc=128"])
+        self.assertEqual([item for item in selected if item.startswith("--nproc=")], ["--nproc=512"])
+        self.assertEqual([item for item in default if not item.startswith("--nproc=")],
+                         [item for item in selected if not item.startswith("--nproc=")])
+        self.assertIn("--unshare-all", selected)
+        self.assertIn("--as=8589934592", selected)
+        self.assertNotIn("CARGO_TARGET_DIR", selected)
+        self.assertEqual(selected[selected.index("CARGO_BUILD_JOBS") + 1], "1")
+
+    def test_process_limit_rejects_unknown_values_and_profile_borrowing_before_execution(self):
+        worker = {"cargo_target_mode": "worker", "build_jobs": 1}
+        invalid_values = (True, False, None, "512", 512.0, 0, -1, 127, 129, 256, 513, 1024)
+        invalid_profiles = ({}, {"cargo_target_mode": "shared", "build_jobs": 1},
+                            {"cargo_target_mode": "worker", "build_jobs": 12},
+                            {"cargo_target_mode": "worker", "build_jobs": 1, "mode": "sanitizer"})
+        with patch.object(RUNTIME.ENV, "run") as execute:
+            for value in invalid_values:
+                with self.subTest(value=value), self.assertRaises(RUNTIME.Incomplete):
+                    RUNTIME.run(ROOT, self.work, ["/usr/bin/true"], **worker, process_limit=value)
+            for options in invalid_profiles:
+                with self.subTest(options=options), self.assertRaises(RUNTIME.Incomplete):
+                    RUNTIME.run(ROOT, self.work, ["/usr/bin/true"], **options, process_limit=512)
+            execute.assert_not_called()
+
+    def test_actual_namespace_receives_admitted_jobs_instead_of_ambient_budget(self):
+        probe = "import os; print(os.environ['CARGO_BUILD_JOBS'])"
+        with patch.dict(os.environ, {"CARGO_BUILD_JOBS": "99"}):
+            for jobs in (12, 1):
+                with self.subTest(jobs=jobs):
+                    result = RUNTIME.run(ROOT, self.work, ["/usr/bin/python3", "-c", probe],
+                                         build_jobs=jobs, timeout=10)
+                    self.assertEqual(RUNTIME.ENV.require_ok(result), str(jobs))
 
     def test_sanitizer_requires_fixed_limits_and_omits_address_space_cap(self):
         argv = self.build(["/work/fuzz-target", *RUNTIME.SANITIZER_FLAGS], mode="sanitizer")

@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("exchange_analysis_shared", ROOT / "scripts/portable-analysis.py")
 COMMON = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(COMMON)
+RUNTIME = COMMON.RUNTIME
 PRODUCT = COMMON.PRODUCT
 Incomplete = COMMON.Incomplete
 SUBJECTS = {name: f"crates/ntp-exchange/src/{name}.rs" for name in ("context", "association")}
@@ -59,7 +60,7 @@ def read_policy(root):
                 "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
                 "maximum_mutants": 512, "coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
                 "mutation_build_seconds": 90, "mutation_test_seconds": 60, "contracts_wall_seconds": 300,
-                "jobs": 1, "test_threads": 2, "resource_wall_seconds": 300,
+                "jobs": RUNTIME.MAX_JOBS, "test_threads": RUNTIME.MAX_JOBS, "resource_wall_seconds": 300,
                 "resource_profile": "single-thread-fixed-fixture-v1"}
     if (set(policy) != {*required, "mutation_equivalences", "inputs_sha256", "scope"}
             or any(type(policy.get(key)) is not type(value) or policy.get(key) != value
@@ -240,7 +241,7 @@ def contracts(session, policy, report):
     """Execute a legal external consumer and require each exact negative cause."""
     deadline = time.monotonic() + policy["contracts_wall_seconds"]
     output = session.run("contract-library", [str(session.stable / "bin/cargo"), "build", "--package", "ntp-exchange",
-                         "--frozen", "--jobs", "1", "--lib", "--message-format=json"],
+                         "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--message-format=json"],
                          COMMON.remaining_timeout(deadline, 120))
     dependencies, externs, artifacts = copy_contract_dependencies(session, output)
     consumers = session.work / "contract-inputs"; consumers.mkdir(mode=0o700)
@@ -404,7 +405,7 @@ def resources(session, policy, report):
     deadline = time.monotonic() + policy["resource_wall_seconds"]
     run = session.run
     output = run("resource-library", [str(session.stable / "bin/cargo"), "build", "--package", "ntp-exchange",
-                 "--frozen", "--jobs", "1", "--lib", "--message-format=json"],
+                 "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--message-format=json"],
                  COMMON.remaining_timeout(deadline, 120))
     dependencies, externs, artifacts = copy_contract_dependencies(session, output, "resource-deps")
     source = "/work/source/" + OBSERVER

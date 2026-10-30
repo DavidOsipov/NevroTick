@@ -27,7 +27,16 @@ PUBLIC = ("/usr", "/bin", "/lib", "/lib64", "/etc/alternatives", "/etc/ld.so.cac
 PRIVATE = ("/proc", "/sys", "/dev", "/etc", "/run")
 SANITIZER_FLAGS = ("-runs=256", "-max_len=4096", "-timeout=2", "-rss_limit_mb=512",
                    "-malloc_limit_mb=256", "-max_total_time=30")
+CORE_SANITIZER_PROFILE = "time-core-s12a"
+CORE_SANITIZER_FLAGS = ("-runs=4096", "-max_len=1537", "-timeout=2", "-rss_limit_mb=512",
+                        "-malloc_limit_mb=256", "-max_total_time=15")
+# Fixed D-only history boundary; the admitted C profile above stays unchanged.
+HISTORY_SANITIZER_PROFILE = "time-core-history-s12d"
+HISTORY_SANITIZER_FLAGS = ("-runs=4096", "-max_len=1561", "-timeout=2", "-rss_limit_mb=512",
+                           "-malloc_limit_mb=256", "-max_total_time=15")
 DEFAULT_ADDRESS_SPACE = 8 * 1024 ** 3
+# Budget build/test utility work for the owner's twelve logical CPU slots.
+MAX_JOBS = 12
 
 
 def _directory(path: Path, label: str) -> Path:
@@ -141,8 +150,17 @@ def _helpers(root: Path) -> dict[str, str]:
     return admitted
 
 
-def _sanitizer(command: list[str]) -> None:
-    for required in SANITIZER_FLAGS:
+def _sanitizer(command: list[str], profile="legacy") -> None:
+    """Select one fixed reviewed profile; callers cannot supply arbitrary limits."""
+    if profile == "legacy":
+        flags = SANITIZER_FLAGS
+    elif profile == CORE_SANITIZER_PROFILE:
+        flags = CORE_SANITIZER_FLAGS
+    elif profile == HISTORY_SANITIZER_PROFILE:
+        flags = HISTORY_SANITIZER_FLAGS
+    else:
+        raise Incomplete("Unknown fixed sanitizer profile.")
+    for required in flags:
         key = required.split("=", 1)[0] + "="
         if [item for item in command if item.startswith(key)] != [required]:
             raise Incomplete("Sanitizer mode requires the fixed bounded libFuzzer flags exactly once.")
@@ -150,18 +168,32 @@ def _sanitizer(command: list[str]) -> None:
                             "-ignore_", "-handle_", "-error_exitcode=", "-timeout_exitcode="))
            for item in command):
         raise Incomplete("Sanitizer subprocess campaigns and failure-handling overrides are forbidden.")
+    if profile in {CORE_SANITIZER_PROFILE, HISTORY_SANITIZER_PROFILE}:
+        permitted = {*flags, "-artifact_prefix=/work/fuzz-artifacts/"}
+        if any(item.startswith("-") and item not in permitted for item in command[1:]):
+            raise Incomplete("Core sanitizer accepts only its exact reviewed flags.")
 
 
 def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), sealed=(), path_dirs=(),
                     environment=None, cwd: Path | None = None, mode="ordinary", cpu_seconds=120,
-                    address_space_bytes=DEFAULT_ADDRESS_SPACE) -> list[str]:
+                    address_space_bytes=DEFAULT_ADDRESS_SPACE, build_jobs=MAX_JOBS,
+                    sanitizer_profile="legacy", cargo_target_mode="shared", process_limit=128) -> list[str]:
     """Return argv with admitted helpers, absolute readonly binds and `/work`.
 
     `sealed` protects canonical input files/directories strictly inside work;
     outputs stay writable. `environment` contains only caller-reviewed values;
     ambient values are never copied. Reserved work/offline/PATH settings cannot
     be overridden. Callers admit input contents and executable payload hashes.
+    `build_jobs` bounds inner Cargo work; outer mutation workers select one.
+    `cargo_target_mode` preserves the shared target by default; `worker` omits
+    that setting so an admitted worker uses its own Cargo target configuration.
+    `process_limit=512` is reserved for a caller-admitted mutation campaign:
+    ordinary resource mode, worker-owned targets and one inner Cargo job.
+    All other invocations retain the 128-task default; neither profile changes
+    namespace isolation, memory/file/CPU limits or any host process limit.
     """
+    if type(cargo_target_mode) is not str or cargo_target_mode not in ("shared", "worker"):
+        raise Incomplete("Unknown Cargo target mode.")
     if os.geteuid() == 0:
         raise Incomplete("Run analysis as an ordinary user, never root.")
     root, work = _directory(root, "Checkout"), _directory(work, "Work")
@@ -185,12 +217,20 @@ def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), 
         raise Incomplete("Analysis command must be a nonempty literal argv list.")
     if mode not in ("ordinary", "sanitizer"):
         raise Incomplete("Unknown analysis resource mode.")
+    if type(build_jobs) is not int or not 1 <= build_jobs <= MAX_JOBS:
+        raise Incomplete("Build jobs must be an integer between 1 and 12.")
+    if type(process_limit) is not int or process_limit not in (128, 512):
+        raise Incomplete("Process limit must be exactly 128 or 512 tasks.")
+    if process_limit == 512 and (mode != "ordinary" or cargo_target_mode != "worker" or build_jobs != 1):
+        raise Incomplete("The 512-task profile requires ordinary mode, worker-owned targets and one inner job.")
     if type(cpu_seconds) is not int or not 1 <= cpu_seconds <= 3600:
         raise Incomplete("CPU budget must be an integer between 1 and 3600 seconds.")
     if type(address_space_bytes) is not int or not 256 * 1024 ** 2 <= address_space_bytes <= 64 * 1024 ** 3:
         raise Incomplete("Ordinary address-space limit is outside the admitted range.")
     if mode == "sanitizer":
-        _sanitizer(command)
+        _sanitizer(command, sanitizer_profile)
+    elif sanitizer_profile != "legacy":
+        raise Incomplete("A sanitizer profile cannot change ordinary resource policy.")
     helpers = _helpers(root)
     for name in ("home", "tmp", "cargo-home", "target"):
         (work / name).mkdir(mode=0o700, exist_ok=True)
@@ -198,12 +238,15 @@ def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), 
                "LANG": "C.UTF-8", "HOME": "/work/home", "TMPDIR": "/work/tmp",
                "TMP": "/work/tmp", "TEMP": "/work/tmp", "CARGO_HOME": "/work/cargo-home",
                "CARGO_TARGET_DIR": "/work/target", "CARGO_NET_OFFLINE": "true",
-               "CARGO_INCREMENTAL": "0", "CARGO_BUILD_JOBS": "1", "CARGO_TERM_COLOR": "never",
+               "CARGO_INCREMENTAL": "0", "CARGO_BUILD_JOBS": str(build_jobs), "CARGO_TERM_COLOR": "never",
                "RUSTUP_AUTO_INSTALL": "0"}
+    if cargo_target_mode == "worker":
+        del trusted["CARGO_TARGET_DIR"]
     for key, value in (environment or {}).items():
         if (not isinstance(key, str) or not re.fullmatch(r"[A-Z_][A-Z_0-9]*", key)
                 or not isinstance(value, str) or "\0" in value or key in trusted
-                or key in {"LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH"}):
+                or key in {"CARGO_TARGET_DIR", "CARGO_BUILD_TARGET_DIR", "CARGO_BUILD_BUILD_DIR",
+                           "LD_PRELOAD", "LD_AUDIT", "LD_LIBRARY_PATH"}):
             raise Incomplete("Invalid or reserved explicit analysis environment setting.")
         trusted[key] = value
     args = [helpers["bwrap"], "--unshare-all", "--die-with-parent", "--new-session",
@@ -221,8 +264,8 @@ def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), 
     args.extend(["--proc", "/proc", "--dev", "/dev", "--chdir", str(namespace_cwd)])
     for key, value in trusted.items():
         args.extend(["--setenv", key, value])
-    # NPROC is applied after entering the namespace, not to unrelated host jobs.
-    limits = [f"--cpu={cpu_seconds}", "--nproc=128", "--nofile=256", "--fsize=268435456"]
+    # Install the selected bounded NPROC inside the new namespace, not on the host.
+    limits = [f"--cpu={cpu_seconds}", f"--nproc={process_limit}", "--nofile=256", "--fsize=268435456"]
     if mode == "ordinary":
         limits.insert(0, f"--as={address_space_bytes}")
     return args + ["--", helpers["prlimit"], *limits, "--", *command]

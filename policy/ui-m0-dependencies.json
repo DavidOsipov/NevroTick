@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "scope": "Exact fixture-only UI-M0, inert NTP-wire, checked pure time-domain and single-slot fixture exchange graph; the two exchange dependencies are local only; existing garde derive-only closure retained; no network, NTS, services, trusted-time or production qualification",
-  "lockfile_sha256": "d8692973657035984b7c9778a55fe831a8379a80f00fa185c2b410834f9ac01a",
+  "scope": "Five-member pure fixture graph; ntp-exchange retains only its normal ntp-wire/time-domain local edges and adds one local time-core development edge for test-only composition. The 16 existing registry records and selected grants are unchanged; no production networking, NTS, clock or native authority.",
+  "lockfile_sha256": "e5dff6283c649af7f47c4b7220af2f7f1520a978293dbb8aab5f1668da65fe32",
   "packages": [
     {
       "name": "castaway",
@@ -165,10 +165,11 @@
     }
   ],
   "manifests_sha256": {
-    "Cargo.toml": "8d5a24fb0eb60bb5acd42eef6e43842b91e9caa220dfb3019205efed219b3bd1",
+    "Cargo.toml": "1ff169cd1e5ef9eea5df503b706c52938e1793201dfaf1aa014449eae07ca6a8",
     "crates/nevrotick-ui/Cargo.toml": "cf4d4ac8953f22c2060e3d99550bea9db6a394dd94c924123a40f68b2276475a",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
-    "crates/ntp-exchange/Cargo.toml": "8494cbed4095c5c5079f84f47a4c248089cbc7423ace6e7e85e15e5ac2427b07"
+    "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
+    "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6"
   }
 }

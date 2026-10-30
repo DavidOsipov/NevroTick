@@ -52,7 +52,7 @@ def read_policy(root: Path) -> dict:
                 "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
                 "maximum_mutants": 512, "coverage_wall_seconds": 300,
                 "mutation_wall_seconds": 1200, "mutation_build_seconds": 90,
-                "mutation_test_seconds": 60, "jobs": 1, "test_threads": 2}
+                "mutation_test_seconds": 60, "jobs": RUNTIME.MAX_JOBS, "test_threads": RUNTIME.MAX_JOBS}
     if "critical_file" in policy or any(type(policy.get(key)) is not type(value) or policy.get(key) != value
            for key, value in required.items()):
         raise Incomplete("Unreviewed NTP analysis scope, threshold or budget.")
@@ -414,8 +414,11 @@ def execute(args, report: dict) -> None:
         if any(PRODUCT.inventory(folder) != expected for folder, expected in protected_tools.items()):
             raise Incomplete("An admitted analysis extension changed before execution.")
         compiler = compiler or stable
+        # Bound the total mutation fan-out: twelve outer copies, serial Cargo
+        # and libtest within each copy. Other build/test lanes use twelve slots.
+        inner_jobs = 1 if label.startswith("mutation-") else RUNTIME.MAX_JOBS
         environment = {"RUSTC": str(compiler / "bin/rustc"),
-                       "RUSTDOC": str(compiler / "bin/rustdoc"), "RUST_TEST_THREADS": "2"}
+                       "RUSTDOC": str(compiler / "bin/rustdoc"), "RUST_TEST_THREADS": str(inner_jobs)}
         if compiler != stable:
             environment.update(RUSTUP_HOME=str(base / "common/rustup"), RUSTUP_TOOLCHAIN=ANALYSIS.NIGHTLY)
         readonly = [base, stable, vendor, tools, *([extra_tools] if extra_tools else [])]
@@ -423,7 +426,7 @@ def execute(args, report: dict) -> None:
         result = RUNTIME.run(ROOT, work, command, readonly=readonly,
                              sealed=[source, work / "cargo-home/config.toml", *sealed], path_dirs=paths, cwd=cwd or source,
                              environment=environment, mode=mode,
-                             timeout=timeout, cpu_seconds=min(timeout, 600))
+                             timeout=timeout, cpu_seconds=min(timeout, 600), build_jobs=inner_jobs)
         report["lanes"].append({"lane": label, "command": command, **result})
         (output / "progress.json").write_text(json.dumps(report, indent=2) + "\n")
         require_unchanged(source, identity)

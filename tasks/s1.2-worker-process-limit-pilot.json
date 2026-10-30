@@ -1,0 +1,18 @@
+{
+  "status": "admitted-one-mutation-only-process-limit-discriminator",
+  "base_manifest_sha256": "39cfcd1a23399275565917da0473b6160de7f4c6f657b2bdaf3b945c45e6bf69",
+  "preceding_10_8_6_trials_executed": true,
+  "workers": 10,
+  "process_limit": 256,
+  "default_other_invocations_process_limit": 128,
+  "baseline_tests": 89,
+  "mutants": 110,
+  "new_package_invocations": 111,
+  "new_trial_reservation": 110,
+  "prior_v4_and_requested_matrix_trial_reservations": 693,
+  "combined_disclosed_reservations": 803,
+  "implicit_retries": 0,
+  "ordinary_and_fuzz_limits_unchanged": true,
+  "sampler_sha256": "1326b879fb624a358f64ec0f37c955654be2dec8440d6a322fb5d5fdda9b11dd",
+  "scope": "same immutable old qualified regression workload; not current S1.3 qualification, no default admission or aggregate RAM guarantee"
+}

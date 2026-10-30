@@ -12,5 +12,8 @@ description = "Pure single-slot NevroTick fixture exchange association"
 ntp-wire = { version = "=0.0.0", path = "../ntp-wire" }
 time-domain = { version = "=0.0.0", path = "../time-domain" }
 
+[dev-dependencies]
+time-core = { version = "=0.0.0", path = "../time-core" }
+
 [lints]
 workspace = true

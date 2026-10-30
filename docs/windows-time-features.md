@@ -15,6 +15,14 @@ The motivating problem is a time service that stops working without a useful exp
 
 The launch target remains supported Windows 11 x64, a native English-first UI, NTPv4 and NTS client support, and one complete MSI under the declared Authenticode or initial OpenPGP profile. The application is useful with its window closed and before anyone logs in. It does not require an account or a remote control plane.
 
+[OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+selects an intended **x86-64-v3** minimum for that x64 product, with qualified
+runtime-selected higher-feature optimizations. The package must identify an
+unsupported CPU/OS/VM before starting v3 payloads; AVX-512 remains optional.
+The [build and native workstream](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+is pending: current generic binaries and fixture UI observations do not establish
+that compatibility claim or a measured performance improvement.
+
 This document translates [architecture revision 1.4](windows-time-architecture.md) into user capabilities, screens, defaults, failure behavior and implementable slices. It does not replace that specification, select new dependencies, clear the license/crypto holds, adopt TUF, or close any native/signing gate. Existing source/trust and correction requirements remain authoritative. New presentation choices are proposals for the first implementation.
 
 ### Current UI entry milestone: UI-M0

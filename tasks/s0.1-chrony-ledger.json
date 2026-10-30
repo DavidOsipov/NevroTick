@@ -238,6 +238,19 @@
       ],
       "header_grant": "GPL-2.0-only",
       "code_imported": false
+    },
+    {
+      "path": "test/unit/regress.c",
+      "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/test/unit/regress.c",
+      "sha256": "1d2fbc3264e3be7d52c3ef7e0e7c6ff4d9a1c058227f35e2cd75c0f088edfe35",
+      "bytes": 4299,
+      "selected_symbols_or_context": "randomized coefficient tests and broad range smoke calls; supplemental source inspection only",
+      "proposed_destination": "independent scenario leads, no copied test algorithm",
+      "copyright_notices": [
+        "Copyright (C) Miroslav Lichvar 2017"
+      ],
+      "header_grant": "GPL-2.0-only",
+      "code_imported": false
     }
   ],
   "local_adaptations": [
@@ -262,6 +275,406 @@
         "every fully correlated stratum-zero packet consumes once as opaque control regardless of LI or peer timestamps; no RATE/scheduler behavior",
         "saved real local T1 distinct from token; exact Q32/Q33 arithmetic and explicit numeric era windows; no source/sample/authentication/clock authority"
       ]
+    },
+    {
+      "task": "S1.2a",
+      "status": "authoring activated; no dependency execution or implementation qualification",
+      "destination": "crates/time-core/src/regression.rs",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "selected_source_files": [
+        "regress.c"
+      ],
+      "selected_coefficient_bodies": [
+        {
+          "file": "regress.c",
+          "function": "RGR_WeightedRegression",
+          "lines": "69-87",
+          "retained": "inverse-divisor weight/time-center/affine coefficient equations; omit residual/statistics outputs"
+        },
+        {
+          "file": "regress.c",
+          "function": "RGR_FindBestRegression",
+          "lines": "252-269",
+          "retained": "shared coefficient equations only; omit start-index loop/runs/history/statistics"
+        }
+      ],
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12-kernel-contract-20261029T203254Z",
+      "port_ledger_proposal_sha256": "86c1494bd335d37a6118b987bf3fb72ff267e3a4f3a2ceb5032bdb1c13b4ff16",
+      "deliberate_deviations": [
+        "synthetic3..64 immutable checked points; newest reference lastx0; positivebehindphase convention; noeligibleproductionconsumer",
+        "scaledx/H, centeredresponse covariance, prescribed separately rounded ordered binary64 operations and explicitfinite/subnormal errors",
+        "span/divisor/magnitude/computedspread restrictions are fixture contracts, not upstream/product policy",
+        "exactconstantseries solution before response arithmetic aftercheckedgeometry; independently demonstrated originalformula discrepancy",
+        "coefficients only; noresidualvariance/confidence/skew,runs/pruning/history orCglobalstate"
+      ],
+      "test_origins": [
+        "13 independent exact pairwise coefficient facts",
+        "computedbinary64 cutoff neighbors explicitly distinguished from exactrealspread",
+        "prospectiveconstant0.1 witness plusMIN_POSITIVE/signedzero and nonconstantunderflowcontrols"
+      ]
+    },
+    {
+      "task": "S1.2b",
+      "status": "controlled source authoring activated after reviewed contract/oracles/graph/budget; no compiler or qualification",
+      "destination": "crates/time-core/src/regression/residuals.rs",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "selected_source_files": [
+        "regress.c"
+      ],
+      "selected_source_sha256": {
+        "regress.c": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7"
+      },
+      "selected_residual_statistic_statements": [
+        {
+          "function": "RGR_FindBestRegression",
+          "lines": "277-280 and303-312",
+          "retained": "y-a-b*x residual grouping; chronological squared residual/divisor sum; divide by npoints-2; (scale*npoints)/W normalization",
+          "omitted": "runs/start-index/pruning/extra samples; sqrt standard errors, covariance/confidence interpretation and caller policy"
+        },
+        {
+          "function": "RGR_WeightedRegression",
+          "lines": "89-101",
+          "retained": "supplemental algebraic reference only",
+          "difference": "Do not adopt s*(n/W) binary64 association; actual caller normalization selected."
+        }
+      ],
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "contract_draft_sha256": "94007a68ca51c31ba0464706ae6efe894a3e67a3d3c52e437767d9016634b2e4",
+      "facts_sha256": "3c554c316a63959e74741a561398d218580d86dab51a38460a6e377a80e0e111",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12b-residual-20261029T234858Z",
+      "deliberate_deviations": [
+        "whole immutable3..64 point fixture; no selected-start history or source-quality policy",
+        "fresh returned fixture line and original seconds coordinates instead of recomputing with internal scaled slope",
+        "separate checked binary64 primitives and explicit unsupported-intermediate rejection, no clamp/floor/physicalconfidence claim",
+        "three nonnegative squared-unit diagnostics through mandatory shared garde/private construction; metadata and privacy enforced",
+        "old coefficient-only API and behavior preserved; statistics failure publishes no partial report"
+      ],
+      "test_origins": [
+        "17named exact bases and sign/common-divisor transforms,51 exact evaluations independently normal-equation verified",
+        "11 integer/Fraction nearest-even model sequences and1637 independent midpoint-cell checks; no host float or product/upstream execution",
+        "positive residual64point controls including outputs above1; tiny-positive/square/weight/scale/normalization and signed-zero controls"
+      ]
+    },
+    {
+      "task": "S1.2c normalization",
+      "status": "controlled source-only authoring activated; no graph/compiler/normalization qualification",
+      "destination": "crates/time-core/src/regression/normalization.rs",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "selected_source_files": [
+        "sourcestats.c"
+      ],
+      "selected_source_sha256": {
+        "sourcestats.c": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6"
+      },
+      "selected_statements": [
+        {
+          "function": "convert_to_intervals",
+          "lines": "353-368",
+          "retained": "Subtract the newest sample reference before fitting; earlier relative intervals are negative",
+          "omitted": "C ring/runs indexing, floating absolute timespec helper, mutable history, pruning, phase-sign adapter, slew and clock authority"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow 1997-2003",
+        "Copyright (C) Miroslav Lichvar 2011-2014, 2016-2018, 2021"
+      ],
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "contract_sha256": "d21c51fcb115be0d3ab346da7053db6801aa0a6750931dee7b781819ddd25d30",
+      "facts_sha256": "2c165c30ea2d6c1ea650d6c8bf6921d3c007870de43c9dce89cad34e2abef839",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12c-normalization-20261030T023815Z",
+      "historical_source_review_preserved": true,
+      "deliberate_deviations": [
+        "Stateless ordered0..64 synthetic observations; no retained history or runs samples",
+        "Reuse actual MonotonicNs exact u64 subtraction and checked Q33 phase; neither grants native continuity/authentication",
+        "Explicit context equality and bounded scalar garde construction; typed insufficient0..2 vs prepared3..64 output",
+        "Only integer differences reach binary64; exact hi/lo reconstruction, one nearest-even ns division and exact Q33 power-of-two division",
+        "Re-admit transformed coordinates into existing FitPoint/FitInput; actual held immutable prefix view for independent bit observations",
+        "No sorting, deduplication, eviction, clock/recovery policy, physical uncertainty, network, IPC or native effects"
+      ]
+    },
+    {
+      "task": "S1.2d atomic fixture history",
+      "status": "controlled source-only authoring activated after independent contract, mathematical oracles and proposal reviews; no history compiler/runtime qualification",
+      "destination": "crates/time-core/src/regression/history.rs",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "selected_source_files": [
+        "sourcestats.c"
+      ],
+      "selected_source_sha256": {
+        "sourcestats.c": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6"
+      },
+      "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
+      "selected_statements": [
+        {
+          "function": "SST_AccumulateSample",
+          "lines": "289-329; capacity294-298, order300-305, time314, count328",
+          "retained": "chronological append, capacity64, actual exact incoming time and count context only",
+          "omitted": "prune_register270-285 quality/runs policy; ring308-310; phase sign flip312-316; peer/root quality317-326; reset on non-increasing time; extra runs arrays; worst-case skew/defaults"
+        },
+        {
+          "function": "convert_to_intervals",
+          "lines": "353-368",
+          "retained": "Reuse existing qualified prepare_fixture_input; no duplicate conversion implementation"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow 1997-2003",
+        "Copyright (C) Miroslav Lichvar 2011-2014, 2016-2018, 2021"
+      ],
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "contract_sha256": "53ce5e686cbb88175bd7138302f35c5d02939316615134451ba74c3fee847ea0",
+      "facts_sha256": "ec6a1b96806c6219bd2b74c37b737fde7cbfddafe6cf2f07b12cb14d1d9c92d1",
+      "facts_review_sha256": "34c5a9d888156079987c28a33931e4515c2d33dd2a0f24e24504cebc0f8ad718",
+      "parent_final_verdict_sha256": "e8a9898994047560f220dee6385c850369c35c2f3c9620175036e87352537e6f",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12d-history-20261030T051420Z",
+      "historical_source_review_preserved": true,
+      "deliberate_deviations": [
+        "Exclusive synchronous &mut transaction; immutable asserted context; checked incoming scalars reused",
+        "Reject mismatch and duplicate/older before staging; preserve healthy history instead of upstream reset",
+        "Stage bounded64 rows and evict oldest only after whole same-input normalizer/statistics success; one complete state assignment",
+        "Already positive-behind Q33 phase is not negated; exact MonotonicNs retained; no second conversion",
+        "No pruning/runs/quality policy, aging, network, clock, IPC, persistence, native continuity, authentication or production eligibility"
+      ]
+    },
+    {
+      "task": "S1.2 proposed fixture residual runs and suffix selection",
+      "status": "PRE-TRANSLATION PROPOSAL: this runs-slice entry claims no authorship, test execution, upstream parity or qualification; prior adaptations have separate records",
+      "destination": "crates/time-core/src/regression/runs.rs",
+      "integration_context": "Existing regression.rs and residuals.rs may require module wiring or narrowly scoped helper factoring; if adapted upstream content is placed in any other file, amend and review the exact source-to-destination ledger before translation.",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "task_record": "tasks/s1.2-regression-readiness.md",
+      "project": "Chrony",
+      "reference_version": "4.9",
+      "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
+      "selected_source_files": [
+        "regress.c"
+      ],
+      "selected_source_sha256": {
+        "regress.c": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7"
+      },
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c",
+      "selected_statements": [
+        {
+          "file": "regress.c",
+          "symbol_kind": "static table",
+          "symbol": "critical_runs",
+          "lines": "153-164, indices 3 through 64 inclusive",
+          "proposed_to_retain": "pinned indexed critical-run values used for the bounded m=0, n<=64 residual window",
+          "omitted": "entries outside 3..64; no statistical or physical confidence assertion"
+        },
+        {
+          "file": "regress.c",
+          "function": "n_runs_from_residuals",
+          "lines": "175-192",
+          "proposed_to_retain": "one initial run; increment unless both adjacent residuals are strictly negative or strictly positive; zero transitions increment"
+        },
+        {
+          "file": "regress.c",
+          "function": "RGR_FindBestRegression",
+          "lines": "242-296, 298-316",
+          "proposed_to_retain": "bounded candidate suffixes; ratio-two decision window clamped to the original input when m=0; strict run threshold; explicit minimum stop; returned fit-only run recount; same-suffix coefficient assignments and residual-statistic context",
+          "omitted": "m>0 pre-input samples; unrestricted C pointer API and global/stateful caller; sqrt standard errors, skew and physical confidence"
+        }
+      ],
+      "context_only": [
+        {
+          "file": "regress.h",
+          "sha256": "eb48f4cb99d5aee47169146449c0a3efdd8a110db79cb3710c0d09704d7d6fa8",
+          "lines": "65-70",
+          "purpose": "ratio-two and three-point minimum declarations; no separate header code import claimed"
+        },
+        {
+          "file": "sourcestats.c",
+          "sha256": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6",
+          "lines": "521-562, 564-598",
+          "purpose": "actual upstream caller, quality and asymmetry preparation, successful-fit output and pruning context; no caller implementation imported by this slice"
+        },
+        {
+          "file": "test/unit/regress.c",
+          "sha256": "1d2fbc3264e3be7d52c3ef7e0e7c6ff4d9a1c058227f35e2cd75c0f088edfe35",
+          "purpose": "previously inspected as supplemental scenario source; no upstream test code copied or executed for this proposed slice"
+        }
+      ],
+      "historical_source_review_preserved": true,
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2011, 2016-2017"
+      ],
+      "notice_obligation": "Retain the complete original regress.c copyright, GPL version 2 grant, warranty disclaimer and licence notice in any derived source, alongside modification attribution and the complete GPL-2.0-only COPYING; preserve corresponding-source/build obligations.",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "deliberate_deviations": [
+        "Pure immutable 3..64 checked synthetic points, explicit fixture minimum 3..n, caller-asserted nonzero frame and newest-relative x=0; no absolute monotonic reference or trusted source binding.",
+        "m=0 omits samples before the original input but retains original points dropped from the fit within the ratio-two decision window; no separate 128-point retained store.",
+        "Checked geometry and individually checked arithmetic with typed failures and no partial result; invalid input is rejected rather than relying on C assertions or unchecked numerical behavior.",
+        "Use the existing conditioned positive-behind fixture fit and inverse divisors; binary64 execution order and numerical behavior can differ from upstream and require explicit independent evidence.",
+        "Return privately bound same-fit fixture coefficients, fit-only runs and limited existing residual statistics; fixture stop-reason metadata and decision-window fields are not original Chrony outputs.",
+        "Do not mutate or prune FixtureHistory and do not adopt upstream quality weighting, asymmetry, standard errors, confidence/skew, aging, eligibility, selection, physical uncertainty or clock authority."
+      ],
+      "test_origins": [
+        "Independent source/manual-arithmetic review covers the revised unequal-divisor, threshold-equality, post-drop pass, extended-window discriminator, larger-minimum fallback, signed-zero and r>0 trajectories; binary64 tolerances, sign-error bounds and executable evidence remain pending.",
+        "Planned independent invalid/valid neighbors, same-fit association, table and window boundary controls, failure atomicity, bounded work, qualifying mutation controls and relevant critical-file evidence; nothing executed for this proposed slice.",
+        "Pinned upstream differential traces are supplemental and not available or executed for this proposed slice."
+      ],
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z",
+      "contract_draft": "next-runs-contract-revision.md",
+      "contract_draft_sha256_at_review": "0850be16c69207b3f6c783b29549cc6df4a0d8e97ff3a820d3baaebb9e95fa12",
+      "independent_contract_review": "next-runs-revision-review.md",
+      "independent_contract_review_sha256_at_provenance_review": "002bb6a98fd8db0212a3716b6b1e7bb54ff9a2b9a32f084be0250e0d577b1dd8",
+      "review_scope": "source and exact-real manual arithmetic only; no compiler, model, binary64 error proof or behavioral qualification; recheck hashes if contents change",
+      "implementation_candidate": "not created or frozen by this draft",
+      "release_or_product_claim": false,
+      "authorship": {
+        "status": "private source authored after actual behavioral RED; pending compiling GREEN and qualification",
+        "candidate": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/runs-private-candidate",
+        "source_sha256": {
+          "crates/time-core/src/regression/runs.rs": "82ed30c770e0419f972b0c8ed862be12051d441823609038982ee2178683dce0",
+          "crates/time-core/src/regression/residuals.rs": "d2acc6b8d41f047e95d6a0a670e4a80facd74e612457ef0ba6f9485a8b9f4aaa",
+          "crates/time-core/src/regression.rs": "40123e34f0390412b648c38d4545f415225c969b79ca3be78efb66ede6727de3",
+          "crates/time-core/src/lib.rs": "97c54cff0ea0d0a63c3ddb9125d78f2690d890c1be2209a6cda23fb0eb35bcfa"
+        },
+        "red_receipt_sha256": "d53cbbc6a9f78030a31933a68503cac5a2f1980ac006db6d958a2e1cfaed5746",
+        "source_review_sha256": "4eed5588d322d77d906aba171fb7002351eb2adc6dc1da940ed0885a8d79b008",
+        "formatter_receipt_sha256": "c1a5f323a43978cfd1db80263d39221754818e99feb5d6fbac0d1fe570f4d0b4",
+        "changes": [
+          "runs.rs contains selected source-derived table/run/window/search logic with full original notice and modification attribution",
+          "residuals.rs mechanically factors existing checked residual and summary primitives, preserving old public per-row order; terminal report consumes carrier-owned same-fit cached residuals",
+          "regression.rs and lib.rs wire and re-export reviewed API"
+        ],
+        "no_behavioral_green_or_qualification": true
+      }
+    },
+    {
+      "task": "S1.3 proposed restricted closed-real interval-majority fixture",
+      "status": "HOST FIXTURE: seven focused tests and 66 evaluator calls passed natively, with package Clippy/rustdoc and custody; parser failure/reconciliation retained in task; six-owner and product qualification pending",
+      "pretranslation_status": "PRETRANSLATION: source context and construction design independently reviewed; this integrated entry still requires independent review before translation; no S1.3 source authored or executed",
+      "authorship_2026_10_30": {
+        "author": "David Osipov with AI assistance",
+        "source_reviewed_selection_sha256": "1d9b5bdf0207a403a16f5d9a7d9d77e966f0daf48b25ba1b2108fcb8a57bd0e8",
+        "local_construction": "mandatory garde interval/minimum validation and capacity-first fixed batch staging; not an upstream translation",
+        "adapted_concepts": "endpoint ordering/collection, maximum depth and strict majority under the declared real-axis fixture deviations",
+        "preserved_notice": "full original sources.c notice and actual dated modification attribution in selection.rs; GPL-2.0-only COPYING retained",
+        "execution_owner": "tasks/s1.3-source-selection-readiness.md",
+        "no_six_owner_or_product_qualification": true
+      },
+      "destination": "crates/time-core/src/selection.rs",
+      "integration_context": "crates/time-core/src/lib.rs may receive only module and re-export wiring. Adapted upstream material in any other destination requires a revised, independently reviewed map before translation.",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "task_record": "tasks/s1.3-source-selection-readiness.md",
+      "project": "Chrony",
+      "reference_version": "4.9",
+      "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
+      "selected_source_files": [
+        "sources.c"
+      ],
+      "selected_source_sha256": {
+        "sources.c": "019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d"
+      },
+      "selected_source_git_blob_sha1": "3c6de32cf546e5df49f45a8076da6049bddad15f",
+      "selected_source_bytes": 60639,
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c",
+      "selected_statements": [
+        {
+          "file": "sources.c",
+          "function": "compare_sort_elements",
+          "lines": "698-715; endpoint tag/index context 159-168",
+          "proposed_to_adapt": "endpoint ordering and closed equal-endpoint behavior",
+          "deviation": "exact i64 endpoints and real open-span states; no qsort parity claim"
+        },
+        {
+          "file": "sources.c",
+          "function": "SRC_SelectSource",
+          "lines": "1157-1171, 1204-1205, 1234-1272, 1279-1280",
+          "proposed_to_adapt": "endpoint collection, depth and strict-majority concepts under the synthetic fixture contract",
+          "deviation": "unique global-maximum connected real component with actual common-point supporters; separate minimum on depth; no upstream multi-peak envelope as common intersection"
+        }
+      ],
+      "context_only": [
+        {
+          "file": "sources.c",
+          "lines": "1307-1350",
+          "purpose": "envelope containment membership, trusted containment and configured survivor minimum, not adopted as common-point support"
+        },
+        {
+          "file": "sources.c",
+          "lines": "963-1171, 1352-1510",
+          "purpose": "eligibility, trust, preference, principal and reference-effect context; no production caller or effect imported"
+        },
+        {
+          "file": "sources.c",
+          "function": "combine_sources",
+          "lines": "871-930",
+          "purpose": "distinct offset/frequency weighting context, not selected"
+        },
+        {
+          "file": "sources.h",
+          "bytes": 5537,
+          "sha256": "c883426f16d0097e2ec816a30f07141decf8f0779b38ed25bff121e221bdd260",
+          "git_blob_sha1": "89cf0add27e25f6b2d77cf0e5021d1eee05e726f",
+          "notice": "Richard P. Curnow 1997-2002; Miroslav Lichvar 2014; GPL version 2",
+          "purpose": "interface context reviewed; not selected for translation"
+        },
+        {
+          "file": "ntp_core.c",
+          "bytes": 115496,
+          "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0",
+          "git_blob_sha1": "86231f1e4ab84138c95d0e5c39639b4cd6218e79",
+          "notice": "Richard P. Curnow 1997-2003; Miroslav Lichvar 2009-2024; GPL version 2",
+          "purpose": "one NTP receive/caller route reviewed; not selected for translation"
+        },
+        {
+          "file": "test/unit/sources.c",
+          "retained_as": "test-unit-sources.c",
+          "bytes": 10476,
+          "sha256": "2215cac8524dee6b3380ef1bb828cd031d35e90570ff42656f5bc70612f3176f",
+          "git_blob_sha1": "c7216bb2d77cb287b3d8dbb40056db38a1dd2b9a",
+          "notice": "Miroslav Lichvar 2016, 2018, 2022; GPL version 2",
+          "purpose": "three unit-source phases inspected; no test import or execution claimed"
+        },
+        {
+          "file": "sourcestats.c",
+          "purpose": "producer context only; additional file-specific source and rights review required before any selection"
+        },
+        {
+          "project": "ntpd-rs",
+          "revision": "46ec9bb4d5b6cb24f814f5543d85b9138afb4cba",
+          "file": "ntp-proto/src/algorithm/kalman/select.rs",
+          "bytes": 10797,
+          "sha256": "98d3b48df0742199ac1c00f323504e0d9340c738f640356f937716f4b530eb23",
+          "git_blob_sha1": "0b4c03c73f207208102de036f7d7ecd1a9fec8fb",
+          "purpose": "conditional alternative comparison only; no code or dependency adoption; see provenance for rights inventory"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2011-2016, 2018, 2020-2025"
+      ],
+      "notice_obligation": "Retain the full original sources.c notice, grant, disclaimer and distribution text recorded in provenance in every derived source, mark actual changes, preserve GPL-2.0-only COPYING and corresponding-source/build obligations. Other files require their own notices and grant review if adopted.",
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "deliberate_deviations": [
+        "One synthetic real axis, closed real intervals with exactly represented i64 integer endpoints, at most 16 checked nonzero caller-asserted logical labels; no integer-lattice connectivity, source identity, UTC or clock frame.",
+        "Global maximum depth must satisfy strict majority and an independently retained 1..16 minimum; a unique component yields its left endpoint and complete sorted common-point supporters; after those gates multiple components yield fixture ambiguity without a chosen result.",
+        "This bounded fixture is not product tie, eligibility, independence, trust, minimum, fallback, principal, clock or preset policy. Empty and insufficient outcomes remain explicit.",
+        "Checked private construction and bounded pure evaluation replace upstream state, qsort and effects; actual authored source, loop bounds and graph remain unreviewed."
+      ],
+      "mandatory_validation_prerequisite": "Reviewed design proposes separate unavoidable garde-backed raw label, whole endpoint-pair and minimum candidates using real shared predicates, with typed error projection, length-first capacity and first-duplicate guards; actual graph, derive compilation, bypass controls and observed receiver order remain pending. No allow_unvalidated, no no-op pair validation and no unowned skip.",
+      "review_status": "Source context, alternative source and construction design have been independently reviewed; no result of independent review of this newly integrated ledger/provenance entry is asserted. Review before any algorithm translation.",
+      "test_origins": [
+        "Manually derived independent closed-real interval fixtures, boundaries, controls and permutation cases; not copied from upstream tests.",
+        "Actual compiler, test, RED/GREEN, differential, mutation, coverage and source/feature/target graph evidence pending."
+      ],
+      "contract_sha256_at_review": "b1df210459a13ce0586de40c84a92ff475f6bc07ebbd6f1a49713a3950867666",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z",
+      "implementation_candidate": "S1.3 algorithm not authored",
+      "release_or_product_claim": false
     }
   ]
 }

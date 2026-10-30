@@ -16,7 +16,10 @@ use ntp_exchange::{
     ArmError, Association, AssociationContext, AssociationGeneration, Binding, CancelError,
     ClockGeneration, CompletionFacts, ConfigurationGeneration, ContextError, ExpireError,
     FixtureEvent, Generations, PeerEraContext, ReceiptFacts, ReceiveError, RequestId,
-    RequestTiming, SocketId, SourceId, WireToken,
+    RequestTiming, SocketId, SourceId, UnauthenticatedFixtureObservation, WireToken,
+};
+use time_core::{
+    FixtureContext, FixtureHistory, FixtureObservation, HistoryError, ObservationError,
 };
 use time_domain::{ActiveAwakeNs, EraWindow, MonotonicNs, UtcCoordinateQ32};
 
@@ -93,6 +96,8 @@ pub(super) enum RunId {
     Baseline(CaseId),
     /// Separate fixed reset script, counted outside the baseline inventory.
     ResetRecovery,
+    /// Separately selected exchange-to-history fixture, outside the baseline inventory.
+    Composition,
 }
 
 /// Exact fixture seconds relative to B, reduced with a positive denominator.
@@ -317,6 +322,355 @@ pub(super) struct RunReport {
     pub final_state: StateSnapshot,
     /// Actual packet-slot occupancy immediately before queue teardown.
     pub final_queue_len: usize,
+}
+
+/// Actual, exact committed row projection, without reconstructing a domain value.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct HistoryRow {
+    /// Complete fixture assertion retained by this row.
+    pub context: FixtureContext,
+    /// Exact monotonic receipt.
+    pub arrival_ns: u64,
+    /// Exact phase numerator over 2^33.
+    pub phase: i128,
+    /// Unchanged divisor bits.
+    pub divisor_bits: u64,
+}
+
+/// All public report associations and binary64 payload bits.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct HistoryStatistics {
+    /// Actual report context.
+    pub context: FixtureContext,
+    /// Actual report reference.
+    pub reference_ns: u64,
+    /// Actual statistics frame.
+    pub frame: u64,
+    /// Actual statistics population.
+    pub count: usize,
+    /// Actual residual degrees of freedom.
+    pub degrees: usize,
+    /// Fitted phase bits.
+    pub phase_bits: u64,
+    /// Fitted rate bits.
+    pub rate_bits: u64,
+    /// Weighted residual sum bits.
+    pub sse_bits: u64,
+    /// Residual scale bits.
+    pub scale_bits: u64,
+    /// Normalized variance bits.
+    pub variance_bits: u64,
+}
+
+/// Observed state after one script action; four rows are the declared run maximum.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct HistorySnapshot {
+    /// Actual history assertion.
+    pub context: FixtureContext,
+    /// Actual committed row count.
+    pub count: usize,
+    /// Exact newest retained time.
+    pub reference_ns: Option<u64>,
+    /// Actual bounded committed rows.
+    pub rows: [Option<HistoryRow>; 4],
+    /// Actual optional report projection.
+    pub report: Option<HistoryStatistics>,
+    /// Actual observation-construction attempts.
+    pub constructions: usize,
+    /// Actual history append attempts.
+    pub appends: usize,
+    /// Actual successful commits.
+    pub commits: usize,
+    /// Actual rejected history appends.
+    pub history_rejections: usize,
+    /// Actual row getter calls across all snapshots so far.
+    pub row_getters: usize,
+    /// Actual present reports projected across snapshots so far.
+    pub present_reports: usize,
+}
+
+/// A completed request's distinct downstream outcome.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum DeliveryResult {
+    /// At least one complete identity role differs.
+    BindingMismatch,
+    /// Actual checked construction rejected.
+    Observation(ObservationError),
+    /// Actual history append rejected.
+    History(HistoryError),
+    /// The append committed.
+    Committed,
+}
+
+/// Actual completion identity accompanies every attempt, including failures.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct Delivery {
+    /// Actual completion identity and timing.
+    pub facts: FactsProjection,
+    /// Actual downstream outcome.
+    pub result: DeliveryResult,
+}
+
+/// Frozen scenario binding; trajectory/origin are explicit fixture assertions.
+struct Composition {
+    /// Complete declared binding and generation tuple.
+    context: AssociationContext,
+    /// Separately asserted receipt mapping.
+    mapping: ClockGeneration,
+    /// Fixed origin and fixture-clock trajectory.
+    timeline: FixtureTimeline,
+    /// Sole history owner.
+    history: FixtureHistory,
+    /// Actual bounded ordered delivery ledger.
+    deliveries: [Option<Delivery>; 5],
+    /// Number of observed completed deliveries.
+    delivery_count: usize,
+    /// Number of observation constructor calls.
+    constructions: usize,
+    /// Number of history append calls.
+    appends: usize,
+    /// Number of successful history commits.
+    commits: usize,
+    /// Number of rejected history appends.
+    history_rejections: usize,
+    /// Actual row getter calls while recording.
+    row_getters: usize,
+    /// Actual present report projections while recording.
+    present_reports: usize,
+    /// Actual post-action history evidence.
+    snapshots: [Option<HistorySnapshot>; EVENT_CAP],
+}
+
+/// Declared fixture origin and trajectory; these are not native clock identity.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct FixtureTimeline {
+    /// Exact declared UTC-coordinate base.
+    pub base: i128,
+    /// Declared initial monotonic reading.
+    pub initial_monotonic_ns: u64,
+    /// Declared initial active-awake reading.
+    pub initial_awake_ns: u64,
+    /// Whether the declared oscillator slope is enabled.
+    pub oscillator: bool,
+}
+
+/// Bounded actual evidence, separate from the existing baseline report.
+pub(super) struct CompositionReport {
+    /// Real association and fixture action trace.
+    pub run: RunReport,
+    /// Declared trajectory bound to this run.
+    pub timeline: FixtureTimeline,
+    /// Actual completion ledger.
+    pub deliveries: [Option<Delivery>; 5],
+    /// Actual populated ledger count.
+    pub delivery_count: usize,
+    /// Actual history snapshots after each action.
+    pub snapshots: [Option<HistorySnapshot>; EVENT_CAP],
+    /// Logical size of the added trace and ledger, excluding owner scratch.
+    pub history_trace_bytes: usize,
+    /// Logical composition-owner size, excluding nested append scratch.
+    pub history_owner_bytes: usize,
+}
+
+/// Admit one ledger slot before any observation construction or history effect.
+/// Duplicate identity takes precedence over an out-of-range slot index.
+/// # Errors
+/// Rejects a previously recorded request or an out-of-range slot index.
+fn admit_delivery(
+    deliveries: &[Option<Delivery>; 5],
+    count: usize,
+    request: u64,
+) -> Result<(), HarnessError> {
+    if deliveries
+        .iter()
+        .flatten()
+        .any(|entry| entry.facts.request == request)
+    {
+        return Err(HarnessError::InvalidFixture);
+    }
+    if deliveries.get(count).is_none() {
+        return Err(HarnessError::TraceCapacity);
+    }
+    Ok(())
+}
+
+/// Check the last valid and first out-of-range indices against an empty ledger.
+/// This calls no exchange, observation constructor or history operation.
+pub(super) fn composition_ledger_capacity_control()
+-> (Result<(), HarnessError>, Result<(), HarnessError>) {
+    let ledger = [None; 5];
+    (admit_delivery(&ledger, 4, 1), admit_delivery(&ledger, 5, 1))
+}
+
+impl Composition {
+    /// Bind one fixture context to one complete declared transport/context identity.
+    /// # Errors
+    /// Rejects invalid fixture labels or binding without creating an owner.
+    fn new() -> Result<Self, HarnessError> {
+        let labels = FixtureContext::new(nonzero(17)?, nonzero(23)?, nonzero(29)?);
+        Ok(Self {
+            context: context(false, 1, 1, 1)?,
+            mapping: ClockGeneration::new(1),
+            timeline: FixtureTimeline {
+                base: BASE,
+                initial_monotonic_ns: START,
+                initial_awake_ns: SECOND / 4,
+                oscillator: false,
+            },
+            history: FixtureHistory::new(labels),
+            deliveries: [None; 5],
+            delivery_count: 0,
+            constructions: 0,
+            appends: 0,
+            commits: 0,
+            history_rejections: 0,
+            row_getters: 0,
+            present_reports: 0,
+            snapshots: [None; EVENT_CAP],
+        })
+    }
+
+    /// Consume exactly one actual completed event; never retry or return its payload.
+    /// # Errors
+    /// Rejects duplicate delivery or an out-of-range ledger index, without retry.
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "The real non-Clone completion is consumed once at this fixture boundary."
+    )]
+    fn deliver(&mut self, time: UnauthenticatedFixtureObservation) -> Result<(), HarnessError> {
+        let actual = facts(time.facts());
+        let id = actual.request;
+        admit_delivery(&self.deliveries, self.delivery_count, id)?;
+        // Stage every potentially needed increment before the first downstream effect.
+        let next_delivery = self
+            .delivery_count
+            .checked_add(1)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let next_constructions = self
+            .constructions
+            .checked_add(1)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let next_appends = self
+            .appends
+            .checked_add(1)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let next_commits = self
+            .commits
+            .checked_add(1)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let next_rejections = self
+            .history_rejections
+            .checked_add(1)
+            .ok_or(HarnessError::TraceCapacity)?;
+        // Reserve the actual slot before any downstream effect; exclusive field
+        // borrowing prevents intervening ledger mutation or failed late admission.
+        let slot = self
+            .deliveries
+            .get_mut(self.delivery_count)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let result = if time.facts().binding() != self.context.binding()
+            || time.facts().generations() != self.context.generations()
+            || time.facts().mapping_generation() != self.mapping
+        {
+            DeliveryResult::BindingMismatch
+        } else {
+            self.constructions = next_constructions;
+            match FixtureObservation::new(
+                self.history.context(),
+                time.facts().arrival(),
+                time.offset(),
+                1.0,
+            ) {
+                Err(error) => DeliveryResult::Observation(error),
+                Ok(observation) => {
+                    self.appends = next_appends;
+                    match self.history.try_append(observation) {
+                        Ok(()) => {
+                            self.commits = next_commits;
+                            DeliveryResult::Committed
+                        }
+                        Err(error) => {
+                            self.history_rejections = next_rejections;
+                            DeliveryResult::History(error)
+                        }
+                    }
+                }
+            }
+        };
+        *slot = Some(Delivery {
+            facts: actual,
+            result,
+        });
+        self.delivery_count = next_delivery;
+        Ok(())
+    }
+
+    /// Read actual public history state once after each declared fixture action.
+    /// # Errors
+    /// Rejects inconsistent rows or exhaustion of the fixed evidence capacity.
+    fn record(&mut self, index: usize) -> Result<(), HarnessError> {
+        let slot = self
+            .snapshots
+            .get_mut(index)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let count = self.history.sample_count();
+        if count > 4 {
+            return Err(HarnessError::TraceCapacity);
+        }
+        let next_row_getters = self
+            .row_getters
+            .checked_add(count)
+            .ok_or(HarnessError::TraceCapacity)?;
+        let mut rows = [None; 4];
+        for (index, slot) in rows.iter_mut().take(count).enumerate() {
+            let row = self
+                .history
+                .observation(index)
+                .ok_or(HarnessError::InvalidFixture)?;
+            *slot = Some(HistoryRow {
+                context: row.context(),
+                arrival_ns: row.observed_at().nanoseconds(),
+                phase: row.phase().numerator(),
+                divisor_bits: row.variance_divisor().to_bits(),
+            });
+        }
+        let report = self.history.report().map(|report| {
+            let stats = report.statistics();
+            HistoryStatistics {
+                context: report.context(),
+                reference_ns: report.reference().nanoseconds(),
+                frame: stats.frame().get(),
+                count: stats.sample_count(),
+                degrees: stats.degrees_of_freedom(),
+                phase_bits: stats.line().phase_seconds().to_bits(),
+                rate_bits: stats.line().phase_rate_seconds_per_second().to_bits(),
+                sse_bits: stats.weighted_sse_seconds_squared().to_bits(),
+                scale_bits: stats.residual_scale_seconds_squared().to_bits(),
+                variance_bits: stats.normalized_data_variance_seconds_squared().to_bits(),
+            }
+        });
+        let next_present_reports = self
+            .present_reports
+            .checked_add(usize::from(report.is_some()))
+            .ok_or(HarnessError::TraceCapacity)?;
+        let snapshot = HistorySnapshot {
+            context: self.history.context(),
+            count,
+            reference_ns: self.history.reference().map(MonotonicNs::nanoseconds),
+            rows,
+            report,
+            constructions: self.constructions,
+            appends: self.appends,
+            commits: self.commits,
+            history_rejections: self.history_rejections,
+            row_getters: next_row_getters,
+            present_reports: next_present_reports,
+        };
+        self.row_getters = next_row_getters;
+        self.present_reports = next_present_reports;
+        *slot = Some(snapshot);
+        Ok(())
+    }
 }
 
 /// Fixture failures are distinct from all product rejections.
@@ -1734,7 +2088,7 @@ fn prepare(run_id: RunId, input: &Script) -> Result<PreparedScript, HarnessError
         previous = Some((event.at, event.ordinal));
         let horizon = event.at.checked_sub(START).ok_or(HarnessError::Horizon)?;
         validate_input(ValidationInput {
-            run_count: ALL_CASES.len(),
+            run_count: ALL_CASES.len() + usize::from(run_id == RunId::Composition),
             event_count: charged,
             queued_count: queue_len(&queue),
             horizon_ns: horizon,
@@ -1799,7 +2153,7 @@ fn facts(facts: &CompletionFacts) -> FactsProjection {
 
 /// Consume a real D event and copy every available typed fact/quality getter.
 /// This contains no formula, normalization, eligibility decision or expected value.
-fn completed(event: FixtureEvent) -> Completed {
+fn completed(event: &FixtureEvent) -> Completed {
     match event {
         FixtureEvent::Time(time) => Completed::Time(TimeProjection {
             facts: facts(time.facts()),
@@ -1844,12 +2198,22 @@ fn receive_captured(
     owner: &mut Option<Association>,
     saved: &CheckedCapture,
     at: MonotonicNs,
+    composition: Option<&mut Composition>,
 ) -> Result<Result<Completed, ReceiveError>, HarnessError> {
-    Ok(owner
+    let event = owner
         .as_mut()
         .ok_or(HarnessError::MissingOwner)?
-        .receive(&saved.raw.packet[..saved.raw.length], receipt(saved, at))
-        .map(completed))
+        .receive(&saved.raw.packet[..saved.raw.length], receipt(saved, at));
+    match event {
+        Ok(event) => {
+            let projection = completed(&event);
+            if let (Some(consumer), FixtureEvent::Time(time)) = (composition, event) {
+                consumer.deliver(time)?;
+            }
+            Ok(Ok(projection))
+        }
+        Err(error) => Ok(Err(error)),
+    }
 }
 
 /// Execute one admitted Association arm/cancel/expire/context action.
@@ -1899,6 +2263,7 @@ fn dispatch(
     event: &PreparedEvent,
     owner: &mut Option<Association>,
     queue: &mut [Option<CheckedCapture>; 2],
+    composition: Option<&mut Composition>,
 ) -> Result<DispatchResult, HarnessError> {
     let mut captured = None;
     let (kind, outcome, product_action) = match event.action {
@@ -1922,7 +2287,7 @@ fn dispatch(
             store(queue, slot, &saved, receive)?;
             captured = Some(saved.raw);
             if receive {
-                let result = receive_captured(owner, &saved, event.at)?;
+                let result = receive_captured(owner, &saved, event.at, composition)?;
                 (EventKind::CaptureReceive, Outcome::Received(result), true)
             } else {
                 (EventKind::Capture, Outcome::None, false)
@@ -1931,12 +2296,12 @@ fn dispatch(
         PreparedAction::Receive { slot } => {
             let saved = queued(queue, slot)?;
             captured = Some(saved.raw);
-            let result = receive_captured(owner, &saved, event.at)?;
+            let result = receive_captured(owner, &saved, event.at, composition)?;
             (EventKind::Receive, Outcome::Received(result), true)
         }
         PreparedAction::ReceiveVariant { saved } => {
             captured = Some(saved.raw);
-            let result = receive_captured(owner, &saved, event.at)?;
+            let result = receive_captured(owner, &saved, event.at, composition)?;
             (EventKind::Receive, Outcome::Received(result), true)
         }
 
@@ -1963,7 +2328,11 @@ fn dispatch(
 /// Logical trace-array bytes are bounded separately from total stack or RSS.
 /// # Errors
 /// Rejects invalid private-plan custody, missing captures, or trace-budget mismatch.
-fn execute(run_id: RunId, input: &PreparedScript) -> Result<RunReport, HarnessError> {
+fn execute(
+    run_id: RunId,
+    input: &PreparedScript,
+    mut composition: Option<&mut Composition>,
+) -> Result<RunReport, HarnessError> {
     let mut owner: Option<Association> = None;
     let mut queue = [None; 2];
     let trace_storage_bytes = size_of::<[Option<Observation>; EVENT_CAP]>();
@@ -1986,7 +2355,10 @@ fn execute(run_id: RunId, input: &PreparedScript) -> Result<RunReport, HarnessEr
             outcome,
             product_action,
             captured,
-        } = dispatch(&event, &mut owner, &mut queue)?;
+        } = dispatch(&event, &mut owner, &mut queue, composition.as_deref_mut())?;
+        if let Some(consumer) = composition.as_deref_mut() {
+            consumer.record(event_count)?;
+        }
         if product_action {
             product_action_count += 1;
         }
@@ -2035,7 +2407,7 @@ fn execute(run_id: RunId, input: &PreparedScript) -> Result<RunReport, HarnessEr
 pub(super) fn run_case(case: CaseId) -> Result<RunReport, HarnessError> {
     let run_id = RunId::Baseline(case);
     let prepared = prepare(run_id, &script(case)?)?;
-    execute(run_id, &prepared)
+    execute(run_id, &prepared, None)
 }
 
 /// Fresh fixed fault/healthy/recovery replay: thirteen charged dispatches, with
@@ -2046,5 +2418,414 @@ pub(super) fn run_case(case: CaseId) -> Result<RunReport, HarnessError> {
 pub(super) fn run_reset_recovery() -> Result<RunReport, HarnessError> {
     let run_id = RunId::ResetRecovery;
     let prepared = prepare(run_id, &reset_script()?)?;
-    execute(run_id, &prepared)
+    execute(run_id, &prepared, None)
+}
+
+/// One fixed 27-record composition plan; all capture and receive work is charged.
+/// # Errors
+/// Rejects a plan exceeding the fixed event table.
+#[expect(
+    clippy::too_many_lines,
+    reason = "The explicit total-ordered 27-record schedule remains one reviewable fixture."
+)]
+fn composition_script() -> Result<Script, HarnessError> {
+    let q = SIXTEENTH;
+    let mut result = Script::new();
+    result.push(16 * q, 1, Action::Construct)?;
+    result.push(
+        16 * q,
+        2,
+        Action::Arm {
+            token: 1,
+            deadline: 32 * q,
+        },
+    )?;
+    result.push(
+        21 * q,
+        1,
+        Action::Capture {
+            slot: 0,
+            reply: symmetric(16 * q, 1),
+        },
+    )?;
+    result.push(
+        22 * q,
+        1,
+        Action::ReceiveVariant {
+            slot: 0,
+            variant: PacketVariant::Malformed47,
+        },
+    )?;
+    result.push(
+        22 * q,
+        2,
+        Action::ReceiveVariant {
+            slot: 0,
+            variant: PacketVariant::WrongOrigin,
+        },
+    )?;
+    result.push(22 * q, 3, Action::Receive { slot: 0 })?;
+    result.push(22 * q, 4, Action::Release)?;
+    result.push(
+        32 * q,
+        1,
+        Action::Arm {
+            token: 2,
+            deadline: 48 * q,
+        },
+    )?;
+    let mut control = symmetric(32 * q, 2);
+    control.variant = PacketVariant::Control;
+    result.push(
+        37 * q,
+        1,
+        Action::CaptureReceive {
+            slot: 0,
+            reply: control,
+        },
+    )?;
+    result.push(37 * q, 2, Action::Release)?;
+    result.push(
+        48 * q,
+        1,
+        Action::Arm {
+            token: 3,
+            deadline: 64 * q,
+        },
+    )?;
+    result.push(
+        53 * q,
+        1,
+        Action::Capture {
+            slot: 0,
+            reply: symmetric(48 * q, 3),
+        },
+    )?;
+    result.push(53 * q, 2, Action::Drop { slot: 0 })?;
+    result.push(64 * q, 1, Action::Expire)?;
+    result.push(
+        64 * q,
+        2,
+        Action::Arm {
+            token: 4,
+            deadline: 80 * q,
+        },
+    )?;
+    result.push(
+        69 * q,
+        1,
+        Action::CaptureReceive {
+            slot: 0,
+            reply: symmetric(64 * q, 4),
+        },
+    )?;
+    result.push(69 * q, 2, Action::Release)?;
+    result.push(
+        80 * q,
+        1,
+        Action::Arm {
+            token: 5,
+            deadline: 96 * q,
+        },
+    )?;
+    result.push(
+        85 * q,
+        1,
+        Action::CaptureReceive {
+            slot: 0,
+            reply: symmetric(80 * q, 5),
+        },
+    )?;
+    result.push(85 * q, 2, Action::Release)?;
+    result.push(
+        85 * q,
+        3,
+        Action::Arm {
+            token: 6,
+            deadline: 96 * q,
+        },
+    )?;
+    let mut duplicate = symmetric(85 * q, 6);
+    duplicate.forward = 0;
+    duplicate.processing = 0;
+    duplicate.reverse = 0;
+    result.push(
+        85 * q,
+        4,
+        Action::CaptureReceive {
+            slot: 0,
+            reply: duplicate,
+        },
+    )?;
+    result.push(85 * q, 5, Action::Receive { slot: 0 })?;
+    result.push(85 * q, 6, Action::Release)?;
+    result.push(
+        96 * q,
+        1,
+        Action::Arm {
+            token: 7,
+            deadline: 112 * q,
+        },
+    )?;
+    let mut recovery = symmetric(96 * q, 7);
+    recovery.forward = q;
+    recovery.reverse = 3 * q;
+    result.push(
+        101 * q,
+        1,
+        Action::CaptureReceive {
+            slot: 0,
+            reply: recovery,
+        },
+    )?;
+    result.push(101 * q, 2, Action::Release)?;
+    Ok(result)
+}
+
+/// Execute only the separately selected, fully prepared composition run.
+/// # Errors
+/// Preserves fixture preflight, association and bounded trace errors.
+pub(super) fn run_composition() -> Result<CompositionReport, HarnessError> {
+    let run_id = RunId::Composition;
+    let prepared = prepare(run_id, &composition_script()?)?;
+    let history_trace_bytes =
+        size_of::<[Option<HistorySnapshot>; EVENT_CAP]>() + size_of::<[Option<Delivery>; 5]>();
+    let history_owner_bytes = size_of::<Composition>();
+    if history_trace_bytes > 32 * 1024 || history_owner_bytes > 64 * 1024 {
+        return Err(HarnessError::TraceCapacity);
+    }
+    let mut composition = Composition::new()?;
+    let run = execute(run_id, &prepared, Some(&mut composition))?;
+    Ok(CompositionReport {
+        run,
+        timeline: composition.timeline,
+        deliveries: composition.deliveries,
+        delivery_count: composition.delivery_count,
+        snapshots: composition.snapshots,
+        history_trace_bytes,
+        history_owner_bytes,
+    })
+}
+
+/// Seven independently selected expected-identity variations.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum GuardRole {
+    /// Source identity only.
+    Source,
+    /// Socket identity only.
+    Socket,
+    /// Endpoint only.
+    Endpoint,
+    /// Configuration generation only.
+    Configuration,
+    /// Association generation only.
+    Association,
+    /// Clock generation only.
+    Clock,
+    /// Receipt mapping generation only.
+    Mapping,
+}
+
+/// The actual association and fixture failure owners remain distinguishable.
+#[derive(Debug)]
+pub(super) enum GuardRunError {
+    /// Fixture setup or evidence admission failed.
+    Fixture(HarnessError),
+    /// The actual association arm rejected.
+    Arm(ArmError),
+    /// The actual complete-byte receive rejected.
+    Receive(ReceiveError),
+    /// The actual association produced control in place of time.
+    UnexpectedControl,
+}
+
+impl fmt::Display for GuardRunError {
+    /// Preserve the actual closed error category and cause.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Fixture(error) => write!(formatter, "fixture: {error}"),
+            Self::Arm(error) => write!(formatter, "arm: {error}"),
+            Self::Receive(error) => write!(formatter, "receive: {error}"),
+            Self::UnexpectedControl => formatter.write_str("unexpected control"),
+        }
+    }
+}
+
+impl std::error::Error for GuardRunError {}
+
+/// One real exchange and the separately asserted consumer binding used for it.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct GuardStep {
+    /// Actual arm identity.
+    pub armed: u64,
+    /// Actual completed observation projection.
+    pub time: TimeProjection,
+    /// Actual post-receive association state.
+    pub state: StateSnapshot,
+    /// Fixture binding/generation assertion tested by the consumer.
+    pub expected_context: AssociationContext,
+    /// Fixture receipt-mapping assertion tested by the consumer.
+    pub expected_mapping: ClockGeneration,
+}
+
+/// Exactly one case: three fresh exchanges and three history snapshots.
+pub(super) struct GuardReport {
+    /// Independently selected role varied once.
+    pub role: GuardRole,
+    /// Three actual, ordered exchange results.
+    pub steps: [GuardStep; 3],
+    /// Three actual delivery outcomes and completion identities.
+    pub deliveries: [Option<Delivery>; 3],
+    /// Post-delivery actual history projections.
+    pub snapshots: [Option<HistorySnapshot>; 3],
+    /// Duplicate and out-of-range index checks against a one-entry ledger.
+    pub ledger_controls: (Result<(), HarnessError>, Result<(), HarnessError>),
+}
+
+/// Change exactly one retained assertion; never alter the association or packet.
+/// # Errors
+/// Rejects the impossible nonzero fixture ID conversion.
+fn vary_guard(role: GuardRole, owner: &mut Composition) -> Result<(), HarnessError> {
+    let original = owner.context;
+    let binding = original.binding();
+    let generations = original.generations();
+    let two = nonzero(2)?;
+    let new_binding = Binding::new(
+        if role == GuardRole::Source {
+            SourceId::new(two)
+        } else {
+            binding.source_id()
+        },
+        if role == GuardRole::Socket {
+            SocketId::new(two)
+        } else {
+            binding.socket_id()
+        },
+        if role == GuardRole::Endpoint {
+            SocketAddr::from(([192, 0, 2, 2], 123))
+        } else {
+            binding.endpoint()
+        },
+    );
+    let new_generations = Generations::new(
+        if role == GuardRole::Configuration {
+            ConfigurationGeneration::new(2)
+        } else {
+            generations.configuration()
+        },
+        if role == GuardRole::Association {
+            AssociationGeneration::new(2)
+        } else {
+            generations.association()
+        },
+        if role == GuardRole::Clock {
+            ClockGeneration::new(2)
+        } else {
+            generations.clock()
+        },
+    );
+    owner.context = AssociationContext::new(new_binding, new_generations);
+    if role == GuardRole::Mapping {
+        owner.mapping = ClockGeneration::new(2);
+    }
+    Ok(())
+}
+
+/// Run one explicit arm, capture, receive and sole typed delivery.
+/// # Errors
+/// Preserves fixture, arm, receive and unexpected-control failures.
+fn guard_step(
+    owner: &mut Association,
+    consumer: &mut Composition,
+    clock: FixtureClock,
+    send: u64,
+    token: u64,
+    index: usize,
+) -> Result<GuardStep, GuardRunError> {
+    let t1 = utc(clock.read(send).map_err(GuardRunError::Fixture)?.local_utc)
+        .map_err(GuardRunError::Fixture)?;
+    let deadline = send
+        .checked_add(16 * SIXTEENTH)
+        .ok_or(GuardRunError::Fixture(HarnessError::Arithmetic))?;
+    let timing = RequestTiming::new(MonotonicNs::new(send), MonotonicNs::new(deadline))
+        .map_err(|_| GuardRunError::Fixture(HarnessError::Domain))?;
+    let wire = WireToken::new(token).map_err(|_| GuardRunError::Fixture(HarnessError::Domain))?;
+    let armed = owner
+        .arm(
+            t1,
+            wire,
+            timing,
+            peer_eras().map_err(GuardRunError::Fixture)?,
+        )
+        .map_err(GuardRunError::Arm)?;
+    let arrival = send
+        .checked_add(5 * SIXTEENTH)
+        .ok_or(GuardRunError::Fixture(HarnessError::Arithmetic))?;
+    let saved = capture(symmetric(send, token), arrival, clock).map_err(GuardRunError::Fixture)?;
+    let event = owner
+        .receive(
+            &saved.raw.packet[..saved.raw.length],
+            receipt(&saved, MonotonicNs::new(arrival)),
+        )
+        .map_err(GuardRunError::Receive)?;
+    let projection = completed(&event);
+    let FixtureEvent::Time(time) = event else {
+        return Err(GuardRunError::UnexpectedControl);
+    };
+    let Completed::Time(projection) = projection else {
+        return Err(GuardRunError::UnexpectedControl);
+    };
+    let expected_context = consumer.context;
+    let expected_mapping = consumer.mapping;
+    consumer.deliver(time).map_err(GuardRunError::Fixture)?;
+    consumer.record(index).map_err(GuardRunError::Fixture)?;
+    Ok(GuardStep {
+        armed: armed.value().get(),
+        time: projection,
+        state: snapshot(owner),
+        expected_context,
+        expected_mapping,
+    })
+}
+
+/// Execute one role case: exactly three arms/receives, one owner and no replay.
+/// Seven caller-selected cases have a maximum of 21 arms and receives, seven
+/// association constructions, 21 completed events and 14 history appends.
+/// The mismatch is rejected before its observation constructor; three snapshots
+/// per case and two immutable ledger checks are additional bounded observer work.
+/// # Errors
+/// Propagates the actual failed operation; no recovery or reset is implicit.
+pub(super) fn run_guard_case(role: GuardRole) -> Result<GuardReport, GuardRunError> {
+    let original = context(false, 1, 1, 1).map_err(GuardRunError::Fixture)?;
+    let mut association = Association::new_plain_header_fixture(
+        original,
+        RequestId::new(nonzero(1).map_err(GuardRunError::Fixture)?),
+    );
+    let mut consumer = Composition::new().map_err(GuardRunError::Fixture)?;
+    let clock = FixtureClock::new(false);
+    let first = guard_step(&mut association, &mut consumer, clock, 16 * SIXTEENTH, 1, 0)?;
+    let ledger_controls = (
+        admit_delivery(&consumer.deliveries, 5, 1),
+        admit_delivery(&consumer.deliveries, 5, 2),
+    );
+    vary_guard(role, &mut consumer).map_err(GuardRunError::Fixture)?;
+    let changed = guard_step(&mut association, &mut consumer, clock, 32 * SIXTEENTH, 2, 1)?;
+    consumer.context = original;
+    consumer.mapping = ClockGeneration::new(1);
+    let recovery = guard_step(&mut association, &mut consumer, clock, 48 * SIXTEENTH, 3, 2)?;
+    Ok(GuardReport {
+        role,
+        steps: [first, changed, recovery],
+        deliveries: [
+            consumer.deliveries[0],
+            consumer.deliveries[1],
+            consumer.deliveries[2],
+        ],
+        snapshots: [
+            consumer.snapshots[0],
+            consumer.snapshots[1],
+            consumer.snapshots[2],
+        ],
+        ledger_controls,
+    })
 }

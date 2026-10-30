@@ -100,10 +100,39 @@ class CargoPolicyControls(unittest.TestCase):
     def nextest(self, *extra):
         self.lock()
         return self.command([
-            "/tools/cargo-nextest", "nextest", "run", "--frozen", "--build-jobs", "1",
+            "/tools/cargo-nextest", "nextest", "run", "--frozen", "--build-jobs", "12",
             "--config-file", "/work/nextest.toml", "--user-config-file", "none",
             "--no-tests=fail", *extra,
         ])
+
+    def test_twelve_test_workers_reach_a_shared_barrier(self):
+        """Observe twelve live tests, rather than merely accepting a setting."""
+        state = self.work / "probe-state"
+        state.mkdir()
+        source = '''
+fn meet_barrier(name: &str) {
+    let state = std::path::Path::new("/work/probe-state");
+    std::fs::write(state.join(name), b"ready").unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+    while std::fs::read_dir(state).unwrap().count() != 12 {
+        assert!(std::time::Instant::now() < deadline, "twelve workers did not meet");
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+'''
+        source += "\n".join(
+            f'#[test] fn worker_{number}() {{ meet_barrier("worker_{number}"); }}'
+            for number in range(12))
+        (self.fixture / "src/lib.rs").write_text(source)
+        result = self.nextest()
+        self.assertEqual(result["exit_code"], 0, result["output"])
+        self.assertEqual(len(list(state.iterdir())), 12)
+        for marker in state.iterdir():
+            marker.unlink()
+        # The cleared environment must also supply libtest's independent budget.
+        result = self.command(["cargo", "test", "--frozen", "--lib"])
+        self.assertEqual(result["exit_code"], 0, result["output"])
+        ENV.require_test_count(result["output"], 12, "twelve-worker libtest")
 
     def test_allowed_local_graph_passes_all_offline_policy_checks(self):
         dep = self.fixture / "permitted"

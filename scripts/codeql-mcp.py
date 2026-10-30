@@ -34,7 +34,7 @@ SUPERVISOR = module("codeql_mcp_supervisor", "codeql-mcp-supervisor.py")
 Incomplete = GUARD.Incomplete
 PROFILE = {"request_timeout_seconds": 300, "startup_timeout_seconds": 600,
            "cpu_seconds": 600, "address_space_bytes": 8589934592,
-           "ram_hint_mb": 1024, "threads": 2}
+           "ram_hint_mb": 1024, "threads": 12}
 FORBIDDEN_TOOLS = {"audit_clear_repo", "annotation_delete", "codeql_database_create",
                    "codeql_pack_install", "codeql_test_accept", "codeql_test_extract",
                    "create_codeql_query", "codeql_query_format"}
@@ -98,7 +98,7 @@ def inventory(base, item, *, copy=None):
         if GUARD.digest(path) != expected:
             raise Incomplete("Installed CodeQL file changed: " + str(path.relative_to(folder)))
 
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=12) as pool:
         list(pool.map(check, jobs))
     return {"root": item["root"], "files": len(files), "links": len(links)}
 
@@ -184,7 +184,8 @@ def command(state, argv, *, cwd=None, sealed=()):
            "CODEQL_DATABASES_BASE_DIRS": "/work", "CODEQL_QUERY_RUN_RESULTS_DIRS": "/work/results",
            "MONITORING_STORAGE_LOCATION": "/work/monitoring", "ENABLE_MONITORING_TOOLS": "false",
            "ENABLE_ANNOTATION_TOOLS": "false", "DEBUG": "false",
-           "JAVA_TOOL_OPTIONS": "-Xmx1024m -XX:ActiveProcessorCount=2",
+           "CODEQL_THREADS": str(PROFILE["threads"]),
+           "JAVA_TOOL_OPTIONS": f"-Xmx1024m -XX:ActiveProcessorCount={PROFILE['threads']}",
            "RUSTC": str(stable / "bin/rustc"), "RUSTDOC": str(stable / "bin/rustdoc")}
     return RUNTIME.sandbox_command(ROOT, work, argv, readonly=[base, ROOT, stable],
                                   path_dirs=[base / "runtime", base / "cli/codeql", stable / "bin"],

@@ -1,3 +1,13 @@
+# Developer tooling budget requested by David: up to twelve parallel jobs.
+# This controls Cargo scheduling, not CPU affinity or release codegen units.
+[build]
+jobs = 12
+
+# libtest has its own scheduler; nextest is configured in .config/nextest.toml.
+# Explicit isolated mutation environments lower this to one per outer worker.
+[env]
+RUST_TEST_THREADS = "12"
+
 # Keep portable-core checks on the host; select the native target explicitly.
 # Use admitted native MSVC inputs or the explicit bundled-LLD/xwin cross lane.
 # Release optimization lives in Cargo.toml. Preserve generic x64 compatibility:

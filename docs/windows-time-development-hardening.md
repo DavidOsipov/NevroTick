@@ -294,7 +294,8 @@ The following target settings are already present in [`.cargo/config.toml`](../.
 ```toml
 [target.x86_64-pc-windows-msvc]
 rustflags = [
-  # Match the pinned target's baseline; do not use the build host's ISA.
+  # Currently admitted legacy baseline; OD-07's v3 migration is pending §6.7.
+  # Do not use the build host's ISA or drop the mitigation flags below.
   "-C", "target-cpu=x86-64",
   "-C", "control-flow-guard=yes",
   "-C", "link-arg=/GUARD:CF",
@@ -353,7 +354,7 @@ The selected workspace release candidate is `opt-level=3`, `lto="thin"`, `codege
 
 The supplied **Optimized build of the compiler** guide concerns rebuilding `rustc`, including `bootstrap.toml`, its allocator and `opt-dist`; it is not an application build recipe. Its Windows LTO warning links open issue **rust-lang/rust#109114**, checked 29 October 2026: unstable `-Zdylib-lto` with ThinLTO and dynamic Rust-library imports on MSVC. That issue does not establish a general failure of ordinary stable Cargo application ThinLTO. Keep the unstable/dynamic-library experiment outside the selected configuration, and qualify the actual compiler/linker/target/graph rather than assuming either immunity or universal breakage. [C24, C25]
 
-`target-cpu=x86-64` explicitly matches the pinned Rust 1.99.1 MSVC target's base CPU; its target feature baseline remains in force. It does not raise the shipped ISA floor to `x86-64-v2`/`v3` or the build host's `native` CPU. A future higher minimum needs an explicit compatibility decision and supported CPU/OS/VM observations. Application flags do not rebuild the supplied standard library or prebuilt native objects; rebuilding `std` is a separate unstable workflow and is not adopted. [C10, C28]
+The current admitted `target-cpu=x86-64` matches the pinned Rust 1.99.1 MSVC target's base CPU. [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization), accepted 30 October, now selects an intended `x86-64-v3` minimum and runtime-selected higher-feature functions. Section 6.7 owns its pending build/checker migration and supported CPU/OS/VM qualification; the older configuration and receipts do not qualify that change. Global v4 and build-host `native` compilation remain excluded. Application flags do not rebuild the supplied standard library or prebuilt native objects; rebuilding `std` is a separate unstable workflow and is not adopted. [C10, C28]
 
 PGO remains an optional future experiment. Rust's pinned profiler runtime includes Windows/MSVC support, but a selected Windows instrumentation/link/runtime lane and compatible `llvm-profdata` must be admitted and observed. Train the actual Windows executable on representative bounded inputs; retain source, lock/features, complete effective flags, binary/tool identities, workload/seed, raw profiles and merged-profile hash. Use absolute paths, fresh owned profile output and matching generate/use settings; LLVM raw profiles have no forward/backward format guarantee, so prefer tools from the pinned toolchain. Missing/stale profiles or unexecuted training provide no result. [C26]
 
@@ -381,6 +382,44 @@ For the pinned **Rust 1.99.1 / LLVM 23.1.1** Windows x64 toolchain, section 6.5'
 For ordinary optimized MSVC-flavor links, the pinned rustc already requests `/OPT:REF,ICF`; unoptimized links request `/OPT:REF,NOICF`. Retained debug information causes `/DEBUG`, which the pinned LLD interprets as a full PDB request. That LLD derives nonincremental linking when REF/ICF are active; Cargo's `incremental=false` separately controls compiler caching. Do not duplicate these flags as a presumed performance improvement. A full PDB packages the information emitted: `debug="limited"` still omits Rust type/variable-level information. ICF can merge function/read-only-data addresses and complicate names/breakpoints; address uniqueness is not a safe identity contract. [C10, C32, C33]
 
 Do not add `/LTCG` as a substitute for Rust LTO or `/DEBUG:FASTLINK` as PDB boilerplate. The pinned LLD warns and substitutes full PDB for FASTLINK, conflicting with `/WX`; native MSVC LTCG and cross-language LLVM LTO have their own input/toolchain requirements. Future native dependencies need their own admitted compiler flags, graph and emitted-object evidence; Rust flags do not retrofit their protections. Record effective inputs and exact artifacts under CHECK-19/20, and retain CHECK-21's separate native performance/soak obligations. This policy adds no code-generation argument, native qualification or performance result. [C17, C29, C32, C33]
+
+### 6.7 v3 baseline and runtime CPU dispatch
+
+[OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+makes CPU optimization a required workstream. The intended Windows x64 minimum
+is `x86-64-v3`; the current admitted build remains generic until the
+[planned migration](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream).
+The [research report](supporting-reviews/x86-runtime-optimization.md) records the
+sources and limits. This section establishes no new flags, kernel or native pass.
+
+| Owner/guarantee | Required implementation and independent observation |
+| --- | --- |
+| Build owner: baseline and artifacts | Change the target-specific CPU entry and exact checker/control expectations together. Preserve the complete CFG/ASLR/DEP and linker-warning vector, profiles, overflow checks, unwind policy and symbols. Inspect effective Rust/native/generated-object flags and final payloads; do not replace the vector through ambient `RUSTFLAGS`. Audit standard-library and prebuilt inputs separately. |
+| Lifecycle/package owner: supported machines | Declare actual CPU/OS/VM rows. A prerequisite check that itself runs on the rejected machine must precede execution of any v3 payload. Observe useful behavior on a v3-capable baseline and clear refusal below it, including masked guest features. Keep one complete MSI; catching an illegal-instruction crash is not admission. Windows 11 branding alone proves no complete feature set. |
+| Kernel/dispatch owner: available functions | Compile optional specializations ahead of time with explicit `#[target_feature]` sets. Use Rust runtime feature detection, including its OS vector-state checks; select only a function whose whole enabled set is available. `avx512f` alone is not full v4. The baseline path remains reachable; never globally enable AVX-512, alter XCR0, or treat detection as runtime recompilation. |
+| Safety/algorithm owner: unchanged contracts | Keep unsafe code out of the pure core. Any necessary feature-specific unsafe boundary needs a narrow reviewed owner and checked safe interface outside that prohibition. Preserve length/alignment/bounds/lifetimes, exact integer time arithmetic, chronological floating-point operations, intermediate checks and error/failure atomicity. New reductions or FMA rounding require separately justified algorithm changes; no fast-math, reassociation or FTZ/DAZ shortcuts. |
+| Crypto owner: independent capabilities | AES/PCLMUL/VAES are not guaranteed by v2/v3/v4. Use the admitted provider's feature dispatch and fallback; retain provider/licence/trust gates and qualify real small-packet and KE workloads separately. |
+| Performance/QA owner: benefit and limits | Identify a real hotspot and predeclare useful-work metrics, noise/acceptance rule and finite campaign bounds. Compare baseline and each supported specialization on native Windows with normal protections. Require correctness/rejection parity and observe startup, tail latency, CPU/wakeups, retained resources and binary size. Hardware availability alone does not justify selecting AVX-512 over AVX2. |
+
+Dispatch tests cover v3 fallback and supported AVX-512 subsets, required
+feature absent, CPU feature masked by a VM, and OS vector state unavailable.
+Distinguish the layers: unavailable baseline AVX state rejects v3 startup;
+unavailable AVX-512 state with usable v3 selects the v3 fallback. A disabled
+baseline feature must never be treated as merely a slower optional path.
+An injected feature inventory may select/test a branch without executing an
+unsupported instruction. A forced optimized execution must first satisfy the
+real detector; a forced baseline mode may always disable an optimization. Retain
+native supported/unsupported rows in addition to such selection controls.
+Shared dispatch/API tests do not replace numerical checks of each implementation.
+
+Implement only measured kernels and a small auditable selection seam; do not
+scaffold a generic dispatch framework or product crates solely for this policy.
+The workstream must evaluate meaningful candidates; an unused feature probe or
+empty wrapper is no optimization result. Record a non-beneficial candidate and
+its revisit trigger rather than shipping it as faster. Preserve CHECK-19/20
+build/artifact evidence, CHECK-25 numerical/contract controls, CHECK-26 graph
+admission and CHECK-21's independent native resource/soak obligations. Missing
+native rows or a changed algorithm remain incomplete, not passing fallbacks.
 
 ## 7. Dependencies, auditors and supply-chain policy
 

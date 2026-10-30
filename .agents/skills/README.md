@@ -1,7 +1,7 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-and four original NevroTick workflows for the Windows time client in
+and five original NevroTick workflows for the Windows time client in
 [the documentation guide](../../docs/README.md) and its development host.
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
@@ -20,6 +20,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Implement Rust ownership, errors, concurrency or Windows adapters | [implement-rust](implementation/implement-rust/SKILL.md) |
 | Implement typed errors, safe diagnostic projection, retry or cleanup failure handling | [Error-handling procedure](implementation/implement-rust/references/error-handling.md) under `implement-rust`; [privacy/logging](security/security-privacy-logging/SKILL.md) for output sinks |
 | Optimize a measured CPU, allocation, latency, wakeup, startup or size cost | [optimize-rust-performance](implementation/optimize-rust-performance/SKILL.md); [resource QA](testing/qa-performance-resources/SKILL.md) for measurement/acceptance |
+| Implement or review x64 baseline admission and runtime CPU-feature dispatch | [implement-cpu-dispatch](implementation/implement-cpu-dispatch/SKILL.md); pair with [performance optimization](implementation/optimize-rust-performance/SKILL.md) for measured adoption |
 | Architect or harden Windows services, SCM lifecycle and recovery | [Service adapter guide](implementation/implement-rust/references/windows-service-adapters.md) and [Windows privileges](security/security-windows-privileges/SKILL.md) |
 | Enforce function/module contracts, IPC/configuration admission or domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
 | Implement numerical kernels or adapt upstream algorithm semantics | [Numerical procedure](implementation/implement-rust/references/numerical-kernels.md) and [Chrony caller-path extraction](implementation/implement-rust/references/chrony-port-simulator.md) under `implement-rust` |
@@ -83,7 +84,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 60 grouped skills without aliases;
+for precise selection. The pack registers 61 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack

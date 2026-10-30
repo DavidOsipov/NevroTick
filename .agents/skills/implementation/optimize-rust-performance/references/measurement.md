@@ -41,14 +41,21 @@ for #27438, later fixes and the pinned regression test. Keep ThinLTO a candidate
 until relevant native correctness and useful-work comparisons pass; neither a
 clean cross-link nor switching LTO/linkers alone establishes runtime correctness.
 
-Keep distributed Windows x64 builds at the explicitly admitted `x86-64` CPU
-baseline. `target-cpu=native` depends on the build machine; it is unsuitable for
-distributed artifacts or portable cross-build qualification. An explicit higher
-CPU/feature floor needs a compatibility decision, declared supported hardware and
-native positive/unsupported-machine behavior before adoption. No incidental AVX,
-AVX2 or x86-64-v2/v3 requirement follows from enabling optimization. Review native
-dependency/compiler flags as well as Rust flags; one baseline flag does not prove
-the complete package's instruction-set requirements. See
+[OD-07](../../../../../docs/nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+selects an intended `x86-64-v3` minimum and required runtime optimization. The
+currently admitted configuration remains generic `x86-64` until the controlled
+[workstream](../../../../../docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+migrates flags, checker expectations and qualification. Inspect current bytes;
+do not use this selected direction to relabel historical artifacts or silently
+change an active candidate. `target-cpu=native` remains unsuitable for distributed
+artifacts. Review native dependencies and prebuilt objects as well as Rust flags.
+
+Use [CPU dispatch implementation](../../implement-cpu-dispatch/SKILL.md) and
+[hardening §6.7](../../../../../docs/windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch)
+for the v3 prerequisite and exact-feature/OS gates of specialized functions.
+AVX2 is already in v3; optional AVX-512 or independent AES/VAES features require
+their own declared support and useful-work evidence. Native supported/unsupported
+CPU/OS/VM behavior and the full mitigation vector remain required. See
 [rustc target-cpu](https://doc.rust-lang.org/rustc/codegen-options/index.html#target-cpu).
 
 ### LLVM policy and native screening

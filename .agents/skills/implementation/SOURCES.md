@@ -120,3 +120,35 @@ Pinned files read through GitHub connector:
 - [Original notice](https://github.com/DavidOsipov/pdfcraft/blob/c9a02b378271f92a73cb44be9fd9e4acc6921516/.agents/skills/QA/pdfcraft-rust-implementation/THIRD_PARTY_NOTICES.md):
   David-owned original material is MIT; the full notice is retained in each adapted
   portable leaf. No target application license is changed.
+
+## CPU baseline and runtime dispatch — 30 October 2026
+
+The original local [CPU dispatch skill](implement-cpu-dispatch/SKILL.md) implements
+[OD-07](../../../docs/nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+and [hardening §6.7](../../../docs/windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch).
+The [maintained research](../../../docs/supporting-reviews/x86-runtime-optimization.md)
+records primary Rust Reference, std detection implementation and psABI feature
+sources. Function-level features require exact CPU/OS gates; v3 includes AVX2,
+and AES is an independent provider capability. Feature support is no benchmark.
+The skill is locally authored; no third-party skill implementation or example
+code was copied. It admits no product dependency, unsafe exception or native pass.
+
+The follow-up review checked Rust's [pinned atomic feature cache](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std_detect/src/detect/cache.rs#L55-L90),
+[x86 cold detection](https://doc.rust-lang.org/src/std_detect/detect/os/x86.rs.html)
+and [`OnceLock`](https://doc.rust-lang.org/std/sync/struct.OnceLock.html).
+Warm feature lookup is already cached; caching the selected typed kernel is a
+separate measured design choice. Full-v4 membership does not require every
+narrower AVX-512 function to enable unused extensions. These references correct
+overbroad external advice without introducing a custom atomic dispatcher.
+
+Three separate read-only research assignments then examined CPU/OS/VM admission,
+compiler/ABI boundaries and cache/performance lifecycle. The coordinator also
+checked numerical/memory semantics using Context7 against primary Rust docs and
+the installed intrinsic source. Their reusable findings live in
+[x86 caveats](implement-cpu-dispatch/references/x86-caveats.md), with source-specific
+links to the pinned compiler, Microsoft XSTATE/DLL/calling-convention/Hyper-V
+documentation, and Intel's generation-specific SIMD tuning and packet-processing
+guides. Rust 1.99.0 Context7 examples were reconciled with the 1.99.1 source/docs;
+portable SIMD examples grant no nightly/dependency admission. No third-party
+skill code or application implementation was imported. Research and model checks
+do not establish native compatibility, tail-load safety or a useful speedup.

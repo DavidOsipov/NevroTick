@@ -84,6 +84,58 @@ healthy control. Jobs, output and wall time are bounded. Resource limits are
 per-process/namespace, **not cumulative cgroup quotas**; this lane admits the
 fixed trusted fixture, not arbitrary dependency build scripts.
 
+## Development CPU budget
+
+David requested **12 parallel workers** on 30 October 2026. The repository
+[Cargo configuration](.cargo/config.toml) sets twelve build jobs and twelve
+libtest threads; [nextest](.config/nextest.toml) separately admits twelve test
+workers. The guarded compiler, Clippy, rustdoc, test and coverage commands carry
+the same budget into cleared sandbox environments. Independent inventory hashing
+uses twelve workers. actionlint and Gitleaks receive `GOMAXPROCS=12`, which budgets
+Go execution rather than their external subprocesses. Tools without a supported
+parallel scheduler remain unchanged.
+
+Mutation campaigns use twelve outer workers, twelve shared jobserver tokens and
+**one Cargo build job and one libtest thread per worker**. Both enumeration and
+campaign commands explicitly enable the pinned tool's jobserver. Do not multiply
+both layers to twelve. Sequential
+fixture edits, shared output ownership, native Windows operations, deterministic
+resource observations, fuzz campaign ownership and Loom's modeled thread count
+keep their existing ordering/bounds. Release codegen units, numerical semantics,
+security checks and memory/CPU/wall-time limits are unchanged. These are worker
+budgets per operation, not CPU affinity, an aggregate machine quota or a promise
+of twelve busy cores; admitted dependency graphs may expose less parallel work.
+Run one owner per shared build/output directory.
+
+The local CodeQL profile, CLI configuration, extractor and JVM processor hint
+also request twelve threads. Reconnect the CodeQL MCP after this change so a new
+process receives the updated environment. Hosted CodeQL remains deferred. Its
+existing RAM estimates and request/CPU limits still apply independently.
+See the [Cargo jobs documentation](https://doc.rust-lang.org/cargo/reference/config.html#buildjobs),
+[nextest scheduling](https://nexte.st/docs/configuration/threads-required/),
+[CodeQL thread option](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli-manual/query-run)
+and [Go scheduler setting](https://pkg.go.dev/runtime#hdr-Environment_Variables).
+
+Validation on 30 October: the old two-worker nextest configuration failed a
+twelve-party test barrier; nextest and libtest both reached it with the new
+budget. The integrated portable row passed formatting, compilation, Clippy and
+rustdoc, 118 ordinary tests, 51 doctests and 91 optimized test executions.
+All 311 selected tooling controls, five workflow-acquisition controls and the
+strict-policy fixtures passed. Evidence is retained under
+`~/.local/share/nevrotick/cpu12-20261030-axla64fh/`. The Windows-mounted vendor path
+stalled before execution; that owned attempt was interrupted, then the same
+sixteen admitted archives/source maps were verified from existing cached bytes
+into Linux storage for the successful row. The default local storage pointer was
+not changed. Native Windows, fresh CodeQL execution and full coverage/mutation/
+fuzz campaigns were not rerun; no acceleration measurement is claimed.
+
+That validation also exposed inherited stale time-domain equivalence and fuzz
+policy references. Independent review checked the unchanged six exact source/
+proof bindings, identical sixteen-package registry records and unchanged
+standalone fuzz graph before refreshing their candidate/input references.
+`equivalence-rebind.json` in the evidence directory records the carry-forward;
+historical campaign outcomes remain historical and were not rewritten.
+
 ## Strict development policy
 
 Configured on 29 October 2026 using Context7 (Clippy and cargo-deny), pinned
@@ -97,7 +149,7 @@ follow the development-hardening guide.
 | [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. `missing_docs_in_private_items` also requires private-item documentation. Permanent local `allow` attributes, multiple unsafe operations per block and discarded `Result::ok()` values fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |
 | [rustfmt.toml](rustfmt.toml), [clippy.toml](clippy.toml) | Explicit 2024 formatting and private API checks; no blanket test exemptions for unwrap/expect/panic/debug output. |
 | [deny.toml](deny.toml) | Retained strict bootstrap policy, including held crypto providers; its GPL-2.0-only/no-build-script baseline remains unchanged. The UI-M0 verifier adds only the reviewed graph's grants to an owned snapshot; direct `cargo deny` against this baseline does not admit the product graph. |
-| [.config/nextest.toml](.config/nextest.toml) | Two test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
+| [.config/nextest.toml](.config/nextest.toml) | Twelve test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
 | [.cargo/audit.toml](.cargo/audit.toml) | No ignored advisory IDs or severity cutoff; warnings fail. Acquisition is separate from analysis and requires an admitted database/index snapshot. |
 | [.cargo/mutants.toml](.cargo/mutants.toml) | Frozen Cargo inputs, bounded timeout multipliers, no copied VCS/target, lint capping disabled. Enumeration/configuration controls are qualified; a mutation campaign is still pending. |
 | [policy/verification-manifest.toml](policy/verification-manifest.toml) | Retains 90% executable-line coverage per security module and 95% mutation per critical file. Records UI-M0 preview admission and the inert header/framing owners, six critical files and Linux/Windows rows for both packages. Candidate results belong to their task records; UI-M0 follows its restricted acceptance scope. |
@@ -268,7 +320,7 @@ Protocol input is limited before upstream schema validation: 1 MiB/frame,
 output is bounded to 64 MiB protocol plus 1 MiB stderr. Each request has a
 300-second wall deadline; startup allows 600 seconds. Timeout/disconnect kills
 the private PID namespace. Per-process limits include 600 CPU seconds, 8 GiB
-address space, 256 MiB/file and bounded file descriptors/processes. Two threads
+address space, 256 MiB/file and bounded file descriptors/processes. Twelve threads
 and a 1024 MB RAM estimate are requested, but CodeQL raises some estimates to
 2048 MB and uses its own JVM heap settings. These are **not an aggregate RAM
 quota**. Exhausted budgets require investigation/reconnection, not removal of
@@ -691,11 +743,21 @@ no stripping and Windows CFG/ASLR/DEP flags remain required. Development builds
 retain Cargo's incremental defaults. These settings favor runtime optimization
 opportunities at higher compile/link cost; no speedup has been measured.
 
-The Windows target explicitly keeps `target-cpu=x86-64`. `native` specializes to
-the builder, while v2/v3 introduce a new CPU floor; neither is a general-release
-shortcut. This does not rebuild the supplied standard library for another CPU.
-The policy checker rejects unreviewed CPU/profile overrides, including PGO flags
-that would replace the complete mitigation vector.
+The currently admitted Windows configuration still uses `target-cpu=x86-64`.
+[OD-07](docs/nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+now selects an intended v3 minimum and required runtime-selected optimization.
+The [execution plan](docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+owns migration of `.cargo/config.toml`, strict checker/control expectations,
+affected input bindings, skills guidance and qualified Windows artifacts.
+This documentation change implements no CPU flag or dispatch function; do not
+copy v3 into the current configuration without that coordinated admission.
+Preserve all mitigations and use exact-feature functions for optional AVX-512
+work, rather than global v4 or `native` compilation. AVX2 is already part of the
+intended v3 baseline. This does not
+rebuild the supplied standard library for another CPU. The policy checker still
+rejects unreviewed CPU/profile overrides, including ambient PGO flags that would
+replace the complete mitigation vector. See [hardening §6.7](docs/windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch)
+for compatibility, numerical and measured-benefit gates.
 
 The guarded `scripts/verify.py --lane windows` row retains compiler/Clippy checks
 and links the UI with `--release`, exporting the executable and its matching PDB
@@ -793,6 +855,19 @@ garde's exact closure and libFuzzer, without adding shipping dependencies.
 Use a new private Linux output and the admitted vendor; actual results belong to
 S1.1c. Tooling admission alone establishes no numerical or Windows behavior.
 
+The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
+and [time-core-analysis.json](policy/time-core-analysis.json). Its existing
+five-owner admission covers regression, residuals, normalization, history and
+runs; the new selection owner requires a revised integrated admission before a
+six-owner claim. The [S1.2 concurrency record](tasks/s1.2-regression-readiness.md#user-requested-mutation-concurrency-trials-30-october-2026)
+records the qualified ten-worker regression pilot and failed lower-limit trials.
+The core selects ten outer workers, isolated mutant targets, one inner Cargo/test
+slot and a fixed 512-task sandbox limit for admitted mutation campaigns.
+Other invocations retain 128; this changes no shipping compiler flags, NTS job
+limit or quality threshold. The 131 persistent profile/accounting controls passed;
+the expanded candidate's actual analysis results remain pending. A healthy pilot
+is no full pass.
+
 The separate [time-domain allocation observer](scripts/verify-time-domain-windows-allocation.py)
 has two explicit lanes. Build with `--lane build --profile release`, the admitted
 `--vendor-dir`, `--toolchain-dir`, `--xwin-config`, `--xwin-inventory` and a new
@@ -821,7 +896,7 @@ python3 -B scripts/verify.py
 
 | Row | Work and evidence limit |
 | --- | --- |
-| `--lane portable` (default) | Format, compiler, Clippy and rustdoc for all four admitted members; separate per-package library/integration tests and doctests, plus optimized time-domain and ntp-exchange tests with their release-only discriminators. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
+| `--lane portable` (default) | Format, compiler, Clippy and rustdoc for the admitted workspace members; separate per-package library/integration tests and doctests, plus the configured optimized owner tests with their release-only discriminators. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows graph checks using a separately acquired RustSec/index snapshot, bound to the lockfile and at most 24 hours old. |
 | `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and release binary linking; copies the executable, matching PDB and receipt to a new external directory. Native execution remains a separate observation. |
 

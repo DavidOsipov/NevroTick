@@ -36,9 +36,9 @@
     "cpu_seconds": 600,
     "address_space_bytes": 8589934592,
     "ram_hint_mb": 1024,
-    "threads": 2
+    "threads": 12
   },
-  "config_sha256": "75a0485dfbea870936bd98493dfb81ab56e6075c9f02ffadc7194b4d4e98efb8",
+  "config_sha256": "4c6484f1a311b6e34c31c82b8e8576f6a0e773cb13fc22dec96fefa764e1720d",
   "inventories": [
     {
       "root": "server",

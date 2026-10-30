@@ -52,6 +52,15 @@ class GuardTests(unittest.TestCase):
             with self.assertRaisesRegex(ENV.Incomplete, "fallback is forbidden"):
                 ENV.sandbox_command(Path("/toolchain"), Path("/work"), ["cargo", "test"])
 
+    def test_cleared_sandbox_receives_independent_build_and_test_budgets(self):
+        with patch.object(ENV.shutil, "which", side_effect=lambda name: "/usr/bin/" + name):
+            command = ENV.sandbox_command(Path("/toolchain"), Path("/work"), ["cargo", "test"])
+        settings = {command[i + 1]: command[i + 2] for i, value in enumerate(command) if value == "--setenv"}
+        self.assertEqual(settings["CARGO_BUILD_JOBS"], "12")
+        self.assertEqual(settings["RUST_TEST_THREADS"], "12")
+        self.assertIn("--clearenv", command)
+        self.assertIn("--nproc=128", command)
+
     def test_changed_target_flags_are_refused_before_execution(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -95,6 +104,7 @@ class GuardTests(unittest.TestCase):
             (root / ".cargo").mkdir()
             for name, candidate, diagnostic in variants:
                 (root / ".cargo/config.toml").write_text(
+                    '[build]\njobs=12\n[env]\nRUST_TEST_THREADS="12"\n'
                     '[target.x86_64-pc-windows-msvc]\nrustflags=' + json.dumps(candidate) + '\n')
                 with self.subTest(case=name), patch.dict(os.environ, {}, clear=True):
                     with self.assertRaisesRegex(ENV.Incomplete, diagnostic):

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange"]
+members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core"]
 resolver = "3"
 
 [workspace.package]

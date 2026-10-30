@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the admitted UI-M0, wire, time-domain and exchange rows in an isolated sandbox.
+"""Run the admitted UI-M0, wire, time-domain, exchange and synthetic regression rows in an isolated sandbox.
 
 Acquisition is separate. Missing tools, vendor bytes or product tests fail closed.
 Windows cross-linking supplies no native UI, service or release qualification.
@@ -31,10 +31,11 @@ STRICT_SPEC.loader.exec_module(STRICT)
 PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
 PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
-            "ntp-exchange": "crates/ntp-exchange"}
+            "ntp-exchange": "crates/ntp-exchange", "time-core": "crates/time-core"}
 OPTIMIZED_DISCRIMINATORS = {
     "time-domain": "release_build_preserves_checked_admission",
     "ntp-exchange": "release_build_preserves_exchange_admission",
+    "time-core": "release_build_preserves_regression_admission",
 }
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
@@ -67,7 +68,7 @@ def inventory(directory: Path) -> dict[str, str]:
 
 
 def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
-    """Admit the four reviewed members, policy inheritance and exact locked graph."""
+    """Admit the five reviewed members, policy inheritance and exact locked graph."""
     try:
         STRICT.read_configuration(root)
     except STRICT.ENV.Incomplete as error:
@@ -81,7 +82,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     workspace = tomllib.loads((root / "Cargo.toml").read_text())
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
     if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):
-        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, NTP-wire, time-domain and exchange workspace members.")
+        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, NTP-wire, time-domain, exchange and time-core workspace members.")
     if (workspace["workspace"].get("lints") != fragment["workspace"]["lints"]
             or workspace.get("profile") != fragment["profile"]):
         raise ENV.Incomplete("Workspace lint/profile policy differs from its owner.")
@@ -95,19 +96,26 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             raise ENV.Incomplete("An unadmitted first-party build script is present.")
         if package == "ntp-wire" and set(member) != {"package", "lints"}:
             raise ENV.Incomplete("The pure NTP-wire member may not add dependencies, features or targets.")
-        if package == "time-domain":
+        if package in {"time-domain", "time-core"}:
             required = {"garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]}}
+            if package == "time-core":
+                required["time-domain"] = {"version": "=0.0.0", "path": "../time-domain"}
             if (set(member) != {"package", "lints", "dependencies"}
+                    or member["package"].get("version") != "0.0.0"
                     or member.get("dependencies") != required
                     or type(member.get("dependencies", {}).get("garde", {}).get("default-features")) is not bool):
-                raise ENV.Incomplete("The time-domain member requires only exact garde 0.23.0, defaults off and derive.")
+                if package == "time-domain":
+                    raise ENV.Incomplete("The time-domain member requires only exact garde with the reviewed features.")
+                raise ENV.Incomplete("The time-core member requires its exact reviewed garde/local dependency graph.")
         if package == "ntp-exchange":
             required = {"ntp-wire": {"version": "=0.0.0", "path": "../ntp-wire"},
                         "time-domain": {"version": "=0.0.0", "path": "../time-domain"}}
-            if (set(member) != {"package", "lints", "dependencies"}
+            required_dev = {"time-core": {"version": "=0.0.0", "path": "../time-core"}}
+            if (set(member) != {"package", "lints", "dependencies", "dev-dependencies"}
                     or member["package"].get("version") != "0.0.0"
-                    or member.get("dependencies") != required):
-                raise ENV.Incomplete("The ntp-exchange member requires only exact local ntp-wire and time-domain 0.0.0 dependencies.")
+                    or member.get("dependencies") != required
+                    or member.get("dev-dependencies") != required_dev):
+                raise ENV.Incomplete("The ntp-exchange member requires only exact local ntp-wire and time-domain normal dependencies and the time-core dev dependency.")
         local_packages.add((package, member["package"]["version"]))
     policy = json.loads((root / "policy/ui-m0-dependencies.json").read_text())
     if policy.get("schema_version") != 1 or policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
@@ -126,7 +134,9 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or {(p["name"], p["version"]) for p in local} != local_packages
             or any(p.get("dependencies") for p in local if p["name"] == "ntp-wire")
             or any(p.get("dependencies") != ["garde"] for p in local if p["name"] == "time-domain")
-            or any(p.get("dependencies") != ["ntp-wire", "time-domain"] for p in local if p["name"] == "ntp-exchange")
+            or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
+            # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
+            or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):
@@ -237,7 +247,7 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
     """Select explicit product commands; never replace execution by bootstrap controls."""
     cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
              "--config", 'source.reviewed.directory="/vendor"']
-    base = ["--workspace", "--frozen", "--jobs", "1"]
+    base = ["--workspace", "--frozen", "--jobs", "12"]
     if lane == "portable":
         return [
             ("format", ["cargo", "fmt", "--all", "--", "--check"]),
@@ -246,14 +256,14 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
             ("rustdoc", [*cargo, "doc", *base, "--lib", "--no-deps"]),
         ] + [
             ("product-tests:" + package, [*cargo, "nextest", "run", "--package", package,
-                                         "--frozen", "--build-jobs", "1", "--lib", "--tests",
+                                         "--frozen", "--build-jobs", "12", "--lib", "--tests",
                                          "--user-config-file", "none", "--no-tests=fail"])
             for package in PACKAGES
         ] + [("doctests:" + package, [*cargo, "test", "--package", package,
-                                      "--frozen", "--jobs", "1", "--doc"])
+                                      "--frozen", "--jobs", "12", "--doc"])
              for package in PACKAGES] + [
             ("optimized-tests:" + package, [*cargo, "nextest", "run", "--package", package,
-                                           "--cargo-profile", "release", "--frozen", "--build-jobs", "1",
+                                           "--cargo-profile", "release", "--frozen", "--build-jobs", "12",
                                            "--lib", "--tests", "--user-config-file", "none", "--no-tests=fail"])
             for package in OPTIMIZED_DISCRIMINATORS]
     if lane == "windows":
@@ -261,7 +271,7 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
         return [("windows-compiler", [*cargo, "check", *target, "--all-targets"]),
                 ("windows-clippy", [*cargo, "clippy", *target, "--all-targets", "--", "-D", "warnings"]),
                  ("windows-link", [*cargo, "--config", f'target.{ENV.WINDOWS_TARGET}.linker="/work/linker"',
-                                   "build", "--release", "--package", PACKAGE, "--frozen", "--jobs", "1",
+                                   "build", "--release", "--package", PACKAGE, "--frozen", "--jobs", "12",
                                    "--target", ENV.WINDOWS_TARGET, "--bin", PACKAGE])]
     if lane == "dependencies":
         return [("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
@@ -573,7 +583,7 @@ def main(argv=None) -> int:
                  "advisory-receipt", "output-dir", "json"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
-    report = {"scope": f"UI-M0, NTP-wire, time-domain and exchange {args.lane} product verification", "status": "incomplete",
+    report = {"scope": f"UI-M0, NTP-wire, time-domain, exchange and synthetic regression {args.lane} product verification", "status": "incomplete",
               "native_windows_execution": "not performed", "advisory_freshness": "not checked by this row"}
     try:
         defaults = json.loads(POINTER.read_text()) if POINTER.is_file() else {}

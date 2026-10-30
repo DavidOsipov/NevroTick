@@ -221,7 +221,7 @@ def require_nextest_configuration(config: dict) -> None:
     expected = {
         "nextest-version": {"required": "0.9.150", "recommended": "0.9.150"},
         "profile": {"default": {
-            "default-filter": "all()", "test-threads": 2, "retries": 0,
+            "default-filter": "all()", "test-threads": ENV.CPU_JOBS, "retries": 0,
             "flaky-result": "fail", "fail-fast": False, "global-timeout": "10m",
             "slow-timeout": {"period": "30s", "terminate-after": 2,
                              "grace-period": "5s", "on-timeout": "fail"},
@@ -341,10 +341,10 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
                 raise ENV.Incomplete(f"{label}: required rejection diagnostic absent: {diagnostic}")
             return result["output"]
 
-        cargo = ["cargo", "check", "--workspace", "--all-targets", "--frozen", "--jobs", "1"]
-        clippy = ["cargo", "clippy", "--workspace", "--all-targets", "--frozen", "--jobs", "1",
+        cargo = ["cargo", "check", "--workspace", "--all-targets", "--frozen", "--jobs", "12"]
+        clippy = ["cargo", "clippy", "--workspace", "--all-targets", "--frozen", "--jobs", "12",
                   "--", "-D", "warnings"]
-        docs = ["cargo", "doc", "--workspace", "--no-deps", "--frozen", "--jobs", "1"]
+        docs = ["cargo", "doc", "--workspace", "--no-deps", "--frozen", "--jobs", "12"]
         execute("format-positive", ["cargo", "fmt", "--all", "--", "--check"])
         execute("compiler-positive", cargo)
         execute("clippy-positive", clippy)
@@ -370,9 +370,9 @@ const fn checked_successor(value: u64) -> Option<u64> {
         execute("private-contract-docs-negative", clippy, "missing_docs_in_private_items")
         source.write_text(SOURCE)
         execute("rustdoc-positive", docs)
-        tests = execute("unit-positive", ["cargo", "test", "--lib", "--frozen", "--jobs", "1"])
+        tests = execute("unit-positive", ["cargo", "test", "--lib", "--frozen", "--jobs", "12"])
         ENV.require_test_count(tests, 2, "policy unit control")
-        tests = execute("doctest-positive", ["cargo", "test", "--doc", "--frozen", "--jobs", "1"])
+        tests = execute("doctest-positive", ["cargo", "test", "--doc", "--frozen", "--jobs", "12"])
         ENV.require_test_count(tests, 1, "policy doctest control")
         execute("windows-compiler-positive", cargo + ["--target", ENV.WINDOWS_TARGET])
         for label, addition, diagnostic in (
@@ -471,7 +471,7 @@ fn main() {
     println!("RELEASE_BOUNDARY_OK");
 }
 ''')
-        output = execute("release-boundary-positive", ["cargo", "run", "--release", "--frozen", "--jobs", "1"])
+        output = execute("release-boundary-positive", ["cargo", "run", "--release", "--frozen", "--jobs", "12"])
         if "RELEASE_BOUNDARY_OK" not in output:
             raise ENV.Incomplete("Optimized arithmetic positive observer did not execute.")
         binary.write_text('''//! Profile control.
@@ -481,7 +481,7 @@ fn main() {
     println!("{}", value + increment);
 }
 ''')
-        execute("release-overflow-negative", ["cargo", "run", "--release", "--frozen", "--jobs", "1"],
+        execute("release-overflow-negative", ["cargo", "run", "--release", "--frozen", "--jobs", "12"],
                 "attempt to add with overflow")
         binary.write_text('''//! Profile control.
 fn main() {
@@ -490,7 +490,7 @@ fn main() {
 }
 ''')
         output = execute("verify-release-positive", ["cargo", "run", "--profile", "verify-release",
-                         "--frozen", "--jobs", "1"])
+                         "--frozen", "--jobs", "12"])
         if "VERIFY_PROFILE_OK" not in output:
             raise ENV.Incomplete("Verification profile observer did not execute.")
         binary.unlink()

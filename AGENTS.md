@@ -94,6 +94,13 @@ framing without exchange, era, authentication or sample admission.
 [time-domain](crates/time-domain/Cargo.toml) is the third member under
 [S1.1c](tasks/s1.1-time-domain.md): checked numerical/era/clock-domain work in
 progress, with no network, clock or authentication effects.
+[ntp-exchange](crates/ntp-exchange/Cargo.toml) owns a single-slot, unauthenticated
+fixture association under [S1.1d](tasks/s1.1-exchange-association.md) and the
+[S1.1e scenario harness](tasks/s1.1-deterministic-harness.md).
+[time-core](crates/time-core/Cargo.toml) owns the pure regression, residual,
+normalization and fixed-capacity fixture-history code described by
+[S1.2](tasks/s1.2-regression-readiness.md). Its checked fixture results do not
+establish production sample eligibility, selection, clock authority or P1.
 Other proposed components remain architecture plans until their source exists.
 Inspect current manifests/source before choosing commands;
 never scaffold product crates merely to pass documentation/tool checks.

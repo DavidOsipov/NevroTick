@@ -3,7 +3,8 @@ nextest-version = { required = "0.9.150", recommended = "0.9.150" }
 
 [profile.default]
 default-filter = "all()"
-test-threads = 2
+# Twelve independent tests at a time; fixture ownership can require serial work.
+test-threads = 12
 retries = 0
 flaky-result = "fail"
 fail-fast = false

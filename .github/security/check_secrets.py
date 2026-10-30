@@ -49,7 +49,8 @@ def main(argv=None):
             ignore = scratch / "empty-ignore"
             ignore.write_text("")
             environment = {"PATH": "/usr/bin:/bin", "HOME": folder,
-                           "XDG_CONFIG_HOME": folder, "LANG": "C.UTF-8"}
+                           "XDG_CONFIG_HOME": folder, "LANG": "C.UTF-8",
+                           "GOMAXPROCS": "12"}
             flags = ["--config", str(ROOT / ".gitleaks.toml"), "--redact=100",
                      "--ignore-gitleaks-allow", "--gitleaks-ignore-path", str(ignore),
                      "--max-target-megabytes=0", "--max-decode-depth=3",

@@ -25,6 +25,7 @@ import tomllib
 
 
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
+CPU_JOBS = 12
 MSVC_FLAGS = [
     "-C", "target-cpu=x86-64",
     "-C", "control-flow-guard=yes", "-C", "link-arg=/GUARD:CF",
@@ -184,8 +185,9 @@ def inspect(root: Path) -> dict:
     if not config.is_file():
         raise Incomplete("Missing repository target-specific Cargo configuration.")
     parsed = tomllib.loads(config.read_text())
-    if parsed != {"target": {WINDOWS_TARGET: {"rustflags": MSVC_FLAGS}}}:
-        raise Incomplete("Cargo configuration differs from the admitted target-only Windows flags.")
+    if parsed != {"build": {"jobs": CPU_JOBS}, "env": {"RUST_TEST_THREADS": str(CPU_JOBS)},
+                  "target": {WINDOWS_TARGET: {"rustflags": MSVC_FLAGS}}}:
+        raise Incomplete("Cargo configuration differs from the admitted CPU budget and Windows flags.")
     policy_file = root / "policy/tool-manifest.json"
     if not policy_file.is_file():
         raise Incomplete("Missing reviewed policy/tool-manifest.json.")
@@ -311,7 +313,8 @@ def sandbox_command(toolchain_dir: Path, work: Path, command: list[str]) -> list
                  "--chdir", "/work/fixture"])
     for key, value in {"PATH": "/toolchain/bin:/usr/bin:/bin", "LANG": "C.UTF-8",
                        "TMPDIR": "/tmp", "CARGO_HOME": "/work/cargo-home",
-                       "CARGO_TARGET_DIR": "/work/target", "CARGO_INCREMENTAL": "0"}.items():
+                       "CARGO_TARGET_DIR": "/work/target", "CARGO_INCREMENTAL": "0",
+                       "CARGO_BUILD_JOBS": str(CPU_JOBS), "RUST_TEST_THREADS": str(CPU_JOBS)}.items():
         args.extend(["--setenv", key, value])
     # Apply NPROC inside the new user namespace. Applying it before bwrap would
     # charge unrelated host processes/threads owned by this development user.
@@ -366,13 +369,13 @@ def smoke(root: Path, metadata: dict, evidence: dict) -> dict:
                 raise Incomplete("Sandbox control did not execute its observer.")
         commands = [
             ("format", ["cargo", "fmt", "--", "--check"], None),
-            ("clippy", ["cargo", "clippy", "--offline", "--locked", "--all-targets", "--jobs", "1",
+            ("clippy", ["cargo", "clippy", "--offline", "--locked", "--all-targets", "--jobs", "12",
                          "--", "-D", "warnings", "-D", "clippy::all", "-D", "clippy::pedantic"], None),
-            ("unit-tests", ["cargo", "test", "--offline", "--locked", "--lib", "--jobs", "1",
-                             "--", "--test-threads=1"], 2),
-            ("doctests", ["cargo", "test", "--offline", "--locked", "--doc", "--jobs", "1"], 1),
+            ("unit-tests", ["cargo", "test", "--offline", "--locked", "--lib", "--jobs", "12",
+                             "--", "--test-threads=12"], 2),
+            ("doctests", ["cargo", "test", "--offline", "--locked", "--doc", "--jobs", "12"], 1),
             ("windows-target-check", ["cargo", "check", "--offline", "--locked", "--all-targets",
-                                       "--target", WINDOWS_TARGET, "--jobs", "1"], None),
+                                       "--target", WINDOWS_TARGET, "--jobs", "12"], None),
         ]
         for label, command, expected_tests in commands:
             result = run(sandbox_command(toolchain_dir, work, command), cwd=root, timeout=90)

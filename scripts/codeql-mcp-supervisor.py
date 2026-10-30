@@ -39,7 +39,7 @@ NOTIFICATIONS = frozenset({"notifications/initialized", "notifications/cancelled
 FORBIDDEN_KEYS = frozenset({"additionalargs", "command", "buildcommand",
                             "extractorenv", "evaluationfunction", "positional", "positionalargs"})
 OUTPUT_KEYS = frozenset({"output", "interpretedoutput", "evaluationoutput", "logdir", "evaluatorlog"})
-RESOURCE_LIMITS = {"threads": 2, "ram": 1024}
+RESOURCE_LIMITS = {"threads": 12, "ram": 1024}
 # The pinned upstream CLI adapter appends these arguments without `--` and
 # unwraps JSON-array-looking `file` strings. Require canonical absolute inputs
 # before either conversion can turn a supposed filename into another option.
@@ -96,7 +96,7 @@ def _argument_problem(value, depth=0):
             if normalized in {"learn", "overwrite"} and nested is not False:
                 return "Learning and overwrite modes are disabled."
             if normalized in RESOURCE_LIMITS and (type(nested) is not int or not 1 <= nested <= RESOURCE_LIMITS[normalized]):
-                return "Tool resources must be positive integers within threads=2 and ram=1024."
+                return "Tool resources must be positive integers within threads=12 and ram=1024."
             if normalized in OUTPUT_KEYS:
                 if not isinstance(nested, str) or "\0" in nested or "\\" in nested:
                     return "Output/log paths must be canonical absolute paths below /work/results."

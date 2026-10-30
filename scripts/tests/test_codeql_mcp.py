@@ -50,7 +50,7 @@ class LauncherControls(unittest.TestCase):
         for name in ("queries", "results", "policy/codeql", "home/.config/codeql", "fixtures"):
             (self.work / name).mkdir(parents=True, exist_ok=True)
         config = self.work / "policy/codeql/config"
-        config.write_text("--ram 1024\n--threads 2\n")
+        config.write_text("--ram 1024\n--threads 12\n")
         self.policy["config_sha256"] = sha256(config)
         (self.work / "home/.config/codeql/config").symlink_to("../../../policy/codeql/config")
         self.pointer = self.home / ".local/share/nevrotick/codeql-installation.json"
@@ -225,6 +225,9 @@ class LauncherControls(unittest.TestCase):
         self.assertTrue({self.work / "policy", self.work / "packs"}.issubset(options["sealed"]))
         self.assertEqual(options["environment"]["TRANSPORT_MODE"], "stdio")
         self.assertEqual(options["environment"]["CODEQL_QUERY_LOG_DIR"], "/work/results")
+        self.assertEqual(options["environment"].get("CODEQL_THREADS"), "12")
+        self.assertEqual(options["environment"]["JAVA_TOOL_OPTIONS"],
+                         "-Xmx1024m -XX:ActiveProcessorCount=12")
         self.assertNotIn("CODEQL_TEST_SECRET", options["environment"])
         self.assertEqual(options["cpu_seconds"], LAUNCH.PROFILE["cpu_seconds"])
 

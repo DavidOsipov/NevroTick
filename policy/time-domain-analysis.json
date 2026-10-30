@@ -16,8 +16,8 @@
   "mutation_build_seconds": 90,
   "mutation_test_seconds": 60,
   "contracts_wall_seconds": 300,
-  "jobs": 1,
-  "test_threads": 2,
+  "jobs": 12,
+  "test_threads": 12,
   "coverage_guided_fuzzing": {
     "status": "admitted-test-only-source",
     "scope": "test-only explicit numeric coordinates, era, exchange, rounding and clock domains; no trust, sample or native-clock qualification",
@@ -29,8 +29,8 @@
       "policy/time-domain-fuzz-target.rs": "78855e99831b8448deef8180904a0438424df18dcf31d466e82d39f235f78709",
       "policy/time-domain-fuzz-manifest.toml": "82228e73a748919ea3012883667350278fc2e26c28c855d10d2be33a89ea0b52",
       "policy/time-domain-fuzz.lock": "ab1ba0f3322d5a52528b08756e800e235f6e5ed64a2b9758f3aa6d6b6a62794e",
-      "policy/ui-m0-dependencies.json": "5e50d809e18675a4419be32415a00e152c4c137759c686284836b6366cde536f",
-      "policy/ntp-wire-analysis.json": "77ec58e6d9f56fb88574985eb81162d6d517b5efd439927ede939013e5b8c241",
+      "policy/ui-m0-dependencies.json": "4953187690855763290e9f0eb551b5fdcf9c496ed5247b23e410a48c20b52377",
+      "policy/ntp-wire-analysis.json": "3b2c38a0e4f67ea1db7b179ec1290f09707ffa1570648c9748a59c79766f18c2",
       "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
       "tasks/s1.1-exchange-vectors.json": "f4ef0a5e339cad487587f5417feb2a12ca4a06ac279d94131265d691181b41ae"
     },
@@ -387,7 +387,7 @@
   "mutation_equivalences": [
     {
       "id": "TD-E-001",
-      "candidate_sha256": "c225fa0548a6b5666cde1ddcfec27aa409e148cef74bd2d537281863dc4dc894",
+      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
       "source_sha256": "366397df0c6bcd260d566b5bac310c882796734887af886a5fdf99a023bb1dc8",
       "mutant": {
         "name": "crates/time-domain/src/era.rs:115:53: replace | with ^ in unfold_ntp",
@@ -432,7 +432,7 @@
     },
     {
       "id": "TD-E-002",
-      "candidate_sha256": "c225fa0548a6b5666cde1ddcfec27aa409e148cef74bd2d537281863dc4dc894",
+      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
       "source_sha256": "366397df0c6bcd260d566b5bac310c882796734887af886a5fdf99a023bb1dc8",
       "mutant": {
         "name": "crates/time-domain/src/era.rs:141:25: replace || with && in unfold_ntp",
@@ -477,7 +477,7 @@
     },
     {
       "id": "TD-E-003",
-      "candidate_sha256": "c225fa0548a6b5666cde1ddcfec27aa409e148cef74bd2d537281863dc4dc894",
+      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
       "source_sha256": "d7208286fb97303a64b719aa880ee07ec2411fef8c17abbda9acfb5e2b33e7b6",
       "mutant": {
         "name": "crates/time-domain/src/exchange.rs:150:45: replace || with && in exchange_arithmetic",
@@ -522,7 +522,7 @@
     },
     {
       "id": "TD-E-004",
-      "candidate_sha256": "c225fa0548a6b5666cde1ddcfec27aa409e148cef74bd2d537281863dc4dc894",
+      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
       "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
       "mutant": {
         "name": "crates/time-domain/src/rounding.rs:59:9: replace || with && in round",
@@ -567,7 +567,7 @@
     },
     {
       "id": "TD-E-005",
-      "candidate_sha256": "c225fa0548a6b5666cde1ddcfec27aa409e148cef74bd2d537281863dc4dc894",
+      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
       "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
       "mutant": {
         "name": "crates/time-domain/src/rounding.rs:59:35: replace || with && in round",
@@ -612,7 +612,7 @@
     },
     {
       "id": "TD-E-006",
-      "candidate_sha256": "c225fa0548a6b5666cde1ddcfec27aa409e148cef74bd2d537281863dc4dc894",
+      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
       "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
       "mutant": {
         "name": "crates/time-domain/src/rounding.rs:59:26: delete - in round",
