@@ -128,6 +128,23 @@ class CoreAnalysisTests(unittest.TestCase):
         return (self.mutation_phase_header('Build') + json.dumps(record) + '\n' + json.dumps(note) + '\n'
                 + '{"reason":"build-finished","success":false}\n')
 
+    def unused_comparison_record(self, operator='<'):
+        """Literal native selection lint, relocated to the fixed synthetic worker."""
+        record = self.semantic_record()
+        record['message'].update(
+            code={'code': 'unused_comparisons', 'explanation': None},
+            message='comparison is useless due to type limits',
+            spans=[{'file_name': 'crates/time-core/src/selection.rs', 'is_primary': True,
+                    'line_start': 526, 'column_start': 15,
+                    'text': [{'text': '        while position ' + operator
+                              + ' /* ~ changed by cargo-mutants ~ */ 0 {'}]}],
+            children=[{'level': level, 'message': message, 'children': [],
+                       'code': None, 'spans': [], 'rendered': None}
+                      for level, message in (
+                          ('note', '`-D unused-comparisons` implied by `-D warnings`'),
+                          ('help', 'to override `-D warnings` add `#[allow(unused_comparisons)]`'))])
+        return record
+
     @staticmethod
     def build_script_record():
         """Observed native rustversion record, with a synthetic inert worker path."""
@@ -282,6 +299,9 @@ class CoreAnalysisTests(unittest.TestCase):
             'selections': 33464, 'garde_validator_invocations_upper': 535407})
         self.assertEqual(proof['selection_direct_helper_call_upper'], {
             'read_adapters': 1014, 'prefix_sorts': 1521, 'cell_depths': 1014, 'label_projections': 2535})
+        self.assertEqual(proof['source_raw_private_direct_work_upper'], {
+            'point_candidate_validation_attempts': 14196, 'garde_rule_callbacks_upper': 42588,
+            'coefficient_constructions': 8112})
         for lane, subjects in [('host', dict(MODULE.SUBJECTS)), ('all', {}),
                                ('all', {'selection': 'crates/time-core/src/regression.rs'})]:
             with self.subTest(lane=lane, subjects=subjects), self.assertRaises(MODULE.Incomplete):
@@ -322,6 +342,9 @@ class CoreAnalysisTests(unittest.TestCase):
                       '{"rendered":'+json.dumps(row)+'}\n']:
             with self.subTest(wrong=wrong), self.assertRaises(MODULE.Incomplete):
                 MODULE.selection_external_counts(wrong)
+        for mixed in (row + 'CORE_PROFILE_COUNTS fits=0 points=0\n', row + self.complete_selection_rows()):
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.profile_counts(mixed)
         prefix = MODULE.selection_external_counts('CORE_SELECTION_EXTERNAL_PROFILE intervals=1 minima=0 batches=0 selections=0\n')
         self.assertEqual(prefix['selection_external_consumer_calls']['intervals'], 1)
 
@@ -383,6 +406,38 @@ class CoreAnalysisTests(unittest.TestCase):
                     MODULE.observe_mutation_outcome(report, output/'outcomes.json',
                         'selection:mutation-baseline', outcome, report['core_invocations'][0])
                 self.assertTrue(report['core_invocations'][0]['observation_pending'])
+
+    def test_timeout_selector_only_prefixes_are_parsed_and_never_qualified(self):
+        prefixes = [
+            'S13_SELECTION_PROFILE scope=interval intervals=1 minima=0 batches=0 selections=0\n',
+            'S13_BATCH_GUARD_PROFILE {"case":"capacity","intervals":1,"batches":0}\n',
+            'SELECTION_HELPER_PROFILE read_adapters=1 prefix_sorts=0 cell_depths=0 label_projections=0\n',
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            outcome = {'scenario': {'Mutant': {'name': 'stalled'}}, 'summary': 'Timeout',
+                       'log_path': 'timeout.log'}
+            for prefix in prefixes:
+                for text, valid in [(prefix, True), (prefix+prefix, False), (prefix.rstrip('\n'), False)]:
+                    (output/'timeout.log').write_text(self.mutation_phase_header('Test')+text)
+                    report = {}
+                    MODULE.record_counts(report, 'selection:mutation-1', {
+                        'charged_fit_work_upper': 5233, 'point_admissions_upper': 220797,
+                        **MODULE.selection_reservation(package=True), 'observation_pending': True})
+                    row = report['core_invocations'][0]
+                    with self.subTest(prefix=prefix, valid=valid):
+                        if valid:
+                            MODULE.observe_mutation_outcome(report, output/'outcomes.json',
+                                                            'selection:mutation-1', outcome, row)
+                            self.assertEqual(row['observation_status'], 'timeout-prefix-unqualified')
+                        else:
+                            with self.assertRaises(MODULE.Incomplete):
+                                MODULE.observe_mutation_outcome(report, output/'outcomes.json',
+                                                                'selection:mutation-1', outcome, row)
+                        self.assertTrue(row['observation_pending'])
+                        self.assertEqual(row['charged_fit_work_upper'], 5233)
+                        self.assertEqual(row['selection_reserved_calls']['intervals'], 492)
+                        self.assertNotIn('observed_counts', row)
 
     def inert_product(self, root):
         """Return the synthetic product inventory; never qualify a real graph."""
@@ -914,6 +969,55 @@ class CoreAnalysisTests(unittest.TestCase):
             {'file_name': 'crates/time-core/src/regression/residuals.rs',
              'is_primary': True, 'line_start': 49, 'column_start': 5}]
         MODULE.unviable_compile_failure(outcome, self.semantic_mutation_log(record))
+
+    def test_unviable_json_accepts_only_observed_owned_unused_comparisons(self):
+        outcome = {'summary': 'Unviable', 'phase_results': self.phase_results('Unviable')}
+        for operator in ('<', '>='):
+            record = self.unused_comparison_record(operator)
+            log = (self.mutation_phase_header('Build') + json.dumps(record) + '\n'
+                   + '{"reason":"build-finished","success":false}\n')
+            with self.subTest(operator=operator):
+                MODULE.unviable_compile_failure(outcome, log)
+
+    def test_unused_comparison_lint_keeps_exact_cause_provenance_and_failure_guards(self):
+        outcome = {'summary': 'Unviable', 'phase_results': self.phase_results('Unviable')}
+        for change in ('unknown_code', 'message', 'explanation', 'code_shape', 'package',
+                       'manifest', 'target', 'unowned_span', 'nonprimary_span', 'warning',
+                       'infrastructure_child', 'infrastructure_raw', 'success', 'duplicate_json'):
+            record = self.unused_comparison_record()
+            if change == 'unknown_code':
+                record['message']['code']['code'] = 'unused_comparisons_extra'
+            elif change == 'message':
+                record['message']['message'] += ' unrelated cause'
+            elif change == 'explanation':
+                record['message']['code']['explanation'] = 'unexpected explanation'
+            elif change == 'code_shape':
+                record['message']['code']['unexpected'] = None
+            elif change == 'package':
+                record['package_id'] = 'registry+https://example.invalid/dependency#1.0.0'
+            elif change == 'manifest':
+                record['manifest_path'] = '/work/tmp/cargo-mutants-source-v2TRlL.tmp/foreign/Cargo.toml'
+            elif change == 'target':
+                record['target']['kind'] = ['test']
+            elif change == 'unowned_span':
+                record['message']['spans'][0]['file_name'] = 'foreign/src/lib.rs'
+            elif change == 'nonprimary_span':
+                record['message']['spans'][0]['is_primary'] = False
+            elif change == 'warning':
+                record['message']['level'] = 'warning'
+            elif change == 'infrastructure_child':
+                record['message']['children'][0]['message'] = 'failed to spawn helper process'
+            log = (self.mutation_phase_header('Build') + json.dumps(record) + '\n'
+                   + '{"reason":"build-finished","success":false}\n')
+            if change == 'infrastructure_raw':
+                log += 'error: could not execute process: Resource temporarily unavailable (os error 11)\n'
+            elif change == 'success':
+                log = log.replace('"success":false', '"success":true')
+            elif change == 'duplicate_json':
+                log = log.replace('"code": "unused_comparisons"',
+                                  '"code": "unused_comparisons", "code": "unused_comparisons"')
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.unviable_compile_failure(outcome, log)
 
     def test_unviable_json_accepts_observed_owned_test_relative_path(self):
         outcome = {'summary': 'Unviable', 'phase_results': self.phase_results('Unviable')}
@@ -1792,7 +1896,7 @@ class CoreAnalysisTests(unittest.TestCase):
             root=Path(temp);policy=self.fixture(root)
             self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],83)
             self.assertEqual(MODULE.SUBJECTS['history'],'crates/time-core/src/regression/history.rs')
-            self.assertEqual(list(MODULE.SCOPE.select('all')),['regression','residuals','normalization','history','runs'])
+            self.assertEqual(list(MODULE.SCOPE.select('all')),['regression','residuals','normalization','history','runs','selection'])
             for key in ['history_telemetry','normalization_telemetry']:
                 bad=copy.deepcopy(policy);bad[key]['status']='pending-actual-source'
                 self.write_policy(root,bad)
@@ -1827,8 +1931,8 @@ class CoreAnalysisTests(unittest.TestCase):
         self.assertEqual(cases['history_report_private_construction']['code'],'E0451')
         self.assertEqual(cases['history_raw_append']['code'],'E0308')
 
-    def test_history_four_file_variant_accounting_respects_one_selected_512_ceiling(self):
-        for amounts,accepted in [([103,103,102,102,102],True),([104,103,102,102,102],False)]:
+    def test_six_owner_variant_accounting_respects_one_selected_512_ceiling(self):
+        for amounts,accepted in [([86,86,85,85,85,85],True),([87,86,85,85,85,85],False)]:
             with tempfile.TemporaryDirectory() as temp:
                 work=Path(temp)
                 for subject,amount in zip(MODULE.SUBJECTS,amounts,strict=True):
@@ -1863,6 +1967,7 @@ class InventoryAdmissionTests(unittest.TestCase):
         tools = {
             'scripts/verify-core-analysis.py', 'scripts/portable-analysis.py',
             'scripts/verify-time-domain-analysis.py', 'scripts/analysis-runtime.py',
+            'scripts/core-selection-accounting.py', 'scripts/core-selection-contracts.py',
             'scripts/check-analysis.py', 'scripts/analysis-controls.py',
             'scripts/prepare-product.py', 'scripts/verify.py',
             'scripts/check-environment.py', 'scripts/check-strict.py',

@@ -686,10 +686,14 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
         mutation_process_limit(policy)
         mutation_message_format(policy)
     if lane in {"coverage", "all"}:
+        # The pinned tool can retain Rust sysroot sources under their recorded
+        # toolchain path. Keep its native threshold scoped away from that code;
+        # coverage_counts still requires every exact declared owner below.
         command = [str(tools / "cargo-llvm-cov"), "llvm-cov", "--package", scope.package,
                    "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--tests", "--json",
                    "--output-path", "/work/coverage.json", "--failure-mode", "any",
-                   "--ignore-filename-regex", "(^|/)tests/", "--fail-under-file-lines", "90"]
+                   "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                   "--fail-under-file-lines", "90"]
         text = run("coverage", command, policy["coverage_wall_seconds"])
         coverage = json.loads((work / "coverage.json").read_text())
         executed = test_count(text)

@@ -23,7 +23,7 @@ to own requirements, and task records own executed evidence.
 | Question | Source of truth |
 | --- | --- |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
-| Where are future platform directions and the Android workstream recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates. The Windows execution plan continues to own current work, phase readiness and acceptance. |
+| Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; future DoQ-only DNS with leaf/intermediate certificate pinning. The Windows execution plan continues to own current work, phase readiness and acceptance. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |

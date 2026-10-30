@@ -14,7 +14,8 @@ use std::{
 
 use super::{
     BATCH_READ_ATTEMPTS, BatchError, FixtureBatch, FixtureInterval, SelectionError,
-    SelectionInvariantStage, cell_depth, read_batch_interval, sort_prefix, supporter_labels,
+    SelectionInvariantStage, cell_depth, common_witness, depth_cells, maximum_components,
+    read_batch_interval, sort_prefix, supporter_labels, unique_endpoints,
 };
 
 /// A local test or fixture-admission failure.
@@ -100,7 +101,8 @@ impl Calls {
     /// The outer result rejects a counter overflow or exhausted batch budget.
     /// The inner result preserves the public receiver's admission error.
     fn batch(&self, values: &[FixtureInterval]) -> TestResult<Result<FixtureBatch, BatchError>> {
-        charge(&self.batches, 2)?;
+        let limit = if self.case == "duplicate_recovery" { 5 } else { 2 };
+        charge(&self.batches, limit)?;
         Ok(FixtureBatch::new(values))
     }
 }
@@ -153,10 +155,39 @@ enum HelperKind {
     Depth,
     /// Raw optional-label prefix projection.
     Labels,
+    /// Endpoint collection from an admitted batch, including empty rejection.
+    Endpoints,
+    /// Depth construction from separately admitted keys and batch.
+    Cells,
+    /// Complete first-component and component-count projection.
+    Components,
+    /// Raw common-component and declared-maximum witness construction.
+    Witness,
+}
+
+/// Closed source-owned helper cases; none is a public product input.
+#[derive(Clone, Copy)]
+enum HelperCase {
+    /// Reuse the sixteen checked nested intervals and their admitted batch.
+    CapacityNeighbor,
+    /// Reuse the two checked disjoint intervals and their recovery batch.
+    DuplicateRecovery,
+}
+
+impl HelperCase {
+    /// Return the fixed payload-free case identity for native transport.
+    const fn name(self) -> &'static str {
+        match self {
+            Self::CapacityNeighbor => "capacity_neighbor",
+            Self::DuplicateRecovery => "duplicate_recovery",
+        }
+    }
 }
 
 /// Finite direct-helper attempts, independent of public construction counters.
 struct HelperCalls {
+    /// Fixed native scope identity and complete per-helper recipe owner.
+    case: HelperCase,
     /// Direct input-copy adapter attempts, at most two.
     reads: Cell<usize>,
     /// Direct prefix-sort attempts, at most three.
@@ -165,16 +196,29 @@ struct HelperCalls {
     depths: Cell<usize>,
     /// Direct optional-label projections, at most five.
     labels: Cell<usize>,
+    /// Direct endpoint-collection attempts, at most three in a case.
+    endpoints: Cell<usize>,
+    /// Direct depth-construction attempts, at most three in a case.
+    cells: Cell<usize>,
+    /// Direct component scans, at most three in a case.
+    components: Cell<usize>,
+    /// Direct witness constructions, at most four in the nested case.
+    witnesses: Cell<usize>,
 }
 
 impl HelperCalls {
     /// Begin one fixed helper recipe without charging a public constructor.
-    const fn new() -> Self {
+    const fn new(case: HelperCase) -> Self {
         Self {
+            case,
             reads: Cell::new(0),
             sorts: Cell::new(0),
             depths: Cell::new(0),
             labels: Cell::new(0),
+            endpoints: Cell::new(0),
+            cells: Cell::new(0),
+            components: Cell::new(0),
+            witnesses: Cell::new(0),
         }
     }
 
@@ -183,23 +227,42 @@ impl HelperCalls {
     /// # Errors
     /// Rejects overflow or a charge beyond that helper's complete recipe.
     fn charge(&self, kind: HelperKind) -> TestResult {
-        let (counter, limit) = match kind {
-            HelperKind::Read => (&self.reads, 2),
-            HelperKind::Sort => (&self.sorts, 3),
-            HelperKind::Depth => (&self.depths, 2),
-            HelperKind::Labels => (&self.labels, 5),
+        let counter = match kind {
+            HelperKind::Read => &self.reads,
+            HelperKind::Sort => &self.sorts,
+            HelperKind::Depth => &self.depths,
+            HelperKind::Labels => &self.labels,
+            HelperKind::Endpoints => &self.endpoints,
+            HelperKind::Cells => &self.cells,
+            HelperKind::Components => &self.components,
+            HelperKind::Witness => &self.witnesses,
+        };
+        let limit = match (self.case, kind) {
+            (HelperCase::CapacityNeighbor, HelperKind::Read | HelperKind::Depth) => 2,
+            (HelperCase::CapacityNeighbor, HelperKind::Sort) => 3,
+            (HelperCase::CapacityNeighbor, HelperKind::Labels) => 5,
+            (HelperCase::CapacityNeighbor, HelperKind::Endpoints | HelperKind::Cells) => 2,
+            (HelperCase::CapacityNeighbor, HelperKind::Components) => 3,
+            (HelperCase::CapacityNeighbor, HelperKind::Witness) => 4,
+            (HelperCase::DuplicateRecovery, HelperKind::Endpoints | HelperKind::Cells) => 3,
+            (HelperCase::DuplicateRecovery, HelperKind::Components) => 2,
+            _ => 0,
         };
         charge(counter, limit)
     }
 
-    /// Copy the four direct-attempt totals, without claiming internal operations.
-    fn totals(&self) -> (usize, usize, usize, usize) {
-        (
+    /// Copy eight direct-attempt totals, without claiming recursive operations.
+    fn totals(&self) -> [usize; 8] {
+        [
             self.reads.get(),
             self.sorts.get(),
             self.depths.get(),
             self.labels.get(),
-        )
+            self.endpoints.get(),
+            self.cells.get(),
+            self.components.get(),
+            self.witnesses.get(),
+        ]
     }
 }
 
@@ -207,11 +270,16 @@ impl Drop for HelperCalls {
     /// Emit one complete native line even when a reached assertion unwinds.
     fn drop(&mut self) {
         let record = format!(
-            "SELECTION_HELPER_PROFILE read_adapters={} prefix_sorts={} cell_depths={} label_projections={}\n",
+            "SELECTION_HELPER_PROFILE case={} read_adapters={} prefix_sorts={} cell_depths={} label_projections={} endpoint_collections={} depth_builds={} component_scans={} witness_builds={}\n",
+            self.case.name(),
             self.reads.get(),
             self.sorts.get(),
             self.depths.get(),
-            self.labels.get()
+            self.labels.get(),
+            self.endpoints.get(),
+            self.cells.get(),
+            self.components.get(),
+            self.witnesses.get()
         );
         let _emitted = io::stderr().lock().write_all(record.as_bytes());
     }
@@ -375,6 +443,193 @@ fn raw_label_contract(values: &[FixtureInterval], calls: &HelperCalls) -> TestRe
     Ok(())
 }
 
+/// Challenge raw declared maxima and component bounds on real nested intervals.
+///
+/// The sixteen intervals have labels 1..=16 and bounds [-label,label], so -1
+/// has exactly sixteen supporters and their exact intersection is [-1,1].
+/// # Errors
+/// Propagates a pre-effect charge or the healthy witness construction's error.
+/// # Panics
+/// Panics on an incorrect rejection stage, witness, intersection or supporter set.
+fn raw_witness_contract(batch: &FixtureBatch, calls: &HelperCalls) -> TestResult {
+    calls.charge(HelperKind::Witness)?;
+    assert!(matches!(
+        common_witness(batch, (-1, 1), 17),
+        Err(SelectionError::Invariant {
+            stage: SelectionInvariantStage::Support
+        })
+    ));
+    calls.charge(HelperKind::Witness)?;
+    assert!(matches!(
+        common_witness(batch, (17, 17), 0),
+        Err(SelectionError::Invariant {
+            stage: SelectionInvariantStage::Support
+        })
+    ));
+    calls.charge(HelperKind::Witness)?;
+    assert!(matches!(
+        common_witness(batch, (-1, 0), 16),
+        Err(SelectionError::Invariant {
+            stage: SelectionInvariantStage::Intersection
+        })
+    ));
+    calls.charge(HelperKind::Witness)?;
+    let witness = common_witness(batch, (-1, 1), 16)?;
+    assert_eq!(
+        (
+            witness.component_lower(),
+            witness.component_upper(),
+            witness.witness(),
+            witness.intersection_lower(),
+            witness.intersection_upper(),
+        ),
+        (-1, 1, -1, -1, 1)
+    );
+    assert_eq!(witness.supporters().len(), 16);
+    assert_eq!(
+        witness.supporters().map(NonZeroU64::get).collect::<Vec<_>>(),
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    );
+    Ok(())
+}
+
+/// Challenge actual endpoint/depth/component boundaries without forged carriers.
+///
+/// The empty batch and batches containing [-2,3], [4,6] or both intervals are
+/// admitted by the real public constructor. Keys have no batch-association token;
+/// valid keys from the left batch must not admit zero-depth cells for the right.
+/// Both disjoint maximum components exist, but only the first is [-2,3].
+/// # Errors
+/// Rejects the wrong fixture widths, a charge failure or a healthy helper error.
+/// # Panics
+/// Panics on wrong stages, exact keys/depths/components or changed admitted inputs.
+fn raw_pipeline_contracts(
+    empty: &FixtureBatch,
+    left: &FixtureBatch,
+    right: &FixtureBatch,
+    disjoint: &FixtureBatch,
+) -> TestResult {
+    if !empty.is_empty() || left.len() != 1 || right.len() != 1 || disjoint.len() != 2 {
+        return Err(io::Error::other("raw pipeline fixture widths").into());
+    }
+    let before: Vec<Vec<Projection>> = [empty, left, right, disjoint]
+        .into_iter()
+        .map(|batch| {
+            batch
+                .iter()
+                .map(|value| (value.label().get(), value.lower(), value.upper()))
+                .collect()
+        })
+        .collect();
+    let calls = HelperCalls::new(HelperCase::DuplicateRecovery);
+    calls.charge(HelperKind::Endpoints)?;
+    assert!(matches!(
+        unique_endpoints(empty),
+        Err(SelectionError::Invariant {
+            stage: SelectionInvariantStage::Slot
+        })
+    ));
+    calls.charge(HelperKind::Endpoints)?;
+    let left_keys = unique_endpoints(left)?;
+    assert_eq!(left_keys.len, 2);
+    assert_eq!(left_keys.values.get(..left_keys.len), Some([-2, 3].as_slice()));
+    calls.charge(HelperKind::Endpoints)?;
+    let disjoint_keys = unique_endpoints(disjoint)?;
+    assert_eq!(disjoint_keys.len, 4);
+    assert_eq!(
+        disjoint_keys.values.get(..disjoint_keys.len),
+        Some([-2, 3, 4, 6].as_slice())
+    );
+    calls.charge(HelperKind::Cells)?;
+    let left_cells = depth_cells(left, &left_keys)?;
+    assert_eq!((left_cells.len, left_cells.maximum), (3, 1));
+    assert_eq!(left_cells.values.get(..left_cells.len), Some([1, 1, 1].as_slice()));
+    calls.charge(HelperKind::Cells)?;
+    assert!(matches!(
+        depth_cells(right, &left_keys),
+        Err(SelectionError::Invariant {
+            stage: SelectionInvariantStage::Component
+        })
+    ));
+    calls.charge(HelperKind::Cells)?;
+    let disjoint_cells = depth_cells(disjoint, &disjoint_keys)?;
+    assert_eq!((disjoint_cells.len, disjoint_cells.maximum), (7, 1));
+    assert_eq!(
+        disjoint_cells.values.get(..disjoint_cells.len),
+        Some([1, 1, 1, 0, 1, 1, 1].as_slice())
+    );
+    calls.charge(HelperKind::Components)?;
+    let single = maximum_components(&left_keys, &left_cells)?;
+    assert_eq!((single.count, single.first), (1, (-2, 3)));
+    calls.charge(HelperKind::Components)?;
+    let multiple = maximum_components(&disjoint_keys, &disjoint_cells)?;
+    assert_eq!((multiple.count, multiple.first), (2, (-2, 3)));
+    assert_eq!(calls.totals(), [0, 0, 0, 0, 3, 3, 2, 0]);
+    let after: Vec<Vec<Projection>> = [empty, left, right, disjoint]
+        .into_iter()
+        .map(|batch| {
+            batch
+                .iter()
+                .map(|value| (value.label().get(), value.lower(), value.upper()))
+                .collect()
+        })
+        .collect();
+    assert_eq!(after, before);
+    assert_eq!(left_keys.values.get(..left_keys.len), Some([-2, 3].as_slice()));
+    assert_eq!(
+        disjoint_keys.values.get(..disjoint_keys.len),
+        Some([-2, 3, 4, 6].as_slice())
+    );
+    Ok(())
+}
+
+/// Reject mismatched completed topology before any endpoint padding is read.
+///
+/// Both keys and cells come from their real checked producers. The nested full
+/// batch has 32 keys and 63 cells; its first interval has two keys and three
+/// cells. Pairing the small keys with the full cells must reject, while both
+/// original pairs yield the exact common maximum component [-1,1].
+/// # Errors
+/// Propagates a pre-effect charge or any healthy producer/consumer error.
+/// # Panics
+/// Panics on wrong topology, a rejected healthy pair or accepted mismatched pair.
+fn raw_topology_contract(
+    full: &FixtureBatch,
+    small: &FixtureBatch,
+    calls: &HelperCalls,
+) -> TestResult {
+    calls.charge(HelperKind::Endpoints)?;
+    let full_keys = unique_endpoints(full)?;
+    calls.charge(HelperKind::Endpoints)?;
+    let small_keys = unique_endpoints(small)?;
+    assert_eq!((full_keys.len, small_keys.len), (32, 2));
+    assert_eq!(small_keys.values.get(..small_keys.len), Some([-1, 1].as_slice()));
+    calls.charge(HelperKind::Cells)?;
+    let full_cells = depth_cells(full, &full_keys)?;
+    calls.charge(HelperKind::Cells)?;
+    let small_cells = depth_cells(small, &small_keys)?;
+    assert_eq!((full_cells.len, full_cells.maximum), (63, 16));
+    assert_eq!((small_cells.len, small_cells.maximum), (3, 1));
+    calls.charge(HelperKind::Components)?;
+    let complete = maximum_components(&full_keys, &full_cells)?;
+    assert_eq!((complete.count, complete.first), (1, (-1, 1)));
+    calls.charge(HelperKind::Components)?;
+    let neighbor = maximum_components(&small_keys, &small_cells)?;
+    assert_eq!((neighbor.count, neighbor.first), (1, (-1, 1)));
+    calls.charge(HelperKind::Components)?;
+    assert!(matches!(
+        maximum_components(&small_keys, &full_cells),
+        Err(SelectionError::Invariant {
+            stage: SelectionInvariantStage::Component
+        })
+    ));
+    assert_eq!((full_keys.len, small_keys.len), (32, 2));
+    assert_eq!(small_keys.values.get(..small_keys.len), Some([-1, 1].as_slice()));
+    assert_eq!((full_cells.len, full_cells.maximum), (63, 16));
+    assert_eq!((small_cells.len, small_cells.maximum), (3, 1));
+    Ok(())
+}
+
 /// Exercise wider raw signatures without forging a checked scratch carrier.
 ///
 /// The existing capacity neighbor supplies sixteen checked values and its real
@@ -386,8 +641,12 @@ fn raw_label_contract(values: &[FixtureInterval], calls: &HelperCalls) -> TestRe
 ///
 /// # Panics
 /// Panics on a helper-contract failure, changed input or unexpected observer state.
-fn raw_helper_contracts(values: &[FixtureInterval], batch: &FixtureBatch) -> TestResult {
-    if values.len() != 16 || batch.len() != 16 {
+fn raw_helper_contracts(
+    values: &[FixtureInterval],
+    batch: &FixtureBatch,
+    small: &FixtureBatch,
+) -> TestResult {
+    if values.len() != 16 || batch.len() != 16 || small.len() != 1 {
         return Err(io::Error::other("raw helper fixture width").into());
     }
     let observer = BATCH_READ_ATTEMPTS
@@ -399,12 +658,14 @@ fn raw_helper_contracts(values: &[FixtureInterval], batch: &FixtureBatch) -> Tes
         .iter()
         .map(|value| (value.label().get(), value.lower(), value.upper()))
         .collect();
-    let calls = HelperCalls::new();
+    let calls = HelperCalls::new(HelperCase::CapacityNeighbor);
     raw_read_contract(values, &calls)?;
     raw_sort_contract(&calls)?;
     raw_depth_contract(batch, &calls)?;
     raw_label_contract(values, &calls)?;
-    assert_eq!(calls.totals(), (2, 3, 2, 5));
+    raw_topology_contract(batch, small, &calls)?;
+    raw_witness_contract(batch, &calls)?;
+    assert_eq!(calls.totals(), [2, 3, 2, 5, 2, 2, 3, 4]);
     assert_eq!(project(values), before);
     assert_eq!(
         batch
@@ -473,8 +734,12 @@ fn capacity_neighbor_copies_all_values_in_order() -> TestResult {
     assert_eq!(batch.len(), 16);
     assert_eq!(copied, before);
     assert_eq!(project(&input), before);
-    raw_helper_contracts(&input, &batch)?;
-    assert_eq!((calls.intervals.get(), calls.batches.get()), (16, 1));
+    let first = input
+        .get(..1)
+        .ok_or_else(|| io::Error::other("capacity neighbor prefix"))?;
+    let small = calls.batch(first)??;
+    raw_helper_contracts(&input, &batch, &small)?;
+    assert_eq!((calls.intervals.get(), calls.batches.get()), (16, 2));
     Ok(())
 }
 
@@ -513,6 +778,12 @@ fn duplicate_stops_at_earliest_index_and_recovers() -> TestResult {
     assert_eq!(copied, neighbor_before);
     assert_eq!(project(&neighbor), neighbor_before);
     assert_eq!(project(&input), before);
-    assert_eq!((calls.intervals.get(), calls.batches.get()), (2, 2));
+    let empty = calls.batch(&[])??;
+    let left = calls.batch(&[a])??;
+    let right = calls.batch(&[b])??;
+    raw_pipeline_contracts(&empty, &left, &right, &batch)?;
+    assert_eq!(project(&neighbor), neighbor_before);
+    assert_eq!(project(&input), before);
+    assert_eq!((calls.intervals.get(), calls.batches.get()), (2, 5));
     Ok(())
 }

@@ -144,6 +144,7 @@ INVENTORY_FIXED = {
 INVENTORY_REQUIRED_TOOLS = frozenset({
     "scripts/verify-core-analysis.py", "scripts/portable-analysis.py",
     "scripts/verify-time-domain-analysis.py", "scripts/analysis-runtime.py",
+    "scripts/core-selection-accounting.py", "scripts/core-selection-contracts.py",
     "scripts/check-analysis.py", "scripts/analysis-controls.py",
     "scripts/prepare-product.py", "scripts/verify.py",
     "scripts/check-environment.py", "scripts/check-strict.py",
@@ -205,6 +206,17 @@ SELECTION_GLOBAL_LIMITS = {"intervals": 249450, "minima": 36507, "batches": 3904
                            "selections": 33464, "garde_validator_invocations_upper": 535407}
 SELECTION_HELPER_GLOBAL_LIMITS = {"read_adapters": 1014, "prefix_sorts": 1521,
                                   "cell_depths": 1014, "label_projections": 2535}
+SOURCE_RAW_PRIVATE_WORK_LIMITS = {"point_candidate_validation_attempts": 28,
+                                  "garde_rule_callbacks_upper": 84,
+                                  "coefficient_constructions": 16}
+SOURCE_RAW_PRIVATE_GLOBAL_LIMITS = {"point_candidate_validation_attempts": 14196,
+                                    "garde_rule_callbacks_upper": 42588,
+                                    "coefficient_constructions": 8112}
+SOURCE_RAW_PRIVATE_WORK = {
+    "scope": "Source-owned direct raw unit-test calls only; callback upper applies to point-candidate attempts. Not observations, all-core garde totals, coefficient-internal/nested work or CPU/RSS.",
+    "per_package": SOURCE_RAW_PRIVATE_WORK_LIMITS,
+    "global_limits": SOURCE_RAW_PRIVATE_GLOBAL_LIMITS,
+}
 SELECTION_TELEMETRY = {
     "status": "admitted-source-owned-observer",
     "counter_families": ["S13_SELECTION_PROFILE", "S13_BATCH_GUARD_PROFILE",
@@ -249,6 +261,7 @@ FIXED = {"schema_version": 6, "source_file_count": SOURCE_FILE_COUNT,
          "history_telemetry": HISTORY_TELEMETRY,
          "normalization_telemetry": NORMALIZATION_TELEMETRY,
          "selection_telemetry": SELECTION_TELEMETRY,
+         "source_owned_private_unit_work": SOURCE_RAW_PRIVATE_WORK,
          "literal_doctest_limits": LITERAL_DOCTEST_LIMITS,
          "external_consumer_limits": EXTERNAL_CONSUMER_LIMITS, "package": "time-core", "critical_files": list(SUBJECTS.values()),
          "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
@@ -612,6 +625,7 @@ def selection_reservation(*, package=False, external=None):
             'selection_reserved_calls': calls,
             'selection_reserved_helper_calls': helpers,
             'selection_reserved_canonical_source_work_uppers': SELECTION.source_work_uppers(calls['selections'], calls['batches']),
+            'source_raw_private_reserved_work': {key: value if package else 0 for key, value in SOURCE_RAW_PRIVATE_WORK_LIMITS.items()},
             'selection_reservation_scope': 'Full source recipe charged before the effect; no measured internal work or arbitrary-mutant bound.'}
 
 
@@ -640,6 +654,12 @@ def profile_counts(output, *, require_fit=True, require_runs=False, validate_run
     selection_external = selection_external_counts(output)
     selection_records = (selection['selection_external_records'] + selection['selection_guard_records']
                          + selection['selection_helper_records'] + selection_external['selection_external_consumer_records'])
+    if selection_external['selection_external_consumer_records'] and (
+            require_selection or direct or stats or normalization or history
+            or runs['runs_external_records'] or runs['runs_sign_records'] or runs['runs_guard_records']
+            or selection['selection_external_records'] or selection['selection_guard_records']
+            or selection['selection_helper_records']):
+        raise Incomplete('Standalone selection consumer counters are mixed with a package/other-owner stream.')
     if not direct and not stats and not normalization and not history and not (
             runs['runs_external_records'] or runs['runs_sign_records'] or runs['runs_guard_records'] or selection_records):
         raise Incomplete("Core profile lacks complete public counter records.")
@@ -949,10 +969,10 @@ def record_counts(report, label, counts):
             external={'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2}) if selection_kind == 'external-consumer' else None
         if expected is None or any(not exact(counts.get(key), expected[key]) for key in (
                 'selection_reserved_calls', 'selection_reserved_helper_calls',
-                'selection_reserved_canonical_source_work_uppers')):
+                'selection_reserved_canonical_source_work_uppers', 'source_raw_private_reserved_work')):
             raise Incomplete('Selection pre-effect reservation is missing or differs from its source-owned scope.')
     elif any(key in counts for key in ('selection_reserved_calls', 'selection_reserved_helper_calls',
-                                       'selection_reserved_canonical_source_work_uppers')):
+                                       'selection_reserved_canonical_source_work_uppers', 'source_raw_private_reserved_work')):
         raise Incomplete('Selection reservation has no declared source scope.')
     report.setdefault("core_invocations", []).append({"invocation": label, **counts})
     refresh_accounting(report)
@@ -1026,6 +1046,11 @@ def refresh_accounting(report):
                        for key in SELECTION_HELPER_GLOBAL_LIMITS}
     report['core_selection_reserved_totals'] = selection_reserved
     report['core_selection_helper_reserved_totals'] = helper_reserved
+    raw_private_reserved = {
+        key: sum(row.get('source_raw_private_reserved_work', {}).get(key, 0) for row in invocations)
+        for key in SOURCE_RAW_PRIVATE_GLOBAL_LIMITS}
+    report['core_source_raw_private_reserved_totals'] = raw_private_reserved
+    report['core_source_raw_private_work_scope'] = SOURCE_RAW_PRIVATE_WORK['scope']
     package_calls, helper_calls, external_calls, selection_pending = [], [], [], []
     partial_subtotals = []
     for row in invocations:
@@ -1064,7 +1089,8 @@ def refresh_accounting(report):
     if any(totals[key] > maximum for key, maximum in GLOBAL_LIMITS.items()):
         raise Incomplete("Core selected subset already exceeds the global charged allowance.")
     if (any(selection_reserved[key] > maximum for key, maximum in SELECTION_GLOBAL_LIMITS.items())
-            or any(helper_reserved[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())):
+            or any(helper_reserved[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())
+            or any(raw_private_reserved[key] > maximum for key, maximum in SOURCE_RAW_PRIVATE_GLOBAL_LIMITS.items())):
         raise Incomplete('Selection selected subset already exceeds the global charged allowance.')
 
 
@@ -1307,7 +1333,9 @@ def unviable_compile_failure(outcome, output):
                 or (not re.fullmatch(r'E[0-9]{4}', code['code'])
                     and not (code['code'] in ('unused_variables', 'dead_code', 'unused_imports',
                                               'arithmetic_overflow')
-                             and code['explanation'] is None))):
+                             and code['explanation'] is None)
+                    and not (code['code'] == 'unused_comparisons' and code['explanation'] is None
+                             and message['message'] == 'comparison is useless due to type limits'))):
             raise Incomplete('Cargo compiler error has an unadmitted diagnostic code.')
         spans = message.get('spans')
         if not isinstance(spans, list) or not spans:
@@ -1367,6 +1395,8 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
             reserved['observation_status'] = 'timeout-no-counter-prefix'
             return
         _, text = cargo_json_records(text[headers[0].end():])
+        if 'CORE_SELECTION_EXTERNAL_PROFILE' in text:
+            raise Incomplete('Mutation Timeout contains a standalone consumer counter.')
         receipt_pattern = r'CORE_RUNS_SIGN_RECEIPT [^\r\n]*\r?\n'
         receipts = re.findall(receipt_pattern, text)
         if (text.count('CORE_RUNS_SIGN_RECEIPT') != len(receipts) or len(receipts) > 1
@@ -1377,7 +1407,8 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
         prefix = re.sub(receipt_pattern, '', text)
         markers = ('CORE_PROFILE_COUNTS', 'CORE_STATS_PROFILE_COUNTS',
                    'CORE_NORMALIZATION_PROFILE_COUNTS', 'CORE_HISTORY_PROFILE_COUNTS',
-                   'CORE_RUNS_PROFILE', 'CORE_RUNS_SIGN_PROFILE', 'CORE_RUNS_GUARDS')
+                   'CORE_RUNS_PROFILE', 'CORE_RUNS_SIGN_PROFILE', 'CORE_RUNS_GUARDS',
+                   'S13_SELECTION_PROFILE', 'S13_BATCH_GUARD_PROFILE', 'SELECTION_HELPER_PROFILE')
         if any(marker in prefix for marker in markers):
             reserved['observation_status'] = 'timeout-prefix-invalid'
             profile_counts(prefix, require_fit=False, require_runs=False,
@@ -1404,6 +1435,8 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
     if build_finished != [True]:
         raise Incomplete('Successful mutation Build lacks its complete Cargo JSON receipt.')
     test_records, test_output = cargo_json_records(segments['Test'])
+    if 'CORE_SELECTION_EXTERNAL_PROFILE' in test_output:
+        raise Incomplete('Mutation Test contains a standalone consumer counter.')
     test_finished = [record['success'] for record in test_records if record['reason'] == 'build-finished']
     if test_finished != [True]:
         raise Incomplete('Mutation Test lacks its complete Cargo JSON build receipt.')
@@ -2495,9 +2528,11 @@ def prospective_scope_reservation(lane, subjects):
                        'garde_validator_invocations_upper': 15}.items():
         selection[key] += legal*value
     helpers = {key: maximum*packages for key, maximum in SELECTION_HELPER_RESERVATION.items()}
+    raw_private = {key: maximum*packages for key, maximum in SOURCE_RAW_PRIVATE_WORK_LIMITS.items()}
     if (any(charged[key] > maximum for key, maximum in GLOBAL_LIMITS.items())
             or any(selection[key] > maximum for key, maximum in SELECTION_GLOBAL_LIMITS.items())
-            or any(helpers[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())):
+            or any(helpers[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())
+            or any(raw_private[key] > maximum for key, maximum in SOURCE_RAW_PRIVATE_GLOBAL_LIMITS.items())):
         raise Incomplete('Complete prospective core scope exceeds its admitted finite reservation.')
     return {'mutation_package_invocations_upper': mutation_invocations,
             'coverage_package_invocations_upper': coverage_invocations,
@@ -2508,6 +2543,7 @@ def prospective_scope_reservation(lane, subjects):
             'history_fuzz_invocations_upper': fuzz*2,
             'charged_upper': charged, 'selection_call_upper': selection,
             'selection_direct_helper_call_upper': helpers,
+            'source_raw_private_direct_work_upper': raw_private,
             'scope': 'Pre-effect source reservation for this fresh scope; historical attempts are retained, never erased or asserted as observations.'}
 
 
@@ -2518,7 +2554,8 @@ def execute(args, report):
     policy = read_policy(ROOT, args.lane)
     subjects = SCOPE.select(args.subject)
     report['core_prospective_scope_reservation'] = prospective_scope_reservation(args.lane, subjects)
-    extra = ("scripts/verify-core-analysis.py", "scripts/verify-time-domain-analysis.py", *SELECTION_INPUTS, *BOUND_INPUTS,
+    extra = ("scripts/verify-core-analysis.py", "scripts/verify-time-domain-analysis.py",
+             "scripts/analysis-controls.py", *SELECTION_INPUTS, *BOUND_INPUTS,
              *(FUZZ_INPUTS if args.lane in {"fuzz", "all"} else ()))
     session = COMMON.Session(ROOT, args, report, SCOPE, policy, extra)
     report["subjects"] = subjects

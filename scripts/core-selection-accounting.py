@@ -23,8 +23,13 @@ EXTERNAL_MARKER = "S13_SELECTION_PROFILE"
 GUARD_MARKER = "S13_BATCH_GUARD_PROFILE"
 HELPER_MARKER = "SELECTION_HELPER_PROFILE"
 CALL_FIELDS = ("intervals", "minima", "batches", "selections")
-HELPER_FIELDS = ("read_adapters", "prefix_sorts", "cell_depths", "label_projections")
-HELPER_RECIPE = (2, 3, 2, 5)
+HELPER_FIELDS = ("read_adapters", "prefix_sorts", "cell_depths", "label_projections",
+                 "endpoint_collections", "depth_builds", "component_scans", "witness_builds")
+HELPER_RECIPES = (
+    ("capacity_neighbor", (2, 3, 2, 5, 2, 2, 3, 4)),
+    ("duplicate_recovery", (0, 0, 0, 0, 3, 3, 2, 0)),
+)
+HELPER_RECIPE = (2, 3, 2, 5, 5, 5, 5, 4)
 EXTERNAL_RECIPES = (
     ("interval", (8, 0, 0, 0)),
     ("minimum", (0, 6, 0, 0)),
@@ -33,8 +38,8 @@ EXTERNAL_RECIPES = (
 )
 GUARD_RECIPES = (
     ("capacity", (1, 1)),
-    ("capacity_neighbor", (16, 1)),
-    ("duplicate_recovery", (2, 2)),
+    ("capacity_neighbor", (16, 2)),
+    ("duplicate_recovery", (2, 5)),
 )
 EXTERNAL_TESTS = (
     "interval_construction_rejects_invalid_raw_values_and_accepts_neighbors",
@@ -69,7 +74,7 @@ _GUARD_LINE = re.compile(
     + r',"batches":' + _DECIMAL + r"\}"
 )
 _HELPER_LINE = re.compile(
-    _progress_prefix(GUARD_TESTS) + HELPER_MARKER
+    _progress_prefix(GUARD_TESTS) + HELPER_MARKER + r" case=([a-z_]+)"
     + "".join(" " + field + "=" + _DECIMAL for field in HELPER_FIELDS)
 )
 
@@ -116,9 +121,9 @@ def _validate_guard(case, counts):
     if case == "capacity":
         allowed = intervals == 1 and batches in (0, 1)
     elif case == "capacity_neighbor":
-        allowed = (1 <= intervals <= 16 and batches == 0) or (intervals == 16 and batches == 1)
+        allowed = (1 <= intervals <= 16 and batches == 0) or (intervals == 16 and batches in (1, 2))
     else:
-        allowed = (intervals == 1 and batches == 0) or (intervals == 2 and batches in (0, 1, 2))
+        allowed = (intervals == 1 and batches == 0) or (intervals == 2 and 0 <= batches <= 5)
     if not allowed:
         raise Incomplete("Selection receiver counter prefix differs from its fixed recipe.")
 
@@ -213,44 +218,44 @@ def full_package_reservation():
     observed work, a global quota or a bound on arbitrary mutant internals.
     Native wall/process/resource controls remain separate caller obligations.
     """
-    return {"intervals": 492, "minima": 72, "batches": 77, "selections": 66,
+    return {"intervals": 492, "minima": 72, "batches": 81, "selections": 66,
             "garde_validator_invocations_upper": 1056}
 
 
-def _validate_helper(counts):
+def _validate_helper(case, counts):
     """Admit only finite prefixes of the direct raw-helper call order.
 
-    The helper scope is created immediately before its first precharged read.
-    It then attempts two reads, three sorts, two depths and five projections.
+    Each named scope starts immediately before its first precharged helper.
+    Nonzero fields follow their source order; fields unused by that case stay zero.
     These are direct test calls, not counts of calls made inside each helper.
     """
-    if not any(counts) or any(value > limit for value, limit in zip(counts, HELPER_RECIPE, strict=True)):
+    recipe = dict(HELPER_RECIPES).get(case)
+    if (recipe is None or not any(counts)
+            or any(value > limit for value, limit in zip(counts, recipe, strict=True))):
         raise Incomplete("Raw-helper attempts exceed or precede their fixed source recipe.")
-    reads, sorts, depths, labels = counts
-    allowed = (
-        (1 <= reads <= 2 and sorts == depths == labels == 0)
-        or (reads == 2 and 1 <= sorts <= 3 and depths == labels == 0)
-        or (reads == 2 and sorts == 3 and 1 <= depths <= 2 and labels == 0)
-        or (reads == 2 and sorts == 3 and depths == 2 and 1 <= labels <= 5)
-    )
-    if not allowed:
-        raise Incomplete("Raw-helper attempt ordering differs from its fixed source recipe.")
+    prefix = [0] * len(HELPER_FIELDS)
+    for index, limit in enumerate(recipe):
+        for value in range(1, limit + 1):
+            prefix[index] = value
+            if counts == tuple(prefix):
+                return
+    raise Incomplete("Raw-helper attempt ordering differs from its fixed source recipe.")
 
 
 def helper_counts(output, *, require_complete=False):
-    """Parse the one direct raw-helper record independently of public calls.
+    """Parse two named direct raw-helper records independently of public calls.
 
     The caller supplies source-bound native test bytes after trusted Cargo JSON
     phase separation. Exact LF/CRLF lines and the three owned library progress
     prefixes are admitted. Missing output remains None and pending; a reached
     failed-test prefix is reported as partial, without reducing prior charges.
-    The source recipe covers twelve direct helper attempts, not recursively
+    The source recipe covers thirty-one direct helper attempts, not recursively
     invoked helpers, total private operations, native success or CPU/RSS.
     Complete-package callers require this and selection_counts independently.
     """
     if type(output) is not str or len(output) > MAX_OUTPUT_CHARACTERS or type(require_complete) is not bool:
         raise Incomplete("Raw-helper observations require bounded text and a Boolean completeness mode.")
-    counts = None
+    profiles = {}
     lines = output.split("\n")
     for index, raw in enumerate(lines):
         if HELPER_MARKER not in raw:
@@ -261,19 +266,31 @@ def helper_counts(output, *, require_complete=False):
         match = _HELPER_LINE.fullmatch(line)
         if match is None:
             raise Incomplete("Raw-helper marker is malformed or outside its exact native prefix.")
-        if counts is not None:
+        case, *values = match.groups()
+        if case in profiles:
             raise Incomplete("Duplicate raw-helper scope observation.")
-        counts = tuple(_u64(value) for value in match.groups())
-        _validate_helper(counts)
-    pending = counts is None
-    complete = counts == HELPER_RECIPE
-    observed = None if pending else dict(zip(HELPER_FIELDS, counts, strict=True))
+        counts = tuple(_u64(value) for value in values)
+        _validate_helper(case, counts)
+        profiles[case] = counts
+    missing = [case for case, _ in HELPER_RECIPES if case not in profiles]
+    partial = [case for case, recipe in HELPER_RECIPES if case in profiles and profiles[case] != recipe]
+    pending = bool(missing)
+    complete = not pending and not partial
+    recorded = None if not profiles else {
+        field: sum(row[index] for row in profiles.values()) for index, field in enumerate(HELPER_FIELDS)
+    }
     result = {
-        "selection_helper_records": 0 if pending else 1,
-        "selection_helper_observed_calls": observed,
+        "selection_helper_records": len(profiles),
+        "selection_helper_profiles": {
+            case: dict(zip(HELPER_FIELDS, counts, strict=True)) for case, counts in profiles.items()
+        },
+        "selection_helper_missing_cases": missing,
+        "selection_helper_partial_cases": partial,
+        "selection_helper_recorded_call_subtotals": recorded,
+        "selection_helper_observed_calls": None if pending else recorded.copy(),
         "selection_helper_observation_pending": pending,
         "selection_helper_counter_observation_complete": complete,
-        "selection_helper_observation_status": "complete-source-recipe" if complete else "missing" if pending else "partial-source-recipe",
+        "selection_helper_observation_status": "complete-source-recipe" if complete else "missing" if recorded is None else "partial-source-recipe",
         "selection_helper_observation_scope": "Reported precharged direct raw-helper attempts only; no public construction, native outcome or recursive/private work count is inferred.",
     }
     if require_complete and not complete:
@@ -284,9 +301,10 @@ def helper_counts(output, *, require_complete=False):
 def full_package_helper_reservation():
     """Return fresh source-derived direct-helper charges before a package run.
 
-    No public constructor/evaluator call is added. The successful label helper
-    calls sorting internally; that is deliberately outside these direct-attempt
-    counters. This reservation is no global quota or arbitrary-mutant work bound.
+    Four extra public batches are charged separately by full_package_reservation.
+    Internal sorting/projection/depth calls are outside
+    these direct-attempt counters; source-work bounds must reserve them separately.
+    This reservation is no global quota or arbitrary-mutant work bound.
     """
     return dict(zip(HELPER_FIELDS, HELPER_RECIPE, strict=True))
 

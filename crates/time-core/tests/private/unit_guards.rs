@@ -5,9 +5,11 @@
 
 use std::io::{self, Write};
 
+use garde::Validate;
+
 use super::{
-    ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, PointField, PointIssue,
-    arithmetic, point_issue,
+    ArithmeticIssue, ArithmeticOperation, ArithmeticStage, Coefficient, FitError, PointCandidate,
+    PointField, PointIssue, arithmetic, point_issue,
 };
 
 /// Exact typed geometry cause expected from one raw private-helper failure.
@@ -17,6 +19,32 @@ fn error(operation: ArithmeticOperation, issue: ArithmeticIssue) -> FitError {
         operation,
         issue,
     }
+}
+
+/// Exact output-admission cause, distinct from the raw geometry helper's stage.
+fn result_error(operation: ArithmeticOperation, issue: ArithmeticIssue) -> FitError {
+    FitError::Arithmetic {
+        stage: ArithmeticStage::Result,
+        operation,
+        issue,
+    }
+}
+
+/// Charge a finite local raw attempt before entering its actual private owner.
+///
+/// This is a test-local source recipe, not public point/fit work or a claim about
+/// the number of internal operations performed by an arbitrary bad variant.
+/// # Errors
+/// Rejects counter overflow or an attempt beyond the test's admitted ceiling.
+fn charge_raw(counter: &mut usize, ceiling: usize) -> io::Result<()> {
+    let next = counter
+        .checked_add(1)
+        .ok_or_else(|| io::Error::other("raw guard attempt counter overflow"))?;
+    if next > ceiling {
+        return Err(io::Error::other("raw guard attempt ceiling"));
+    }
+    *counter = next;
+    Ok(())
 }
 
 /// Emit this test's exact zero public-point/fit count directly to stderr.
@@ -31,11 +59,11 @@ fn profile_counts() -> io::Result<()> {
         .write_all(b"CORE_PROFILE_COUNTS fits=0 points=0\n")
 }
 
-/// Nonfinite operands/results are rejected without entering a domain constructor.
+/// Nonfinite operands and raw coefficient outputs preserve their typed causes.
 /// # Panics
 /// Fails if raw nonfinite arithmetic escapes or loses its actual operation code.
 /// # Errors
-/// Propagates required direct-stderr accounting failure.
+/// Propagates required stderr accounting or a raw-attempt charge failure.
 #[test]
 fn nonfinite_operands_and_results_preserve_typed_cause() -> io::Result<()> {
     profile_counts()?;
@@ -61,6 +89,23 @@ fn nonfinite_operands_and_results_preserve_typed_cause() -> io::Result<()> {
         ),
         Ok(0.0)
     );
+    let mut coefficient_attempts = 0;
+    for (value, operation) in [
+        (f64::NAN, ArithmeticOperation::Add),
+        (f64::INFINITY, ArithmeticOperation::Subtract),
+        (f64::NEG_INFINITY, ArithmeticOperation::Multiply),
+        (
+            f64::from_bits(0xfff8_0000_0000_0001),
+            ArithmeticOperation::Divide,
+        ),
+    ] {
+        charge_raw(&mut coefficient_attempts, 4)?;
+        assert_eq!(
+            Coefficient::new(value, operation).map(|coefficient| coefficient.value.to_bits()),
+            Err(result_error(operation, ArithmeticIssue::NonFinite))
+        );
+    }
+    assert_eq!(coefficient_attempts, 4);
     Ok(())
 }
 
@@ -68,7 +113,7 @@ fn nonfinite_operands_and_results_preserve_typed_cause() -> io::Result<()> {
 /// # Panics
 /// Fails if a subnormal value escapes or a legal minimum-normal value is rejected.
 /// # Errors
-/// Propagates required direct-stderr accounting failure.
+/// Propagates required stderr accounting or a raw-attempt charge failure.
 #[test]
 fn subnormal_operands_and_results_have_a_normal_neighbor() -> io::Result<()> {
     profile_counts()?;
@@ -97,6 +142,51 @@ fn subnormal_operands_and_results_have_a_normal_neighbor() -> io::Result<()> {
         ),
         Ok(f64::MIN_POSITIVE)
     );
+    raw_coefficient_boundary_controls()?;
+    Ok(())
+}
+
+/// Raw coefficient admission rejects signed subnormals and preserves legal bits.
+///
+/// Unlike the point envelope, this output contract allows finite extrema. These
+/// four rejected and eight accepted values perform no arithmetic or public fit.
+/// # Panics
+/// Fails if rejection loses Result-stage/operation identity or accepted bits change.
+/// # Errors
+/// Propagates a raw-attempt charge failure before the next constructor call.
+fn raw_coefficient_boundary_controls() -> io::Result<()> {
+    let mut coefficient_attempts = 0;
+    for (bits, operation) in [
+        (0x0000_0000_0000_0001, ArithmeticOperation::Add),
+        (0x8000_0000_0000_0001, ArithmeticOperation::Subtract),
+        (0x000f_ffff_ffff_ffff, ArithmeticOperation::Multiply),
+        (0x800f_ffff_ffff_ffff, ArithmeticOperation::Divide),
+    ] {
+        charge_raw(&mut coefficient_attempts, 12)?;
+        assert_eq!(
+            Coefficient::new(f64::from_bits(bits), operation)
+                .map(|coefficient| coefficient.value.to_bits()),
+            Err(result_error(operation, ArithmeticIssue::Subnormal))
+        );
+    }
+    for (bits, operation) in [
+        (0x0000_0000_0000_0000, ArithmeticOperation::Add),
+        (0x8000_0000_0000_0000, ArithmeticOperation::Subtract),
+        (0x0010_0000_0000_0000, ArithmeticOperation::Multiply),
+        (0x8010_0000_0000_0000, ArithmeticOperation::Divide),
+        (0x7fef_ffff_ffff_ffff, ArithmeticOperation::Add),
+        (0xffef_ffff_ffff_ffff, ArithmeticOperation::Subtract),
+        (0x3ff0_0000_0000_0000, ArithmeticOperation::Multiply),
+        (0xbff0_0000_0000_0000, ArithmeticOperation::Divide),
+    ] {
+        charge_raw(&mut coefficient_attempts, 12)?;
+        assert_eq!(
+            Coefficient::new(f64::from_bits(bits), operation)
+                .map(|coefficient| coefficient.value.to_bits()),
+            Ok(bits)
+        );
+    }
+    assert_eq!(coefficient_attempts, 12);
     Ok(())
 }
 
@@ -203,7 +293,7 @@ fn cancellation_and_zero_operands_remain_legal() -> io::Result<()> {
 /// # Panics
 /// Fails if the typed field predicate changes its fixed first-issue ordering.
 /// # Errors
-/// Propagates required direct-stderr accounting failure.
+/// Propagates required stderr accounting or a raw-attempt charge failure.
 #[test]
 fn scalar_rule_precedence_is_explicit() -> io::Result<()> {
     profile_counts()?;
@@ -231,5 +321,117 @@ fn scalar_rule_precedence_is_explicit() -> io::Result<()> {
         None
     );
     assert_eq!(point_issue(-0.0, PointField::RelativeSeconds), None);
+    raw_candidate_field_controls()?;
+    Ok(())
+}
+
+/// Challenge each raw derived field while leaving the other two fields healthy.
+///
+/// Inclusive endpoints and exact representable neighbors are fixed independently
+/// of the production predicate. No checked point is fabricated, and rejection is
+/// required from the actual garde derive rather than the constructor's fallback.
+/// # Panics
+/// Fails if a single bad field passes or an admitted endpoint/neighbor is rejected.
+/// # Errors
+/// Propagates a raw-attempt charge failure before the next validation call.
+fn raw_candidate_field_controls() -> io::Result<()> {
+    let mut validation_attempts = 0;
+    for field in [
+        PointField::RelativeSeconds,
+        PointField::PhaseSeconds,
+        PointField::VarianceDivisor,
+    ] {
+        for value in [
+            f64::NAN,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::from_bits(0x0000_0000_0000_0001),
+            f64::from_bits(0x8000_0000_0000_0001),
+        ] {
+            raw_candidate_field_rejection(field, value, &mut validation_attempts)?;
+        }
+    }
+    for (field, value) in [
+        (
+            PointField::RelativeSeconds,
+            f64::from_bits(0xc0b0_0000_0000_0001),
+        ),
+        (PointField::RelativeSeconds, f64::MIN_POSITIVE),
+        (
+            PointField::PhaseSeconds,
+            f64::from_bits(0xbff0_0000_0000_0001),
+        ),
+        (
+            PointField::PhaseSeconds,
+            f64::from_bits(0x3ff0_0000_0000_0001),
+        ),
+        (
+            PointField::VarianceDivisor,
+            f64::from_bits(0x3faf_ffff_ffff_ffff),
+        ),
+        (
+            PointField::VarianceDivisor,
+            f64::from_bits(0x4030_0000_0000_0001),
+        ),
+    ] {
+        raw_candidate_field_rejection(field, value, &mut validation_attempts)?;
+    }
+    for (relative_seconds, phase_seconds, variance_divisor) in [
+        (-1.0, 0.0, 1.0),
+        (-4096.0, -1.0, 1.0 / 16.0),
+        (0.0, 1.0, 16.0),
+        (-0.0, -0.0, 1.0),
+        (-f64::MIN_POSITIVE, f64::MIN_POSITIVE, 1.0),
+        (
+            f64::from_bits(0xc0af_ffff_ffff_ffff),
+            f64::from_bits(0x3fef_ffff_ffff_ffff),
+            f64::from_bits(0x3fb0_0000_0000_0001),
+        ),
+        (
+            -1.0,
+            f64::from_bits(0xbfef_ffff_ffff_ffff),
+            f64::from_bits(0x402f_ffff_ffff_ffff),
+        ),
+    ] {
+        charge_raw(&mut validation_attempts, 28)?;
+        assert!(
+            PointCandidate {
+                relative_seconds,
+                phase_seconds,
+                variance_divisor
+            }
+            .validate()
+            .is_ok()
+        );
+    }
+    assert_eq!(validation_attempts, 28);
+    Ok(())
+}
+
+/// Require one raw bad field to be rejected by its derived validation wiring.
+///
+/// The other two raw fields are fixed healthy neighbors. This creates only an
+/// unvalidated candidate, never a checked point or coefficient.
+/// # Panics
+/// Fails if the field designated invalid by the caller's fixed case is accepted.
+/// # Errors
+/// Propagates an attempt charge failure before invoking the actual garde derive.
+fn raw_candidate_field_rejection(
+    field: PointField,
+    value: f64,
+    validation_attempts: &mut usize,
+) -> io::Result<()> {
+    charge_raw(validation_attempts, 28)?;
+    let mut raw = PointCandidate {
+        relative_seconds: -1.0,
+        phase_seconds: 0.0,
+        variance_divisor: 1.0,
+    };
+    match field {
+        PointField::RelativeSeconds => raw.relative_seconds = value,
+        PointField::PhaseSeconds => raw.phase_seconds = value,
+        PointField::VarianceDivisor => raw.variance_divisor = value,
+    }
+    assert!(raw.validate().is_err());
     Ok(())
 }

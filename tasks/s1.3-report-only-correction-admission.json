@@ -1,0 +1,19 @@
+{
+  "status": "admitted-not-executed",
+  "parent_admission_sha256": "d00fb454b321d5a217691efbf2bd8f74f875a91fe932b973ecb727d1a578af56",
+  "output_dir": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s13-retained-coverage-report-v2",
+  "report_only_script_sha256": "1d69aff53c544a34ed0728c35edb20de55efb807a53f38a21a7e9bf82bfc59e6",
+  "previous_failed_report_receipt_sha256": "5800bf84aa1f9619d1604d0ee846c01c5d5aab9bde88f02fe0c94029816ee16c",
+  "previous_failure": "Pinned reportparser rejects --jobs despite sharedhelp text. No producttests; all362 copied/original targetartifacts unchanged.",
+  "primary_parser_source": "https://github.com/taiki-e/cargo-llvm-cov/blob/v0.9.1/src/cli.rs#L1175-L1185",
+  "native_argv_change": "Removeonly --jobs12; native90/any, JSON, package,frozen,correctedregex retained.",
+  "limits": {
+    "fresh_native_report_operations": 1,
+    "wall_seconds": 120,
+    "new_product_tests": 0,
+    "new_fit_point_selector_calls": 0,
+    "implicit_retries": 0
+  },
+  "copied_target_custody": "Exactfullendpoint inventory path/hash equality; no read-only-duringexecutionclaim",
+  "native_test_qualification": "No newtestexecution/clock/service/networkeffects; previousnativeexit1 remainsretained."
+}

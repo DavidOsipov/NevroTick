@@ -27,14 +27,25 @@ class SelectionAccountingTests(unittest.TestCase):
             "S13_SELECTION_PROFILE scope=batch intervals=19 minima=1 batches=8 selections=1\n"
             "S13_SELECTION_PROFILE scope=literal_permutations intervals=446 minima=65 batches=65 selections=65\n"
             'S13_BATCH_GUARD_PROFILE {"case":"capacity","intervals":1,"batches":1}\n'
-            'S13_BATCH_GUARD_PROFILE {"case":"capacity_neighbor","intervals":16,"batches":1}\n'
-            'S13_BATCH_GUARD_PROFILE {"case":"duplicate_recovery","intervals":2,"batches":2}\n'
+            'S13_BATCH_GUARD_PROFILE {"case":"capacity_neighbor","intervals":16,"batches":2}\n'
+            'S13_BATCH_GUARD_PROFILE {"case":"duplicate_recovery","intervals":2,"batches":5}\n'
+        )
+
+    @staticmethod
+    def helper_healthy():
+        return (
+            "SELECTION_HELPER_PROFILE case=capacity_neighbor read_adapters=2 prefix_sorts=3 "
+            "cell_depths=2 label_projections=5 endpoint_collections=2 depth_builds=2 "
+            "component_scans=3 witness_builds=4\n"
+            "SELECTION_HELPER_PROFILE case=duplicate_recovery read_adapters=0 prefix_sorts=0 "
+            "cell_depths=0 label_projections=0 endpoint_collections=3 depth_builds=3 "
+            "component_scans=2 witness_builds=0\n"
         )
 
     def test_complete_package_records_have_literal_totals_and_no_outcome_claim(self):
         result = MODULE.selection_counts(self.healthy(), require_complete=True)
         self.assertEqual(result["selection_observed_calls"],
-                         {"intervals": 492, "minima": 72, "batches": 77, "selections": 66})
+                         {"intervals": 492, "minima": 72, "batches": 81, "selections": 66})
         self.assertEqual(result["selection_external_records"], 4)
         self.assertEqual(result["selection_guard_records"], 3)
         self.assertTrue(result["selection_counter_observation_complete"])
@@ -199,7 +210,7 @@ class SelectionAccountingTests(unittest.TestCase):
 
     def test_precharged_source_projection_is_separate_and_fresh(self):
         reserve = MODULE.full_package_reservation()
-        self.assertEqual(reserve, {"intervals": 492, "minima": 72, "batches": 77,
+        self.assertEqual(reserve, {"intervals": 492, "minima": 72, "batches": 81,
                                    "selections": 66, "garde_validator_invocations_upper": 1056})
         reserve["intervals"] = 0
         self.assertEqual(MODULE.full_package_reservation()["intervals"], 492)
@@ -224,45 +235,60 @@ class SelectionAccountingTests(unittest.TestCase):
                     MODULE.source_work_uppers(selector_count, batch_count)
 
     def test_raw_helper_complete_record_has_literal_direct_recipe(self):
-        row = "SELECTION_HELPER_PROFILE read_adapters=2 prefix_sorts=3 cell_depths=2 label_projections=5\n"
-        stream = self.healthy() + row
+        stream = self.healthy() + self.helper_healthy()
         result = MODULE.helper_counts(stream, require_complete=True)
         self.assertEqual(result["selection_helper_observed_calls"],
-                         {"read_adapters": 2, "prefix_sorts": 3, "cell_depths": 2, "label_projections": 5})
-        self.assertEqual(result["selection_helper_records"], 1)
+                         {"read_adapters": 2, "prefix_sorts": 3, "cell_depths": 2, "label_projections": 5,
+                          "endpoint_collections": 5, "depth_builds": 5, "component_scans": 5, "witness_builds": 4})
+        self.assertEqual(result["selection_helper_records"], 2)
+        self.assertEqual(result["selection_helper_missing_cases"], [])
+        self.assertEqual(result["selection_helper_partial_cases"], [])
+        self.assertEqual(set(result["selection_helper_profiles"]), {"capacity_neighbor", "duplicate_recovery"})
         self.assertFalse(result["selection_helper_observation_pending"])
         self.assertTrue(result["selection_helper_counter_observation_complete"])
         self.assertEqual(result["selection_helper_observation_status"], "complete-source-recipe")
         self.assertNotIn("native_exit", result)
         self.assertNotIn("intervals", result["selection_helper_observed_calls"])
         self.assertEqual(MODULE.selection_counts(stream, require_complete=True)["selection_observed_calls"],
-                         {"intervals": 492, "minima": 72, "batches": 77, "selections": 66})
+                         {"intervals": 492, "minima": 72, "batches": 81, "selections": 66})
         reserve = MODULE.full_package_helper_reservation()
         self.assertEqual(reserve, {"read_adapters": 2, "prefix_sorts": 3,
-                                   "cell_depths": 2, "label_projections": 5})
+                                   "cell_depths": 2, "label_projections": 5,
+                                   "endpoint_collections": 5, "depth_builds": 5,
+                                   "component_scans": 5, "witness_builds": 4})
         reserve["prefix_sorts"] = 0
         self.assertEqual(MODULE.full_package_helper_reservation()["prefix_sorts"], 3)
         self.assertEqual(MODULE.full_package_reservation()["intervals"], 492)
 
     def test_raw_helper_progress_and_missing_have_independent_semantics(self):
-        row = "SELECTION_HELPER_PROFILE read_adapters=2 prefix_sorts=3 cell_depths=2 label_projections=5"
+        rows = self.helper_healthy().splitlines()
         names = [
             "selection::selection_guards::capacity_neighbor_copies_all_values_in_order",
             "selection::selection_guards::over_capacity_rejects_before_adapter_reads",
             "selection::selection_guards::duplicate_stops_at_earliest_index_and_recovers",
         ]
         for name in names:
-            result = MODULE.helper_counts("test " + name + " ... " + row + "\r\n", require_complete=True)
+            stream = "".join("test " + name + " ... " + row + "\r\n" for row in rows)
+            result = MODULE.helper_counts(stream, require_complete=True)
             self.assertEqual(result["selection_helper_observed_calls"]["label_projections"], 5)
+        reverse = MODULE.helper_counts("\n".join(reversed(rows)) + "\n", require_complete=True)
+        self.assertEqual(reverse["selection_helper_observed_calls"]["component_scans"], 5)
         missing = MODULE.helper_counts(self.healthy())
         self.assertIsNone(missing["selection_helper_observed_calls"])
         self.assertTrue(missing["selection_helper_observation_pending"])
         self.assertFalse(missing["selection_helper_counter_observation_complete"])
         self.assertEqual(missing["selection_helper_records"], 0)
         self.assertEqual(missing["selection_helper_observation_status"], "missing")
+        self.assertEqual(missing["selection_helper_missing_cases"], ["capacity_neighbor", "duplicate_recovery"])
+        single = MODULE.helper_counts(rows[0] + "\n")
+        self.assertIsNone(single["selection_helper_observed_calls"])
+        self.assertEqual(single["selection_helper_recorded_call_subtotals"]["witness_builds"], 4)
+        self.assertEqual(single["selection_helper_missing_cases"], ["duplicate_recovery"])
+        self.assertEqual(single["selection_helper_partial_cases"], [])
+        self.assertEqual(single["selection_helper_observation_status"], "partial-source-recipe")
         self.assertTrue(MODULE.selection_counts(self.healthy(), require_complete=True)
                         ["selection_counter_observation_complete"])
-        for output in ("", self.healthy()):
+        for output in ("", self.healthy(), rows[0] + "\n", rows[1] + "\n"):
             with self.subTest(output=output), self.assertRaises(MODULE.Incomplete):
                 MODULE.helper_counts(output, require_complete=True)
         for value in (None, b"", 1, [], {}):
@@ -270,13 +296,16 @@ class SelectionAccountingTests(unittest.TestCase):
                 MODULE.helper_counts(value)
         for value in (None, 0, 1, "true"):
             with self.subTest(mode=value), self.assertRaises(MODULE.Incomplete):
-                MODULE.helper_counts(row + "\n", require_complete=value)
+                MODULE.helper_counts(self.helper_healthy(), require_complete=value)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.helper_counts("x" * (16 * 1024 * 1024 + 1))
 
     def test_raw_helper_closed_lines_reject_forged_schema_and_scalars(self):
-        row = "SELECTION_HELPER_PROFILE read_adapters=2 prefix_sorts=3 cell_depths=2 label_projections=5"
+        row, duplicate = self.helper_healthy().splitlines()
         invalid = [
+            row.replace("case=capacity_neighbor", "case=unknown"),
+            row.replace("case=capacity_neighbor", "case=duplicate_recovery"),
+            row.replace(" case=capacity_neighbor", ""),
             row.replace("read_adapters=2", "read_adapters=02"),
             row.replace("read_adapters=2", "read_adapters=-1"),
             row.replace("read_adapters=2", "read_adapters=+1"),
@@ -289,9 +318,18 @@ class SelectionAccountingTests(unittest.TestCase):
             row.replace("prefix_sorts=3", "prefix_sorts=4"),
             row.replace("cell_depths=2", "cell_depths=3"),
             row.replace("label_projections=5", "label_projections=6"),
+            row.replace("endpoint_collections=2", "endpoint_collections=3"),
+            row.replace("depth_builds=2", "depth_builds=3"),
+            row.replace("component_scans=3", "component_scans=4"),
+            row.replace("witness_builds=4", "witness_builds=5"),
+            duplicate.replace("endpoint_collections=3", "endpoint_collections=4"),
+            duplicate.replace("depth_builds=3", "depth_builds=4"),
+            duplicate.replace("component_scans=2", "component_scans=3"),
+            duplicate.replace("witness_builds=0", "witness_builds=1"),
             row.replace(" read_adapters=", "  read_adapters="),
             row.replace(" read_adapters=2 prefix_sorts=3", " prefix_sorts=3 read_adapters=2"),
             row.replace(" cell_depths=2", ""),
+            row.replace(" witness_builds=4", ""),
             row + " extra=1",
             row + " label_projections=5",
             " " + row,
@@ -311,24 +349,57 @@ class SelectionAccountingTests(unittest.TestCase):
                 MODULE.helper_counts(output)
 
     def test_raw_helper_failed_prefixes_remain_partial_in_fixed_order(self):
-        prefixes = [(1, 0, 0, 0), (2, 0, 0, 0), (2, 1, 0, 0),
-                    (2, 3, 0, 0), (2, 3, 1, 0), (2, 3, 2, 0), (2, 3, 2, 4)]
-        for reads, sorts, depths, labels in prefixes:
-            row = (f"SELECTION_HELPER_PROFILE read_adapters={reads} prefix_sorts={sorts} "
-                   f"cell_depths={depths} label_projections={labels}\n")
-            result = MODULE.helper_counts(row)
-            self.assertEqual(result["selection_helper_observed_calls"],
-                             {"read_adapters": reads, "prefix_sorts": sorts,
-                              "cell_depths": depths, "label_projections": labels})
-            self.assertFalse(result["selection_helper_observation_pending"])
-            self.assertFalse(result["selection_helper_counter_observation_complete"])
-            self.assertEqual(result["selection_helper_observation_status"], "partial-source-recipe")
-            with self.subTest(row=row), self.assertRaises(MODULE.Incomplete):
-                MODULE.helper_counts(row, require_complete=True)
-        for reads, sorts, depths, labels in [(0, 0, 0, 0), (1, 1, 0, 0),
-                                             (2, 2, 1, 0), (2, 3, 1, 1)]:
-            row = (f"SELECTION_HELPER_PROFILE read_adapters={reads} prefix_sorts={sorts} "
-                   f"cell_depths={depths} label_projections={labels}\n")
+        fields = ("read_adapters", "prefix_sorts", "cell_depths", "label_projections",
+                  "endpoint_collections", "depth_builds", "component_scans", "witness_builds")
+        healthy_capacity, healthy_duplicate = self.helper_healthy().splitlines()
+        recipes = [
+            ("capacity_neighbor", healthy_duplicate, [
+                (1, 0, 0, 0, 0, 0, 0, 0), (2, 0, 0, 0, 0, 0, 0, 0),
+                (2, 1, 0, 0, 0, 0, 0, 0), (2, 3, 0, 0, 0, 0, 0, 0),
+                (2, 3, 1, 0, 0, 0, 0, 0), (2, 3, 2, 0, 0, 0, 0, 0),
+                (2, 3, 2, 4, 0, 0, 0, 0), (2, 3, 2, 5, 1, 0, 0, 0),
+                (2, 3, 2, 5, 2, 1, 0, 0), (2, 3, 2, 5, 2, 2, 2, 0),
+                (2, 3, 2, 5, 2, 2, 3, 0), (2, 3, 2, 5, 2, 2, 3, 3),
+            ]),
+            ("duplicate_recovery", healthy_capacity, [
+                (0, 0, 0, 0, 1, 0, 0, 0), (0, 0, 0, 0, 3, 0, 0, 0),
+                (0, 0, 0, 0, 3, 2, 0, 0), (0, 0, 0, 0, 3, 3, 1, 0),
+            ]),
+        ]
+        for case, healthy_other, prefixes in recipes:
+            for counts in prefixes:
+                row = "SELECTION_HELPER_PROFILE case=" + case + "".join(
+                    f" {field}={value}" for field, value in zip(fields, counts, strict=True)) + "\n"
+                missing = MODULE.helper_counts(row)
+                self.assertIsNone(missing["selection_helper_observed_calls"])
+                self.assertTrue(missing["selection_helper_observation_pending"])
+                self.assertEqual(missing["selection_helper_recorded_call_subtotals"],
+                                 dict(zip(fields, counts, strict=True)))
+                stream = row + healthy_other + "\n"
+                result = MODULE.helper_counts(stream)
+                self.assertEqual(result["selection_helper_profiles"][case],
+                                 dict(zip(fields, counts, strict=True)))
+                self.assertIsNotNone(result["selection_helper_observed_calls"])
+                self.assertFalse(result["selection_helper_observation_pending"])
+                self.assertFalse(result["selection_helper_counter_observation_complete"])
+                self.assertEqual(result["selection_helper_partial_cases"], [case])
+                self.assertEqual(result["selection_helper_observation_status"], "partial-source-recipe")
+                with self.subTest(row=row), self.assertRaises(MODULE.Incomplete):
+                    MODULE.helper_counts(stream, require_complete=True)
+        invalid = [
+            ("capacity_neighbor", (0, 0, 0, 0, 0, 0, 0, 0)),
+            ("capacity_neighbor", (1, 1, 0, 0, 0, 0, 0, 0)),
+            ("capacity_neighbor", (2, 2, 1, 0, 0, 0, 0, 0)),
+            ("capacity_neighbor", (2, 3, 2, 5, 1, 1, 0, 0)),
+            ("capacity_neighbor", (2, 3, 2, 5, 2, 1, 1, 0)),
+            ("capacity_neighbor", (2, 3, 2, 5, 2, 2, 2, 1)),
+            ("duplicate_recovery", (0, 0, 0, 0, 1, 1, 0, 0)),
+            ("duplicate_recovery", (0, 0, 0, 0, 3, 2, 1, 0)),
+            ("duplicate_recovery", (1, 0, 0, 0, 1, 0, 0, 0)),
+        ]
+        for case, counts in invalid:
+            row = "SELECTION_HELPER_PROFILE case=" + case + "".join(
+                f" {field}={value}" for field, value in zip(fields, counts, strict=True)) + "\n"
             with self.subTest(row=row), self.assertRaises(MODULE.Incomplete):
                 MODULE.helper_counts(row)
 

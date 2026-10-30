@@ -5,6 +5,7 @@ import importlib.util
 import hashlib
 import json
 from pathlib import Path
+import re
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -16,6 +17,14 @@ SPEC.loader.exec_module(MODULE)
 FILES = tuple((name, f"crates/time-domain/src/{name}.rs")
               for name in ("coordinate", "era", "exchange", "clock", "rounding"))
 SCOPE = MODULE.Scope("time-domain", FILES, "policy/time-domain-analysis.json")
+CORE_FILES = (
+    ("regression", "crates/time-core/src/regression.rs"),
+    ("residuals", "crates/time-core/src/regression/residuals.rs"),
+    ("normalization", "crates/time-core/src/regression/normalization.rs"),
+    ("history", "crates/time-core/src/regression/history.rs"),
+    ("runs", "crates/time-core/src/regression/runs.rs"),
+    ("selection", "crates/time-core/src/selection.rs"),
+)
 
 
 def phase_records(summary="Success"):
@@ -562,6 +571,73 @@ class EvidenceTests(unittest.TestCase):
                     MODULE.coverage_counts(SCOPE, bad, full)
         with self.assertRaises(MODULE.Incomplete):
             MODULE.coverage_counts(SCOPE, report, "/work/source/crates/other.rs")
+
+    def test_native_coverage_filter_keeps_all_six_owners_and_the_file_threshold(self):
+        """The observed upstream 3/6 file must not enter the native owner gate."""
+        subjects = dict(CORE_FILES)
+        scope = MODULE.Scope("time-core", tuple(subjects.items()), "policy/time-core-analysis.json")
+        sysroot = ("/home/david_osipov/.rustup/toolchains/1.99.1-x86_64-unknown-linux-gnu/"
+                   "lib/rustlib/src/rust/library/std/src/sys/thread_local/native/mod.rs")
+        test_source = "/work/source/crates/time-core/tests/selection.rs"
+        files = [{"filename": "/work/source/" + filename,
+                  "summary": {"lines": {"count": 10, "covered": 9}}}
+                 for filename in subjects.values()]
+        files.extend([{"filename": sysroot, "summary": {"lines": {"count": 6, "covered": 3}}},
+                      {"filename": test_source, "summary": {"lines": {"count": 10, "covered": 0}}}])
+        with tempfile.TemporaryDirectory() as temporary:
+            work, report, calls = Path(temporary), {}, []
+            def run(label, command, timeout):
+                calls.append(label)
+                self.assertEqual((label, timeout), ("coverage", 300))
+                self.assertTrue({"--frozen", "--lib", "--tests", "--json"}.issubset(command))
+                self.assertEqual(command[command.index("--failure-mode") + 1], "any")
+                self.assertEqual(command[command.index("--fail-under-file-lines") + 1], "90")
+                self.assertNotIn("--disable-default-ignore", command)
+                self.assertEqual(command.count("--ignore-filename-regex"), 1)
+                excluded = re.compile(command[command.index("--ignore-filename-regex") + 1])
+                self.assertIsNotNone(excluded.search(sysroot))
+                self.assertIsNotNone(excluded.search(test_source))
+                self.assertIsNone(excluded.search("/work/source/crates/time-core/src/thread_local/native/mod.rs"))
+                for filename in subjects.values():
+                    self.assertIsNone(excluded.search("/work/source/" + filename))
+                selected = [item for item in files if not excluded.search(item["filename"])]
+                self.assertEqual(len(selected), 6)
+                (work / "coverage.json").write_text(json.dumps({"data": [{"files": selected}]}))
+                return "test result: ok. 94 passed; 0 failed; 0 ignored;"
+            MODULE.run_analysis_lanes(scope, subjects, {"coverage_wall_seconds": 300},
+                                      work, work / "tools", run, report, "coverage")
+            self.assertEqual(calls, ["coverage"])
+            self.assertEqual(set(report["coverage"]), set(subjects))
+            self.assertTrue(all(value["line_percent"] == 90 and value["tests_executed"] == 94
+                                for value in report["coverage"].values()))
+
+    def test_coverage_scope_repair_cannot_hide_missing_duplicate_or_undercovered_owner(self):
+        """Good neighbors and an upstream file cannot replace a declared owner."""
+        subjects = dict(CORE_FILES)
+        scope = MODULE.Scope("time-core", CORE_FILES, "policy/time-core-analysis.json")
+        for selected_name, filename in subjects.items():
+            for fault in ("missing", "duplicate", "below-threshold"):
+                with self.subTest(owner=selected_name, fault=fault), tempfile.TemporaryDirectory() as temporary:
+                    work, report = Path(temporary), {}
+                    files = [{"filename": "/work/source/" + owner,
+                              "summary": {"lines": {"count": 1000, "covered": 1000}}}
+                             for owner in subjects.values() if owner != filename]
+                    selected = {"filename": "/work/source/" + filename,
+                                "summary": {"lines": {"count": 10, "covered": 8 if fault == "below-threshold" else 9}}}
+                    if fault != "missing":
+                        files.append(selected)
+                    if fault == "duplicate":
+                        files.append(selected)
+                    files.append({"filename": "/rustlib/src/rust/library/std/src/lib.rs",
+                                  "summary": {"lines": {"count": 10000, "covered": 10000}}})
+                    def run(label, _command, _timeout):
+                        self.assertEqual(label, "coverage")
+                        (work / "coverage.json").write_text(json.dumps({"data": [{"files": files}]}))
+                        return "test result: ok. 94 passed; 0 failed; 0 ignored;"
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.run_analysis_lanes(scope, subjects, {"coverage_wall_seconds": 300},
+                                                  work, work / "tools", run, report, "coverage")
+                    self.assertNotIn("coverage", report)
 
     def test_viable_mutants_require_actual_tests_and_exact_full_inventory(self):
         filename = FILES[0][1]
