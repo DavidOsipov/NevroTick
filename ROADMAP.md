@@ -21,6 +21,7 @@ applying time to its own clock.
 | Windows client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. This roadmap neither duplicates nor reorders that plan. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
+| DNS-over-QUIC | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning): DoQ-only resolution with leaf and intermediate certificate pinning; platform/integration scope remains to be qualified. |
 
 The [architecture](docs/windows-time-architecture.md),
 [owner decisions](docs/nevrotick-owner-decisions.md) and
@@ -330,7 +331,61 @@ turning it into a hidden v1 requirement.
 two-device authenticated interoperability and lifecycle evidence. Windows v1's
 client-only contract is changed only by the explicit later scope decision.
 
-## 5. Command reference for the feasibility stage
+## 5. Planned DNS-over-QUIC and certificate pinning
+
+**Status:** requested future feature; no DoQ implementation or pinning support
+is established by this roadmap.
+
+Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
+certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are
+out of scope**, including DoH carried over HTTP/3. In the selected DoQ mode,
+connection or authentication failure must not silently switch to those protocols
+or plaintext DNS.
+
+Use the dedicated DoQ mapping in RFC 9250, with ALPN `doq` and normally UDP port
+853. QUIC's TLS handshake remains part of DoQ; excluding DoT does not exclude
+TLS authentication. [A12]
+
+- [ ] Define the first target platform and which lookups the feature owns.
+  An in-app resolver does not establish system-wide Android DNS coverage.
+  Any wider integration needs its own feasibility proof under the no-root,
+  no-continuously-active-VPN constraints.
+- [ ] Define resolver identity, bootstrap addresses, query/cache/resource limits
+  and network-change behavior. Resolve bootstrap DNS and certificate-time
+  dependencies explicitly; do not hide a system-resolver fallback or disable
+  certificate validation to get started.
+- [ ] Admit the QUIC/TLS dependency graph and enforce pin checks in its actual
+  certificate verifier. Do not assume Android's network-security configuration
+  automatically governs a separately selected native QUIC/TLS implementation.
+- [ ] Treat pins as an additional restriction on normal certificate-chain,
+  validity-period and expected-server-name validation. Scope pins to the intended
+  resolver identity. An intermediate pin must match an intermediate on the
+  accepted certification path, not an unrelated certificate sent by the peer.
+  DNS transport authentication does not replace NTS server authentication. [A13]
+- [ ] Select the pin representation before freezing configuration: full
+  certificate fingerprints versus public-key/SPKI hashes. Support leaf and
+  intermediate pinsets; explicitly define leaf-only, intermediate-only and
+  combined-policy behavior, including whether both levels must match.
+  A single flat any-match pinset must not be presented as enforcing both levels.
+- [ ] Plan active/backup pins, overlapping rotation, CA/intermediate changes and
+  authenticated configuration updates. Pin expiry, mismatch or update failure
+  must not automatically disable pinning. Scope connection reuse and resumption
+  to the current trust/pin policy. [A14]
+- [ ] Expose the selected resolver, DoQ connection state, pin-policy state and
+  actionable failures without logging query names by default. Distinguish
+  configured policy from a successfully verified connection.
+- [ ] Qualify valid neighboring cases and rejection controls: wrong hostname,
+  invalid/expired chain, leaf mismatch, intermediate mismatch, an unrelated
+  matching certificate, alternate/cross-signed paths, rotation, stale resumed
+  sessions after policy change, blocked UDP and attempted protocol downgrade.
+
+**Exit DOQ-C01:** a reviewed resolver/pinning contract, an admitted implementation
+and independent interoperability/negative-test evidence for the claimed platform
+and lookup scope. Pin formats, combined-match semantics, resolver presets and
+platform rollout remain implementation decisions; this feature does not reorder
+the current Windows execution plan or make Android feasibility depend on DoQ.
+
+## 6. Command reference for the feasibility stage
 
 These are **version-scoped examples**, not an instruction to change a phone
 before the listener, captured configuration and restoration path exist.
@@ -388,7 +443,7 @@ do not infer success from its exit code. USB ADB `reverse` is not an automatic
 UDP tunnel; this design uses local UDP and the companion's own remote transport.
 [A1, A6, A11]
 
-## 6. Decision points and evidence discipline
+## 7. Decision points and evidence discipline
 
 The next implementation stage is **AND-0**, starting with device identification
 and read-only capability discovery. Dates for later stages are intentionally not
@@ -404,12 +459,14 @@ Resolve these choices when the dependent stage is ready, using the existing
   impersonation risk.
 - Any requirement that the whole OS prohibit alternate time origins.
 - Whether to add the separately exposed Windows NTS server in AND-6.
+- DoQ platform/lookup scope, resolver bootstrap, pin representation, combined
+  leaf/intermediate matching and pin-update/rotation policy.
 
 Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-AND-C01–AND-C07 are local roadmap exit IDs, not replacements for existing
+AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.
@@ -421,7 +478,7 @@ next action. Repository planning/security/testing skills guide the applicable
 boundaries; add Android-specific guidance only when an actual gap requires it.
 Documentation review and upstream source evidence are not device-test passes.
 
-## 7. Primary evidence
+## 8. Primary evidence
 
 Reviewed for this roadmap on 30 October 2026. Versioned AOSP sources support the
 specific version claims; mutable current sources and Android/OEM policies must
@@ -439,3 +496,6 @@ support for the user's particular handset.
 - **A9 — NTS protocol and security limits:** [RFC 8915](https://www.rfc-editor.org/rfc/rfc8915.html), especially certificate-time bootstrap, delay attacks and downgrade resistance.
 - **A10 — settings output/representation:** [SettingsService](https://github.com/aosp-mirror/platform_frameworks_base/blob/main/packages/SettingsProvider/src/com/android/providers/settings/SettingsService.java) and [SettingsState](https://github.com/aosp-mirror/platform_frameworks_base/blob/main/packages/SettingsProvider/src/com/android/providers/settings/SettingsState.java).
 - **A11 — ADB transports and commands:** [official ADB man page](https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/docs/user/adb.1.md).
+- **A12 — DNS-over-QUIC transport:** [RFC 9250](https://www.rfc-editor.org/rfc/rfc9250.html), especially connection establishment, port selection and authentication profiles.
+- **A13 — TLS service identity:** [RFC 9525](https://www.rfc-editor.org/rfc/rfc9525.html), especially certification-path validation and matching the intended service identity.
+- **A14 — pinning semantics and rotation example:** [Android certificate pinning](https://developer.android.com/privacy-and-security/security-config#CertificatePinning). Its any-match SPKI pinset and pin-expiration behavior are reference behavior, not the selected DoQ policy or proof of enforcement by a native stack.
