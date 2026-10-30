@@ -1,4 +1,5 @@
 # NevroTick
+<img width="1300" height="576" alt="nevrotick-illustrated-for-light" src="https://github.com/user-attachments/assets/a594b72f-adda-45dd-ac07-925476f23bac" />
 
 **System essentials, under control.**
 
