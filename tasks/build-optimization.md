@@ -218,3 +218,34 @@ lookup cost and cold/concurrent initialization checks. No blanket five-feature
 attribute rule, per-packet-syscall assumption or custom `AtomicPtr` requirement
 was adopted. The earlier 128-case exercise covers selector safety, not shared
 cache initialization or native instruction execution.
+
+## Hidden-caveat research and skill review — 30 October 2026
+
+Three fresh-context read-only research assignments covered CPU/OS/VM and Windows
+admission, compiler/ABI boundaries, and cache/performance lifecycle. The
+coordinator also checked vector memory/arithmetic and pinned-version limitations
+using Context7, primary Rust documentation and installed intrinsic source. No
+product code, CPU flag, dependency, native setting or historical receipt changed.
+
+The skill now routes to [seven caveat groups and concrete controls](../.agents/skills/implementation/implement-cpu-dispatch/references/x86-caveats.md):
+inherited flags/DLL startup and direct entry paths; cfg/helper and optimized-code
+boundaries; callable/SIMD ABI; AVX512VL/OS state and Windows CONTEXT semantics;
+OnceLock initialization and platform cache lifetime; per-length and sparse-work
+profitability; and vector tails, arithmetic and rejection precedence. Sources
+support named platform/compiler observations, not universal penalties, affinity
+requirements or a newly discovered compiler defect.
+
+A fourth fresh-context agent used the revised skill on a review/repair exercise.
+It rejected the supplied v3-compiled checker, deleted specialization, reentrant
+initializer and out-of-bounds tail-load proposals, while accepting the supplied
+exact AVX512F-only feature boundary under its stated preconditions. Its repaired
+pure Python model passed the coordinator's 72 ordered-length-pair cases; the
+original passed 54 and failed 18 because it cached a first-request cost decision.
+The agent also reported 300 individual checks on its larger exercise selection.
+These are fixture policy facts and source arguments, not hardware measurements,
+executed Rust cache/ABI/load controls or general agent-reliability evidence.
+Coordinator imports created bytecode caches during grading; source-input hashes
+remained unchanged and no grader answers were exposed in the agent's input scope.
+
+The current skill/package/local-link checks pass. Evidence and source identities
+are retained under `~/.local/share/nevrotick/cpu-caveats-20261030-pg3xgcyy/`.

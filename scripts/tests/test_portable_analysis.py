@@ -376,6 +376,147 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(report["mutation_enumeration"]["coordinate"],
                              {"raw_output": raw, "warning": warning})
 
+    def test_inventory_only_lists_exact_owners_without_baselines_or_campaigns(self):
+        """A larger discovery reservation reports, but never admits, a campaign."""
+        subjects = {"era": dict(FILES)["era"], "clock": dict(FILES)["clock"]}
+        mutants = {name: {"file": filename, "name": name, "package": "time-domain"}
+                   for name, filename in subjects.items()}
+        warning = (" WARN --jobs=10 is probably too high and may overload your machine: each job runs a separate "
+                   "`cargo` process, and cargo may internally start many threads and subprocesses; values <= 8 "
+                   "are usually safe\n")
+        report, calls = {}, []
+        tools = Path("/sealed/tools")
+        def run(label, command, timeout, **options):
+            calls.append(label)
+            name = label.removeprefix("mutation-enumeration:")
+            self.assertIn(name, subjects)
+            self.assertEqual(command, [str(tools / "cargo-mutants"), "mutants", "--package", "time-domain",
+                "--file", subjects[name], "--test-workspace", "false", "--cap-lints", "false", "--jobs", "10",
+                "--jobserver", "true", "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
+                "--list", "--json"])
+            self.assertEqual(options, {})
+            self.assertGreater(timeout, 0)
+            self.assertLessEqual(timeout, 120)
+            return (warning if name == "era" else "") + json.dumps([mutants[name]])
+        policy = {"maximum_mutants": 1, "mutation_jobs": 10,
+                  "mutation_process_limit": 512, "mutation_message_format": "json"}
+        found = MODULE.enumerate_mutation_inventories(SCOPE, subjects, policy, tools, run, report,
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=2, maximum_total=4)
+        self.assertEqual(calls, ["mutation-enumeration:era", "mutation-enumeration:clock"])
+        self.assertEqual(found.inventories, {name: {name: mutant} for name, mutant in mutants.items()})
+        self.assertEqual(found.total, 2)
+        self.assertTrue(found.campaign_budget_exceeded)
+        self.assertEqual(report["mutation_enumerated_total"], 2)
+        self.assertTrue(report["mutation_campaign_budget_exceeded"])
+        self.assertEqual(found.observations, report["mutation_enumeration"])
+        self.assertEqual(found.observations["era"], {"raw_output": warning + json.dumps([mutants["era"]]),
+                                                  "warning": warning})
+        self.assertIsNone(found.observations["clock"]["warning"])
+        self.assertTrue(all("--baseline" not in command and "--output" not in command
+                            for command in found.commands.values()))
+        self.assertNotIn("mutation", report)
+        self.assertNotIn("mutation_reviewed_inventories", report)
+
+    def test_inventory_only_requires_exact_scope_and_explicit_finite_allowances(self):
+        subjects = {"era": dict(FILES)["era"]}
+        policy = {"maximum_mutants": 2}
+        valid = {"deadline": MODULE.time.monotonic() + 60, "maximum_per_file": 2, "maximum_total": 2}
+        for field, values in {
+            "maximum_per_file": (True, False, None, "2", 2.0, 0, -1, 513),
+            "maximum_total": (True, None, "2", 2.0, 0, -1, 3),
+            "deadline": (True, None, "later", float("inf"), float("nan"), 10**500, 0),
+        }.items():
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    run = unittest.mock.Mock()
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.enumerate_mutation_inventories(SCOPE, subjects, policy, Path("/tools"), run, {},
+                                                              **{**valid, field: value})
+                    run.assert_not_called()
+        for selected in ({}, {"unknown": dict(FILES)["era"]}, {"unknown": None},
+                         {"era": dict(FILES)["clock"]}):
+            with self.subTest(subjects=selected):
+                run = unittest.mock.Mock()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.enumerate_mutation_inventories(SCOPE, selected, policy, Path("/tools"), run, {}, **valid)
+                run.assert_not_called()
+        for value in (True, None, "2", 2.0, 0, -1, 513):
+            with self.subTest(campaign_cap=value):
+                run = unittest.mock.Mock()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.enumerate_mutation_inventories(SCOPE, subjects, {"maximum_mutants": value},
+                                                          Path("/tools"), run, {}, **valid)
+                run.assert_not_called()
+
+    def test_inventory_only_retains_rejected_native_listings(self):
+        mutant = {"name": "one", "file": dict(FILES)["era"], "package": "time-domain"}
+        warning = (" WARN --jobs=12 is probably too high and may overload your machine: each job runs a separate "
+                   "`cargo` process, and cargo may internally start many threads and subprocesses; values <= 8 "
+                   "are usually safe\n")
+        invalid = [("[", 1), ("{}", 1), ("[]", 1), (json.dumps([mutant, mutant]), 2),
+                   (json.dumps([{**mutant, "file": dict(FILES)["clock"]}]), 1),
+                   (json.dumps([{**mutant, "package": "other"}]), 1),
+                   (json.dumps([mutant, {**mutant, "name": "two"}]), 1),
+                   (warning + json.dumps([mutant]), 1)]
+        for raw, allowance in invalid:
+            with self.subTest(raw=raw):
+                report = {"mutation_enumerated_total": 1, "mutation_campaign_budget_exceeded": False}
+                run = unittest.mock.Mock(return_value=raw)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.enumerate_mutation_inventories(SCOPE, {"era": dict(FILES)["era"]},
+                        {"maximum_mutants": 512, "mutation_jobs": 10}, Path("/tools"), run, report,
+                        deadline=MODULE.time.monotonic() + 60,
+                        maximum_per_file=allowance, maximum_total=allowance)
+                self.assertEqual(run.call_count, 1)
+                self.assertEqual(run.call_args.args[0], "mutation-enumeration:era")
+                self.assertEqual(run.call_args.args[1][-2:], ["--list", "--json"])
+                self.assertEqual(report["mutation_enumeration"]["era"]["raw_output"], raw)
+                self.assertNotIn("mutation", report)
+                self.assertNotIn("mutation_enumerated_total", report)
+                self.assertNotIn("mutation_campaign_budget_exceeded", report)
+
+    def test_inventory_only_stops_on_its_separate_aggregate_listing_allowance(self):
+        subjects = dict(FILES[:2])
+        calls, report = [], {}
+        def run(label, command, _timeout):
+            calls.append(label)
+            name = label.split(":")[1]
+            self.assertEqual(command[-2:], ["--list", "--json"])
+            return json.dumps([{"name": name, "file": subjects[name], "package": "time-domain"}])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.enumerate_mutation_inventories(SCOPE, subjects, {"maximum_mutants": 512},
+                Path("/tools"), run, report, deadline=MODULE.time.monotonic() + 60,
+                maximum_per_file=1, maximum_total=1)
+        self.assertEqual(calls, ["mutation-enumeration:coordinate", "mutation-enumeration:era"])
+        self.assertEqual(set(report["mutation_enumeration"]), set(subjects))
+        self.assertNotIn("mutation", report)
+
+    def test_campaign_lanes_keep_the_aggregate_gate_before_every_campaign(self):
+        subjects = dict(FILES[:2])
+        for lane in ("mutation", "all"):
+            with self.subTest(lane=lane), tempfile.TemporaryDirectory() as temporary:
+                work = Path(temporary)
+                calls, report = [], {}
+                def run(label, command, _timeout, **_options):
+                    calls.append(label)
+                    self.assertNotIn("--baseline", command)
+                    if label == "coverage":
+                        (work / "coverage.json").write_text(json.dumps({"data": [{"files": [
+                            {"filename": "/work/source/" + filename,
+                             "summary": {"lines": {"count": 10, "covered": 9}}}
+                            for filename in subjects.values()]}]}))
+                        return "test result: ok. 1 passed; 0 failed; 0 ignored;"
+                    name = label.removeprefix("mutation-enumeration:")
+                    self.assertIn(name, subjects)
+                    return json.dumps([{"name": name, "file": subjects[name], "package": "time-domain"}])
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.run_analysis_lanes(SCOPE, subjects,
+                        {"coverage_wall_seconds": 300, "mutation_wall_seconds": 1200, "maximum_mutants": 1},
+                        work, work / "tools", run, report, lane)
+                self.assertEqual(calls, (["coverage"] if lane == "all" else [])
+                                 + ["mutation-enumeration:coordinate", "mutation-enumeration:era"])
+                self.assertNotIn("mutation", report)
+
     def test_scope_is_immutable(self):
         with self.assertRaises(AttributeError):
             SCOPE.package = "other"

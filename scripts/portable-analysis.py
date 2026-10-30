@@ -607,12 +607,83 @@ def compiler_cause(result: dict, specimen: dict, source_path: str) -> None:
     raise Incomplete("External consumer diagnostic has an unrelated type, field or primary span.")
 
 
+class MutationEnumeration(NamedTuple):
+    """Caller-owned listing facts, not baseline, campaign or review admission."""
+    inventories: dict[str, dict]
+    commands: dict[str, list[str]]
+    total: int
+    observations: dict[str, dict]
+    campaign_budget_exceeded: bool
+
+
+def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, *,
+                                   deadline, maximum_per_file, maximum_total) -> MutationEnumeration:
+    """List each exact selected owner once through a source-bound custodian.
+
+    The caller admits source/graph/tool bytes and supplies the unchanged absolute
+    wall deadline plus explicit finite listing allowances. Each command contains
+    only `--list --json`, with at most 120 seconds remaining from that deadline;
+    this helper launches neither a baseline nor a campaign and creates no files.
+    Raw output and warning observations remain in `report` even on parse failure.
+
+    Listing discovery may reserve a larger aggregate than the current campaign
+    cap. That condition is reported, never converted into campaign admission.
+    Reviewed hashes, equivalences, passing baselines and full resource reservation
+    remain separate pre-campaign obligations. Returned dictionaries belong to
+    the caller and must stay unchanged while those obligations are reconciled.
+    """
+    allowed = scope.select("all")
+    if (not isinstance(subjects, dict) or not subjects
+            or any(name not in allowed or allowed[name] != filename for name, filename in subjects.items())):
+        raise Incomplete("Mutation listing subjects differ from the exact admitted scope.")
+    campaign_maximum = policy.get("maximum_mutants")
+    try:
+        finite_deadline = type(deadline) in (int, float) and math.isfinite(deadline)
+    except OverflowError:
+        finite_deadline = False
+    if (type(maximum_per_file) is not int or not 0 < maximum_per_file <= 512
+            or type(maximum_total) is not int or not 0 < maximum_total <= maximum_per_file * len(subjects)
+            or type(campaign_maximum) is not int or not 0 < campaign_maximum <= 512
+            or not finite_deadline):
+        raise Incomplete("Mutation listing requires explicit finite allowances and a finite deadline.")
+    workers = mutation_jobs(policy)
+    mutation_process_limit(policy)
+    message_format = mutation_message_format(policy)
+    inventories, commands = {}, {}
+    observations = report["mutation_enumeration"] = {}
+    report.pop("mutation_enumerated_total", None)
+    report.pop("mutation_campaign_budget_exceeded", None)
+    for name, filename in subjects.items():
+        # Bound independent mutant copies and the GNU jobserver separately.
+        common = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
+                  "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(workers),
+                  "--jobserver", "true", "--jobserver-tasks", str(workers)]
+        if message_format == "json":
+            common.append("--cargo-arg=--message-format=json")
+        commands[name] = common
+        listed = run("mutation-enumeration:" + name, [*common, "--list", "--json"],
+                     remaining_timeout(deadline, 120))
+        expected_warning = mutation_listing_warning(workers)
+        observed_warning = (expected_warning if expected_warning is not None
+                            and isinstance(listed, str) and listed.startswith(expected_warning) else None)
+        observations[name] = {"raw_output": listed, "warning": observed_warning}
+        items, warning = parse_mutation_listing(listed, expected_jobs=workers)
+        if warning != observed_warning:
+            raise Incomplete("Mutation listing warning observation disagrees with parser admission.")
+        inventories[name] = mutation_inventory(scope, items, maximum_per_file, filename)
+    total = combined_mutant_count(inventories, maximum_total)
+    report["mutation_enumerated_total"] = total
+    exceeded = total > campaign_maximum
+    report["mutation_campaign_budget_exceeded"] = exceeded
+    return MutationEnumeration(inventories, commands, total, observations, exceeded)
+
+
 def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
     """Execute finite coverage and complete per-file mutation through a supplied custodian."""
-    workers = mutation_jobs(policy) if lane in {"mutation", "all"} else None
-    if workers is not None:
+    if lane in {"mutation", "all"}:
+        mutation_jobs(policy)
         mutation_process_limit(policy)
-    message_format = mutation_message_format(policy) if lane in {"mutation", "all"} else None
+        mutation_message_format(policy)
     if lane in {"coverage", "all"}:
         command = [str(tools / "cargo-llvm-cov"), "llvm-cov", "--package", scope.package,
                    "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--tests", "--json",
@@ -630,27 +701,10 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
         equivalences = admit_mutation_equivalences(work / "source", scope, policy)
         (work / "mutation").mkdir()
         deadline = time.monotonic() + policy["mutation_wall_seconds"]
-        inventories, commands = {}, {}
-        report["mutation_enumeration"] = {}
-        for name, filename in subjects.items():
-            # --jobs bounds mutant copies; the independent GNU jobserver budget
-            # also needs an explicit limit instead of its all-CPU default.
-            common = [str(tools / "cargo-mutants"), "mutants", "--package", scope.package, "--file", filename,
-                      "--test-workspace", "false", "--cap-lints", "false", "--jobs", str(workers),
-                      "--jobserver", "true", "--jobserver-tasks", str(workers)]
-            if message_format == "json":
-                common.append("--cargo-arg=--message-format=json")
-            commands[name] = common
-            listed = run("mutation-enumeration:" + name, [*common, "--list", "--json"],
-                         remaining_timeout(deadline, 120))
-            expected_warning = mutation_listing_warning(workers)
-            observed_warning = (expected_warning if expected_warning is not None
-                                and isinstance(listed, str) and listed.startswith(expected_warning) else None)
-            report["mutation_enumeration"][name] = {"raw_output": listed, "warning": observed_warning}
-            items, warning = parse_mutation_listing(listed, expected_jobs=workers)
-            if warning != observed_warning:
-                raise Incomplete("Mutation listing warning observation disagrees with parser admission.")
-            inventories[name] = mutation_inventory(scope, items, policy["maximum_mutants"], filename)
+        enumerated = enumerate_mutation_inventories(
+            scope, subjects, policy, tools, run, report, deadline=deadline,
+            maximum_per_file=policy["maximum_mutants"], maximum_total=policy["maximum_mutants"])
+        inventories, commands = enumerated.inventories, enumerated.commands
         report["mutation_enumerated_total"] = combined_mutant_count(inventories, policy["maximum_mutants"])
         reviewed = admit_reviewed_mutation_inventories(scope, policy, inventories)
         if reviewed is not None:
