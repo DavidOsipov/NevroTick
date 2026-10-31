@@ -54,6 +54,13 @@ pub use combination::{
     FixtureSupporterUncertainty, combine_fixture_supporters,
 };
 
+pub use combination::{
+    FixtureCombinationLifecycleError, FixtureCombinationLifecycleStep, FixtureCombinationOutcome,
+    FixtureCombinationParameterField, FixtureCombinationParameterIssue,
+    FixtureCombinationParameters, FixtureCombinationSourceState, FixtureCombinationSourceStatus,
+    FixtureCombinationState, FixtureReachabilityUpdate,
+};
+
 pub use principal::{
     FixturePrincipalContextField, FixturePrincipalDecision, FixturePrincipalError,
     FixturePrincipalOutcomeKind, FixturePrincipalParameterField, FixturePrincipalParameters,

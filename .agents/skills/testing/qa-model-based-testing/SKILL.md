@@ -17,6 +17,10 @@ Model acknowledgement loss, stale late completion, reconnect/restart/suspend/suc
 
 A sequential state model does not prove thread schedules or Windows OS behavior. Combine necessary [concurrency](../qa-state-concurrency-lifecycle/SKILL.md) and [native evidence](../references/windows-evidence.md) explicitly. Read [Rust techniques](../references/rust-techniques.md) for optional instrumented models and limits.
 
+For a concrete search gap between meaningful states sharing familiar branches,
+use [state-guided fuzzing](../qa-state-guided-fuzzing/SKILL.md). Keep the model as
+the oracle and derive exploration feedback from actual target observations.
+
 For a synchronization/property gap, select admitted Loom or Kani through
 [configured analysis](../references/configured-tooling.md#additional-rust-analysis):
 `python3 -B scripts/check-analysis.py --tool loom --fixtures` or the corresponding

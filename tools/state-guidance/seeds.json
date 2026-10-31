@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "seeds": {
+    "arm": "0100f0",
+    "complete": "0100f00100",
+    "socket-recovery": "0100f003000100",
+    "stale-cancel": "0100f0010000f105000100"
+  }
+}

@@ -112,6 +112,61 @@ class GuardTests(unittest.TestCase):
 
 
 class ProcessTests(unittest.TestCase):
+    def test_failed_predecessors_preserve_same_parent_runner_and_pipe_cleanup(self):
+        """Independent commands share a runner parent, not scenario state."""
+        children = []
+        launch = ENV.subprocess.Popen
+
+        def observe_launch(*args, **kwargs):
+            """Observe real owned children without performing runner cleanup."""
+            child = launch(*args, **kwargs)
+            children.append(child)
+            return child
+
+        def cleanup_owned_children():
+            """Restore only this test's children after pre-teardown assertions."""
+            for child in children:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait(timeout=5)
+                child.stdout.close()
+
+        self.addCleanup(cleanup_owned_children)
+        expected = {"exit_code": 0, "failure": None, "output": "healthy\n"}
+
+        def healthy_victim():
+            """Check independent output and reached cleanup before fallback."""
+            result = ENV.run([sys.executable, "-c", "print('healthy')"], cwd=Path.cwd())
+            observed = {key: result[key] for key in expected}
+            self.assertEqual(observed, expected)
+            for child in children:
+                self.assertIsNotNone(child.returncode, "runner did not reap an owned child")
+                self.assertTrue(child.stdout.closed, "runner left an owned output pipe open")
+            return observed
+
+        predecessors = {
+            "nonzero": ("raise SystemExit(7)", 30, None),
+            "output": (f"import os; os.write(1, b'x'*{ENV.MAX_OUTPUT + 1})",
+                       30, "output budget exceeded"),
+            "timeout": ("import time; time.sleep(10)", 0.1, "wall timeout"),
+        }
+        with patch.object(ENV.subprocess, "Popen", side_effect=observe_launch):
+            baseline = healthy_victim()
+            for sequence in (("nonzero",), ("output", "nonzero"), ("timeout",)):
+                with self.subTest(predecessors=sequence):
+                    for name in sequence:
+                        code, timeout, failure = predecessors[name]
+                        result = ENV.run([sys.executable, "-c", code],
+                                         cwd=Path.cwd(), timeout=timeout)
+                        if failure is None:
+                            self.assertEqual(result["exit_code"], 7)
+                            self.assertIsNone(result["failure"])
+                        else:
+                            self.assertIn(failure, result["failure"] or "")
+                        with self.assertRaises(ENV.Incomplete):
+                            ENV.require_ok(result)
+                    self.assertEqual(healthy_victim(), baseline)
+
     def test_completed_command_without_descendants_is_a_healthy_control(self):
         result = ENV.run([sys.executable, "-c", "print('healthy')"], cwd=Path.cwd())
         self.assertEqual(result["exit_code"], 0)

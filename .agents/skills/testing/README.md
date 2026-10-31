@@ -45,6 +45,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-property-based-testing](qa-property-based-testing/SKILL.md) | Use bounded generated cases and shrinking to test a NevroTick invariant with an independent oracle and reproducible counterexamples. |
 | [qa-model-based-testing](qa-model-based-testing/SKILL.md) | Test NevroTick controller, authority and recovery sequences against an independently defined transition model. |
 | [qa-structured-fuzzing](qa-structured-fuzzing/SKILL.md) | Run or design a bounded NevroTick fuzz target for structured IPC/configuration, NTP/NTS parsing or numeric conversion with useful seeds and explicit oracles. |
+| [qa-state-guided-fuzzing](qa-state-guided-fuzzing/SKILL.md) | Compare real coverage with bounded semantic-state feedback through one actual-target driver and an independent transition oracle. |
 | [qa-mutation-testing](qa-mutation-testing/SKILL.md) | Use a bounded NevroTick mutation campaign to assess behavioral assertions, preserving the architecture per-critical-file gate and honest outcome accounting. |
 | [qa-golden-fixture-parity](qa-golden-fixture-parity/SKILL.md) | Compare NevroTick captured outputs or pinned reference trajectories with independent semantic facts and a deliberately tested comparator. |
 | [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate NevroTick compiler, Clippy, source-policy, bounded static analysis and CodeQL data-flow evidence for the actual target/features. |

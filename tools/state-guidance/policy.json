@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "installation_manifest_sha256": "dbcb80b43f9fd781532c9e6fdd9d605645440c6d6f4f90e3aa006df7a6cbdb5f",
+  "recipe_bindings": {
+    "run.py": "b93d69c8efab30c91a43d08ef7181448a62b2647dcfe14e72aa6a6b985c313a3",
+    "test_run.py": "c23f5af0486ed1a8ff065f7a578c4b53bae38236a359bddb4666f8b6b2a067e5",
+    "seeds.json": "4106b42fdb420c49f893975a6b0e1f50c7ad807ded91c3f5a4bf51965f18a336"
+  },
+  "supervisor_bindings": {
+    "scripts/analysis-runtime.py": "172623473b288125634347b2e826e9ebf749c7427dfa0922415f5a69d009717d",
+    "scripts/check-environment.py": "8a6ca976dcc46dc7986472c72bde8d0be0596d873afd2ec88b0419df8239d880",
+    "policy/tool-manifest.json": "9daab43041ce4b0e798ffb7e4dab3f9d6ac89a0811815f8550c4667203e17b53"
+  },
+  "bounds": {
+    "healthy_evaluations_per_arm": 1024,
+    "seeds": [
+      1,
+      7,
+      42
+    ],
+    "max_steps": 32,
+    "max_trace_bytes": 65,
+    "wall_seconds_per_command": 60,
+    "worker_count": 1
+  },
+  "scope": "Qualified fixture-only comparison; controls required before campaigns",
+  "advisory_relative": "qualification/advisory.json",
+  "advisory_sha256": "38c3fae6b1779650ba68453cc52d078700884ae1c94d40cf80f1b8440104db7c",
+  "controls_relative": "qualification/controls.json",
+  "controls_sha256": "238a5624a790f0da3307c6de4b36e3d112181f7747f72d1a9d09231bce8a75d8"
+}

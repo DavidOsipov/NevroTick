@@ -36,6 +36,7 @@ HELPERS = {
 FIXTURE_NAMES = (
     "typed_consumer.py", "wrong_field.py", "wrong_value.py",
     "reservation_as_observation.py", "partial_as_complete.py",
+    "lifecycle_reservation_as_observation.py", "lifecycle_partial_as_complete.py",
     "unhandled_status.py", "unhandled_match.py",
 )
 SOURCE_PATHS = (
@@ -75,6 +76,8 @@ CASES = (
     ("wrong_value", "wrong_value.py", "typeddict-item", "terms"),
     ("reservation_as_observation", "reservation_as_observation.py", "return-value", "ReservedAttempts"),
     ("partial_as_complete", "partial_as_complete.py", "arg-type", "PartialObservation"),
+    ("lifecycle_reservation_as_observation", "lifecycle_reservation_as_observation.py", "return-value", "ReservedLifecycleAttempts"),
+    ("lifecycle_partial_as_complete", "lifecycle_partial_as_complete.py", "arg-type", "LifecyclePartialObservation"),
     ("unhandled_status", "unhandled_status.py", "arg-type", "InterruptedObservation"),
     ("unhandled_match", "unhandled_match.py", "exhaustive-match", "interrupted"),
     ("incompatible_implementation", "typed_consumer.py", "assignment", "CombinationInterface"),

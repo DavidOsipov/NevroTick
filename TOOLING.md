@@ -238,9 +238,11 @@ python3 -B scripts/check-python-typing.py \
 ```
 
 For checker/configuration/interface changes, also select `--fixtures`: one
-healthy consumer and seven intended static rejections cover wrong fields/value
+healthy consumer and nine intended static rejections cover wrong fields/value
 types, reservation/observation confusion, partial/complete confusion, unhandled
-statuses and an incompatible actual implementation. Use `--json` with a fresh
+statuses and an incompatible actual implementation. Lifecycle-specific controls
+also reject reserved attempts as observations and partial records as complete.
+Use `--json` with a fresh
 external result path to retain the receipt. Refresh admission only after reviewing
 the changed inputs; source hashes are not a substitute for those checks. A
 complete counter transport establishes neither successful assertions nor product
@@ -1216,3 +1218,65 @@ output; Context7 and primary upstream sources resolve API questions. Root
 [AGENTS.md](AGENTS.md) describes when to choose each tool. Existing connection
 history is not a fresh runtime qualification. UI-M0 now supplies Rust source for
 navigation; confirm current indexing before relying on its application graph.
+
+
+## Fixture semantic-state guidance
+
+The standalone `tools/state-guidance/` lane uses LibAFL/bolts 0.16.1 and the
+admitted Rust 1.99.1 GNU toolchain. It adds no shipping workspace member or
+product dependency. The pure versioned action driver calls the real
+`ntp-exchange` association and checks a separately authored scalar model.
+A reviewed wrapper instruments only the three selected pure product crates.
+
+Both crates have defaults disabled in the
+[engine manifest](tools/state-guidance/engine/Cargo.toml). Selected `libafl`
+features are `derive` and `serdeany_autoreg`; selected `libafl_bolts` features
+remain `std`, `derive` and `serdeany_autoreg`. Optional `libafl/std` was removed
+after the original graph's audit reported unmaintained `bincode 2.0.1`
+(`RUSTSEC-2025-0141`). The warning receipt remains historical; the change used
+no upstream patch or ignored advisory. The current [lockfile](tools/state-guidance/engine/Cargo.lock)
+contains 130 packages, with 101 in the selected GNU host graph. A fresh private
+RustSec advisory-only audit reported zero vulnerabilities and zero warnings
+for this exact lock. Yank status was outside that audit's scope; this is no
+registry/index or full security/release qualification. The supervisor requires
+the pinned passing exact-lock advisory receipt as part of admission.
+
+```sh
+python3 -B tools/state-guidance/run.py
+python3 -B tools/state-guidance/run.py --controls --output-dir /absolute/existing-parent/new-controls
+python3 -B tools/state-guidance/run.py --compare --output-dir /absolute/existing-parent/new-comparison
+```
+
+These are offline guarded commands. Fresh output must be outside the checkout
+and installation; the parent must already exist. The private schema-1 pointer
+`~/.local/share/nevrotick/state-guidance-installation.json` locates the installed
+payload. The checkout's `tools/state-guidance/policy.json` pins its manifest, source,
+recipe, native dependencies and qualifying controls. Changed bindings fail closed;
+comparison requires controls for the exact candidate. Reading a skill does not
+install, rebuild or repin tools. The installer retained exact lock/vendor/source
+and compiler provenance in its private installation evidence directory.
+
+The default corpus includes pending-request creation, completion, socket
+rejection/recovery and stale-cancellation sequences. Its `arm` action creates a
+pending request; it does not refer to ARM processors. The corpus-only follow-up
+kept the x86-64 build fixed and requalified the changed seed recipe and controls.
+
+The engine also provides an explicitly selected effects oracle and a lifecycle
+mutation operator. Legacy calls keep baseline mutations and strict comparison.
+The effects lane checks observable state/completion effects before continuing a
+returned-error difference, and retains the first diagnostic input separately
+from the coverage corpus. The lifecycle operator remains optional: the bounded
+four-fault experiment improved cancellation sensitivity but regressed context
+invalidation search. Its common training corpus excludes the default
+stale-cancellation input, which already triggers one of the new private variants.
+See the [fault-suite results](tasks/s1.1-deterministic-harness.md#bounded-fault-suite-and-mutation-follow-up-1-november-2026)
+and [experimental admission procedure](.agents/skills/testing/qa-state-guided-fuzzing/references/backend-workflow.md#compare-fault-classes-oracle-objectives-and-mutations).
+
+The completed bounded pilot, mixed results and later corpus experiment are recorded in the
+[S1.1e follow-up](tasks/s1.1-deterministic-harness.md#semantic-feedback-follow-up-31-october-2026).
+Use [state-guided fuzzing](.agents/skills/testing/qa-state-guided-fuzzing/SKILL.md)
+for consumer/feedback selection and the corresponding skill reference for limits.
+This lane qualifies fixture forwarding, oracle/feedback sensitivity and finite
+search observations. It supplies no NTS, sanitizer, native Windows, performance
+budget or release result. Existing cargo-fuzz, Miri, Loom, Kani and native
+verification workflows retain their separate purposes.

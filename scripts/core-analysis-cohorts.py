@@ -114,12 +114,12 @@ class Incomplete(ValueError):
 
 MAX_COHORT_VARIANTS = 512
 MAX_LISTING_VARIANTS = 3072
-MAX_OWNERS = 4
+MAX_OWNERS = 6
 MAX_INPUTS = 256
-# The four-owner recipe vector has 265 prior fields, 91 combination fields and
-# two checked-arithmetic prerequisite units and eight private-boundary work fields;
-# unknown/extra fields still fail.
-MAX_BUDGET_FIELDS = 366
+# Preserve the predecessor's 366 units and add exactly 121 lifecycle units:
+# 22 public, four bridge and one counter call fields; 38 module-work fields;
+# and 56 delegated-principal fields. Unknown/extra fields still fail.
+MAX_BUDGET_FIELDS = 487
 PLAN_KEYS = frozenset({
     "schema_version", "status", "candidate_sha256", "product_inputs_sha256",
     "tool_inputs_sha256", "tool_payloads_sha256", "recipe_sha256", "inventories",
@@ -266,7 +266,7 @@ def plan_reservation(plan: object, package_budget: object, check_budgets: object
 def _cohorts(value: object) -> list[Cohort]:
     """Project exact named subject/path rows; partition ownership is checked later."""
     if not is_exact_list(value) or len(value) != MAX_OWNERS:
-        raise Incomplete("Checkpoint partition must contain each of four owners once.")
+        raise Incomplete("Checkpoint partition must contain each of six owners once.")
     result: list[Cohort] = []
     for raw in value:
         row = _object(raw)
@@ -300,7 +300,7 @@ def _plan(value: object) -> CohortPlan:
 
 
 def _subjects(value: object) -> dict[str, str]:
-    """Require the four distinct source owners used by this checkpoint."""
+    """Require the six distinct source owners used by this checkpoint."""
     raw = _object(value)
     result: dict[str, str] = {}
     for name, path in raw.items():
@@ -308,7 +308,7 @@ def _subjects(value: object) -> dict[str, str]:
             raise Incomplete("Checkpoint source owner paths must be strings.")
         result[name] = path
     if len(result) != MAX_OWNERS or len(set(result.values())) != MAX_OWNERS:
-        raise Incomplete("Checkpoint scope must contain exactly four distinct changed critical owners.")
+        raise Incomplete("Checkpoint scope must contain exactly six distinct changed critical owners.")
     return result
 
 
@@ -446,4 +446,4 @@ def reconcile_receipts(plan: object, receipts: object, *, subjects: object) -> R
             "generated_variants": sum(row["count"] for row in admitted["inventories"].values()),
             "baselines": len(receipts), "reservation": admitted["cumulative_reservation"],
             "critical_manifest_complete_selection": False,
-            "scope": "Four changed/coupled critical owners' mutation receipt union; coverage/contracts and native Windows remain separate."}
+            "scope": "Six changed/coupled critical owners' mutation receipt union; coverage/contracts and native Windows remain separate."}

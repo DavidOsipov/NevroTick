@@ -1,0 +1,27 @@
+[package]
+name = "state-guidance-harness"
+version = "0.0.0"
+publish = false
+edition = "2024"
+rust-version = "1.99"
+license = "GPL-2.0-only"
+description = "Bounded fixture-association trace driver and independent lifecycle oracle"
+
+# Deliberately separate test infrastructure, not a new product workspace member.
+[workspace]
+resolver = "3"
+
+[dependencies]
+ntp-exchange = { path = "../../../crates/ntp-exchange" }
+ntp-wire = { path = "../../../crates/ntp-wire" }
+time-domain = { path = "../../../crates/time-domain" }
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "deny"
+unused_must_use = "deny"
+
+[lints.clippy]
+all = "deny"
+unwrap_used = "deny"
+expect_used = "deny"

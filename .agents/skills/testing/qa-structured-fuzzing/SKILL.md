@@ -20,6 +20,14 @@ Start accepted seeds/independent expected facts/named malformed boundaries. Pres
 
 For a new/changed adapter, use [harness qualification](../references/harness-qualification.md) to check actual forwarding with a finite accepted seed and an intended fault. An adapter that changes the selected bytes or rejects everything can hide the boundary despite a successful runner.
 
+When important states revisit familiar branches, use
+[state-guided fuzzing](../qa-state-guided-fuzzing/SKILL.md) for an equal-budget
+comparison with actual-target semantic observations and an independent model.
+
+For unexplained input-dependent work, consider [cost-directed search](../references/cost-directed-search.md).
+Qualify actual-work feedback separately from coverage, source reservations and
+functional correctness; this optional strategy requires no PerfFuzz installation.
+
 Cap total cases/time, bytes/depth, memory, workers, output retention, minimization. Distinguish ordinary rejection/crash/hang/launch/wait error/cleanup failure. Caught panic/zero wrapper exit cannot hide failure. Preserve original/minimized exact bytes, corpus/build/configuration hashes, toolchain, reproduction command.
 
 Read [Rust techniques](../references/rust-techniques.md), including the conflicting upstream Windows support statements. Qualify the installed nightly/sanitizer/target with known controls. `tmin` reduces an individual failure; `cmin` reduces a coverage corpus. Neither creates Windows protected-effect evidence or permission for an overnight campaign.

@@ -17,6 +17,11 @@ Use architecture section 17/CHECK-21 budgets; identify named hardware, Windows s
 
 Choose bounded steady tracking/idle UI/reconnect/outage/malformed requests/NAK storms/source changes/logging/long-running recovery workloads. Measure actual owning process/service, CPU/working set/handles/threads/wakeups, queue/work bounds, UI/control-loop responsiveness.
 
+For a consumer with unexplained structure-dependent work, use
+[cost-directed search](../references/cost-directed-search.md) to discover candidate
+inputs, then confirm them through comparable ordinary measurements. Search finds
+observed heavy cases, not a global worst-case or resource-budget proof.
+
 Before sampling define metric start/stop events, bounded repeats/warmup, preselected statistic/spread. Retain all raw samples/outliers/failed/missing observations/reasons; unavailable is not zero. Compare only comparable candidate/environment identities; near-noise/unspecified-decision-rule verdict remains uncertain.
 
 Observe before fixture teardown; forced child cleanup must not hide leaks. Separate cold/warm caches/startup/steady state; preserve time series/workload inputs/first spikes/failures. Keep UTC/monotonic/active-awake distinctions.

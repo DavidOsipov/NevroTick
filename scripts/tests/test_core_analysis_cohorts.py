@@ -3,6 +3,7 @@ import copy
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location(
     "core_analysis_cohorts", Path(__file__).resolve().parents[1] / "core-analysis-cohorts.py")
@@ -14,7 +15,7 @@ class CohortPlanTests(unittest.TestCase):
     """Synthetic identities test admission mechanics, never a product candidate."""
 
     def fixture(self):
-        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(4)}
+        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(6)}
         product = {"Cargo.toml": "a" * 64}
         tools = {"scripts/wrapper.py": "b" * 64}
         inventories = {name: {"count": 300 + index, "sha256": str(index) * 64}
@@ -55,36 +56,52 @@ class CohortPlanTests(unittest.TestCase):
                            "mutation_generated_variants_selected_total": plan["inventories"][subject]["count"]})
         return result
 
-    def test_disjoint_four_owner_union_can_exceed_one_cohort_cap(self):
+    def test_disjoint_six_owner_union_can_exceed_one_cohort_cap(self):
         plan, args = self.fixture()
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted["reservation"]["mutation_variants"], 1206)
-        self.assertEqual(admitted["reservation"]["mutation_baselines"], 4)
-        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 2425, "points": 8481})
+        self.assertEqual(admitted["reservation"]["mutation_variants"], 1815)
+        self.assertEqual(admitted["reservation"]["mutation_baselines"], 6)
+        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 3647, "points": 12758})
         union = MODULE.reconcile_receipts(plan, self.receipts(plan, args["subjects"]), subjects=args["subjects"])
-        self.assertEqual(union["focused_receipts"], 4)
-        self.assertEqual(union["generated_variants"], 1206)
+        self.assertEqual(union["focused_receipts"], 6)
+        self.assertEqual(union["generated_variants"], 1815)
         self.assertFalse(union["critical_manifest_complete_selection"])
 
-    def test_scope_requires_exactly_four_distinct_owners(self):
-        for change in ("one", "three", "five", "duplicate_file"):
+    def test_scope_requires_exactly_six_distinct_owners(self):
+        for change in ("one", "five", "seven", "duplicate_file"):
             plan, args = self.fixture()
             if change == "one":
                 args['subjects'] = {'owner0': args['subjects']['owner0']}
-            elif change == "three":
-                args['subjects'].pop('owner3')
             elif change == "five":
-                args['subjects']['owner4'] = 'src/owner4.rs'
+                args['subjects'].pop('owner5')
+            elif change == "seven":
+                args['subjects']['owner6'] = 'src/owner6.rs'
             else:
                 args['subjects']['owner1'] = args['subjects']['owner0']
             with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                 MODULE.admit_plan(plan, **args)
 
-    def test_reviewed_366_field_width_accepts_exact_limit_and_rejects_next(self):
-        exact = {f"metric{index}": 1 for index in range(366)}
+    def test_six_full_cohorts_reach_the_independent_listing_limit(self):
+        plan, args = self.fixture()
+        for row in plan['inventories'].values():
+            row['count'] = 512
+        plan['cumulative_reservation'] = MODULE.plan_reservation(
+            plan, args['package_budget'], args['check_budgets'])
+        args['global_limits'] = dict(plan['cumulative_reservation']['source_work'])
+        admitted = MODULE.admit_plan(plan, **args)
+        self.assertEqual(admitted['reservation']['mutation_variants'], 3072)
+        self.assertEqual(admitted['reservation']['mutation_baselines'], 6)
+        self.assertEqual(admitted['reservation']['mutation_package_invocations'], 3078)
+        self.assertEqual(admitted['reservation']['source_work'], {'fits': 6161, 'points': 21557})
+        with patch.object(MODULE, 'MAX_LISTING_VARIANTS', 3071), \
+                self.assertRaisesRegex(MODULE.Incomplete, 'listing ceiling'):
+            MODULE.admit_plan(plan, **args)
+
+    def test_reviewed_487_field_width_accepts_exact_limit_and_rejects_next(self):
+        exact = {f"metric{index}": 1 for index in range(487)}
         self.assertEqual(MODULE._budget(exact), exact)
         with self.assertRaises(MODULE.Incomplete):
-            MODULE._budget({**exact, 'metric366': 1})
+            MODULE._budget({**exact, 'metric487': 1})
 
     def test_typed_budget_projection_rejects_boolean_and_unbounded_counts(self):
         self.assertEqual(MODULE._budget({"fits": 0, "points": (1 << 63) - 1}),

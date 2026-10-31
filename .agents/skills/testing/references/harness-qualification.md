@@ -69,6 +69,32 @@ An assertion proves comparator sensitivity or failure propagation; qualifying
 ASan detection requires a representative memory fault with an ASan diagnosis.
 Reuse matching mechanism evidence and keep its scope separate from product tests.
 
+## Proactive independence of separate cases
+
+When changing reused mutable state, mocks, caches, counters, cleanup or owned
+runner resources, select a bounded order-independence control before relying on
+the harness. Identify the shared owner and reset boundary. Run independent victim
+B alone, after a relevant predecessor A, after a plausible predecessor group, and
+after a failed predecessor where applicable. Use the same process/resource scope
+that could retain state; compare B against independent expected facts before test
+teardown. Observe the relevant resource/state restoration, not only B's output.
+Do not add permutations to a pure fresh-input function without a concrete risk.
+
+Preserve intended state within a sequential/model scenario. Failed reset makes
+later results unresolved until restoration; do not call that pollution a product
+defect without causal evidence. Reuse [failure localization](failure-localization.md)
+for an observed order failure, including joint predecessors. Nextest's separate
+processes cannot establish shared-process independence; a fresh victim process
+can still exercise a reused parent runner, file or other actual shared owner.
+
+Register owned fallback cleanup promptly and check restoration before that cleanup
+masks a leak. In Python, `addCleanup` runs even if `setUp` fails; `tearDown` need
+not. Avoid whole-suite randomization that changes class/module fixture lifetimes
+without respecting their contract. Primary behavior:
+[unittest shared fixtures](https://docs.python.org/3/library/unittest.html#class-and-module-fixtures),
+[cleanup registration](https://docs.python.org/3/library/unittest.html#unittest.TestCase.addCleanup),
+[nextest process isolation](https://nexte.st/docs/design/why-process-per-test/).
+
 Record exact variant/input identity, selected/executed checks, intended failing
 assertion, actual outcome and exit propagation. Build/setup failures are not
 successful discrimination. A surviving harness fault limits the affected claim;

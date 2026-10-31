@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explore semantic program states"
+  short_description: "Qualify state-guided fuzzing and independent trace oracles"
+  default_prompt: "Use $qa-state-guided-fuzzing to qualify the selected real trace driver, independent oracle and semantic feedback, then compare bounded baseline and guided exploration with reproducible evidence."

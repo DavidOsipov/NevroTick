@@ -1,4 +1,10 @@
-"""Compiler identity controls independent of rustup's version selection."""
+"""Compiler identity controls independent of rustup's version selection.
+
+For release-mismatch OR commit-mismatch, the healthy identity is the common
+accepting neighbor of the release-only and commit-only rejections. Requested
+channel and LLVM stay valid in both pairs. These are logical condition-influence
+controls, not instrumented MC/DC coverage measurements.
+"""
 import importlib.util
 import hashlib
 from pathlib import Path
@@ -30,6 +36,11 @@ class CompilerAdmissionTests(unittest.TestCase):
     def test_llvm_substitution_is_rejected(self):
         with self.assertRaisesRegex(ENV.Incomplete, "LLVM differs"):
             ENV.require_admitted_compiler("1.99.1", self.IDENTITY.replace("23.1.1", "22.1.0"), self.POLICY)
+
+    def test_other_effective_release_with_matching_commit_is_rejected(self):
+        identity = "release: 1.99.2\ncommit-hash: admitted-commit\nLLVM version: 23.1.1\n"
+        with self.assertRaisesRegex(ENV.Incomplete, "Effective compiler release/commit differs"):
+            ENV.require_admitted_compiler("1.99.1", identity, self.POLICY)
 
     def test_distribution_source_override_is_refused(self):
         self.assertEqual(ENV.overridden_names({"RUSTUP_DIST_SERVER": "synthetic"}), ["RUSTUP_DIST_SERVER"])

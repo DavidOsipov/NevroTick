@@ -26,6 +26,11 @@
       "name": "implement-cpu-dispatch",
       "target": "implementation/implement-cpu-dispatch/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "qa-state-guided-fuzzing",
+      "target": "testing/qa-state-guided-fuzzing/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

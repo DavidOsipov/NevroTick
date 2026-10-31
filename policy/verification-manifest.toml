@@ -1,4 +1,4 @@
-# UI-M0, pure wire, checked time-domain, fixture exchange and eleven pure core owners.
+# UI-M0, pure wire, checked time-domain, fixture exchange and thirteen pure core owners.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
 status = "five-member-scope-recorded-qualification-candidate-specific"
@@ -20,12 +20,13 @@ security_modules = [
     { name = "fixture-observation-normalization", package = "time-core", files = ["crates/time-core/src/regression/normalization.rs"], scope = "checked fixture context/Q33 admission and exact newest-reference normalization to a fresh owned FitInput; bounded read-only point observation; no history, eligible sample, native clock or authenticated provenance" },
     { name = "fixture-history-atomic-append-and-report", package = "time-core", files = ["crates/time-core/src/regression/history.rs"], scope = "exclusive bounded fixture append, context/order admission, staged oldest-only replacement and failure-atomic same-input report commit; no production retention, prune/reset/freshness, provenance, native clock or correction authority" },
     { name = "fixture-residual-runs-and-suffix-selection", package = "time-core", files = ["crates/time-core/src/regression/runs.rs"], scope = "bounded immutable fixture suffix search, extended residual runs, checked stage/position errors and associated same-fit diagnostics; no history pruning, source selection, physical uncertainty or clock authority" },
-    { name = "fixture-closed-real-interval-majority", package = "time-core", files = ["crates/time-core/src/selection.rs"], scope = "checked synthetic labels and closed-real interval-majority fixture, independent minimum, complete common witness and fixed-capacity results; no source eligibility, identity, trust, principal, freshness or clock authority" },
-    { name = "fixture-same-history-anchor-projection", package = "time-core", files = ["crates/time-core/src/regression/projection.rs"], scope = "source-authored same-history anchor/rate projection, exact elapsed clocks and separate asserted uncertainty/growth; final source inventory/cohort binding and execution pending; no confidence, new observation, production eligibility or clock authority" },
+    { name = "fixture-closed-real-interval-wction", package = "time-core", files = ["crates/time-core/src/regression/projection.rs"], scope = "source-authored same-history anchor/rate projection, exact elapsed clocks and separate asserted uncertainty/growth; final source inventory/cohort binding and execution pending; no confidence, new observation, production eligibility or clock authority" },
     { name = "fixture-projection-q33-enclosure", package = "time-core", files = ["crates/time-core/src/projection_enclosure.rs"], scope = "exact outward Q33 enclosure of the computed binary64 projection operands with immutable original projection and source-derived label; source inventory/cohort binding and execution pending; no physical confidence, source eligibility, common-frame batch admission or clock authority" },
     { name = "fixture-projected-batch-context-admission", package = "time-core", files = ["crates/time-core/src/projected_batch.rs"], scope = "borrowed immutable projected entries with declared common frame, mapping generation and exact evaluation instant; ordered mandatory contextual validation and actual checked-batch/selector delegation; source, inventory, budgets and execution pending; no genuine mapping, physical confidence, production source eligibility or clock authority" },
     { name = "fixture-principal-state-and-hysteresis", package = "time-core", files = ["crates/time-core/src/principal.rs"], scope = "mandatory fixed-roster/context/event admission, atomic same-batch source scoring and bounded observation credit; initial focused RED/GREEN only, expanded contracts and per-file analysis pending; no production eligibility, freshness, reference update or clock authority" },
     { name = "fixture-supporter-combination-kernel", package = "time-core", files = ["crates/time-core/src/combination.rs"], scope = "mandatory same-instant uncertainty construction, actual witnessed-supporter association, exact singleton and checked ordered phase/rate/uncertainty reduction; per-file analysis pending; no compatibility penalties, calibrated confidence, production eligibility, reference credit or clock authority" },
+    { name = "fixture-combination-full-metadata-and-contributor-admission", package = "time-core", files = ["crates/time-core/src/combination/admission.rs"], scope = "complete original witnessed metadata admission before filtering, mandatory private contributor mask and original-cardinality reduction dispatch; qualification pending; no fabricated agreement, calibrated confidence, source eligibility or clock authority" },
+    { name = "fixture-combination-atomic-lifecycle", package = "time-core", files = ["crates/time-core/src/combination/lifecycle.rs"], scope = "fixed-roster ordered reachability, startup/mature compatibility penalties, actual staged principal credit, ready-only emission and full failure atomicity; qualification pending; no production acquisition, freshness, trust, policy defaults or clock authority" },
 ]
 critical_files = [
     "crates/nevrotick-ui/src/model.rs",
@@ -52,6 +53,8 @@ critical_files = [
     "crates/time-core/src/projected_batch.rs",
     "crates/time-core/src/principal.rs",
     "crates/time-core/src/combination.rs",
+    "crates/time-core/src/combination/admission.rs",
+    "crates/time-core/src/combination/lifecycle.rs",
 ]
 feature_matrix = [
     { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
@@ -63,5 +66,5 @@ feature_matrix = [
     { package = "ntp-exchange", target = "x86_64-unknown-linux-gnu", scope = "pure fixture association and test-only time-core composition; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "ntp-exchange", target = "x86_64-pc-windows-msvc", scope = "pure association library and test-only time-core consumer compilation; no native transport or clock qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-core", target = "x86_64-unknown-linux-gnu", scope = "checked fixture history/normalization, coefficient, residual-statistics, runs and closed-real interval-majority owners; ordinary and optimized tests plus independently audited doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "eleven pure fixture core owners and external test-consumer compilation; current combination cross-target qualification pending; no native clock, physical confidence, production source eligibility or statistical qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "thirteen pure fixture core owners and external test-consumer compilation; current combination cross-target qualification pending; no native clock, physical confidence, production source eligibility or statistical qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
 ]

@@ -1,0 +1,26 @@
+[package]
+name = "nevrotick-state-guidance"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99.1"
+publish = false
+license = "GPL-2.0-only"
+description = "Bounded test-only LLVM coverage and semantic-state comparison"
+
+[workspace]
+
+[dependencies]
+state-guidance-harness = { path = "../harness" }
+libafl = { version = "=0.16.1", default-features = false, features = ["derive", "serdeany_autoreg"] }
+libafl_bolts = { version = "=0.16.1", default-features = false, features = ["std", "derive", "serdeany_autoreg"] }
+serde_json = "=1.0.151"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 1
+codegen-units = 1
+debug = 2
+overflow-checks = true

@@ -481,9 +481,9 @@ pub struct FixtureCombinedEstimate {
     fit_reference: MonotonicNs,
     /// Exact common projection instant supplied to the original batch.
     projected_at: MonotonicNs,
-    /// Complete sorted supporter prefix; unused padding is inaccessible.
+    /// Complete sorted original-contributor prefix; unused padding is inaccessible.
     labels: [NonZeroU64; MAX_SUPPORTERS],
-    /// Admitted occupied label prefix, in 1..=16.
+    /// Admitted contributing label prefix, in 1..=16; not an agreement quorum.
     supporter_count: usize,
     /// Positive-behind weighted original phase, in seconds.
     phase_seconds: f64,
@@ -547,13 +547,15 @@ impl FixtureCombinedEstimate {
         self.projected_at
     }
 
-    /// Copy the complete occupied supporter count, never an inferred vote count.
+    /// Count combined original contributors, never an inferred agreement quorum.
+    /// The all-witness kernel retains every supporter; lifecycle filtering may
+    /// retain fewer. Its outcome carries the genuine witness/minimum separately.
     #[must_use]
     pub const fn supporter_count(&self) -> usize {
         self.supporter_count
     }
 
-    /// Iterate every actual supporter in ascending label order, excluding padding.
+    /// Iterate combined original contributors in ascending order, excluding padding.
     pub fn supporters(&self) -> impl ExactSizeIterator<Item = NonZeroU64> + '_ {
         self.labels.iter().take(self.supporter_count).copied()
     }
@@ -1051,6 +1053,23 @@ pub fn combine_fixture_supporters(
         combined: Some(combined),
     })
 }
+
+/// Complete original admission and checked contributor-subset reduction.
+mod admission;
+
+use admission::{
+    AdmittedFixtureSupporters, admit_lifecycle_supporters, combine_lifecycle_supporters,
+};
+
+/// Transactional fixture-only compatibility and lifecycle state owner.
+mod lifecycle;
+
+pub use lifecycle::{
+    FixtureCombinationLifecycleError, FixtureCombinationLifecycleStep, FixtureCombinationOutcome,
+    FixtureCombinationParameterField, FixtureCombinationParameterIssue,
+    FixtureCombinationParameters, FixtureCombinationSourceState, FixtureCombinationSourceStatus,
+    FixtureCombinationState, FixtureReachabilityUpdate,
+};
 
 /// Independent genuine-public-input cases share only crate exports with this owner.
 #[cfg(test)]
