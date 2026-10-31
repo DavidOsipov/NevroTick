@@ -24,6 +24,11 @@ With source present, initialize Serena before symbol/reference queries; use Prob
 for Rust search/extraction and configured documentation tools for design context.
 Empty graph before source exists is expected.
 
+For a pure-crate boundary or lint-policy change, use
+[role-specific API restrictions](../../testing/references/role-api-restrictions.md).
+Keep ambient reads and effects in their designated adapters; named Clippy bans
+supplement ownership review and do not prove transitive purity.
+
 Choose smallest model that makes meaningful mistakes hard to express:
 
 - Private newtypes for units/identity; enums for explicit states/outcomes;

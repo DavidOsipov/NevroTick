@@ -20,6 +20,11 @@ caching or instrumentation overhead from retention using owner/release-event
 measurements. Restore the owned profile on every outcome without discarding
 failed-run evidence.
 
+For a costly native callback, ownership or cleanup failure whose history is hard
+to recover, consider [recorded execution with TTD](../references/windows-memory.md#optional-recorded-execution-with-ttd).
+Preserve the intended target token and sensitive traces; recorder availability
+or replay alone proves no product fix or complete lifecycle qualification.
+
 For an unexplained effect across boundaries, a smaller witness or a historical introduction question, use [failure localization](../references/failure-localization.md). Trace actual predecessor values/state before choosing a repair. Preserve the same reached semantic failure and healthy control during reduction, including joint order polluters. Historical localization uses real ancestry, faithful revision prerequisites and explicit PASS/TARGET_FAIL/UNRESOLVED outcomes; freshly replay the boundary before drawing a causal conclusion.
 
 Oracle changes need independent authoritative reason; matching current output insufficient. Tests-only: retain valid regression/report product finding. Authorized repair: smallest causal change, unchanged behavioral expectations, appropriate GREEN evidence.

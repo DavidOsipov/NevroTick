@@ -686,15 +686,41 @@
       "source_git_blob_sha1": "3c6de32cf546e5df49f45a8076da6049bddad15f",
       "source_bytes": 60639,
       "selected_ranges": [
-        {"lines": "191", "purpose": "strict score threshold 10"},
-        {"lines": "1377-1442", "purpose": "minimum survivor stratum, asymmetric NTP distance penalty, per-update scores and stable first-maximum tie"},
-        {"lines": "1447-1490", "purpose": "forced reselection, pending update gate, score reset and update-credit consumption"}
+        {
+          "lines": "191",
+          "purpose": "strict score threshold 10"
+        },
+        {
+          "lines": "1377-1442",
+          "purpose": "minimum survivor stratum, asymmetric NTP distance penalty, per-update scores and stable first-maximum tie"
+        },
+        {
+          "lines": "1447-1490",
+          "purpose": "forced reselection, pending update gate, score reset and update-credit consumption"
+        }
       ],
       "context_only": [
-        {"file": "sources.c", "lines": "980-983", "purpose": "one updated source per selection call"},
-        {"file": "sources.c", "lines": "365-375,848-860", "purpose": "reset and unselect lifecycle"},
-        {"file": "sources.c", "lines": "1197-1202,1279-1305,1344-1348", "purpose": "negative agreement and minimum paths"},
-        {"file": "ntp_core.c", "lines": "1876-1877", "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0", "purpose": "accepted sample precedes source-selection update; no code copied"}
+        {
+          "file": "sources.c",
+          "lines": "980-983",
+          "purpose": "one updated source per selection call"
+        },
+        {
+          "file": "sources.c",
+          "lines": "365-375,848-860",
+          "purpose": "reset and unselect lifecycle"
+        },
+        {
+          "file": "sources.c",
+          "lines": "1197-1202,1279-1305,1344-1348",
+          "purpose": "negative agreement and minimum paths"
+        },
+        {
+          "file": "ntp_core.c",
+          "lines": "1876-1877",
+          "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0",
+          "purpose": "accepted sample precedes source-selection update; no code copied"
+        }
       ],
       "license": "GPL-2.0-only",
       "notice_obligation": "Retain the complete original sources.c Curnow/Lichvar copyright, GPL version 2 grant, disclaimer and distribution notice in principal.rs; mark actual dated modifications and retain COPYING and corresponding-source/build obligations.",
@@ -711,6 +737,71 @@
       "independent_expectations_file": "principal-independent-facts.md",
       "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z",
       "review_status": "Contract and exact manual facts reviewed independently; newly appended ledger and provenance bytes still require independent pretranslation review.",
+      "release_or_product_claim": false
+    },
+    {
+      "slice": "S1.3 combination kernel",
+      "review_date": "2026-10-31",
+      "status": "independently reviewed mathematical kernel; focused and full portable rows passed; critical-file qualification pending",
+      "destination": "crates/time-core/src/combination.rs",
+      "integration_context": "src/lib.rs module/re-export wiring only; shared checked arithmetic in regression.rs is independently authored infrastructure, not another sources.c translation destination",
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c",
+      "source_sha256": "019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d",
+      "source_git_blob_sha1": "3c6de32cf546e5df49f45a8076da6049bddad15f",
+      "source_bytes": 60639,
+      "selected_ranges": [
+        {
+          "function": "combine_sources",
+          "lines": "882-886",
+          "adaptation": "singleton passthrough and bounded reduction initialization"
+        },
+        {
+          "function": "combine_sources",
+          "lines": "925-926, 932-950, 955",
+          "adaptation": "distinct reciprocal weights, original-principal disagreement, full phase/rate/SD/skew outputs and participant count"
+        }
+      ],
+      "context_only": [
+        {
+          "lines": "871-880, 888-890, 894-897",
+          "purpose": "signature and tracking/principal producer context, no additional producer translation"
+        },
+        {
+          "lines": "903-920",
+          "purpose": "required future compatibility/distant penalty/status lifecycle; not implemented by pure kernel"
+        },
+        {
+          "lines": "922-924",
+          "purpose": "time extrapolation replaced by actual existing same-time projections; caller uncertainty assertions are explicitly at that instant"
+        },
+        {
+          "lines": "928-930, 952-953, 1496-1510",
+          "purpose": "logging, reference-call context and external effects not imported"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "notice_obligation": "Retain complete sources.c Curnow/Lichvar copyright, GPL version2 grant/disclaimer/distribution notice in combination.rs, actual dated modification attribution, existing COPYING and corresponding-source/build obligations. Preserve earlier historical context-only entries.",
+      "deliberate_adaptations": [
+        "inert fixture mathematical kernel only; complete compatibility/penalty/replay owner remains required",
+        "actual principal decision and original-entry associations; fixed capacity16 and deterministic ascending witness-label order",
+        "positive-behind phase and signed model rate seconds/second; explicit separately checked phaseSD/rateSD/tracking skew at common projection instant",
+        "mandatory Garde parameter admission and separately checked primitive/root/result support; no clamp/drop/fallback",
+        "strict multi-source positive reciprocal denominators; singleton exactcopy after admission",
+        "all actual witness supporters; kernel does not claim compatibility policy or calibrated production confidence"
+      ],
+      "contract_file": "tasks/s1.3-source-selection-readiness.md",
+      "contract_section": "Kernel contract for translation",
+      "contract_section_sha256": "3f8a0a68681dd47c8710c189feec82c164860f034eb39bbcbc89b5668471cb63",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z",
+      "review_status": {
+        "status": "independently-reviewed-pretranslation",
+        "reviewer": "/root/principal_independent_facts",
+        "reviewed_ledger_sha256": "336031aefd2fdf92e48e3c9e45f23e848683373a30978a4309f07ed23a06451d",
+        "reviewed_provenance_sha256": "b5aaa3ac6962d92ad4181b651e7363a9ec6c0b10a520f1841ed748475cbf16af",
+        "contract_section_sha256": "3f8a0a68681dd47c8710c189feec82c164860f034eb39bbcbc89b5668471cb63",
+        "verdict": "No pretranslation blocker; execution, compatibility lifecycle and product qualification remain separate."
+      },
       "release_or_product_claim": false
     }
   ]

@@ -1342,3 +1342,8 @@ impl FixturePrincipalDecision<'_> {
         self.updated_source
     }
 }
+
+/// Test-only direct receiver checks live outside the production line denominator.
+#[cfg(test)]
+#[path = "../tests/private/principal_guards.rs"]
+mod private_decision_guards;

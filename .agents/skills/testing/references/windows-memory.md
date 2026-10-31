@@ -128,6 +128,42 @@ Report tool readiness, reached native defect checks, measured retention and
 remaining product/allocator/native coverage separately. Neither this lane nor
 Miri, ASan or CodeQL establishes absence of every memory error.
 
+## Optional recorded execution with TTD
+
+Use WinDbg Time Travel Debugging for a named difficult user-mode callback,
+ownership or cleanup history when ordinary fault capture is insufficient. This
+is an optional diagnostic capability, not an installed/admitted lane merely
+because CDB is available. Check current Windows, target, recorder, debugger,
+symbols and mitigation compatibility before selecting it; do not disable
+protections automatically to make recording work.
+
+- Admit exact tool, executable and matching symbol identities. Use a short owned
+  fixture with explicit wall-time, recording/index storage, stop and cleanup
+  budgets. Keep recorder/injection/symbol failures separate from reached defects.
+- Recording requires elevation. `TTD.exe -launch` gives the target the recorder's
+  elevated privileges; for an ordinary-user UI/engine, attach or monitor an owned
+  process separately launched with its intended token and verify that identity.
+  Do not attach to shared developer services or system-critical processes.
+- Stopping recording does not remove its instrumentation. Plan controlled
+  termination/restoration of the owned target; stopping the recorder alone does
+  not restore an uninstrumented process. No host clock, W32Time or service effects
+  follow from permission to diagnose a fixture.
+- Treat trace, index and memory-derived output as sensitive. Use dummy secrets,
+  restricted local storage and scoped retention; no automatic upload/publication.
+  Recording can greatly change timing and storage use. Keep those measurements
+  separate from ordinary performance/resource budgets.
+- Inspect the recorded writes, calls and ownership transitions around the actual
+  failure; retain the concrete failure location and history. Replay observes that
+  recorded execution, not all schedules or a fresh execution of external effects.
+  User-mode recording does not supply kernel/other-process lifecycle evidence.
+  Missing history remains an evidence limit. Verify any repair through fresh
+  behavioral checks with healthy controls and the required native evidence.
+
+Relate findings to the selected CHECK-11/12/17/21/27 obligations; a useful trace
+alone completes none of their full acceptance scope.
+Primary behavior: [Microsoft TTD overview](https://learn.microsoft.com/en-us/windows-hardware/drivers/debuggercmds/time-travel-debugging-overview),
+[TTD recorder and privilege/lifetime rules](https://learn.microsoft.com/en-us/windows-hardware/drivers/debuggercmds/time-travel-debugging-ttd-exe-command-line-util).
+
 Primary tool behavior:
 [Application Verifier](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/application-verifier),
 [verification layers](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/application-verifier-tests-within-application-verifier),

@@ -14,7 +14,7 @@ class CohortPlanTests(unittest.TestCase):
     """Synthetic identities test admission mechanics, never a product candidate."""
 
     def fixture(self):
-        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(2)}
+        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(4)}
         product = {"Cargo.toml": "a" * 64}
         tools = {"scripts/wrapper.py": "b" * 64}
         inventories = {name: {"count": 300 + index, "sha256": str(index) * 64}
@@ -55,34 +55,36 @@ class CohortPlanTests(unittest.TestCase):
                            "mutation_generated_variants_selected_total": plan["inventories"][subject]["count"]})
         return result
 
-    def test_disjoint_two_owner_union_can_exceed_one_cohort_cap(self):
+    def test_disjoint_four_owner_union_can_exceed_one_cohort_cap(self):
         plan, args = self.fixture()
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted["reservation"]["mutation_variants"], 601)
-        self.assertEqual(admitted["reservation"]["mutation_baselines"], 2)
-        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 1211, "points": 4232})
+        self.assertEqual(admitted["reservation"]["mutation_variants"], 1206)
+        self.assertEqual(admitted["reservation"]["mutation_baselines"], 4)
+        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 2425, "points": 8481})
         union = MODULE.reconcile_receipts(plan, self.receipts(plan, args["subjects"]), subjects=args["subjects"])
-        self.assertEqual(union["focused_receipts"], 2)
-        self.assertEqual(union["generated_variants"], 601)
+        self.assertEqual(union["focused_receipts"], 4)
+        self.assertEqual(union["generated_variants"], 1206)
         self.assertFalse(union["critical_manifest_complete_selection"])
 
-    def test_scope_requires_exactly_two_distinct_owners(self):
-        for change in ("one", "three", "duplicate_file"):
+    def test_scope_requires_exactly_four_distinct_owners(self):
+        for change in ("one", "three", "five", "duplicate_file"):
             plan, args = self.fixture()
             if change == "one":
-                args['subjects'].pop('owner1')
+                args['subjects'] = {'owner0': args['subjects']['owner0']}
             elif change == "three":
-                args['subjects']['owner2'] = 'src/owner2.rs'
+                args['subjects'].pop('owner3')
+            elif change == "five":
+                args['subjects']['owner4'] = 'src/owner4.rs'
             else:
                 args['subjects']['owner1'] = args['subjects']['owner0']
             with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                 MODULE.admit_plan(plan, **args)
 
-    def test_reviewed_265_field_width_accepts_exact_limit_and_rejects_next(self):
-        exact = {f"metric{index}": 1 for index in range(265)}
+    def test_reviewed_358_field_width_accepts_exact_limit_and_rejects_next(self):
+        exact = {f"metric{index}": 1 for index in range(358)}
         self.assertEqual(MODULE._budget(exact), exact)
         with self.assertRaises(MODULE.Incomplete):
-            MODULE._budget({**exact, 'metric265': 1})
+            MODULE._budget({**exact, 'metric358': 1})
 
     def test_unknown_missing_and_pending_plan_fields_reject(self):
         for change in ("unknown", "missing", "pending", "schema_bool"):

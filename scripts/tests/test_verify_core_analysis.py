@@ -24,8 +24,434 @@ MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
 
 
+class CombinationCheckpointTests(unittest.TestCase):
+    """Independent current combination transport/accounting controls, never Rust runs."""
+
+    FIELDS = ('histories', 'appends', 'observations', 'contexts', 'monotonic',
+              'coordinates', 'exchanges', 'getters', 'terms', 'projections', 'enclosures',
+              'batches', 'minima', 'parameters', 'strata', 'seeds', 'advances',
+              'state_clones', 'value_equalities', 'state_formats', 'uncertainties', 'combinations')
+    RECIPES = (
+        ('combination_distinct_weights_and_principal_disagreement', (2,6,6,2,7,24,6,44,2,2,2,1,1,1,2,1,1,0,0,0,2,1)),
+        ('combination_unavailable_and_checked_uncertainty', (1,3,3,1,4,12,3,21,1,1,1,1,1,1,1,1,1,0,0,0,1,1)),
+        ('combination_singleton_signed_zero_and_retained', (1,3,3,1,4,12,3,52,1,1,1,1,1,1,1,1,2,0,0,0,1,2)),
+        ('combination_raw_uncertainty_boundaries', (1,3,3,1,4,12,3,326,1,1,1,1,1,1,1,1,1,0,0,0,40,15)),
+        ('combination_three_source_permutation_and_zero_phase_sd', (3,9,9,3,10,36,9,73,3,3,3,1,1,1,3,1,1,0,0,0,3,2)),
+        ('combination_metadata_association_and_context', (6,18,18,6,22,72,18,68,6,6,6,1,1,1,6,1,1,0,0,0,7,10)),
+        ('combination_zero_denominators_and_phase_neighbor', (4,12,12,4,14,48,12,55,4,4,4,2,2,2,4,2,2,0,0,0,8,6)),
+        ('combination_finite_square_failures_and_neighbors', (2,6,6,2,7,24,6,31,2,2,2,1,1,1,2,1,1,0,0,0,13,12)),
+        ('combination_capacity_and_weight_sum_overflow', (16,48,48,16,49,192,48,148,16,16,16,1,1,1,16,1,1,0,0,0,48,4)),
+        ('combination_variance_mean_underflow_and_neighbor', (2,6,6,2,7,24,6,36,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
+        ('combination_weighted_rate_subnormal_and_neighbor', (2,6,6,2,7,24,6,36,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
+        ('combination_canonical_reduction_rounding_order', (3,9,9,3,10,36,9,61,3,3,3,1,1,1,3,1,1,0,0,0,3,2)),
+    )
+
+    def setUp(self):
+        # Only these new global fields are pending current discovery. Inert
+        # observer tests fund their finite source recipes explicitly; production
+        # policy/campaign admission is neither called nor patched into success.
+        limits = patch.dict(MODULE.SOURCE_RAW_PRIVATE_GLOBAL_LIMITS,
+                            {'square_root_calls_upper': 33000, 'binary_arithmetic_calls_upper': 22000})
+        limits.start(); self.addCleanup(limits.stop)
+
+    @classmethod
+    def row(cls, case, values):
+        return 'CORE_COMBINATION_PROFILE case=' + case + ''.join(
+            f' {field}={value}' for field, value in zip(cls.FIELDS, values, strict=True)) + '\n'
+
+    @classmethod
+    def complete_rows(cls):
+        return ''.join(cls.row(case, values) for case, values in cls.RECIPES)
+
+    def test_exact_complete_combination_profile_charges_its_disjoint_producers_once(self):
+        counts = MODULE.profile_counts(self.complete_rows(), require_combination=True)
+        actual = counts['combination_observed_calls']
+        self.assertEqual(tuple(actual[name] for name in self.FIELDS),
+                         (43,129,129,43,145,516,129,951,43,43,43,13,13,13,43,13,14,0,0,0,132,59))
+        self.assertEqual(counts['combination_counter_records'], 12)
+        self.assertFalse(counts['combination_observation_pending'])
+        self.assertEqual((counts['charged_fit_work_upper'], counts['point_admissions_upper']), (129,8256))
+        self.assertEqual((counts['direct_fit_calls'], counts['stats_calls']), (0,0))
+        work = counts['combination_source_owned_work_uppers']
+        self.assertEqual(work['uncertainty_constructor_attempts_upper'], 132)
+        self.assertEqual(work['kernel_checked_square_root_calls_upper'], 177)
+        self.assertEqual(work['kernel_checked_binary_calls_upper'], 17287)
+        producer = MODULE.principal_source_work({name: actual[name] for name in self.FIELDS[:20]})
+        for key, value in producer.items():
+            self.assertEqual(work[key], value)
+        self.assertIsNone(counts['principal_observed_calls'])
+
+    def test_combination_is_not_ignored_when_a_healthy_legacy_stream_is_present(self):
+        legacy = 'CORE_PROFILE_COUNTS fits=1 points=3\n'
+        counts = MODULE.profile_counts(legacy + self.row(*self.RECIPES[0]))
+        self.assertEqual((counts['charged_fit_work_upper'], counts['point_admissions_upper']), (7,387))
+        self.assertEqual(counts['combination_recorded_call_subtotals']['uncertainties'], 2)
+        self.assertIsNone(counts['combination_observed_calls'])
+        self.assertEqual(len(counts['combination_missing_cases']), 11)
+        self.assertTrue(counts['combination_observation_pending'])
+        missing = MODULE.profile_counts(legacy)
+        self.assertIsNone(missing['combination_recorded_call_subtotals'])
+        self.assertIsNone(missing['combination_source_owned_work_uppers'])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.profile_counts(legacy, require_combination=True)
+
+    def test_partial_prefix_keeps_full_reservation_and_missing_remains_none(self):
+        report = {}
+        reservation = MODULE.selection_reservation(package=True)
+        MODULE.record_counts(report, 'bounded-package', {
+            **MODULE.package_charged_upper(), **reservation, 'observation_pending': True})
+        self.assertIsNone(report['core_combination_recorded_call_subtotals'])
+        case, values = self.RECIPES[0]
+        partial = tuple(value if index < 20 else 0 for index, value in enumerate(values))
+        observed = MODULE.profile_counts(self.row(case, partial))
+        row = report['core_invocations'][0]
+        row.update(observed_counts=observed, observation_pending=False)
+        MODULE.refresh_accounting(report)
+        self.assertEqual(report['core_combination_recorded_call_subtotals']['uncertainties'], 0)
+        self.assertIsNone(report['core_combination_complete_observed_call_subtotals'])
+        self.assertEqual(report['core_combination_pending_observation_invocations'], ['bounded-package'])
+        self.assertEqual(report['core_combination_reserved_totals']['combination.call.uncertainties'], 132)
+        self.assertEqual(row['combination_reserved_source_work_uppers']['charged_fit_work_upper'], 129)
+
+    def test_unknown_malformed_duplicate_and_overflow_combination_markers_fail_closed(self):
+        good = self.row(*self.RECIPES[0])
+        invalid = [good.rstrip('\n'), good + good,
+                   good.replace('CORE_COMBINATION_PROFILE', 'CORE_COMBINATION_UNRECOGNIZED'),
+                   good.replace(self.RECIPES[0][0], 'combination_unknown'),
+                   good.replace(' uncertainties=2', ' unknown=2'),
+                   good.replace(' combinations=1', ' combinations=1 extra=0'),
+                   good.replace(' combinations=1', ''),
+                   good.replace(' uncertainties=2', ' uncertainties=18446744073709551616'),
+                   good.replace(' uncertainties=2', ' uncertainties=3')]
+        for bad in invalid:
+            with self.subTest(record=bad[:90]), self.assertRaises(MODULE.Incomplete):
+                MODULE.profile_counts('CORE_PROFILE_COUNTS fits=1 points=3\n' + bad)
+
+    def test_zero_work_prefix_cannot_supply_a_successful_execution(self):
+        zero = self.row(self.RECIPES[0][0], (0,) * 22)
+        for require_fit in (False, True):
+            with self.subTest(require_fit=require_fit), self.assertRaisesRegex(MODULE.Incomplete, 'no prepaid source attempt'):
+                MODULE.profile_counts(zero, require_fit=require_fit)
+
+    def test_constructor_and_kernel_units_cannot_be_omitted_or_double_charge_producers(self):
+        calls = dict.fromkeys(self.FIELDS, 0)
+        calls.update(uncertainties=1, combinations=1)
+        work = MODULE.combination_source_work(calls)
+        self.assertEqual(work['charged_fit_work_upper'], 0)
+        self.assertEqual(work['point_admissions_upper'], 0)
+        self.assertEqual(work['uncertainty_garde_rule_callbacks_upper'], 3)
+        self.assertEqual(work['kernel_checked_binary_calls_upper'], 293)
+        for name in ('uncertainties', 'combinations'):
+            malformed = dict(calls); del malformed[name]
+            with self.subTest(missing=name), self.assertRaises(MODULE.Incomplete):
+                MODULE.combination_source_work(malformed)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.combination_source_work({**calls, 'combinations': (1 << 64) - 1})
+        with patch.object(MODULE.COMBINATION, 'source_work_uppers', return_value={'charged_fit_work_upper':0}), \
+                self.assertRaisesRegex(MODULE.Incomplete, 'units overlap'):
+            MODULE.combination_source_work(calls)
+        bad = MODULE.selection_reservation(package=True)
+        del bad['combination_reserved_source_work_uppers']['uncertainty_constructor_attempts_upper']
+        with self.assertRaisesRegex(MODULE.Incomplete, 'Combination full-package reservation'):
+            MODULE.record_counts({}, 'missing-unit', {**MODULE.package_charged_upper(), **bad})
+
+    def test_complete_cumulative_allowances_are_typed_and_cannot_drop_a_new_unit(self):
+        required = MODULE.combination_budget_vector()
+        self.assertEqual(MODULE.admit_combination_allowances(required), required)
+        key = 'combination.work.kernel_checked_square_root_calls_upper'
+        for malformed in (None, {}, {k:v for k,v in required.items() if k != key},
+                          {**required, key: required[key] - 1}, {**required, key: True},
+                          {**required, key: 1 << 64}, {**required, 'combination.extra': 0}):
+            with self.subTest(limits=type(malformed)), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_combination_allowances(malformed)
+
+    def test_current_checkpoint_counts_inventory_and_equivalences_stay_explicit(self):
+        self.assertEqual(set(MODULE.SUBJECTS), {'combination','principal','regression','projection'})
+        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(MODULE.BOUND_INPUTS)), (101,101))
+        self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary':163,'doctests':5,'baseline':168})
+        self.assertEqual(MODULE.INVENTORY_FIXED['schema_version'], 4)
+        self.assertFalse(MODULE.INVENTORY_FIXED['campaigns_admitted'])
+        self.assertEqual(MODULE.SOURCE_RAW_PRIVATE_WORK_LIMITS['square_root_calls_upper'], 33)
+        self.assertEqual(MODULE.SOURCE_RAW_PRIVATE_WORK_LIMITS['binary_arithmetic_calls_upper'], 22)
+        MODULE.admit_core_equivalence_scope([])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admit_core_equivalence_scope(CoreAnalysisTests.repaired_selection_equivalence_scope())
+        with patch.dict(MODULE.MUTATION_INVENTORIES, {}, clear=True), self.assertRaisesRegex(MODULE.Incomplete, 'inventories remain pending'):
+            MODULE.checkpoint_source_reservation()
+
+    def test_timeout_recognizes_combo_prefix_and_rejects_unrecognized_family(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); path = root / 'outcomes.json'
+            log = root / 'timeout.log'
+            outcome = {'summary':'Timeout', 'log_path':'timeout.log'}
+            for marker, valid in ((self.row(self.RECIPES[0][0], (1,) + (0,) * 21), True),
+                                  ('CORE_COMBINATION_UNKNOWN value=1\n', False)):
+                log.write_text(CoreAnalysisTests.mutation_phase_header('Test') + marker)
+                reserved = {'observation_pending':True, **MODULE.package_charged_upper(include_doctests=True)}
+                if valid:
+                    MODULE.observe_mutation_outcome({}, path, 'timeout', outcome, reserved)
+                    self.assertEqual(reserved['observation_status'], 'timeout-prefix-unqualified')
+                    self.assertTrue(reserved['observation_pending'])
+                    self.assertNotIn('observed_counts', reserved)
+                else:
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.observe_mutation_outcome({}, path, 'timeout', outcome, reserved)
+
+    def test_successful_complete_baseline_requires_every_combination_case(self):
+        helper = CoreAnalysisTests()
+        history_fields = MODULE.HISTORY_TELEMETRY['observed_fields']
+        ordinary = ('CORE_PROFILE_COUNTS fits=1 points=3\n'
+                    'CORE_STATS_PROFILE_COUNTS stats=1 points=3\n'
+                    + helper.norm_row(normalizations=0, observations=0, contexts=0,
+                                      monotonic=0, coordinates=0, exchanges=0, getters=0) + '\n'
+                    + 'CORE_HISTORY_PROFILE_COUNTS ' + ' '.join(field + '=0' for field in history_fields) + '\n'
+                    + helper.complete_runs_rows()
+                    + 'test result: ok. 168 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n')
+        complete = helper.completed_mutation_log(ordinary)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); path = root / 'outcomes.json'; log = root / 'baseline.log'
+            outcome = {'scenario':'Baseline', 'summary':'Success', 'log_path':'baseline.log',
+                       'phase_results':helper.phase_results('Success')}
+            for text, failure in ((complete, None),
+                                  (complete.replace(self.complete_rows(), ''), 'Combination complete package'),
+                                  (complete.replace('168 passed', '0 passed'), 'no observed passing tests|did not execute all')):
+                log.write_text(text)
+                report = {}
+                MODULE.record_counts(report, 'baseline', {
+                    **MODULE.package_charged_upper(include_doctests=True),
+                    **MODULE.selection_reservation(package=True),
+                    'literal_doctests_reserved':True, 'observation_pending':True})
+                reserved = report['core_invocations'][-1]
+                if failure is None:
+                    MODULE.observe_mutation_outcome(report, path, 'baseline', outcome, reserved)
+                    self.assertFalse(reserved['observation_pending'])
+                    self.assertEqual(reserved['observed_counts']['combination_counter_records'], 12)
+                    self.assertEqual(report['core_combination_complete_observed_call_subtotals']['combinations'], 59)
+                else:
+                    with self.assertRaisesRegex(MODULE.Incomplete, failure):
+                        MODULE.observe_mutation_outcome(report, path, 'baseline', outcome, reserved)
+
+
+class CombinationContractTests(unittest.TestCase):
+    """Inert contract transport/ownership controls; actual compiler causes are separate."""
+
+    @staticmethod
+    def contract_row():
+        # This literal expected delta deliberately has no producer operations.
+        values = (0,0,0,0,0,0,0,12,0,0,0,0,0,0,0,0,0,0,0,0,1,1)
+        return 'CORE_COMBINATION_CONTRACT_PROFILE' + ''.join(
+            f' {field}={value}' for field, value in zip(CombinationCheckpointTests.FIELDS, values, strict=True)) + '\n'
+
+    def test_exact_contract_delta_rejects_missing_partial_mixed_and_package_streams(self):
+        good = self.contract_row()
+        expected = dict(zip(CombinationCheckpointTests.FIELDS,
+                            (0,0,0,0,0,0,0,12,0,0,0,0,0,0,0,0,0,0,0,0,1,1), strict=True))
+        for text in (good, 'legal-core-contract\n' + good, good.replace('\n','\r\n')):
+            self.assertEqual(MODULE.combination_contract_counts(text), expected)
+        malformed = ('', good.rstrip('\n'), good + good, 'prefix ' + good,
+                     good.replace(' getters=12', ' getters=11'), good.replace(' combinations=1',''),
+                     good.replace(' histories=0', ' histories=00'),
+                     good.replace(' uncertainties=1', ' uncertainties=18446744073709551616'),
+                     good.replace('PROFILE', 'UNKNOWN'), good.replace('\n',' extra=0\n'),
+                     good + CombinationCheckpointTests.complete_rows())
+        for text in malformed:
+            with self.subTest(text=text[:70]), self.assertRaises(MODULE.Incomplete):
+                MODULE.combination_contract_counts(text)
+        # A new contract marker is never a substitute for package case evidence.
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.profile_counts(good, require_fit=False)
+
+    def test_registry_has_one_legal_runtime_and_seven_exact_private_field_compilations(self):
+        cases = MODULE.contract_examples()
+        expected = {
+            'principal_private_parameter_fields': ('E0451','reselect_distance_seconds',3),
+            'combination_uncertainty_private_fields': ('E0451','phase_standard_deviation_seconds',3),
+            'combination_uncertainty_private_mutation': ('E0616','phase_standard_deviation_seconds',3),
+            'combination_estimate_private_fields': ('E0451','phase_seconds',5),
+            'combination_estimate_private_mutation': ('E0616','phase_seconds',3),
+            'combination_outcome_private_fields': ('E0451','combined',3),
+            'combination_outcome_private_mutation': ('E0616','combined',3),
+        }
+        self.assertEqual(set(cases), {'legal_principal_checked_producer', *expected})
+        self.assertEqual(MODULE.EXTERNAL_CONSUMER_LIMITS, {'legal_executions':1,'negative_compilations':7})
+        self.assertIsNone(cases['legal_principal_checked_producer']['code'])
+        for name, (code, field, line) in expected.items():
+            case = cases[name]
+            self.assertEqual((case['code'], case['line']), (code,line))
+            self.assertEqual(set(case['tokens']), {'private',field})
+            self.assertIn(field, case['source'].splitlines()[line-1])
+            for forbidden in ('try_append', 'FixtureHistory::new', 'combine_fixture_supporters(', 'FixtureSupporterUncertainty::new'):
+                self.assertNotIn(forbidden, case['source'])
+
+    def test_private_diagnostics_bind_code_field_and_primary_attempt_without_type_name(self):
+        for name, specimen in MODULE.combination_contract_examples().items():
+            path = '/work/contract-inputs/' + name + '.rs'
+            field = next(token for token in specimen['tokens'] if token != 'private')
+            diagnostic = {'$message_type':'diagnostic', 'level':'error',
+                          'code':{'code':specimen['code']}, 'message':field + ' is private',
+                          'spans':[{'is_primary':True,'file_name':path,'line_start':specimen['line']}],
+                          'children':[]}
+            result = {'exit_code':1,'failure':None,'output':json.dumps(diagnostic)}
+            MODULE.COMMON.compiler_cause(result, specimen, path)
+            for changed in ('code','field','line'):
+                wrong = copy.deepcopy(diagnostic)
+                if changed == 'code': wrong['code']['code'] = 'E0308'
+                elif changed == 'field': wrong['message'] = 'another_field is private'
+                else: wrong['spans'][0]['line_start'] += 1
+                with self.subTest(case=name, changed=changed), self.assertRaises(MODULE.Incomplete):
+                    MODULE.COMMON.compiler_cause({**result,'output':json.dumps(wrong)}, specimen, path)
+
+    def test_legal_fixture_retains_old_producer_and_precharges_exact_singleton_delta(self):
+        case = MODULE.contract_examples()['legal_principal_checked_producer']
+        self.assertEqual(tuple(case['principal_calls'][field] for field in MODULE.PRINCIPAL_FIELDS),
+                         (1,3,3,1,5,1,1,6,1,1,1,1,1,1,1,1,1,0,0,0))
+        self.assertEqual(case['combination_calls'], MODULE.combination_contract_counts(self.contract_row()))
+        work = MODULE.combination_source_work(case['combination_calls'])
+        self.assertEqual((work['charged_fit_work_upper'],work['point_admissions_upper']), (0,0))
+        self.assertEqual(work['uncertainty_constructor_attempts_upper'], 1)
+        self.assertEqual(work['kernel_checked_binary_calls_upper'], 293)
+        self.assertIn('combination_calls.0[$slot]+=1; $value',case['source'])
+        self.assertEqual(case['source'].count('combination_call!(7,'), 12)
+        self.assertIn('FixtureSupporterUncertainty::new(&entries[0],-0.0,0.0,0.0)',case['source'])
+        self.assertIn('phase_standard_deviation_seconds()).to_bits(),0x8000_0000_0000_0000',case['source'])
+
+    def test_external_delta_requires_both_recipes_and_accumulates_without_new_fits(self):
+        principal = MODULE.principal_legal_calls(); delta = MODULE.combination_legal_calls()
+        principal_work = MODULE.principal_source_work(principal)
+        delta_work = MODULE.combination_source_work(delta)
+        reservation = {**{key:principal_work[key]+delta_work[key] for key in MODULE.GLOBAL_LIMITS},
+                       'principal_external_reserved_calls':principal,
+                       'principal_external_reserved_source_work_uppers':principal_work,
+                       'combination_external_reserved_calls':delta,
+                       'combination_external_reserved_source_work_uppers':delta_work,
+                       'observation_pending':True}
+        for key in ('principal_external_reserved_calls', 'principal_external_reserved_source_work_uppers',
+                    'combination_external_reserved_calls', 'combination_external_reserved_source_work_uppers'):
+            wrong = copy.deepcopy(reservation); del wrong[key]
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.record_counts({},'missing-recipe',wrong)
+        missing_unit = copy.deepcopy(reservation)
+        del missing_unit['combination_external_reserved_source_work_uppers']['uncertainty_constructor_attempts_upper']
+        with self.assertRaises(MODULE.Incomplete): MODULE.record_counts({},'missing-unit',missing_unit)
+        report = {}; MODULE.record_counts(report,'legal-singleton',reservation)
+        self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper':3,'point_admissions_upper':192})
+        self.assertIsNone(report['core_combination_recorded_call_subtotals'])
+        self.assertEqual(report['core_combination_reserved_totals']['combination.call.getters'],12)
+        self.assertEqual(report['core_combination_reserved_totals']['combination.work.charged_fit_work_upper'],0)
+        report['core_invocations'][0].update(observation_pending=False, observed_counts={
+            'principal_recorded_call_subtotals':principal,'principal_observation_pending':False,
+            'combination_recorded_call_subtotals':delta,'combination_observed_calls':delta,
+            'combination_observation_pending':False})
+        MODULE.refresh_accounting(report)
+        self.assertEqual(report['core_combination_complete_observed_call_subtotals'],delta)
+        self.assertEqual(report['core_combination_pending_observation_invocations'],[])
+
+    def test_contract_prospective_and_cohort_vectors_include_exact_delta(self):
+        limits = {key:value*1000 for key,value in MODULE.combination_budget_vector().items()}
+        with patch.dict(MODULE.COMBINATION_TELEMETRY, {'global_limits':limits}):
+            reserved = MODULE.prospective_scope_reservation('contracts',dict(MODULE.SUBJECTS))
+            _, checks, _ = MODULE.cohort_budget_vectors(require_limits=False)
+        self.assertEqual(reserved['negative_consumer_compilations_upper'],7)
+        self.assertEqual(reserved['legal_consumer_executions_upper'],1)
+        self.assertEqual(reserved['charged_upper'], {'charged_fit_work_upper':3,'point_admissions_upper':192})
+        expected = {**{'combination.call.'+key:value for key,value in MODULE.combination_legal_calls().items()},
+                    **{'combination.work.'+key:value for key,value in MODULE.combination_source_work(MODULE.combination_legal_calls()).items()}}
+        self.assertEqual(reserved['combination_source_work_upper'],expected)
+        self.assertEqual({key:value for key,value in checks['contracts'].items() if key.startswith('combination.')},expected)
+        self.assertEqual(checks['contracts']['charged_fit_work_upper'],3)
+        self.assertEqual(checks['contracts']['point_admissions_upper'],192)
+
+    def test_contract_orchestrator_reserves_before_one_run_and_requires_both_marker_families(self):
+        principal = MODULE.principal_legal_calls()
+        principal_row = 'CORE_PRINCIPAL_CONTRACT_PROFILE' + ''.join(
+            f' {field}={principal[field]}' for field in MODULE.PRINCIPAL_FIELDS17) + '\n'
+        healthy = 'legal-core-contract\n' + principal_row + self.contract_row()
+        for text, succeeds in ((healthy,True), (healthy.replace(self.contract_row(),''),False)):
+            with self.subTest(complete=succeeds), tempfile.TemporaryDirectory() as temporary:
+                report = {}; commands = []
+                class Session:
+                    def protect(self, _path): pass
+                    def run(self, label, command, _timeout, **kwargs):
+                        commands.append((label,kwargs))
+                        if label == 'contract-library': return 'inert selected artifact envelope'
+                        if label.startswith('external-consumer-'): return ''
+                        if label == 'external-legal-execution':
+                            self_report = report['core_invocations'][0]
+                            if not self_report['observation_pending']:
+                                raise AssertionError('Runtime preceded source reservation')
+                            if self_report['combination_external_reserved_calls']['uncertainties'] != 1:
+                                raise AssertionError('Missing singleton source reservation')
+                            return text
+                        raise AssertionError(label)
+                session = Session(); session.work = Path(temporary); session.stable = Path('/inert-stable')
+                with patch.object(MODULE.COMMON,'library_artifact',side_effect=['/work/core.rlib','/work/domain.rlib']), \
+                     patch.object(MODULE,'copy_contract_dependencies',return_value=session.work/'contract-deps'), \
+                     patch.object(MODULE.PRODUCT,'inventory',return_value={}):
+                    if succeeds:
+                        MODULE.contracts(session,{'contracts_wall_seconds':300,'jobs':10},report)
+                    else:
+                        with self.assertRaisesRegex(MODULE.Incomplete,'one contract marker'):
+                            MODULE.contracts(session,{'contracts_wall_seconds':300,'jobs':10},report)
+                self.assertEqual(sum(label=='external-legal-execution' for label,_ in commands),1)
+                self.assertEqual(report['core_charged_subset_totals'],{'charged_fit_work_upper':3,'point_admissions_upper':192})
+                self.assertEqual(report['core_invocations'][0]['observation_pending'],not succeeds)
+                if succeeds:
+                    rejected = [kwargs['specimen'] for label,kwargs in commands
+                                if label.startswith('external-consumer-') and 'specimen' in kwargs and kwargs['specimen']]
+                    self.assertEqual(len(rejected),7)
+                    self.assertEqual(report['contracts']['literal_combination_legal_calls'],MODULE.combination_legal_calls())
+                    self.assertEqual(report['core_combination_recorded_call_subtotals'],MODULE.combination_legal_calls())
+
+
 class PrincipalCheckpointTests(unittest.TestCase):
     """Current principal records must be charged, never silently ignored."""
+
+    def setUp(self):
+        limits = patch.dict(MODULE.SOURCE_RAW_PRIVATE_GLOBAL_LIMITS,
+                            {'square_root_calls_upper':33000, 'binary_arithmetic_calls_upper':22000})
+        limits.start(); self.addCleanup(limits.stop)
+
+    def test_private_decision_source_upper_preserves_public_call_identity(self):
+        """Seven direct selections/completions add work without invented advances."""
+        calls = dict.fromkeys(MODULE.PRINCIPAL_FIELDS, 0)
+        ordinary = MODULE.principal_source_work(calls)
+        private = MODULE.principal_source_work(calls, private_decision_case=True)
+        selector = MODULE.projected_batch_source_work({
+            name: 7 if name == 'selections' else 0 for name in MODULE.PROJECTED_BATCH.FIELDS})
+        self.assertEqual(set(private), set(ordinary))
+        for key, value in selector.items():
+            self.assertEqual(private[key], value + (448 if key == 'internal_product_getter_requests_upper' else 0))
+        self.assertEqual(private['principal_key_comparisons_upper'], 448)
+        self.assertEqual(private['principal_checked_scalar_primitives_upper'], 0)
+        self.assertEqual(private['principal_state_clone_cells_upper'], 0)
+        self.assertEqual(private['principal_garde_validation_calls_upper'], 0)
+        self.assertEqual(calls['advances'], 0)
+        self.assertEqual(MODULE.principal_source_work(calls, private_decision_case=False), ordinary)
+        for value in (None, 0, 1, 'true', [], {}):
+            with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.principal_source_work(calls, private_decision_case=value)
+
+    def test_principal_floor_equivalence_scope_is_one_exact_closed_fault(self):
+        entry = {
+            'id': 'S13-P-E-001',
+            'source_sha256': '876b647b1d8f1df7156b7383c42fcc0a0a3497e0561ebb331079c120888da658',
+            'mutant': {'name': 'crates/time-core/src/principal.rs:945:17: replace < with <= in updated_score',
+                       'file': 'crates/time-core/src/principal.rs', 'replacement': '<='},
+            'proof': {'path': 'tasks/s1.3-principal-equivalences.md'},
+        }
+        MODULE.admit_core_equivalence_scope([])
+        MODULE.historical_admit_core_equivalence_scope([entry])
+        for group, field, value in (
+                (None, 'id', 'unreviewed'), (None, 'source_sha256', '0' * 64),
+                ('mutant', 'name', entry['mutant']['name'].replace('945:17', '1063:9')),
+                ('mutant', 'file', 'crates/time-core/src/regression.rs'),
+                ('mutant', 'replacement', '=='), ('proof', 'path', 'tasks/unreviewed.md')):
+            altered = json.loads(json.dumps(entry))
+            (altered if group is None else altered[group])[field] = value
+            with self.subTest(group=group, field=field), self.assertRaises(MODULE.Incomplete):
+                MODULE.historical_admit_core_equivalence_scope([altered])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.historical_admit_core_equivalence_scope([entry, entry])
 
     FIRST = ('CORE_PRINCIPAL_PROFILE case=principal_seed_and_genuine_update_hysteresis '
              'histories=2 appends=10 observations=10 contexts=2 monotonic=33 coordinates=1 '
@@ -34,7 +460,7 @@ class PrincipalCheckpointTests(unittest.TestCase):
 
     @classmethod
     def complete_rows(cls):
-        """Literal actual ten-case native recipes, independent of parser tables."""
+        """Literal fourteen-case recipes, independent of parser tables."""
         fields = ('histories','appends','observations','contexts','monotonic','coordinates',
                   'exchanges','getters','terms','projections','enclosures','batches','minima',
                   'parameters','strata','seeds','advances','state_clones','value_equalities','state_formats')
@@ -48,6 +474,10 @@ class PrincipalCheckpointTests(unittest.TestCase):
             ('principal_metadata_and_roster_rejections_preserve_state',(4,12,12,4,18,8,4,57,4,4,4,3,1,1,5,5,11,5,10,5)),
             ('principal_numeric_rejection_is_atomic_and_recovers',(6,18,18,6,27,12,6,28,6,6,6,3,1,1,6,1,4,2,2,1)),
             ('principal_cardinality_zero_distance_and_stratum_weight_neighbors',(36,108,108,36,149,72,36,231,36,36,36,5,5,5,36,5,5,0,0,0)),
+            ('principal_error_sources_preserve_embedded_identity',(0,0,0,0,0,0,0,18,0,0,0,0,0,0,0,0,0,0,0,0)),
+            ('principal_equality_distinguishes_context_and_pending_credit',(2,6,6,2,10,4,2,28,2,2,2,2,1,1,2,2,1,1,4,0)),
+            ('principal_inferior_update_floors_score_without_reprojection_credit',(4,12,12,4,18,8,4,43,4,4,4,2,1,1,4,1,3,1,1,0)),
+            ('principal_private_decision_relations',(2,6,6,2,3,1,1,63,2,2,2,3,1,1,2,1,4,0,0,0)),
         )
         return cls.FIRST + ''.join('CORE_PRINCIPAL_NEXT_PROFILE case=' + case + ''.join(
             ' ' + field + '=' + str(value) for field, value in zip(fields, values, strict=True)) + '\n'
@@ -68,28 +498,26 @@ class PrincipalCheckpointTests(unittest.TestCase):
             MODULE.profile_counts(legacy + self.FIRST.replace(
                 'case=principal_seed_and_genuine_update_hysteresis', 'case=unadmitted_case'))
 
-    def test_all_means_the_two_owner_checkpoint_without_a_full_manifest_claim(self):
-        self.assertEqual(set(MODULE.SCOPE.select('all')), {'principal', 'regression'})
+    def test_all_means_the_four_owner_checkpoint_without_a_full_manifest_claim(self):
+        self.assertEqual(set(MODULE.SCOPE.select('all')), {'combination','principal','regression','projection'})
         claim = MODULE.checkpoint_scope_claim(MODULE.SCOPE.select('all'))
         self.assertTrue(claim['checkpoint_complete_selection'])
         self.assertFalse(claim['critical_manifest_complete_selection'])
-        self.assertIn('two changed critical owners', claim['qualification_scope'])
+        self.assertIn('four changed or coupled critical owners', claim['qualification_scope'])
 
     def test_full_actual_rows_and_partial_prefixes_stay_distinct(self):
         complete = MODULE.principal_counts(self.complete_rows(), require_complete=True)
-        self.assertEqual(complete['principal_counter_records'], 10)
-        self.assertEqual(complete['principal_observed_calls']['getters'], 1263)
-        self.assertEqual(complete['principal_observed_calls']['value_equalities'], 37)
+        self.assertEqual(complete['principal_counter_records'], 14)
+        self.assertEqual(complete['principal_observed_calls']['getters'], 1415)
+        self.assertEqual(complete['principal_observed_calls']['value_equalities'], 42)
+        self.assertTrue(complete['principal_private_case_source_upper_present'])
         partial = MODULE.principal_counts(self.FIRST)
         self.assertIsNone(partial['principal_observed_calls'])
-        self.assertEqual(len(partial['principal_missing_cases']), 9)
+        self.assertFalse(partial['principal_private_case_source_upper_present'])
+        self.assertEqual(len(partial['principal_missing_cases']), 13)
         for altered in (self.complete_rows() + self.FIRST, self.complete_rows().rstrip('\n'),
                         self.complete_rows().replace('getters=259', 'getters=18446744073709551616'),
-                        self.complete_rows().replace('value_equalities=37', 'state_equalities=37')):
-            # The last replacement is independently covered below because no
-            # single actual row contains the aggregate37 value.
-            if altered == self.complete_rows():
-                continue
+                        self.complete_rows().replace('value_equalities=24', 'state_equalities=24')):
             with self.subTest(value=altered[:70]), self.assertRaises(MODULE.Incomplete):
                 MODULE.principal_counts(altered, require_complete=True)
         with self.assertRaises(MODULE.Incomplete):
@@ -97,7 +525,7 @@ class PrincipalCheckpointTests(unittest.TestCase):
 
     def test_successful_baseline_cannot_omit_the_principal_family(self):
         helper = CoreAnalysisTests()
-        output = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '148 passed')
+        output = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '168 passed')
         outcome = {'scenario': 'Baseline', 'summary': 'Success', 'log_path': 'baseline.log',
                    'phase_results': helper.phase_results('Success')}
         with tempfile.TemporaryDirectory() as temporary:
@@ -106,7 +534,8 @@ class PrincipalCheckpointTests(unittest.TestCase):
                 path.write_text(text)
                 report = {}
                 MODULE.record_counts(report, 'principal:mutation-baseline', {
-                    'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+                    **MODULE.package_charged_upper(include_doctests=True),
+                    'literal_doctests_reserved':True,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 if valid:
                     MODULE.observe_mutation_outcome(report, path.parent / 'outcomes.json',
@@ -125,7 +554,7 @@ class PrincipalCheckpointTests(unittest.TestCase):
                 path.write_text(helper.mutation_phase_header('Test') + prefix)
                 report = {}
                 MODULE.record_counts(report, 'principal:mutation-1', {
-                    'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+                    'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 row = report['core_invocations'][0]
                 if valid:
@@ -176,17 +605,17 @@ class CoreAnalysisTests(unittest.TestCase):
             for identifier, suffix, replacement in names]
 
     def test_core_equivalence_scope_accepts_empty_or_exact_repaired_trio(self):
-        MODULE.admit_core_equivalence_scope([])
-        MODULE.admit_core_equivalence_scope(self.repaired_selection_equivalence_scope())
-        MODULE.admit_core_equivalence_scope(list(reversed(self.repaired_selection_equivalence_scope())))
+        MODULE.historical_admit_core_equivalence_scope([])
+        MODULE.historical_admit_core_equivalence_scope(self.repaired_selection_equivalence_scope())
+        MODULE.historical_admit_core_equivalence_scope(list(reversed(self.repaired_selection_equivalence_scope())))
 
     def test_core_equivalence_scope_accepts_only_the_complete_combined_seven(self):
         good = self.combined_equivalence_scope()
-        MODULE.admit_core_equivalence_scope(good)
-        MODULE.admit_core_equivalence_scope(list(reversed(good)))
+        MODULE.historical_admit_core_equivalence_scope(good)
+        MODULE.historical_admit_core_equivalence_scope(list(reversed(good)))
         for subset in (good[3:], good[:6], good[1:], good[:2] + good[3:4], good[:3] + [good[3]] * 4):
             with self.subTest(subset=subset), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(subset)
+                MODULE.historical_admit_core_equivalence_scope(subset)
 
     def test_combined_equivalence_scope_rejects_wrong_owners_operators_and_unreviewed_complement(self):
         good = self.combined_equivalence_scope()
@@ -199,18 +628,18 @@ class CoreAnalysisTests(unittest.TestCase):
                 bad = copy.deepcopy(good)
                 bad[index][owner][field] = value
                 with self.subTest(index=index, owner=owner, field=field), self.assertRaises(MODULE.Incomplete):
-                    MODULE.admit_core_equivalence_scope(bad)
+                    MODULE.historical_admit_core_equivalence_scope(bad)
             bad = copy.deepcopy(good)
             bad[index]['source_sha256'] = ('219142ff1ce58475b4707306e5f85909eb03918d9b3e21d0f5181e2bee49fe36'
                                            if index < 3 else 'da8b87fe69215b71419ff370d4032f0dc49363131c75e70076cb2cce6305d19e')
             with self.subTest(index=index, field='source_sha256'), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_admit_core_equivalence_scope(bad)
         bad = copy.deepcopy(good)
         bad[3]['mutant'].update({
             'name': 'crates/time-core/src/projection_enclosure.rs:275:62: replace || with && in Fraction::complement',
             'replacement': '&&'})
         with self.assertRaises(MODULE.Incomplete):
-            MODULE.admit_core_equivalence_scope(bad)
+            MODULE.historical_admit_core_equivalence_scope(bad)
 
     def test_core_equivalence_scope_rejects_old_or_different_faults_and_unbound_proofs(self):
         good = self.repaired_selection_equivalence_scope()
@@ -234,10 +663,13 @@ class CoreAnalysisTests(unittest.TestCase):
             bad.append(changed)
         for value in bad:
             with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(value)
+                MODULE.historical_admit_core_equivalence_scope(value)
 
     def setUp(self):
         """Replace only adjacent product admission for inert reader fixtures."""
+        inventories = patch.dict(MODULE.MUTATION_INVENTORIES, {
+            name: {'count':1, 'sha256':'1' * 64} for name in MODULE.SUBJECTS}, clear=True)
+        inventories.start(); self.addCleanup(inventories.stop)
         admission = patch.object(MODULE.PRODUCT, 'admit_product', side_effect=self.inert_product)
         admission.start()
         self.addCleanup(admission.stop)
@@ -259,6 +691,14 @@ class CoreAnalysisTests(unittest.TestCase):
                 # Deliberate inert parser allowances, never candidate quotas.
                 'global_limits': {key: amount * 1000
                                   for key, amount in MODULE.projected_batch_budget_vector().items()}}),
+            (MODULE.PRINCIPAL_TELEMETRY, {
+                'status': 'admitted-source-owned-profiles',
+                'global_limits': {key: amount * 1000 for key, amount in MODULE.principal_budget_vector().items()}}),
+            (MODULE.COMBINATION_TELEMETRY, {
+                'status': 'admitted-source-owned-profiles',
+                'global_limits': {key: amount * 1000 for key, amount in MODULE.combination_budget_vector().items()}}),
+            (MODULE.SOURCE_RAW_PRIVATE_GLOBAL_LIMITS,
+                {'square_root_calls_upper': 33000, 'binary_arithmetic_calls_upper': 22000}),
             (MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary': 94, 'doctests': 2, 'baseline': 96}),
         ):
             fixture = patch.dict(mapping, values)
@@ -284,14 +724,14 @@ class CoreAnalysisTests(unittest.TestCase):
         """Independent authored fixture recipes; no native result is inferred."""
         recipes = (
             ('terms_admission', (0,0,0,0,0,0,0,36,48,0)),
-            ('linear_identity', (1,3,3,1,7,12,3,240,1,5)),
-            ('shape_controls', (2,6,6,1,8,24,6,288,1,2)),
-            ('origin_durations', (2,6,6,1,10,24,6,288,1,2)),
-            ('integer_envelope', (1,3,3,1,7,12,3,168,1,3)),
-            ('error_precedence', (3,4,4,4,9,16,4,204,2,12)),
-            ('evicted_anchor', (1,65,65,1,68,260,65,1488,1,2)),
-            ('numeric_failures', (1,3,3,1,7,12,3,168,5,6)),
-            ('signed_zero_consumption', (1,3,3,1,5,12,3,504,8,16)),
+            ('linear_identity', (1,4,4,1,8,16,4,280,1,6)),
+            ('shape_controls', (2,6,6,1,8,24,6,290,1,2)),
+            ('origin_durations', (2,6,6,1,10,24,6,290,1,2)),
+            ('integer_envelope', (1,3,3,1,7,12,3,170,1,3)),
+            ('error_precedence', (3,4,4,4,9,16,4,205,2,12)),
+            ('evicted_anchor', (1,65,65,1,68,260,65,1489,1,2)),
+            ('numeric_failures', (1,3,3,1,7,12,3,170,5,6)),
+            ('signed_zero_consumption', (1,3,3,1,5,12,3,520,8,16)),
             ('projection_private_predicate', (0,)*10),
             ('projection_private_candidate', (0,)*10),
             ('projection_private_arithmetic', (0,)*10),
@@ -362,6 +802,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 for case, values in MODULE.ENCLOSURE.SOURCE_RECIPES)
             test_output += ProjectedBatchWrapperTests.complete_rows()
             test_output += PrincipalCheckpointTests.complete_rows()
+            test_output += CombinationCheckpointTests.complete_rows()
         if 'test result:' not in test_output:
             test_output += 'test result: ok. 96 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n'
         return (self.mutation_phase_header('Build') + finished
@@ -427,7 +868,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.object(MODULE, 'RUNS_TELEMETRY_STATUS', 'pending-reviewed-runs-telemetry-and-campaign-budget'):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.read_policy(root, 'contracts')
-            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 95)
+            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 101)
 
     def test_final_projected_batch_admission_requires_every_finite_nominal_allowance(self):
         required = MODULE.projected_batch_budget_vector()
@@ -582,8 +1023,8 @@ class CoreAnalysisTests(unittest.TestCase):
         proof = MODULE.prospective_scope_reservation('coverage', dict(MODULE.SUBJECTS))
         self.assertEqual(proof['mutation_package_invocations_upper'], 0)
         self.assertEqual(proof['coverage_package_invocations_upper'], 1)
-        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 5990,
-                                                 'point_admissions_upper': 269245})
+        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 6144,
+                                                 'point_admissions_upper': 279101})
         self.assertEqual(proof['package_test_count_upper_each'], 96)
         for lane, subjects in [('host', dict(MODULE.SUBJECTS)), ('all', {}),
                                ('all', {'selection': 'crates/time-core/src/regression.rs'})]:
@@ -595,13 +1036,14 @@ class CoreAnalysisTests(unittest.TestCase):
 
     def test_focused_mutation_reserves_actual_inventory_and_its_own_baseline(self):
         proof = MODULE.prospective_scope_reservation('mutation', {'principal': MODULE.SUBJECTS['principal']})
-        self.assertEqual(proof['mutation_package_invocations_upper'], 218)
+        # setUp declares one inert variant, not the historical217-variant listing.
+        self.assertEqual(proof['mutation_package_invocations_upper'], 2)
         self.assertEqual(proof['coverage_package_invocations_upper'], 0)
-        self.assertEqual(proof['package_invocations_upper'], 218)
+        self.assertEqual(proof['package_invocations_upper'], 2)
         self.assertEqual(proof['legal_consumer_executions_upper'], 0)
-        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 1305820,
-                                                  'point_admissions_upper': 58696064})
-        with patch.dict(MODULE.GLOBAL_LIMITS, {'point_admissions_upper': 58696063}):
+        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 12288,
+                                                  'point_admissions_upper': 558208})
+        with patch.dict(MODULE.GLOBAL_LIMITS, {'point_admissions_upper': 558207}):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.prospective_scope_reservation('mutation', {'principal': MODULE.SUBJECTS['principal']})
 
@@ -655,7 +1097,7 @@ class CoreAnalysisTests(unittest.TestCase):
     def test_selection_reservation_retains_missing_observations_without_zeroing(self):
         report = {}
         MODULE.record_counts(report, 'package', {
-            'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+            'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
             **MODULE.selection_reservation(package=True), 'observation_pending': True})
         self.assertEqual(report['core_selection_reserved_totals']['intervals'], 492)
         self.assertIsNone(report['core_selection_package_observed_calls'])
@@ -690,7 +1132,7 @@ class CoreAnalysisTests(unittest.TestCase):
         package = MODULE.selection_reservation(package=True)
         external = MODULE.selection_reservation(external={'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2})
         for label, reservation, literal, fits, points, forged in (
-                ('package', package, expected, 5990, 269245, 0),
+                ('package', package, expected, 6144, 279101, 0),
                 ('external', external, dict.fromkeys(expected, 0), 0, 0, 1)):
             with self.subTest(scope=label):
                 self.assertEqual(reservation['selection_reserved_helper_canonical_source_work_uppers'], literal)
@@ -733,7 +1175,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 (output/'baseline.log').write_text(text)
                 report = {}
                 MODULE.record_counts(report, 'selection:mutation-baseline', {
-                    'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+                    'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 with self.subTest(message=message), self.assertRaisesRegex(MODULE.Incomplete, message):
                     MODULE.observe_mutation_outcome(report, output/'outcomes.json',
@@ -760,7 +1202,7 @@ class CoreAnalysisTests(unittest.TestCase):
                     (output/'timeout.log').write_text(self.mutation_phase_header('Test')+text)
                     report = {}
                     MODULE.record_counts(report, 'selection:mutation-1', {
-                        'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+                        'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
                         **MODULE.selection_reservation(package=True), 'observation_pending': True})
                     row = report['core_invocations'][0]
                     with self.subTest(prefix=prefix, valid=valid):
@@ -773,7 +1215,7 @@ class CoreAnalysisTests(unittest.TestCase):
                                 MODULE.observe_mutation_outcome(report, output/'outcomes.json',
                                                                 'selection:mutation-1', outcome, row)
                         self.assertTrue(row['observation_pending'])
-                        self.assertEqual(row['charged_fit_work_upper'], 5990)
+                        self.assertEqual(row['charged_fit_work_upper'], 6144)
                         self.assertEqual(row['selection_reserved_calls']['intervals'], 492)
                         self.assertNotIn('observed_counts', row)
 
@@ -782,12 +1224,12 @@ class CoreAnalysisTests(unittest.TestCase):
         return {}, {name: MODULE.PRODUCT.sha256(root / name) for name in MODULE.BOUND_INPUTS}
 
     def fixture(self, root):
-        """Create the full95-file synthetic shape and retained ten-owner manifest."""
+        """Create the full101-file synthetic shape and retained eleven-owner manifest."""
         for name in MODULE.BOUND_INPUTS:
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('// isolated synthetic input; never compiled\n')
-        critical = {**MODULE.HISTORICAL_SUBJECTS, 'principal': MODULE.SUBJECTS['principal']}
+        critical = {**MODULE.HISTORICAL_SUBJECTS, **MODULE.SUBJECTS}
         manifest = 'critical_files=[' + ','.join(json.dumps(n) for n in critical.values()) + ']\n'
         for name in critical.values():
             manifest += '[[security_modules]]\npackage="time-core"\nfiles=[' + json.dumps(name) + ']\n'
@@ -844,7 +1286,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(MODULE.SCOPE.select('regression'), {'regression': MODULE.SUBJECTS['regression']})
             self.assertEqual(MODULE.SCOPE.select('principal'), {'principal': MODULE.SUBJECTS['principal']})
             self.assertEqual(MODULE.SCOPE.select('all'), MODULE.SUBJECTS)
-            self.assertEqual(len(admitted['inputs_sha256']), 95)
+            self.assertEqual(len(admitted['inputs_sha256']), 101)
             policy['admission_status'] = 'pending-final-source-and-inventory-binding'
             self.write_policy(root, policy)
             with self.assertRaises(MODULE.Incomplete):
@@ -1001,21 +1443,21 @@ class CoreAnalysisTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); healthy = self.fixture(root); self.fuzz_fixture(root, healthy)
             MODULE.read_policy(root, 'contracts')
-            with self.assertRaisesRegex(MODULE.Incomplete, 'two named mutation cohorts only'):
+            with self.assertRaisesRegex(MODULE.Incomplete, 'four named mutation cohorts only'):
                 MODULE.read_policy(root, 'fuzz')
             for key, value in [('profile', 'unreviewed-profile'), ('target_contract', 'fit-only'),
                                ('runtime_profile_reuse_review', 'pending-independent-resource-contract-equivalence'),
                                ('fuzzer_flags', ['-runs=1000000']), ('status', 'pending-s12b-target-source-binding')]:
                 changed = copy.deepcopy(healthy); changed['coverage_guided_fuzzing'][key] = value
                 self.write_policy(root, changed)
-                with self.subTest(key=key), self.assertRaisesRegex(MODULE.Incomplete, 'two named mutation cohorts only'):
+                with self.subTest(key=key), self.assertRaisesRegex(MODULE.Incomplete, 'four named mutation cohorts only'):
                     MODULE.read_policy(root, 'fuzz')
             changed = copy.deepcopy(healthy); changed['coverage_guided_fuzzing']['invocation_limits']['wall_seconds'] = 16
             self.write_policy(root, changed)
-            with self.assertRaisesRegex(MODULE.Incomplete, 'two named mutation cohorts only'): MODULE.read_policy(root, 'fuzz')
+            with self.assertRaisesRegex(MODULE.Incomplete, 'four named mutation cohorts only'): MODULE.read_policy(root, 'fuzz')
             changed = copy.deepcopy(healthy); changed['coverage_guided_fuzzing']['selected_grants'] = {}
             self.write_policy(root, changed)
-            with self.assertRaisesRegex(MODULE.Incomplete, 'two named mutation cohorts only'): MODULE.read_policy(root, 'fuzz')
+            with self.assertRaisesRegex(MODULE.Incomplete, 'four named mutation cohorts only'): MODULE.read_policy(root, 'fuzz')
 
     def test_real_consumer_specimens_have_ten_legal_controls_and_exact_declared_causes(self):
         cases = MODULE.legacy_contract_examples(); legal = [v for v in cases.values() if v['code'] is None]
@@ -1073,16 +1515,16 @@ class CoreAnalysisTests(unittest.TestCase):
                 MODULE.mutation_accounting(report, work)
             self.assertFalse(report['mutation_full_manifest_selected'])
             self.assertTrue(report['mutation_checkpoint_complete_selection'])
-            self.assertEqual(report['mutation_baselines_required'], 2)
-            self.assertEqual(report['mutation_baselines_observed'], 2)
+            self.assertEqual(report['mutation_baselines_required'], 4)
+            self.assertEqual(report['mutation_baselines_observed'], 4)
             self.assertEqual(report['mutation_missing_selected_files'], [])
             for subject in MODULE.SUBJECTS:
                 row = report['mutation_full_accounting'][subject]
                 self.assertEqual(row['counts'], {'K': 1, 'M': 1, 'U': 1, 'T': 0, 'X': 0, 'E': 0})
                 self.assertEqual(row['accounted'], 3)
-            self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 35940, 'point_admissions_upper': 1615488})
-            self.assertEqual(report['core_direct_and_stats_observations'], {'direct_fit_calls': 6, 'stats_calls': 6, 'point_admissions': 36})
-            self.assertEqual(report['core_runs_external_observations']['runs_selections'], 120)
+            self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 73728, 'point_admissions_upper': 3349248})
+            self.assertEqual(report['core_direct_and_stats_observations'], {'direct_fit_calls': 12, 'stats_calls': 12, 'point_admissions': 72})
+            self.assertEqual(report['core_runs_external_observations']['runs_selections'], 240)
             self.assertTrue(report['core_recorded_observations_parsed'])
             self.assertFalse(report['mutation_counter_observation_complete'])
             self.assertEqual(report['core_invocations'][0]['observed_counts']['runs_selections'],20)
@@ -1093,8 +1535,10 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 with self.assertRaises(MODULE.Incomplete): MODULE.mutation_accounting(incomplete, work)
             self.assertEqual(incomplete['mutation_full_accounting']['principal']['accounted'], 3)
-            self.assertEqual(incomplete['core_invocations'][0]['charged_fit_work_upper'],5990)
-            self.assertNotIn('observed_counts',incomplete['core_invocations'][0])
+            principal_baseline = next(row for row in incomplete['core_invocations']
+                                      if row['invocation'] == 'principal:mutation-baseline')
+            self.assertEqual(principal_baseline['charged_fit_work_upper'],6144)
+            self.assertNotIn('observed_counts',principal_baseline)
             self.assertFalse(incomplete['core_recorded_observations_parsed'])
             baseline.write_text(original)
             path = work / 'mutation/regression/mutants.out/outcomes.json'; raw = json.loads(path.read_text())
@@ -1120,13 +1564,13 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 17970, 'point_admissions_upper': 807744})
+                             {'charged_fit_work_upper': 18432, 'point_admissions_upper': 837312})
             self.assertEqual(report['mutation_full_accounting']['runs']['counts']['T'], 2)
             self.assertEqual(report['mutation_full_accounting']['runs']['counts']['K'], 0)
             self.assertFalse(report['mutation_counter_observation_complete'])
             self.assertEqual(report['core_observation_pending_invocations'], ['runs:mutation-1', 'runs:mutation-2'])
             for row in report['core_invocations'][1:]:
-                self.assertEqual((row['charged_fit_work_upper'], row['point_admissions_upper']), (5990, 269248))
+                self.assertEqual((row['charged_fit_work_upper'], row['point_admissions_upper']), (6144, 279104))
                 self.assertTrue(row['observation_pending'])
                 self.assertNotIn('observed_counts', row)
             self.assertEqual(report['core_invocations'][1]['observation_status'], 'timeout-prefix-unqualified')
@@ -1145,7 +1589,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 5990, 'point_admissions_upper': 269248})
+                             {'charged_fit_work_upper': 6144, 'point_admissions_upper': 279104})
             self.assertFalse(report['core_recorded_observations_parsed'])
             self.assertFalse(report['mutation_counter_observation_complete'])
             self.assertEqual(report['core_observation_pending_invocations'], ['runs:mutation-baseline'])
@@ -1166,7 +1610,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 11980, 'point_admissions_upper': 538496})
+                             {'charged_fit_work_upper': 12288, 'point_admissions_upper': 558208})
             row = report['core_invocations'][1]
             self.assertEqual(row['observation_status'], 'timeout-no-counter-prefix')
             self.assertTrue(row['observation_pending'])
@@ -1191,7 +1635,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 11980, 'point_admissions_upper': 538496})
+                             {'charged_fit_work_upper': 12288, 'point_admissions_upper': 558208})
             self.assertEqual(report['core_observation_pending_invocations'],
                              ['regression:mutation-baseline', 'principal:mutation-baseline'])
             self.assertFalse(report['mutation_counter_observation_complete'])
@@ -1216,7 +1660,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(row['observation_status'], 'timeout-receipt-unqualified')
             self.assertTrue(row['observation_pending'])
             self.assertNotIn('observed_counts', row)
-            self.assertEqual(row['charged_fit_work_upper'], 5990)
+            self.assertEqual(row['charged_fit_work_upper'], 6144)
             self.assertFalse(report['mutation_counter_observation_complete'])
 
     def test_all_known_outcomes_are_charged_even_when_subset_cap_is_exceeded(self):
@@ -1229,11 +1673,11 @@ class CoreAnalysisTests(unittest.TestCase):
                     {'scenario': 'Baseline', 'summary': 'Success', 'log_path': 'unread.log',
                      'phase_results': self.phase_results('Success')}]}))
             report = {'subjects': {name: MODULE.SUBJECTS[name] for name in ('regression', 'principal')}}
-            with patch.dict(MODULE.GLOBAL_LIMITS, {'charged_fit_work_upper': 5990}):
+            with patch.dict(MODULE.GLOBAL_LIMITS, {'charged_fit_work_upper': 6144}):
                 with self.assertRaisesRegex(MODULE.Incomplete, 'global charged allowance'):
                     MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 11980, 'point_admissions_upper': 538496})
+                             {'charged_fit_work_upper': 12288, 'point_admissions_upper': 558208})
             self.assertEqual(len(report['core_observation_pending_invocations']), 2)
             self.assertFalse(report['mutation_counter_observation_complete'])
 
@@ -1552,6 +1996,91 @@ class CoreAnalysisTests(unittest.TestCase):
             with self.subTest(raw=invalid), self.assertRaises(MODULE.Incomplete):
                 MODULE.cargo_json_records(invalid)
 
+    @staticmethod
+    def captured_principal_assertion_blocks():
+        """Literal native Test assertions from the retained principal-v1 logs.
+
+        The first block is from outcome15/log381. The second occurs in
+        outcomes107/109/128; its two brace-only lines are assertion source,
+        rather than Cargo transport records. No recorded log is rewritten.
+        """
+        return (
+            'assertion failed: matches!(rejected,Err(FixturePrincipalError::InvalidParameter\n'
+            '    {field:actual_field,issue:actual_issue}) if actual_field==field &&\n'
+            '    actual_issue==issue)\n',
+            'assertion failed: matches!(rejected,\n'
+            '    Err(FixturePrincipalError::Arithmetic\n'
+            '    {\n'
+            '        step: FixturePrincipalStep::StratumPenalty, source:\n'
+            '        FitError::Arithmetic\n'
+            '        {\n'
+            '            stage: ArithmeticStage::Principal, operation:\n'
+            '            ArithmeticOperation::Multiply, issue: ArithmeticIssue::NonFinite\n'
+            '        },\n'
+            '    }))\n',
+        )
+
+    def test_cargo_json_test_context_preserves_complete_native_principal_assertions(self):
+        cargo = '{"reason":"build-finished","success":true}\n'
+        ordinary = 'running 1 test\ntest ordinary_native_neighbor ... ok\n'
+        records, cleaned = MODULE.cargo_json_records(cargo + ordinary, test_phase=True)
+        self.assertEqual(records, [{'reason': 'build-finished', 'success': True}])
+        self.assertEqual(cleaned, ordinary)
+        for block in self.captured_principal_assertion_blocks():
+            for newline in ('\n', '\r\n'):
+                stream = (cargo + ordinary + block + 'native-after\n').replace('\n', newline)
+                expected = (ordinary + block + 'native-after\n').replace('\n', newline)
+                with self.subTest(block=block, newline=repr(newline)):
+                    records, cleaned = MODULE.cargo_json_records(stream, test_phase=True)
+                    self.assertEqual(records, [{'reason': 'build-finished', 'success': True}])
+                    self.assertEqual(cleaned, expected)
+
+    def test_principal_assertion_transport_keeps_unknown_partial_and_bad_json_closed(self):
+        parameter, arithmetic = self.captured_principal_assertion_blocks()
+        rejected = (
+            '    {\n',
+            '        {\n',
+            parameter.splitlines(keepends=True)[1],
+            parameter.replace('InvalidParameter', 'UnknownParameter'),
+            parameter.replace('actual_field==field', 'actual_field!=field'),
+            arithmetic.replace('StratumPenalty', 'UnknownStep'),
+            arithmetic.replace('ArithmeticOperation::Multiply', 'ArithmeticOperation::Add'),
+            parameter.rsplit('\n', 2)[0] + '\n',
+            arithmetic.rsplit('\n', 3)[0] + '\n',
+            parameter.rstrip('\n'),
+            arithmetic.rstrip('\n'),
+        )
+        for block in rejected:
+            with self.subTest(block=block), self.assertRaises(MODULE.Incomplete):
+                MODULE.cargo_json_records(block, test_phase=True)
+        malformed = (
+            '{"reason":"build-finished","success":true\n',
+            '{"reason":"build-finished","success":false,"success":true}\n',
+            '{"reason":"build-finished","success":NaN}\n',
+            '{"reason":"build-finished","success":Infinity}\n',
+            '{"reason":"build-finished","success":1e999}\n',
+        )
+        for block in (parameter, arithmetic):
+            for record in malformed:
+                with self.subTest(block=block, record=record), self.assertRaises(MODULE.Incomplete):
+                    MODULE.cargo_json_records(block + record, test_phase=True)
+
+    def test_principal_assertion_transport_never_admits_a_build_or_unviable_cause(self):
+        unviable = {'summary': 'Unviable', 'phase_results': self.phase_results('Unviable')}
+        healthy = self.semantic_mutation_log()
+        MODULE.unviable_compile_failure(unviable, healthy)
+        for block in self.captured_principal_assertion_blocks():
+            for mode in (None, False):
+                with self.subTest(block=block, mode=mode), self.assertRaises(MODULE.Incomplete):
+                    if mode is None:
+                        MODULE.cargo_json_records(block)
+                    else:
+                        MODULE.cargo_json_records(block, test_phase=mode)
+            build = healthy.replace(self.mutation_phase_header('Build'),
+                                    self.mutation_phase_header('Build') + block, 1)
+            with self.subTest(block=block), self.assertRaises(MODULE.Incomplete):
+                MODULE.unviable_compile_failure(unviable, build)
+
     def test_cargo_json_test_context_preserves_only_literal_assertion_tails(self):
         """Literal transport controls preserve panic bytes; they prove no Rust failure or kill."""
         tails = (
@@ -1660,13 +2189,13 @@ class CoreAnalysisTests(unittest.TestCase):
                 report = {}
                 label = 'selection:' + outcome['summary']
                 MODULE.record_counts(report, label, {
-                    'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+                    'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 row = report['core_invocations'][0]
                 with self.subTest(summary=outcome['summary']):
                     MODULE.observe_mutation_outcome(report, output / 'outcomes.json', label, outcome, row)
-                    self.assertEqual(row['charged_fit_work_upper'], 5990)
-                    self.assertEqual(row['point_admissions_upper'], 269245)
+                    self.assertEqual(row['charged_fit_work_upper'], 6144)
+                    self.assertEqual(row['point_admissions_upper'], 279101)
                     if outcome['summary'] == 'CaughtMutant':
                         self.assertFalse(row['observation_pending'])
                         self.assertEqual(row['observed_counts']['selection_recorded_call_subtotals']['intervals'], 1)
@@ -1721,7 +2250,7 @@ class CoreAnalysisTests(unittest.TestCase):
                        'log_path': 'mutant.log', 'phase_results': self.phase_results('CaughtMutant')}
             report = {}
             MODULE.record_counts(report, 'runs:mutation-1', {
-                'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+                'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
                 'observation_pending': True})
             with self.assertRaisesRegex(MODULE.Incomplete, 'conflicts with an error diagnostic'):
                 MODULE.observe_mutation_outcome(report, output / 'outcomes.json',
@@ -1757,7 +2286,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 with self.subTest(log=invalid), patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                     with self.assertRaises(MODULE.Incomplete):
                         MODULE.mutation_accounting(incomplete, work)
-                self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 5990)
+                self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 6144)
                 self.assertTrue(incomplete['core_invocations'][1]['observation_pending'])
             (output / 'compile.log').write_text(diagnostic)
             outcome['phase_results'][0]['process_status'] = {'Failure': 2}
@@ -1768,7 +2297,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.mutation_accounting(incomplete, work)
-            self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 5990)
+            self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 6144)
             self.assertTrue(incomplete['core_invocations'][1]['observation_pending'])
 
     def test_failed_native_mutant_retains_valid_prefix_and_rejects_setup_or_resource_failures(self):
@@ -1792,7 +2321,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 11980, 'point_admissions_upper': 538496})
+                             {'charged_fit_work_upper': 12288, 'point_admissions_upper': 558208})
             caught = report['core_invocations'][1]
             self.assertEqual(caught['observed_counts']['runs_points'], 2)
             self.assertEqual(caught['raw_log_sha256'],
@@ -1840,7 +2369,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(report['core_direct_and_stats_observations'], expected)
             self.assertEqual(report['core_runs_external_observations']['runs_selections'], 40)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 11983, 'point_admissions_upper': 538505})
+                             {'charged_fit_work_upper': 12291, 'point_admissions_upper': 558217})
             self.assertTrue(report['core_recorded_observations_parsed'])
             MODULE.refresh_accounting(report)
             self.assertEqual(report['core_direct_and_stats_observations'], expected)
@@ -1934,8 +2463,10 @@ class CoreAnalysisTests(unittest.TestCase):
                     {'mutation_equivalences': [], 'maximum_mutants': 512, 'mutation_wall_seconds': 1200},
                     work, Path('/inert-tools'), run, report, 'mutation')
             campaigns = [row for row in launches if row[0].startswith('mutation-campaign:')]
-            self.assertEqual([row[0] for row in campaigns], ['mutation-campaign:principal', 'mutation-campaign:regression'])
-            self.assertEqual([row[2] for row in campaigns], [1100, 1025])
+            self.assertEqual([row[0] for row in campaigns],
+                             ['mutation-campaign:combination', 'mutation-campaign:principal',
+                              'mutation-campaign:regression', 'mutation-campaign:projection'])
+            self.assertEqual([row[2] for row in campaigns], [1000, 925, 850, 775])
             for _, command, _, _ in campaigns:
                 self.assertEqual(command[command.index('--baseline') + 1], 'run')
                 self.assertEqual(command[command.index('--build-timeout') + 1], '90')
@@ -1992,7 +2523,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 self.assertEqual(MODULE.main(args + ['--subject', 'principal']), 1)
                 self.assertEqual(MODULE.main(args + ['--subject', 'regression']), 1)
         self.assertEqual(selected, ['all', 'principal', 'regression'])
-        self.assertEqual(len(MODULE.SCOPE.select('all')), 2)
+        self.assertEqual(len(MODULE.SCOPE.select('all')), 4)
         self.assertEqual(len(MODULE.SCOPE.select('regression')), 1)
         with self.assertRaises(MODULE.Incomplete): MODULE.SCOPE.select('../residuals')
 
@@ -2237,7 +2768,8 @@ class CoreAnalysisTests(unittest.TestCase):
             session=Session(); session.work=work; session.stable=Path('/inert-stable')
             with patch.object(MODULE.COMMON,'library_artifact',side_effect=['/work/target/core.rlib','/work/target/domain.rlib']) as selector, \
                  patch.object(MODULE,'copy_contract_dependencies',return_value=work/'contract-deps') as copier:
-                with self.assertRaises(Captured): MODULE.contracts(session,{'contracts_wall_seconds':300},{})
+                with self.assertRaises(Captured): MODULE.contracts(session,{'contracts_wall_seconds':300,'jobs':6},{})
+            self.assertEqual(commands[0][1][commands[0][1].index('--jobs')+1], '6')
             self.assertEqual(selector.call_args_list[1].args[1:],('time-domain','/work/source/crates/time-domain/Cargo.toml'))
             self.assertEqual(copier.call_args.args[1:],('/work/target/core.rlib','/work/target/domain.rlib'))
             command=commands[-1][1]
@@ -2393,11 +2925,11 @@ class CoreAnalysisTests(unittest.TestCase):
     def test_history_pending_and_fully_bound_synthetic_schema_have_causal_neighbors(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);policy=self.fixture(root)
-            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],95)
+            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],101)
             historical = self.historical_scope().select('all')
             self.assertEqual(historical['history'],'crates/time-core/src/regression/history.rs')
             self.assertEqual(list(historical),['regression','residuals','normalization','history','runs','selection','projection','enclosure','projected_batch'])
-            self.assertEqual(list(MODULE.SCOPE.select('all')), ['principal', 'regression'])
+            self.assertEqual(list(MODULE.SCOPE.select('all')), ['combination','principal','regression','projection'])
             for key in ['history_telemetry','normalization_telemetry']:
                 bad=copy.deepcopy(policy);bad[key]['status']='pending-actual-source'
                 self.write_policy(root,bad)
@@ -2455,17 +2987,17 @@ class CoreAnalysisTests(unittest.TestCase):
         self.assertIsNone(old['projection_source_owned_work_uppers'])
         counts = MODULE.profile_counts(self.complete_projection_rows(), require_projection=True)
         self.assertEqual(counts['projection_observed_calls'], {
-            'histories': 12, 'appends': 93, 'observations': 93, 'contexts': 11,
-            'monotonic': 121, 'coordinates': 372, 'exchanges': 93, 'getters': 3384,
-            'terms': 68, 'projections': 48})
+            'histories': 12, 'appends': 94, 'observations': 94, 'contexts': 11,
+            'monotonic': 122, 'coordinates': 376, 'exchanges': 94, 'getters': 3450,
+            'terms': 68, 'projections': 49})
         self.assertEqual(counts['direct_fit_calls'], 0)
         self.assertEqual(counts['stats_calls'], 0)
-        self.assertEqual(counts['charged_fit_work_upper'], 93)
-        self.assertEqual(counts['point_admissions_upper'], 5952)
+        self.assertEqual(counts['charged_fit_work_upper'], 94)
+        self.assertEqual(counts['point_admissions_upper'], 6016)
         self.assertEqual(counts['projection_source_owned_work_uppers']['projection_term_predicate_calls_upper'], 408)
 
     def test_complete_package_cannot_omit_projection_preeffect_charges(self):
-        healthy = {'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245,
+        healthy = {'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101,
                    **MODULE.selection_reservation(package=True), 'observation_pending': True}
         MODULE.record_counts({}, 'synthetic-package', healthy)
         for field in ('projection_reserved_calls', 'projection_reserved_source_work_uppers',
@@ -2495,8 +3027,10 @@ class InventoryAdmissionTests(unittest.TestCase):
 
     NOW = 1700000100
     SUBJECTS = {
+        'combination': 'crates/time-core/src/combination.rs',
         'principal': 'crates/time-core/src/principal.rs',
         'regression': 'crates/time-core/src/regression.rs',
+        'projection': 'crates/time-core/src/regression/projection.rs',
     }
 
     def fixture(self, root):
@@ -2510,6 +3044,7 @@ class InventoryAdmissionTests(unittest.TestCase):
             'scripts/core-selection-accounting.py', 'scripts/core-selection-contracts.py',
             'scripts/core-projection-accounting.py', 'scripts/core-analysis-cohorts.py',
             'scripts/core-enclosure-accounting.py', 'scripts/core-projected-batch-accounting.py',
+            'scripts/core-combination-accounting.py',
             'scripts/check-analysis.py', 'scripts/analysis-controls.py',
             'scripts/prepare-product.py', 'scripts/verify.py',
             'scripts/check-environment.py', 'scripts/check-strict.py',
@@ -2520,8 +3055,8 @@ class InventoryAdmissionTests(unittest.TestCase):
             path.write_text('inert input ' + name + '\n')
         product = {name: MODULE.PRODUCT.sha256(root / name) for name in names}
         policy = {
-            'schema_version': 1, 'admission_status': 'admitted-two-owner-inventory-only',
-            'package': 'time-core', 'source_file_count': 95, 'subjects': dict(self.SUBJECTS),
+            'schema_version': 4, 'admission_status': 'admitted-four-owner-inventory-only',
+            'package': 'time-core', 'source_file_count': 101, 'subjects': dict(self.SUBJECTS),
             'maximum_mutants': 512, 'listing_maximum_per_file': 512,
             'listing_maximum_total': 3072, 'inventory_wall_seconds': 600,
             'mutation_jobs': 10, 'mutation_process_limit': 512, 'listing_process_limit': 128,
@@ -2546,19 +3081,19 @@ class InventoryAdmissionTests(unittest.TestCase):
             root = Path(temporary); policy, path = self.fixture(root)
             self.assertEqual(self.read(root, path, policy), policy)
             self.assertEqual(MODULE.INVENTORY_SUBJECTS, self.SUBJECTS)
-            self.assertEqual(len(policy['product_inputs_sha256']), 95)
-            self.assertEqual(len(MODULE.SUBJECTS), 2)
+            self.assertEqual(len(policy['product_inputs_sha256']), 101)
+            self.assertEqual(len(MODULE.SUBJECTS), 4)
             self.assertIn('principal', MODULE.SUBJECTS)
             self.assertFalse(policy['campaigns_admitted'])
-            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 95)
+            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 101)
 
     def test_unknown_fields_duplicate_fields_and_nonfinite_json_reject(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); policy, path = self.fixture(root)
             original = path.read_text()
             invalid = [json.dumps({**policy, 'unknown': 1}),
-                       original.replace('"schema_version": 1', '"schema_version": 1, "schema_version": 1', 1),
-                       original.replace('"schema_version": 1', '"schema_version": NaN', 1),
+                       original.replace('"schema_version": 4', '"schema_version": 4, "schema_version": 4', 1),
+                       original.replace('"schema_version": 4', '"schema_version": NaN', 1),
                        '[]', 'null']
             for text in invalid:
                 path.write_text(text)
@@ -2612,8 +3147,8 @@ class InventoryAdmissionTests(unittest.TestCase):
             path.unlink(); path.symlink_to(redirect)
             with self.assertRaises(MODULE.Incomplete): self.read(root, path, healthy)
 
-    def test_inventory_execution_only_lists_both_checkpoint_owners_and_reports_campaign_overflow(self):
-        for per_file, total, exceeded in [(1, 2, False), (300, 600, True)]:
+    def test_inventory_execution_only_lists_four_checkpoint_owners_and_reports_campaign_overflow(self):
+        for per_file, total, exceeded in [(1, 4, False), (300, 1200, True)]:
             with self.subTest(per_file=per_file), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary); policy, path = self.fixture(root)
                 session = Mock(tools=Path('/inert-sealed-tools'), source=root,
@@ -2641,8 +3176,8 @@ class InventoryAdmissionTests(unittest.TestCase):
                      patch.object(MODULE, 'fuzz', side_effect=AssertionError('fuzz used')):
                     MODULE.execute(args, report)
                 self.assertEqual(factory.call_args.args[1].lane, 'mutation')
-                self.assertEqual(factory.call_args.args[3].policy, 'tasks/s1.3-principal-inventory-admission.json')
-                self.assertEqual(session.run.call_count, 2)
+                self.assertEqual(factory.call_args.args[3].policy, 'tasks/s1.3-combination-inventory-admission.json')
+                self.assertEqual(session.run.call_count, 4)
                 self.assertTrue(all(not call.kwargs for call in session.run.call_args_list))
                 session.finish.assert_called_once()
                 self.assertEqual(report['inventory_discovery']['total'], total)
@@ -2696,8 +3231,8 @@ class InventoryAdmissionTests(unittest.TestCase):
                     changed = copy.deepcopy(policy); changed['created_unix_seconds'] += 1
                     path.write_text(json.dumps(changed))
                 if change == 'duplicate-document':
-                    path.write_text(original.replace('"schema_version": 1',
-                        '"schema_version": 1, "schema_version": 1', 1))
+                    path.write_text(original.replace('"schema_version": 4',
+                        '"schema_version": 4, "schema_version": 4', 1))
                 if change == 'product': session.product_identity['Cargo.lock'] = '0' * 64
                 if change == 'tool': session.identity['scripts/portable-analysis.py'] = '0' * 64
                 now = policy['expires_unix_seconds'] if change == 'expiry' else self.NOW
@@ -2862,17 +3397,22 @@ class CoreDocumentReaderTests(unittest.TestCase):
 class ProjectedBatchWrapperTests(unittest.TestCase):
     """Independent literal new-family controls; no Rust or native outcomes."""
 
+    def setUp(self):
+        limits = patch.dict(MODULE.SOURCE_RAW_PRIVATE_GLOBAL_LIMITS,
+                            {'square_root_calls_upper':33000, 'binary_arithmetic_calls_upper':22000})
+        limits.start(); self.addCleanup(limits.stop)
+
     FIELDS = ('histories', 'appends', 'observations', 'contexts', 'monotonic',
               'coordinates', 'exchanges', 'getters', 'terms', 'projections',
               'enclosures', 'batches', 'minima', 'selections')
     RECIPES = (
         ('single_compatible', (1,3,3,1,6,12,3,24,1,1,1,1,1,1)),
-        ('linear_selection', (3,9,9,3,16,36,9,414,3,3,3,2,2,3)),
-        ('capacity_neighbors', (17,51,51,17,86,204,51,2171,17,17,17,5,1,3)),
-        ('context_admission', (8,24,24,8,42,96,24,662,8,8,8,12,1,1)),
-        ('duplicate_precedence', (3,9,9,3,16,36,9,297,3,3,3,3,1,1)),
-        ('permutation_retention', (3,9,9,3,16,36,9,603,3,3,3,3,1,6)),
-        ('subtick_overlap', (2,6,6,2,11,24,6,225,2,2,2,1,1,1)),
+        ('linear_selection', (3,9,9,3,16,36,9,525,3,3,3,2,2,3)),
+        ('capacity_neighbors', (17,51,51,17,86,204,51,2234,17,17,17,5,1,3)),
+        ('context_admission', (8,24,24,8,42,96,24,680,8,8,8,12,1,1)),
+        ('duplicate_precedence', (3,9,9,3,16,36,9,305,3,3,3,3,1,1)),
+        ('permutation_retention', (3,9,9,3,16,36,9,618,3,3,3,3,1,6)),
+        ('subtick_overlap', (2,6,6,2,11,24,6,231,2,2,2,1,1,1)),
         ('projected_batch_private_admission', (1,3,3,1,5,12,3,6,1,1,1,3,0,0)),
         ('projected_batch_private_priority', (3,9,9,3,14,36,9,18,3,3,3,0,0,0)),
         ('projected_batch_private_delegation', (2,6,6,2,9,24,6,14,2,2,2,2,0,0)),
@@ -2896,7 +3436,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
     def test_disjoint_attempts_reuse_each_producer_and_selector_work_owner_once(self):
         counts = MODULE.profile_counts(self.complete_rows(), require_projected_batch=True)
         self.assertEqual(counts['projected_batch_observed_calls'], dict(zip(
-            self.FIELDS, (43,129,129,43,221,516,129,4434,43,43,43,32,8,16), strict=True)))
+            self.FIELDS, (43,129,129,43,221,516,129,4655,43,43,43,32,8,16), strict=True)))
         self.assertEqual((counts['direct_fit_calls'], counts['stats_calls']), (0, 0))
         self.assertEqual((counts['charged_fit_work_upper'], counts['point_admissions_upper']), (129, 8256))
         self.assertIsNone(counts['projection_observed_calls'])
@@ -2908,7 +3448,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
         self.assertEqual(work['selection_membership_probes_upper'], 16128)
         self.assertEqual(work['minimum_garde_validate_calls_upper'], 8)
         self.assertEqual(work['scratch_Copy_assignments_upper'], 992)
-        self.assertEqual(work['wrapper_debug_format_calls_upper'], 4434)
+        self.assertEqual(work['wrapper_debug_format_calls_upper'], 4655)
 
     def test_observers_are_actual_overlapping_observations_and_add_no_charges(self):
         public = ''.join(self.row(case, values) for case, values in self.RECIPES)
@@ -2942,7 +3482,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
         self.assertEqual(report['core_projected_batch_pending_observation_invocations'], ['synthetic-package'])
         self.assertEqual(report['core_projected_batch_reserved_totals']['projected_batch.call.appends'], 129)
         self.assertEqual(report['core_charged_subset_totals'],
-                         {'charged_fit_work_upper': 5990, 'point_admissions_upper': 269245})
+                         {'charged_fit_work_upper': 6144, 'point_admissions_upper': 279101})
 
     def test_package_reservation_rejects_each_missing_or_forged_new_work_owner(self):
         good = {**MODULE.package_charged_upper(), **MODULE.selection_reservation(package=True),
@@ -3028,7 +3568,8 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
     def test_nonmutation_prospective_source_vector_is_checked_before_effects(self):
         required = MODULE.projected_batch_budget_vector()
         subjects = dict(MODULE.SUBJECTS)
-        with patch.dict(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'baseline': 1}):
+        with patch.dict(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'baseline': 1}), \
+             patch.dict(MODULE.COMBINATION_TELEMETRY, {'global_limits': MODULE.combination_budget_vector()}):
             with patch.dict(MODULE.PROJECTED_BATCH_TELEMETRY, {'global_limits': required}):
                 coverage = MODULE.prospective_scope_reservation('coverage', subjects)
                 self.assertEqual(coverage['projected_batch_source_work_upper'], required)
@@ -3039,7 +3580,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
                     with self.subTest(lane=lane), self.assertRaisesRegex(MODULE.Incomplete, 'exact admitted lanes/owners'):
                         MODULE.prospective_scope_reservation(lane, subjects)
                 # Nominal one-package admission cannot fund both named cohorts.
-                with self.assertRaisesRegex(MODULE.Incomplete, 'finite reservation'):
+                with self.assertRaisesRegex(MODULE.Incomplete, 'finite reservation|inventories remain pending'):
                     MODULE.prospective_scope_reservation('mutation', subjects)
             for limits in (None, {**required, 'projected_batch.call.batches': required['projected_batch.call.batches'] - 1}):
                 with self.subTest(limits=limits), patch.dict(
@@ -3050,22 +3591,16 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
 class CheckedInCorePolicyTests(unittest.TestCase):
     """Exercise the real checked-in source admission outside synthetic fixtures."""
 
-    def test_checked_in_checkpoint_policy_admits_the_current_complete_product(self):
-        # No adjacent reader, identity map, FIXED metadata or environment is
-        # patched. Admission reads the actual manifests, sources, guards,
-        # dependency graph, fuzz inputs and current candidate bindings.
-        policy = MODULE.read_policy(ROOT, 'coverage')
-        self.assertEqual(policy['source_file_count'], 95)
-        self.assertEqual(len(policy['inputs_sha256']), 95)
-        self.assertEqual(policy['final_package_test_counts'],
-                         {'ordinary': 143, 'doctests': 5, 'baseline': 148})
-        self.assertEqual(policy['selection_telemetry']['package_tests'],
-                         {'ordinary': 143, 'doctests': 5, 'baseline': 148})
-        self.assertEqual(policy['mutation_equivalences'], [])
-        self.assertEqual(set(policy['critical_files']),
-                         {'crates/time-core/src/principal.rs', 'crates/time-core/src/regression.rs'})
-        self.assertEqual(MODULE.COMMON.canonical_sha256(policy['inputs_sha256']),
-                         '225da73a1d0bd8f6be12e45b9de20c3ec3b889d475ef72a0604d16f1d977750f')
+    def test_changed_checkpoint_does_not_reuse_the_historical_source_admission(self):
+        # The current stage permits inventory only. No adjacent reader, source
+        # identity or metadata is patched into final-source admission.
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.read_policy(ROOT, 'coverage')
+        self.assertEqual(MODULE.SOURCE_FILE_COUNT, 101)
+        self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS,
+                         {'ordinary': 163, 'doctests': 5, 'baseline': 168})
+        self.assertEqual(set(MODULE.SUBJECTS), {'combination','principal','regression','projection'})
+        self.assertIsNone(MODULE.CHECKPOINT_SOURCE_RESERVATION)
 
     def test_nonmutation_session_binds_enclosure_helper_before_native_work(self):
         """Capture the real execution boundary before any tool can be admitted."""
@@ -3080,7 +3615,9 @@ class CheckedInCorePolicyTests(unittest.TestCase):
                     captured.extend(extra)
                     raise CapturedBeforeNative
 
-                with patch.object(MODULE.COMMON, 'Session', side_effect=stop_before_native):
+                with patch.object(MODULE, 'read_policy', return_value={}), \
+                     patch.object(MODULE, 'prospective_scope_reservation', return_value={}), \
+                     patch.object(MODULE.COMMON, 'Session', side_effect=stop_before_native):
                     with self.assertRaises(CapturedBeforeNative):
                         MODULE.execute(SimpleNamespace(lane=lane, subject='all'), {})
                 # Healthy neighboring tool owners already cross this actual
@@ -3089,6 +3626,7 @@ class CheckedInCorePolicyTests(unittest.TestCase):
                 self.assertIn('scripts/core-analysis-cohorts.py', captured)
                 self.assertIn('scripts/core-enclosure-accounting.py', captured)
                 self.assertIn('scripts/core-projected-batch-accounting.py', captured)
+                self.assertIn('scripts/core-combination-accounting.py', captured)
 
 
 if __name__ == '__main__':

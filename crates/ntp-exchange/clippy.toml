@@ -1,0 +1,90 @@
+# Pinned Clippy 0.1.99. This package is a pure fixture library.
+# Keep all common settings synchronized with the admitted root configuration.
+check-private-items = true
+allow-unwrap-in-tests = false
+allow-expect-in-tests = false
+allow-panic-in-tests = false
+allow-dbg-in-tests = false
+
+# Selected API bans are defense in depth, not proof of effect-free dependencies.
+# Inert SocketAddr/IpAddr/Duration values and explicit input coordinates remain legal.
+# Fixture accounting deliberately retains stderr().write_all; no blanket I/O claim.
+
+disallowed-methods = [
+    { path = "std::time::SystemTime::now", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::time::Instant::now", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::var", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::var_os", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::vars", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::vars_os", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::args", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::args_os", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::current_dir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::current_exe", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::temp_dir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env::set_current_dir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::read", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::read_to_string", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::write", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::read_dir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::create_dir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::create_dir_all", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::remove_dir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::remove_dir_all", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::remove_file", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::rename", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::copy", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::hard_link", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::metadata", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::symlink_metadata", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::canonicalize", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::set_permissions", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::read_link", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::exists", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::File::open", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::File::create", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::File::create_new", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::OpenOptions::new", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::DirBuilder::new", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::TcpStream::connect", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::TcpStream::connect_timeout", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::TcpListener::bind", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::UdpSocket::bind", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::process::Command::new", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::process::Command::spawn", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::process::Command::output", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::process::Command::status", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::spawn", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::scope", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::sleep", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::park", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::park_timeout", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::yield_now", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::current", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::available_parallelism", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+]
+
+disallowed-types = [
+    { path = "std::fs::File", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::OpenOptions", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::DirBuilder", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::ReadDir", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::fs::DirEntry", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::TcpStream", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::TcpListener", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::net::UdpSocket", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::process::Command", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::process::Child", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::Builder", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::JoinHandle", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::thread::ScopedJoinHandle", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+]
+
+disallowed-macros = [
+    { path = "std::print", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::println", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::eprint", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::eprintln", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::env", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+    { path = "std::option_env", reason = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter." },
+]

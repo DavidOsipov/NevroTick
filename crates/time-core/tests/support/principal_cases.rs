@@ -1413,3 +1413,241 @@ fn principal_cardinality_zero_distance_and_stratum_weight_neighbors() -> TestRes
     }
     Ok(())
 }
+
+// Added for the observed principal mutation gaps; execution is recorded in S1.3.
+
+/// Public error variants expose their exact embedded typed cause by reference.
+/// This is Error-API coverage, not a claim that a valid selector can fail.
+/// # Errors
+/// Preserve counter exhaustion and reject an unexpectedly missing/wrong cause.
+/// # Panics
+/// Delegates must return the same borrow; every nondelegated family has no cause.
+#[test]
+fn principal_error_sources_preserve_embedded_identity() -> TestResult {
+    use time_core::{SelectionError, SelectionInvariantStage};
+
+    let p = Budget::new(
+        "principal_error_sources_preserve_embedded_identity",
+        [0, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    );
+    let arithmetic = FixturePrincipalError::Arithmetic {
+        step: FixturePrincipalStep::UpdatedScore,
+        source: FitError::Arithmetic {
+            stage: ArithmeticStage::Principal,
+            operation: ArithmeticOperation::Multiply,
+            issue: ArithmeticIssue::NonFinite,
+        },
+    };
+    let FixturePrincipalError::Arithmetic {
+        source: expected, ..
+    } = &arithmetic
+    else {
+        return Err(io::Error::other("arithmetic variant fixture").into());
+    };
+    let actual = p
+        .get(|| arithmetic.source())?
+        .ok_or_else(|| io::Error::other("missing arithmetic cause"))?;
+    let actual = actual
+        .downcast_ref::<FitError>()
+        .ok_or_else(|| io::Error::other("wrong arithmetic cause type"))?;
+    assert!(std::ptr::eq(actual, expected));
+
+    let selection = FixturePrincipalError::Selection {
+        source: SelectionError::Invariant {
+            stage: SelectionInvariantStage::Slot,
+        },
+    };
+    let FixturePrincipalError::Selection { source: expected } = &selection else {
+        return Err(io::Error::other("selection variant fixture").into());
+    };
+    let actual = p
+        .get(|| selection.source())?
+        .ok_or_else(|| io::Error::other("missing selection cause"))?;
+    let actual = actual
+        .downcast_ref::<SelectionError>()
+        .ok_or_else(|| io::Error::other("wrong selection cause type"))?;
+    assert!(std::ptr::eq(actual, expected));
+
+    for error in [
+        FixturePrincipalError::InvalidParameter {
+            field: FixturePrincipalParameterField::ReselectDistanceSeconds,
+            issue: FixturePrincipalScalarIssue::NonPositive,
+        },
+        FixturePrincipalError::InvalidStratum,
+        FixturePrincipalError::EmptyRoster,
+        FixturePrincipalError::RosterCapacityExceeded,
+        FixturePrincipalError::DuplicateRoster { index: 1 },
+        FixturePrincipalError::MetadataCapacityExceeded,
+        FixturePrincipalError::MetadataCountMismatch,
+        FixturePrincipalError::UnknownSource { index: 1 },
+        FixturePrincipalError::DuplicateMetadata { index: 1 },
+        FixturePrincipalError::MissingMetadata { index: 1 },
+        FixturePrincipalError::ContextMismatch {
+            field: FixturePrincipalContextField::Frame,
+        },
+        FixturePrincipalError::BackwardEvaluation,
+        FixturePrincipalError::BackwardObservation { index: 1 },
+        FixturePrincipalError::MultipleObservations,
+        FixturePrincipalError::StratumWithoutObservation { index: 1 },
+        FixturePrincipalError::Invariant,
+    ] {
+        assert!(p.get(|| error.source())?.is_none());
+    }
+    Ok(())
+}
+
+/// Context belongs to whole state; source equality still owns pending credit.
+/// # Errors
+/// Preserve genuine producer/receiver rejection and bounded observer failures.
+/// # Panics
+/// Only frame differs at seed; after one advance only source pending differs.
+#[test]
+fn principal_equality_distinguishes_context_and_pending_credit() -> TestResult {
+    let p = Budget::new(
+        "principal_equality_distinguishes_context_and_pending_credit",
+        [2, 6, 6, 2, 10, 4, 2, 40, 2, 2, 2, 2, 1, 1, 2, 2, 1, 1, 4, 0],
+    );
+    let roster = [tag(101)?];
+    let sources = [src(101, 0, 1.0, 2_000_000_000, 1)];
+    let left_built = build(&p, &sources, 7, 11, 2_000_000_000)?;
+    let right_built = build(&p, &sources, 8, 11, 2_000_000_000)?;
+    let left_batch = left_built.batch(&p)?;
+    let right_batch = right_built.batch(&p)?;
+    let minimum = p.call(12, || FixtureMinimum::new(1))??;
+    let parameters = p.call(13, || FixturePrincipalParameters::new(0.25, 0.0))??;
+    let mut left = p.call(15, || {
+        FixturePrincipalState::seed(
+            &roster,
+            parameters,
+            minimum,
+            &left_batch,
+            &left_built.metadata,
+        )
+    })??;
+    let right = p.call(15, || {
+        FixturePrincipalState::seed(
+            &roster,
+            parameters,
+            minimum,
+            &right_batch,
+            &right_built.metadata,
+        )
+    })??;
+    assert_eq!(p.get(|| left.principal())?, None);
+    assert_eq!(p.get(|| right.principal())?, None);
+    let saved = p.clone_state(&left)?;
+    p.same(&left, &saved)?;
+    p.different(&left, &right)?;
+    let right_source = p
+        .get(|| right.source_state(roster[0]))?
+        .ok_or_else(|| io::Error::other("missing right source"))?;
+    let left_source = p
+        .get(|| left.source_state(roster[0]))?
+        .ok_or_else(|| io::Error::other("missing left source"))?;
+    assert!(p.call(18, || left_source == right_source)?);
+
+    // Same original observation, scalar metadata and evaluation time: no event.
+    let result = p.call(16, || left.advance(&left_batch, &left_built.metadata))??;
+    view(
+        &p,
+        &left,
+        &result,
+        View {
+            principal: Some(roster[0]),
+            kind: FixturePrincipalOutcomeKind::ReferenceReady,
+            updated: None,
+            selection: FixtureOutcomeKind::WitnessedFixture,
+        },
+    )?;
+    let after = p
+        .get(|| left.source_state(roster[0]))?
+        .ok_or_else(|| io::Error::other("missing advanced source"))?;
+    for source in [after, right_source] {
+        assert_eq!(p.get(|| source.source_id())?, roster[0]);
+        assert_eq!(p.get(|| source.score())?.to_bits(), 1.0_f64.to_bits());
+        assert_eq!(
+            p.get(|| source.latest_observed_at())?,
+            Some(left_built.header.2)
+        );
+        assert_eq!(
+            p.get(|| source.distance_seconds())?.map(f64::to_bits),
+            Some(1.0_f64.to_bits())
+        );
+        assert_eq!(p.get(|| source.stratum())?, Some(1));
+    }
+    assert!(!p.get(|| after.pending())?);
+    assert!(p.get(|| right_source.pending())?);
+    p.different(after, right_source)?;
+    Ok(())
+}
+
+/// A fresh inferior challenger floors its exact one-half score back to one.
+/// # Errors
+/// Preserve genuine producer/receiver rejection and bounded observer failures.
+/// # Panics
+/// Literal event, floor, principal and same-observation preservation must agree.
+#[test]
+fn principal_inferior_update_floors_score_without_reprojection_credit() -> TestResult {
+    let p = Budget::new(
+        "principal_inferior_update_floors_score_without_reprojection_credit",
+        [
+            4, 12, 12, 4, 18, 8, 4, 64, 4, 4, 4, 2, 1, 1, 4, 1, 3, 1, 1, 0,
+        ],
+    );
+    let roster = [tag(101)?, tag(202)?];
+    let mut sources = [
+        src(101, 0, 1.0, 2_000_000_000, 1),
+        src(202, 0, 1.75, 2_000_000_000, 1),
+    ];
+    let (mut state, _initial) = start(
+        &p,
+        &sources,
+        Start {
+            roster: &roster,
+            minimum: 2,
+            parameters: [0.25, 0.0],
+            at: 2_000_000_000,
+            principal: roster[0],
+        },
+    )?;
+    score(&p, &state, roster[1], 1.0)?;
+    pending(&p, &state, roster[1], false)?;
+
+    // A numerator1, B denominator(7/4+1/4)=2: product1*(1/2), floor1.
+    sources[1].latest = 3_000_000_000;
+    let built = build(&p, &sources, 7, 11, 3_000_000_000)?;
+    let batch = built.batch(&p)?;
+    let result = p.call(16, || state.advance(&batch, &built.metadata))??;
+    view(
+        &p,
+        &state,
+        &result,
+        View {
+            principal: Some(roster[0]),
+            kind: FixturePrincipalOutcomeKind::RetainedWithoutNewEstimate,
+            updated: Some(roster[1]),
+            selection: FixtureOutcomeKind::WitnessedFixture,
+        },
+    )?;
+    score(&p, &state, roster[1], 1.0)?;
+    pending(&p, &state, roster[0], false)?;
+    pending(&p, &state, roster[1], true)?;
+    let saved = p.clone_state(&state)?;
+
+    let repeated = p.call(16, || state.advance(&batch, &built.metadata))??;
+    view(
+        &p,
+        &state,
+        &repeated,
+        View {
+            principal: Some(roster[0]),
+            kind: FixturePrincipalOutcomeKind::RetainedWithoutNewEstimate,
+            updated: None,
+            selection: FixtureOutcomeKind::WitnessedFixture,
+        },
+    )?;
+    score(&p, &state, roster[1], 1.0)?;
+    pending(&p, &state, roster[1], true)?;
+    p.same(&state, &saved)?;
+    Ok(())
+}

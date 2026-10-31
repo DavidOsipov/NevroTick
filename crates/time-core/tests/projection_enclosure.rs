@@ -395,11 +395,11 @@ struct ProjectionBits {
     instants: [u64; 4],
     /// Exact anchor and latest-observation ages in nanoseconds.
     ages: [u64; 2],
-    /// Original anchor age, center, half-delay, dispersion, skew, growth, distance.
-    scalars: [u64; 7],
+    /// Original anchor age, center, fitted rate, delay, dispersion, skew, growth, distance.
+    scalars: [u64; 8],
 }
 
-/// Read every original projection getter with 24 actual precharged calls.
+/// Read every original projection getter with 25 actual precharged calls.
 /// # Errors
 /// Propagates exhausted accounting, including each nested getter separately.
 fn projection_bits(
@@ -429,6 +429,9 @@ fn projection_bits(
         scalars: [
             profile.getter(|| value.anchor_elapsed_seconds())?.to_bits(),
             profile.getter(|| value.center_seconds())?.to_bits(),
+            profile
+                .getter(|| value.phase_rate_seconds_per_second())?
+                .to_bits(),
             profile.getter(|| terms.half_delay_seconds())?.to_bits(),
             profile.getter(|| terms.dispersion_seconds())?.to_bits(),
             profile
@@ -455,7 +458,7 @@ struct EnclosureBits {
     projection: ProjectionBits,
 }
 
-/// Observe one entire enclosure view with exactly 32 product getters.
+/// Observe one entire enclosure view with exactly 33 product getters.
 /// # Errors
 /// Propagates exhausted accounting before each immutable public observation.
 fn enclosure_bits(
@@ -485,7 +488,7 @@ fn enclosure_bits(
 /// # Panics
 /// Copy/repeated reads retain every original field; Debug has the fixed redacted form.
 /// # Resources
-/// One enclosure, 88 getters and one bounded Debug format; no refit or mutation.
+/// One enclosure, 91 getters and one bounded Debug format; no refit or mutation.
 fn inspect_enclosure(
     profile: &Profile,
     projection: &FixtureAnchorProjection,
@@ -524,7 +527,7 @@ struct EnclosureFact {
 /// Exact center, radius, endpoint metadata, original identity and history must match.
 /// # Resources
 /// One history, three appends/observations/exchanges, twelve UTC coordinates,
-/// one context, five monotonic values, one term/projection/enclosure, 208 getters.
+/// one context, five monotonic values, one term/projection/enclosure, 211 getters.
 fn check_fixture(
     profile: &Profile,
     context: [u64; 3],
@@ -546,9 +549,9 @@ fn check_fixture(
     assert_eq!(actual.label, raw_context[0], "actual source owns label");
     assert_eq!(actual.projection.context, raw_context);
     assert_eq!(actual.projection.scalars[1], fact.center.to_bits());
-    assert_eq!(actual.projection.scalars[6], fact.distance.to_bits());
+    assert_eq!(actual.projection.scalars[7], fact.distance.to_bits());
     assert_eq!(
-        &actual.projection.scalars[2..5],
+        &actual.projection.scalars[3..6],
         &terms.map(f64::to_bits),
         "supplied terms retain original bits"
     );
@@ -597,7 +600,7 @@ const OUTWARD: [FixtureEndpointRounding; 2] = [FixtureEndpointRounding::OutwardF
 /// Exact endpoints [7*2^27,13*2^27] and original ages must match.
 #[test]
 fn latest_linear_anchor_has_exact_q33_endpoints() -> TestResult {
-    let profile = Profile::new("linear_latest", [1, 3, 3, 1, 5, 12, 3, 208, 1, 1, 1]);
+    let profile = Profile::new("linear_latest", [1, 3, 3, 1, 5, 12, 3, 211, 1, 1, 1]);
     let actual = check_fixture(
         &profile,
         CONTEXT,
@@ -622,7 +625,7 @@ fn latest_linear_anchor_has_exact_q33_endpoints() -> TestResult {
 /// Exact endpoints [6*2^27,14*2^27] retain distinct actual anchor/latest ages.
 #[test]
 fn older_linear_anchor_retains_its_larger_distance_and_original_age() -> TestResult {
-    let profile = Profile::new("linear_older", [1, 3, 3, 1, 5, 12, 3, 208, 1, 1, 1]);
+    let profile = Profile::new("linear_older", [1, 3, 3, 1, 5, 12, 3, 211, 1, 1, 1]);
     let actual = check_fixture(
         &profile,
         CONTEXT,
@@ -647,7 +650,7 @@ fn older_linear_anchor_retains_its_larger_distance_and_original_age() -> TestRes
 /// Ordinary rounded endpoints lose the radius; the exact bridge must retain it.
 #[test]
 fn tiny_radius_is_enclosed_before_binary64_endpoint_rounding_can_erase_it() -> TestResult {
-    let profile = Profile::new("tiny_radius", [1, 3, 3, 1, 5, 12, 3, 208, 1, 1, 1]);
+    let profile = Profile::new("tiny_radius", [1, 3, 3, 1, 5, 12, 3, 211, 1, 1, 1]);
     let tiny = f64::from_bits(943_u64 << 52);
     assert_eq!((1.0_f64 - tiny).to_bits(), 1.0_f64.to_bits());
     assert_eq!((1.0_f64 + tiny).to_bits(), 1.0_f64.to_bits());
@@ -674,7 +677,7 @@ fn tiny_radius_is_enclosed_before_binary64_endpoint_rounding_can_erase_it() -> T
 /// Directed rounding must distinguish positive [0,1] from negative [-1,0].
 #[test]
 fn public_half_tick_centers_round_outward_for_both_signs() -> TestResult {
-    let profile = Profile::new("fractional_signs", [2, 6, 6, 2, 10, 24, 6, 416, 2, 2, 2]);
+    let profile = Profile::new("fractional_signs", [2, 6, 6, 2, 10, 24, 6, 422, 2, 2, 2]);
     for (rows, center, bounds) in [
         (&RISING_TICK, 1.0 / 17_179_869_184.0, [0, 1]),
         (&FALLING_TICK, -1.0 / 17_179_869_184.0, [-1, 0]),
@@ -705,7 +708,7 @@ fn public_half_tick_centers_round_outward_for_both_signs() -> TestResult {
 fn public_fraction_cancellation_has_independent_endpoint_exactness() -> TestResult {
     let profile = Profile::new(
         "asymmetric_endpoints",
-        [2, 6, 6, 2, 10, 24, 6, 416, 2, 2, 2],
+        [2, 6, 6, 2, 10, 24, 6, 422, 2, 2, 2],
     );
     let quarter = 1.0 / 34_359_738_368.0;
     for (rows, center, bounds, rounding) in [
@@ -752,7 +755,7 @@ fn public_fraction_cancellation_has_independent_endpoint_exactness() -> TestResu
 /// Their disjoint [1/8,3/8] and [5/8,7/8] tick inputs both enclose to [0,1].
 #[test]
 fn disjoint_subtick_fixture_operands_can_have_overlapping_integer_enclosures() -> TestResult {
-    let profile = Profile::new("subtick_overlap", [2, 6, 6, 2, 10, 24, 6, 416, 2, 2, 2]);
+    let profile = Profile::new("subtick_overlap", [2, 6, 6, 2, 10, 24, 6, 422, 2, 2, 2]);
     let rising_three = [(0, -6), (1_000_000_000, -3), (2_000_000_000, 0)];
     let first = check_fixture(
         &profile,
@@ -795,7 +798,7 @@ fn disjoint_subtick_fixture_operands_can_have_overlapping_integer_enclosures() -
 /// Original term/radius signs survive while both enclosures remain exact singletons.
 #[test]
 fn signed_zero_terms_and_computed_radius_survive_original_projection_retention() -> TestResult {
-    let profile = Profile::new("signed_zero", [2, 6, 6, 2, 10, 24, 6, 416, 2, 2, 2]);
+    let profile = Profile::new("signed_zero", [2, 6, 6, 2, 10, 24, 6, 422, 2, 2, 2]);
     for zero in [0.0_f64, -0.0] {
         check_fixture(
             &profile,
@@ -821,7 +824,7 @@ fn signed_zero_terms_and_computed_radius_survive_original_projection_retention()
 /// A valid projection is rejected as Unrepresentable, unchanged; its neighbor succeeds.
 #[test]
 fn valid_large_radius_projection_is_rejected_without_changing_history_or_input() -> TestResult {
-    let profile = Profile::new("large_radius", [1, 3, 3, 1, 7, 12, 3, 256, 2, 2, 2]);
+    let profile = Profile::new("large_radius", [1, 3, 3, 1, 7, 12, 3, 261, 2, 2, 2]);
     let context = profile.context(CONTEXT)?;
     let history = make_history(&profile, context, &CONSTANT_EIGHTH)?;
     let before = history_bits(&profile, &history)?;
@@ -831,7 +834,7 @@ fn valid_large_radius_projection_is_rejected_without_changing_history_or_input()
     let projection = profile.project(&history, context, 2, anchor, at, terms)??;
     let original = projection_bits(&profile, &projection)?;
     assert_eq!(original.scalars[1], (1.0_f64 / 8.0).to_bits());
-    assert_eq!(original.scalars[6], 1_073_741_824.0_f64.to_bits());
+    assert_eq!(original.scalars[7], 1_073_741_824.0_f64.to_bits());
     let error = profile
         .enclose(&projection)?
         .err()
@@ -856,7 +859,7 @@ fn valid_large_radius_projection_is_rejected_without_changing_history_or_input()
 /// Each label comes from its source, including `u64::MAX`; reads create no observation.
 #[test]
 fn actual_source_labels_and_complete_context_survive_repeated_reads_and_copy() -> TestResult {
-    let profile = Profile::new("identity_labels", [3, 9, 9, 3, 15, 36, 9, 624, 3, 3, 3]);
+    let profile = Profile::new("identity_labels", [3, 9, 9, 3, 15, 36, 9, 633, 3, 3, 3]);
     for context in [CONTEXT, [53, 59, 61], [u64::MAX, 67, 71]] {
         let actual = check_fixture(
             &profile,

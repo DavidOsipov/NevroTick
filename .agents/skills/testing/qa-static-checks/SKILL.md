@@ -13,6 +13,12 @@ Use [configured tool execution](../references/configured-tooling.md) to choose t
 
 Development-policy changes: distinguish the adopted configuration and observed controls in [TOOLING.md](../../../../TOOLING.md) from proposed/application qualification in the [development-hardening guide](../../../../docs/windows-time-development-hardening.md). Run affected strict-policy fixtures/admission tests; configuration alone proves no executed gate. Reading installs no tools, mandates no every-analyzer-per-change campaign.
 
+For pure-library effect boundaries, use
+[role-specific API restrictions](../references/role-api-restrictions.md).
+Verify effective configuration and lint levels, intended rejection diagnostics
+and legal adapter use through the admitted gate; selected bans prove no complete
+absence of effects.
+
 Challenge changed enforcement: isolated known violation/valid companion through actual command; check nonzero propagation. Type/visibility/trait contracts need intended compile diagnostic; unresolved import insufficient. Preserve narrow reviewed exceptions/stale-expectation detection on selected compiler.
 
 For garde-backed types, verify omitted-rule rejection on the admitted derive

@@ -381,8 +381,8 @@ struct ProjectionBits {
     instants: [u64; 4],
     /// Exact anchor/latest ages, never refreshed by the batch.
     ages: [u64; 2],
-    /// Age seconds, center, half-delay, dispersion, skew, growth and distance bits.
-    scalars: [u64; 7],
+    /// Age seconds, center, fitted rate, delay, dispersion, skew, growth, distance.
+    scalars: [u64; 8],
 }
 
 /// Complete wrapper data, never recomputed by the new consumer.
@@ -411,7 +411,7 @@ fn context_bits(profile: &Profile, value: FixtureContext) -> TestResult<[u64; 3]
     ])
 }
 
-/// Read every original projection field with exactly 24 public getters.
+/// Read every original projection field with exactly 25 public getters.
 /// # Errors
 /// Propagates accounting before each immutable observation.
 fn projection_bits(
@@ -441,6 +441,9 @@ fn projection_bits(
         scalars: [
             profile.getter(|| value.anchor_elapsed_seconds())?.to_bits(),
             profile.getter(|| value.center_seconds())?.to_bits(),
+            profile
+                .getter(|| value.phase_rate_seconds_per_second())?
+                .to_bits(),
             profile.getter(|| terms.half_delay_seconds())?.to_bits(),
             profile.getter(|| terms.dispersion_seconds())?.to_bits(),
             profile
@@ -452,7 +455,7 @@ fn projection_bits(
     })
 }
 
-/// Read the complete wrapper with exactly 32 public getters.
+/// Read the complete wrapper with exactly 33 public getters.
 /// # Errors
 /// Propagates accounting before every immutable observation.
 fn enclosure_bits(
@@ -614,7 +617,7 @@ fn unwitnessed(
 /// # Panics
 /// Any header, prefix, order, storage-copy or original-bit change fails.
 /// # Resources
-/// Seven getters plus 32 per entry; one fixed redacted Debug observation.
+/// Seven getters plus 33 per entry; one fixed redacted Debug observation.
 fn assert_batch_view(
     profile: &Profile,
     batch: &FixtureProjectedBatch<'_>,
@@ -747,7 +750,7 @@ fn linear_values(profile: &Profile) -> TestResult<[FixtureProjectedInterval; 3]>
 fn linear_sources_preserve_original_ages_and_configured_minimum() -> TestResult {
     let profile = Profile::new(
         "linear_selection",
-        [3, 9, 9, 3, 16, 36, 9, 514, 3, 3, 3, 2, 2, 3],
+        [3, 9, 9, 3, 16, 36, 9, 525, 3, 3, 3, 2, 2, 3],
     );
     let values = linear_values(&profile)?;
     let before = all_bits(&profile, &values)?;
@@ -828,7 +831,7 @@ fn admitted_capacity_neighbors(
 fn capacity_neighbors_keep_every_entry_and_the_original_minimum() -> TestResult {
     let profile = Profile::new(
         "capacity_neighbors",
-        [17, 51, 51, 17, 86, 204, 51, 2171, 17, 17, 17, 5, 1, 3],
+        [17, 51, 51, 17, 86, 204, 51, 2234, 17, 17, 17, 5, 1, 3],
     );
     let mut values = Vec::with_capacity(16);
     for source in 1..=16 {
@@ -980,13 +983,13 @@ fn high_origin_time_neighbor(profile: &Profile) -> TestResult {
 fn equal_numeric_intervals_still_require_exact_ordered_context_admission() -> TestResult {
     let profile = Profile::new(
         "context_admission",
-        [8, 24, 24, 8, 42, 96, 24, 662, 8, 8, 8, 12, 1, 1],
+        [8, 24, 24, 8, 42, 96, 24, 680, 8, 8, 8, 12, 1, 1],
     );
     let values = context_values(&profile)?;
     let before = all_bits(&profile, &values)?;
     assert!(before.iter().all(|value| value.bounds == CONSTANT_BOUNDS
         && value.projection.scalars[1] == (1.0_f64 / 8.0).to_bits()
-        && value.projection.scalars[6] == (1.0_f64 / 64.0).to_bits()));
+        && value.projection.scalars[7] == (1.0_f64 / 64.0).to_bits()));
     let header = expected(&profile, [43, 47, 3_000_000_000])?;
     let good = profile.batch(header, &values[..1])??;
     assert_batch_view(&profile, &good, &values[..1], &before[..1], header)?;
@@ -1010,7 +1013,7 @@ fn equal_numeric_intervals_still_require_exact_ordered_context_admission() -> Te
 fn context_failure_precedes_duplicates_and_real_duplicate_cause_is_preserved() -> TestResult {
     let profile = Profile::new(
         "duplicate_precedence",
-        [3, 9, 9, 3, 16, 36, 9, 297, 3, 3, 3, 3, 1, 1],
+        [3, 9, 9, 3, 16, 36, 9, 305, 3, 3, 3, 3, 1, 1],
     );
     let values = [
         constant(&profile, [41, 43, 47], 3_000_000_000)?,
@@ -1095,7 +1098,7 @@ fn retention_values(profile: &Profile) -> TestResult<[FixtureProjectedInterval; 
 fn permutations_and_repeated_selection_retain_the_original_complete_borrow() -> TestResult {
     let profile = Profile::new(
         "permutation_retention",
-        [3, 9, 9, 3, 16, 36, 9, 603, 3, 3, 3, 3, 1, 6],
+        [3, 9, 9, 3, 16, 36, 9, 618, 3, 3, 3, 3, 1, 6],
     );
     let values = retention_values(&profile)?;
     let before = all_bits(&profile, &values)?;
@@ -1104,8 +1107,8 @@ fn permutations_and_repeated_selection_retain_the_original_complete_borrow() -> 
         [before[0].projection.ages[0], before[1].projection.ages[0]],
         [2_000_000_000, 4_000_000_000]
     );
-    assert_eq!(before[1].projection.scalars[3], (-0.0_f64).to_bits());
-    assert_eq!(before[2].projection.scalars[4], (-0.0_f64).to_bits());
+    assert_eq!(before[1].projection.scalars[4], (-0.0_f64).to_bits());
+    assert_eq!(before[2].projection.scalars[5], (-0.0_f64).to_bits());
     let header = expected(&profile, [43, 47, 102_000_000_000])?;
     let minimum = profile.minimum(3)?;
     for order in [[0, 1, 2], [2, 1, 0], [1, 2, 0]] {
@@ -1134,7 +1137,7 @@ fn permutations_and_repeated_selection_retain_the_original_complete_borrow() -> 
 fn disjoint_subtick_inputs_keep_rounding_overlap_without_physical_claims() -> TestResult {
     let profile = Profile::new(
         "subtick_overlap",
-        [2, 6, 6, 2, 11, 24, 6, 225, 2, 2, 2, 1, 1, 1],
+        [2, 6, 6, 2, 11, 24, 6, 231, 2, 2, 2, 1, 1, 1],
     );
     let rows_a = [(0, -2), (1_000_000_000, -1), (2_000_000_000, 0)];
     let rows_b = [(0, -6), (1_000_000_000, -3), (2_000_000_000, 0)];
@@ -1169,7 +1172,7 @@ fn disjoint_subtick_inputs_keep_rounding_overlap_without_physical_claims() -> Te
     );
     assert!(before.iter().all(|value| value.bounds == [0, 1]
         && value.rounding == [FixtureEndpointRounding::OutwardFraction; 2]
-        && value.projection.scalars[6] == radius.to_bits()));
+        && value.projection.scalars[7] == radius.to_bits()));
     let header = expected(&profile, [43, 47, 2_250_000_000])?;
     let batch = profile.batch(header, &values)??;
     assert_batch_view(&profile, &batch, &values, &before, header)?;

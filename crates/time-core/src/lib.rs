@@ -44,6 +44,16 @@ mod projected_batch;
 /// Fixed-roster fixture principal contracts and checked parameter/stratum admission.
 mod principal;
 
+/// Checked common-instant uncertainty admission and inert supporter-combination kernel.
+mod combination;
+
+pub use combination::{
+    FixtureCombinationContextField, FixtureCombinationDenominatorField, FixtureCombinationError,
+    FixtureCombinationKernelKind, FixtureCombinationKernelOutcome, FixtureCombinationScalarField,
+    FixtureCombinationScalarIssue, FixtureCombinationStep, FixtureCombinedEstimate,
+    FixtureSupporterUncertainty, combine_fixture_supporters,
+};
+
 pub use principal::{
     FixturePrincipalContextField, FixturePrincipalDecision, FixturePrincipalError,
     FixturePrincipalOutcomeKind, FixturePrincipalParameterField, FixturePrincipalParameters,

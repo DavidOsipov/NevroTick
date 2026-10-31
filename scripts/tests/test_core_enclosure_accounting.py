@@ -13,7 +13,7 @@ class EnclosureAccountingTests(unittest.TestCase):
     """Test receiving parsers with literal source recipes and hostile neighbors."""
 
     @staticmethod
-    def row(case="linear_latest", values=(1, 3, 3, 1, 5, 12, 3, 208, 1, 1, 1)):
+    def row(case="linear_latest", values=(1, 3, 3, 1, 5, 12, 3, 211, 1, 1, 1)):
         fields = ("histories", "appends", "observations", "contexts", "monotonic",
                   "coordinates", "exchanges", "getters", "terms", "projections", "enclosures")
         return "CORE_ENCLOSURE_PROFILE case=" + case + "".join(
@@ -22,15 +22,15 @@ class EnclosureAccountingTests(unittest.TestCase):
     @classmethod
     def rows(cls):
         cases = (
-            ("linear_latest", (1,3,3,1,5,12,3,208,1,1,1)),
-            ("linear_older", (1,3,3,1,5,12,3,208,1,1,1)),
-            ("tiny_radius", (1,3,3,1,5,12,3,208,1,1,1)),
-            ("fractional_signs", (2,6,6,2,10,24,6,416,2,2,2)),
-            ("asymmetric_endpoints", (2,6,6,2,10,24,6,416,2,2,2)),
-            ("subtick_overlap", (2,6,6,2,10,24,6,416,2,2,2)),
-            ("signed_zero", (2,6,6,2,10,24,6,416,2,2,2)),
-            ("large_radius", (1,3,3,1,7,12,3,256,2,2,2)),
-            ("identity_labels", (3,9,9,3,15,36,9,624,3,3,3)),
+            ("linear_latest", (1,3,3,1,5,12,3,211,1,1,1)),
+            ("linear_older", (1,3,3,1,5,12,3,211,1,1,1)),
+            ("tiny_radius", (1,3,3,1,5,12,3,211,1,1,1)),
+            ("fractional_signs", (2,6,6,2,10,24,6,422,2,2,2)),
+            ("asymmetric_endpoints", (2,6,6,2,10,24,6,422,2,2,2)),
+            ("subtick_overlap", (2,6,6,2,10,24,6,422,2,2,2)),
+            ("signed_zero", (2,6,6,2,10,24,6,422,2,2,2)),
+            ("large_radius", (1,3,3,1,7,12,3,261,2,2,2)),
+            ("identity_labels", (3,9,9,3,15,36,9,633,3,3,3)),
         )
         return "".join(cls.row(case, counts) for case, counts in cases) + "".join(
             cls.row("enclosure_private_" + case, (0,)*11)
@@ -41,7 +41,7 @@ class EnclosureAccountingTests(unittest.TestCase):
         self.assertEqual(observed["enclosure_counter_records"], 15)
         self.assertEqual(observed["enclosure_observed_calls"], {
             "histories":15, "appends":45, "observations":45, "contexts":15,
-            "monotonic":77, "coordinates":180, "exchanges":45, "getters":3168,
+            "monotonic":77, "coordinates":180, "exchanges":45, "getters":3215,
             "terms":16, "projections":16, "enclosures":16})
         self.assertFalse(observed["enclosure_observation_pending"])
         self.assertNotIn("native_outcome", observed)

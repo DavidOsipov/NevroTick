@@ -442,6 +442,8 @@ struct ProjectionBits {
     elapsed_seconds: u64,
     /// Projected anchor-phase center in seconds, as raw binary64 bits.
     center: u64,
+    /// Same-history fitted phase derivative in seconds per second, as raw bits.
+    rate: u64,
     /// Supplied half-delay, dispersion and skew bits, kept separate from growth.
     terms: [u64; 3],
     /// Computed skew growth seconds, as raw binary64 bits.
@@ -450,7 +452,7 @@ struct ProjectionBits {
     distance: u64,
 }
 
-/// Read every immutable output field once with exactly 24 actual product getters.
+/// Read every immutable output field once with exactly 25 actual product getters.
 ///
 /// # Errors
 /// Propagates only accounting failure; all nested getters are separately precharged.
@@ -476,6 +478,9 @@ fn projection_bits(
         latest_ns: profile.getter(|| latest_elapsed.nanoseconds())?,
         elapsed_seconds: profile.getter(|| value.anchor_elapsed_seconds())?.to_bits(),
         center: profile.getter(|| value.center_seconds())?.to_bits(),
+        rate: profile
+            .getter(|| value.phase_rate_seconds_per_second())?
+            .to_bits(),
         terms: term_bits(profile, terms)?,
         growth: profile.getter(|| value.growth_seconds())?.to_bits(),
         distance: profile.getter(|| value.distance_seconds())?.to_bits(),
@@ -639,7 +644,7 @@ fn terms_admit_signed_zeros_and_reject_each_raw_invalid_field_in_order() -> Test
 fn signed_zero_terms_reach_projection_without_clamping_or_losing_supplied_bits() -> TestResult {
     let profile = Profile::new(
         "signed_zero_consumption",
-        [1, 3, 3, 1, 5, 12, 3, 504, 8, 16],
+        [1, 3, 3, 1, 5, 12, 3, 520, 8, 16],
     );
     let context = profile.context(CONTEXT)?;
     let history = make_history(
@@ -707,7 +712,7 @@ type LinearFact = (u64, u64, u64, u64, f64, f64, f64);
 /// All immutable fields and bounded redacted diagnostics must match the literal fact.
 ///
 /// # Resources
-/// Exactly 24 actual product getters, unchanged from the test's inline inspection.
+/// Exactly 25 actual product getters, including the retained same-fit rate.
 fn inspect_linear_projection(
     profile: &Profile,
     output: &FixtureAnchorProjection,
@@ -737,12 +742,86 @@ fn inspect_linear_projection(
             _ => 4.0_f64.to_bits(),
         },
         center: center.to_bits(),
+        rate: (1.0_f64 / 64.0).to_bits(),
         terms: TERMS.map(f64::to_bits),
         growth: growth.to_bits(),
         distance: distance.to_bits(),
     };
     assert_eq!(actual, expected, "independent exact linear projection");
     Ok(actual)
+}
+
+/// Append a genuine changed fit while an earlier owned projection stays intact.
+///
+/// # Errors
+/// Preserve setup, append, projection and observation accounting failures.
+///
+/// # Panics
+/// The new independent rate/anchor facts and the complete old snapshot must hold.
+///
+/// # Resources
+/// One append at occupied length4, one projection and35 public getters.
+fn retained_rate_after_append(
+    profile: &Profile,
+    history: &mut FixtureHistory,
+    context: FixtureContext,
+    terms: FixtureProjectionTerms,
+    snapshot: (FixtureAnchorProjection, ProjectionBits),
+) -> TestResult {
+    let (previous, previous_bits) = snapshot;
+    let at = profile.monotonic(102_000_000_000)?;
+    let phase = phase(profile, 6_039_797_760)?;
+    let row = profile.observation(context, at, phase)?;
+    profile.append(history, row)??;
+    // Times0,1,2,4 and phases(6,7,8,45)/64 have Sxx35/4 and
+    // covariance175/128: rate5/32. H4 normalization stays exactly dyadic.
+    let report = profile
+        .getter(|| history.report())?
+        .ok_or_else(|| io::Error::other("missing changed-fit report"))?;
+    let statistics = profile.getter(|| report.statistics())?;
+    let line = profile.getter(|| statistics.line())?;
+    let actual_rate = profile.getter(|| line.phase_rate_seconds_per_second())?;
+    assert_eq!(actual_rate.to_bits(), (5.0_f64 / 32.0).to_bits());
+    assert_eq!(
+        projection_bits(profile, &previous)?,
+        previous_bits,
+        "an owned projection keeps its original committed rate and metadata"
+    );
+    let current = profile.project(history, context, 3, at, at, terms)??;
+    assert_eq!(
+        profile
+            .getter(|| current.phase_rate_seconds_per_second())?
+            .to_bits(),
+        actual_rate.to_bits(),
+        "projection retains exactly the rate used by its same-history fit"
+    );
+    // Latest anchor phase45/64 differs from the new fitted intercept39/64.
+    assert_eq!(
+        profile.getter(|| current.center_seconds())?.to_bits(),
+        (45.0_f64 / 64.0).to_bits()
+    );
+    assert_eq!(profile.getter(|| current.fit_reference())?, at);
+    assert_eq!(profile.getter(|| current.latest_observed_at())?, at);
+    Ok(())
+}
+
+/// Snapshot the original literal linear history and verify its independent rate.
+///
+/// # Errors
+/// Preserve complete-history getter and accounting failures.
+///
+/// # Panics
+/// The original three-row linear fixture must retain rate `1/64`.
+fn original_linear_history_bits(
+    profile: &Profile,
+    history: &FixtureHistory,
+) -> TestResult<HistoryBits> {
+    let before = history_bits(profile, history)?;
+    assert_eq!(
+        before.report.as_ref().map(|r| r.scalars[1]),
+        Some((1.0_f64 / 64.0).to_bits())
+    );
+    Ok(before)
 }
 
 /// Independent exact line facts challenge both anchor identity and repeated read behavior.
@@ -755,20 +834,17 @@ fn inspect_linear_projection(
 #[test]
 fn linear_anchors_agree_and_repeated_projection_preserves_original_identity_and_age() -> TestResult
 {
-    let profile = Profile::new("linear_identity", [1, 3, 3, 1, 7, 12, 3, 240, 1, 5]);
+    let profile = Profile::new("linear_identity", [1, 4, 4, 1, 8, 16, 4, 280, 1, 6]);
     let context = profile.context(CONTEXT)?;
-    let history = make_history(&profile, context, &LINEAR)?;
-    let before = history_bits(&profile, &history)?;
-    assert_eq!(
-        before.report.as_ref().map(|r| r.scalars[1]),
-        Some((1.0_f64 / 64.0).to_bits())
-    );
+    let mut history = make_history(&profile, context, &LINEAR)?;
+    let before = original_linear_history_bits(&profile, &history)?;
     let terms = profile.terms(TERMS)??;
     let oldest = profile.monotonic(98_000_000_000)?;
     let newest = profile.monotonic(100_000_000_000)?;
     let now = profile.monotonic(102_000_000_000)?;
     let later = profile.monotonic(104_000_000_000)?;
     let mut repeated = None;
+    let mut retained_snapshot = None;
     for (index, anchor, at, anchor_raw, at_raw, anchor_age, latest_age, center, growth, distance) in [
         (
             2,
@@ -844,6 +920,8 @@ fn linear_anchors_agree_and_repeated_projection_preserves_original_identity_and_
                 assert_eq!(&actual, first);
             }
             repeated = Some(actual);
+        } else if at_raw == 104_000_000_000 {
+            retained_snapshot = Some((output, actual));
         }
     }
     assert_eq!(
@@ -851,6 +929,8 @@ fn linear_anchors_agree_and_repeated_projection_preserves_original_identity_and_
         before,
         "projection cannot refresh history"
     );
+    let snapshot = retained_snapshot.ok_or_else(|| io::Error::other("missing owned projection"))?;
+    retained_rate_after_append(&profile, &mut history, context, terms, snapshot)?;
     Ok(())
 }
 
@@ -863,7 +943,7 @@ fn linear_anchors_agree_and_repeated_projection_preserves_original_identity_and_
 /// The independent zero/negative rates, anchor centers, ages and unchanged history must match.
 #[test]
 fn nonlinear_anchor_is_not_fitted_intercept_and_negative_rate_keeps_its_sign() -> TestResult {
-    let profile = Profile::new("shape_controls", [2, 6, 6, 1, 8, 24, 6, 288, 1, 2]);
+    let profile = Profile::new("shape_controls", [2, 6, 6, 1, 8, 24, 6, 290, 1, 2]);
     let context = profile.context(CONTEXT)?;
     let terms = profile.terms(TERMS)??;
     let anchor = profile.monotonic(100_000_000_000)?;
@@ -890,6 +970,11 @@ fn nonlinear_anchor_is_not_fitted_intercept_and_negative_rate_keeps_its_sign() -
         );
         let output = profile.project(&history, context, 2, anchor, at, terms)??;
         let actual = projection_bits(&profile, &output)?;
+        assert_eq!(
+            actual.rate,
+            expected_rate.to_bits(),
+            "retained positive-behind phase derivative, in seconds per second"
+        );
         // [1,0,1] at [-2,-1,0] has mathematical intercept 2/3 and rate 0.
         // The independent expected anchor center is 1; no returned intercept is an oracle.
         assert_eq!(
@@ -915,7 +1000,7 @@ fn nonlinear_anchor_is_not_fitted_intercept_and_negative_rate_keeps_its_sign() -
 /// Original times, one-nanosecond ages, converted bits and unchanged history must match.
 #[test]
 fn large_monotonic_origins_retain_one_nanosecond_without_absolute_float_conversion() -> TestResult {
-    let profile = Profile::new("origin_durations", [2, 6, 6, 1, 10, 24, 6, 288, 1, 2]);
+    let profile = Profile::new("origin_durations", [2, 6, 6, 1, 10, 24, 6, 290, 1, 2]);
     let context = profile.context(CONTEXT)?;
     let terms = profile.terms([1.0 / 64.0, 1.0 / 64.0, 0.0])??;
     for latest in [9_223_372_036_854_775_808_u64, 18_446_744_073_709_551_614] {
@@ -953,7 +1038,7 @@ fn large_monotonic_origins_retain_one_nanosecond_without_absolute_float_conversi
 /// Exact duration neighbors, independent converted bits, rejection stage and history must match.
 #[test]
 fn duration_conversion_accepts_two_to_53_and_rejects_only_its_next_integer() -> TestResult {
-    let profile = Profile::new("integer_envelope", [1, 3, 3, 1, 7, 12, 3, 168, 1, 3]);
+    let profile = Profile::new("integer_envelope", [1, 3, 3, 1, 7, 12, 3, 170, 1, 3]);
     let context = profile.context(CONTEXT)?;
     let history = make_history(
         &profile,
@@ -1008,7 +1093,7 @@ fn duration_conversion_accepts_two_to_53_and_rejects_only_its_next_integer() -> 
 /// Ordered typed errors, bounded diagnostics, the healthy center and all history views must match.
 #[test]
 fn relationship_errors_precede_numeric_work_and_preserve_every_history_view() -> TestResult {
-    let profile = Profile::new("error_precedence", [3, 4, 4, 4, 9, 16, 4, 204, 2, 12]);
+    let profile = Profile::new("error_precedence", [3, 4, 4, 4, 9, 16, 4, 205, 2, 12]);
     let context = profile.context(CONTEXT)?;
     let wrong = [
         profile.context([42, 43, 47])?,
@@ -1085,7 +1170,7 @@ fn relationship_errors_precede_numeric_work_and_preserve_every_history_view() ->
 /// Eviction facts, rejection identity, projected fields and unchanged history must match.
 #[test]
 fn eviction_cannot_retarget_a_stale_index_to_a_different_observation() -> TestResult {
-    let profile = Profile::new("evicted_anchor", [1, 65, 65, 1, 68, 260, 65, 1488, 1, 2]);
+    let profile = Profile::new("evicted_anchor", [1, 65, 65, 1, 68, 260, 65, 1489, 1, 2]);
     let context = profile.context(CONTEXT)?;
     let rows: Vec<Row> = (1_u64..=65)
         .map(|second| (second * 1_000_000_000, 1_073_741_824))
@@ -1127,7 +1212,7 @@ fn eviction_cannot_retarget_a_stale_index_to_a_different_observation() -> TestRe
 /// Exact arithmetic errors, healthy neighboring outputs and complete preserved history must match.
 #[test]
 fn separately_checked_growth_and_sums_reject_hidden_subnormal_and_overflow() -> TestResult {
-    let profile = Profile::new("numeric_failures", [1, 3, 3, 1, 7, 12, 3, 168, 5, 6]);
+    let profile = Profile::new("numeric_failures", [1, 3, 3, 1, 7, 12, 3, 170, 5, 6]);
     let context = profile.context(CONTEXT)?;
     let history = make_history(
         &profile,

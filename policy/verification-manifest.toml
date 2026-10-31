@@ -1,4 +1,4 @@
-# UI-M0, pure wire, checked time-domain, fixture exchange and nine pure core owners.
+# UI-M0, pure wire, checked time-domain, fixture exchange and eleven pure core owners.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
 status = "five-member-scope-recorded-qualification-candidate-specific"
@@ -25,6 +25,7 @@ security_modules = [
     { name = "fixture-projection-q33-enclosure", package = "time-core", files = ["crates/time-core/src/projection_enclosure.rs"], scope = "exact outward Q33 enclosure of the computed binary64 projection operands with immutable original projection and source-derived label; source inventory/cohort binding and execution pending; no physical confidence, source eligibility, common-frame batch admission or clock authority" },
     { name = "fixture-projected-batch-context-admission", package = "time-core", files = ["crates/time-core/src/projected_batch.rs"], scope = "borrowed immutable projected entries with declared common frame, mapping generation and exact evaluation instant; ordered mandatory contextual validation and actual checked-batch/selector delegation; source, inventory, budgets and execution pending; no genuine mapping, physical confidence, production source eligibility or clock authority" },
     { name = "fixture-principal-state-and-hysteresis", package = "time-core", files = ["crates/time-core/src/principal.rs"], scope = "mandatory fixed-roster/context/event admission, atomic same-batch source scoring and bounded observation credit; initial focused RED/GREEN only, expanded contracts and per-file analysis pending; no production eligibility, freshness, reference update or clock authority" },
+    { name = "fixture-supporter-combination-kernel", package = "time-core", files = ["crates/time-core/src/combination.rs"], scope = "mandatory same-instant uncertainty construction, actual witnessed-supporter association, exact singleton and checked ordered phase/rate/uncertainty reduction; per-file analysis pending; no compatibility penalties, calibrated confidence, production eligibility, reference credit or clock authority" },
 ]
 critical_files = [
     "crates/nevrotick-ui/src/model.rs",
@@ -50,6 +51,7 @@ critical_files = [
     "crates/time-core/src/projection_enclosure.rs",
     "crates/time-core/src/projected_batch.rs",
     "crates/time-core/src/principal.rs",
+    "crates/time-core/src/combination.rs",
 ]
 feature_matrix = [
     { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
@@ -61,5 +63,5 @@ feature_matrix = [
     { package = "ntp-exchange", target = "x86_64-unknown-linux-gnu", scope = "pure fixture association and test-only time-core composition; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "ntp-exchange", target = "x86_64-pc-windows-msvc", scope = "pure association library and test-only time-core consumer compilation; no native transport or clock qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-core", target = "x86_64-unknown-linux-gnu", scope = "checked fixture history/normalization, coefficient, residual-statistics, runs and closed-real interval-majority owners; ordinary and optimized tests plus independently audited doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "nine pure fixture core owners and external test-consumer compilation; projected-batch source admission/execution pending; no native clock, physical confidence, production source eligibility or statistical qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "eleven pure fixture core owners and external test-consumer compilation; current combination cross-target qualification pending; no native clock, physical confidence, production source eligibility or statistical qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
 ]

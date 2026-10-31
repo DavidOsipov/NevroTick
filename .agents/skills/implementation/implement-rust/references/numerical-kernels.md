@@ -126,6 +126,44 @@ arithmetic. Do not impose exact-constant results on unrelated algorithms.
   and tool admission. Reuse [numerical QA](../../../testing/references/numerical-protocol.md)
   and the existing test/analysis lanes rather than creating a parallel framework.
 
+## Optional whole-domain rounding proof
+
+Consider Gappa only for a named consumer-relevant rounding-error bound over a
+declared nonempty domain that existing fixtures or bounded Kani checks do not
+adequately establish. Begin with one small kernel and compare the maintenance
+cost with the current verification route. No arithmetic-only change requires
+this tool, a new proof stack or an installation.
+
+Map the model to current Rust conversions, exact constant values, units, operation
+order, separate/fused operations and intermediate admission guards. A formula
+simplified over the reals can erase rounding and observable rejection behavior.
+Distinguish error relative to admitted binary inputs from conversion error
+relative to exact source integers/rationals, upstream estimator error and physical
+clock uncertainty. An enclosure of already computed floating values establishes
+no bound on omitted earlier arithmetic or physical error.
+
+Use the appropriate format and minimum exponent when modeling subnormals;
+unbounded-exponent precision alone does not model gradual underflow. Separately
+discharge finite exponent overflow, NaN/infinity and any signed-zero bit contract:
+Gappa's real-valued model does not by itself establish these Rust behaviors.
+Preserve actual nonzero-to-zero/subnormal rejection rules. Check domain
+satisfiability, denominators, assumptions and manually supplied rewrite equalities;
+contradictory assumptions or unproved hints establish no useful source guarantee.
+Treat `-Munconstrained` as exploration with outstanding hypotheses.
+
+Keep model/source hashes, tool/options, domain, theorem, assumptions and results
+in the existing task evidence. Distinguish successful Gappa analysis from an
+independently checked certificate: its default `-Bnull` emits no proof script;
+`-Bcoq` generates one that still needs the compatible checker and libraries.
+Admit any selected tool/checker chain before execution. Retain discriminating
+Rust fixtures and healthy neighbors. Failure to prove a bound is inconclusive,
+not a Rust counterexample; proof of the model alone does not qualify source
+correspondence, native arithmetic or clock accuracy.
+
+Primary semantics: [Gappa arithmetic](https://gappa.gitlabpages.inria.fr/gappa/arithmetic.html),
+[formalization and hints](https://gappa.gitlabpages.inria.fr/gappa/formalizing.html),
+[invocation and proof backends](https://gappa.gitlabpages.inria.fr/gappa/invoking.html).
+
 Report the supported envelope, comparison semantics, reached consumer and
 unresolved range/conditioning/target gaps. A finite fixture family supplies
 evidence for that family; it is no whole-domain error bound or physical accuracy

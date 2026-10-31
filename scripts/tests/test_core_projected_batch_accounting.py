@@ -171,7 +171,7 @@ class ProjectedBatchAccountingTests(unittest.TestCase):
 class NativeProjectedBatchRecipeTests(unittest.TestCase):
     """Captured native attempt facts; this receiver test executes no Rust."""
 
-    def test_captured_native_linear_row_is_exact_beside_healthy_single_case(self):
+    def test_historical_native_linear_row_stays_partial_beside_unchanged_single_case(self):
         # Frozen focused-v2 receipt 2f5eff3c...f05c93, exit0 public lane.
         # Literal rows are independent of the exact-recipe table under test.
         output = (
@@ -186,15 +186,26 @@ class NativeProjectedBatchRecipeTests(unittest.TestCase):
         observed = MODULE.projected_batch_counts(output)
         self.assertEqual(observed['projected_batch_profiles']['single_compatible']['getters'], 24)
         self.assertEqual(observed['projected_batch_profiles']['linear_selection']['getters'], 414)
-        self.assertEqual(observed['projected_batch_partial_cases'], [])
+        self.assertEqual(observed['projected_batch_partial_cases'], ['linear_selection'])
         self.assertEqual(observed['projected_batch_recorded_call_subtotals']['getters'], 438)
         # The two exact rows cannot synthesize the other nine native scopes.
         self.assertEqual(len(observed['projected_batch_missing_cases']), 9)
         self.assertTrue(observed['projected_batch_observation_pending'])
         self.assertIsNone(observed['projected_batch_observed_calls'])
         reservation = MODULE.full_package_reservation()
-        self.assertEqual(reservation['projected_batch_reserved_calls']['getters'], 4434)
-        self.assertEqual(reservation['projected_batch_reserved_module_work_uppers']['wrapper_debug_format_calls_upper'], 4434)
+        self.assertEqual(reservation['projected_batch_reserved_calls']['getters'], 4655)
+        self.assertEqual(reservation['projected_batch_reserved_module_work_uppers']['wrapper_debug_format_calls_upper'], 4655)
+
+    def test_current_retained_rate_linear_recipe_has_its_full_getter_count(self):
+        # Authored current source recipe; this test makes no native-result claim.
+        row = ('CORE_PROJECTED_BATCH_PROFILE case=linear_selection histories=3 appends=9 '
+               'observations=9 contexts=3 monotonic=16 coordinates=36 exchanges=9 getters=525 '
+               'terms=3 projections=3 enclosures=3 batches=2 minima=2 selections=3\n')
+        parsed = MODULE.projected_batch_counts(row)
+        self.assertEqual(parsed['projected_batch_partial_cases'], [])
+        self.assertEqual(parsed['projected_batch_profiles']['linear_selection']['getters'], 525)
+        self.assertIsNone(parsed['projected_batch_observed_calls'])
+        self.assertEqual(len(parsed['projected_batch_missing_cases']), 10)
 
 
 if __name__ == "__main__":

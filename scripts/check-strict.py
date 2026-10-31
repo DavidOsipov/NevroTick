@@ -27,10 +27,106 @@ SPEC = importlib.util.spec_from_file_location(
 ENV = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ENV)
 ROOT = Path(__file__).resolve().parents[1]
+PURE_CLIPPY_FILES = (
+    "crates/time-domain/clippy.toml",
+    "crates/ntp-exchange/clippy.toml",
+    "crates/time-core/clippy.toml",
+)
+
+COMMON_CLIPPY = {
+    "check-private-items": True, "allow-unwrap-in-tests": False,
+    "allow-expect-in-tests": False, "allow-panic-in-tests": False,
+    "allow-dbg-in-tests": False,
+}
+PURE_API_REASON = "Pure libraries receive explicit inputs; delegate ambient state and effects to the owning adapter."
+PURE_METHOD_PATHS = (
+    "std::time::SystemTime::now",
+    "std::time::Instant::now",
+    "std::env::var",
+    "std::env::var_os",
+    "std::env::vars",
+    "std::env::vars_os",
+    "std::env::args",
+    "std::env::args_os",
+    "std::env::current_dir",
+    "std::env::current_exe",
+    "std::env::temp_dir",
+    "std::env::set_current_dir",
+    "std::fs::read",
+    "std::fs::read_to_string",
+    "std::fs::write",
+    "std::fs::read_dir",
+    "std::fs::create_dir",
+    "std::fs::create_dir_all",
+    "std::fs::remove_dir",
+    "std::fs::remove_dir_all",
+    "std::fs::remove_file",
+    "std::fs::rename",
+    "std::fs::copy",
+    "std::fs::hard_link",
+    "std::fs::metadata",
+    "std::fs::symlink_metadata",
+    "std::fs::canonicalize",
+    "std::fs::set_permissions",
+    "std::fs::read_link",
+    "std::fs::exists",
+    "std::fs::File::open",
+    "std::fs::File::create",
+    "std::fs::File::create_new",
+    "std::fs::OpenOptions::new",
+    "std::fs::DirBuilder::new",
+    "std::net::TcpStream::connect",
+    "std::net::TcpStream::connect_timeout",
+    "std::net::TcpListener::bind",
+    "std::net::UdpSocket::bind",
+    "std::process::Command::new",
+    "std::process::Command::spawn",
+    "std::process::Command::output",
+    "std::process::Command::status",
+    "std::thread::spawn",
+    "std::thread::scope",
+    "std::thread::sleep",
+    "std::thread::park",
+    "std::thread::park_timeout",
+    "std::thread::yield_now",
+    "std::thread::current",
+    "std::thread::available_parallelism",
+)
+PURE_TYPE_PATHS = (
+    "std::fs::File",
+    "std::fs::OpenOptions",
+    "std::fs::DirBuilder",
+    "std::fs::ReadDir",
+    "std::fs::DirEntry",
+    "std::net::TcpStream",
+    "std::net::TcpListener",
+    "std::net::UdpSocket",
+    "std::process::Command",
+    "std::process::Child",
+    "std::thread::Builder",
+    "std::thread::JoinHandle",
+    "std::thread::ScopedJoinHandle",
+)
+PURE_MACRO_PATHS = (
+    "std::print",
+    "std::println",
+    "std::eprint",
+    "std::eprintln",
+    "std::env",
+    "std::option_env",
+)
+
+PURE_CLIPPY = {
+    **COMMON_CLIPPY,
+    **{key: [{"path": path, "reason": PURE_API_REASON} for path in paths]
+       for key, paths in (("disallowed-methods", PURE_METHOD_PATHS),
+                          ("disallowed-types", PURE_TYPE_PATHS),
+                          ("disallowed-macros", PURE_MACRO_PATHS))},
+}
 CONFIG_FILES = (
     "policy/rust-workspace.toml", "rustfmt.toml", "clippy.toml", "deny.toml",
     ".config/nextest.toml", ".cargo/audit.toml", ".cargo/mutants.toml",
-    "policy/verification-manifest.toml",
+    "policy/verification-manifest.toml", *PURE_CLIPPY_FILES,
 )
 
 SOURCE = '''//! A dependency-free policy control for the toolchain.
@@ -76,6 +172,7 @@ def with_control(addition: str) -> str:
 
 
 def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
+    require_clippy_locations(root)
     data = snapshot or {name: (root / name).read_bytes() for name in CONFIG_FILES}
     parsed = {name: tomllib.loads(data[name].decode("utf-8")) for name in CONFIG_FILES}
     policy = parsed["policy/rust-workspace.toml"]
@@ -127,14 +224,34 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
         "rustfmt.toml": {"edition": "2024", "style_edition": "2024", "newline_style": "Unix",
                          "max_width": 100, "hard_tabs": False, "tab_spaces": 4,
                          "reorder_imports": True, "reorder_modules": True, "force_explicit_abi": True},
-        "clippy.toml": {"check-private-items": True, "allow-unwrap-in-tests": False,
-                        "allow-expect-in-tests": False, "allow-panic-in-tests": False,
-                        "allow-dbg-in-tests": False},
+        "clippy.toml": COMMON_CLIPPY,
+        **dict.fromkeys(PURE_CLIPPY_FILES, PURE_CLIPPY),
     }
     for name, expected in native_configs.items():
         if parsed[name] != expected:
             raise ENV.Incomplete(f"Unadmitted configuration keys or values: {name}")
     return parsed
+
+
+def require_clippy_locations(root: Path) -> None:
+    """Reject missing, linked or shadowing Clippy policy before invoking Cargo.
+
+    Only the root adapter policy and the three pure-role policies are admitted.
+    Nested/alternate files must not change Clippy's nearest-file discovery.
+    """
+    admitted = {"clippy.toml", *PURE_CLIPPY_FILES}
+    for name in admitted:
+        path = root / name
+        if path.is_symlink() or not path.is_file():
+            raise ENV.Incomplete(f"Missing or linked admitted Clippy configuration: {name}")
+    candidates = [root / ".clippy.toml"]
+    crates = root / "crates"
+    if crates.is_dir():
+        candidates.extend(path for path in crates.rglob("*clippy.toml")
+                          if path.name in {"clippy.toml", ".clippy.toml"})
+    for path in candidates:
+        if (path.exists() or path.is_symlink()) and str(path.relative_to(root)) not in admitted:
+            raise ENV.Incomplete(f"Unadmitted shadow Clippy configuration: {path.relative_to(root)}")
 
 
 def require_analysis_configuration(parsed: dict) -> None:
@@ -300,6 +417,149 @@ def fixture_command(metadata: dict, work: Path, command: list[str], extensions: 
         extra.extend(["--ro-bind", entry["path"], f"/tools/{name}"])
     extra.extend(["--setenv", "PATH", "/tools:/toolchain/bin:/usr/bin:/bin"])
     return args[:offset] + extra + args[offset:]
+
+
+PURE_API_HEALTHY = '''//! A pure-role explicit-input policy control.
+/// Advance only the supplied coordinate without ambient state or effects.
+#[must_use]
+pub const fn explicit_tick(tick: u64) -> Option<u64> {
+    tick.checked_add(1)
+}
+'''
+
+PURE_API_VIOLATIONS = '''
+/// Deliberately read the ambient monotonic clock through an alias.
+#[must_use]
+pub fn ambient_clock() -> std::time::Instant {
+    use std::time::Instant as Clock;
+    Clock::now()
+}
+/// Deliberately read the ambient UTC clock.
+#[must_use]
+pub fn ambient_utc() -> std::time::SystemTime {
+    std::time::SystemTime::now()
+}
+/// Deliberately read ambient configuration through an alias.
+/// # Errors
+/// Returns the standard error when the synthetic variable is absent.
+pub fn ambient_configuration() -> Result<String, std::env::VarError> {
+    use std::env::var as read_environment;
+    read_environment("NEVROTICK_PURE_CONTROL")
+}
+/// Deliberately read a file through an alias; this function is never executed.
+/// # Errors
+/// Returns the underlying file error.
+pub fn read_external_file() -> std::io::Result<String> {
+    use std::fs::read_to_string as read_file;
+    read_file("synthetic-not-executed")
+}
+/// Deliberately name a socket effect; this function is never executed.
+/// # Errors
+/// Returns the underlying bind error.
+pub fn bind_external_socket() -> std::io::Result<std::net::TcpListener> {
+    std::net::TcpListener::bind("127.0.0.1:0")
+}
+/// Deliberately construct an external-work capability without executing it.
+#[must_use]
+pub fn external_command() -> std::process::Command {
+    std::process::Command::new("synthetic-not-executed")
+}
+/// Deliberately name a thread effect; this function is never executed.
+#[must_use]
+pub fn external_thread() -> std::thread::JoinHandle<()> {
+    std::thread::spawn(|| ())
+}
+/// A type-only effect capability, without calling its constructor.
+pub type ExternalFile = std::fs::File;
+/// Deliberately print from a calculation; this function is never executed.
+pub fn implicit_output() {
+    println!("synthetic-not-executed");
+}
+/// Deliberately capture ambient build configuration.
+#[must_use]
+pub const fn implicit_build_configuration() -> Option<&'static str> {
+    option_env!("NEVROTICK_PURE_CONTROL")
+}
+'''
+
+
+def qualify_pure_api_fixtures(root: Path, metadata: dict, evidence: dict,
+                             snapshot: dict) -> None:
+    """Exercise actual workspace discovery, alias bans and adapter permissions.
+
+    These dependency-free functions are compiled, never executed. A healthy
+    workspace and the identical adapter-role source distinguish policy rejection
+    from compiler/setup failures. Every pure role must reject all three lints.
+    """
+    if shutil.disk_usage("/tmp").free < 512 * 1024 * 1024:
+        raise ENV.Incomplete("Pure API fixtures require 512 MiB free scratch space.")
+    lanes = evidence.setdefault("lanes", [])
+    with tempfile.TemporaryDirectory(dir="/tmp", prefix="nevrotick-pure-api-") as temporary:
+        work = Path(temporary)
+        fixture = work / "fixture"
+        fixture.mkdir()
+        (work / "cargo-home").mkdir()
+        (fixture / ".cargo").mkdir()
+        (fixture / ".cargo/config.toml").write_bytes(snapshot[".cargo/config.toml"])
+        (fixture / "clippy.toml").write_bytes(snapshot["clippy.toml"])
+        roles = [Path(name).parent.name for name in PURE_CLIPPY_FILES]
+        members = [*roles, "adapter-control"]
+        (fixture / "Cargo.toml").write_text(
+            '[workspace]\nmembers = ' + json.dumps([f"crates/{name}" for name in members])
+            + '\nresolver = "3"\n' + snapshot["policy/rust-workspace.toml"].decode("utf-8"))
+        lock = "version = 4\n"
+        for name in members:
+            member = fixture / "crates" / name
+            (member / "src").mkdir(parents=True)
+            (member / "Cargo.toml").write_text(
+                f'[package]\nname="{name}"\nversion="0.0.0"\nedition="2024"\n'
+                '[lints]\nworkspace=true\n')
+            (member / "src/lib.rs").write_text(PURE_API_HEALTHY)
+            lock += f'\n[[package]]\nname="{name}"\nversion="0.0.0"\n'
+        (fixture / "Cargo.lock").write_text(lock)
+        for name in PURE_CLIPPY_FILES:
+            (fixture / name).write_bytes(snapshot[name])
+        toolchain = Path(metadata["tools"]["rustc"]["path"]).parent.parent
+
+        def execute(label: str, selection: list[str], rejected: bool = False,
+                    required: tuple[str, ...] | None = None) -> None:
+            command = ["cargo", "clippy", *selection, "--all-targets", "--frozen",
+                       "--jobs", str(ENV.CPU_JOBS), "--", "-D", "warnings"]
+            result = ENV.run(ENV.sandbox_command(toolchain, work, command), cwd=root, timeout=90)
+            lanes.append({"lane": label, "expected": "rejected" if rejected else "passed", **result})
+            if not rejected:
+                require_warning_free(result)
+                return
+            if required is None:
+                required = ("disallowed_methods", "disallowed_types", "disallowed_macros", PURE_API_REASON,
+                            "std::time::Instant::now", "std::time::SystemTime::now", "std::env::var",
+                            "std::fs::read_to_string", "std::net::TcpListener::bind",
+                            "std::process::Command::new", "std::thread::spawn")
+            if (result["failure"] or result["exit_code"] == 0
+                    or any(marker not in result["output"] for marker in required)):
+                raise ENV.Incomplete(f"{label}: intended pure API rejection diagnostics absent.")
+
+        execute("pure-explicit-input-workspace-positive", ["--workspace"])
+        adapter = fixture / "crates/adapter-control/src/lib.rs"
+        adapter.write_text(PURE_API_HEALTHY + PURE_API_VIOLATIONS)
+        execute("adapter-identical-capabilities-positive", ["--package", "adapter-control"])
+        for name in roles:
+            source = fixture / "crates" / name / "src/lib.rs"
+            source.write_text(PURE_API_HEALTHY + PURE_API_VIOLATIONS)
+            execute(f"{name}-ambient-capabilities-negative", ["--package", name], rejected=True)
+            source.write_text(PURE_API_HEALTHY)
+        source = fixture / "crates" / roles[0] / "src/lib.rs"
+        source.write_text(PURE_API_HEALTHY + '''
+/// Deliberately retain an ambient clock function without calling it.
+#[must_use]
+pub const fn ambient_clock_reader() -> fn() -> std::time::Instant {
+    std::time::Instant::now
+}
+''')
+        execute("pure-ambient-clock-function-reference-negative", ["--package", roles[0]],
+                rejected=True, required=("disallowed_methods", PURE_API_REASON, "std::time::Instant::now"))
+    evidence["status"] = "passed"
+    evidence["scope"] = "selected direct API enforcement; no proof of effect-free wrappers/dependencies"
 
 
 def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dict,
@@ -509,6 +769,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fixtures", action="store_true", help="exercise strict policy in isolated temporary workspaces")
     parser.add_argument("--workspace", action="store_true", help="check real workspace policy inheritance (no builds)")
+    parser.add_argument("--pure-api-fixtures", action="store_true",
+                        help="exercise only pure-role API restrictions and adapter controls")
     parser.add_argument("--json", type=Path, help="write exact command results to an external evidence path")
     args = parser.parse_args(argv)
     report = {"scope": "NevroTick strict development policy", "status": "incomplete"}
@@ -521,7 +783,7 @@ def main(argv=None) -> int:
         snapshot = {name: (ROOT / name).read_bytes() for name in inputs}
         config = read_configuration(ROOT, snapshot)
         report["metadata"] = ENV.inspect(ROOT)
-        report["extensions"] = admit_extensions(ROOT)
+        report["extensions"] = admit_extensions(ROOT) if args.fixtures or not args.pure_api_fixtures else {}
         report["configuration_sha256"] = {
             name: hashlib.sha256(data).hexdigest() for name, data in snapshot.items()
         }
@@ -532,6 +794,10 @@ def main(argv=None) -> int:
         if args.fixtures:
             report["fixtures"] = {"status": "incomplete", "lanes": []}
             qualify_fixtures(ROOT, report["metadata"], report["extensions"], report["fixtures"], snapshot)
+        if args.fixtures or args.pure_api_fixtures:
+            report["pure_api_fixtures"] = {"status": "incomplete", "lanes": []}
+            qualify_pure_api_fixtures(ROOT, report["metadata"], report["pure_api_fixtures"], snapshot)
+        require_clippy_locations(ROOT)
         if any((ROOT / name).read_bytes() != data for name, data in snapshot.items()):
             raise ENV.Incomplete("Policy/tooling inputs changed during the check; results are stale.")
         report["status"] = "passed"

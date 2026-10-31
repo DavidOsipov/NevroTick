@@ -9,7 +9,7 @@ use garde::Validate;
 
 use super::{
     ArithmeticIssue, ArithmeticOperation, ArithmeticStage, Coefficient, FitError, PointCandidate,
-    PointField, PointIssue, arithmetic, point_issue,
+    PointField, PointIssue, arithmetic, checked_square_root, point_issue,
 };
 
 /// Exact typed geometry cause expected from one raw private-helper failure.
@@ -143,6 +143,163 @@ fn subnormal_operands_and_results_have_a_normal_neighbor() -> io::Result<()> {
         Ok(f64::MIN_POSITIVE)
     );
     raw_coefficient_boundary_controls()?;
+    Ok(())
+}
+
+/// Exact dyadic roots and independently rounded neighbors preserve their bits.
+/// # Errors
+/// Preserve marker/attempt failures; square-root errors are assertion failures.
+/// # Panics
+/// The actual unary receiver must match the independently specified binary64 bits.
+#[test]
+fn square_root_preserves_exact_bits_and_rounding_neighbors() -> io::Result<()> {
+    profile_counts()?;
+    let mut attempts = 0;
+    // IEEE squareRoot rounds the exact root once. The one-neighbor and MAX
+    // cases straddle representable midpoints; no product helper is the oracle.
+    // https://doc.rust-lang.org/std/primitive.f64.html#method.sqrt
+    for (input, expected) in [
+        (0x0000_0000_0000_0000, 0x0000_0000_0000_0000),
+        (0x8000_0000_0000_0000, 0x8000_0000_0000_0000),
+        (0x3fd0_0000_0000_0000, 0x3fe0_0000_0000_0000),
+        (0x4010_0000_0000_0000, 0x4000_0000_0000_0000),
+        (0x0010_0000_0000_0000, 0x2000_0000_0000_0000),
+        (0x7fef_ffff_ffff_ffff, 0x5fef_ffff_ffff_ffff),
+        (0x3fef_ffff_ffff_ffff, 0x3fef_ffff_ffff_ffff),
+        (0x3ff0_0000_0000_0000, 0x3ff0_0000_0000_0000),
+        (0x3ff0_0000_0000_0001, 0x3ff0_0000_0000_0000),
+        (0x3ff0_0000_0000_0002, 0x3ff0_0000_0000_0001),
+    ] {
+        charge_raw(&mut attempts, 10)?;
+        assert_eq!(
+            checked_square_root(f64::from_bits(input), ArithmeticStage::Geometry).map(f64::to_bits),
+            Ok(expected)
+        );
+    }
+    assert_eq!(attempts, 10);
+    Ok(())
+}
+
+/// Unary admission preserves scalar priority, the actual owner stage and cause.
+/// # Errors
+/// Preserve marker/attempt failures without attempting another product call.
+/// # Panics
+/// Invalid inputs must reject in finite/subnormal/negative order at the receiver.
+#[test]
+fn square_root_rejections_preserve_stage_and_issue() -> io::Result<()> {
+    profile_counts()?;
+    let mut attempts = 0;
+    for stage in [ArithmeticStage::Geometry, ArithmeticStage::Result] {
+        for (bits, issue) in [
+            (0x7ff8_0000_0000_0001, ArithmeticIssue::NonFinite),
+            (0xfff8_0000_0000_0001, ArithmeticIssue::NonFinite),
+            (0x7ff0_0000_0000_0000, ArithmeticIssue::NonFinite),
+            (0xfff0_0000_0000_0000, ArithmeticIssue::NonFinite),
+            (0x0000_0000_0000_0001, ArithmeticIssue::Subnormal),
+            (0x000f_ffff_ffff_ffff, ArithmeticIssue::Subnormal),
+            (0x8000_0000_0000_0001, ArithmeticIssue::Subnormal),
+            (0x800f_ffff_ffff_ffff, ArithmeticIssue::Subnormal),
+            (0x8010_0000_0000_0000, ArithmeticIssue::NegativeRadicand),
+            (0xbff0_0000_0000_0000, ArithmeticIssue::NegativeRadicand),
+            (0xffef_ffff_ffff_ffff, ArithmeticIssue::NegativeRadicand),
+        ] {
+            charge_raw(&mut attempts, 22)?;
+            assert_eq!(
+                checked_square_root(f64::from_bits(bits), stage),
+                Err(FitError::SquareRoot { stage, issue })
+            );
+        }
+    }
+    assert_eq!(attempts, 22);
+    Ok(())
+}
+
+/// Actual unary failures expose bounded codes and retain no raw input or cause.
+/// # Errors
+/// Preserve marker/attempt failures; a successful negative root is an assertion failure.
+/// # Panics
+/// The emitted error must name square root and its actual stage/cause only.
+#[test]
+fn square_root_diagnostics_are_bounded_and_operation_specific() -> io::Result<()> {
+    profile_counts()?;
+    let mut attempts = 0;
+    charge_raw(&mut attempts, 1)?;
+    let returned = checked_square_root(-1.0, ArithmeticStage::Result);
+    assert_eq!(
+        returned,
+        Err(FitError::SquareRoot {
+            stage: ArithmeticStage::Result,
+            issue: ArithmeticIssue::NegativeRadicand,
+        })
+    );
+    if let Err(error) = returned {
+        assert_eq!(error.to_string(), "square root Result: NegativeRadicand");
+        assert!(std::error::Error::source(&error).is_none());
+    }
+    assert_eq!(attempts, 1);
+    Ok(())
+}
+
+/// Aggregate scalar precedence is independent of operand order and operation.
+/// # Errors
+/// Preserve marker/attempt failures before invoking the binary receiver.
+/// # Panics
+/// Any nonfinite operand precedes subnormal; scalar rejection precedes denominator.
+#[test]
+fn mixed_scalar_operands_preserve_binary_error_precedence() -> io::Result<()> {
+    profile_counts()?;
+    let mut attempts = 0;
+    let tiny = f64::from_bits(1);
+    let negative_nan = f64::from_bits(0xfff8_0000_0000_0001);
+    for operation in [
+        ArithmeticOperation::Add,
+        ArithmeticOperation::Subtract,
+        ArithmeticOperation::Multiply,
+        ArithmeticOperation::Divide,
+    ] {
+        for (left, right) in [
+            (tiny, f64::INFINITY),
+            (f64::INFINITY, tiny),
+            (-tiny, negative_nan),
+            (negative_nan, -tiny),
+        ] {
+            charge_raw(&mut attempts, 22)?;
+            assert_eq!(
+                arithmetic(left, right, operation, ArithmeticStage::Geometry),
+                Err(error(operation, ArithmeticIssue::NonFinite))
+            );
+        }
+    }
+    for (left, right, issue) in [
+        (tiny, -1.0, ArithmeticIssue::Subnormal),
+        (1.0, -tiny, ArithmeticIssue::Subnormal),
+        (tiny, -0.0, ArithmeticIssue::Subnormal),
+        (f64::NAN, -0.0, ArithmeticIssue::NonFinite),
+        (1.0, -0.0, ArithmeticIssue::NonPositiveDenominator),
+    ] {
+        charge_raw(&mut attempts, 22)?;
+        assert_eq!(
+            arithmetic(
+                left,
+                right,
+                ArithmeticOperation::Divide,
+                ArithmeticStage::Geometry
+            ),
+            Err(error(ArithmeticOperation::Divide, issue))
+        );
+    }
+    charge_raw(&mut attempts, 22)?;
+    assert_eq!(
+        arithmetic(
+            1.0,
+            1.0,
+            ArithmeticOperation::Divide,
+            ArithmeticStage::Geometry
+        )
+        .map(f64::to_bits),
+        Ok(0x3ff0_0000_0000_0000)
+    );
+    assert_eq!(attempts, 22);
     Ok(())
 }
 

@@ -695,7 +695,7 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
         # toolchain path. Keep its native threshold scoped away from that code;
         # coverage_counts still requires every exact declared owner below.
         command = [str(tools / "cargo-llvm-cov"), "llvm-cov", "--package", scope.package,
-                   "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--tests", "--json",
+                   "--frozen", "--jobs", str(policy.get("jobs", RUNTIME.MAX_JOBS)), "--lib", "--tests", "--json",
                    "--output-path", "/work/coverage.json", "--failure-mode", "any",
                    "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
                    "--fail-under-file-lines", "90"]
@@ -856,7 +856,7 @@ class Session:
             raise Incomplete("Unadmitted extra tool island.")
         # Mutants parallelize independent copies; each nested Cargo/test process
         # gets one slot rather than multiplying twelve workers by twelve jobs.
-        inner_jobs = 1 if label.startswith("mutation-") else RUNTIME.MAX_JOBS
+        inner_jobs = 1 if label.startswith("mutation-") else self.policy.get("jobs", RUNTIME.MAX_JOBS)
         environment = {"RUSTC": str(compiler / "bin/rustc"), "RUSTDOC": str(compiler / "bin/rustdoc"),
                        "RUST_TEST_THREADS": str(inner_jobs)}
         if compiler != self.stable:

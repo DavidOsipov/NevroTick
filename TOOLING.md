@@ -58,6 +58,7 @@ python3 -B scripts/setup-unix.py --json /tmp/nevrotick-tool-install.json
 python3 -B scripts/check-environment.py
 python3 -B scripts/check-environment.py --smoke --json /tmp/nevrotick-environment.json
 python3 -B scripts/check-strict.py --fixtures --json /tmp/nevrotick-strict.json
+python3 -B scripts/check-strict.py --pure-api-fixtures --json /tmp/nevrotick-pure-api.json
 python3 -X dev -Werror -B -m unittest discover -s scripts/tests -v
 ```
 
@@ -148,6 +149,7 @@ follow the development-hardening guide.
 | --- | --- |
 | [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. `missing_docs_in_private_items` also requires private-item documentation. Permanent local `allow` attributes, multiple unsafe operations per block and discarded `Result::ok()` values fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |
 | [rustfmt.toml](rustfmt.toml), [clippy.toml](clippy.toml) | Explicit 2024 formatting and private API checks; no blanket test exemptions for unwrap/expect/panic/debug output. |
+| [time-domain](crates/time-domain/clippy.toml), [ntp-exchange](crates/ntp-exchange/clippy.toml), [time-core](crates/time-core/clippy.toml) role policies | Preserve all five common Clippy settings and reject selected ambient clock/configuration, filesystem, socket, process/thread, printing and build-environment APIs. The existing `all = deny` activates these style lints. Root/adapter policy retains its separate scope. |
 | [deny.toml](deny.toml) | Retained strict bootstrap policy, including held crypto providers; its GPL-2.0-only/no-build-script baseline remains unchanged. The UI-M0 verifier adds only the reviewed graph's grants to an owned snapshot; direct `cargo deny` against this baseline does not admit the product graph. |
 | [.config/nextest.toml](.config/nextest.toml) | Twelve test workers, zero retries, fatal timeouts/leaks, bounded total duration and JUnit accounting including skips. The trusted checker rejects unknown settings because nextest itself only warns. |
 | [.cargo/audit.toml](.cargo/audit.toml) | No ignored advisory IDs or severity cutoff; warnings fail. Acquisition is separate from analysis and requires an admitted database/index snapshot. |
@@ -184,6 +186,32 @@ for formatting, compiler/Clippy/rustdoc rules, unsafe exceptions, arithmetic
 profiles and nextest. The unittest command also exercises actual cargo-deny,
 audit, nextest and mutation enumeration with local fixtures in the cleared-env,
 network-isolated sandbox. Neither command builds application code.
+
+**Pure-role API enforcement, 31 October 2026:** the three package-local Clippy
+policies participate in strict admission and product source snapshots. Clippy
+uses the closest configuration rather than merging parent settings; the checker
+therefore requires the complete common settings and exact role lists, and rejects
+alternate or nested configuration files. Ambient `CLIPPY_CONF_DIR` remains
+rejected. `--pure-api-fixtures` selects six dependency-free native Clippy
+commands: a healthy workspace, identical capabilities accepted in an adapter,
+and intended method/type/macro rejection in each pure role, including aliased
+clock/environment/file functions and a clock function-reference bypass control.
+`--fixtures` includes these controls alongside
+the existing 37 lanes. The focused command admits only the tools it uses.
+
+The observed baseline accepted ambient clocks in all three pure roles; the new
+controls reject them. All 43 policy lanes and 107 focused Python tests passed.
+Current `time-domain`/`ntp-exchange` library Clippy also passed. At adoption, full
+workspace Clippy remained incomplete on the in-progress combination prerequisite's
+unused square-root helper and documentation markup. Subsequent kernel work added
+the real square-root consumers, corrected the markup and passed the full portable
+row, including workspace Clippy: 284 ordinary tests, 56 doctests and 257 optimized
+tests. The new numerical owner's per-file qualification remains pending.
+Receipts and source scope are recorded in
+[the S1.3 task](tasks/s1.3-source-selection-readiness.md#external-proposal-assessment-31-october-2026).
+These named bans do not prove complete effect freedom through wrappers,
+dependencies or native APIs. Fixture accounting retains its deliberate
+`stderr().write_all` observer. No new analyzer or dependency was installed.
 
 `python3 -B scripts/check-strict.py --workspace` checks **manifest adoption only**;
 it can now inspect the actual UI-M0 workspace. It does not prove the intended
@@ -1010,16 +1038,22 @@ production, native Windows and release gates remain open.
 The main checkout now also contains the bounded stateful
 [principal/hysteresis fixture](tasks/s1.3-source-selection-readiness.md#next-principalhysteresis-fixture-31-october-2026).
 Its actual constructor RED and first unchanged producer-to-principal GREEN are
-retained separately from the 92-input checkpoint. The formatted 95-input candidate
-has passed all ten principal cases and the complete portable workspace row:
-264 ordinary tests, 56 doctests and 237 optimized executions. Contracts and
-per-file analysis for the principal and changed arithmetic owners remain open.
+retained separately from the 92-input checkpoint. The formatted 96-input candidate
+has fourteen principal cases, including genuine private-receiver controls, and
+passed the complete portable workspace row: 268 ordinary tests, 56 doctests and
+241 optimized executions. Current 96-input coverage passed 147 core tests with
+92.56% principal and 95.25% arithmetic line coverage; scoped contracts passed.
+Both selected mutation cohorts and the actual CLI union passed all 327 generated
+variants at ten workers, with one exact reviewed equivalent disposition. The
+[checkpoint record](tasks/s1.3-source-selection-readiness.md#principal-receiver-checkpoint-31-october-2026)
+retains both failed campaigns and the one exact reviewed floor equivalence.
 Ordinary development uses the configured stable sandbox and the complete used
 stable-toolchain inventory; unused optional analyzer stores need no full
 admission for that row. The analysis wrapper now checks the unchanged 2 GiB
 space floor before expensive admission and again before creating its output;
-43 wrapper regression tests pass. The analysis checkpoint is being rebound
-through the existing runner. Preserve the old nine-owner qualification and its
+176 wrapper regression tests pass. Analysis honors six admitted Cargo build
+jobs while retaining ten mutation workers with one nested job; other default
+callers retain twelve. The existing runner owns the selected checkpoint. Preserve the old nine-owner qualification and its
 scope; no current ten-owner qualification is implied.
 
 The current principal campaign also has a qualified private RAM view of the

@@ -637,3 +637,60 @@ consumer sequence passed its declared Linux fixture scope after the initial
 seed RED. The existing S1.3 task retains exact candidate hashes, native exits,
 actual counters, independent source review and remaining expanded verification.
 No upstream differential, complete S1.3/P1 or product/release pass follows.
+
+### Combination kernel pretranslation mapping, 31 October 2026
+
+This additive mapping retains the earlier context-only records. The proposed
+derived owner is `src/combination.rs`; `src/lib.rs` may receive module/re-export
+wiring only. No kernel translation has yet occurred. The shared unary arithmetic
+helper and retained fitted-rate field are independently authored infrastructure;
+they do not add another Chrony translation destination.
+
+The source is Chrony 4.9 revision
+`8df4f1263e206585e6c4e61352d042c2dd12916a`, `sources.c`, 60,639 bytes,
+SHA-256 `019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d`.
+The [ledger](../../tasks/s0.1-chrony-ledger.json) selects `combine_sources`
+882–886 for singleton/initialization and 925–926, 932–950, 955 for distinct
+weights, principal-centered disagreement, complete phase/rate/uncertainty outputs
+and count. Preserve the original Curnow/Lichvar copyright, complete GPL version2
+grant/disclaimer/distribution notice and actual dated modification attribution
+in the derived file, together with existing COPYING/corresponding-source duties.
+
+The [existing S1.3 task](../../tasks/s1.3-source-selection-readiness.md#kernel-contract-for-translation)
+freezes the proposed API, primitive order, independent facts and deviations.
+Inputs are genuine common-time projection/principal results plus explicitly
+checked fixture phase SD, rate SD and tracking skew. Positive-behind phase and
+seconds/second rate remain explicit; raw tracking-producer sign conventions and
+additional time extrapolation are not copied. The pure bounded kernel includes
+all actual witness supporters; it establishes no compatibility policy or physical
+uncertainty calibration. Fixed storage, mandatory Garde admission, original-entry
+association, deterministic reductions and typed checked arithmetic replace the
+unbounded C storage/assertion assumptions. Singleton passthrough is not fallback
+after disagreement or invalid arithmetic.
+
+Compatibility/distant penalties/status at 903–920, tracking production at
+894–897, extrapolation at 922–924, logging and reference effects remain context
+only. A real transactional compatibility/re-entry/principal-change/replay owner
+is still required for the complete combiner; the mathematical kernel cannot
+discharge it. Independent review of these actual mapping/contract/provenance
+bytes is required before translation. No implementation, differential, full
+S1.3/P1, Windows or product/release qualification follows from this mapping.
+
+### Combination kernel adaptation authorship, 31 October 2026
+
+The preceding section records the pretranslation checkpoint. Its independent
+review is retained in the ledger and existing S1.3 task. After the genuine
+two-source numerical RED and healthy unavailable control, David Osipov with AI
+assistance authored the mapped mathematical body in `src/combination.rs`.
+The file retains the complete upstream notice and dated modification attribution.
+It consumes the existing checked arithmetic owner and crate-internal square root;
+neither helper is another translated Chrony source destination.
+
+The implementation preserves the distinct reciprocal phase/rate weights,
+original-principal disagreement, three checked square-root uncertainty outputs,
+exact singleton passthrough, actual witnessed-supporter associations and bounded
+ascending-label reduction. These source changes are under verification, not
+qualified by this authorship record. Mandatory raw uncertainty admission and
+original-entry/context guards remain separate from physical confidence or
+production eligibility. The full compatibility/penalty/re-entry/replay lifecycle
+and external reference effects remain required later work as recorded above.

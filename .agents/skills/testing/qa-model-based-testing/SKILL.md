@@ -25,3 +25,8 @@ bounded state space; Kani requires a reachable property harness, justified
 assumptions and unwind bounds. Bootstrap controls prove no application model.
 Keep the requirements-derived oracle independent and record all reachable,
 excluded, incomplete and failed obligations before claiming model coverage.
+
+When asynchronous effect/acknowledgement/recovery complexity justifies a reusable
+executable specification, consider [Quint trace conformance](../references/quint-trace-conformance.md).
+Keep this conditional: model checking, Rust trace replay and actual Windows
+effects supply distinct evidence; an existing small model needs no second stack.

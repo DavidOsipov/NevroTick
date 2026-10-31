@@ -18,9 +18,11 @@ class Incomplete(ValueError):
 
 MAX_COHORT_VARIANTS = 512
 MAX_LISTING_VARIANTS = 3072
-MAX_OWNERS = 2
+MAX_OWNERS = 4
 MAX_INPUTS = 256
-MAX_BUDGET_FIELDS = 265
+# The four-owner recipe vector has 265 prior fields, 91 combination fields and
+# two new checked-arithmetic prerequisite units; unknown/extra fields still fail.
+MAX_BUDGET_FIELDS = 358
 PLAN_KEYS = frozenset({
     "schema_version", "status", "candidate_sha256", "product_inputs_sha256",
     "tool_inputs_sha256", "tool_payloads_sha256", "recipe_sha256", "inventories",
@@ -107,7 +109,7 @@ def admit_plan(plan, *, subjects, product_inputs, tool_inputs, recipe_sha256,
         raise Incomplete("Coordinator cohort plan awaits final-source/inventory binding.")
     if (type(subjects) is not dict or len(subjects) != MAX_OWNERS
             or len(set(subjects.values())) != MAX_OWNERS):
-        raise Incomplete("Checkpoint scope must contain exactly two distinct changed critical owners.")
+        raise Incomplete("Checkpoint scope must contain exactly four distinct changed critical owners.")
     if (not _same(_identity(plan["product_inputs_sha256"]), _identity(product_inputs))
             or plan["candidate_sha256"] != canonical_sha256(product_inputs)):
         raise Incomplete("Coordinator cohort plan names a different complete product candidate.")
@@ -132,7 +134,7 @@ def admit_plan(plan, *, subjects, product_inputs, tool_inputs, recipe_sha256,
         raise Incomplete("Checkpoint inventory exceeds the separate listing ceiling.")
     cohorts = plan["cohorts"]
     if type(cohorts) is not list or len(cohorts) != MAX_OWNERS:
-        raise Incomplete("Checkpoint partition must contain each of two owners once.")
+        raise Incomplete("Checkpoint partition must contain each of four owners once.")
     ids, owners, outputs = set(), set(), set()
     for row in cohorts:
         if type(row) is not dict or set(row) != COHORT_KEYS:
@@ -232,4 +234,4 @@ def reconcile_receipts(plan, receipts, *, subjects):
             "generated_variants": sum(row["count"] for row in plan["inventories"].values()),
             "baselines": len(receipts), "reservation": plan["cumulative_reservation"],
             "critical_manifest_complete_selection": False,
-            "scope": "Two changed critical owners' mutation receipt union; coverage/contracts and native Windows remain separate."}
+            "scope": "Four changed/coupled critical owners' mutation receipt union; coverage/contracts and native Windows remain separate."}

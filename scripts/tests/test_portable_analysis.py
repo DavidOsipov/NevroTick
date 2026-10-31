@@ -413,6 +413,7 @@ class EvidenceTests(unittest.TestCase):
             session.config = root / "config"
             session.protected_islands = {}
             session.admitted = {"policy": {"common_nightly": "night"}}
+            session.policy = {}
             session.report = {"lanes": []}
             success = {"exit_code": 0, "failure": None, "output": raw, "command": ["fixture"]}
             with patch.object(MODULE.RUNTIME, "run", return_value=success):
@@ -737,12 +738,13 @@ class EvidenceTests(unittest.TestCase):
                                 for value in report["coverage"].values()))
 
     def test_coverage_test_threads_are_opt_in_and_forwarded_after_the_separator(self):
-        """Serialize libtest only when requested; keep Cargo compilation at twelve jobs."""
+        """Honor selected Cargo jobs independently of the opt-in libtest limit."""
         core = MODULE.Scope("time-core", CORE_FILES, "policy/time-core-analysis.json")
-        for scope, subjects, override, suffix in (
-                (SCOPE, dict(FILES), {}, []),
-                (core, dict(CORE_FILES), {}, []),
-                (core, dict(CORE_FILES), {"coverage_test_threads": 1}, ["--", "--test-threads=1"])):
+        for scope, subjects, override, jobs, suffix in (
+                (SCOPE, dict(FILES), {}, "12", []),
+                (core, dict(CORE_FILES), {}, "12", []),
+                (core, dict(CORE_FILES), {"coverage_test_threads": 1}, "12", ["--", "--test-threads=1"]),
+                (core, dict(CORE_FILES), {"jobs": 6, "coverage_test_threads": 1}, "6", ["--", "--test-threads=1"])):
             with self.subTest(package=scope.package, override=override), tempfile.TemporaryDirectory() as temporary:
                 work, report, calls = Path(temporary), {}, []
                 def run(label, command, timeout):
@@ -750,7 +752,7 @@ class EvidenceTests(unittest.TestCase):
                     self.assertEqual((label, timeout), ("coverage", 300))
                     self.assertEqual(command, [
                         str(work / "tools" / "cargo-llvm-cov"), "llvm-cov", "--package", scope.package,
-                        "--frozen", "--jobs", "12", "--lib", "--tests", "--json",
+                        "--frozen", "--jobs", jobs, "--lib", "--tests", "--json",
                         "--output-path", "/work/coverage.json", "--failure-mode", "any",
                         "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
                         "--fail-under-file-lines", "90", *suffix])
@@ -1260,6 +1262,7 @@ class EvidenceTests(unittest.TestCase):
             session.protected_islands = {base / "work/deps": {}, base / "work/consumers": {}}
             session.protected_tools = {session.tools: {}}
             session.report = {"lanes": []}
+            session.policy = {}
             captured = {}
             raw_listing = " WARN exact captured output\n[]\n"
             def runner(*args, **options):
@@ -1274,6 +1277,12 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual((captured["timeout"], captured["cpu_seconds"]), (30, 30))
             self.assertEqual(captured["build_jobs"], 12)
             self.assertEqual(captured["environment"]["RUST_TEST_THREADS"], "12")
+            session.policy = {"jobs": 6}
+            with patch.object(session, "check"), patch.object(MODULE.RUNTIME, "run", side_effect=runner):
+                result = session.run("coverage", ["/tool", "arg"], 30)
+            self.assertEqual(result, "observed")
+            self.assertEqual(captured["build_jobs"], 6)
+            self.assertEqual(captured["environment"]["RUST_TEST_THREADS"], "6")
             with patch.object(session, "check"), patch.object(MODULE.RUNTIME, "run", side_effect=runner):
                 with patch.object(MODULE.PRODUCT.ENV, "require_ok", return_value="trimmed") as require_ok:
                     result = session.run("mutation-enumeration:era", ["/tool", "--list"], 30)

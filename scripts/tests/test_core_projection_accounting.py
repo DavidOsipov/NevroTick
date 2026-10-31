@@ -107,5 +107,23 @@ class ProjectionAccountingTests(unittest.TestCase):
                 MODULE.source_work_uppers(bad)
 
 
+class CurrentProjectionRecipeTests(unittest.TestCase):
+    """Independent retained-rate and appended-history source facts."""
+
+    def test_current_complete_source_reservation_keeps_new_rate_getters_and_append(self):
+        calls = MODULE.full_package_reservation()["projection_reserved_calls"]
+        self.assertEqual(calls, {"histories": 12, "appends": 94, "observations": 94,
+                                "contexts": 11, "monotonic": 122, "coordinates": 376,
+                                "exchanges": 94, "getters": 3450, "terms": 68, "projections": 49})
+        work = MODULE.full_package_reservation()["projection_reserved_source_work_uppers"]
+        self.assertEqual(work["charged_fit_work_upper"], 94)
+        self.assertEqual(work["point_admissions_upper"], 6016)
+        row = ProjectionAccountingTests.row("linear_identity", (1, 4, 4, 1, 8, 16, 4, 280, 1, 6))
+        parsed = MODULE.projection_counts(row)
+        self.assertEqual(parsed["projection_partial_cases"], [])
+        self.assertEqual(parsed["projection_profiles"]["linear_identity"]["appends"], 4)
+        self.assertTrue(parsed["projection_observation_pending"])
+
+
 if __name__ == "__main__":
     unittest.main()

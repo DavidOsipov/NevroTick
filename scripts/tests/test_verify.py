@@ -52,7 +52,7 @@ class ProductAdmissionTests(unittest.TestCase):
             (ROOT / "policy/rust-workspace.toml").read_text())
         for package, directory in EXPECTED_PACKAGES.items():
             member = self.root / directory
-            (member / "src").mkdir(parents=True)
+            (member / "src").mkdir(parents=True, exist_ok=True)
             (member / "Cargo.toml").write_text(
                 f'[package]\nname="{package}"\nversion="0.0.0"\n[lints]\nworkspace=true\n')
             if package in {"time-domain", "time-core"}:
@@ -128,6 +128,40 @@ class ProductAdmissionTests(unittest.TestCase):
             run.assert_not_called()
         for directory in EXPECTED_PACKAGES.values():
             self.assertIn(directory + "/src/lib.rs", files)
+
+    def test_all_pure_role_clippy_configurations_are_frozen_product_inputs(self):
+        _, files = VERIFY.admit_product(self.root)
+        for package in ("time-domain", "ntp-exchange", "time-core"):
+            name = f"crates/{package}/clippy.toml"
+            with self.subTest(package=package):
+                self.assertIn(name, files)
+                self.assertEqual(files[name], digest((self.root / name).read_bytes()))
+
+    def test_alternate_clippy_configuration_is_rejected_before_cargo(self):
+        paths = (".clippy.toml", *(f"{directory}/.clippy.toml"
+                                  for directory in EXPECTED_PACKAGES.values()))
+        for name in paths:
+            path = self.root / name
+            with self.subTest(configuration=name), patch.object(VERIFY.ENV, "run") as run:
+                path.write_text("check-private-items = false\n")
+                with self.assertRaises(VERIFY.ENV.Incomplete):
+                    VERIFY.admit_product(self.root)
+                run.assert_not_called()
+            path.unlink()
+            VERIFY.admit_product(self.root)
+
+    def test_nested_pure_clippy_configuration_is_rejected_before_cargo(self):
+        for package in ("time-domain", "ntp-exchange", "time-core"):
+            for filename in ("clippy.toml", ".clippy.toml"):
+                path = self.root / f"crates/{package}/src/{filename}"
+                with self.subTest(package=package, filename=filename), \
+                        patch.object(VERIFY.ENV, "run") as run:
+                    path.write_text("check-private-items = false\n")
+                    with self.assertRaises(VERIFY.ENV.Incomplete):
+                        VERIFY.admit_product(self.root)
+                    run.assert_not_called()
+                path.unlink()
+                VERIFY.admit_product(self.root)
 
     def test_prior_four_member_graph_cannot_hide_the_kernel(self):
         path = self.root / "Cargo.toml"

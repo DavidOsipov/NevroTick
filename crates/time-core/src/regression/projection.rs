@@ -340,6 +340,9 @@ pub struct FixtureAnchorProjection {
     anchor_elapsed_seconds: f64,
     /// Checked actual anchor phase plus same-history rate times anchor age.
     center_seconds: f64,
+    /// Exact supported same-history fitted phase derivative, in seconds per second.
+    /// The immutable report's checked line owns its normal-or-zero invariant.
+    phase_rate_seconds_per_second: f64,
     /// Original immutable supplied terms, including supplied signed-zero bits.
     terms: FixtureProjectionTerms,
     /// Checked separate anchor age times supplied skew, in seconds.
@@ -408,6 +411,15 @@ impl FixtureAnchorProjection {
     #[must_use]
     pub const fn center_seconds(&self) -> f64 {
         self.center_seconds
+    }
+
+    /// Return the same fitted positive-behind phase derivative used for projection.
+    ///
+    /// This is seconds per monotonic second, separate from supplied skew or any
+    /// clock-correction request. The owned bits stay fixed across later appends.
+    #[must_use]
+    pub const fn phase_rate_seconds_per_second(&self) -> f64 {
+        self.phase_rate_seconds_per_second
     }
 
     /// Return the original immutable asserted terms without recomputation/effects.
@@ -548,6 +560,7 @@ pub fn project_fixture_anchor(
         latest_elapsed,
         anchor_elapsed_seconds,
         center_seconds,
+        phase_rate_seconds_per_second: rate,
         terms,
         growth_seconds,
         distance_seconds,

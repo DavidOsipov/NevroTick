@@ -124,6 +124,8 @@ pub enum ArithmeticStage {
     Result,
     /// Fixed-roster principal distance, score and hysteresis calculations.
     Principal,
+    /// Fixture supporter phase/rate reductions and uncertainty outputs.
+    Combination,
 }
 
 /// One separately evaluated binary64 operation; fused operations are excluded.
@@ -150,6 +152,8 @@ pub enum ArithmeticIssue {
     ZeroUnderflow,
     /// A division denominator was zero or negative.
     NonPositiveDenominator,
+    /// A supported normal scalar was negative at the unary square-root boundary.
+    NegativeRadicand,
 }
 
 /// Bounded domain failures; returned indices are proven below 64.
@@ -188,6 +192,13 @@ pub enum FitError {
         /// Bounded cause code.
         issue: ArithmeticIssue,
     },
+    /// Unsupported unary square root; no fabricated binary operation is retained.
+    SquareRoot {
+        /// Numerical owner stage supplied by the actual consumer.
+        stage: ArithmeticStage,
+        /// Scalar-support or negative-radicand cause, without its raw value.
+        issue: ArithmeticIssue,
+    },
     /// Mandatory garde validation disagreed with all shared scalar rules.
     ValidationInvariant,
 }
@@ -210,6 +221,9 @@ impl fmt::Display for FitError {
                 issue,
             } => {
                 write!(formatter, "arithmetic {stage:?}/{operation:?}: {issue:?}")
+            }
+            Self::SquareRoot { stage, issue } => {
+                write!(formatter, "square root {stage:?}: {issue:?}")
             }
             Self::ValidationInvariant => formatter.write_str("validation invariant disagreement"),
         }
@@ -402,6 +416,21 @@ fn arithmetic_error(
     }
 }
 
+/// Classify every binary64 input using the common primitive support envelope.
+///
+/// Returns only `NonFinite`, `Subnormal` or no issue. Signed zeros and finite normal
+/// values are supported without changing bits. There is no arithmetic, state,
+/// allocation or normalization; each caller owns its operation-specific errors.
+pub(super) fn scalar_issue(value: f64) -> Option<ArithmeticIssue> {
+    if !value.is_finite() {
+        Some(ArithmeticIssue::NonFinite)
+    } else if value.is_subnormal() {
+        Some(ArithmeticIssue::Subnormal)
+    } else {
+        None
+    }
+}
+
 /// Admit one supported normal-or-zero scalar without changing its bits.
 ///
 /// The stage and operation identify the actual caller/producing primitive, never
@@ -413,19 +442,8 @@ fn supported_result(
     operation: ArithmeticOperation,
     stage: ArithmeticStage,
 ) -> Result<f64, FitError> {
-    if !value.is_finite() {
-        return Err(arithmetic_error(
-            stage,
-            operation,
-            ArithmeticIssue::NonFinite,
-        ));
-    }
-    if value.is_subnormal() {
-        return Err(arithmetic_error(
-            stage,
-            operation,
-            ArithmeticIssue::Subnormal,
-        ));
+    if let Some(issue) = scalar_issue(value) {
+        return Err(arithmetic_error(stage, operation, issue));
     }
     Ok(value)
 }
@@ -444,19 +462,21 @@ pub(super) fn arithmetic(
     operation: ArithmeticOperation,
     stage: ArithmeticStage,
 ) -> Result<f64, FitError> {
-    if !left.is_finite() || !right.is_finite() {
+    let left_issue = scalar_issue(left);
+    let right_issue = scalar_issue(right);
+    // Classify both operands before choosing a cause: a right nonfinite value
+    // must outrank a left subnormal exactly as in the original binary contract.
+    if left_issue == Some(ArithmeticIssue::NonFinite)
+        || right_issue == Some(ArithmeticIssue::NonFinite)
+    {
         return Err(arithmetic_error(
             stage,
             operation,
             ArithmeticIssue::NonFinite,
         ));
     }
-    if left.is_subnormal() || right.is_subnormal() {
-        return Err(arithmetic_error(
-            stage,
-            operation,
-            ArithmeticIssue::Subnormal,
-        ));
+    if let Some(issue) = left_issue.or(right_issue) {
+        return Err(arithmetic_error(stage, operation, issue));
     }
     if operation == ArithmeticOperation::Divide && right <= 0.0 {
         return Err(arithmetic_error(
@@ -483,6 +503,30 @@ pub(super) fn arithmetic(
             operation,
             ArithmeticIssue::ZeroUnderflow,
         ));
+    }
+    Ok(result)
+}
+
+/// Evaluate one correctly rounded unary square root in the shared scalar domain.
+///
+/// All raw binary64 inputs are admitted to this constant-work receiver. Signed
+/// zeros preserve their bits; supported nonnegative inputs return a supported
+/// normal-or-zero root. The actual producing stage is retained in typed errors.
+/// No allocation, state mutation, normalization or clamp occurs.
+/// # Errors
+/// Reject nonfinite then subnormal inputs, then negative normal radicands, and
+/// independently reject an unsupported computed result before publication.
+pub(super) fn checked_square_root(value: f64, stage: ArithmeticStage) -> Result<f64, FitError> {
+    let error = |issue| FitError::SquareRoot { stage, issue };
+    if let Some(issue) = scalar_issue(value) {
+        return Err(error(issue));
+    }
+    if value < 0.0 {
+        return Err(error(ArithmeticIssue::NegativeRadicand));
+    }
+    let result = value.sqrt();
+    if let Some(issue) = scalar_issue(result) {
+        return Err(error(issue));
     }
     Ok(result)
 }

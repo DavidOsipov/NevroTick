@@ -20,6 +20,10 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("strict_policy", ROOT / "scripts/check-strict.py")
 STRICT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(STRICT)
+PURE_CLIPPY_FILES = tuple(
+    f"crates/{package}/clippy.toml"
+    for package in ("time-domain", "ntp-exchange", "time-core")
+)
 
 
 class PolicyAdmissionTests(unittest.TestCase):
@@ -42,9 +46,128 @@ class PolicyAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(STRICT.ENV.Incomplete, diagnostic):
             STRICT.read_configuration(self.root)
 
+    def write_clippy_configuration(self, name, configuration):
+        """Write the small Clippy input grammar independently of policy constants."""
+        lines = []
+        for key, value in configuration.items():
+            if isinstance(value, bool):
+                encoded = "true" if value else "false"
+            else:
+                self.assertIsInstance(value, list)
+                entries = []
+                for entry in value:
+                    if isinstance(entry, str):
+                        entries.append(json.dumps(entry))
+                    else:
+                        self.assertIsInstance(entry, dict)
+                        entries.append("{ " + ", ".join(
+                            f"{field} = {json.dumps(content)}"
+                            for field, content in entry.items()
+                        ) + " }")
+                encoded = "[" + ", ".join(entries) + "]"
+            lines.append(f"{key} = {encoded}")
+        (self.root / name).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
     def test_admitted_repository_configuration_is_a_healthy_control(self):
         parsed = STRICT.read_configuration(self.root)
         self.assertEqual(set(parsed), set(STRICT.CONFIG_FILES))
+
+    def test_pure_role_configuration_retains_shared_strict_settings(self):
+        parsed = STRICT.read_configuration(self.root)
+        common = {
+            "check-private-items": True,
+            "allow-unwrap-in-tests": False,
+            "allow-expect-in-tests": False,
+            "allow-panic-in-tests": False,
+            "allow-dbg-in-tests": False,
+        }
+        self.assertEqual(parsed["clippy.toml"], common)
+        for name in PURE_CLIPPY_FILES:
+            with self.subTest(configuration=name):
+                self.assertIn(name, parsed)
+                for key, value in common.items():
+                    self.assertIs(parsed[name][key], value)
+                for family in ("disallowed-methods", "disallowed-types", "disallowed-macros"):
+                    self.assertTrue(parsed[name].get(family), f"Empty role restriction: {family}")
+
+    def test_each_pure_role_requires_the_clock_method_ban(self):
+        for name in PURE_CLIPPY_FILES:
+            path = self.root / name
+            original = path.read_bytes()
+            configuration = tomllib.loads(original.decode("utf-8"))
+            methods = configuration["disallowed-methods"]
+            selected = [entry for entry in methods
+                        if (entry if isinstance(entry, str) else entry.get("path"))
+                        == "std::time::Instant::now"]
+            self.assertEqual(len(selected), 1)
+            configuration["disallowed-methods"] = [entry for entry in methods
+                                                   if entry not in selected]
+            with self.subTest(configuration=name):
+                self.write_clippy_configuration(name, configuration)
+                with self.assertRaises(STRICT.ENV.Incomplete):
+                    STRICT.read_configuration(self.root)
+            path.write_bytes(original)
+            STRICT.read_configuration(self.root)
+
+    def test_pure_role_common_settings_cannot_be_changed_or_omitted(self):
+        for name in PURE_CLIPPY_FILES:
+            path = self.root / name
+            original = path.read_bytes()
+            healthy = tomllib.loads(original.decode("utf-8"))
+            for setting in ("check-private-items", "allow-unwrap-in-tests",
+                            "allow-expect-in-tests", "allow-panic-in-tests", "allow-dbg-in-tests"):
+                for mutation in ("change", "remove"):
+                    configuration = dict(healthy)
+                    if mutation == "change":
+                        configuration[setting] = not configuration[setting]
+                    else:
+                        del configuration[setting]
+                    with self.subTest(configuration=name, setting=setting, mutation=mutation):
+                        self.write_clippy_configuration(name, configuration)
+                        with self.assertRaises(STRICT.ENV.Incomplete):
+                            STRICT.read_configuration(self.root)
+                    path.write_bytes(original)
+
+    def test_pure_role_disallowed_families_cannot_be_emptied_or_removed(self):
+        for name in PURE_CLIPPY_FILES:
+            path = self.root / name
+            original = path.read_bytes()
+            healthy = tomllib.loads(original.decode("utf-8"))
+            for family in ("disallowed-methods", "disallowed-types", "disallowed-macros"):
+                for mutation in ("empty", "remove"):
+                    configuration = dict(healthy)
+                    if mutation == "empty":
+                        configuration[family] = []
+                    else:
+                        del configuration[family]
+                    with self.subTest(configuration=name, family=family, mutation=mutation):
+                        self.write_clippy_configuration(name, configuration)
+                        with self.assertRaises(STRICT.ENV.Incomplete):
+                            STRICT.read_configuration(self.root)
+                    path.write_bytes(original)
+
+    def test_alternate_clippy_configuration_cannot_shadow_admitted_policy(self):
+        for name in (".clippy.toml", *(f"{Path(path).parent}/.clippy.toml"
+                                      for path in PURE_CLIPPY_FILES)):
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with self.subTest(configuration=name):
+                path.write_text("check-private-items = false\n", encoding="utf-8")
+                with self.assertRaises(STRICT.ENV.Incomplete):
+                    STRICT.read_configuration(self.root)
+            path.unlink()
+            STRICT.read_configuration(self.root)
+
+    def test_nested_clippy_configuration_is_not_admitted(self):
+        for role in ("time-domain", "ntp-exchange", "time-core"):
+            path = self.root / f"crates/{role}/src/clippy.toml"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with self.subTest(role=role):
+                path.write_text("check-private-items = false\n", encoding="utf-8")
+                with self.assertRaises(STRICT.ENV.Incomplete):
+                    STRICT.read_configuration(self.root)
+            path.unlink()
+            STRICT.read_configuration(self.root)
 
     def test_release_optimization_is_explicit_and_keeps_correctness_guards(self):
         parsed = STRICT.read_configuration(self.root)

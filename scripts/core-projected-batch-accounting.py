@@ -27,12 +27,12 @@ U64_MAX = (1 << 64) - 1
 # actual native discovery, all cumulative limits and the complete cohort plan.
 SOURCE_RECIPES = (
     ("single_compatible", (1,3,3,1,6,12,3,24,1,1,1,1,1,1)),
-    ("linear_selection", (3,9,9,3,16,36,9,414,3,3,3,2,2,3)),
-    ("capacity_neighbors", (17,51,51,17,86,204,51,2171,17,17,17,5,1,3)),
-    ("context_admission", (8,24,24,8,42,96,24,662,8,8,8,12,1,1)),
-    ("duplicate_precedence", (3,9,9,3,16,36,9,297,3,3,3,3,1,1)),
-    ("permutation_retention", (3,9,9,3,16,36,9,603,3,3,3,3,1,6)),
-    ("subtick_overlap", (2,6,6,2,11,24,6,225,2,2,2,1,1,1)),
+    ("linear_selection", (3,9,9,3,16,36,9,525,3,3,3,2,2,3)),
+    ("capacity_neighbors", (17,51,51,17,86,204,51,2234,17,17,17,5,1,3)),
+    ("context_admission", (8,24,24,8,42,96,24,680,8,8,8,12,1,1)),
+    ("duplicate_precedence", (3,9,9,3,16,36,9,305,3,3,3,3,1,1)),
+    ("permutation_retention", (3,9,9,3,16,36,9,618,3,3,3,3,1,6)),
+    ("subtick_overlap", (2,6,6,2,11,24,6,231,2,2,2,1,1,1)),
     ("projected_batch_private_admission", (1,3,3,1,5,12,3,6,1,1,1,3,0,0)),
     ("projected_batch_private_priority", (3,9,9,3,14,36,9,18,3,3,3,0,0,0)),
     ("projected_batch_private_delegation", (2,6,6,2,9,24,6,14,2,2,2,2,0,0)),
