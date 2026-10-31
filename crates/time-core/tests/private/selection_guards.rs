@@ -101,7 +101,11 @@ impl Calls {
     /// The outer result rejects a counter overflow or exhausted batch budget.
     /// The inner result preserves the public receiver's admission error.
     fn batch(&self, values: &[FixtureInterval]) -> TestResult<Result<FixtureBatch, BatchError>> {
-        let limit = if self.case == "duplicate_recovery" { 5 } else { 2 };
+        let limit = if self.case == "duplicate_recovery" {
+            5
+        } else {
+            2
+        };
         charge(&self.batches, limit)?;
         Ok(FixtureBatch::new(values))
     }
@@ -238,14 +242,15 @@ impl HelperCalls {
             HelperKind::Witness => &self.witnesses,
         };
         let limit = match (self.case, kind) {
-            (HelperCase::CapacityNeighbor, HelperKind::Read | HelperKind::Depth) => 2,
-            (HelperCase::CapacityNeighbor, HelperKind::Sort) => 3,
+            (
+                HelperCase::CapacityNeighbor,
+                HelperKind::Read | HelperKind::Depth | HelperKind::Endpoints | HelperKind::Cells,
+            )
+            | (HelperCase::DuplicateRecovery, HelperKind::Components) => 2,
+            (HelperCase::CapacityNeighbor, HelperKind::Sort | HelperKind::Components)
+            | (HelperCase::DuplicateRecovery, HelperKind::Endpoints | HelperKind::Cells) => 3,
             (HelperCase::CapacityNeighbor, HelperKind::Labels) => 5,
-            (HelperCase::CapacityNeighbor, HelperKind::Endpoints | HelperKind::Cells) => 2,
-            (HelperCase::CapacityNeighbor, HelperKind::Components) => 3,
             (HelperCase::CapacityNeighbor, HelperKind::Witness) => 4,
-            (HelperCase::DuplicateRecovery, HelperKind::Endpoints | HelperKind::Cells) => 3,
-            (HelperCase::DuplicateRecovery, HelperKind::Components) => 2,
             _ => 0,
         };
         charge(counter, limit)
@@ -487,7 +492,10 @@ fn raw_witness_contract(batch: &FixtureBatch, calls: &HelperCalls) -> TestResult
     );
     assert_eq!(witness.supporters().len(), 16);
     assert_eq!(
-        witness.supporters().map(NonZeroU64::get).collect::<Vec<_>>(),
+        witness
+            .supporters()
+            .map(NonZeroU64::get)
+            .collect::<Vec<_>>(),
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     );
     Ok(())
@@ -532,7 +540,10 @@ fn raw_pipeline_contracts(
     calls.charge(HelperKind::Endpoints)?;
     let left_keys = unique_endpoints(left)?;
     assert_eq!(left_keys.len, 2);
-    assert_eq!(left_keys.values.get(..left_keys.len), Some([-2, 3].as_slice()));
+    assert_eq!(
+        left_keys.values.get(..left_keys.len),
+        Some([-2, 3].as_slice())
+    );
     calls.charge(HelperKind::Endpoints)?;
     let disjoint_keys = unique_endpoints(disjoint)?;
     assert_eq!(disjoint_keys.len, 4);
@@ -543,7 +554,10 @@ fn raw_pipeline_contracts(
     calls.charge(HelperKind::Cells)?;
     let left_cells = depth_cells(left, &left_keys)?;
     assert_eq!((left_cells.len, left_cells.maximum), (3, 1));
-    assert_eq!(left_cells.values.get(..left_cells.len), Some([1, 1, 1].as_slice()));
+    assert_eq!(
+        left_cells.values.get(..left_cells.len),
+        Some([1, 1, 1].as_slice())
+    );
     calls.charge(HelperKind::Cells)?;
     assert!(matches!(
         depth_cells(right, &left_keys),
@@ -575,7 +589,10 @@ fn raw_pipeline_contracts(
         })
         .collect();
     assert_eq!(after, before);
-    assert_eq!(left_keys.values.get(..left_keys.len), Some([-2, 3].as_slice()));
+    assert_eq!(
+        left_keys.values.get(..left_keys.len),
+        Some([-2, 3].as_slice())
+    );
     assert_eq!(
         disjoint_keys.values.get(..disjoint_keys.len),
         Some([-2, 3, 4, 6].as_slice())
@@ -603,7 +620,10 @@ fn raw_topology_contract(
     calls.charge(HelperKind::Endpoints)?;
     let small_keys = unique_endpoints(small)?;
     assert_eq!((full_keys.len, small_keys.len), (32, 2));
-    assert_eq!(small_keys.values.get(..small_keys.len), Some([-1, 1].as_slice()));
+    assert_eq!(
+        small_keys.values.get(..small_keys.len),
+        Some([-1, 1].as_slice())
+    );
     calls.charge(HelperKind::Cells)?;
     let full_cells = depth_cells(full, &full_keys)?;
     calls.charge(HelperKind::Cells)?;
@@ -624,7 +644,10 @@ fn raw_topology_contract(
         })
     ));
     assert_eq!((full_keys.len, small_keys.len), (32, 2));
-    assert_eq!(small_keys.values.get(..small_keys.len), Some([-1, 1].as_slice()));
+    assert_eq!(
+        small_keys.values.get(..small_keys.len),
+        Some([-1, 1].as_slice())
+    );
     assert_eq!((full_cells.len, full_cells.maximum), (63, 16));
     assert_eq!((small_cells.len, small_cells.maximum), (3, 1));
     Ok(())

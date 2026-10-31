@@ -529,6 +529,17 @@ Persist minimized proptest failures and generation seeds/configuration. Random g
 
 The simulator owns independent true UTC, oscillator error, asymmetry and source faults. Production code must not compute its expected answer. Preserve analytic cases and protocol/crypto vectors alongside pinned Chrony trajectory comparison. For example, the architecture's `T1=0, T2=70, T3=80, T4=110` millisecond fixture yields +20 ms offset and 100 ms network delay. Include an asymmetric-delay case demonstrating bias; authentication does not remove that physical limitation.
 
+Separate recorded-packet replay from first delivery delayed within an outstanding
+authenticated request. Apply [architecture section 7.4](windows-time-architecture.md#74-nts-implementation-contract)
+and the [protocol qualification matrix](../tasks/s0.1-protocol-comparison.md#replay-and-delayed-response-qualification)
+under CHECK-6/7/8/9/21: completion/expiry, queued processing at the deadline,
+restart with restored keys/cookies, suspend/resume and protected-response races
+need discriminating rejection and healthy controls. Exercise real NTS admission
+with independent crypto vectors before claiming authenticated replay protection;
+the unauthenticated fixture cannot supply that evidence. For an otherwise
+admissible first-delivery delay, demonstrate the independently expected bias and
+uncertainty; rejection of every delayed sample is no proof of useful operation.
+
 Compare selected/supporting/rejected identities, reason codes, uncertainty, polling and full correction accounting. Agreement with a translated upstream algorithm can reproduce a shared bug. Require an independently valid input that produces the intended effect and invalid/stale/unauthorized inputs that produce no forbidden effect. Round trips, mocks and a harness that repairs the output cannot establish production behavior.
 
 ### 9.3 Coverage: at least 90% for every security module

@@ -1,12 +1,14 @@
 """Independent finite evidence-accounting and artifact-custody controls."""
 from __future__ import annotations
 
+from contextlib import contextmanager
 import importlib.util
 import hashlib
 import json
 from pathlib import Path
 import re
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -54,6 +56,129 @@ def complete_report(value):
 
 class EvidenceTests(unittest.TestCase):
     """Literal healthy controls accompany wrong-file/empty/cause failures."""
+
+    @contextmanager
+    def _session_admission_fixture(self, free_bytes, *, drop_during_admission=False):
+        """Reach the real initializer with bounded fake expensive admissions.
+
+        Real temporary checkout/vendor/output-parent paths preserve the actual
+        path checks. A sentinel stops at the first output mkdir before copying,
+        tool execution or product work; these are runner-order controls only.
+        """
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary).resolve()
+            root = parent / "checkout"; root.mkdir()
+            vendor = parent / "vendor"; vendor.mkdir()
+            output = parent / "output"
+            args = SimpleNamespace(vendor_dir=vendor, output_dir=output, lane="contracts")
+            events, measured_free = [], []
+            current_free = [free_bytes]
+
+            class OutputReached(RuntimeError):
+                """Healthy initialization reached its first owned output mutation."""
+
+            def product_admission(actual_root):
+                self.assertEqual(actual_root, root)
+                events.append("product")
+                return {}, {}
+
+            def equivalence_admission(actual_root, scope, policy):
+                self.assertEqual((actual_root, scope, policy), (root, SCOPE, {}))
+                events.append("equivalences")
+                return []
+
+            def input_hash(path):
+                self.assertTrue(path.is_relative_to(root))
+                events.append("hash")
+                return "a" * 64
+
+            def analysis_admission(actual_root):
+                self.assertEqual(actual_root, root)
+                events.append("analysis")
+                if drop_during_admission:
+                    current_free[0] = 2 * 1024 ** 3 - 1
+                return {"base": parent / "admitted-base", "stable": parent / "stable"}
+
+            def vendor_admission(actual_vendor, policy):
+                self.assertEqual((actual_vendor, policy), (vendor, {}))
+                events.append("vendor")
+                return {}
+
+            def disk_usage(path):
+                self.assertEqual(path, parent)
+                events.append("space")
+                measured_free.append(current_free[0])
+                return SimpleNamespace(free=current_free[0])
+
+            def first_output_mkdir(path, *positional, **keywords):
+                self.assertEqual(path, output)
+                self.assertEqual((positional, keywords), ((), {"mode": 0o700}))
+                events.append("output-mkdir")
+                raise OutputReached("first private output mkdir reached")
+
+            with (patch.object(MODULE.PRODUCT, "admit_product", side_effect=product_admission) as product,
+                  patch.object(MODULE, "admit_mutation_equivalences", side_effect=equivalence_admission) as proofs,
+                  patch.object(MODULE.PRODUCT, "sha256", side_effect=input_hash) as hashes,
+                  patch.object(MODULE.ANALYSIS, "admit", side_effect=analysis_admission) as analysis,
+                  patch.object(MODULE.PRODUCT, "admit_vendor", side_effect=vendor_admission) as admitted_vendor,
+                  patch.object(MODULE.shutil, "disk_usage", side_effect=disk_usage) as space,
+                  patch.object(Path, "mkdir", side_effect=first_output_mkdir, autospec=True) as mkdir):
+                yield SimpleNamespace(
+                    root=root, args=args, report={}, output=output, events=events,
+                    measured_free=measured_free, output_reached=OutputReached,
+                    product=product, proofs=proofs, hashes=hashes, analysis=analysis,
+                    vendor=admitted_vendor, space=space, mkdir=mkdir,
+                )
+
+    def test_session_low_space_rejects_before_expensive_admission(self):
+        """One byte below the unchanged floor must avoid all expensive admission."""
+        with self._session_admission_fixture(2 * 1024 ** 3 - 1) as case:
+            with self.assertRaisesRegex(MODULE.Incomplete, "at least 2 GiB"):
+                MODULE.Session(case.root, case.args, case.report, SCOPE, {}, ())
+            self.assertEqual(
+                case.events, ["space"],
+                "low space must reject before product, proof, hash, tool or vendor admission",
+            )
+            for expensive in (case.product, case.proofs, case.hashes, case.analysis, case.vendor):
+                expensive.assert_not_called()
+            case.mkdir.assert_not_called()
+            self.assertFalse(case.output.exists())
+            self.assertEqual(case.report, {})
+
+    def test_session_healthy_space_preserves_mandatory_admission_before_output(self):
+        """The exact floor permits mandatory admission before the first mkdir."""
+        with self._session_admission_fixture(2 * 1024 ** 3) as case:
+            with self.assertRaisesRegex(case.output_reached, "first private output mkdir"):
+                MODULE.Session(case.root, case.args, case.report, SCOPE, {}, ())
+            admitted = [event for event in case.events if event not in {"space", "output-mkdir"}]
+            self.assertEqual(admitted, ["product", "equivalences", *["hash"] * 7, "analysis", "vendor"])
+            for mandatory in (case.product, case.proofs, case.analysis, case.vendor):
+                self.assertEqual(mandatory.call_count, 1)
+            self.assertEqual(case.hashes.call_count, 7)
+            last_space = len(case.events) - 1 - case.events[::-1].index("space")
+            self.assertLess(case.events.index("vendor"), last_space)
+            self.assertLess(last_space, case.events.index("output-mkdir"))
+            self.assertTrue(all(value == 2 * 1024 ** 3 for value in case.measured_free))
+            case.mkdir.assert_called_once()
+            self.assertFalse(case.output.exists())
+            self.assertEqual(case.report, {})
+
+    def test_session_space_drop_during_admission_rejects_before_output(self):
+        """A fresh late guard still rejects space lost during mandatory admission."""
+        with self._session_admission_fixture(2 * 1024 ** 3, drop_during_admission=True) as case:
+            with self.assertRaisesRegex(MODULE.Incomplete, "at least 2 GiB"):
+                MODULE.Session(case.root, case.args, case.report, SCOPE, {}, ())
+            admitted = [event for event in case.events if event != "space"]
+            self.assertEqual(admitted, ["product", "equivalences", *["hash"] * 7, "analysis", "vendor"])
+            for mandatory in (case.product, case.proofs, case.analysis, case.vendor):
+                self.assertEqual(mandatory.call_count, 1)
+            self.assertEqual(case.hashes.call_count, 7)
+            self.assertEqual(case.measured_free[-1], 2 * 1024 ** 3 - 1)
+            self.assertEqual(case.events[-1], "space")
+            self.assertLess(case.events.index("vendor"), len(case.events) - 1)
+            case.mkdir.assert_not_called()
+            self.assertFalse(case.output.exists())
+            self.assertEqual(case.report, {})
 
     def test_mutation_json_policy_emits_flag_in_listing_and_campaign(self):
         """Core's JSON mode reaches both commands and exact command guards."""
@@ -610,6 +735,52 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(set(report["coverage"]), set(subjects))
             self.assertTrue(all(value["line_percent"] == 90 and value["tests_executed"] == 94
                                 for value in report["coverage"].values()))
+
+    def test_coverage_test_threads_are_opt_in_and_forwarded_after_the_separator(self):
+        """Serialize libtest only when requested; keep Cargo compilation at twelve jobs."""
+        core = MODULE.Scope("time-core", CORE_FILES, "policy/time-core-analysis.json")
+        for scope, subjects, override, suffix in (
+                (SCOPE, dict(FILES), {}, []),
+                (core, dict(CORE_FILES), {}, []),
+                (core, dict(CORE_FILES), {"coverage_test_threads": 1}, ["--", "--test-threads=1"])):
+            with self.subTest(package=scope.package, override=override), tempfile.TemporaryDirectory() as temporary:
+                work, report, calls = Path(temporary), {}, []
+                def run(label, command, timeout):
+                    calls.append(label)
+                    self.assertEqual((label, timeout), ("coverage", 300))
+                    self.assertEqual(command, [
+                        str(work / "tools" / "cargo-llvm-cov"), "llvm-cov", "--package", scope.package,
+                        "--frozen", "--jobs", "12", "--lib", "--tests", "--json",
+                        "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                        "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                        "--fail-under-file-lines", "90", *suffix])
+                    (work / "coverage.json").write_text(json.dumps({"data": [{"files": [
+                        {"filename": "/work/source/" + filename,
+                         "summary": {"lines": {"count": 10, "covered": 9}}}
+                        for filename in subjects.values()]}]}))
+                    return "test result: ok. 8 passed; 0 failed; 0 ignored;"
+                MODULE.run_analysis_lanes(scope, subjects, {"coverage_wall_seconds": 300, **override},
+                                          work, work / "tools", run, report, "coverage")
+                self.assertEqual(calls, ["coverage"])
+                self.assertEqual(set(report["coverage"]), set(subjects))
+                self.assertTrue(all(row["tests_executed"] == 8 for row in report["coverage"].values()))
+
+    def test_invalid_coverage_thread_overrides_stop_before_any_lane_effect(self):
+        for lane in ("coverage", "mutation", "all"):
+            for value in (None, True, False, 0, 2, 12, -1, "1", 1.0, [], {}):
+                with self.subTest(lane=lane, value=value), tempfile.TemporaryDirectory() as temporary:
+                    work, report = Path(temporary), {}
+                    run = unittest.mock.Mock()
+                    policy = {"coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
+                              "maximum_mutants": 512, "coverage_test_threads": value}
+                    with patch.object(MODULE, "admit_mutation_equivalences") as admit:
+                        with self.assertRaisesRegex(MODULE.Incomplete, "Coverage test-thread override"):
+                            MODULE.run_analysis_lanes(SCOPE, dict(FILES), policy,
+                                                      work, work / "tools", run, report, lane)
+                        admit.assert_not_called()
+                    run.assert_not_called()
+                    self.assertFalse((work / "mutation").exists())
+                    self.assertEqual(report, {})
 
     def test_coverage_scope_repair_cannot_hide_missing_duplicate_or_undercovered_owner(self):
         """Good neighbors and an upstream file cannot replace a declared owner."""

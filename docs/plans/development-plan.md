@@ -4,7 +4,7 @@
 **Status:** reviewed; ready to assign the next bounded task; implementation phases remain open  
 **Inspected source baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`, initially clean  
 **Immediate priority:** secure, bounded and performant NTP/NTS acquisition, with independently verified algorithms  
-**Current task:** [S1.3 source-selection fixture](../../tasks/s1.3-source-selection-readiness.md), following the separately qualified bounded [main S1.2 runs integration](../../tasks/s1.2-regression-readiness.md#main-fixture-qualification-result-30-october-2026). Checked constructor, batch and evaluator progress belongs to the live S1.3 record; old five-owner receipts do not qualify the new owner. The required [OD-07 CPU workstream](#81-x64-baseline-and-runtime-optimization-workstream) starts at the next controlled build-policy checkpoint and continues with measured runtime specialization. Independent S1.3 work can proceed; full S1.2/P1, native Windows and release gates remain open.
+**Current task:** [S1.3 source-selection fixture](../../tasks/s1.3-source-selection-readiness.md), following the separately qualified bounded [main S1.2 runs integration](../../tasks/s1.2-regression-readiness.md#main-fixture-qualification-result-30-october-2026). The [92-input projected-batch host-fixture result](../../tasks/s1.3-source-selection-readiness.md#projected-batch-host-fixture-result-31-october-2026) records the borrowed common-context consumer, 254 ordinary/56 doctests/227 optimized executions, all nine line gates, 717 native mutation variants at ten workers, actual CLI union, contracts and bounded history semantic fuzz. The newer [principal/hysteresis fixture](../../tasks/s1.3-source-selection-readiness.md#execution-efficiency-correction-during-principal-development) has passed ten focused cases and the complete portable row at 264 ordinary/56 doctests/237 optimized executions; its critical-file and contract checkpoint remains open. The [89-input enclosure result](../../tasks/s1.3-source-selection-readiness.md#enclosure-host-fixture-result-31-october-2026), [86-input projection result](../../tasks/s1.3-source-selection-readiness.md#projection-host-fixture-result-31-october-2026) and earlier [six-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#host-fixture-checkpoint-31-october-2026) remain historical. Preserve the qualified inputs before further edits. Production eligibility and combination remain next S1.3 obligations; inert acquisition framing preparation may overlap within §2. Preserve observation ages and unresolved production policy. The required [OD-07 CPU workstream](#81-x64-baseline-and-runtime-optimization-workstream) remains owned by its controlled build-policy checkpoint and measured runtime specialization. Full S1.2/S1.3/P1, native Windows and release gates remain open.
 
 Agent navigation: [implementation contracts](#3-mandatory-explicit-contracts-during-implementation),
 [phase skill map](#5-required-skill-reading-and-use-by-phase),
@@ -377,6 +377,10 @@ polling/recovery implementation. S2.1 owns plain-NTP KoD integration; S2.2 adds
 NTS control semantics and the [AES-preferred TLS policy](../windows-time-architecture.md#1871-license-gate-and-finite-provider-choice).
 S2.3/S2.4 exercise cache recovery, retry and resource failure paths. Keep graph,
 Windows trust and interoperability gates distinct from this documentation review.
+The same task's [replay and delayed-response matrix](../../tasks/s0.1-protocol-comparison.md#replay-and-delayed-response-qualification)
+binds S2.2–S2.4 to restoration, consume-once publication, monotonic processing-time
+expiry and genuine first-delivery-delay cases. Existing fixture correlation is
+not production NTS replay qualification; retain OPEN-5/6's unresolved bounds.
 
 | Acceptance | Independent observation and valid/fault controls | Mapping |
 | --- | --- | --- |

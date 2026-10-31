@@ -675,6 +675,43 @@
       "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z",
       "implementation_candidate": "S1.3 algorithm not authored",
       "release_or_product_claim": false
+    },
+    {
+      "slice": "S1.3 fixed-roster principal and hysteresis fixture",
+      "review_date": "2026-10-31",
+      "status": "pretranslation source mapping; algorithm and execution pending",
+      "destination": "crates/time-core/src/principal.rs",
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c",
+      "source_sha256": "019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d",
+      "source_git_blob_sha1": "3c6de32cf546e5df49f45a8076da6049bddad15f",
+      "source_bytes": 60639,
+      "selected_ranges": [
+        {"lines": "191", "purpose": "strict score threshold 10"},
+        {"lines": "1377-1442", "purpose": "minimum survivor stratum, asymmetric NTP distance penalty, per-update scores and stable first-maximum tie"},
+        {"lines": "1447-1490", "purpose": "forced reselection, pending update gate, score reset and update-credit consumption"}
+      ],
+      "context_only": [
+        {"file": "sources.c", "lines": "980-983", "purpose": "one updated source per selection call"},
+        {"file": "sources.c", "lines": "365-375,848-860", "purpose": "reset and unselect lifecycle"},
+        {"file": "sources.c", "lines": "1197-1202,1279-1305,1344-1348", "purpose": "negative agreement and minimum paths"},
+        {"file": "ntp_core.c", "lines": "1876-1877", "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0", "purpose": "accepted sample precedes source-selection update; no code copied"}
+      ],
+      "license": "GPL-2.0-only",
+      "notice_obligation": "Retain the complete original sources.c Curnow/Lichvar copyright, GPL version 2 grant, disclaimer and distribution notice in principal.rs; mark actual dated modifications and retain COPYING and corresponding-source/build obligations.",
+      "deliberate_adaptations": [
+        "Pure NTP-only fixture with fixed ordered roster of at most16 asserted labels, actual projected-batch common-witness selection and explicit minimum; no trust, eligibility, independence or production vote-policy adoption.",
+        "Explicit positive normal reselection distance and nonnegative normal-or-zero stratum weight have no defaults; ordinary separately checked binary64 primitives reject unsupported arithmetic atomically.",
+        "Seed records initial unconsumed observations without selection. Later calls derive at most one new-source event from exact latest-observation timestamps, never a caller boolean or projection time.",
+        "Registered absent sources retain their watermark, pending credit, distance and stratum; a missing current principal participates through owned cached numerator before forced replacement, preserving score-before-replacement order. Cached last projection is a fixture approximation: unlike Chrony's registered-source refresh at1030, no absent-source aging is performed.",
+        "Pending credits are bounded booleans rather than upstream update counters. A principal-ready fixture decision consumes all credits but performs no combination, reference update or clock effect.",
+        "Frame, mapping generation, roster, real source lifetime, parameters or minimum changes require explicit replacement state. No packet observation identity or independent peer-generation owner is claimed."
+      ],
+      "contract_file": "next-s13-selection-slice.md",
+      "contract_sha256": "9c87c7dff9d632fd01e1d59b8b0691048f416b3368d9ad13058b41725afe7b52",
+      "independent_expectations_file": "principal-independent-facts.md",
+      "evidence_directory": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z",
+      "review_status": "Contract and exact manual facts reviewed independently; newly appended ledger and provenance bytes still require independent pretranslation review.",
+      "release_or_product_claim": false
     }
   ]
 }

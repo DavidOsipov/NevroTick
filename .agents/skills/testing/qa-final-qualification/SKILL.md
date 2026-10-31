@@ -26,6 +26,11 @@ Tool controls, PageHeap success and process exit cannot substitute for required
 product cleanup or sustained-resource evidence; instrumentation changes the
 performance measurement conditions.
 
+For sanitizer claims, reconcile [the selected mechanism's evidence](../references/sanitizers.md):
+actual instrumented scope, detector-specific controls and diagnostic, semantic
+oracle results, raw/accepted/reached counts when fuzzing and remaining native gaps.
+An assertion-only control cannot establish ASan detection or general leak freedom.
+
 For whole-system stabilization or explicit acceptance require direct [black-box inspection](../qa-black-box-acceptance/SKILL.md) of representative actual inputs/outputs on the frozen integrated candidate. Review source-derived claims and independent findings separately from runtime evidence.
 
 Return qualified within declared scope, not ready for confirmed blockers, or incomplete for missing required evidence; give exact remaining action. Required failures/skips/cancellations/timeouts remain incomplete. Skill/documentation-only changes need pack verification, no unimplemented product gates. No staged readiness/signing/release approval/standard certification claim unless separately established.

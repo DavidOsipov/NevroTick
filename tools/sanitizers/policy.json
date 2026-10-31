@@ -1,0 +1,1052 @@
+{
+  "schema_version": 1,
+  "platform": "x86_64-unknown-linux-gnu",
+  "payloads": [
+    {
+      "root": "clang",
+      "path": "bin/x86_64-linux-gnu-gcc-13",
+      "sha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26"
+    },
+    {
+      "root": "clang",
+      "path": "bin/x86_64-linux-gnu-ld.bfd",
+      "sha256": "e9ceb054c12207970f2726dfc07e9a66b411602748628baf27399f02a9bbb31b"
+    },
+    {
+      "root": "clang",
+      "path": "lib/gcc/x86_64-linux-gnu/13/crtbeginS.o",
+      "sha256": "667ff5f1edc931d44d1f2bb44d313907aa274bcc207c0beff71a398335f0d29f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/gcc/x86_64-linux-gnu/13/crtendS.o",
+      "sha256": "9c8b2caad195193301ef072895dc89bea1d23371d4c19accd821debe27773063"
+    },
+    {
+      "root": "clang",
+      "path": "lib/gcc/x86_64-linux-gnu/13/libgcc.a",
+      "sha256": "d9376c55f97863a4e5fbb6c6beca2591b319bf786f3a7ca56da8964c5662171f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/gcc/x86_64-linux-gnu/13/libgcc_eh.a",
+      "sha256": "f853cbbf842ff8714cc8dd986e2fd5bb309d34d490b0707203223ee4d52c76bc"
+    },
+    {
+      "root": "clang",
+      "path": "lib/gcc/x86_64-linux-gnu/13/libgcc_s.so",
+      "sha256": "69a56a9993b7729b29b274e65016031c81f2397f176ed5ad44d59bd50425e0bd"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/bin/clang",
+      "sha256": "9dff149140cff7484c1efd85a5cfe0e3f046edcf71c63b42b5501c4a2ee462ae"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/bin/llvm-symbolizer",
+      "sha256": "8645b6453dc37c97473622e04ed6ddc51ac5cfde43f8dd8f2e6e2f9620b86a29"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan-preinit-x86_64.a",
+      "sha256": "c73c421075b6fa922594a2b9bf3af5ce15ab42cb93a505c4e84210d0ab631b07"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan-x86_64.a",
+      "sha256": "f4d71ecc27d0bb415c7f624de53e86d76646954aee4a10fb90781a49430b278f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan-x86_64.a.syms",
+      "sha256": "1422cb573bc14ea623fcf4d057b57a7c871c87b62089bb71505d7584a414d262"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan-x86_64.so",
+      "sha256": "5fee26888ddd4d343a3c25c1a64787125ed372b1410d2c55f6537216b0dd49f3"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan_cxx-x86_64.a",
+      "sha256": "627325d2572a0e64eb34d4add236ecabf142e9d4612036c510accae4e24e33d9"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan_cxx-x86_64.a.syms",
+      "sha256": "6eac435ad2d94c93a4e3deb0ffb5e62e37ca5eb7b5f32d96ffc812abe54918d7"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.asan_static-x86_64.a",
+      "sha256": "ee79ead74348205b0420e14026085c556b0a905dbd89b277c4fdc8790aae2fa1"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.dfsan-x86_64.a",
+      "sha256": "b8ef3a213c14d138af4cf8f5640e0f079fd94d498b7608ef89b94cd08e221450"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.dfsan-x86_64.a.syms",
+      "sha256": "5b68af57e6507281eee02fe54652825babe4c452e2703659738ae6f7e3602899"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.gwp_asan-x86_64.a",
+      "sha256": "2903f61c98f48311cfb6f7aedd27686ebc482478598001f45918f3b2ad8dc64f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan-preinit-x86_64.a",
+      "sha256": "704e7370d81c92d669ede2abd619d85724f8df4297e00e6c5c21aa2dcd290e76"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan-x86_64.a",
+      "sha256": "54bc7aabfc13a18bdc8ae5dfb3178b28bf3d5b7085b60ff5e54a31b2c4800783"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan-x86_64.a.syms",
+      "sha256": "dcbd9a8a36e6c976edfd6037ada1d4eba8f0f76d2065ce131355ab7b5390c61f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan-x86_64.so",
+      "sha256": "5b87bc0eaf7aa7b626a03558715dc8a85b3a4e4e6c9a5548eac44a958bf79c0d"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_aliases-x86_64.a",
+      "sha256": "4b0b5a42753bd3f7583faf5eda0c7d5c91feffe74813340e1d8342fd41e8b2fc"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_aliases-x86_64.a.syms",
+      "sha256": "dcbd9a8a36e6c976edfd6037ada1d4eba8f0f76d2065ce131355ab7b5390c61f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_aliases-x86_64.so",
+      "sha256": "f3e37b6a3426f28157d2cd162ee84478b94bcf9ce80b9337f007af441c25dfb7"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_aliases_cxx-x86_64.a",
+      "sha256": "7887881c204cf7192987d16c6906b836a625cebd50117f34eb3cdfff18dc9b36"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_aliases_cxx-x86_64.a.syms",
+      "sha256": "7634cbe8cc66a5e07b8cda2e21275aab735b36d591f369c05a855818e38654f7"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_cxx-x86_64.a",
+      "sha256": "7887881c204cf7192987d16c6906b836a625cebd50117f34eb3cdfff18dc9b36"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.hwasan_cxx-x86_64.a.syms",
+      "sha256": "7634cbe8cc66a5e07b8cda2e21275aab735b36d591f369c05a855818e38654f7"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.lsan-x86_64.a",
+      "sha256": "a5205b0bafc520bb158e46c7cfc82a40013cf20a3af03fac9fc2dd528e50a95c"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.msan-x86_64.a",
+      "sha256": "2e69c009670c5202146e66c668a64dfc6c5617395ce557910d431bd6609684f5"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.msan-x86_64.a.syms",
+      "sha256": "a260965d2def10118700267304fcf35436dc590451aa4d16524c13b956ddb090"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.msan_cxx-x86_64.a",
+      "sha256": "21e67c128df29da7fa2881e42bccc15eb1f77c79fe2f18c89392d55327b8531e"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.msan_cxx-x86_64.a.syms",
+      "sha256": "3529bbca9108ba19cd5b53033912776f3e19cbe1c3d70024f150fd4ee573fa68"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.nsan-x86_64.a",
+      "sha256": "e8075c8ae692f0c76dfbe9c3f3d38b8d9486e45ad4aa1c54871e39f2b3e0f634"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.nsan-x86_64.so",
+      "sha256": "0d8164eb1a416b7399dca5159972548405eb24698723a076c987e40ec75299e6"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.rtsan-x86_64.a",
+      "sha256": "bbc9e3dc6cad86ed5c63fe52b766774fe97e5e928e53bde2ad05f23e310b6082"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.tsan-x86_64.a",
+      "sha256": "2daeedab3d9b42f2154bf924f7749c6014c209a6972718681d1ea1838f632a73"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.tsan-x86_64.a.syms",
+      "sha256": "0a35488afec1a1a67220df5b13a48805ae52d6a73a393ed8ce799ffa92014001"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.tsan-x86_64.so",
+      "sha256": "64e6dfbb201d119e65dbcb22a674b1dce3e654331f7484330f334104a0faadbb"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.tsan_cxx-x86_64.a",
+      "sha256": "2a5c3b820074461868e1f58f8533eaee40984d75de0db9beb49726e1acb1171e"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.tsan_cxx-x86_64.a.syms",
+      "sha256": "c9c7e18db539e8e72264d03627b158cbd159020a00e74be08a007f41cb505f4d"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.tysan-x86_64.a",
+      "sha256": "ff9f2cec4c03812f9a86bae956086d92a6cf8b1c2efafcae47742fcf5db62a86"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_minimal-x86_64.a",
+      "sha256": "fb7aa3e3e81170d95b9b1aac3599d271150a67d354b41d30b7979f06bfc58638"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_minimal-x86_64.a.syms",
+      "sha256": "e75012de432dd345c24acb6eecad877944bd1944fec55c9b44218ef610424fd0"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_minimal-x86_64.so",
+      "sha256": "7ea8185457a521204050c5974be67b232a226742bfe32c11c8130c9ef0b32f3c"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_standalone-x86_64.a",
+      "sha256": "9bc0685e30c637b05a0f446c616bbf809fc8930f798ac99da9a5d32fc25cd8d9"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_standalone-x86_64.a.syms",
+      "sha256": "3cb55df810ba31b96cac6fc9d4b139e449f966b700a90cf7ec9720aea8b3b066"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_standalone-x86_64.so",
+      "sha256": "cdac81ae1f950a6ac12ba69823f9b1c3bc622f6f95e2ea28e2ab5fba7f6eaff3"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_standalone_cxx-x86_64.a",
+      "sha256": "bd3df54adbf87ddcfbc7b6925ff3b09d360e8e90187f75b6714d091aac26fc82"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/lib/linux/libclang_rt.ubsan_standalone_cxx-x86_64.a.syms",
+      "sha256": "e75012de432dd345c24acb6eecad877944bd1944fec55c9b44218ef610424fd0"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/share/asan_ignorelist.txt",
+      "sha256": "f0180e94133315446c6e45287e1801e70ea94de1905a237c974627a732ebeadc"
+    },
+    {
+      "root": "clang",
+      "path": "lib/llvm-22/lib/clang/22/share/msan_ignorelist.txt",
+      "sha256": "b90693478acf1b7ea4180eccbc31a9d9badc55c58d49e406eddd47eb00e8fe21"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/Scrt1.o",
+      "sha256": "9438d15c4bac893a0e3aad2c2c86ccbceb59d5872bd07101949f237ee1c92a8b"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/crt1.o",
+      "sha256": "5cfb30db1d2c92a9a818f6c015ad7fcd6519afaa1b88148e831504fe6e299479"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/crti.o",
+      "sha256": "077ccb6c68db1794da3ee262c4a16a3c6f8e902845dd0829110ad4b7065e5aa3"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/crtn.o",
+      "sha256": "a2266079f95b84ccc2162ebbf279bcd78858a748aa1882e0bdb912316c76a58f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+      "sha256": "c20a2dc8917c755f02b94049356320fe1f62ac7d9f8994731f807d9df39302da"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libLLVM.so.22.1",
+      "sha256": "3f02d721ee01ce618a2317fe5552ab3bbd44331cd6d65e602dae2876fbf35e2e"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libbfd-2.42-system.so",
+      "sha256": "11f084bc6ff5fc64e91c0b6422040fab1245419e7ff29560a95c1176ce1b9ff4"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libbrotlicommon.so.1.1.0",
+      "sha256": "f8cd338ec62f719333abd5cba29a6e0bdb4597dfdffed000ffb868b47e02f2e9"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libbrotlidec.so.1.1.0",
+      "sha256": "d5060475e7259904af3600d01e809710305b296441815bcaa540119a66530a70"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libbsd.so.0.12.1",
+      "sha256": "e86cd4f0019f42c2ba5e60602e0edc8694d2948377d98c3654d0f6bddb5254bb"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libc.so",
+      "sha256": "fe2a4ce2930fc6b3966aa987fae808375446c8d3823b8c21792e991aad9c75df"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libc.so.6",
+      "sha256": "3a15d66867d83762c7f2f1e37359cb8f6c5743edb369c65285cb0b1c4f7498bf"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libclang-cpp.so.22.1",
+      "sha256": "abbea03976507c6777a8323a20fa55e7cade4dd4213a62742cbac81de269afe5"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libcom_err.so.2.1",
+      "sha256": "022943b3b11c860b049bce41342f1c2594941b7b401d95dfdf235521099fee08"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libcrypto.so.3",
+      "sha256": "6866ed711dab8927e1bf82bf1cd30e828bdfc34f3cc1e83b1c9eb01ce6c37d9a"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libctf.so.0.0.0",
+      "sha256": "25c8f765c259d05b59a3dc3634d711912a7f5ce9be8a28ace081507b925b3ad1"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libcurl.so.4.8.0",
+      "sha256": "3e51df20a6b52879ee83a207115a9bc6891092741ce2f5ec791606e6caf859fa"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libdl.so.2",
+      "sha256": "c2994527172cc23b7fb0f7d611b71e00a37da27af12c2e5e9e0dc1a742886c96"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libedit.so.2.0.72",
+      "sha256": "195c607216f8581dbf516346ed38f4c73500cac4b84e18eb0a4fd49931e4cd56"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libffi.so.8.1.4",
+      "sha256": "00f593fe192f2851b8ce23b25cec2488d769beb5a8f63e8c9e563071e1075153"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libgcc_s.so.1",
+      "sha256": "9c08cedd322f564a362444b58135cf0356a1113ceebb702c7e634e481fe1c8bb"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libgmp.so.10.5.0",
+      "sha256": "0ccdfb6d6f5c039465f6d002cf7e4c072d48ac6a2cffc8dd6c748dec31592804"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libgnutls.so.30.37.1",
+      "sha256": "ddbae2995750875c07bc218d12a062d73f8250678f54dedda7e9be5068781c98"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libgssapi_krb5.so.2.2",
+      "sha256": "c7aa00cf51646f7c32f196d329a562bc873ff32906c9caf6554ca489dd657507"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libhogweed.so.6.8",
+      "sha256": "c3c606139d4f7776efa4dbd4a6b62e30c916b07a0cafd8c3ef173d6f093607e3"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libicudata.so.74.2",
+      "sha256": "ddbb3718b8bd9cbd780e5ab08b4503c30a6c4fa0706ebe5d074ed6b596c1714e"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libicuuc.so.74.2",
+      "sha256": "7560aadde38e5f4237a47a1ddd5891f9b36768a77a60faae30beee003ac01901"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libidn2.so.0.4.0",
+      "sha256": "6e632fd9a3125db60bbc623719bbc17b0470330321c5b1c57f1ff7190e5551ad"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libjansson.so.4.14.0",
+      "sha256": "c49935a4b3ac599064281b1f257576087806d0dad7ec46f353bd983b052c5e26"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libk5crypto.so.3.1",
+      "sha256": "b37407fb2930939bf78b47267019cd201a8af1f4b6a3852249c849cf3a985798"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libkeyutils.so.1.10",
+      "sha256": "f48214417757f18793ed6e180cc14ee1d6f04252a518fc7270e8ca1d0b4260fe"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libkrb5.so.3.3",
+      "sha256": "fad617a72b5839d30143e7db03281279089def6f18788cbb0b7f86385301bf04"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libkrb5support.so.0.1",
+      "sha256": "936bae947a838bd47676a419dfcfb036d0163249215b58ec706ec7d46b7497aa"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/liblber.so.2.0.200",
+      "sha256": "ddf14275b1fb70ba06510094071adcc1462e675f15ae6cdcadbf40c1dabe5a03"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libldap.so.2.0.200",
+      "sha256": "a9829b999c95452eb0a34cc7b5349427b76dbf3e5d5c8672a5ca69e454c1b151"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/liblzma.so.5.4.5",
+      "sha256": "26b37d25f7ca2a2d348de8ecabacda12e921cd933b21fa069a179760db77219d"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libm.so",
+      "sha256": "55de4a3e12e17c3e2b18eb95ee21b3f46a8893ea6cab68c0a1c3a5caaf32e6cf"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libm.so.6",
+      "sha256": "fce00b6f25f459cf4ae0b7fae4257909a1a8a86f9149e7c029a5d617baf1ccd0"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libmd.so.0.1.0",
+      "sha256": "423e18586b6ea740f4465afd64f7a9a4cb7264ed979c8e7256f9085af5345fef"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libnettle.so.8.8",
+      "sha256": "a245ed916229583d6fe0b07657b3ed945bc148c28cc08b5266295f620d2b91cc"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libnghttp2.so.14.26.0",
+      "sha256": "46764ab5b6ca7e353a322054f0bee45d9158a27f3e6a82a2fa4447f2ba9ba268"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libp11-kit.so.0.3.1",
+      "sha256": "a59efd4792d3343dedea1d26a28f5597abfe3369082deb504c4802a31b014897"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libpsl.so.5.3.4",
+      "sha256": "ae6c5a9aecc249fc66e03c16ec6c4385d09d7e12e0ea7694bb831ab4fee8133c"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libpthread.so.0",
+      "sha256": "90491a21ce44efcf3bd4b65ec82501c091d7ebe7f8d9b341dd01d721001d9ecd"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libresolv.so.2",
+      "sha256": "1d730ea434da5a5595bc6a961d7a9ace83e03703205df9644044b3dca79c362f"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/librt.so.1",
+      "sha256": "6d072187d88e092e81561a44c03a4a41397319022c6d43519757cc051c576d82"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/librtmp.so.1",
+      "sha256": "15a2a75e8c437b9c99971b5ee10278ab110beef1a56d1d9e5d6759ea140e98ac"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libsasl2.so.2.0.25",
+      "sha256": "a0f410ad093236856eee59c4ff2838dc04d932ea0993400f23ed77d67d85af34"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libsframe.so.1.0.0",
+      "sha256": "1693a2dbd77c909d279ae34aa9b5d8d08d97f116f8d0ed724063df11151b3c69"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libssh.so.4.9.6",
+      "sha256": "b82bd54edb908605b8142be1a6d242df65501af0e9bb7581cc36ebf4d8a5ecfd"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libssl.so.3",
+      "sha256": "a40e7b67489bbd257e432c700ff8f6a1ad796425b5eccecdc2930127fdd86624"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libstdc++.so.6.0.35",
+      "sha256": "c3d5641b6d085d5b2e8d955cc709ab16a2616cf23cff91517a7e44733de39eb6"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libtasn1.so.6.6.3",
+      "sha256": "59994414d0cdec4f678ef91eaaafc44b26b00bca507e4cc7978caaf79f584173"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libtinfo.so.6.4",
+      "sha256": "e6089d7bb95eee5b545f3770dd69095b0bca47d26701cad145af429561d16306"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libunistring.so.5.0.0",
+      "sha256": "7bcf825cd449892db5105ad2aed91dcf94a27b796426600c765720c584c54dd1"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libxml2.so.2.9.14",
+      "sha256": "209e941be9eb2eb9ab36caaa0b81d1c6b36c8f5d7268c24f19e81039137e6485"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libz.so.1.3",
+      "sha256": "f61677c7bdb7c2aa2a243ea781bfd16afcb361cede7b4ef76127a9d8eb9a5242"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libz3.so.4",
+      "sha256": "730694c87a99a1e512562bd36d005c121610531c146e4317be0e1a8d53882b18"
+    },
+    {
+      "root": "clang",
+      "path": "lib/x86_64-linux-gnu/libzstd.so.1.5.5",
+      "sha256": "0a2128bc10841fb29e76d08d945864dfb0b6a66da5df6df5d8299197439e54bb"
+    },
+    {
+      "root": "clang",
+      "path": "libexec/gcc/x86_64-linux-gnu/13/collect2",
+      "sha256": "4d1f341ae5b763b513258ee2812422a45e063c30a2f1924a0cf63d3699f3a158"
+    },
+    {
+      "root": "clang",
+      "path": "libexec/gcc/x86_64-linux-gnu/13/liblto_plugin.so",
+      "sha256": "14469ff8498fca3871c29dbf678c2330123207fffb8308151314a08395309ddf"
+    },
+    {
+      "root": "clang",
+      "path": "libexec/gcc/x86_64-linux-gnu/13/lto-wrapper",
+      "sha256": "f6d39bcfb1c2798c704e275a4ed2c1fe6374ebfb6aa0c5f3f3b6c669e1ff2e13"
+    },
+    {
+      "root": "rust",
+      "path": "bin/cargo",
+      "sha256": "c6544ac72ef19a2bc829398ea6e828fcfd9ca3a01bb4652f4f6f809c59b1ced1"
+    },
+    {
+      "root": "rust",
+      "path": "bin/rustc",
+      "sha256": "b1d854c5bab8a9cb953f953cfc199e6bc07b28ac4386cf4469eae080f1ee1bd6"
+    },
+    {
+      "root": "rust",
+      "path": "bin/rustdoc",
+      "sha256": "9d1306e0e2b8b44a49eadc623936c9d35e175cb8135ccc5fffbcd591227bff59"
+    },
+    {
+      "root": "rust",
+      "path": "lib/libLLVM-23-rust-1.101.0-nightly.so",
+      "sha256": "ccfd1258407eda67c3335f740a9e03e62b28ad830683c11524033d5013334938"
+    },
+    {
+      "root": "rust",
+      "path": "lib/libLLVM.so.23.1-rust-1.101.0-nightly",
+      "sha256": "75e3ebeb9506c1d0b62e08891069ee15abf8244ed5cf765ca093c9bb5c2f9868"
+    },
+    {
+      "root": "rust",
+      "path": "lib/librustc_driver-8c22876555d7e18b.so",
+      "sha256": "27138ccd41d9285a0a8c490c7730f0b93fbb7244a11a370150005c5fee19142d"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "sha256": "1de227b882a98a4e89bc8daf08e24ce7498e9eaf7720afd78356ad6d1d18c334"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld64.lld",
+      "sha256": "1de227b882a98a4e89bc8daf08e24ce7498e9eaf7720afd78356ad6d1d18c334"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/lld-link",
+      "sha256": "1de227b882a98a4e89bc8daf08e24ce7498e9eaf7720afd78356ad6d1d18c334"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/wasm-ld",
+      "sha256": "1de227b882a98a4e89bc8daf08e24ce7498e9eaf7720afd78356ad6d1d18c334"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld",
+      "sha256": "f1b354ed937dfb7883db40007b6e75b9fc320cf57a6a109751e46a2bcbe8b663"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-objcopy",
+      "sha256": "97cba1edba740414b0889ca01a4498e2ba593773021c18e01722f3df10abdc33"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/bin/wasm-component-ld",
+      "sha256": "6a93b88b2bba7d78a99ad1e98f2439f72f4dc9365b8c9bb18fdff78230ad0c05"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libaddr2line-0b4046677976d5f5.rlib",
+      "sha256": "a28eed0b7ea60dd46c87e98371d4b8a1dca9dea5874cf1b8fe62e79c9340e9df"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libaddr2line-0b4046677976d5f5.rmeta",
+      "sha256": "0d6bbeedbfb7941b7ba4817f847c8bc539feec8cbf3d14377bf198c24c5e2d86"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libadler2-5c03b1722ed77d52.rlib",
+      "sha256": "90fd6b118370a4fc646ad7be3d030f21ccf879d93d4186f1f2a9905f1e7bf3e4"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libadler2-5c03b1722ed77d52.rmeta",
+      "sha256": "68e1ef04fddf2948dad6cb5fd2cf14038594c819cd12bfe1e29ae531464e3ac9"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc-6e37827f505ea391.rlib",
+      "sha256": "923b05621211ebb22db2a76ee35d4a357b520076534825a45bd8345cc13f2f73"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/liballoc-6e37827f505ea391.rmeta",
+      "sha256": "ac21f2a114b363f72fa7e9083c6bcab9188b97073593d29e4816a0fa38608ddd"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libcfg_if-644aa646e65e91a4.rlib",
+      "sha256": "2ee460ea112ef2b9503680144149256469d348d9509c4d01a7d033d785d38409"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libcfg_if-644aa646e65e91a4.rmeta",
+      "sha256": "875b2f5280c61e4c2792a725953f004feab46c5de1f6c123ba149341a85a74a6"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-f043acce59f01d9a.rlib",
+      "sha256": "e9f44852f6b93be7e6f0da43579d591571823b94b2d555a4438504504c8b60bd"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-f043acce59f01d9a.rmeta",
+      "sha256": "f45cd14cb0a2aab4ad32b05c54b1f181b40f82e89e5b8b2cc609740265377b51"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-7832d2fe4fa07f06.rlib",
+      "sha256": "d8acab97d9666c7597db7012c6e0008c2bdf1650bb5c18730fe94a7789f16ff0"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-7832d2fe4fa07f06.rmeta",
+      "sha256": "f377ce3201b25e2c1401b760d0bd820989610bb1abc86970c568bc6e83e30be0"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libgetopts-fb7e44a789f434d4.rlib",
+      "sha256": "4b88eb2e55032d3f672abcb1c4dbd9be0ea7324274fbb8233229898fbf3895ed"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libgetopts-fb7e44a789f434d4.rmeta",
+      "sha256": "853ccb4badea29e1f715f993dbca365f48ddd32b65a97f3f02b522710ea5636b"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libgimli-878b9e2bdd4c63a1.rlib",
+      "sha256": "0b098f70ec743f9296eb9a2da8dcc29f6edb8dbb67c4d82790ccd139f6347d31"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libgimli-878b9e2bdd4c63a1.rmeta",
+      "sha256": "a0ba33162c5db6da97069a1f87593daa3df572f32b07b8267ed301a02ba55ac1"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libhashbrown-765e2b693c1989ba.rlib",
+      "sha256": "0913a5479a78a315de16b5b00c8984a17579228b448171b561ab72c3fe89b91f"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libhashbrown-765e2b693c1989ba.rmeta",
+      "sha256": "d69b6dc3724d8278ccf8c2f0c8848f95d397cd961eb620544fb1ff77d4cd04bc"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-006c2673a6f85a35.rlib",
+      "sha256": "dd683cc1d7062d4c40b23acda862d97d67982a4734e82f222ef53e43e1451ac0"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/liblibc-006c2673a6f85a35.rmeta",
+      "sha256": "ec38d2a1faa3eb69a1f1223950aef99ab3e5f6780bcff99ddbac74187a086d37"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libmemchr-0d58b9ae10852bd1.rlib",
+      "sha256": "e4263b57de9682a35a549ccceb90ea11afacc444898cf161e2e9e1ae0ab90aed"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libmemchr-0d58b9ae10852bd1.rmeta",
+      "sha256": "f44bbacb4df39f11fc19bdf00d550b8b57769909a6abc887d5d5b29fd4a4e2f7"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libminiz_oxide-957a6e3f452b47b6.rlib",
+      "sha256": "d508baaa17b21bbc459896926152a1e90b6c3b158bfbd03230246139cb19c816"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libminiz_oxide-957a6e3f452b47b6.rmeta",
+      "sha256": "dc7f496e8075a59da8c53f55238f02c9c9fa67de3a070da850f6064cab58ed21"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libobject-3d053868bf3c7427.rlib",
+      "sha256": "76f94840f1180c0909f0354cd59c51e70fc1b8b1238a3f45273066278dd9a86b"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libobject-3d053868bf3c7427.rmeta",
+      "sha256": "b71c2f8cb7a5f73c90a23f17e1478bed7fba9ce02774884675f5783b4926a09c"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_abort-bf8908f88444d673.rlib",
+      "sha256": "201e8e420fca482bd0cd92f154b8d92a6b51c45e680722ccab2cb45946380310"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_abort-bf8908f88444d673.rmeta",
+      "sha256": "36c96869d2beac4742bb141e78695b6b7295084c7d9da3c7bc546f649348d91e"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_unwind-fd929f0b2e29b388.rlib",
+      "sha256": "046c7903bf78ba2c2ebae2f5aba7d93a0c437bb3a04d4eeee458c6f7dcadfb36"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libpanic_unwind-fd929f0b2e29b388.rmeta",
+      "sha256": "884c07296a0709b4110530af7b7cb2ba057ce19d3703fdb8cdd893477f112c73"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libproc_macro-f8718aacc3e32896.rlib",
+      "sha256": "5fed35b65b7c2383ee281b710b9513014453fc16b4fdd2e5955eb76b1ad15c0b"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libproc_macro-f8718aacc3e32896.rmeta",
+      "sha256": "4013955f83438cfffddcb519ecc6055a016f24da7e2cb13a7cd50aa709e8cea7"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libprofiler_builtins-fab1916287a66445.rlib",
+      "sha256": "75962be6b55ec937652dcf14c16bdc1319aa7ece64a621ed60669ba9b25b20e3"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libprofiler_builtins-fab1916287a66445.rmeta",
+      "sha256": "4726f7b913394e6ba44a4eed9a9888b5ea74ebbc0a246d18506b36236a447ba9"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.asan.a",
+      "sha256": "453521224b21a54ae3c4778a5ef8e68e5d343b3bf22b41cfaa34a76d695ec4ff"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.dfsan.a",
+      "sha256": "b1570bfd9d96a41105be4888ae633e19d675828d93aaeb2939bdfb3bafc7cbdc"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.lsan.a",
+      "sha256": "d00bf129062a02039302e9086e9cc8c52f7d6d98aadee0219c48b8c3cfdb6b3e"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.msan.a",
+      "sha256": "4f3baf6189e26cbaf22217d0dabf4e74b7f550debef8ab407d08d1a67f5379c8"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.rtsan.a",
+      "sha256": "fc4b65f355411025f7c0635fe151d325b034b78324ad3f84341161b037e79bb8"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.safestack.a",
+      "sha256": "c8a0e984d6cb00c94538103c91a490be0f4342141d61229afe7e82e1b2079bd9"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.tsan.a",
+      "sha256": "663d2976d9916bc4bf89751246fe976934da282200211f31ae9adcb4c8b3c785"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.ubsan.a",
+      "sha256": "5a457c3ea096f453dd4f90db7202286a09fee0863b20c5b58a4a887414cf671a"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.ubsan_minimal.a",
+      "sha256": "f38692f881a5b7e69d3632e9744783ad369519641722b84e38b0be675fdab0bc"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_demangle-2cb3073f367a5b9f.rlib",
+      "sha256": "62757aa5183c0917e65718e4b675a308acf0f2317f51ac2ab98f27421fb9eb47"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_demangle-2cb3073f367a5b9f.rmeta",
+      "sha256": "4c15e9d10de3a7dde77a00eef0eb0853d0ecde19ad640fbbd6cba7d53105547b"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_literal_escaper-7c03408115038d7c.rlib",
+      "sha256": "a7916b7865b648b92c74ffb55e5cd0aa2c426ebe06c537049de28812c6925b53"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_literal_escaper-7c03408115038d7c.rmeta",
+      "sha256": "39a410c595bc9e3e7a6133d2cb10046d0ae9986bd78f8ae3c1eb7df3a1cd93c9"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_std_workspace_alloc-927c4cf5b3d3fcc2.rlib",
+      "sha256": "75165d5a7229959655372b5425edd1a70fb1c559156cd1b25c94eb0c62783d19"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_std_workspace_alloc-927c4cf5b3d3fcc2.rmeta",
+      "sha256": "fba07a7c45f3780b854a6d903e1d035d62d13f6369758929cc045ee43aaf59e7"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_std_workspace_core-20c2e8bdc5854322.rlib",
+      "sha256": "d8fd87b07d6fc42efd1d94611567f54e293695d1b3caa4765eb1ceb38c703ea0"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_std_workspace_core-20c2e8bdc5854322.rmeta",
+      "sha256": "53f88d856a1d223e7aeadebc4703b460a0b7a8ae395b294b453249a6c33827af"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_std_workspace_std-268f8340053f24ff.rlib",
+      "sha256": "d7a0ce7a8a462acaef5ce3fc0fca64dbc6fcc99697c70047128e068246876e35"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc_std_workspace_std-268f8340053f24ff.rmeta",
+      "sha256": "dfc8f2078e80d466354faa9f13877b51272bb5994fa0c6ea878913dc3f757ed0"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-530112f2fd58de10.rlib",
+      "sha256": "c089876f066c0f7788ac95276ef8fbc677f2a5cc189d659daceabfa7b6b223b9"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-530112f2fd58de10.rmeta",
+      "sha256": "72be8adc9da293458f51d7cb57be27cf7b4c191932988a6cd6f83209a58a66d1"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd-530112f2fd58de10.so",
+      "sha256": "11eb56e4b176da54a22559e80ab5d4fb88a8a458b3a2f6049e4d5b058581c7d2"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_detect-e0d819b1a0eef409.rlib",
+      "sha256": "80f915f23eefbf74e69fec8df26b2810fb47d8f02d7dcb24e1257488f5602463"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd_detect-e0d819b1a0eef409.rmeta",
+      "sha256": "193aa188b8592c4ecce01fd681dbf4f3b78e1af88adfedeb8a2e2036dac9d012"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libsysroot-bd7a49c4f62381d0.rlib",
+      "sha256": "65550cb6aa924432f67f5eec04cb4584a57918478d405d7e9eae6fd9a08036a7"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libsysroot-bd7a49c4f62381d0.rmeta",
+      "sha256": "286a679d431dadfa44819d092af5d7a8f01a374731800991f4e25b2c7964d6e3"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libtest-0ff0891ee5353bd7.rlib",
+      "sha256": "7915b4f0e6d5dea6a235eefc5ff3499522e993c3d277c1272ac87d105119140c"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libtest-0ff0891ee5353bd7.rmeta",
+      "sha256": "c6e3a3934da572c4b1e91cc8a5f3865cec7512ee220b4cb1c4cc9a5ad08175cd"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libunwind-aeab9d0258a7ab0c.rlib",
+      "sha256": "30826f3c03f0f0c83112c868e916d364e0f4123192aca1f73d1302e178a1d5df"
+    },
+    {
+      "root": "rust",
+      "path": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libunwind-aeab9d0258a7ab0c.rmeta",
+      "sha256": "1249d003ef963ecb963681e908b8310dfc31944296ca82febe1e31b8dae8da6d"
+    },
+    {
+      "root": "sysroots",
+      "path": "memory/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-5203382d44640939.rlib",
+      "sha256": "311bd1614dcd3c1c3d326bbee694ad36eb29d79c5b460b2024a52323bec75e76"
+    },
+    {
+      "root": "sysroots",
+      "path": "memory/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-5203382d44640939.rmeta",
+      "sha256": "01101edf080af99f405995cc3e3d233e374c0694609a71886d3a2cecc01285f9"
+    },
+    {
+      "root": "sysroots",
+      "path": "memory/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-d6b31a6f7962b72d.rlib",
+      "sha256": "339847196fadb4b6e392022a9725f6d22fea8e9c3c658ddc9e10f7e4ba772d90"
+    },
+    {
+      "root": "sysroots",
+      "path": "memory/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-d6b31a6f7962b72d.rmeta",
+      "sha256": "d66b031aaea8446695fc4680478ea4ae6c5b419bf3c7806010170150151f3472"
+    },
+    {
+      "root": "sysroots",
+      "path": "memory/lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.msan.a",
+      "sha256": "4f3baf6189e26cbaf22217d0dabf4e74b7f550debef8ab407d08d1a67f5379c8"
+    },
+    {
+      "root": "sysroots",
+      "path": "thread/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-fa166e1253ff4dac.rlib",
+      "sha256": "9bbf442641439daee312f23e2beabd844a69007249a4aa1f5852090162de1bdf"
+    },
+    {
+      "root": "sysroots",
+      "path": "thread/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcompiler_builtins-fa166e1253ff4dac.rmeta",
+      "sha256": "13355b835655835a3f140f947a83076049a9b46558d426dedd049c7c0d3443ba"
+    },
+    {
+      "root": "sysroots",
+      "path": "thread/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-72734490af5d4840.rlib",
+      "sha256": "b4ad233bed56be03d393327c293440f69af46ad5857a9195ea8a124a39715b04"
+    },
+    {
+      "root": "sysroots",
+      "path": "thread/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-72734490af5d4840.rmeta",
+      "sha256": "ebb32ebc674800445914150bdc0210a15db467542bcc519d85b9435284f979e7"
+    },
+    {
+      "root": "sysroots",
+      "path": "thread/lib/rustlib/x86_64-unknown-linux-gnu/lib/librustc-nightly_rt.tsan.a",
+      "sha256": "663d2976d9916bc4bf89751246fe976934da282200211f31ae9adcb4c8b3c785"
+    }
+  ],
+  "rust_compiler": "bin/rustc",
+  "native_compiler": "lib/llvm-22/bin/clang",
+  "symbolizer": "lib/llvm-22/bin/llvm-symbolizer",
+  "tools": {
+    "asan": "fixtures/asan.rs",
+    "lsan": "fixtures/lsan.rs",
+    "tsan": "fixtures/tsan.rs",
+    "msan": "fixtures/msan.rs",
+    "ubsan": "fixtures/ubsan.cpp"
+  },
+  "inputs": {
+    "fixtures/asan.rs": "380f3f987325dea4b88ee13223ebfc0388720365a998620a84d8d9b4d21f87a1",
+    "fixtures/lsan.rs": "b9d0a3a9dd4698f4b7d8d3ddab1375c6abbd059ac9f738958e9c3a1e443a8fbe",
+    "fixtures/tsan.rs": "7cdaae4f30162cf08d8d09c8d5a9bc14aefabd46f60fd81eb9454a55494cdf76",
+    "fixtures/msan.rs": "4572a7270a6e84d97b13cd4ce3cf58ece983d25017de139800380abd6652f7ef",
+    "fixtures/ubsan.cpp": "3158b38eab9158994814d29e0068da4a7b589d073202469806023e9712ae4def"
+  },
+  "helpers": {
+    "bwrap": {
+      "path": "/usr/bin/bwrap",
+      "sha256": "e318903862396f96de3df57264e0158682b952fd3fb53ac23d876413e7b30f71"
+    },
+    "prlimit": {
+      "path": "/usr/bin/prlimit",
+      "sha256": "17064f67e650d6152a6902b013aab496b54c87587c8eea6f5023aafee6154069"
+    }
+  },
+  "sysroots": {
+    "tsan": "thread",
+    "msan": "memory"
+  }
+}

@@ -640,13 +640,16 @@ fn depth_cells(batch: &FixtureBatch, keys: &EndpointKeys) -> Result<CellDepths, 
 /// run must therefore begin and end at a point, including singleton components;
 /// an intervening nonmaximum open span separates even adjacent integer keys.
 /// At most 63 cells and 32 component starts are visited, with no depth recheck.
+/// Independently checked carriers must have matching prefix shapes before any
+/// endpoint read; initialized array padding is outside the key domain.
 /// # Errors
 /// Rejects inconsistent cell topology, missing maximum points or scratch indices.
 fn maximum_components(
     keys: &EndpointKeys,
     cells: &CellDepths,
 ) -> Result<MaximumComponents, SelectionError> {
-    if cells.len.is_multiple_of(2) || cells.maximum == 0 {
+    let expected_cells = keys.len.checked_mul(2).and_then(|len| len.checked_sub(1));
+    if Some(cells.len) != expected_cells || cells.maximum == 0 {
         return Err(COMPONENT_ERROR);
     }
     let mut count: usize = 0;

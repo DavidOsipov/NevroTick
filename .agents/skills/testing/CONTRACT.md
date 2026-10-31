@@ -18,6 +18,7 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 - Before execution inspect actual Cargo manifests, selected features/targets, test discovery, runner/tool versions, setup, effects. Assume no Cargo workspace/Windows runner/optional tool. Initial repository documentation-only; verify current state before relying on observation.
 - When selecting configured compiler, lint, runner, scanner or artifact commands, use [configured tool execution](references/configured-tooling.md). Apply only the checks needed for the changed guarantee; retain tool-admission, application execution and native/package evidence as separate layers.
 - Select Miri, cargo-fuzz, Loom, Kani, Lockbud or cargo-vet only for a named evidence gap and admitted source/harness/graph. Respect separate analysis compilers, bounds, assumptions and store custody. Successful tool controls do not execute an application gate.
+- For sanitizer or memory-detection claims, use [sanitizer selection and controls](references/sanitizers.md). Separate semantic assertions from detector-specific faults; retain exact instrumentation/platform coverage and independent resource-lifecycle evidence.
 - Native heap/handle/FFI or resource-lifecycle changes require an explicit coverage decision through [Windows memory diagnostics](references/windows-memory.md). Select reached Application Verifier/PageHeap checks and CDB fault capture where applicable; measure retained allocations, handles, GUI objects and tasks separately. Own per-image configuration and restoration, run the candidate with its intended token, and report missing coverage or restoration as incomplete. A clean debugger exit proves neither absence of faults nor absence of leaks.
 - For uncertain Rust data propagation, use [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) and its [CodeQL reference](references/codeql-data-flow.md). Tie paths to actual extracted source/target/features and query/model identity; challenge reachable healthy/faulty controls. AST/CFG, query compilation and empty results prove no complete data-flow or authorization claim. Local MCP use leaves hosted CodeQL deferral unchanged.
 - Choose smallest claim-proving environment. Distinguish pure simulation, host Rust execution, cross-compilation, real Windows services/IPC/FFI, native UIA/Narrator, clean-machine package evidence. Mocks/successful Windows-target compilation do not prove Windows enforcement.
@@ -26,6 +27,42 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 - Preserve native exit codes, selected/discovered test counts, failures, skipped/ignored tests, retries, cancellations, cleanup failures. Zero-test success/caught panic/generated report/exit zero alone proves no behavior. Required unavailable/failed/cancelled check remains incomplete, including inherited failure.
 - Keep independent fixture truth/production entry points. Observers must not perform claimed transition. Inspect application cleanup before harness teardown masks leaked handles/tasks/timers/privileges/temporary clock changes. Restore owned resources on every exit; abort/crash tests need external cleanup: destructors may not execute.
 - Reuse evidence while all relevant state/prerequisites unchanged. Rerun affected checks after invalidating changes, including features/generated code/platform bindings/packaging/fixtures. No ritual reruns of unrelated expensive gates.
+
+## Execution efficiency
+
+- Run cheap resource/cache/readiness checks before preparing expensive campaigns,
+  inventories or admission paperwork. Preserve a failed preflight as incomplete;
+  retry only after its relevant condition changes. Continue useful independent
+  work without repeatedly submitting the same blocked campaign.
+- Keep genuine focused RED→GREEN during implementation. Complete a coherent
+  bounded slice and its planned cases, then format before freezing the expensive
+  qualification candidate. Select affected checks and indirect consumers through
+  [regression selection](qa-regression-selection/SKILL.md); run the applicable full
+  phase/release gates at their declared checkpoints. Name required gates, owners
+  and checkpoint exits in the existing plan; never move a checkpoint just to
+  avoid a missing or failing required check. Later bound-byte changes
+  still require configured re-admission and honest candidate-specific reporting.
+- Before a large campaign, exercise representative healthy/faulty harness controls
+  with the admitted compiler. A negative consumer must fail for its intended rule;
+  match the required diagnostic meaning/context rather than incidental rendering
+  unless exact text is the contract. Retain a legal-use control; unrelated compiler
+  failures do not count. Retain mechanism-specific sanitizer controls.
+- Reuse the existing plan, campaign recipe and source-work accounting tools where
+  applicable. Add another script, inventory or receipt layer only for a concrete
+  enforcement gap or configured-runner requirement. Keep necessary accounting in
+  the existing evidence chain; avoid duplicate full campaigns across workers.
+- When verification cost becomes material, measure acquisition, hashing/admission,
+  compilation and test execution separately in the existing task record. Profile
+  the dominant cost before changing worker counts or adding tools. Filesystem
+  metadata and serial admission work need not scale with twelve CPU slots.
+- Improve tool-store placement or admission implementation through a scoped,
+  reviewed change preserving exact identity, read-only inputs and configured
+  per-command custody. Paths, version strings, mtimes and file sizes alone cannot
+  prove unchanged payloads. Never skip required re-admission, drop limits or lower the 90% coverage/95% mutation,
+  security or native-evidence requirements to improve throughput.
+- Report completed acceptance, actual execution, setup failures and remaining
+  product capabilities separately. Give any estimated percentage a declared scope
+  and basis; changing coarse estimates cannot establish development velocity.
 
 ## Product-specific evidence
 

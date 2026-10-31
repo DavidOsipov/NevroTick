@@ -436,7 +436,7 @@ impl std::error::Error for NormalizationError {
 /// ordinary primitive uses fixed scalar scratch, with no publication or effects.
 /// # Errors
 /// Wraps the actual shared `FitError` with its exact closed conversion context.
-fn normalization_arithmetic(
+pub(super) fn normalization_arithmetic(
     left: f64,
     right: f64,
     component: NormalizationComponent,
@@ -462,7 +462,7 @@ fn normalization_arithmetic(
 /// # Errors
 /// Returns `IntegerRange` above `2^53`, a checked-conversion disagreement, or the
 /// exact component/step's actual shared arithmetic error. No partial value escapes.
-fn integer_to_f64(
+pub(super) fn integer_to_f64(
     value: u64,
     component: NormalizationComponent,
 ) -> Result<f64, NormalizationError> {
@@ -524,7 +524,7 @@ fn relative_seconds(elapsed_nanoseconds: u64) -> Result<f64, NormalizationError>
 /// # Errors
 /// Preserves the actual component/step arithmetic error or a checked-conversion
 /// disagreement with the immutable observation owner; no partial value escapes.
-fn phase_seconds(observation: &FixtureObservation) -> Result<f64, NormalizationError> {
+pub(super) fn phase_seconds(observation: &FixtureObservation) -> Result<f64, NormalizationError> {
     let signed = i64::try_from(observation.phase.numerator()).map_err(|_| {
         NormalizationError::ConversionInvariant {
             component: NormalizationComponent::Phase,

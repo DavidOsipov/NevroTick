@@ -27,6 +27,9 @@ Select admitted Loom for a specific synchronization invariant and bounded
 preemption/permutation model; use Miri for reached portable ownership/aliasing
 paths. Experimental Lockbud can complement these with static lock screening
 only after real-source compatibility with its separate compiler is established.
+For reached data-race risks, consider separately admitted TSan through
+[sanitizer selection](../references/sanitizers.md); synchronization visibility
+and supported targets constrain it, and it does not replace lifecycle assertions.
 Use [configured analysis](../references/configured-tooling.md#additional-rust-analysis)
 for tool controls, then the actual product model/tests. Retain exact crate
 selection, fresh Lockbud build outputs and `--exit-code-on-bug`; a skipped compile

@@ -27,6 +27,28 @@ The repeated-proposal review also checks [RFC 9109 §§3.2–4](https://www.rfc-
 and [RFC 8915 §5.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-5.7)
 for port-lifecycle qualification and the control-only KoD/NAK test distinction.
 
+## Sanitizer selection and controls — 31 October 2026
+
+The original local [sanitizer reference](references/sanitizers.md) extends the
+existing Miri/fuzz/native workflows. It imports no tool, code sample or skill
+implementation and changes no runtime pin or admission inventory. The selection
+rules and mechanism-specific controls use these primary sources:
+
+| Source | Consequence and limit |
+| --- | --- |
+| [Rust sanitizer guidance](https://doc.rust-lang.org/unstable-book/compiler-flags/sanitizer.html) and [Miri](https://github.com/rust-lang/miri#readme) | Select by defect, target and instrumentation; preserve Miri's unsupported FFI/execution limits. Rolling docs do not qualify the installed compiler or product harness. |
+| [Clang sanitizer options](https://clang.llvm.org/docs/UsersManual.html#controlling-code-generation) and [LSan](https://clang.llvm.org/docs/LeakSanitizer.html) | Separate ASan/TSan/MSan configurations; supported ASan/LSan integration is a valid combination. Leak detection does not measure reachable growth or nonmemory resources. |
+| [MSan external-code handling](https://clang.llvm.org/docs/MemorySanitizer.html#handling-external-code) and [TSan limitations](https://clang.llvm.org/docs/ThreadSanitizer.html#limitations) | Native libraries, standard-library instrumentation and synchronization visibility constrain results; missing coverage cannot become a clean-process claim. |
+| [UBSan usage](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html#usage) | Compile the actual native C/C++ source with selected checks; merely linking a runtime into Rust emits none of those missing checks. |
+| [Rust Windows target snapshot](https://github.com/rust-lang/rust/blob/76456a688bc0ed897fa23a677d4ddb5b3fdb575a/compiler/rustc_target/src/spec/targets/x86_64_pc_windows_msvc.rs) and [Rust Fuzz Book Windows setup](https://rust-fuzz.github.io/book/cargo-fuzz/windows/setup.html) | That compiler snapshot admits ADDRESS although the Rust Unstable Book's ASan list omits Windows. Require exact pinned native qualification; do not infer support or impossibility from one document. |
+| [Android HWASan](https://developer.android.com/ndk/guides/hwasan) and [Rust HWASan/memtag guidance](https://doc.rust-lang.org/unstable-book/compiler-flags/sanitizer.html#hwaddresssanitizer) | Future Android ARM64 work needs its own toolchain/runtime/device evidence. HWASan and hardware MTE are distinct; no Android lane is admitted here. |
+| [Microsoft ASan limitations](https://learn.microsoft.com/en-us/cpp/sanitizers/asan-known-issues?view=msvc-170), [AppVerifier](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/application-verifier) and [PageHeap](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/gflags-and-pageheap) | Track instrumented native modules, runtime/DLL lifetime and observed allocator/API paths; keep resource retention, ordinary-user execution and instrumentation restoration separate. |
+
+Semantic assertion controls establish oracle sensitivity/failure propagation;
+representative memory faults with the detector's own diagnostic establish a
+different mechanism claim. This instruction amendment executes neither control
+and retroactively upgrades no existing fixture or product evidence.
+
 ## Skill-quality procedures — 30 October 2026
 
 Original local procedures extend existing numerical, harness, mutation and

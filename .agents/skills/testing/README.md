@@ -58,6 +58,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 ## Conditional shared references
 
 - [Configured tool execution](references/configured-tooling.md) when selecting existing compiler/lint/test, dependency, workflow/security, coverage/mutation or SBOM entry points. Its additional-analysis section routes Miri, cargo-fuzz, Loom, Kani, Lockbud and cargo-vet by the changed guarantee; tool controls and product harnesses remain separate evidence.
+- [Sanitizer selection and controls](references/sanitizers.md) for ASan/LSan, Miri, TSan, MSan, native C/C++ UBSan, future Android HWASan and their relationship to Windows diagnostics. Choose by defect and admitted environment; distinguish detector faults from semantic assertion controls.
 - [CodeQL data-flow analysis](references/codeql-data-flow.md) for local MCP readiness, extraction scope and trace evidence; [the Rust query recipe](references/codeql-rust-query.md) for pinned APIs, source/sink selection, path queries, missing-flow diagnostics and sensitivity controls. Local analysis does not enable deferred hosted scanning.
 - [Numerical, NTP/NTS and strict contract truth](references/numerical-protocol.md) for analytic or byte-level oracles, domain construction and input-to-effect obligations.
 - [Harness qualification](references/harness-qualification.md) for actual-input binding, comparator sensitivity and failure propagation.

@@ -568,3 +568,72 @@ weighting, network or correction implementation, and does not claim Chrony's
 multi-peak envelope as a common-point intersection. Source review found no
 demonstrated algorithm defect; runtime, privacy, coverage/mutation, full graph
 and native qualification remain owned by the existing task.
+
+### Principal and hysteresis pretranslation mapping, 31 October 2026
+
+The preceding selection mapping remains unchanged. The next separate owner is
+`src/principal.rs`, adapting Chrony 4.9 `sources.c` at revision
+`8df4f1263e206585e6c4e61352d042c2dd12916a`: line 191 and lines 1377–1442,
+1447–1490. The retained source is 60,639 bytes, SHA-256
+`019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d`,
+recomputed against the current retained bytes before this mapping. These ranges
+own the strict score threshold, minimum survivor stratum, asymmetric NTP
+reselection penalty, per-source update scoring, stable first-maximum tie,
+replacement, pending-update gate, score reset and credit consumption.
+
+Source context at 980–983, 365–375, 848–860, 1197–1202, 1279–1305 and
+1344–1348 informs update/reset/negative-result lifetime. The already retained
+`ntp_core.c` lines 1876–1877 show the sample then selection update call; its
+current SHA-256 is
+`ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0`.
+These context files/ranges supply no additional copied implementation.
+
+The complete original Curnow/Lichvar copyright, GPL version-2 grant, disclaimer
+and distribution notice recorded above must remain in the new derived file,
+with actual dated modification attribution. `COPYING`, corresponding source
+and build obligations remain; translation does not establish clean-room work
+or license clearance for an unqualified product graph.
+
+The fixed ordered roster has at most sixteen asserted fixture identities.
+The actual existing common-witness selector owns agreement; the new state owns
+scores, observation watermarks, pending credit and cached source distance/stratum.
+Explicit fixture reselection/stratum parameters have no shipped defaults. Seed
+captures initial unconsumed observations without selecting; later transitions
+derive at most one new-source event from original latest-observation timestamps.
+An absent registered principal uses owned cached numerical context during scoring
+before forced replacement. This preserves score-before-replacement order, but
+uses its last projection; Chrony refreshes registered-source selection data at
+line 1030. Absent-source aging parity is not claimed. Boolean pending credit replaces upstream counters;
+consuming it yields only an inert principal-ready decision, not a reference or
+clock effect. Configuration/source-lifetime/mapping changes require new state.
+Unsupported arithmetic and invalid transitions preserve the complete old state.
+
+The reviewed contract is `next-s13-selection-slice.md`, SHA-256
+`9c87c7dff9d632fd01e1d59b8b0691048f416b3368d9ad13058b41725afe7b52`,
+and independently derived sequences are `principal-independent-facts.md` in
+the existing S1.3 evidence directory. Tests are locally authored, not imported
+upstream tests. This paragraph records a proposed source-to-owner map before
+algorithm translation. Independent review of these exact new mapping bytes,
+mandatory garde construction, actual source/graph admission, behavioral tests
+and per-file analysis remain pending. No production freshness, source identity,
+eligibility, combination, P1, Windows or release result follows.
+
+### Principal fixture adaptation authorship, 31 October 2026
+
+The preceding mapping describes the pretranslation stage. David Osipov with
+AI assistance subsequently authored `src/principal.rs` after the real seed
+constructor RED. The derived file retains the complete original notice and
+dated modification attribution. It uses the existing checked arithmetic owner
+through crate-internal visibility and the explicit Principal diagnostic stage;
+the arithmetic body and existing stage meanings are unchanged.
+
+The mapped scoring/update mechanism now consumes the real projected-batch
+selector and original projection metadata. Whole-roster and contextual garde
+admission precede one staged transition, checked same-batch decision and commit.
+The explicit fixed-roster/event/seed/credit/cached-absence adaptations above
+remain; compatible weighting, production source eligibility and reference/clock
+effects are not implemented. The independently authored initial producer-to-
+consumer sequence passed its declared Linux fixture scope after the initial
+seed RED. The existing S1.3 task retains exact candidate hashes, native exits,
+actual counters, independent source review and remaining expanded verification.
+No upstream differential, complete S1.3/P1 or product/release pass follows.

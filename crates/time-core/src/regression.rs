@@ -49,6 +49,9 @@ mod history;
 /// Exact fixture observation admission and separately gated newest-reference preparation.
 mod normalization;
 
+/// Pure checked projection from an explicitly identified same-history fixture anchor.
+mod projection;
+
 /// Residual diagnostics reuse this owner's immutable input and checked primitives.
 mod residuals;
 
@@ -61,6 +64,11 @@ pub use normalization::{
     FixtureContext, FixtureNormalization, FixtureObservation, InsufficientFixture,
     NormalizationComponent, NormalizationError, NormalizationStep, ObservationError,
     PreparedFixtureInput, prepare_fixture_input,
+};
+
+pub use projection::{
+    FixtureAnchorProjection, FixtureProjectionError, FixtureProjectionField,
+    FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms, project_fixture_anchor,
 };
 
 pub use residuals::{
@@ -114,6 +122,8 @@ pub enum ArithmeticStage {
     Coefficients,
     /// Private result admission preserving the originating operation code.
     Result,
+    /// Fixed-roster principal distance, score and hysteresis calculations.
+    Principal,
 }
 
 /// One separately evaluated binary64 operation; fused operations are excluded.
@@ -428,7 +438,7 @@ fn supported_result(
 /// # Errors
 /// Rejects nonfinite then subnormal operands, a nonpositive divide denominator,
 /// nonfinite/subnormal results, or nonzero multiplication/division lost to zero.
-fn arithmetic(
+pub(super) fn arithmetic(
     left: f64,
     right: f64,
     operation: ArithmeticOperation,

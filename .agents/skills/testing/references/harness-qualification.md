@@ -58,6 +58,11 @@ Retain both layers when both are claimed. For fuzzing, qualify the adapter with 
 finite accepted seed and a targeted fault before interpreting the bounded campaign;
 seed/corpus counts alone show neither semantic reachability nor correct forwarding.
 
+For sanitizer claims, also use [detector-specific controls](sanitizers.md#qualify-the-selected-mechanism).
+An assertion proves comparator sensitivity or failure propagation; qualifying
+ASan detection requires a representative memory fault with an ASan diagnosis.
+Reuse matching mechanism evidence and keep its scope separate from product tests.
+
 Record exact variant/input identity, selected/executed checks, intended failing
 assertion, actual outcome and exit propagation. Build/setup failures are not
 successful discrimination. A surviving harness fault limits the affected claim;

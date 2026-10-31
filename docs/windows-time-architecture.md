@@ -655,6 +655,43 @@ Define an explicit NTP-era pivot and plausible date range. The 32-bit seconds fi
 
 NTS requires a TLS 1.3-or-later KE channel with `ntske/1`, verified server identity, bounded record parsing and exporter-derived direction-specific keys. Implement the interoperable AES-SIV-CMAC-256 profile using a maintained compatible library. Each protected request uses a fresh UID containing at least 32 CSPRNG-generated octets, cookie handling and authenticated response validation. NTS authenticates time data; it does not make an inaccurate server correct or remove network delay attacks. [S20]
 
+**Replay and delayed-response admission:** an ordinary protected response must
+match the exact UID of a current outstanding request and authenticate with that
+request's associated S2C key. Bind admission to the saved endpoint/socket and
+configuration, association and clock generations. At publication, require trusted
+local monotonic readings satisfying `send <= arrival <= processing_now < deadline`;
+arrival before expiry alone cannot admit a response processed after expiry.
+Serialize final revalidation, permitted packet/cookie publication and consume-once
+completion at the association owner. Rejected malformed, unauthenticated or
+uncorrelated traffic cannot consume a healthy current request. Genuine timeout,
+cancellation and lifecycle invalidation retire requests independently. Time-sample
+eligibility still requires the separate numerical, delay and uncertainty checks;
+this rule changes no statistical-rejection policy or control-only KoD/NAK admission.
+[S20]
+
+Restoring qualified keys/cookies never restores an outstanding exchange or makes
+an accepted response pending again. New queries after restart use fresh CSPRNG
+UIDs; discard exchanges crossing suspend or a clock/association discontinuity.
+An internal sequence number or generation absent from the wire cannot repair
+reused wire correlation. The unauthenticated S1.1 fixture's caller-supplied token
+is not the production NTS UID issuer. Duplicate or obsolete packets grant no new
+time/cookie publication or freshness. These rules require bounded pending state,
+not an unbounded database of every historical UID.
+
+A first response delayed while its UID and authentication remain valid is a
+different case from replay after completion. Enforce the qualified monotonic
+deadline, absolute delay/uncertainty limits, fresh agreement and broker correction
+budgets; none proves symmetric paths or a permanent absolute UTC-error bound.
+A common path attacker can affect several independently operated servers. When
+the current eligible evidence no longer meets the qualified freshness and
+configured minimum agreement requirements, stop admitting new corrections from
+that evidence and retain only policy-valid holdover with aging uncertainty; never
+lower agreement or enable plain NTP to hide the outage. OPEN-5/6 retain the production bounds;
+the S1.1 fixture's one-second ceiling is not an adopted timeout. Qualify the
+[recorded-replay and first-delivery-delay cases](../tasks/s0.1-protocol-comparison.md#replay-and-delayed-response-qualification)
+under CHECK-6/7/8/9/21; ordinary protected admission does not replace the separate
+correlated KoD/NAK exception below. [S20]
+
 Track accepted-observation freshness, cookie issuance/receipt age, C2S/S2C key age,
 the last full certificate-authentication time and the trust-policy revision
 separately. Fresh UDP authentication, cookies and resumed TLS do not reset the
@@ -1242,7 +1279,7 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 **Path and preconditions:** Attacker-supplied UDP bytes, replayed response, wrong origin/UID, truncated length, malicious extension count or unauthenticated fields → protocol parser/admission → source statistics, cookie cache or correction evidence.
 
-**Control and failure:** Protocol owner checks packet size before allocation, parses without unsafe code, validates exchange/endpoint/generation/one-response correlation, authenticates NTS protected fields before mutation, and separates syntax from semantic validity. Accepted trailing unauthenticated extension policy must have no effect on authenticated state. Failure drops the packet with bounded counters rather than logging every byte.
+**Control and failure:** Protocol owner checks packet size before allocation, parses without unsafe code, validates exchange/endpoint/generation/one-response correlation, authenticates NTS protected fields before mutation, and separates syntax from semantic validity. Section 7.4 requires current monotonic expiry and serialized consume-once publication, including after restoration; a valid tag alone proves neither a current request nor acceptable delay. Accepted trailing unauthenticated extension policy must have no effect on authenticated state. Failure drops the packet with bounded counters rather than logging every byte.
 
 **Residual and owner:** An on-path adversary can still drop/delay traffic. Protocol/core owners must document the measured effect on uncertainty and availability. **Verification:** CHECK-6, P1/P2: malformed/replayed packet causes no time/cookie/statistics mutation; a valid neighboring packet is admitted once. CHECK-21 confirms bounded sustained bad-input costs.
 

@@ -102,6 +102,18 @@ test an application or create a product workspace.
 | Static concurrency defect screening — Lockbud | `--tool lockbud --fixtures`, then admit compatible source/feature rows on its older experimental analysis compiler. Shipping Rust 1.99.1 is unchanged; no automatic compiler downgrade follows. |
 | Dependency review obligations — cargo-vet | `--tool vet --fixtures`, then a real audited graph with `--locked --frozen --no-all-features --no-minimize-exemptions --no-registry-suggestions`. Missing audits block; do not invent reviews/imports/exemptions. |
 
+For additional sanitizer selection and detector controls, read
+[the shared reference](sanitizers.md). The current fuzz fixture's seeded
+assertion qualifies oracle/failure propagation; it is not a known-memory-error
+ASan control. Preserve that evidence limit. The six existing tool selections
+above do not implicitly admit TSan, MSan, UBSan or Android HWASan commands.
+
+The separately configured [standalone sanitizer checker](../../../../tools/sanitizers/check.py)
+now admits ASan/LSan/TSan/MSan and native C++ UBSan detector-control profiles;
+[TOOLING](../../../../TOOLING.md#standalone-sanitizer-detector-controls) owns their
+commands, installed sysroots and actual qualification. This does not add tool
+names to `check-analysis.py` or qualify an application graph.
+
 The guarded entry point verifies the private Linux installation pointer and
 payload inventories pinned by repository policy. Full inventories and payloads
 reside on Drvfs; mode `0777` there is not privacy evidence. Payloads are mounted

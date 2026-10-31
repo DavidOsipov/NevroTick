@@ -35,14 +35,41 @@ mod regression;
 /// Checked synthetic intervals and bounded, inert fixture-majority selection.
 mod selection;
 
+/// Exact Q33 enclosure bridge between checked fixture projection and interval owners.
+mod projection_enclosure;
+
+/// Borrowed common-context admission and selection of fixture projection enclosures.
+mod projected_batch;
+
+/// Fixed-roster fixture principal contracts and checked parameter/stratum admission.
+mod principal;
+
+pub use principal::{
+    FixturePrincipalContextField, FixturePrincipalDecision, FixturePrincipalError,
+    FixturePrincipalOutcomeKind, FixturePrincipalParameterField, FixturePrincipalParameters,
+    FixturePrincipalScalarIssue, FixturePrincipalSourceState, FixturePrincipalState,
+    FixturePrincipalStep, FixturePrincipalStratum,
+};
+
+pub use projected_batch::{
+    FixtureProjectedBatch, FixtureProjectedBatchError, FixtureProjectionMismatchKind,
+};
+
+pub use projection_enclosure::{
+    FixtureEnclosureError, FixtureEndpointRounding, FixtureProjectedInterval,
+    enclose_fixture_projection,
+};
+
 pub use regression::{
     ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FitInput, FitPoint,
-    FixtureContext, FixtureHistory, FixtureHistoryReport, FixtureLine, FixtureNormalization,
-    FixtureObservation, FixtureResidualStatistics, FixtureRunsError, FixtureRunsSelection,
-    FixtureRunsStage, FixtureRunsStop, HistoryError, InsufficientFixture, NormalizationComponent,
-    NormalizationError, NormalizationStep, ObservationError, PointField, PointIssue,
-    PreparedFixtureInput, ResidualError, ResidualField, ResidualIssue, ResidualStep, fit,
-    prepare_fixture_input, residual_statistics, select_fixture_runs,
+    FixtureAnchorProjection, FixtureContext, FixtureHistory, FixtureHistoryReport, FixtureLine,
+    FixtureNormalization, FixtureObservation, FixtureProjectionError, FixtureProjectionField,
+    FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms,
+    FixtureResidualStatistics, FixtureRunsError, FixtureRunsSelection, FixtureRunsStage,
+    FixtureRunsStop, HistoryError, InsufficientFixture, NormalizationComponent, NormalizationError,
+    NormalizationStep, ObservationError, PointField, PointIssue, PreparedFixtureInput,
+    ResidualError, ResidualField, ResidualIssue, ResidualStep, fit, prepare_fixture_input,
+    project_fixture_anchor, residual_statistics, select_fixture_runs,
 };
 
 pub use selection::{

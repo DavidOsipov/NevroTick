@@ -24,6 +24,12 @@ Cap total cases/time, bytes/depth, memory, workers, output retention, minimizati
 
 Read [Rust techniques](../references/rust-techniques.md), including the conflicting upstream Windows support statements. Qualify the installed nightly/sanitizer/target with known controls. `tmin` reduces an individual failure; `cmin` reduces a coverage corpus. Neither creates Windows protected-effect evidence or permission for an overnight campaign.
 
+Use [sanitizer selection and controls](../references/sanitizers.md) when claiming
+memory/race/leak detection. A numerical assertion or `libFuzzer: deadly signal`
+qualifies no ASan detector by itself; retain a representative mechanism fault
+and repaired healthy control, reusing matching tool evidence where adequate.
+Report raw fuzz callbacks separately from accepted inputs and reached operations.
+
 Use `python3 -B scripts/check-analysis.py --tool fuzz --fixtures` through
 [configured analysis](../references/configured-tooling.md#additional-rust-analysis)
 for admitted cargo-fuzz/libFuzzer identities and bounded runner controls.

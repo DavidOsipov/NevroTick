@@ -11,6 +11,11 @@ Inspect current repository instructions/manifest/toolchain/lockfile/actual comma
 
 Use [configured tool execution](../references/configured-tooling.md) for existing environment/policy checkers, tool pins and applicable Cargo/security/SBOM entry points. Run the selected readiness check or reuse matching current evidence before scheduling dependent gates. Keep local Linux/WSL admission distinct from hosted preparation and native Windows readiness.
 
+Apply the [cheap-first execution order](../CONTRACT.md#execution-efficiency):
+check selected work/output capacity and cache prerequisites before costly
+inventory preparation or full-store admission. Preserve configured limits and
+the first failure; unchanged prerequisites justify no repeated failed launch.
+
 Inspect selected tools' actual interfaces/installed versions/representative operation. Follow AGENTS.md: Serena session activation, SocratiCode indexing/watcher ownership, Probe, context-mode. Advertisement/existing index proves no current source/execution readiness. Use supported optional-tool fallback; missing required capability remains incomplete.
 
 For Miri/cargo-fuzz/Loom/Kani/Lockbud/cargo-vet, use the guide's guarded analysis
@@ -20,6 +25,11 @@ no tool. For CodeQL MCP work, read
 exposed tools, separate CLI/query-pack admission and the actual Rust database's
 source/target/features before accepting a data-flow result. A registered server
 or hosted deferred gate establishes neither a connection nor an executed query.
+
+For a selected sanitizer, use [sanitizer readiness](../references/sanitizers.md):
+check the exact compiler/runtime/target, instrumentation and mechanism-specific
+healthy/fault controls. Existing assertion controls alone do not qualify ASan's
+detector; unsupported or unadmitted native/tool combinations remain explicit gaps.
 
 For Application Verifier, GFlags/PageHeap or cdb, read
 [native memory readiness](../references/windows-memory.md). Admit actual tools,

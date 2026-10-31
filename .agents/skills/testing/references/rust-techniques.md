@@ -38,6 +38,11 @@ Installed identity and bounded bootstrap controls do not qualify a product
 harness, Windows target or the exact dependency/features under test. Preserve
 shipping Rust 1.99.1; select analysis toolchains explicitly without global changes.
 
+For address, initialization, race or leak detection, use
+[sanitizer selection and controls](sanitizers.md). It complements these existing
+tools and distinguishes actual detector diagnostics from oracle assertions,
+native C/C++ instrumentation and platform-specific evidence.
+
 For Lockbud, retain admitted `--exit-code-on-bug`, exact crate selection and fresh
 build outputs so the selected compiler actually analyzes the intended code.
 Unknown `LOCKBUD_FLAGS`, cached/skipped compilation or a zero-diagnostic wrapper

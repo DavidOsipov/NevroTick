@@ -97,6 +97,10 @@ hostile parser/conversion inputs may suit cargo-fuzz. Use the guide's guarded
 analysis lane and then qualify the real harness; bootstrap controls alone test
 no product path. Keep shipping Rust and native Windows observations separate.
 
+For an address, initialization, race or leak question, follow
+[sanitizer selection](../../testing/references/sanitizers.md). Reuse existing Miri
+and fuzz workflows; choose additional tools only for their admitted defect scope.
+
 For reached Windows heap/handle/FFI or resource-lifetime changes, use
 [native memory diagnostics](../../testing/references/windows-memory.md).
 Select Application Verifier/PageHeap for native misuse and separate lifecycle

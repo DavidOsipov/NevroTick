@@ -681,6 +681,11 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
 
 def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
     """Execute finite coverage and complete per-file mutation through a supplied custodian."""
+    coverage_test_args = []
+    if "coverage_test_threads" in policy:
+        if type(policy["coverage_test_threads"]) is not int or policy["coverage_test_threads"] != 1:
+            raise Incomplete("Coverage test-thread override must be exactly integer one.")
+        coverage_test_args = ["--", "--test-threads=1"]
     if lane in {"mutation", "all"}:
         mutation_jobs(policy)
         mutation_process_limit(policy)
@@ -694,6 +699,7 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
                    "--output-path", "/work/coverage.json", "--failure-mode", "any",
                    "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
                    "--fail-under-file-lines", "90"]
+        command.extend(coverage_test_args)
         text = run("coverage", command, policy["coverage_wall_seconds"])
         coverage = json.loads((work / "coverage.json").read_text())
         executed = test_count(text)
@@ -746,11 +752,22 @@ def run_analysis_lanes(scope, subjects, policy, work, tools, run, report, lane):
             raise Incomplete("Complete mutation accounting has unresolved custom gates: " + ", ".join(failed))
         print("PASSED: portable mutation", flush=True)
 
+
+def _require_private_output(root, output):
+    """Recheck canonical external Linux output and free space without creating it."""
+    if (not output.is_absolute() or output.parent != output.parent.resolve(strict=True)
+            or output.is_relative_to(root) or output.is_relative_to(Path("/mnt"))):
+        raise Incomplete("Use a fresh external canonical private Linux output directory.")
+    if shutil.disk_usage(output.parent).free < 2 * 1024 ** 3:
+        raise Incomplete("Portable analysis requires at least 2 GiB free Linux work space.")
+
+
 class Session:
     """One immutable candidate, admitted graph/tools and private bounded work tree."""
 
     def __init__(self, root, args, report, scope, policy, extra_inputs):
         self.root, self.report, self.scope, self.policy = Path(root), report, scope, policy
+        _require_private_output(self.root, args.output_dir)
         self.dependency_policy, self.product_identity = PRODUCT.admit_product(self.root)
         self.identity = dict(self.product_identity)
         equivalences = admit_mutation_equivalences(self.root, scope, policy)
@@ -764,11 +781,7 @@ class Session:
         self.vendor = args.vendor_dir.resolve(strict=True)
         self.vendor_identity = PRODUCT.admit_vendor(self.vendor, self.dependency_policy)
         self.output = args.output_dir
-        if (not self.output.is_absolute() or self.output.parent != self.output.parent.resolve(strict=True)
-                or self.output.is_relative_to(self.root) or self.output.is_relative_to(Path("/mnt"))):
-            raise Incomplete("Use a fresh external canonical private Linux output directory.")
-        if shutil.disk_usage(self.output.parent).free < 2 * 1024 ** 3:
-            raise Incomplete("Portable analysis requires at least 2 GiB free Linux work space.")
+        _require_private_output(self.root, self.output)
         self.output.mkdir(mode=0o700)
         report["owned_output"] = str(self.output)
         self.work = self.output / "work"; self.work.mkdir(mode=0o700)

@@ -9,6 +9,11 @@ Read [the testing contract](../CONTRACT.md).
 
 First resolve scope, requirements, source/candidate identity, existing plan. Read [the router](../README.md); select complementary claim-proving techniques. Known local change: go directly to leaf.
 
+Apply [execution efficiency](../CONTRACT.md#execution-efficiency) before dispatch:
+choose one bounded milestone, validate cheap prerequisites/harness controls and
+plan a stable qualification checkpoint. Separate admission/I/O time from compiler
+and test time when throughput stalls; preserve mandatory gates and custody.
+
 For coordinated whole-system stabilization, use [system stabilization](../qa-system-stabilization/SKILL.md): retain parent perimeter; assign every selected required obligation/integration seam. Worker/package passes provisional until sufficient integrated-candidate evidence; local verification retains narrower scope.
 
 1. Establish needed tool readiness/one finite acceptance set. Use [configured tool execution](../references/configured-tooling.md) to assign applicable format/compiler/Clippy/rustdoc, test, graph, workflow/SAST/secret or artifact gates to concrete commands and owners. Separate pure-core/strict contract/native IPC/clock/UI/package requirements. Name selected CHECK IDs/required environments; planned checks are unexecuted.

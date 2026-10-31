@@ -319,6 +319,13 @@ enable preferred workflow.
    package/signature evidence. Stage/commit/push only within user's existing
    authorization; preserve concurrent work, configured signing/hooks.
 
+Keep one bounded delivery milestone and a stable qualification checkpoint. Apply
+[execution efficiency](.agents/skills/testing/CONTRACT.md#execution-efficiency):
+cheap preflight first, focused checks during development and required gates on
+the final candidate. Optimize measured admission/I/O overhead while preserving
+configured custody checks; reuse existing plans and recipes. Report observable
+milestones and timings; label estimated percentages with their scope and basis.
+
 Skill-pack changes: run package checker from repository root:
 
 ```sh

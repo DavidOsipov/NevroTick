@@ -457,6 +457,82 @@ harness, source/lockfile, target/features, reachable healthy/defect controls and
 reported limitations; native Windows and complete-package evidence remain
 separate obligations.
 
+## Standalone sanitizer detector controls
+
+The separate [sanitizer checker](tools/sanitizers/check.py) and
+[payload policy](tools/sanitizers/policy.json) configure bounded GNU/Linux
+detector controls. The four Rust profiles use an isolated
+[`nightly-2026-10-30` bundle](https://static.rust-lang.org/dist/2026-10-30/channel-rust-nightly.toml),
+the newest published nightly checked on 31 October, with LLVM **23.1.4**.
+Native C++ UBSan uses Clang **22.1.8**. Rust linking follows an explicit
+GCC13/BFD route. The private, mode-0600 pointer is
+`~/.local/share/nevrotick/sanitizer-installation.json`.
+
+The five selections are `asan`, `lsan`, `tsan`, `msan` and native C++ `ubsan`.
+They are separate from `check-analysis.py`'s six existing analysis selections;
+Miri continues to use that existing checker and sysroot.
+
+```sh
+python3 -B tools/sanitizers/check.py --tool asan
+python3 -B tools/sanitizers/check.py --tool all --fixtures --output-dir /new/private/Linux/output
+python3 -B tools/sanitizers/test_check.py -v
+```
+
+The first command admits hashes only. Fixture execution requires a new external
+Linux directory and emits `verification.json`, retaining native commands, options,
+outputs, artifact hashes and setup/detector failures. Select the useful tool;
+`all` is not a required per-change campaign. No arbitrary flags, source programs,
+inherited environment or unsandboxed fallback are accepted.
+
+Rust ASan/LSan use standalone `no_std` fixtures. TSan/MSan additionally use
+matching instrumented `core` and `compiler_builtins`, rebuilt separately from the
+pinned Rust sources with Cargo `-Zbuild-std=core,compiler_builtins` and its complete
+vendored dependency set. Their split `.rlib`/`.rmeta` files and corresponding
+runtime archives are pinned in separate sysroots. These controls qualify neither
+an instrumented Rust `std` nor an application/native-dependency graph. C++ UBSan
+uses its own Clang runtime; no mixed Rust/C++ runtime compatibility is inferred.
+
+The checker retains offline namespaces, read-only payloads/fixtures, fresh owned
+outputs, bounded capture and owned-process cleanup. Only the fixed detector
+executables receive the standalone shadow-address-space exception; CPU, wall,
+process, file and output limits remain. This is separate from the existing
+libFuzzer resource profile. Qualified detector evidence requires the actual
+expected diagnosis and source site plus a successful healthy neighbor; a panic
+or generic crash is insufficient.
+
+The compiler refresh advances Rust to commit
+`92b5b8c87c61b20adc9001b41baf587634a74734`. Both the previous October 28 and
+current October 30 bundles use LLVM/compiler-rt revision
+[`f738f3b0ed65c01edcb44a504a77edc12a82c319`](https://github.com/rust-lang/llvm-project/blob/f738f3b0ed65c01edcb44a504a77edc12a82c319/cmake/Modules/LLVMVersion.cmake).
+All four ASan/LSan/TSan/MSan runtime archives are byte-identical across the
+refresh; this supplies no newer sanitizer runtime fixes. The TSan/MSan
+instrumented libraries were rebuilt with the new compiler and its sources.
+
+Verified distribution archives, source/vendor checks, offline build receipts,
+runtime comparisons and activation evidence are retained under
+`~/.local/share/nevrotick/sanitizer-update-20261031-4g1800_z/`.
+The isolated compiler and separate `sysroots/` are installed under
+`/mnt/c/Users/perso/AppData/Local/NevroTick/sanitizer-update-20261031-4g1800_z/`.
+The previous `sanitizer-setup-20261031-2cgkw00x/` retains its initial controls,
+linker/ABI setup failures and old sysroots for rollback.
+The shipping compiler/profile, product graph and original analysis installation
+retain their independent admission. Windows AppVerifier/PageHeap and future
+Android HWASan need their own native evidence; GNU controls cannot supply it.
+
+**Refresh qualification, 31 October 2026:** `controls-v1/verification.json` in
+the update evidence directory records all
+five healthy controls returning 0 and all five seeded faults returning 86 with
+the required detector diagnosis and fixture source site. Ten compilations
+succeeded; all 203 payload records and runner/source bytes passed final custody.
+The inventory includes the compiler's resolved native dependencies and ELF loader.
+The checker has 13 passing Python controls for admission, classification and
+supervision. No ABI-mismatch bypass was used. A byte-identical external checker
+and fixture copy qualified the candidate before activation; actual repository
+admission then passed. The policy and private pointer switch sequentially;
+the mixed new-policy/old-pointer control rejected admission. Original copies
+remain available for rollback. Existing Miri/fuzz campaigns keep their separately
+pinned compiler and evidence chain.
+
 ## Release SBOM tooling
 
 `cargo-cyclonedx` **0.5.9** is installed in the ordinary user's Cargo bin directory
@@ -856,17 +932,107 @@ Use a new private Linux output and the admitted vendor; actual results belong to
 S1.1c. Tooling admission alone establishes no numerical or Windows behavior.
 
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
-and [time-core-analysis.json](policy/time-core-analysis.json). Its existing
-five-owner admission covers regression, residuals, normalization, history and
-runs; the new selection owner requires a revised integrated admission before a
-six-owner claim. The [S1.2 concurrency record](tasks/s1.2-regression-readiness.md#user-requested-mutation-concurrency-trials-30-october-2026)
+and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded
+six-owner checkpoint covers regression, residuals, normalization, history, runs
+and selection. The [S1.3 record](tasks/s1.3-source-selection-readiness.md) binds
+501 exact generated variants and the three separately reviewed
+[selection equivalences](tasks/s1.3-selection-equivalences.md); actual missed
+outcomes are required before adjustment. The
+[S1.2 concurrency record](tasks/s1.2-regression-readiness.md#user-requested-mutation-concurrency-trials-30-october-2026)
 records the qualified ten-worker regression pilot and failed lower-limit trials.
 The core selects ten outer workers, isolated mutant targets, one inner Cargo/test
 slot and a fixed 512-task sandbox limit for admitted mutation campaigns.
 Other invocations retain 128; this changes no shipping compiler flags, NTS job
-limit or quality threshold. The 131 persistent profile/accounting controls passed;
-the expanded candidate's actual analysis results remain pending. A healthy pilot
-is no full pass.
+limit or quality threshold. Core coverage explicitly uses
+`-- --test-threads=1` to keep libtest progress from interrupting strict counter
+records; compile jobs remain twelve. Other wrappers retain their default unless
+they explicitly adopt that override. The 180 checkpoint profile/accounting controls
+passed. The S1.3 record preserves the original failures, native 501-variant
+execution and read-only reconciliation, serialized coverage and history-only
+ASan-enabled semantic fuzz controls. The 4,096 healthy callbacks and intended
+published-report assertion establish bounded input delivery and semantic failure
+propagation. No matching address/lifetime detector control or real leak control
+was located for this profile; ASan detection and leak freedom remain unqualified.
+Its 31 October host-fixture checkpoint also records the configured
+workspace and optimized checks. Follow the exact candidate and scope in those
+receipts; neither tool admission nor these pure
+fixtures establish production, native Windows or release qualification.
+
+The next fixture projection owner and its tests are now source-authored in the
+main checkout. The actual product census is 86 inputs. Its exact 557-variant
+inventory is admitted through a complete seven-file cohort plan; the whole union
+remains subject to the cumulative reservation and receipt reconciliation. The
+configured portable row, seven-file line coverage, all seven mutation cohorts,
+consumer contracts and bounded history semantic fuzz passed within the declared
+86-input host-fixture checkpoint in S1.3. The repaired merger separately bounds
+native receipts to eight MiB while keeping admission cards/plans at 512 KiB.
+Its 163 controls and retained-native receiving-function check passed; historical
+native reports keep their original tool identity and are not a fresh CLI campaign.
+The new projection/cohort readers and existing wrapper
+and portable controls passed 155 selected controls; 19 selector/runtime controls
+also passed. First failures, causal repairs and incomplete portable attempts are
+retained in the same S1.3 task. These control results qualify no product behavior.
+
+The subsequent exact-enclosure bridge has a separately qualified 89-input
+Linux host-fixture checkpoint in S1.3: portable checks, all eight line gates,
+688 native mutation variants at ten workers with zero timeouts, actual CLI
+union, ten legal/106 rejected consumers and 4096 bounded history callbacks with
+the intended semantic-fault control. The 172 selected wrapper/accounting controls
+passed. Four new exact equivalents have independent full-domain proofs; the
+quarter-fraction assertion gap was causally repaired, preserving the first failed
+campaign and its complete continuation reservation. E counts remain separate
+from kills and unviable builds from tests.
+
+That checkpoint used explicit supplemental full-closure checks for the omitted
+nonmutation helper; they establish before/after custody under the frozen owner,
+not an immutable helper snapshot. The subsequent persistent input-list repair
+passed a three-lane boundary RED and 173-control GREEN; the stale aggregate-512
+description is corrected too. Old native receipts retain their actual tool revision.
+An independent input-copy pilot passed source admission. Subsequent projected-batch
+snapshots executed eleven focused native cases while main's accounting advanced;
+the main candidate then passed the configured portable row: 254 ordinary tests,
+56 doctests and 227 optimized executions. Its genuine assertion RED, first harness
+lint failures and independent recipe reconciliation remain in the same task.
+The supplementary public validation-result probe also passed with a genuine
+healthy control and an isolated callback failure. Multiple prepared source
+copies require distinct Cargo target directories and actual compile-origin /
+executed-binary observations: the first probe reused a pristine cached binary
+and remains incomplete in the task record. The exact 92-input projected-batch
+candidate now has a qualified Linux fixture checkpoint: all nine line gates,
+717 native variants at ten workers (411 K, 7 M, 299 U, 0 T; E = 7 as a subset of M), nine
+138-case baselines, actual CLI union, ten legal/120 rejected consumers and
+bounded history semantic fuzz. Current wrapper/helper controls passed 193 cases;
+the first diagnostic-expectation failure and explicit continuation remain retained.
+History-only semantic
+fuzz provides no address/lifetime-detector or leak qualification. Full S1.3/P1,
+production, native Windows and release gates remain open.
+
+The main checkout now also contains the bounded stateful
+[principal/hysteresis fixture](tasks/s1.3-source-selection-readiness.md#next-principalhysteresis-fixture-31-october-2026).
+Its actual constructor RED and first unchanged producer-to-principal GREEN are
+retained separately from the 92-input checkpoint. The formatted 95-input candidate
+has passed all ten principal cases and the complete portable workspace row:
+264 ordinary tests, 56 doctests and 237 optimized executions. Contracts and
+per-file analysis for the principal and changed arithmetic owners remain open.
+Ordinary development uses the configured stable sandbox and the complete used
+stable-toolchain inventory; unused optional analyzer stores need no full
+admission for that row. The analysis wrapper now checks the unchanged 2 GiB
+space floor before expensive admission and again before creating its output;
+43 wrapper regression tests pass. The analysis checkpoint is being rebound
+through the existing runner. Preserve the old nine-owner qualification and its
+scope; no current ten-owner qualification is implied.
+
+The current principal campaign also has a qualified private RAM view of the
+unchanged analysis payloads at their original logical paths. Complete admission
+took 13.68/13.33 seconds through that view versus a retained 63.54-second original
+store sample; these limited samples establish no whole-day speed estimate.
+The [task record](tasks/s1.3-source-selection-readiness.md#execution-efficiency-correction-during-principal-development)
+retains setup costs/failures, exact inventories and the successful corruption,
+identity, nested-isolation and owned-write controls. Reuse the four read-only
+child binds only inside the private outer namespace, with fresh `/dev` and an
+explicit read-only backing-alias bind; keep all existing inner sandbox and
+per-command admission checks. The tmpfs view is volatile, uses about 3.7 GB RAM,
+and changes no installation pointer or shared configuration.
 
 The separate [time-domain allocation observer](scripts/verify-time-domain-windows-allocation.py)
 has two explicit lanes. Build with `--lane build --profile release`, the admitted

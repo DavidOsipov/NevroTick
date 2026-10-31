@@ -11,6 +11,13 @@ Read applicable `AGENTS.md`, `docs/README.md`, canonical architecture and affect
 
 For known local owner, unchanged trust/data/lifecycle contract and known focused check, record only: requested behavior, owner/files/callers, expected observation/check, unknowns, next action. Label correction needs no plan file or specialist review.
 
+Choose one bounded milestone with an observable exit and finite verification
+budget through [execution efficiency](../../testing/CONTRACT.md#execution-efficiency).
+Keep optional tooling/documentation expansion outside its critical path unless
+the user requests it or the selected guarantee needs it. Preserve focused
+RED→GREEN and plan formatting before final candidate freeze; reuse existing
+recipes instead of adding process layers without a concrete enforcement need.
+
 For multiple stages, uncertain impact, security-sensitive work or migration:
 
 1. Reuse existing plan; otherwise use [the template](../templates/change-plan.md). Record request, non-goals, authorization, source/dirty identity, next question. Preserve unknowns.
