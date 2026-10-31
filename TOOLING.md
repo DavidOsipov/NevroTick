@@ -213,6 +213,39 @@ These named bans do not prove complete effect freedom through wrappers,
 dependencies or native APIs. Fixture accounting retains its deliberate
 `stderr().write_all` observer. No new analyzer or dependency was installed.
 
+**Bounded Python verification typing, 31 October 2026:**
+`scripts/check-python-typing.py` checks the real combination-accounting and
+cohort-accounting helpers plus an independent consumer. The checker normalizes
+the two existing hyphenated filenames into private read-only input copies and
+checks their actual exported functions against maintained Protocol interfaces.
+It does not type-check the complete dynamic orchestration script. Runtime log,
+JSON, exact-integer, range, identity and completeness checks remain required.
+
+The local checker is Python 3.12.3 with mypy 2.4.1 and a closed six-wheel graph in
+`policy/python-typing.json`. The isolated environment is under
+`~/.local/share/nevrotick/python-typing-20261031/venv`; no system package or Cargo
+dependency was added. The entry point requires an external admission receipt
+binding every installed file, selected source byte and policy byte. It rejects
+stale bindings, ambient checker configuration, unchecked imports/typing escapes
+and writable source aliases; it installs or rewrites nothing.
+
+For a change to either selected helper, run the admitted healthy typing check:
+
+```sh
+python3 -B scripts/check-python-typing.py \
+  --checker-python /home/david_osipov/.local/share/nevrotick/python-typing-20261031/venv/bin/python \
+  --admission /path/to/current-external-admission.json
+```
+
+For checker/configuration/interface changes, also select `--fixtures`: one
+healthy consumer and seven intended static rejections cover wrong fields/value
+types, reservation/observation confusion, partial/complete confusion, unhandled
+statuses and an incompatible actual implementation. Use `--json` with a fresh
+external result path to retain the receipt. Refresh admission only after reviewing
+the changed inputs; source hashes are not a substitute for those checks. A
+complete counter transport establishes neither successful assertions nor product
+qualification. Current execution evidence belongs to the existing S1.3 task.
+
 `python3 -B scripts/check-strict.py --workspace` checks **manifest adoption only**;
 it can now inspect the actual UI-M0 workspace. It does not prove the intended
 package/target inventory, feature matrix, native behavior or release readiness.

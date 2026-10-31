@@ -15,20 +15,20 @@ FIELDS = ("histories", "appends", "observations", "contexts", "monotonic",
           "batches", "minima", "parameters", "strata", "seeds", "advances",
           "state_clones", "value_equalities", "state_formats", "uncertainties", "combinations")
 ROWS = (
-    ("combination_distinct_weights_and_principal_disagreement", (2,6,6,2,7,24,6,44,2,2,2,1,1,1,2,1,1,0,0,0,2,1)),
-    ("combination_unavailable_and_checked_uncertainty", (1,3,3,1,4,12,3,21,1,1,1,1,1,1,1,1,1,0,0,0,1,1)),
-    ("combination_singleton_signed_zero_and_retained", (1,3,3,1,4,12,3,52,1,1,1,1,1,1,1,1,2,0,0,0,1,2)),
+    ("combination_distinct_weights_and_principal_disagreement", (2,6,6,2,7,24,6,45,2,2,2,1,1,1,2,1,1,0,0,2,2,1)),
+    ("combination_unavailable_and_checked_uncertainty", (1,3,3,1,4,12,3,22,1,1,1,1,1,1,1,1,1,0,0,3,1,2)),
+    ("combination_singleton_signed_zero_and_retained", (1,3,3,1,4,12,3,67,1,1,1,1,1,1,1,1,2,0,0,0,1,2)),
     ("combination_raw_uncertainty_boundaries", (1,3,3,1,4,12,3,326,1,1,1,1,1,1,1,1,1,0,0,0,40,15)),
     ("combination_three_source_permutation_and_zero_phase_sd", (3,9,9,3,10,36,9,73,3,3,3,1,1,1,3,1,1,0,0,0,3,2)),
-    ("combination_metadata_association_and_context", (6,18,18,6,22,72,18,68,6,6,6,1,1,1,6,1,1,0,0,0,7,10)),
+    ("combination_metadata_association_and_context", (6,18,18,6,22,72,18,76,6,6,6,2,2,2,6,2,2,0,0,0,7,10)),
     ("combination_zero_denominators_and_phase_neighbor", (4,12,12,4,14,48,12,55,4,4,4,2,2,2,4,2,2,0,0,0,8,6)),
     ("combination_finite_square_failures_and_neighbors", (2,6,6,2,7,24,6,31,2,2,2,1,1,1,2,1,1,0,0,0,13,12)),
     ("combination_capacity_and_weight_sum_overflow", (16,48,48,16,49,192,48,148,16,16,16,1,1,1,16,1,1,0,0,0,48,4)),
     ("combination_variance_mean_underflow_and_neighbor", (2,6,6,2,7,24,6,36,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
-    ("combination_weighted_rate_subnormal_and_neighbor", (2,6,6,2,7,24,6,36,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
+    ("combination_weighted_rate_subnormal_and_neighbor", (2,6,6,2,7,24,6,37,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
     ("combination_canonical_reduction_rounding_order", (3,9,9,3,10,36,9,61,3,3,3,1,1,1,3,1,1,0,0,0,3,2)),
 )
-TOTAL = (43,129,129,43,145,516,129,951,43,43,43,13,13,13,43,13,14,0,0,0,132,59)
+TOTAL = (43,129,129,43,145,516,129,977,43,43,43,14,14,14,43,14,15,0,0,5,132,60)
 
 
 def row(case=ROWS[0][0], values=ROWS[0][1]):
@@ -67,6 +67,33 @@ class CombinationAccountingTests(unittest.TestCase):
         for text in ("", row(), row(values=(1,) + (0,) * 21)):
             with self.subTest(text=text[:100]), self.assertRaises(MODULE.Incomplete):
                 MODULE.combination_counts(text, require_complete=True)
+
+    def test_typed_projection_keeps_reserved_and_observed_attempts_distinct(self):
+        complete = MODULE.combination_counts("".join(row(case, values) for case, values in ROWS))
+        observed = MODULE.observation_attempts(complete)
+        reserved = MODULE.reserved_attempts(MODULE.full_package_reservation())
+        self.assertIsInstance(observed, MODULE.ObservedAttempts)
+        self.assertIsInstance(reserved, MODULE.ReservedAttempts)
+        self.assertIsNot(type(observed), type(reserved))
+        self.assertEqual(observed.calls["combinations"], 60)
+        self.assertEqual(reserved.calls["getters"], 977)
+        observed.calls["getters"] = 0
+        self.assertEqual(complete["combination_observed_calls"]["getters"], 977)
+        self.assertIsNone(MODULE.observation_attempts(MODULE.combination_counts("")))
+        self.assertIsNone(MODULE.observation_attempts(MODULE.combination_counts(row())))
+        for incomplete in (MODULE.combination_counts(""), MODULE.combination_counts(row())):
+            with self.subTest(incomplete=incomplete["combination_observation_status"]), \
+                    self.assertRaises(MODULE.Incomplete):
+                MODULE.complete_attempts(incomplete)
+
+    def test_named_vector_projection_preserves_exact_integer_admission(self):
+        self.assertEqual(MODULE._counts_from_vector(TOTAL), dict(zip(FIELDS, TOTAL, strict=True)))
+        distinct = tuple(range(22))
+        self.assertEqual(MODULE._counts_from_vector(distinct), dict(zip(FIELDS, distinct, strict=True)))
+        for values in (TOTAL[:-1], (True,) + TOTAL[1:], (-1,) + TOTAL[1:],
+                       (1 << 64,) + TOTAL[1:]):
+            with self.subTest(values=values), self.assertRaises(MODULE.Incomplete):
+                MODULE._counts_from_vector(values)
 
     def test_unknown_duplicate_truncated_reordered_and_noncanonical_rows_reject(self):
         good = row()
@@ -116,15 +143,16 @@ class CombinationAccountingTests(unittest.TestCase):
         MODULE.combination_counts(row(values=(1,) + (0,) * 21))
         self.assertEqual(MODULE.full_package_reservation(), before)
         self.assertEqual(before["combination_reserved_calls"], dict(zip(FIELDS, TOTAL, strict=True)))
-        self.assertEqual(before["combination_reserved_module_work_uppers"]["kernel_checked_binary_calls_upper"], 17287)
-        self.assertEqual(before["combination_reserved_module_work_uppers"]["kernel_checked_square_root_calls_upper"], 177)
+        self.assertEqual(before["combination_reserved_module_work_uppers"]["kernel_checked_binary_calls_upper"], 17580)
+        self.assertEqual(before["combination_reserved_module_work_uppers"]["kernel_checked_square_root_calls_upper"], 180)
 
     def test_producer_projection_preserves_twenty_fields_without_double_charging(self):
         calls = dict(zip(FIELDS, TOTAL, strict=True))
         producer = MODULE.producer_calls(calls)
         self.assertEqual(producer, dict(zip(FIELDS[:20], TOTAL[:20], strict=True)))
         self.assertEqual(producer["appends"], 129)
-        self.assertEqual(producer["getters"], 951)
+        self.assertEqual(producer["getters"], 977)
+        self.assertEqual(producer["state_formats"], 5)
         self.assertNotIn("uncertainties", producer)
         own = MODULE.source_work_uppers(calls)
         self.assertNotIn("charged_fit_work_upper", own)
@@ -133,9 +161,9 @@ class CombinationAccountingTests(unittest.TestCase):
         self.assertEqual(own["uncertainty_garde_validation_calls_upper"], 132)
         self.assertEqual(own["uncertainty_garde_rule_callbacks_upper"], 396)
         self.assertEqual(own["uncertainty_predicate_calls_upper"], 792)
-        self.assertEqual(own["kernel_final_uncertainty_predicate_calls_upper"], 177)
-        self.assertEqual(own["kernel_positive_denominator_guards_upper"], 2832)
-        self.assertEqual(own["kernel_record_lookup_visits_upper"], 15104)
+        self.assertEqual(own["kernel_final_uncertainty_predicate_calls_upper"], 180)
+        self.assertEqual(own["kernel_positive_denominator_guards_upper"], 2880)
+        self.assertEqual(own["kernel_record_lookup_visits_upper"], 15360)
 
     def test_call_and_work_values_reject_missing_unknown_boolean_negative_and_overflow(self):
         calls = dict(zip(FIELDS, TOTAL, strict=True))

@@ -19,6 +19,11 @@ resources and permitted effects/lifecycle. Name the enforcing type/constructor,
 checked operation or live guard and its consumer; plain typed calls need no
 invented serialization boundary.
 
+When a synchronous internal API must bind objects to one evaluation, consider
+[generative evaluation brands](references/generative-evaluation-brands.md).
+Use them only when a narrow trial improves the contract; ordinary borrow lifetimes
+prove no evaluation identity, and brands replace no current-authority guard.
+
 For uncertain constructor, transformation or guard bypasses across functions,
 use [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
 investigate raw-input sources and protected sinks. Model checked-result use

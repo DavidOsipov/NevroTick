@@ -22,6 +22,7 @@ class ProjectedBatchAccountingTests(unittest.TestCase):
         self.fixture = patch.multiple(
             MODULE,
             SOURCE_RECIPES=(("supported", VALUES), ("raw_guard", (0,) * 14)),
+            SOURCE_RESERVATION_OVERRIDES={},
             SOURCE_TESTS=("external_supported", "projected_batch::guards::raw_guard"),
             SOURCE_PRIVATE_CASES=("raw_guard",),
             GUARD_RECIPES=(("raw_guard", (1, 2)),),
@@ -196,16 +197,38 @@ class NativeProjectedBatchRecipeTests(unittest.TestCase):
         self.assertEqual(reservation['projected_batch_reserved_calls']['getters'], 4655)
         self.assertEqual(reservation['projected_batch_reserved_module_work_uppers']['wrapper_debug_format_calls_upper'], 4655)
 
+    def test_exact_observations_do_not_refund_the_authored_rust_ceiling(self):
+        recipes = MODULE.case_recipes()
+        self.assertEqual(recipes['linear_selection']['getters'], 425)
+        self.assertEqual(sum(row['getters'] for row in recipes.values()), 4555)
+        reserved = MODULE.full_package_reservation()['projected_batch_reserved_calls']
+        self.assertEqual(reserved['getters'], 4655)
+
+    def test_reservation_overrides_reject_unknown_or_underfunded_values(self):
+        for overrides in ({'unknown': {'getters': 525}},
+                          {'linear_selection': {'unknown': 525}},
+                          {'linear_selection': {'getters': 424}},
+                          {'linear_selection': {'getters': True}},
+                          {'linear_selection': {'getters': 2**64}}):
+            with self.subTest(overrides=overrides), patch.object(
+                    MODULE, 'SOURCE_RESERVATION_OVERRIDES', overrides), self.assertRaises(MODULE.Incomplete):
+                MODULE.full_package_reservation()
+
     def test_current_retained_rate_linear_recipe_has_its_full_getter_count(self):
-        # Authored current source recipe; this test makes no native-result claim.
+        # Independent source sum: 18+99+106+14+8+73+8+99=425.
+        # Rust's conservative 525 ceiling is not an exact observation recipe.
         row = ('CORE_PROJECTED_BATCH_PROFILE case=linear_selection histories=3 appends=9 '
-               'observations=9 contexts=3 monotonic=16 coordinates=36 exchanges=9 getters=525 '
+               'observations=9 contexts=3 monotonic=16 coordinates=36 exchanges=9 getters=425 '
                'terms=3 projections=3 enclosures=3 batches=2 minima=2 selections=3\n')
         parsed = MODULE.projected_batch_counts(row)
         self.assertEqual(parsed['projected_batch_partial_cases'], [])
-        self.assertEqual(parsed['projected_batch_profiles']['linear_selection']['getters'], 525)
+        self.assertEqual(parsed['projected_batch_profiles']['linear_selection']['getters'], 425)
         self.assertIsNone(parsed['projected_batch_observed_calls'])
         self.assertEqual(len(parsed['projected_batch_missing_cases']), 10)
+        partial = MODULE.projected_batch_counts(row.replace('getters=425', 'getters=424'))
+        self.assertEqual(partial['projected_batch_partial_cases'], ['linear_selection'])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.projected_batch_counts(row.replace('getters=425', 'getters=426'))
 
 
 if __name__ == "__main__":

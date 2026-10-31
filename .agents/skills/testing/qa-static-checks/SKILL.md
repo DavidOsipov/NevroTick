@@ -1,13 +1,18 @@
 ---
 name: "qa-static-checks"
-description: "Select and validate NevroTick compiler, Clippy, source-policy, bounded static analysis and CodeQL data-flow evidence for the actual target/features."
+description: "Select and validate NevroTick Rust and verification-Python static enforcement, Clippy, source policy and CodeQL evidence for admitted inputs and targets."
 ---
 
-# Verify Rust static enforcement
+# Verify static enforcement
 
 Read [the testing contract](../CONTRACT.md).
 
 Inspect current manifests/pinned toolchain/lint configuration/cfg/feature/target selection/actual CI entry points. Confirm relevant files/generated/native sources admitted. Configured rule/installed analyzer proves no executed enforcement.
+
+For Python verification helpers, collectors or report interfaces, use
+[Python verification typing](../references/python-verification-typing.md).
+Select the affected language/owner and consumers; a Python-only edit does not
+itself require unrelated Rust builds. Preserve configured mandatory gates.
 
 Use [configured tool execution](../references/configured-tooling.md) to choose the actual entry points: environment/policy admission, isolated enforcement controls, then applicable format/compiler/Clippy/rustdoc checks on real source. Run relevant workflow/SAST/secret checks when those guarantees change. Add only required supported matrix entries: member/default/no-default/optional features, Windows target and promised compiler. Do not blindly enable all features or entire Clippy restriction/nursery groups.
 

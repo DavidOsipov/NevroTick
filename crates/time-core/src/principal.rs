@@ -1044,16 +1044,48 @@ fn choose_principal(
     Ok(FixturePrincipalOutcomeKind::ReferenceReady)
 }
 
-/// Produce a private same-entry decision only after its output relations hold.
+/// One real selection paired with the original entries of its checked batch.
+///
+/// Only `select_same_batch` constructs this private pair. Its immutable borrowed
+/// entries retain the batch's capacity/context invariants and cannot be replaced
+/// by independently supplied entries when completing a decision.
+struct SameBatchSelection<'batch> {
+    /// Complete original wrappers borrowed from the actual selected batch.
+    entries: &'batch [FixtureProjectedInterval],
+    /// Actual owned output computed from that exact immutable checked batch.
+    selection: FixtureSelection,
+}
+
+/// Select one checked batch and retain its exact original entries together.
+///
+/// The existing checked batch owns capacity and context admission. This performs
+/// exactly one real selection, borrows entries without copying, and grants no
+/// freshness, state-transition credit or external authority.
+/// # Errors
+/// Preserve the actual selector cause without publishing a partial pair.
+fn select_same_batch<'batch>(
+    batch: &'batch FixtureProjectedBatch<'_>,
+    minimum: FixtureMinimum,
+) -> Result<SameBatchSelection<'batch>, FixturePrincipalError> {
+    let selection = batch
+        .select(minimum)
+        .map_err(|source| FixturePrincipalError::Selection { source })?;
+    Ok(SameBatchSelection {
+        entries: batch.entries(),
+        selection,
+    })
+}
+
+/// Consume one private same-batch pair after its output relations hold.
 /// # Errors
 /// Reject any mismatched outcome, selected label/index or supporter association.
 fn complete_decision(
-    entries: &[FixtureProjectedInterval],
-    selection: FixtureSelection,
+    selected: SameBatchSelection<'_>,
     principal_label: Option<NonZeroU64>,
     kind: FixturePrincipalOutcomeKind,
     updated_source: Option<NonZeroU64>,
 ) -> Result<FixturePrincipalDecision<'_>, FixturePrincipalError> {
+    let SameBatchSelection { entries, selection } = selected;
     let selected_kind = matches!(
         kind,
         FixturePrincipalOutcomeKind::ReferenceReady
@@ -1179,11 +1211,10 @@ impl FixturePrincipalState {
         admit_receiver(input, self)?;
         let mut staged = self.clone();
         let updated_source = stage_entries(&input, &mut staged)?;
-        let selection = batch
-            .select(staged.minimum)
-            .map_err(|source| FixturePrincipalError::Selection { source })?;
+        let selected = select_same_batch(batch, staged.minimum)?;
+        let selection = &selected.selection;
         let kind = if selection.outcome() == FixtureOutcomeKind::WitnessedFixture {
-            let survivors = survivor_set(&staged, &selection)?;
+            let survivors = survivor_set(&staged, selection)?;
             let (best_index, best_score) = rank_sources(&mut staged, &survivors, updated_source)?;
             choose_principal(&mut staged, &survivors, best_index, best_score)?
         } else {
@@ -1193,13 +1224,7 @@ impl FixturePrincipalState {
             staged.principal = None;
             FixturePrincipalOutcomeKind::Unavailable
         };
-        let decision = complete_decision(
-            batch.entries(),
-            selection,
-            staged.principal,
-            kind,
-            updated_source,
-        )?;
+        let decision = complete_decision(selected, staged.principal, kind, updated_source)?;
         *self = staged;
         Ok(decision)
     }

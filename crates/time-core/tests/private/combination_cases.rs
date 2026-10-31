@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Independent CHECK-7/8/14/25 public combination-kernel consumers.
+//! Independent CHECK-7/8/14/25 combination-kernel consumers.
 //!
 //! Bounded cfg(test) unit module at tests/private/combination_cases.rs; this file
-//! imports crate public APIs and never constructs private product representations.
+//! uses genuine checked producers and never constructs private representations.
 //! Genuine three-row histories supply actual latest-anchor projections, exact
 //! enclosures, checked batches and principal decisions. Explicit uncertainty
 //! assertions are at that same instant, separate from projection growth skew.
@@ -11,16 +11,20 @@
 //! uncertainties and combinations. Per-case UPPER recipes precede every call.
 //! Twelve complete authored recipes (not execution observations) are the literal
 //!22-field arrays at each case entry. Their aggregate is
-//! [43,129,129,43,145,516,129,951,43,43,43,13,13,13,43,13,14,0,0,0,132,59].
+//! [43,129,129,43,145,516,129,977,43,43,43,14,14,14,43,14,15,0,0,5,132,60].
 //! Forty-three histories/129 appends yield258 normalized prefix rows and43
 //! sufficient fits of size3. Conservative append-based upper129 fits/8256 points.
-//! Fourteen principal advances retain selector/implicit-clone/source bounds;
+//! Fifteen principal advances retain selector/implicit-clone/source bounds;
 //! the kernel owns separate fixed<=16 arithmetic/metadata bounds. These callers
 //! invoke no public low-level square-root API, explicit state clone or formatting.
 //! Setup loops have at most16 sources and3 rows; metadata inspection has16
 //! entries. Raw constructor cases have3fields*7invalid and3fields*5valid inputs,
 //! then4mixed-field checks. Arithmetic square checks have3fields*3faults and
 //!3healthy neighbors. Attempt records emit on assertion unwind and normal return.
+//! Separately precharged direct private attempts are2 record admissions,3 estimate
+//! completions and1 singleton copy; these are source-owned, outside Closed22.
+//! Genuine principal B from a real singleton decision challenges decision A's
+//! association guard. Raw publication counts0/17 reject beside a genuine count1.
 //! One legal immutable entry copy challenges address custody; no private value is
 //! forged. Successful constructor/singleton paths preserve three negative-zero
 //! uncertainty bits. Genuine integer-produced phase/rate zero bits remain+0.
@@ -42,12 +46,12 @@ use crate::{
     ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError,
     FixtureCombinationContextField, FixtureCombinationDenominatorField, FixtureCombinationError,
     FixtureCombinationKernelKind, FixtureCombinationKernelOutcome, FixtureCombinationScalarField,
-    FixtureCombinationScalarIssue, FixtureCombinationStep, FixtureContext, FixtureHistory,
-    FixtureMinimum, FixtureObservation, FixtureOutcomeKind, FixturePrincipalDecision,
-    FixturePrincipalOutcomeKind, FixturePrincipalParameters, FixturePrincipalState,
-    FixturePrincipalStratum, FixtureProjectedBatch, FixtureProjectedInterval,
-    FixtureProjectionTerms, FixtureSupporterUncertainty, combine_fixture_supporters,
-    enclose_fixture_projection, project_fixture_anchor,
+    FixtureCombinationScalarIssue, FixtureCombinationStep, FixtureCombinedEstimate, FixtureContext,
+    FixtureHistory, FixtureMinimum, FixtureObservation, FixtureOutcomeKind,
+    FixturePrincipalDecision, FixturePrincipalOutcomeKind, FixturePrincipalParameters,
+    FixturePrincipalState, FixturePrincipalStratum, FixtureProjectedBatch,
+    FixtureProjectedInterval, FixtureProjectionTerms, FixtureSupporterUncertainty,
+    combine_fixture_supporters, enclose_fixture_projection, project_fixture_anchor,
 };
 use time_domain::{MonotonicNs, PhaseOffsetQ33, UtcCoordinateQ32, exchange_arithmetic};
 
@@ -55,6 +59,21 @@ use time_domain::{MonotonicNs, PhaseOffsetQ33, UtcCoordinateQ32, exchange_arithm
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 /// Principal20 followed by uncertainty-constructor and kernel-call attempts.
 type Recipe = [u64; 22];
+
+/// Precharge a separately source-owned private attempt before its operation.
+/// # Errors
+/// Reject an exhausted fixed local allowance without invoking the receiver.
+fn private_attempt<T>(attempts: &Cell<u8>, ceiling: u8, call: impl FnOnce() -> T) -> TestResult<T> {
+    let next = attempts
+        .get()
+        .checked_add(1)
+        .ok_or_else(|| io::Error::other("combination private counter overflow"))?;
+    if next > ceiling {
+        return Err(io::Error::other("combination private counter ceiling").into());
+    }
+    attempts.set(next);
+    Ok(call())
+}
 
 /// One bounded local actual-attempt scope with no product-derived allowance.
 struct Calls {
@@ -395,6 +414,22 @@ fn observe_combined(
     let estimate = p
         .get(|| outcome.combined())?
         .ok_or_else(|| io::Error::other("missing actual combined estimate"))?;
+    observe_estimate(p, estimate, built, label, labels, bits)
+}
+
+/// Observe a real estimate's scalars, complete provenance and occupied labels.
+/// # Errors
+/// Preserve the public-getter precharge failure without calling its accessor.
+/// # Panics
+/// Every field must retain the independently declared scalar and source facts.
+fn observe_estimate(
+    p: &Calls,
+    estimate: &FixtureCombinedEstimate,
+    built: &Built,
+    label: u64,
+    labels: &[u64],
+    bits: [u64; 5],
+) -> TestResult {
     // Exact dyadic means; roots/reciprocals follow independently derived
     // round-to-nearest-even execution controls, not a production-formula oracle.
     assert_eq!(p.get(|| estimate.phase_seconds())?.to_bits(), bits[0]);
@@ -431,6 +466,115 @@ fn observe_combined(
         .map(NonZeroU64::get)
         .collect();
     assert_eq!(actual_labels, labels);
+    Ok(())
+}
+
+/// Challenge raw prefix counts using a genuine singleton's checked quantities.
+/// # Errors
+/// Preserve setup, private receiver and precharged observer failures.
+/// # Panics
+/// Counts0/17 must reject; the count1 neighbor preserves all scalar/provenance bits.
+fn singleton_publication_counts(
+    p: &Calls,
+    decision: &FixturePrincipalDecision<'_>,
+    record: &FixtureSupporterUncertainty<'_>,
+    built: &Built,
+    label: NonZeroU64,
+) -> TestResult {
+    let principal = p
+        .get(|| decision.principal_entry())?
+        .ok_or_else(|| io::Error::other("missing singleton publication principal"))?;
+    let copies = Cell::new(0);
+    let quantities = private_attempt(&copies, 1, || super::singleton_quantities(record))?;
+    let attempts = Cell::new(0);
+    let estimate = private_attempt(&attempts, 3, || {
+        super::complete_estimate(principal, [label; 16], 1, &quantities)
+    })??;
+    observe_estimate(
+        p,
+        &estimate,
+        built,
+        101,
+        &[101],
+        [
+            0x3fc0_0000_0000_0000,
+            0,
+            0x8000_0000_0000_0000,
+            0x8000_0000_0000_0000,
+            0x8000_0000_0000_0000,
+        ],
+    )?;
+    for count in [0, 17] {
+        assert_eq!(
+            private_attempt(&attempts, 3, || {
+                super::complete_estimate(principal, [label; 16], count, &quantities)
+            })?
+            .err(),
+            Some(FixtureCombinationError::Invariant)
+        );
+    }
+    assert_eq!(copies.get(), 1);
+    assert_eq!(attempts.get(), 3);
+    Ok(())
+}
+
+/// Challenge cross-decision principal association without forging checked values.
+/// # Errors
+/// Preserve genuine producer, private receiver and precharged accessor failures.
+/// # Panics
+/// Decision A accepts its own principal and rejects genuine witnessed principal B.
+fn principal_association_rejections(
+    p: &Calls,
+    built: &Built,
+    decision: &FixturePrincipalDecision<'_>,
+    records: &[FixtureSupporterUncertainty<'_>],
+) -> TestResult {
+    let selection = p.get(|| decision.selection())?;
+    let witness = p
+        .get(|| selection.witnessed())?
+        .ok_or_else(|| io::Error::other("missing association witness"))?;
+    let labels: Vec<_> = p.get(|| witness.supporters())?.collect();
+    assert_eq!(labels, [tag(101)?, tag(202)?]);
+    let batch = p.call(11, || {
+        FixtureProjectedBatch::new(
+            built.frame,
+            built.generation,
+            built.at,
+            &built.entries[1..2],
+        )
+    })??;
+    let minimum = p.call(12, || FixtureMinimum::new(1))??;
+    let parameters = p.call(13, || FixturePrincipalParameters::new(0.25, 0.0))??;
+    let roster = [tag(202)?];
+    let mut state = p.call(15, || {
+        FixturePrincipalState::seed(&roster, parameters, minimum, &batch, &built.strata[1..2])
+    })??;
+    let other = p.call(16, || state.advance(&batch, &built.strata[1..2]))??;
+    principal(
+        p,
+        &other,
+        FixturePrincipalOutcomeKind::ReferenceReady,
+        Some(tag(202)?),
+    )?;
+    let actual = p
+        .get(|| decision.principal_entry())?
+        .ok_or_else(|| io::Error::other("missing association principal A"))?;
+    let other = p
+        .get(|| other.principal_entry())?
+        .ok_or_else(|| io::Error::other("missing association principal B"))?;
+    assert!(std::ptr::eq(actual, &raw const built.entries[0]));
+    assert!(std::ptr::eq(other, &raw const built.entries[1]));
+    let attempts = Cell::new(0);
+    private_attempt(&attempts, 2, || {
+        super::admit_records(decision, records, actual)
+    })??;
+    assert_eq!(
+        private_attempt(&attempts, 2, || {
+            super::admit_records(decision, records, other)
+        })?,
+        Err(FixtureCombinationError::Invariant)
+    );
+    assert_eq!(attempts.get(), 2);
     Ok(())
 }
 
@@ -553,9 +697,10 @@ fn arithmetic_rejection(
     step: FixtureCombinationStep,
     operation: ArithmeticOperation,
     issue: ArithmeticIssue,
-) -> TestResult {
+) -> TestResult<FixtureCombinationError> {
+    let error = rejection(result)?;
     assert_eq!(
-        rejection(result)?,
+        error,
         FixtureCombinationError::Arithmetic {
             step,
             source: FitError::Arithmetic {
@@ -565,6 +710,38 @@ fn arithmetic_rejection(
             },
         }
     );
+    Ok(error)
+}
+
+/// Observe an actual product Debug dispatch against its fixed redaction contract.
+/// # Errors
+/// Preserve the precharged formatting-attempt bound.
+/// # Panics
+/// The complete output must contain only the independently named opaque type.
+fn opaque_debug(p: &Calls, value: &impl std::fmt::Debug, expected: &str) -> TestResult {
+    assert_eq!(p.call(19, || format!("{value:?}"))?, expected);
+    Ok(())
+}
+
+/// Require the arithmetic error trait source to borrow its original typed cause.
+/// # Errors
+/// Reject a missing/wrong cause or a precharged getter-accounting failure.
+/// # Panics
+/// Downcasting must retain the address of the actual original `FitError` field.
+fn borrowed_arithmetic_source(p: &Calls, error: &FixtureCombinationError) -> TestResult {
+    let FixtureCombinationError::Arithmetic {
+        source: expected, ..
+    } = error
+    else {
+        return Err(io::Error::other("missing combination arithmetic cause").into());
+    };
+    let source = p
+        .get(|| Error::source(error))?
+        .ok_or_else(|| io::Error::other("missing borrowed combination cause"))?;
+    let actual = source
+        .downcast_ref::<FitError>()
+        .ok_or_else(|| io::Error::other("wrong borrowed combination cause type"))?;
+    assert!(std::ptr::eq(actual, expected));
     Ok(())
 }
 
@@ -600,7 +777,7 @@ fn combination_distinct_weights_and_principal_disagreement() -> TestResult {
     let p = Calls::new(
         "combination_distinct_weights_and_principal_disagreement",
         [
-            2, 6, 6, 2, 7, 24, 6, 44, 2, 2, 2, 1, 1, 1, 2, 1, 1, 0, 0, 0, 2, 1,
+            2, 6, 6, 2, 7, 24, 6, 45, 2, 2, 2, 1, 1, 1, 2, 1, 1, 0, 0, 2, 2, 1,
         ],
     );
     // Supplied entry/metadata order B,A differs from ascending witness order A,B.
@@ -650,7 +827,13 @@ fn combination_distinct_weights_and_principal_disagreement() -> TestResult {
         result.is_ok(),
         "genuine two-source combination computed path must succeed"
     );
-    combined(&p, &result?, &built)?;
+    let outcome = result?;
+    opaque_debug(&p, &outcome, "FixtureCombinationKernelOutcome { .. }")?;
+    let estimate = p
+        .get(|| outcome.combined())?
+        .ok_or_else(|| io::Error::other("missing diagnostic combination estimate"))?;
+    opaque_debug(&p, estimate, "FixtureCombinedEstimate { .. }")?;
+    combined(&p, &outcome, &built)?;
     p.assert_complete();
     Ok(())
 }
@@ -665,7 +848,7 @@ fn combination_unavailable_and_checked_uncertainty() -> TestResult {
     let p = Calls::new(
         "combination_unavailable_and_checked_uncertainty",
         [
-            1, 3, 3, 1, 4, 12, 3, 21, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1,
+            1, 3, 3, 1, 4, 12, 3, 22, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 3, 1, 2,
         ],
     );
     let built = build(
@@ -683,6 +866,7 @@ fn combination_unavailable_and_checked_uncertainty() -> TestResult {
         FixtureSupporterUncertainty::new(&built.entries[0], -0.0, 0.5, 1.0)
     })??;
     uncertainty(&p, &record, &built.entries[0], [-0.0, 0.5, 1.0])?;
+    opaque_debug(&p, &record, "FixtureSupporterUncertainty { .. }")?;
     let roster = [tag(101)?, tag(202)?];
     let mut state = state(&p, &built, &batch, &roster, 2)?;
     let decision = p.call(16, || state.advance(&batch, &built.strata))??;
@@ -698,6 +882,14 @@ fn combination_unavailable_and_checked_uncertainty() -> TestResult {
         FixtureOutcomeKind::InsufficientPopulation
     );
     assert_eq!(p.get(|| selection.minimum())?, 2);
+    let error = rejection(p.call(21, || combine_fixture_supporters(&decision, &[record]))?)?;
+    assert_eq!(error, FixtureCombinationError::MetadataCountMismatch);
+    opaque_debug(&p, &error, "FixtureCombinationError { .. }")?;
+    assert_eq!(
+        p.call(19, || error.to_string())?,
+        "combination metadata count mismatch"
+    );
+    assert!(p.get(|| Error::source(&error))?.is_none());
     let outcome = p.call(21, || combine_fixture_supporters(&decision, &[]))??;
     assert_eq!(
         p.get(|| outcome.kind())?,
@@ -722,7 +914,7 @@ fn combination_singleton_signed_zero_and_retained() -> TestResult {
     let p = Calls::new(
         "combination_singleton_signed_zero_and_retained",
         [
-            1, 3, 3, 1, 4, 12, 3, 52, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 1, 2,
+            1, 3, 3, 1, 4, 12, 3, 67, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 1, 2,
         ],
     );
     let built = build(
@@ -748,6 +940,9 @@ fn combination_singleton_signed_zero_and_retained() -> TestResult {
     ] {
         let decision = p.call(16, || state.advance(&batch, &built.strata))??;
         principal(&p, &decision, kind, Some(roster[0]))?;
+        if kind == FixturePrincipalOutcomeKind::ReferenceReady {
+            singleton_publication_counts(&p, &decision, &record, &built, roster[0])?;
+        }
         let outcome = p.call(21, || combine_fixture_supporters(&decision, &[record]))??;
         observe_combined(
             &p,
@@ -970,7 +1165,7 @@ fn combination_metadata_association_and_context() -> TestResult {
     let p = Calls::new(
         "combination_metadata_association_and_context",
         [
-            6, 18, 18, 6, 22, 72, 18, 68, 6, 6, 6, 1, 1, 1, 6, 1, 1, 0, 0, 0, 7, 10,
+            6, 18, 18, 6, 22, 72, 18, 76, 6, 6, 6, 2, 2, 2, 6, 2, 2, 0, 0, 0, 7, 10,
         ],
     );
     let built = build(
@@ -1025,6 +1220,7 @@ fn combination_metadata_association_and_context() -> TestResult {
     let time = p.call(20, || {
         FixtureSupporterUncertainty::new(&wrong_time.entries[0], 0.0, 1.0, 1.0)
     })??;
+    principal_association_rejections(&p, &built, &decision, &[a, b])?;
     metadata_rejections(&p, &decision, [a, b, c, copied, frame, generation, time])?;
     let outcome = p.call(21, || combine_fixture_supporters(&decision, &[a, b]))??;
     observe_combined(
@@ -1380,7 +1576,7 @@ fn combination_weighted_rate_subnormal_and_neighbor() -> TestResult {
     let p = Calls::new(
         "combination_weighted_rate_subnormal_and_neighbor",
         [
-            2, 6, 6, 2, 7, 24, 6, 36, 2, 2, 2, 1, 1, 1, 2, 1, 1, 0, 0, 0, 3, 2,
+            2, 6, 6, 2, 7, 24, 6, 37, 2, 2, 2, 1, 1, 1, 2, 1, 1, 0, 0, 0, 3, 2,
         ],
     );
     let built = build(
@@ -1419,12 +1615,13 @@ fn combination_weighted_rate_subnormal_and_neighbor() -> TestResult {
     })??;
     // rateSD2^511 squares to2^1022; inverse2^-1022 times5*2^-20 is
     // the nonzero subnormal5*2^-1042. Phase/disagreement terms remain normal.
-    arithmetic_rejection(
+    let error = arithmetic_rejection(
         p.call(21, || combine_fixture_supporters(&decision, &[b, a]))?,
         FixtureCombinationStep::WeightedRate,
         ArithmeticOperation::Multiply,
         ArithmeticIssue::Subnormal,
     )?;
+    borrowed_arithmetic_source(&p, &error)?;
     let neighbor = p.call(20, || {
         FixtureSupporterUncertainty::new(
             &built.entries[1],

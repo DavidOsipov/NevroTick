@@ -5,6 +5,12 @@ or result collector whose mistake could make the selected behavior appear tested
 Reuse adequate controls while their relevant bytes and assumptions are unchanged.
 This supports CHECK-6/19/25; it does not add a campaign to every small test edit.
 
+For changed Python accounting/report interfaces, use
+[verification typing](python-verification-typing.md) without replacing runtime
+admission. For repeated positional counter mappings across Rust/Python, consider
+[mechanical counter generation](counter-transport-generation.md); shared field
+definitions must not become the independent expected-result oracle.
+
 ## Bind facts to the real route
 
 Before observing candidate output, identify the facts that distinguish the chosen

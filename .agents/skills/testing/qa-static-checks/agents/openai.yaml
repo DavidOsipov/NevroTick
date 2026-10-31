@@ -1,4 +1,4 @@
 interface:
-  display_name: "Verify Rust static enforcement"
-  short_description: "Select and validate NevroTick compiler, format, Clippy,"
-  default_prompt: "Use $qa-static-checks to select and validate NevroTick compiler, format, Clippy, source-policy and feature/MSRV checks with meaningful admission controls."
+  display_name: "Verify static enforcement"
+  short_description: "Validate Rust and verification-Python static checks"
+  default_prompt: "Use $qa-static-checks to select and validate NevroTick Rust or verification-Python static enforcement with meaningful admission and rejection controls."

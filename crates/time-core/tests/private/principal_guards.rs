@@ -3,8 +3,9 @@
 //!
 //! Included only by the actual principal owner under cfg(test).
 //! No private State, Selection, Witness or Decision representation is forged.
-//! Two real flat histories supply four admitted public decisions. Independently
-//! valid arguments are mixed only at the actual complete_decision receiver.
+//! Two real flat histories supply four admitted public decisions. Selections
+//! retain their actual checked batch entries as one private pair; independently
+//! valid kind/label arguments are mixed only at the complete_decision receiver.
 //!
 //! Public upper20=[2,6,6,2,3,1,1,96,2,2,2,3,1,1,2,1,4,0,0,0].
 //! Nominal complete20 differs only in getters=63. Two wrappers append at lengths
@@ -13,11 +14,14 @@
 //! Four advances retain their existing internal selector/clone/helper bounds.
 //! Separately reserve SEVEN direct actual batch.select calls and SEVEN direct
 //! complete_decision calls. Neither operation is labelled getter or advance.
+//! Each selection's pair retains exactly the batch's original slice identity.
 //! Their local attempt counters enforce7 and are asserted on healthy completion;
 //! the unchanged20-field marker intentionally does not claim to observe them.
 //! Reserve the complete fixed7 for each even on a failed public-marker prefix.
-//! Direct complete_decision source upper: at most112 entry-label comparisons,
-//! 112 supporter-label comparisons and14 selection.outcome probes. The actual
+//! Pair construction adds seven batch.entries accessors; pair identity checks
+//! add seven pointer comparisons. Direct complete_decision source upper remains
+//! at most112 entry-label comparisons,112 supporter-label comparisons and14
+//! selection.outcome probes. The actual
 //! positives select original A at entry0; the three negatives reject beforehand.
 //! At most two input records, three checked batches and no explicit state clone,
 //! whole-state equality or formatting operation occur in this test.
@@ -34,12 +38,12 @@ use crate::{
     FixtureContext, FixtureHistory, FixtureMinimum, FixtureObservation, FixtureOutcomeKind,
     FixturePrincipalDecision, FixturePrincipalError, FixturePrincipalOutcomeKind,
     FixturePrincipalParameters, FixturePrincipalState, FixturePrincipalStratum,
-    FixtureProjectedBatch, FixtureProjectedInterval, FixtureProjectionTerms, FixtureSelection,
+    FixtureProjectedBatch, FixtureProjectedInterval, FixtureProjectionTerms,
     enclose_fixture_projection, project_fixture_anchor,
 };
 use time_domain::{MonotonicNs, PhaseOffsetQ33, UtcCoordinateQ32, exchange_arithmetic};
 
-use super::complete_decision;
+use super::{SameBatchSelection, complete_decision, select_same_batch};
 
 /// Preserve actual producer/receiver failures separately from harness failures.
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
@@ -99,33 +103,32 @@ impl Calls {
         self.call(7, get)
     }
 
-    /// Run one real selector without pretending it is an accessor or advance.
+    /// Form one same-batch pair with one actual selector, never a detached result.
     /// # Errors
-    /// Preserve pre-call budget failure or the real selector's typed error.
-    fn select(
+    /// Preserve pre-call budget failure or the actual paired selector's cause.
+    fn select<'batch>(
         &self,
-        batch: &FixtureProjectedBatch<'_>,
+        batch: &'batch FixtureProjectedBatch<'_>,
         minimum: FixtureMinimum,
-    ) -> TestResult<FixtureSelection> {
+    ) -> TestResult<SameBatchSelection<'batch>> {
         charge_direct(&self.selections)?;
-        Ok(batch.select(minimum)?)
+        Ok(select_same_batch(batch, minimum)?)
     }
 
     /// Pass independently genuine arguments to the actual private consumer.
     /// # Errors
     /// Preserve accounting failure; retain the consumer Result for exact assertions.
-    fn complete<'entries>(
+    fn complete<'batch>(
         &self,
-        entries: &'entries [FixtureProjectedInterval],
-        selection: FixtureSelection,
+        selected: SameBatchSelection<'batch>,
         kind_from: &FixturePrincipalDecision<'_>,
         label_from: &FixturePrincipalDecision<'_>,
-    ) -> TestResult<Result<FixturePrincipalDecision<'entries>, FixturePrincipalError>> {
+    ) -> TestResult<Result<FixturePrincipalDecision<'batch>, FixturePrincipalError>> {
         let label = self.get(|| label_from.principal_label())?;
         let kind = self.get(|| kind_from.kind())?;
         let updated = self.get(|| kind_from.updated_source())?;
         charge_direct(&self.decisions)?;
-        Ok(complete_decision(entries, selection, label, kind, updated))
+        Ok(complete_decision(selected, label, kind, updated))
     }
 
     /// Assert the healthy whole recipe without product state formatting.
@@ -291,9 +294,10 @@ fn check_relations(
             FixtureOutcomeKind::Empty,
         ),
     ] {
-        let selection = p.select(batch, minimum)?;
+        let selected = p.select(batch, minimum)?;
         let entries = p.get(|| batch.entries())?;
-        let matched = p.complete(entries, selection, donor, donor)??;
+        assert!(std::ptr::eq(selected.entries, entries));
+        let matched = p.complete(selected, donor, donor)??;
         observe(p, &matched, kind, label, outcome, original_a)?;
     }
     // A-only: Ready paired with a genuine unavailable None label.
@@ -304,9 +308,10 @@ fn check_relations(
         (empty, waiting, waiting),
         (full, unavailable, unavailable),
     ] {
-        let selection = p.select(batch, minimum)?;
+        let selected = p.select(batch, minimum)?;
         let entries = p.get(|| batch.entries())?;
-        let rejected = p.complete(entries, selection, kind_from, label_from)?;
+        assert!(std::ptr::eq(selected.entries, entries));
+        let rejected = p.complete(selected, kind_from, label_from)?;
         assert!(matches!(rejected, Err(FixturePrincipalError::Invariant)));
     }
     Ok(())

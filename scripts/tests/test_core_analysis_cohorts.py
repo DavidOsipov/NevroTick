@@ -80,11 +80,44 @@ class CohortPlanTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                 MODULE.admit_plan(plan, **args)
 
-    def test_reviewed_358_field_width_accepts_exact_limit_and_rejects_next(self):
-        exact = {f"metric{index}": 1 for index in range(358)}
+    def test_reviewed_366_field_width_accepts_exact_limit_and_rejects_next(self):
+        exact = {f"metric{index}": 1 for index in range(366)}
         self.assertEqual(MODULE._budget(exact), exact)
         with self.assertRaises(MODULE.Incomplete):
-            MODULE._budget({**exact, 'metric358': 1})
+            MODULE._budget({**exact, 'metric366': 1})
+
+    def test_typed_budget_projection_rejects_boolean_and_unbounded_counts(self):
+        self.assertEqual(MODULE._budget({"fits": 0, "points": (1 << 63) - 1}),
+                         {"fits": 0, "points": (1 << 63) - 1})
+        for budget in ({"fits": True}, {"fits": -1}, {"fits": 1 << 63},
+                       {"fits": 1.0}, {1: 1}, []):
+            with self.subTest(budget=budget), self.assertRaises(MODULE.Incomplete):
+                MODULE._budget(budget)
+
+    def test_malformed_nested_receipts_fail_closed_after_typed_projection(self):
+        for field in ("core_cohort_binding", "source_sha256", "mutation"):
+            plan, args = self.fixture()
+            receipts = self.receipts(plan, args["subjects"])
+            receipts[0][field] = []
+            with self.subTest(field=field), self.assertRaises(MODULE.Incomplete):
+                MODULE.reconcile_receipts(plan, receipts, subjects=args["subjects"])
+
+    def test_boolean_inventory_and_baseline_counts_remain_invalid(self):
+        for change in ("inventory", "baseline", "required", "observed", "generated"):
+            plan, args = self.fixture()
+            receipts = self.receipts(plan, args["subjects"])
+            if change == "inventory":
+                plan["inventories"]["owner0"]["count"] = True
+            elif change == "baseline":
+                receipts[0]["mutation"]["owner0"]["baseline_tests_executed"] = True
+            elif change == "required":
+                receipts[0]["mutation_baselines_required"] = True
+            elif change == "observed":
+                receipts[0]["mutation_baselines_observed"] = True
+            else:
+                receipts[0]["mutation_generated_variants_selected_total"] = True
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.reconcile_receipts(plan, receipts, subjects=args["subjects"])
 
     def test_unknown_missing_and_pending_plan_fields_reject(self):
         for change in ("unknown", "missing", "pending", "schema_bool"):

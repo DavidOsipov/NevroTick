@@ -32,17 +32,17 @@ class CombinationCheckpointTests(unittest.TestCase):
               'batches', 'minima', 'parameters', 'strata', 'seeds', 'advances',
               'state_clones', 'value_equalities', 'state_formats', 'uncertainties', 'combinations')
     RECIPES = (
-        ('combination_distinct_weights_and_principal_disagreement', (2,6,6,2,7,24,6,44,2,2,2,1,1,1,2,1,1,0,0,0,2,1)),
-        ('combination_unavailable_and_checked_uncertainty', (1,3,3,1,4,12,3,21,1,1,1,1,1,1,1,1,1,0,0,0,1,1)),
-        ('combination_singleton_signed_zero_and_retained', (1,3,3,1,4,12,3,52,1,1,1,1,1,1,1,1,2,0,0,0,1,2)),
+        ('combination_distinct_weights_and_principal_disagreement', (2,6,6,2,7,24,6,45,2,2,2,1,1,1,2,1,1,0,0,2,2,1)),
+        ('combination_unavailable_and_checked_uncertainty', (1,3,3,1,4,12,3,22,1,1,1,1,1,1,1,1,1,0,0,3,1,2)),
+        ('combination_singleton_signed_zero_and_retained', (1,3,3,1,4,12,3,67,1,1,1,1,1,1,1,1,2,0,0,0,1,2)),
         ('combination_raw_uncertainty_boundaries', (1,3,3,1,4,12,3,326,1,1,1,1,1,1,1,1,1,0,0,0,40,15)),
         ('combination_three_source_permutation_and_zero_phase_sd', (3,9,9,3,10,36,9,73,3,3,3,1,1,1,3,1,1,0,0,0,3,2)),
-        ('combination_metadata_association_and_context', (6,18,18,6,22,72,18,68,6,6,6,1,1,1,6,1,1,0,0,0,7,10)),
+        ('combination_metadata_association_and_context', (6,18,18,6,22,72,18,76,6,6,6,2,2,2,6,2,2,0,0,0,7,10)),
         ('combination_zero_denominators_and_phase_neighbor', (4,12,12,4,14,48,12,55,4,4,4,2,2,2,4,2,2,0,0,0,8,6)),
         ('combination_finite_square_failures_and_neighbors', (2,6,6,2,7,24,6,31,2,2,2,1,1,1,2,1,1,0,0,0,13,12)),
         ('combination_capacity_and_weight_sum_overflow', (16,48,48,16,49,192,48,148,16,16,16,1,1,1,16,1,1,0,0,0,48,4)),
         ('combination_variance_mean_underflow_and_neighbor', (2,6,6,2,7,24,6,36,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
-        ('combination_weighted_rate_subnormal_and_neighbor', (2,6,6,2,7,24,6,36,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
+        ('combination_weighted_rate_subnormal_and_neighbor', (2,6,6,2,7,24,6,37,2,2,2,1,1,1,2,1,1,0,0,0,3,2)),
         ('combination_canonical_reduction_rounding_order', (3,9,9,3,10,36,9,61,3,3,3,1,1,1,3,1,1,0,0,0,3,2)),
     )
 
@@ -67,15 +67,15 @@ class CombinationCheckpointTests(unittest.TestCase):
         counts = MODULE.profile_counts(self.complete_rows(), require_combination=True)
         actual = counts['combination_observed_calls']
         self.assertEqual(tuple(actual[name] for name in self.FIELDS),
-                         (43,129,129,43,145,516,129,951,43,43,43,13,13,13,43,13,14,0,0,0,132,59))
+                         (43,129,129,43,145,516,129,977,43,43,43,14,14,14,43,14,15,0,0,5,132,60))
         self.assertEqual(counts['combination_counter_records'], 12)
         self.assertFalse(counts['combination_observation_pending'])
         self.assertEqual((counts['charged_fit_work_upper'], counts['point_admissions_upper']), (129,8256))
         self.assertEqual((counts['direct_fit_calls'], counts['stats_calls']), (0,0))
         work = counts['combination_source_owned_work_uppers']
         self.assertEqual(work['uncertainty_constructor_attempts_upper'], 132)
-        self.assertEqual(work['kernel_checked_square_root_calls_upper'], 177)
-        self.assertEqual(work['kernel_checked_binary_calls_upper'], 17287)
+        self.assertEqual(work['kernel_checked_square_root_calls_upper'], 180)
+        self.assertEqual(work['kernel_checked_binary_calls_upper'], 17580)
         producer = MODULE.principal_source_work({name: actual[name] for name in self.FIELDS[:20]})
         for key, value in producer.items():
             self.assertEqual(work[key], value)
@@ -179,6 +179,78 @@ class CombinationCheckpointTests(unittest.TestCase):
         with patch.dict(MODULE.MUTATION_INVENTORIES, {}, clear=True), self.assertRaisesRegex(MODULE.Incomplete, 'inventories remain pending'):
             MODULE.checkpoint_source_reservation()
 
+    @staticmethod
+    def combination_equivalence_scope():
+        """Independent literal scope fixtures, not full proofs or native E outcomes."""
+        names = (
+            ('S13-C-E-001', '639:19: replace || with && in admit_records'),
+            ('S13-C-E-002', '639:45: replace || with && in admit_records'),
+            ('S13-C-E-003', '1013:26: replace || with && in combine_fixture_supporters'),
+        )
+        return [
+            {'id': identifier,
+             'candidate_sha256': 'c0d69657d97cae32b6a90dd7d371c0b75132eafb8b37ab3de5e96a7d080efda6',
+             'source_sha256': 'c4dcd5d67141b44f43f81b94c8e6165611b7dd8269b5d7c76bbb21a683d32c91',
+             'mutant': {'name': 'crates/time-core/src/combination.rs:' + suffix,
+                        'package': 'time-core', 'file': 'crates/time-core/src/combination.rs',
+                        'replacement': '&&'},
+             'proof': {'path': 'tasks/s1.3-combination-equivalences.md'}}
+            for identifier, suffix in names
+        ]
+
+    def test_current_equivalence_scope_accepts_empty_or_exact_repaired_combination_trio(self):
+        MODULE.admit_core_equivalence_scope([])
+        good = self.combination_equivalence_scope()
+        MODULE.admit_core_equivalence_scope(good)
+        MODULE.admit_core_equivalence_scope(list(reversed(good)))
+
+    def test_current_equivalence_scope_rejects_incomplete_duplicate_and_malformed_sets(self):
+        good = self.combination_equivalence_scope()
+        malformed = (None, False, {}, (), good[:1], good[:2], good + [good[0]],
+                     [good[0]] * 3, [None, good[1], good[2]],
+                     [False, good[1], good[2]], [{}, good[1], good[2]])
+        for value in malformed:
+            with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_core_equivalence_scope(value)
+        for missing in ('id', 'candidate_sha256', 'source_sha256', 'mutant', 'proof'):
+            altered = copy.deepcopy(good); del altered[0][missing]
+            with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_core_equivalence_scope(altered)
+
+    def test_current_equivalence_scope_rejects_changed_identity_candidate_source_and_proof(self):
+        good = self.combination_equivalence_scope()
+        for index in range(3):
+            for field, value in (
+                ('id', 'S13-C-E-004'), ('id', []), ('id', True),
+                ('candidate_sha256', '0' * 64), ('candidate_sha256', None),
+                ('source_sha256', '0' * 64), ('source_sha256', None),
+                ('mutant', None), ('mutant', []), ('proof', None), ('proof', []),
+            ):
+                altered = copy.deepcopy(good); altered[index][field] = value
+                with self.subTest(index=index, field=field, value=value), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_core_equivalence_scope(altered)
+            for owner, field, value in (
+                ('mutant', 'name', 'crates/time-core/src/combination.rs:639:20: replace || with && in admit_records'),
+                ('mutant', 'package', 'time-domain'),
+                ('mutant', 'file', 'crates/time-core/src/principal.rs'),
+                ('mutant', 'replacement', '||'),
+                ('proof', 'path', 'tasks/old-combination-equivalences.md'),
+            ):
+                altered = copy.deepcopy(good); altered[index][owner][field] = value
+                with self.subTest(index=index, owner=owner, field=field), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_core_equivalence_scope(altered)
+
+    def test_current_equivalence_scope_never_excludes_the_two_boundary_counterexamples(self):
+        for name in (
+            'crates/time-core/src/combination.rs:647:9: replace || with && in admit_records',
+            'crates/time-core/src/combination.rs:946:19: replace || with && in complete_estimate',
+        ):
+            for index in range(3):
+                altered = self.combination_equivalence_scope()
+                altered[index]['mutant']['name'] = name
+                with self.subTest(name=name, index=index), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admit_core_equivalence_scope(altered)
+
     def test_timeout_recognizes_combo_prefix_and_rejects_unrecognized_family(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); path = root / 'outcomes.json'
@@ -226,7 +298,7 @@ class CombinationCheckpointTests(unittest.TestCase):
                     MODULE.observe_mutation_outcome(report, path, 'baseline', outcome, reserved)
                     self.assertFalse(reserved['observation_pending'])
                     self.assertEqual(reserved['observed_counts']['combination_counter_records'], 12)
-                    self.assertEqual(report['core_combination_complete_observed_call_subtotals']['combinations'], 59)
+                    self.assertEqual(report['core_combination_complete_observed_call_subtotals']['combinations'], 60)
                 else:
                     with self.assertRaisesRegex(MODULE.Incomplete, failure):
                         MODULE.observe_mutation_outcome(report, path, 'baseline', outcome, reserved)
@@ -1700,6 +1772,7 @@ class CoreAnalysisTests(unittest.TestCase):
         report['tools_sha256'] = {}
         with patch.object(MODULE, 'read_policy', return_value=policy), \
              patch.object(MODULE, 'read_cohort_plan', return_value=(plan, {'synthetic_reservation': True}, plan_path)), \
+             patch.object(MODULE.COHORTS, 'cohort_binding', return_value=plan['cohorts'][0]), \
              patch.object(MODULE, 'inventory_document', return_value=plan), \
              patch.object(MODULE.COMMON, 'Session', return_value=session):
             yield args
@@ -3407,7 +3480,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
               'enclosures', 'batches', 'minima', 'selections')
     RECIPES = (
         ('single_compatible', (1,3,3,1,6,12,3,24,1,1,1,1,1,1)),
-        ('linear_selection', (3,9,9,3,16,36,9,525,3,3,3,2,2,3)),
+        ('linear_selection', (3,9,9,3,16,36,9,425,3,3,3,2,2,3)),
         ('capacity_neighbors', (17,51,51,17,86,204,51,2234,17,17,17,5,1,3)),
         ('context_admission', (8,24,24,8,42,96,24,680,8,8,8,12,1,1)),
         ('duplicate_precedence', (3,9,9,3,16,36,9,305,3,3,3,3,1,1)),
@@ -3436,7 +3509,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
     def test_disjoint_attempts_reuse_each_producer_and_selector_work_owner_once(self):
         counts = MODULE.profile_counts(self.complete_rows(), require_projected_batch=True)
         self.assertEqual(counts['projected_batch_observed_calls'], dict(zip(
-            self.FIELDS, (43,129,129,43,221,516,129,4655,43,43,43,32,8,16), strict=True)))
+            self.FIELDS, (43,129,129,43,221,516,129,4555,43,43,43,32,8,16), strict=True)))
         self.assertEqual((counts['direct_fit_calls'], counts['stats_calls']), (0, 0))
         self.assertEqual((counts['charged_fit_work_upper'], counts['point_admissions_upper']), (129, 8256))
         self.assertIsNone(counts['projection_observed_calls'])
@@ -3448,7 +3521,9 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
         self.assertEqual(work['selection_membership_probes_upper'], 16128)
         self.assertEqual(work['minimum_garde_validate_calls_upper'], 8)
         self.assertEqual(work['scratch_Copy_assignments_upper'], 992)
-        self.assertEqual(work['wrapper_debug_format_calls_upper'], 4655)
+        self.assertEqual(work['wrapper_debug_format_calls_upper'], 4555)
+        self.assertEqual(MODULE.PROJECTED_BATCH.full_package_reservation()[
+            'projected_batch_reserved_calls']['getters'], 4655)
 
     def test_observers_are_actual_overlapping_observations_and_add_no_charges(self):
         public = ''.join(self.row(case, values) for case, values in self.RECIPES)
@@ -3579,8 +3654,10 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
                 for lane in ('all', 'fuzz'):
                     with self.subTest(lane=lane), self.assertRaisesRegex(MODULE.Incomplete, 'exact admitted lanes/owners'):
                         MODULE.prospective_scope_reservation(lane, subjects)
-                # Nominal one-package admission cannot fund both named cohorts.
-                with self.assertRaisesRegex(MODULE.Incomplete, 'finite reservation|inventories remain pending'):
+                # A one-package combination allowance cannot fund four cohorts.
+                with self.assertRaisesRegex(
+                        MODULE.Incomplete,
+                        r'^Prospective combination work exceeds its exact checkpoint allowance\.$'):
                     MODULE.prospective_scope_reservation('mutation', subjects)
             for limits in (None, {**required, 'projected_batch.call.batches': required['projected_batch.call.batches'] - 1}):
                 with self.subTest(limits=limits), patch.dict(
@@ -3591,16 +3668,32 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
 class CheckedInCorePolicyTests(unittest.TestCase):
     """Exercise the real checked-in source admission outside synthetic fixtures."""
 
-    def test_changed_checkpoint_does_not_reuse_the_historical_source_admission(self):
-        # The current stage permits inventory only. No adjacent reader, source
-        # identity or metadata is patched into final-source admission.
-        with self.assertRaises(MODULE.Incomplete):
-            MODULE.read_policy(ROOT, 'coverage')
+    def test_changed_checkpoint_binds_actual_source_inventory_and_reservation(self):
+        # Exercise the real final-source reader without patching identities,
+        # discovery, recipes, allowances or the current product admission.
+        policy = MODULE.read_policy(ROOT, 'coverage')
+        self.assertEqual(policy['inputs_sha256'], MODULE.PRODUCT.admit_product(ROOT)[1])
+        actual_scope = [{
+            'id': entry['id'],
+            'candidate_sha256': entry['candidate_sha256'],
+            'source_sha256': entry['source_sha256'],
+            'mutant': {key: entry['mutant'][key]
+                       for key in ('name', 'package', 'file', 'replacement')},
+            'proof': {'path': entry['proof']['path']},
+        } for entry in policy['mutation_equivalences']]
+        self.assertCountEqual(actual_scope, CombinationCheckpointTests.combination_equivalence_scope())
         self.assertEqual(MODULE.SOURCE_FILE_COUNT, 101)
         self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS,
                          {'ordinary': 163, 'doctests': 5, 'baseline': 168})
         self.assertEqual(set(MODULE.SUBJECTS), {'combination','principal','regression','projection'})
-        self.assertIsNone(MODULE.CHECKPOINT_SOURCE_RESERVATION)
+        reservation = MODULE.CHECKPOINT_SOURCE_RESERVATION
+        self.assertEqual(reservation['mutation_variants'], 502)
+        self.assertEqual(reservation['mutation_baselines'], 4)
+        self.assertEqual(reservation['mutation_package_invocations'], 506)
+        self.assertEqual(len(reservation['source_work']), 366)
+        self.assertEqual(reservation['source_work']['charged_fit_work_upper'], 3115011)
+        # Extra package includes three literal doctest admissions: 279101+3.
+        self.assertEqual(reservation['source_work']['point_admissions_upper'], 141505917)
 
     def test_nonmutation_session_binds_enclosure_helper_before_native_work(self):
         """Capture the real execution boundary before any tool can be admitted."""

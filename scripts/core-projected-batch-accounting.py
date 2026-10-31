@@ -27,7 +27,8 @@ U64_MAX = (1 << 64) - 1
 # actual native discovery, all cumulative limits and the complete cohort plan.
 SOURCE_RECIPES = (
     ("single_compatible", (1,3,3,1,6,12,3,24,1,1,1,1,1,1)),
-    ("linear_selection", (3,9,9,3,16,36,9,525,3,3,3,2,2,3)),
+    # Exact source observation: 18+99+106+14+8+73+8+99; Rust's 525 is a ceiling.
+    ("linear_selection", (3,9,9,3,16,36,9,425,3,3,3,2,2,3)),
     ("capacity_neighbors", (17,51,51,17,86,204,51,2234,17,17,17,5,1,3)),
     ("context_admission", (8,24,24,8,42,96,24,680,8,8,8,12,1,1)),
     ("duplicate_precedence", (3,9,9,3,16,36,9,305,3,3,3,3,1,1)),
@@ -38,6 +39,9 @@ SOURCE_RECIPES = (
     ("projected_batch_private_delegation", (2,6,6,2,9,24,6,14,2,2,2,2,0,0)),
     ("projected_batch_private_errors", (0,) * 14),
 )
+# The authored Rust Profile permits this spare work. Exact healthy observations
+# remain independently specified above; completing them does not refund a charge.
+SOURCE_RESERVATION_OVERRIDES = {"linear_selection": {"getters": 525}}
 SOURCE_TESTS = (
     "genuine_compatible_projection_reaches_real_batch_selection",
     "linear_sources_preserve_original_ages_and_configured_minimum",
@@ -123,11 +127,27 @@ def _recipes(rows, tests, fields, *, public):
 
 
 def case_recipes():
-    """Return actual source-authored attempt ceilings, never native observations."""
+    """Return authored exact complete-observation recipes, not observed outcomes."""
     recipes = _recipes(SOURCE_RECIPES, SOURCE_TESTS, FIELDS, public=True)
     if not set(SOURCE_PRIVATE_CASES) <= set(recipes):
         raise Incomplete("Projected-batch private scope is absent from the source inventory.")
     return {case: dict(zip(FIELDS, values, strict=True)) for case, values in recipes.items()}
+
+
+def reservation_case_ceilings():
+    """Preserve the separately authored pre-effect ceilings, including spare work."""
+    ceilings = case_recipes()
+    overrides = SOURCE_RESERVATION_OVERRIDES
+    if (type(overrides) is not dict or not set(overrides) <= set(ceilings)
+            or any(type(case) is not str or type(fields) is not dict or not fields
+                   or not set(fields) <= set(FIELDS) for case, fields in overrides.items())):
+        raise Incomplete("Projected-batch reservation overrides have an unowned scope or field.")
+    for case, fields in overrides.items():
+        for field, value in fields.items():
+            if type(value) is not int or not ceilings[case][field] <= value <= U64_MAX:
+                raise Incomplete("Projected-batch reservation ceiling cannot underfund its exact recipe.")
+            ceilings[case][field] = value
+    return ceilings
 
 
 def guard_recipes():
@@ -247,7 +267,7 @@ def source_work_uppers(calls):
 
 def full_package_reservation():
     """Reserve complete source attempts and disjoint direct-private work."""
-    recipes = case_recipes()
+    recipes = reservation_case_ceilings()
     calls = {field: sum(row[field] for row in recipes.values()) for field in FIELDS}
     if any(value > U64_MAX for value in calls.values()):
         raise Incomplete("Projected-batch source attempt total exceeds u64.")
