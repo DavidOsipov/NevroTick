@@ -1,14 +1,19 @@
 # NevroTick roadmap
 
-**Updated:** 30 October 2026  
+**Updated:** 1 November 2026
+
+**First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
+
 **Android status:** planned; no Android implementation or handset qualification is established  
-**Reviewed repository baseline:** [a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab](https://github.com/DavidOsipov/NevroTick/commit/a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab)
+**Original Android research baseline:** [a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab](https://github.com/DavidOsipov/NevroTick/commit/a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab)
 
 ## 1. Direction and authority
 
-David requested this roadmap for an Android application that runs a local time
-server and redirects Android's existing NTP client to it, without root or an
-always-active VPN interface.
+Finish the current Windows development and acceptance plan first. The first
+follow-up is the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking)
+below, before any Android implementation. Then pursue the Android application
+David requested: a local time server that redirects Android's existing NTP client
+to it, without root or an always-active VPN interface.
 
 Here, **redirecting the client means changing its configured NTP endpoint through
 an explicitly authorized ADB setup operation**. It does not mean replacing Android
@@ -19,7 +24,8 @@ applying time to its own clock.
 | Workstream | Planning owner and status |
 | --- | --- |
 | Windows client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. This roadmap neither duplicates nor reorders that plan. |
-| Android local SNTP bridge | This document, stages AND-0–AND-5. Future work with device-specific feasibility gates. |
+| Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
+| Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
 | DNS-over-QUIC | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning): DoQ-only resolution with leaf and intermediate certificate pinning; platform/integration scope remains to be qualified. |
 
@@ -34,6 +40,76 @@ candidates, not a production Android or NTS engine. Preserve Chrony-derived
 provenance and GPL-2.0-only obligations. Admit any Android/JNI, TLS, AEAD, runtime
 and build dependencies separately. The Windows x64 CPU policy in OD-07 does not
 apply to Android ABIs or impose x86 compiler flags on shared portable code.
+
+### KHR-0 — evaluate independent time cross-checking
+
+**Status:** planned research and bounded experiment; no mechanism is adopted.
+
+**Order:** after the current Windows P0–P7 plan, before AND-0.
+
+**Owners:** numerical/protocol implementer, with independent security/test review.
+
+Evaluate a separate, periodically resampled check of the primary time estimate,
+using Khronos's client-side watchdog idea from
+[Informational RFC 9523](https://www.rfc-editor.org/rfc/rfc9523.html) and
+[Ananke's cautious pool-formation proposal](https://www.ndss-symposium.org/wp-content/uploads/ndss2021_1A-2_24302_paper.pdf).
+Ask whether additional observations detect coordinated errors that the primary
+source set misses. Keep the existing estimator and correction policy as the
+baseline; a second calculation over the same dependent observations supplies no
+independent confirmation.
+
+- [ ] Define the threat model, pool provenance, sampling distribution, round
+  rules, disagreement threshold and finite experiment budgets before execution.
+  Version the candidate catalog; retain operator/shared-upstream information,
+  uncertainty, admission/removal reasons and DNS/configuration provenance.
+  Multiple addresses, ASNs, countries or self-reported stratum 1 do not establish
+  independence. Examine pool poisoning, Sybil entries and selective availability.
+- [ ] Model four explicit outcomes: **agrees**, **contradicts**,
+  **insufficient evidence** and **stale**. Bind the estimate and its supporting
+  observations to the same round, pool/configuration generations, evaluation
+  time and clock frame. Account for aging, applied corrections and suspend;
+  insufficient or stale evidence cannot become agreement.
+- [ ] Use cryptographically secure production selection and reproducible injected
+  randomness in tests. Prove a requested resampling invokes a fresh selection;
+  do not require consecutive selections to differ. Keep selected, responding,
+  admitted and independently supported sets distinct. Timeouts or repeated
+  resampling must not silently reduce agreement requirements or search until a
+  convenient majority appears.
+- [ ] Compare a qualified NTS-only pool, diagnostic plain-NTP cross-checks and
+  cross-checking within an explicitly selected plain-NTP profile. Preserve
+  [architecture §7.5](docs/windows-time-architecture.md#75-operating-profiles):
+  unauthenticated observations never enter an NTS quorum or trigger a silent
+  downgrade. A plain-NTP diagnostic must not gain an unlimited veto over valid
+  NTS corrections. Any changed trust, inhibition or recovery authority needs its
+  own reviewed decision; the watchdog has no independent clock-write authority.
+- [ ] Separate a bounded candidate catalog from ordinary active associations.
+  Preserve the existing **16-source limit** and aggregate CPU, memory, socket,
+  timer and request budgets. Measure both ordinary and expanded checks; exhausted
+  budgets yield insufficient evidence. Catalog size grants no permission to
+  create hundreds of active histories or overload public servers.
+- [ ] Start with a pure deterministic model, independent truth and the existing
+  testing tools, without network traffic or Windows clock writes. Compare the
+  unchanged baseline with the proposed check on coordinated false agreement,
+  gradual drift, honest delay/asymmetry, selective loss, pool changes, replay,
+  aging and correction/suspend between replies. Include conflicting small versus
+  expanded rounds and sustained failures. Predeclare useful additional
+  detections, false-alarm limits, detection latency and resource/load criteria.
+- [ ] Before reuse, review exact revisions and licences of
+  [netars/chronos](https://github.com/netars/chronos) and
+  [nwtime/khronos](https://github.com/nwtime/khronos). Their shared lineage is no
+  independent oracle. Reproduce the proposal's reported cached-selection and
+  old-estimate/new-round provenance issues as discriminating controls before
+  treating them as confirmed upstream defects. Preserve source/port provenance;
+  published numerical security bounds apply only under their stated assumptions,
+  not automatically to a modified sampler, pool or retry policy.
+
+**Exit KHR-C01:** retain the compared candidates, assumptions, independent
+expected results, actual outcomes and costs in one task under `tasks/`. Record
+`ADOPT_LIMITED`, `DEFER` or `REJECT` with evidence and remaining gaps. An adoption
+must define and qualify its bounded implementation before Android work begins;
+deferral or rejection records the reason and return trigger. Completing this
+evaluation and disposition is the prerequisite to AND-0; it does not require
+adopting Khronos. Research alone proves no protection in the delivered client.
 
 ## 2. Intended behavior and limits
 
@@ -112,6 +188,9 @@ explicit plain profile, if ever requested, needs its own policy and visible trus
 label; it must not be entered automatically on NTS failure.
 
 ## 4. Ordered Android stages
+
+Begin these stages only after KHR-C01 and any adopted cross-check implementation
+have been completed. This ordering leaves the current Windows plan intact.
 
 All implementation and runtime checkboxes below are **open**. The current request
 creates the plan; it does not establish a built APK, device test or release.
@@ -445,9 +524,11 @@ UDP tunnel; this design uses local UDP and the companion's own remote transport.
 
 ## 7. Decision points and evidence discipline
 
-The next implementation stage is **AND-0**, starting with device identification
-and read-only capability discovery. Dates for later stages are intentionally not
-promised before that result.
+Current implementation follows the Windows development plan. Its first roadmap
+follow-up is **KHR-0**, with KHR-C01 before Android work. The first Android stage
+is then **AND-0**, starting with device identification and read-only capability
+discovery. Dates for later stages are intentionally not promised before those
+results.
 
 Resolve these choices when the dependent stage is ready, using the existing
 [owner-decision procedure](docs/nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete):
@@ -459,6 +540,8 @@ Resolve these choices when the dependent stage is ready, using the existing
   impersonation risk.
 - Any requirement that the whole OS prohibit alternate time origins.
 - Whether to add the separately exposed Windows NTS server in AND-6.
+- Any Khronos/Ananke adoption, including pool/sampling parameters, NTS/plain-NTP
+  roles and authority on contradiction or unavailable evidence.
 - DoQ platform/lookup scope, resolver bootstrap, pin representation, combined
   leaf/intermediate matching and pin-update/rotation policy.
 
@@ -466,7 +549,7 @@ Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+KHR-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.
