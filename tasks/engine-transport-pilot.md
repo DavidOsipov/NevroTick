@@ -22,11 +22,24 @@ S26's processing-unit results below retain their recorded candidates. The
 now qualifies the variable-offer harness. Engine critical-file coverage/mutation,
 affected Windows regression and the remaining native/resource gates are next.
 
-The current [S29 Cargo baseline](#s29-engine-analysis-admission-and-cargo-test-layout)
+The [S29 Cargo baseline](#s29-engine-analysis-admission-and-cargo-test-layout)
 binds 118 inputs after separating the API test binaries. Both default Cargo
 profiles pass seven unit/integration tests plus two doctests; formatting,
 compilation, Clippy and custody checks pass. This is a serial Cargo observation,
 not engine coverage/mutation or ten-worker resource qualification.
+
+The historical [S32 contract checkpoint](#s32-focused-contracts-and-verified-cargo-checkpoint)
+adds six focused cases. Its 118-input candidate passes all thirteen tests and two
+doctests in both Cargo profiles, with compiler/Clippy and all custody checks.
+Its [line-coverage gate](#s33-current-engine-line-coverage) passed on that
+recorded source; later qualification is candidate-specific.
+
+The current [S40 contract checkpoint](#s40-mandatory-completion-owners-and-current-native-baseline)
+passes 24 GNU unit/integration tests plus two doctests in both Cargo profiles,
+compiler/Clippy and 213 verification-harness controls. Fresh enumeration lists
+185 library and 31 CLI variants. Current line coverage and both complete
+[per-file mutation gates](#s43-complete-current-engine-mutation-checkpoint) pass.
+Earlier receipts retain their original candidates.
 
 ## Authority and current inputs
 
@@ -643,3 +656,425 @@ The current low storage margin must be resolved before a ten-worker campaign;
 actual descriptor enumeration and critical-file coverage/mutation remain next.
 S27 and QF-03 receipts retain their own exact candidates. Native Windows,
 completion/heap/resource, TLS and complete P0–P7 remain open.
+
+## S30 inventory and S31 first engine coverage
+
+**1 November 2026.** On the unchanged S29 118-input candidate, the configured
+enumeration lane completed both native commands with exit zero and full
+tool/source/vendor custody. It retained **176 library and 34 CLI descriptors**,
+210 total, without exclusions. The normalized complete inventory bindings are
+`28d483d667bb05732d6649739571e145ccb2f5519d3367d1c74ae2441a0c5455`
+and `bbcd99c0016069f8be87fb242bd0205d9658e27de7559322aaf046667df3d673`.
+The receipt `s30-engine-mutation-enumeration-v1/verification.json` has SHA-256
+`4b847627286ed1a344e686801ad805f19617f358a207f0aec108647063663d90`.
+The jobs=10 warning remains in both raw listings. Enumeration grants neither
+mutation kills nor a campaign/resource qualification.
+
+Two independent reviews reconciled every raw descriptor field and identified
+two absent constructors: `Config::new` and `ControlSchedule::new`. The pinned
+[generator explicitly skips methods named `new`](https://github.com/sourcefrog/cargo-mutants/blob/v27.1.0/src/visit.rs#L425-L445).
+Its [macro limitations](https://github.com/sourcefrog/cargo-mutants/blob/v27.1.0/book/src/macros.md)
+also leave async macro bodies outside generated faults. Constructor boundary
+tests and real control/transport trajectories supply separate evidence; native
+Windows, dependency internals and macro expansion retain their own obligations.
+Ungenerated behavior is never added to kills or equivalent-mutant exclusions.
+
+The first actual coverage command compiled successfully and passed all seven
+required unit/integration tests, then exited **1** at the unchanged file gate:
+library **613/741 lines, 82.726%**; CLI **86/86 lines, 100%**. The retained native
+JSON, raw test output and receipt identify this as a coverage failure rather than
+a test/setup failure. `s31-engine-coverage-v1/verification.json` has SHA-256
+`8dd7afd0557bce1eb3859165d9ecce5985b7513fc1cb9fd36b4555c3abe76749`.
+All final full-tool custody checks passed. Missing constructor, control-generation,
+public observation and redacted-failure cases now drive the next focused test
+change under REQ-8/BND-1 and the applicable CHECK-6/21/25/27 subsets. The required
+environment remains the admitted isolated GNU host graph and controlled loopback
+peers; no threshold, production behavior or native-Windows claim changes.
+
+## S32 focused contracts and verified Cargo checkpoint
+
+**1 November 2026.** The current 118-input product candidate is
+`4cb124a75adcfa6f6b83d3ed07d6b70dcbdd032a7e1754085b16cdf519456470`.
+Only `tests/private/processing_guards.rs` changed from S29's product map;
+production source, manifests, dependencies and runtime policy are unchanged.
+Its SHA-256 is
+`8a8d20d6ad68cf400cdf3722f29f80e5f22b50b69bc286222e325355b4cde162`.
+
+The six added tests establish independently expected constructor rejection and
+legal neighbors (including IPv6 scope/flow and exact timeout limits), stop latching
+and checked generation exhaustion through real watch delivery, distinct fixed
+redacted error projections, immediate timer delivery and actual cancellation/reap,
+and seven hostile literal-header variants followed by the original real UDP
+healthy result. Existing checks also compare public timestamps, endpoints and
+facts with observations saved before later control. Synthetic near-maximum
+generations, operation errors and the deliberately reversed software observation
+are explicit representation controls; they do not claim induced OS failures.
+
+The analysis receiver now requires all thirteen actual unit/integration names.
+A healthy thirteen-case transcript passed while the prior receiver incorrectly
+accepted each of six omitted-case transcripts; adding the six required names
+made all unchanged omission controls reject. All **25 engine Python controls**
+pass. The final combined **211 Core/domain/engine Python controls** pass under
+`s32-binding-python-controls-v2.json`, SHA-256
+`84929968283918192b72e913a5601560d075aa40b42a49196425fcd9f14f3171`.
+The thirteen existing Core/domain equivalence arguments were independently
+re-admitted for the tests-only context change: source, mathematical arguments,
+proof bytes and descriptors are unchanged. Historical mutation outcomes remain
+historical; no Rust campaign was replayed by this binding update.
+
+The first native attempt passed isolation, formatting and compilation, then
+Clippy rejected a similar helper name and a 101-line helper against its 100-line
+limit. It executed no Rust tests. The retained receipt is
+`s32-engine-cargo-baseline-v1/verification.json`, SHA-256
+`4df486c55b1a166218edcb164263bb3bfb13cb705f47894bc86ab65ee49a8473`.
+A clearer buffer initializer and one local rename repaired both without lint
+suppression or changed expectations. The final formatter made no further change;
+`s32-engine-contract-tests-format-v2.json` has SHA-256
+`cd0102abcbaa930d9da71e661a481b30e54550f195dff2822b9a4006cf9dd914`.
+
+All six final native rows pass: isolation, format, compiler, Clippy and the default
+Cargo ordinary/release selections. Each profile executed the same **thirteen
+unit/integration tests plus two doctests**, with zero failures, ignored or filtered
+cases. All nine source/index, Cargo-home, vendor, advisory, tool/stable and policy
+bookends pass. `s32-engine-cargo-baseline-v2/verification.json` has SHA-256
+`b32285e456d9d0e81fc4297c1da0d8fae543b2967216cfcc87b79a5035e513bd`.
+Its serial native body took **81.939 seconds**, with target peak **293,027,840
+allocated bytes** and minimum ordinary-user availability **17,451,433,984 bytes**.
+This remains one-worker evidence, not aggregate ten-worker readiness.
+
+The removed historical directory also removed the old execution lock. Current
+Root executions serialize on `s12e-composition-20261030T082648Z/execution.lock`;
+no historical receipt is rewritten or deleted directory reconstructed. The active
+vendor, admitted tool payloads and current receipts remain required inputs.
+Next: current-candidate line coverage, then complete per-file mutation with actual
+worker-resource observation. Constructor and macro alternatives, real native
+failure/completion, Windows diagnostics, fairness and retention remain distinct
+obligations; neither this checkpoint nor a generated score closes P0–P7.
+
+## S33 current engine line coverage
+
+**1 November 2026.** The admitted coverage lane passes on S32 candidate
+`4cb124a75adcfa6f6b83d3ed07d6b70dcbdd032a7e1754085b16cdf519456470`:
+library **684/741 executable lines, 92.308%**; CLI **86/86, 100%**. All thirteen
+required unit/integration cases actually passed; this coverage selection excludes
+doctests, which passed separately in both S32 Cargo profiles. The original 741/86
+production denominators and 90% per-file threshold are unchanged. Native JSON
+reports zero branch records, so these results establish no measured branch gate.
+
+The native command exited zero, and final full source/vendor/tool admission
+passed. `s33-engine-coverage-v2/verification.json` has SHA-256
+`5c18d5140a83daf9dfb898508b1224609cbb2ad82676cc730995e443db3bc628`;
+the raw `work/coverage.json` has SHA-256
+`202a48ba7da835d6c3d309bca80f831238c386f7931da8e59002d1fad9b4d0a8`.
+S31's failed attempt remains retained. The complete CLI mutation gate has now
+started at `s34-engine-cli-mutation-v1`, with ten configured workers and passive
+whole-work disk/RSS/process observations. Its terminal outcomes and actual
+concurrency are pending; this launch grants no score or ten-worker pass.
+
+## S34 CLI mutation and observed ten-worker load
+
+**1 November 2026.** The complete CLI campaign on S32 candidate `4cb124a7…`
+retained all **34 generated variants**: **16 caught, 11 missed, seven unviable,
+zero timeouts**; successful baseline: thirteen unit/integration tests and two
+doctests. The raw/adjusted score is **16/27, 59.259%**, with zero exclusions.
+The native tool exited **2** and the configured receiver exited **1**, correctly
+leaving the custom gate incomplete. All final source/vendor/full-tool custody
+checks pass. `s34-engine-cli-mutation-v1/verification.json` has SHA-256
+`6fdf340adcd5a2220b16bd3afec9e6b9eb736d440b5a74295102c5c83414a4b5`.
+All seven unviable logs contain actual compiler trait/ordinary-lint errors;
+none is credited as a kill. The campaign's native interval was 29.496 seconds.
+
+The passive observer recorded **ten concurrent Cargo processes**, peak **191
+namespace threads / 42 processes**, and the effective **512-process** limit.
+Summed observed RSS peaked at **4,239,300 KiB**; host MemAvailable stayed at least
+**7,195,260 KiB** and ordinary-user disk availability at least **15,599,632,384
+bytes**. Largest sampled work allocation was **1,668,333,568 bytes**, but that
+sample was partial; the largest complete snapshot was **782,811,136 bytes**.
+Sampling cannot establish a hard aggregate maximum. There were 23 missing-RSS
+process samples, 24 executable-read gaps, 16 disk-read races/errors and unreadable
+unattributed processes. The observer completed without exceptions, window or
+scan-bound exhaustion; `observation_has_gaps` remains true. It sampled for
+119.264 seconds including admission/closeout, with 109 matched-executable samples.
+`s34-engine-cli-mutation-resources-v1.json` has SHA-256
+`4ed32c20f096842aa3fc5ab35d885a75c08f89e39bb35457e2255e52155a9651`.
+These observations support retaining ten configured workers for the next bounded
+engine check under fresh headroom admission; they do not establish product
+resource/soak qualification or a successful mutation score.
+
+Independent triage found five concrete missing process witnesses that distinguish
+six variants: an exact eight-digit duration rejected by Config rather than syntax,
+a malformed third peer, repeated stop/invalidate options, and an exact 128-byte
+value. These are being added with parent-owned loopback peers. Three other missed
+variants have potential full-prefix equivalence arguments; none is adopted.
+Two variants bypass early option-size rejection yet eventually return the same
+error after processing an oversized key. Same exit code is insufficient evidence
+for their bounded-work obligation. The next source slice gives pair and text
+budgets explicit mandatory owners with direct boundary controls, followed by new
+source admission, enumeration and actual gates. S32/S33 remain exact-candidate
+historical passes while this newer source is under development; no exclusions or
+threshold relaxations close the S34 failure.
+
+## S35 explicit CLI resource owners
+
+**1 November 2026.** The current **119-input** product candidate is
+`295bd1708a70b577148aed66282722ec7a2eeeb606a2892181e8e89ffc5f283e`.
+Relative to S32, the CLI and runtime consumer changed and
+`tests/private/argument_guards.rs` was added. The engine library, existing private
+processing controls, dependency graph, compiler/lint profiles and native paths
+are unchanged.
+
+The CLI now must charge a private six-pair allowance before decoding each option
+or fetching its value. Checked exhaustion preserves zero on repeated failure.
+A closed option/value role selects mandatory 32/128 encoded-byte admission before
+UTF-8 conversion; the parser consumes the returned borrowed text. Tests cover
+six legal charges/seventh rejection, exact byte neighbors, multibyte text and
+original borrowing, plus Unix nontext rejection. They live outside production
+coverage files. Five additional real current-worker CLI invocations exercise
+exact duration/value boundaries, malformed third-peer ownership and repeated
+stop/invalidation, using parent-owned peers for potentially accepted fault cases.
+The grammar, finite safe errors and existing limits are preserved; no new
+equivalence exclusion or relaxed threshold is adopted.
+
+The receiver requires all sixteen GNU unit/integration names. Three independent
+omission controls reproduced acceptance of missing resource-owner records with
+the prior required set; adding those three names made the unchanged controls
+reject. All **212 Core/domain/engine Python controls** pass; raw log
+`s35-binding-python-controls-v1.log` has SHA-256
+`cfbc336fa9e6431cc206fb60d91027f1a59c51df9aeb33e45ac449e5473a868f`.
+The Core census/full input map and thirteen existing equivalence-context pins
+follow the legitimate extra test source; mathematical source/proof bytes and
+historical outcomes remain unchanged. The old CLI inventory bindings are empty
+until the changed source is independently re-enumerated.
+
+The formatter completed on all three changed/new files; receipt
+`s35-engine-argument-guards-format-v1.json` has SHA-256
+`180dc712ebf8d4cefeb9f5106dc720bd0be640caaf1d469a2cf773fe83301007`.
+An initial copied launcher stopped before creating output or executing Rust
+because its output-prefix check still named S32. The original launcher is
+retained; the corrected invocation uses a fresh S35-v2 output.
+
+All six S35-v2 native rows pass: isolation, format, compiler, Clippy and both
+default Cargo profiles. Each profile executed the same **sixteen unit/integration
+tests plus two doctests**, with zero failed/ignored/filtered cases. All nine
+source/index, vendor, Cargo-home, advisory, tool/stable and policy bookends pass.
+`s35-engine-cargo-baseline-v2/verification.json` has SHA-256
+`fa4c111a5875cfeb2d8c043c1b4be910b8881cbc42f1dab632b372f14735496b`.
+The serial native body took **77.562 seconds**, sampled target peak was
+**297,734,144 bytes**, and minimum ordinary-user availability was
+**16,934,043,648 bytes**. These remain one-worker observations.
+
+Fresh enumeration is running at `s36-engine-argument-guard-enumeration-v1`.
+Current critical-file coverage and mutation are next; S33/S34 retain their own
+source identity. Unix OS-string controls do not qualify Windows nontext behavior,
+and resource-owner units do not establish native completion or product soak.
+
+## S36–S38 current coverage and CLI mutation
+
+**1 November 2026.** Fresh complete enumeration on the S35 119-input candidate
+retains **176 library and 31 CLI descriptors**, 207 total. The library list is
+byte-identical to S30; the CLI's 34→31 change removes ten old monolithic operator
+variants and adds seven explicit resource-owner variants. Every raw descriptor,
+source span and old diff hunk was independently reconciled. No filter, skip,
+threshold or equivalence change caused the count difference. Old S34 misses are
+not relabelled as new kills. Receipt
+`s36-engine-argument-guard-enumeration-v1/verification.json` has SHA-256
+`e5395b61a9824e77692f04d479196c5f9152ac11992ab5626d98653c9f70dd11`.
+Normalized bindings are library
+`28d483d667bb05732d6649739571e145ccb2f5519d3367d1c74ae2441a0c5455`
+and CLI `c6d2bb87dcbb9a3b0144cfee12c563611e6c3ff04900ae2f1e9371ce9120ef0f`.
+
+Current coverage passes: **684/741 library lines, 92.308%**, and **101/101 CLI
+lines, 100%**. All sixteen GNU unit/integration cases passed. New test bodies
+remain outside the production denominator. There are zero native branch records,
+so no branch-coverage claim follows. Full source/vendor/tool bookends pass.
+`s37-engine-argument-guard-coverage-v1/verification.json` has SHA-256
+`4007494cddfba790587914f91592ea1746d9834457b2849044a7ea65e963682a`.
+
+The complete current CLI mutation gate passes: **31 generated, 20 viable/caught,
+zero missed/timeouts/exclusions and eleven unviable**, with an unchanged successful
+baseline of sixteen tests and two doctests. The native tool and receiver exit
+zero, and all final full-admission checks pass. The raw/adjusted viable kill score
+is **100%**; unviable variants receive no kill credit. Receipt
+`s38-engine-cli-mutation-v2/verification.json` has SHA-256
+`30bbf7f463dfc27372c47e991c7b3c8f0064f2cc591b4598a925693a069741eb`.
+
+The observer again recorded **ten Cargo processes**, peak 174 namespace threads
+and 37 processes. Summed observed RSS peaked at 4,545,668 KiB; minimum host
+MemAvailable was 7,559,808 KiB and ordinary-user disk availability 15,153,262,592
+bytes. Largest sampled work allocation was 1,624,551,424 bytes (partial), versus
+1,159,651,328 bytes for the largest complete snapshot. Thirty missing-RSS samples,
+31 executable-read gaps and eight disk-read races/errors remain explicit. The
+observer finished after 111.390 seconds including admission/closeout; sampling
+provides no hard resource maximum. Its receipt
+`s38-engine-cli-mutation-resources-v2.json` has SHA-256
+`4ac276062b21a49bdada19c5c47d3649611087ec33db0a387e78100d253bd1a2`.
+
+The complete library campaign is now running at `s39-engine-library-mutation-v1`
+with the same fixed ten workers and current candidate. Its outcome remains
+pending. Constructor, closure/macro, native failure/completion and platform/soak
+alternatives retain their separate obligations regardless of generated scores.
+
+## S39 library faults and next contract slice
+
+**1 November 2026.** The library campaign on S35 source actually completed all
+**176 generated variants**: **56 caught, 22 missed, 96 unviable and two timeouts**.
+The native baseline passed sixteen tests and two doctests. An independent raw
+review matched every actual descriptor and diff to S36. The native tool exited
+**3** for timeouts; the receiver exited **1** and did not publish a custom mutation
+score or accepted baseline accounting. Full final source/vendor/tool custody
+passed. `s39-engine-library-mutation-v1/verification.json` has SHA-256
+`5e096a307737d843e16fc5495ce5468d33bc3b6c4e3cfdf5264a95db1821ae88`.
+The raw `work/mutation/library/mutants.out/outcomes.json` and individual logs retain
+all 177 outcomes including the successful baseline. Neither timeouts nor
+unviable variants receive kill or equivalent credit.
+
+The two timed-out mutations changed `can_send` to always true and deleted the
+send guard's negation. Both built successfully, then stalled in a private fixture
+at an immediately-ready await loop. Its Tokio timeout could not preempt that
+synchronous progress cycle. The fixture now independently limits readiness to
+65 decisions, reports failure on nonretirement, and checks every confirmed send
+has an actual attempt count in 1..64. This changes no production budget.
+
+The 22 misses expose entropy/local-endpoint validation, elapsed reporting,
+receive-cap and retired-read accounting, send-result branches, platform-specific
+oversize classification, exact commit/stratum boundaries and cleanup aggregation.
+Same output on GNU is insufficient equivalence for Windows-only behavior. The
+next coherent source slice makes the relevant checked transformations and native
+result receivers mandatory private owners, with direct positive/negative cases.
+Synthetic completed I/O results, platform-code cases and exact-instant boundaries
+will remain distinguished from actual OS failures and real UDP observations.
+No equivalence disposition or threshold change has been adopted.
+
+The real CLI timeout observer also now requires its reported active elapsed to
+cover the independently requested 120ms unanswered lifetime; zero/one-nanosecond
+transcript controls accompany the actual healthy stream. The current source is
+under development and is not qualified by the older S35/S37/S38 receipts. Finish
+this slice, format and freeze it before the next complete affected checks.
+
+
+## S40 mandatory completion owners and current native baseline
+
+**1 November 2026.** The 119-input candidate is
+`509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1`.
+Private checked owners now receive generated request entropy, bound local
+endpoints, completed send results, platform-specific read results and completed
+cleanup results. Their actual producers remain mandatory callers; the public API,
+native timestamp order, one-way slot history and timer reaping remain unchanged.
+Eight additional library units challenge those alternatives and exact receive-cap,
+selected-read accounting and commit-time boundaries with accepted neighbors.
+Synthetic native errors and Windows oversize codes are labelled synthetic; they
+establish no induced OS failure or Windows I/O qualification. The real CLI timeout
+observer checks the independently requested 120ms lifetime, with zero/one elapsed
+transcript controls. The private ready-loop bound remains independent of the
+production send guard.
+
+The required native baseline now includes all **24 unit/integration names**.
+An omission control first demonstrated eight incorrectly accepted omissions;
+after adding the required names it passes. All **213** engine/core/domain Python
+controls pass on the current candidate, with raw log
+`s40-binding-python-controls-v3.log`, SHA-256
+`bf2a68c71bf6cfb883eac2e2017432ff930b47e0c33b64d34e286497a8a0cfd4`.
+Core/domain candidate-context pins were refreshed without changing their
+mathematical source, equivalence proofs or historical execution identities.
+
+Native baseline v1 stopped at six test-only Clippy findings. The lint repair
+missed one renamed local in a slice expression; v2 stopped at that compiler
+error. Both attempts retain their failures and executed zero Rust tests. After
+the exact repair and formatting, **all six v3 rows pass**: isolation, format,
+compiler, Clippy and default Cargo ordinary/release tests. Each profile executes
+**24 unit/integration tests plus two doctests**, with no failed/ignored/filtered
+cases. All nine custody bookends pass. The serial native body took **77.992
+seconds**; this is host execution, with no native Windows claim. Receipt
+`s40-engine-cargo-baseline-v3/verification.json` has SHA-256
+`6222247a63d46336c64a60ac2c5508fb581831f10c943cad0c763466e4eb5d53`.
+
+Fresh complete S41 enumeration retains **185 library and 31 CLI descriptors**,
+216 total, below the unchanged campaign cap. Receipt
+`s41-engine-completion-guard-enumeration-v1/verification.json` has SHA-256
+`a1af3d24540aa254c7dd29a4f2170afa103e3ff5983dc2ea38b33821b5833ffd`.
+Independent review reconciled every descriptor, source span and old diff hunk.
+The 176→185 library change consists of prepare/local admission +3, send completion
++2, receive/classification +3 and cleanup +1; other function counts are unchanged.
+The CLI inventory, including diffs, is identical to S36. Reviewed bindings are
+library `2f03a757eaa5e6c78635a69900c91f2b7ddfe9ca7da4eecf7196117e916d1583`
+and CLI `c6d2bb87dcbb9a3b0144cfee12c563611e6c3ff04900ae2f1e9371ce9120ef0f`.
+The policy adopts those exact inventories; all 27 focused engine Python controls
+pass afterward. No equivalences, thresholds, filters, tool custody or command
+budgets have changed. S38/S39 retain their earlier source identities.
+
+S42 coverage v1 stopped in preflight with zero native commands and no output:
+copying the enumerator launcher accidentally changed its retained-receipt pin to
+the fresh coverage output path. V1 is preserved; v2 corrects that one input path
+and uses a fresh output. Both critical-file mutation gates will share the existing
+`--subject all` Session, preserving independent baselines and 95% per-file gates.
+This uses two full tool-admission bookends instead of four separate-session
+bookends, with ten workers per sequential file campaign. It changes no cache or
+integrity implementation and claims no measured runtime saving yet.
+
+
+## S42 current critical-file coverage
+
+**1 November 2026.** On the unchanged S40 candidate, coverage v2 passes
+**754/786 library lines (95.929%)** and **101/101 CLI lines (100%)**.
+All **24** GNU unit/integration cases executed; this lane runs no doctests.
+Test source remains outside the production denominator. Both files have zero
+branch records, so this establishes executable-line coverage only. The actual
+coverage command exits zero and full final admission reports unchanged inputs.
+`s42-engine-completion-guard-coverage-v2/verification.json` has SHA-256
+`efa53b3ab377575b75757fceb96cb0a768a0b4b2c61dc522a02f4c358ff8dde2`.
+
+The complete all-subject mutation campaign is prepared at
+`s43-engine-completion-guard-mutation-all-v1`, with the existing passive observer,
+full custody, ten workers and separate complete inventories/baselines per file.
+No mutation result is claimed before the native receiver finishes.
+
+
+## S43 complete current engine mutation checkpoint
+
+**1 November 2026.** Both complete critical-file campaigns pass on the unchanged
+S40 candidate and reviewed S41 inventories. The library has **185 generated,
+81 viable/caught and 104 unviable**; the CLI has **31 generated, 20 viable/caught
+and eleven unviable**. Each file has **zero survivors, timeouts and exclusions**,
+and a **100% viable kill score**. Unviable variants receive no kill credit.
+Each actual native baseline passes the same **24 unit/integration tests plus two
+doctests**. Both enumeration commands and both native campaigns exit zero; final
+full tool/source admission reports unchanged inputs. Receipt
+`s43-engine-completion-guard-mutation-all-v1/verification.json` has SHA-256
+`0999525f4696b24002aa0956017f19e69f3b79511e9639ea5c008167543b1591`.
+The old S39 misses/timeouts retain their original descriptors/source; none is
+relabeled as a kill or equivalence on that older candidate.
+Independent review matched all 216 actual descriptors and stored diff bytes to
+S41, every caught variant's successful build and meaningful failed test, and all
+115 unviable variants' ordinary compile/lint diagnostics (48 dead-code, 39 E0277,
+25 unused-variable and three unused-import primary causes). No resource,
+infrastructure, signal or compiler-internal failure was found. Both native
+baseline streams and exact full custody inventories were reconciled; no native
+Windows or ungenerated-behavior credit follows.
+
+The single existing all-subject Session executes separate file campaigns and
+retains both full custody bookends, avoiding a second initial/final admission
+pair. Native tool wall times were **80.979 seconds library** and **30.557 seconds
+CLI**. The observer's complete window was **203.637 seconds**, including setup,
+admission and closeout; the difference is not an exclusive admission profile or
+a controlled runtime comparison.
+
+The observer recorded **ten Cargo processes**, peaks of **227 threads and 51
+processes**, and summed observed RSS of **4,954,580 KiB**. Minimum host
+MemAvailable was **7,584,416 KiB** and minimum ordinary-user disk availability
+**14,303,563,776 bytes**. Largest sampled owned-work allocation was
+**1,761,726,464 bytes**, also the largest complete snapshot. Missing RSS samples
+(125), executable-read gaps (126), a status-read gap and 33 disk-read races remain
+explicit, alongside 19,855 unattributed process-read errors. The sampler finished
+with `measurement_incomplete=false` and `observation_has_gaps=true`; these sampled
+observations establish no hard resource maximum or product soak. Resource receipt
+`s43-engine-completion-guard-mutation-resources-v1.json` has SHA-256
+`7e56696da4793e7b1dfb4d1dcd9c2718a2221719e97bfa14ccb25cd97fa192b8`.
+
+This completes the current **GNU host baseline, executable-line coverage and
+generated-mutant checkpoint**. The inherited constructor/closure/macro,
+ungenerated and actual native failure/completion obligations remain distinct.
+Native Windows regression, memory/lifetime, retention/soak and production
+acquisition/TLS/service/clock/package qualification remain open. Continue the
+existing S0.1/R-01 TLS feasibility chain by restoring the same frozen proposal's
+missing transitive source cohort, then completing its declared admission gates;
+this engine result adopts no provider or trust policy.

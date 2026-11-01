@@ -23,19 +23,29 @@
   "mutation_message_format": "json",
   "tool_admission_profile": "full",
   "mutation_equivalences": [],
-  "mutation_inventories": {},
-  "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
+  "mutation_inventories": {
+    "library": {
+      "count": 185,
+      "sha256": "2f03a757eaa5e6c78635a69900c91f2b7ddfe9ca7da4eecf7196117e916d1583"
+    },
+    "cli": {
+      "count": 31,
+      "sha256": "c6d2bb87dcbb9a3b0144cfee12c563611e6c3ff04900ae2f1e9371ce9120ef0f"
+    }
+  },
+  "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
   "inputs_sha256": {
     "Cargo.toml": "008eea7d34f859482cbca1688b54a25e879ce0f655bb8f87a18b8e4f90c03d71",
     "Cargo.lock": "416b349d87cc0e53562d79d494316fd20c210ede2e45c2568f5973652753ec8f",
     "crates/nevrotick-engine/Cargo.toml": "8399d79a18b2746d2a93aa5299df631fd4297f146b880831a84b3b6b2abd42e1",
-    "crates/nevrotick-engine/src/lib.rs": "b298467785ba72c3734e92b10496821e7935300aae9a52c0f63d5d6cdd07a3fb",
-    "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": "9564c4f7c2c2d76c8cdfb7a980a3933ab4efef65b2cd95ec7b716a97174bd5dc",
-    "crates/nevrotick-engine/tests/runtime_boundary.rs": "3a239fc99157c9692172031db8517f14bf803d48875ea0a8b95e36592114b4ce",
+    "crates/nevrotick-engine/src/lib.rs": "71cb5a0d994a7f0aa895922f95a0302dcc3152988162a43ccc9aa7d57acdf5fe",
+    "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": "6f51aafe69426edd03d276014e58bb7bd5140f11e9ba1c5f724eff5f2f174ecf",
+    "crates/nevrotick-engine/tests/runtime_boundary.rs": "f056bfe1b515e84f885c7630b79d254913692635653cae86e6dbaad61cd2e11e",
     "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
     "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
     "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
-    "crates/nevrotick-engine/tests/private/processing_guards.rs": "65249a48af134cec84f7cd9002c22869d791fbf2080dc16183bba2ac7bbef6c4",
+    "crates/nevrotick-engine/tests/private/processing_guards.rs": "35e0f34f0a1ada129d10558e10d747f0a9f12b449b4c82ee81b61777553baabe",
+    "crates/nevrotick-engine/tests/private/argument_guards.rs": "e7f122097eb04677484641b33f8682da6950e66e67f7558f2ba6c1b06aab653a",
     "scripts/portable-analysis.py": "2ff5a5d10031df578356db1e8bbf517ad8d6d5243f37189020d9933887b117e2",
     "scripts/analysis-runtime.py": "fcfe9eb5018d729e9a20ea9e782e3e767fff4388477e405826600091391c2f38",
     "scripts/check-analysis.py": "203cd61007f48e789b2c9f5bf73f1ec35abb5255974dadd200671e2f90d26668",
@@ -43,5 +53,5 @@
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
     "policy/verification-manifest.toml": "6208d3876f420ba4e70d62b8d29e05008da98e4f64bef002bd76b57e98716a92"
   },
-  "scope": "Two engine critical files on the admitted GNU host graph. Enumeration alone grants no campaign or qualification; exact reviewed inventories are initially absent. Coverage and per-file mutation must be observed on this candidate. One-worker storage/readiness measurement is an unexecuted proposal, not ten-worker admission. Macro/generated/native, Windows completion, retention and release gaps remain separate."
+  "scope": "Two engine critical files on the admitted GNU host graph. S40 mandatory private admission/completion owners and 24 required GNU tests pass the default Cargo ordinary/release baseline. S41 independently reviewed complete inventories bind 185 library and 31 CLI descriptors. Current coverage and both per-file mutation gates remain pending on the 119-input candidate. S38 CLI pass and S39 library failures retain their previous source identities. Ten Cargo workers were observed with sampling gaps; no product resource/soak, native Windows I/O, AFD or release qualification follows. Equivalences remain empty; thresholds, filters and command budgets are unchanged."
 }

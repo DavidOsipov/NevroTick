@@ -698,10 +698,17 @@ fn transcript(output: &CliOutput, case: CliCase, clients: [SocketAddr; 2]) -> Ch
         result_record(lines[slot + 2], case, slot)?;
     }
     let done = fields(lines[4], &["event", "elapsed_ns"])?;
+    let elapsed = integer(&done, "elapsed_ns")?;
     check(
-        done["event"] == "done" && integer(&done, "elapsed_ns")? < CASE_WALL.as_nanos(),
+        done["event"] == "done" && elapsed < CASE_WALL.as_nanos(),
         "CLI completion record is invalid/outside budget",
     )?;
+    if case == CliCase::Timeout {
+        check(
+            elapsed >= 120_000_000,
+            "CLI timeout elapsed precedes the requested 120ms lifetime",
+        )?;
+    }
     Ok(())
 }
 
@@ -740,6 +747,38 @@ fn transcript_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()
             Err(error) => check(
                 error.to_string() == diagnostic,
                 "CLI observer rejected for an unrelated reason",
+            )?,
+        }
+    }
+    Ok(())
+}
+
+/// A completed unanswered 120ms query cannot report zero or one nanosecond.
+/// The original actual timeout stream is the positive control before alteration.
+///
+/// # Errors
+/// Reject missing completion records or a fault rejected for an unrelated reason.
+fn timeout_elapsed_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()> {
+    let healthy = std::str::from_utf8(&output.stdout)?;
+    let (prefix, _) = healthy
+        .rsplit_once("event=done elapsed_ns=")
+        .ok_or_else(|| io::Error::other("actual timeout completion record absent"))?;
+    for value in ["0", "1"] {
+        let changed = CliOutput {
+            status: output.status,
+            stdout: format!("{prefix}event=done elapsed_ns={value}\n").into_bytes(),
+            stderr: Vec::new(),
+        };
+        match transcript(&changed, CliCase::Timeout, clients) {
+            Ok(()) => {
+                return Err(io::Error::other(
+                    "CLI observer admitted an impossible timeout elapsed value",
+                )
+                .into());
+            }
+            Err(error) => check(
+                error.to_string() == "CLI timeout elapsed precedes the requested 120ms lifetime",
+                "timeout elapsed control failed for an unrelated reason",
             )?,
         }
     }
@@ -796,6 +835,9 @@ fn cli_case(ip: IpAddr, case: CliCase) -> Check<()> {
     }
     if case == CliCase::Healthy {
         transcript_controls(&output, clients)?;
+    }
+    if case == CliCase::Timeout {
+        timeout_elapsed_controls(&output, clients)?;
     }
     // The exact child has exited; ALL peer sockets are still owned/open here.
     let _first_released = UdpSocket::bind(clients[0])?;
@@ -958,12 +1000,56 @@ fn non_text_arguments() -> Check<()> {
     Ok(())
 }
 
+/// Exact duration/value boundaries and duplicate controls retain their error owner.
+/// All numeric peers used by a wrongly admitted child remain parent-owned loopback
+/// endpoints; no public or ambient service is used by a fault variant.
+///
+/// # Errors
+/// Preserve peer setup/child cleanup failures and reject changed exit/error labels.
+fn cli_argument_boundary_rejections() -> Check<()> {
+    let (_peers, endpoints) = controlled_peers()?;
+    let first = endpoints[0].to_string();
+    let second = endpoints[1].to_string();
+    let base = [
+        "--peer",
+        first.as_str(),
+        "--peer",
+        second.as_str(),
+        "--timeout-ms",
+        "700",
+    ];
+    for extra in [
+        &["--peer", "not-an-endpoint"][..],
+        &["--stop-after-ms", "0", "--stop-after-ms", "0"][..],
+        &["--invalidate-after-ms", "0", "--invalidate-after-ms", "0"][..],
+    ] {
+        let mut arguments = base.to_vec();
+        arguments.extend_from_slice(extra);
+        argument_rejection(&arguments, "invalid_arguments")?;
+    }
+    argument_rejection(
+        &[
+            "--peer",
+            first.as_str(),
+            "--peer",
+            second.as_str(),
+            "--timeout-ms",
+            "99999999",
+        ],
+        "invalid_timeout",
+    )?;
+    let exact_value_limit = "0".repeat(128);
+    argument_rejection(&["--peer", &exact_value_limit], "invalid_endpoint")?;
+    Ok(())
+}
+
 /// Observe literal argument rejections and real output-sink failure exits.
 ///
 /// # Errors
 /// Reject wrong native exit, error-code disclosure or unexpected partial output.
 #[test]
 fn cli_worker_binary_rejects_arguments_and_observes_sink_failures() -> Check<()> {
+    cli_argument_boundary_rejections()?;
     let base = [
         "--peer",
         "127.0.0.1:10001",

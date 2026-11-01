@@ -51,6 +51,14 @@ and retroactively upgrades no existing fixture or product evidence.
 
 ## Skill-quality procedures — 30 October 2026
 
+The [workflow-observation reference](references/workflow-observation.md), added
+2 November 2026, critically assesses pinned Microsoft TokenEconomizer source.
+It borrows accounting and shadow-advisory ideas into original local procedures
+and a standard-library offline helper. No upstream code, plugin, model service,
+automatic memory or tool-pruning configuration is adopted. Its source links,
+verified limitations and execution boundaries are retained in that reference;
+the existing skill-quality task owns actual controls and remaining evaluation.
+
 Original local procedures extend existing numerical, harness, mutation and
 campaign skills; `qa-skill-evaluations` is registered separately in `LOCAL.json`.
 No donor mapping or imported-file hash is changed. Corrected local findings in

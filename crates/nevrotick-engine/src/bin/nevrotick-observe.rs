@@ -7,6 +7,7 @@
 
 #![forbid(unsafe_code)]
 
+use std::ffi::OsStr;
 use std::io::{self, Write};
 use std::net::SocketAddr;
 use std::process::ExitCode;
@@ -51,6 +52,57 @@ struct Arguments {
     invalidate_after: Option<Duration>,
 }
 
+/// Private allowance for at most six option/value pairs in this one CLI parse.
+struct ArgumentBudget {
+    /// Unconsumed complete-pair allowance; exhaustion can never wrap or reset.
+    remaining_pairs: u8,
+}
+
+impl ArgumentBudget {
+    /// Establish the CLI's fixed twelve-atom allowance without reading input.
+    fn for_cli() -> Self {
+        Self { remaining_pairs: 6 }
+    }
+
+    /// Charge one raw option before decoding it or fetching its paired value.
+    ///
+    /// # Errors
+    /// Reject exhaustion and preserve the previous state; repeated failure stays exhausted.
+    fn charge_pair(&mut self) -> Result<(), CliError> {
+        let remaining = self
+            .remaining_pairs
+            .checked_sub(1)
+            .ok_or(CliError::Arguments)?;
+        self.remaining_pairs = remaining;
+        Ok(())
+    }
+}
+
+/// Closed raw argument roles; callers cannot choose an arbitrary decoding budget.
+#[derive(Clone, Copy)]
+enum ArgumentTextKind {
+    /// Option names admit at most thirty-two encoded bytes before grammar matching.
+    Option,
+    /// Option values admit at most one hundred twenty-eight encoded bytes.
+    Value,
+}
+
+/// Admit bounded text without copying or retaining the original OS argument.
+/// Check encoded byte length BEFORE UTF-8 conversion; grammar remains with the parser.
+///
+/// # Errors
+/// Reject an over-budget or non-text argument with the same fixed syntax error.
+fn argument_text(value: &OsStr, kind: ArgumentTextKind) -> Result<&str, CliError> {
+    let maximum = match kind {
+        ArgumentTextKind::Option => 32,
+        ArgumentTextKind::Value => 128,
+    };
+    if value.len() > maximum {
+        return Err(CliError::Arguments);
+    }
+    value.to_str().ok_or(CliError::Arguments)
+}
+
 /// Parse at most twelve bounded arguments without retaining raw caller strings.
 ///
 /// No network, file or clock mutation occurs. Endpoint meaning and timeout bounds
@@ -65,18 +117,13 @@ fn arguments() -> Result<Arguments, CliError> {
     let mut timeout = None;
     let mut stop_after = None;
     let mut invalidate_after = None;
-    let mut consumed = 0_u8;
+    let mut budget = ArgumentBudget::for_cli();
     while let Some(option) = raw.next() {
-        consumed = consumed.checked_add(2).ok_or(CliError::Arguments)?;
-        if consumed > 12 || option.len() > 32 {
-            return Err(CliError::Arguments);
-        }
+        budget.charge_pair()?;
+        let option = argument_text(&option, ArgumentTextKind::Option)?;
         let value = raw.next().ok_or(CliError::Arguments)?;
-        if value.len() > 128 {
-            return Err(CliError::Arguments);
-        }
-        let value = value.to_str().ok_or(CliError::Arguments)?;
-        match option.to_str().ok_or(CliError::Arguments)? {
+        let value = argument_text(&value, ArgumentTextKind::Value)?;
+        match option {
             "--peer" if peers.len() < 2 => {
                 peers.push(value.parse().map_err(|_| CliError::Endpoint)?);
             }
@@ -173,3 +220,8 @@ fn main() -> ExitCode {
             .map_or(ExitCode::FAILURE, |()| ExitCode::from(2)),
     }
 }
+
+/// Direct resource-owner checks live outside the production coverage denominator.
+#[cfg(test)]
+#[path = "../../tests/private/argument_guards.rs"]
+mod argument_guard_tests;

@@ -11,6 +11,13 @@ Preserve first failing native output/exact source/configuration/fixture/runner i
 
 Separate product defect/incorrect expectation/fixture/harness fault/environment/capability gap/policy conflict/unresolved cause. Test competing explanations with smallest discriminating run/source trace. Reproduce beside healthy neighbor; check indirect consumers/recovery before repair proposal.
 
+Repeated remedy against the same failure, unchanged relevant context and no new
+discriminating observation warrants reassessing the hypothesis. Use
+[workflow observation](../references/workflow-observation.md) when recurrence
+needs measurement; its output is advisory. Attribute workers separately and
+exclude intended RED, caught mutants and successful rejection controls. Duration
+or a nonzero child exit alone does not identify a stalled repair.
+
 For native access violations, verifier stops, invalid handles or unexplained
 resource growth, use [Windows memory diagnostics](../references/windows-memory.md).
 Preserve the first exception/stop, stack, reached API, effective profile and

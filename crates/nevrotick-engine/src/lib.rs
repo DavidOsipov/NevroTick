@@ -286,19 +286,7 @@ pub fn prepare(config: &Config) -> Result<(PreparedPilot, ControlHandle), PilotE
     }
     let mut entropy = [0_u8; 16];
     getrandom::fill(&mut entropy).map_err(|_| PilotError::Entropy)?;
-    let (left, right) = entropy.split_at(8);
-    if left == [0_u8; 8] || right == [0_u8; 8] {
-        return Err(PilotError::ZeroToken);
-    }
-    if left == right {
-        return Err(PilotError::DuplicateToken);
-    }
-    let mut first = [0_u8; PACKET_BYTES];
-    let mut second = first;
-    first[0] = 0x23;
-    second[0] = 0x23; // LI=0, VN=4, client mode=3.
-    first[40..48].copy_from_slice(left);
-    second[40..48].copy_from_slice(right);
+    let [first, second] = request_packets(&entropy)?;
     let a = prepare_slot(config.peers[0], first)?;
     let b = prepare_slot(config.peers[1], second)?;
     if a.local == b.local {
@@ -320,6 +308,28 @@ pub fn prepare(config: &Config) -> Result<(PreparedPilot, ControlHandle), PilotE
     ))
 }
 
+/// Convert one successfully filled entropy buffer to exactly two inert requests.
+/// This pure admission never reads entropy, retries a token, binds or sends.
+///
+/// # Errors
+/// Reject either zero half or equal halves before publishing either request.
+fn request_packets(entropy: &[u8; 16]) -> Result<[[u8; PACKET_BYTES]; 2], PilotError> {
+    let (left, right) = entropy.split_at(8);
+    if left == [0_u8; 8] || right == [0_u8; 8] {
+        return Err(PilotError::ZeroToken);
+    }
+    if left == right {
+        return Err(PilotError::DuplicateToken);
+    }
+    let mut first = [0_u8; PACKET_BYTES];
+    let mut second = first;
+    first[0] = 0x23;
+    second[0] = 0x23; // LI=0, VN=4, client mode=3.
+    first[40..48].copy_from_slice(left);
+    second[40..48].copy_from_slice(right);
+    Ok([first, second])
+}
+
 /// Own one real nonblocking loopback socket; partial construction drops its resources.
 ///
 /// # Errors
@@ -334,18 +344,29 @@ fn prepare_slot(peer: SocketAddr, packet: [u8; PACKET_BYTES]) -> Result<Prepared
     socket
         .set_nonblocking(true)
         .map_err(|e| PilotError::Nonblocking(IoCause::capture(&e)))?;
-    let local = socket
-        .local_addr()
-        .map_err(|e| PilotError::LocalAddress(IoCause::capture(&e)))?;
-    if !local.ip().is_loopback() || local.port() == 0 {
-        return Err(PilotError::InvalidPeer);
-    }
+    let local = checked_local_endpoint(
+        socket
+            .local_addr()
+            .map_err(|e| PilotError::LocalAddress(IoCause::capture(&e)))?,
+    )?;
     Ok(PreparedSlot {
         socket,
         peer,
         local,
         packet,
     })
+}
+
+/// Admit the actual bound address before it can become a prepared local endpoint.
+/// This pure check does not assert that a caller-supplied address was OS-bound.
+///
+/// # Errors
+/// Reject a non-loopback or zero-port result without retaining a prepared socket.
+fn checked_local_endpoint(local: SocketAddr) -> Result<SocketAddr, PilotError> {
+    if !local.ip().is_loopback() || local.port() == 0 {
+        return Err(PilotError::InvalidPeer);
+    }
+    Ok(local)
 }
 
 /// One historical terminal association outcome, without current confidence,
@@ -784,8 +805,8 @@ enum Wake {
     Read {
         /// Fixed association index produced only by the two select branches.
         slot: usize,
-        /// Actual bytes copied and observed source, or the native receive failure.
-        result: io::Result<(usize, SocketAddr)>,
+        /// Classified actual return; consumed oversize never exposes partial bytes.
+        result: NativeReadOutcome,
         /// Captured only when this receive future returned ready.
         read: SoftwareClock,
     },
@@ -825,10 +846,20 @@ fn attempt_send(slot: &mut LiveSlot, deadline: Instant) {
     }
     let result = slot.socket.try_send_to(&slot.packet, slot.peer);
     let after = SoftwareClock::capture();
+    complete_send(slot, result, SendBracket { before, after });
+}
+
+/// Consume the completed synchronous send result while retaining its adjacent bracket.
+/// Only a full result arms a pending request; readiness failure can rearm sending.
+/// A prior pending/terminal state can never be replaced by another completion.
+fn complete_send(slot: &mut LiveSlot, result: io::Result<usize>, bracket: SendBracket) {
+    if !slot.can_send() {
+        return;
+    }
     match result {
         Ok(PACKET_BYTES) => {
             slot.sent = true;
-            slot.phase = Phase::Pending(SendBracket { before, after });
+            slot.phase = Phase::Pending(bracket);
         }
         Ok(_) => slot.finish(TerminalOutcome::Io(IoOutcome::ShortSend)), // No automatic repeat after an anomalous send.
         Err(error) if error.kind() == io::ErrorKind::WouldBlock => {} // Readiness re-arm, not a query retry.
@@ -840,11 +871,82 @@ fn attempt_send(slot: &mut LiveSlot, deadline: Instant) {
     }
 }
 
-/// Classify only Winsock's explicit consumed oversized-datagram error; no partial bytes are parsed.
-fn is_oversized(error: &io::Error) -> bool {
-    // Winsock UDP receive consumes/discards the oversized datagram with 10040.
-    // Never parse its partly written buffer. Native Windows observation remains required.
-    cfg!(windows) && error.raw_os_error() == Some(10040)
+/// Closed source-platform identity chosen only at the native receive producer.
+#[derive(Clone, Copy)]
+enum NativeDatagramPlatform {
+    /// Winsock reports consumed oversized UDP datagrams using code 10040.
+    Windows,
+    /// Other targets cannot infer consumption from that numerical code.
+    Other,
+}
+impl NativeDatagramPlatform {
+    /// Select the compiled adapter, never a CLI/configuration/caller override.
+    fn current() -> Self {
+        if cfg!(windows) {
+            Self::Windows
+        } else {
+            Self::Other
+        }
+    }
+}
+
+/// Closed result of the completed native receive; no error payload text survives.
+enum NativeReadOutcome {
+    /// Actual bytes copied and source from one successful native return.
+    Datagram {
+        /// Prefix length bounded by the owner-provided receive buffer.
+        length: usize,
+        /// Source from that same receive operation.
+        source: SocketAddr,
+    },
+    /// Windows consumed/discarded one oversized datagram; partial bytes are unusable.
+    ConsumedOversize,
+    /// No datagram consumption is established by this bounded native error.
+    Io(IoCause),
+}
+
+/// Classify one completed adapter result without reading or parsing its buffer.
+/// The private caller selects the current platform; explicit alternatives support
+/// pure classification controls and establish no native Windows observation.
+fn classify_read_result(
+    platform: NativeDatagramPlatform,
+    result: io::Result<(usize, SocketAddr)>,
+) -> NativeReadOutcome {
+    match result {
+        Ok((length, source)) => NativeReadOutcome::Datagram { length, source },
+        Err(error)
+            if matches!(platform, NativeDatagramPlatform::Windows)
+                && error.raw_os_error() == Some(10040) =>
+        {
+            NativeReadOutcome::ConsumedOversize
+        }
+        Err(error) => NativeReadOutcome::Io(IoCause::capture(&error)),
+    }
+}
+
+/// Capture the adjacent software observation before classifying a selected return.
+/// The zero-or-one index is fixed by the private select branch, not external input.
+fn selected_read(slot: usize, result: io::Result<(usize, SocketAddr)>) -> Wake {
+    let read = SoftwareClock::capture();
+    Wake::Read {
+        slot,
+        result: classify_read_result(NativeDatagramPlatform::current(), result),
+        read,
+    }
+}
+
+/// Charge one already selected consumed datagram before any owner-state decision.
+/// Ordinary I/O failures establish no consumption and leave the counter unchanged.
+/// The sole select owner supplies each result once, including after retirement.
+fn charge_selected_datagram(slot: &mut LiveSlot, result: &NativeReadOutcome) -> bool {
+    let consumed = matches!(
+        result,
+        NativeReadOutcome::Datagram { .. } | NativeReadOutcome::ConsumedOversize
+    );
+    if consumed {
+        slot.received += 1;
+    }
+    consumed
 }
 
 /// Closed inert rejection reasons, never rejected packet contents.
@@ -974,8 +1076,8 @@ async fn next_wake(
         tokio::select! { biased;
             changed = control.changed(), if control_open => Wake::Control(changed.is_ok()),
             () = &mut timer => Wake::Deadline,
-            result = &mut receive_b, if rb => Wake::Read { slot: 1, result, read: SoftwareClock::capture() },
-            result = &mut receive_a, if ra => Wake::Read { slot: 0, result, read: SoftwareClock::capture() },
+            result = &mut receive_b, if rb => selected_read(1, result),
+            result = &mut receive_a, if ra => selected_read(0, result),
             result = b.socket.writable(), if wb => Wake::Writable { slot: 1, result },
             result = a.socket.writable(), if wa => Wake::Writable { slot: 0, result },
         }
@@ -983,8 +1085,8 @@ async fn next_wake(
         tokio::select! { biased;
             changed = control.changed(), if control_open => Wake::Control(changed.is_ok()),
             () = &mut timer => Wake::Deadline,
-            result = &mut receive_a, if ra => Wake::Read { slot: 0, result, read: SoftwareClock::capture() },
-            result = &mut receive_b, if rb => Wake::Read { slot: 1, result, read: SoftwareClock::capture() },
+            result = &mut receive_a, if ra => selected_read(0, result),
+            result = &mut receive_b, if rb => selected_read(1, result),
             result = a.socket.writable(), if wa => Wake::Writable { slot: 0, result },
             result = b.socket.writable(), if wb => Wake::Writable { slot: 1, result },
         }
@@ -1112,13 +1214,7 @@ fn handle_wake(
             result,
             read,
         } => {
-            let actual_datagram = match &result {
-                Ok(_) => true,
-                Err(error) => is_oversized(error),
-            };
-            if actual_datagram {
-                slots[index].received += 1;
-            }
+            let actual_datagram = charge_selected_datagram(&mut slots[index], &result);
             if slots[index].done() {
                 if actual_datagram {
                     slots[index].rejected += 1;
@@ -1126,7 +1222,7 @@ fn handle_wake(
                 return;
             }
             match result {
-                Ok((length, source)) => process_reply(
+                NativeReadOutcome::Datagram { length, source } => process_reply(
                     slots,
                     control,
                     index,
@@ -1138,14 +1234,12 @@ fn handle_wake(
                     limits,
                     deadline,
                 ),
-                Err(error) if is_oversized(&error) => {
+                NativeReadOutcome::ConsumedOversize => {
                     slots[index].last_rejection = Some(Rejection::Length);
                     slots[index].rejected += 1;
                 }
-                Err(error) => {
-                    slots[index].finish(TerminalOutcome::Io(IoOutcome::Native(IoCause::capture(
-                        &error,
-                    ))));
+                NativeReadOutcome::Io(cause) => {
+                    slots[index].finish(TerminalOutcome::Io(IoOutcome::Native(cause)));
                 }
             }
             // At the read cap, preserve pending ownership until retirement.
@@ -1397,6 +1491,20 @@ async fn run_owned(
         }
         Err(error) => (Err(error), finish_timer(stop_job).await, Ok(())),
     };
+    finish_run(primary, stop_cleanup, invalidate_cleanup)
+}
+
+/// Aggregate results only after both owned timer cleanups have actually returned.
+/// This pure owner preserves each completed error independently; it reaps no job
+/// and cannot manufacture cleanup acknowledgement from a pending task.
+///
+/// # Errors
+/// Return the primary error or all present fixed summaries when cleanup failed.
+fn finish_run(
+    primary: Result<PilotReport, PilotError>,
+    stop_cleanup: Result<(), PilotError>,
+    invalidate_cleanup: Result<(), PilotError>,
+) -> Result<PilotReport, PilotError> {
     if stop_cleanup.is_err() || invalidate_cleanup.is_err() {
         return Err(PilotError::ControlCleanup {
             primary: primary.err().map(FailureSummary::capture),

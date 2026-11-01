@@ -19,6 +19,13 @@ the distinction between an applied edit, a verified fix and an owner decision.
 
 Interrupted diagnosis: retain last discriminating observation/open hypotheses/evidence-ruled-out approaches. Carry observed method/harness failures with avoidance/recovery action; distinguish untested concerns. Before repeating approach, recheck next action against constraints.
 
+Recurring operational lessons remain evidence-linked candidates in this task
+record: include applicability, source/wrapper/tool/environment identity,
+contradictions and invalidation. Follow
+[workflow observation](../references/workflow-observation.md) before promoting
+one into repository guidance. Pattern matches do not prove a rule; automatic
+memory writes or changed acceptance policy require their own authorization.
+
 On resume reconcile actual files/index/running jobs/machine/service/clock state/ownership/artifacts before continuing. Revalidate only changed prerequisites; old reports prove no unchanged candidate bytes. Preserve aggregate budget consumption/pending cleanup.
 
 Keep unfinished recovery state/evidence available. Coordinator may remove only registered disposable coordination notes after accepted handoff/closeout and required-result retention. No deleting user receipts/forced compaction/restarting completed work merely at phase end.

@@ -135,3 +135,96 @@ These exercises establish useful execution of the changed guidance on selected
 cases. Future substantive skill changes should retain these controls and add an
 independent case for the changed decision; application/native/release gates remain
 with their existing owners.
+
+## TokenEconomizer workflow adaptation — 2 November 2026
+
+User requested critical assessment and implementation of the attached proposal.
+This extension reuses the skill-quality chain. Scope is repository instructions
+and an original offline observer; no product source, Cargo graph, plugin install,
+global configuration, automatic memory, tool pruning or publication. Main
+development remains with its existing owner. Read-only starting snapshot:
+`/tmp/nevrotick-workflow-observer-baseline-20261102.json`, HEAD
+`82fc967fdb96333ea4bcc479f9b494c971129dce`, 46 pre-existing dirty/untracked files.
+
+The assessment supports accounting for accepted work, per-worker repeated-failure
+advice, fact applicability/invalidation and shadow comparison. Most underlying
+retry/checkpoint advice already existed. Upstream source at
+`7bbad83b5215ee46c75f89370efda820590298af` confirms three concrete integration
+limits: the parser coerces string `"false"` to true; verification recognition
+misses our Python wrappers and its no-check success proxy is unsuitable for
+acceptance; the controller excludes subagents. Shadow still has observer state
+and possible model costs. Current Codex pruning is narrow and protects tracked
+configuration. These support borrowing bounded ideas rather than installing
+defaults. Published benchmark benefits are not a NevroTick savings forecast.
+Primary sources and the scoped decision live in
+[workflow observation](../skills/testing/references/workflow-observation.md).
+
+| ID | Independent expected result | Owner / environment |
+| --- | --- | --- |
+| SKQ-OBS-1 | Confirm consequential upstream claims against pinned code and healthy/malformed controls; retain actual scope | Source reviewer; read-only public source and isolated Python controls |
+| SKQ-OBS-2 | Offline observer accounts for every assigned outcome and partial costs, attributes worker loops, uses pinned outer receipts and never grants qualification | Helper writer; bounded local JSON fixtures and Python CLI |
+| SKQ-OBS-3 | Existing evaluation/triage/checkpoint skills route to one reference; facts retain applicability, contradiction and invalidation; no automatic memory/policy change | Coordinator; skill/link review |
+| SKQ-OBS-4 | Meaningful healthy/fault controls, independent integrated review, package/whitespace checks and preserved unrelated work/staging | Coordinator and independent evaluator; no product/native campaign |
+
+Controls cover repeated/unrepeated failures, worker separation/new evidence,
+expected RED/mutation/rejection cases, enumeration versus qualification,
+incomplete/missing/drifted receipts, strict booleans and incomplete accounting.
+The helper analyzes explicit sanitized ledgers, not raw sessions; supplied labels
+and visibility need review. Actual usage for current agents is unavailable here,
+so no real-project cost baseline, intervention improvement or savings is claimed.
+
+Pinned-source assessment executed **12 narrow extracted-function observations**:
+seven judge-parser values, four command-recognition cases and one no-check
+success-proxy case. Healthy JSON false/true stayed false/true; the string
+`"false"` became true. Cargo/pytest commands were recognized; both NevroTick
+Python wrappers were not. A normal edited turn with no recognized verification
+returned the upstream resolved proxy. These are not the full upstream suite.
+The connected GitHub source bytes had SHA-256
+`ffc9382ba36b822873b985704b96627fed9138edd83ca10aa657da37c31dc647`
+(`judge.py`) and
+`ebfe2cc2614f035a6e41aeae553fa266c62e10eda21006444e047ab662306067`
+(`turn.py`). Controller/configuration limits were source/test inspection.
+
+### Adaptation results
+
+SKQ-OBS-1 through SKQ-OBS-4 are complete for the bounded instruction/helper
+scope. Three existing QA leaves and the testing contract route to one reference;
+no new skill or imported inventory was needed. The original observer consumes
+explicit sanitized ledgers, distinguishes supported outer receipts, reports all
+assigned outcomes and incomplete cost coverage, and emits per-worker shadow
+advisories. It performs no automatic capture, fact injection or intervention.
+
+Independent review exposed overly permissive receipt recognition. A new
+regression failed **seven conflicting/unrelated subcases** before repair. The
+minimal adapter correction validates known outer scopes and rejects contradictory
+success/error/source/lane data while preserving early incomplete reports and
+intentional negative engine children. Eight independent follow-up controls
+confirmed closure; no further concrete finding remained in that review.
+
+Final coordinator checks:
+
+- Observer suite under `python3 -X dev -Werror -B`: **14 tests passed**, 0.818 s.
+  Includes actual CLI/no-write checks, expected failures, enumeration, worker
+  separation, strict booleans, missing/changed receipts and bounded partial
+  accounting. Invalid JSON consumes the aggregate read allowance; unobserved
+  tasks/workers cannot make accounting complete.
+- Skill package: **62 skills passed**, metadata/prompts/local links/inventories.
+  Checker code and covered inventory contracts were unchanged.
+- Real retained-receipt CLI smoke: S40 custom launcher → unknown (outside the
+  supported product adapter), S41 → enumerated, S42 → passed. The observer itself
+  reports `qualification: false`, zero complete-cost tasks and no loop advisory.
+  Receipt pins matched the existing engine task; no application check was rerun
+  or requalified. Evidence:
+  `/tmp/nevrotick-workflow-observer-20261102-d647wlp2/`.
+- Staged/unstaged whitespace checks passed. Staged inventory was preserved;
+  concurrent main-development CNG and protocol changes remained outside this
+  writer's scope. No staging, publication or product/configuration write was
+  performed by this task.
+
+Reviewed helper SHA-256:
+`499b665ed05d3bc97814dfc6d814aa756aee4c9245486576a0b318956e45d35a`;
+test SHA-256:
+`50915b3e6581018631e0fff940a1d4f552ebd2eda23da20ccbd23a61aa42d2e6`.
+These controls establish observer behavior, not a measured improvement in agent
+efficiency. A future requested comparison can supply complete per-worker ledgers
+and independently grade outcomes under the unchanged acceptance criteria.

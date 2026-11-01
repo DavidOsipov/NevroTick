@@ -389,7 +389,7 @@ class CombinationCheckpointTests(unittest.TestCase):
     def test_current_checkpoint_counts_inventory_and_equivalences_stay_explicit(self):
         self.assertEqual(set(MODULE.SUBJECTS), {'combination','principal','regression','projection',
                                               'combination_admission','combination_lifecycle'})
-        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(MODULE.BOUND_INPUTS)), (118,118))
+        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(MODULE.BOUND_INPUTS)), (119,119))
         self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary':177,'doctests':5,'baseline':182})
         self.assertEqual(MODULE.INVENTORY_FIXED['schema_version'], 4)
         self.assertFalse(MODULE.INVENTORY_FIXED['campaigns_admitted'])
@@ -411,7 +411,7 @@ class CombinationCheckpointTests(unittest.TestCase):
         )
         return [
             {'id': identifier,
-             'candidate_sha256': '4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b',
+             'candidate_sha256': '509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1',
              'source_sha256': '67e083d7a0e752566879754e9fb406bde7e1d89243a3866743a9a0fc601db47f',
              'mutant': {'name': 'crates/time-core/src/combination.rs:' + suffix,
                         'package': 'time-core', 'file': 'crates/time-core/src/combination.rs',
@@ -420,7 +420,7 @@ class CombinationCheckpointTests(unittest.TestCase):
             for identifier, suffix in names
         ] + [{
             'id': 'S13-P-E-001',
-            'candidate_sha256': '4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b',
+            'candidate_sha256': '509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1',
             'source_sha256': 'aa7256364c3006943f614a9eb21d4ef94a0e0f30ecd147439c93d34fa17e7da9',
             'mutant': {'name': 'crates/time-core/src/principal.rs:945:17: replace < with <= in updated_score',
                        'package': 'time-core', 'file': 'crates/time-core/src/principal.rs',
@@ -428,7 +428,7 @@ class CombinationCheckpointTests(unittest.TestCase):
             'proof': {'path': 'tasks/s1.3-lifecycle-equivalences.md'},
         }, {
             'id': 'S13-L-E-001',
-            'candidate_sha256': '4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b',
+            'candidate_sha256': '509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1',
             'source_sha256': '3d1294fedcc5d3a7036b43512ccd8a1d2b52167f8867b820eb6a7a71af35f17d',
             'mutant': {'name': 'crates/time-core/src/combination/lifecycle.rs:1031:13: replace || with && in estimate_relation_valid',
                        'package': 'time-core', 'file': 'crates/time-core/src/combination/lifecycle.rs',
@@ -436,7 +436,7 @@ class CombinationCheckpointTests(unittest.TestCase):
             'proof': {'path': 'tasks/s1.3-lifecycle-equivalences.md'},
         }] + [
             {'id': identifier,
-             'candidate_sha256': '4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b',
+             'candidate_sha256': '509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1',
              'source_sha256': '9225260bf71cebf50618057984d2e3f8b865830bf48bbde7b0904f17d546c5b4',
              'mutant': {'name': 'crates/time-core/src/combination/admission.rs:' + suffix,
                         'package': 'time-core', 'file': 'crates/time-core/src/combination/admission.rs',
@@ -1249,7 +1249,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.object(MODULE, 'RUNS_TELEMETRY_STATUS', 'pending-reviewed-runs-telemetry-and-campaign-budget'):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.read_policy(root, 'contracts')
-            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 118)
+            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 119)
 
     def test_final_projected_batch_admission_requires_every_finite_nominal_allowance(self):
         required = MODULE.projected_batch_budget_vector()
@@ -1667,7 +1667,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(MODULE.SCOPE.select('regression'), {'regression': MODULE.SUBJECTS['regression']})
             self.assertEqual(MODULE.SCOPE.select('principal'), {'principal': MODULE.SUBJECTS['principal']})
             self.assertEqual(MODULE.SCOPE.select('all'), MODULE.SUBJECTS)
-            self.assertEqual(len(admitted['inputs_sha256']), 118)
+            self.assertEqual(len(admitted['inputs_sha256']), 119)
             policy['admission_status'] = 'pending-final-source-and-inventory-binding'
             self.write_policy(root, policy)
             with self.assertRaises(MODULE.Incomplete):
@@ -3386,7 +3386,7 @@ class CoreAnalysisTests(unittest.TestCase):
     def test_history_pending_and_fully_bound_synthetic_schema_have_causal_neighbors(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);policy=self.fixture(root)
-            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],118)
+            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],119)
             historical = self.historical_scope().select('all')
             self.assertEqual(historical['history'],'crates/time-core/src/regression/history.rs')
             self.assertEqual(list(historical),['regression','residuals','normalization','history','runs','selection','projection','enclosure','projected_batch'])
@@ -3521,7 +3521,7 @@ class InventoryAdmissionTests(unittest.TestCase):
         product = {name: MODULE.PRODUCT.sha256(root / name) for name in names}
         policy = {
             'schema_version': 4, 'admission_status': 'admitted-six-owner-inventory-only',
-            'package': 'time-core', 'source_file_count': 118, 'subjects': dict(self.SUBJECTS),
+            'package': 'time-core', 'source_file_count': 119, 'subjects': dict(self.SUBJECTS),
             'maximum_mutants': 512, 'listing_maximum_per_file': 512,
             'listing_maximum_total': 3072, 'inventory_wall_seconds': 600,
             'mutation_jobs': 10, 'mutation_process_limit': 512, 'listing_process_limit': 128,
@@ -3546,11 +3546,11 @@ class InventoryAdmissionTests(unittest.TestCase):
             root = Path(temporary); policy, path = self.fixture(root)
             self.assertEqual(self.read(root, path, policy), policy)
             self.assertEqual(MODULE.INVENTORY_SUBJECTS, self.SUBJECTS)
-            self.assertEqual(len(policy['product_inputs_sha256']), 118)
+            self.assertEqual(len(policy['product_inputs_sha256']), 119)
             self.assertEqual(len(MODULE.SUBJECTS), 6)
             self.assertIn('principal', MODULE.SUBJECTS)
             self.assertFalse(policy['campaigns_admitted'])
-            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 118)
+            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 119)
 
     def test_unknown_fields_duplicate_fields_and_nonfinite_json_reject(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -4109,7 +4109,7 @@ class CheckedInCorePolicyTests(unittest.TestCase):
             'proof': {'path': entry['proof']['path']},
         } for entry in policy['mutation_equivalences']]
         self.assertCountEqual(actual_scope, CombinationCheckpointTests.combination_equivalence_scope())
-        self.assertEqual(MODULE.SOURCE_FILE_COUNT, 118)
+        self.assertEqual(MODULE.SOURCE_FILE_COUNT, 119)
         self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS,
                          {'ordinary': 177, 'doctests': 5, 'baseline': 182})
         self.assertEqual(set(MODULE.SUBJECTS), {'combination','principal','regression','projection',

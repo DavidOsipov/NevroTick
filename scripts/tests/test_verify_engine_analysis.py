@@ -26,12 +26,29 @@ def independent_digest(value):
 
 def literal_execution(*, doctests):
     """Literal native libtest records, independent of the runner's required-name set."""
-    text = """running 2 tests
+    text = """running 16 tests
 test processing_guard_tests::processing_uses_fresh_deadline_and_current_control ... ok
 test processing_guard_tests::terminal_io_causes_and_send_history_remain_distinct ... ok
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
-running 0 tests
-test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries ... ok
+test processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays ... ok
+test processing_guard_tests::watch_controls_latch_stop_and_reject_generation_wrap ... ok
+test processing_guard_tests::failure_summaries_preserve_fixed_redacted_cause_projections ... ok
+test processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions ... ok
+test processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor ... ok
+test processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes ... ok
+test processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port ... ok
+test processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct ... ok
+test processing_guard_tests::completed_send_results_preserve_rearm_causes_and_one_way_history ... ok
+test processing_guard_tests::receive_cap_preserves_sixty_three_and_retires_sixty_four ... ok
+test processing_guard_tests::selected_read_accounting_survives_retirement_and_typed_oversize ... ok
+test processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor ... ok
+test processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error ... ok
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+running 3 tests
+test argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure ... ok
+test argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows ... ok
+test argument_guard_tests::argument_text_rejects_unix_nontext_in_both_roles ... ok
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 running 5 tests
 test prepare_outside_runtime_owns_and_releases_standard_sockets ... ok
 test prepare_rejects_entered_runtime_before_native_startup ... ok
@@ -79,6 +96,7 @@ class EngineAnalysisTests(unittest.TestCase):
         identity = {"owned-fixture-input.rs": "a" * 64}
         policy = json.loads((root / MODULE.POLICY).read_text())
         policy["candidate_sha256"] = independent_digest(identity)
+        policy["mutation_inventories"] = {}  # This literal fixture models the held state.
         policy["inputs_sha256"] = {
             name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in MODULE.BOUND_INPUTS}
         self.write_policy(root, policy)
@@ -93,7 +111,7 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_new_analysis_files_are_outside_the_frozen_product_census(self):
         _, identity = MODULE.PRODUCT.admit_product(ROOT)
-        self.assertEqual(len(identity), 118)
+        self.assertEqual(len(identity), 119)
         for name in ["scripts/verify-engine-analysis.py", "scripts/tests/test_verify_engine_analysis.py",
                      "policy/engine-analysis.json"]:
             self.assertNotIn(name, identity)
@@ -199,9 +217,57 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_baseline_has_healthy_coverage_and_full_cargo_neighbors(self):
         self.assertEqual(MODULE.validate_test_execution(literal_execution(doctests=False), doctests=False)
-                         ["tests_executed"], 7)
+                         ["tests_executed"], 24)
         full = MODULE.validate_test_execution(literal_execution(doctests=True), doctests=True)
-        self.assertEqual((full["tests_executed"], full["doctests"]), (9, 2))
+        self.assertEqual((full["tests_executed"], full["doctests"]), (26, 2))
+
+    def test_constructor_and_guard_alternatives_cannot_be_omitted_from_baseline(self):
+        """A healthy full transcript discriminates the earlier seven-case baseline."""
+        healthy = literal_execution(doctests=False)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 24)
+        added = (
+            "processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries",
+            "processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays",
+            "processing_guard_tests::watch_controls_latch_stop_and_reject_generation_wrap",
+            "processing_guard_tests::failure_summaries_preserve_fixed_redacted_cause_projections",
+            "processing_guard_tests::owned_timers_deliver_immediate_actions_and_cancel_future_actions",
+            "processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor",
+        )
+        for name in added:
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("16 passed;", "15 passed;", 1)
+            with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_test_execution(text, doctests=False)
+
+    def test_argument_budget_cases_cannot_be_omitted_from_baseline(self):
+        """Checked resource owners require their actual native unit records."""
+        healthy = literal_execution(doctests=False)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 24)
+        for name in (
+            "argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure",
+            "argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows",
+            "argument_guard_tests::argument_text_rejects_unix_nontext_in_both_roles",
+        ):
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("3 passed;", "2 passed;", 1)
+            with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_test_execution(text, doctests=False)
+
+    def test_library_native_result_alternatives_cannot_be_omitted(self):
+        """Every newly required admission/completion owner has a native record."""
+        healthy = literal_execution(doctests=False)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 24)
+        for name in (
+            "processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes",
+            "processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port",
+            "processing_guard_tests::read_classification_keeps_platform_oversize_and_native_errors_distinct",
+            "processing_guard_tests::completed_send_results_preserve_rearm_causes_and_one_way_history",
+            "processing_guard_tests::receive_cap_preserves_sixty_three_and_retires_sixty_four",
+            "processing_guard_tests::selected_read_accounting_survives_retirement_and_typed_oversize",
+            "processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor",
+            "processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error",
+        ):
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("16 passed;", "15 passed;", 1)
+            with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
+                MODULE.validate_test_execution(text, doctests=False)
 
     def test_old_runtime_only_baseline_and_printed_names_cannot_replace_execution(self):
         old = """running 3 tests
@@ -211,7 +277,7 @@ test execute_rejects_entered_runtime_without_nested_runtime_creation ... ok
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 """
         for text in [old, old + "\n".join(MODULE.REQUIRED_TESTS),
-                     literal_execution(doctests=False).replace("2 passed;", "0 passed;", 1)]:
+                     literal_execution(doctests=False).replace("16 passed;", "0 passed;", 1)]:
             with self.subTest(text=text[:40]), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
@@ -232,7 +298,7 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
             path = directory / "outcomes.json"
             path.write_text(json.dumps({"outcomes": [{"scenario": "Baseline", "summary": "Success",
                                                     "duration": 0.25, "log_path": "log/baseline.log"}]}))
-            self.assertEqual(MODULE.validate_baseline(work, "library")["tests_executed"], 9)
+            self.assertEqual(MODULE.validate_baseline(work, "library")["tests_executed"], 26)
             bad = json.loads(path.read_text()); bad["outcomes"][0]["log_path"] = "../escape.log"
             path.write_text(json.dumps(bad))
             with self.assertRaisesRegex(MODULE.Incomplete, "escapes"):

@@ -55,6 +55,10 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
   compilation and test execution separately in the existing task record. Profile
   the dominant cost before changing worker counts or adding tools. Filesystem
   metadata and serial admission work need not scale with twelve CPU slots.
+- For agent-workflow cost or loop experiments, use
+  [workflow observation](references/workflow-observation.md). Preserve all assigned
+  outcomes, partial accounting and per-worker attribution; shadow advice cannot
+  replace required verification or independent acceptance.
 - Improve tool-store placement or admission implementation through a scoped,
   reviewed change preserving exact identity, read-only inputs and configured
   per-command custody. Paths, version strings, mtimes and file sizes alone cannot

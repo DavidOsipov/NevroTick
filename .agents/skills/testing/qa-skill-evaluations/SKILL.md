@@ -38,6 +38,13 @@ edit needs no evaluation campaign. Keep one existing task/plan record.
    single successful exercise demonstrates that case, not a measured uplift or
    general reliability. Changed grading criteria require regrading both sides.
 
+For agent-cost, context-reduction or failure-loop changes, use
+[workflow observation](../references/workflow-observation.md): account for failed
+attempts, reviewers, repairs and observer overhead; keep every assigned task in
+the quality denominator. Start with shadow observation and retain unknown usage,
+missing worker visibility and false advisories. One passing check is not an
+independently accepted change.
+
 Use [campaign budgeting](../references/campaign-budget.md) for multiple trials.
 Review grader sensitivity through [harness qualification](../references/harness-qualification.md).
 Keep independent holdout variants for regression checks; an example whose answer
