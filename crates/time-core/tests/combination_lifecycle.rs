@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Eleven independent CHECK-7/8/14/25 lifecycle cases through real producers.
+//! Twelve independent CHECK-7/8/14/25 lifecycle cases through real producers.
 //!
 //! UTC/exchange arithmetic supplies exact Q33 phases; real histories own fits,
 //! original projections/enclosures own interval witnesses, and the real principal
 //! owns update credit. No decision, mask, checked state or public overflow is
 //! fabricated. All time is explicit fixture time, with no external effects.
 //!
-//! The authored complete-suite upper is 41 histories, 184 append attempts,
-//! 183 projections/enclosures, 87 batches, 27 seeds, 161 lifecycle advances,
-//! 49 reachability constructors, 42 reachability records and 183 uncertainty
+//! The authored public-suite upper is 57 histories, 232 append attempts,
+//! 199 projections/enclosures, 88 batches, 31 seeds, 167 lifecycle advances,
+//! 49 reachability constructors, 42 reachability records and 199 uncertainty
 //! constructors. Each source has at most 47 rows; each test at most 98 advances.
-//! Combination-parameter constructors have a separate raw-case cap: 47 total,
-//! comprising 27 seed constructors and 20 explicit raw-admission attempts.
+//! Literal combination-parameter constructors total49:28 fixture constructions
+//! and21 explicit raw-admission attempts. The generic seed-derived reservation
+//! conservatively allows52 because the capacity case reuses immutable parameters
+//! across four seed attempts. Private guard/setup bounds are recorded separately.
 //! These are source reservations, not observed execution. An append reserves at
-//! most one sufficient fit of 64 points; hence <=184 fits/11776 points. A
+//! most one sufficient fit of 64 points; hence <=232 fits/14848 points. A
 //! projection does not fit. Each advance reserves its real principal transition,
 //! selector, <=16-source scans, <=16 compatibility visits and, when reached,
 //! <=16*18+5 binary reduction calls plus three roots. Getter/equality calls have
@@ -99,7 +101,7 @@ enum Call {
     Advance,
     /// Checked original-entry uncertainty construction.
     Uncertainty,
-    /// Whole lifecycle-state bit-preserving comparison.
+    /// Bit-preserving immutable parameter or complete lifecycle-state comparison.
     Equality,
 }
 
@@ -136,7 +138,7 @@ impl Call {
 /// Explicit finite major-call envelope for one authored trajectory.
 #[derive(Clone, Copy)]
 struct Limits {
-    /// At most three original sources per independently seeded fixture.
+    /// At most sixteen original sources per independently seeded fixture.
     histories: u64,
     /// Appends including the initial three observations per history.
     appends: u64,
@@ -154,17 +156,19 @@ struct Limits {
     reachability_records: u64,
     /// Original uncertainty constructor attempts.
     uncertainties: u64,
-    /// Maximum whole-state comparisons across independent owners.
+    /// Maximum immutable parameter or whole-state comparisons.
     equalities: u64,
 }
 
-/// Independent finite constructor-only envelope; it reserves no seed or fit.
+/// Independent finite raw-constructor/comparison envelope; no seed or fit.
 #[derive(Clone, Copy)]
 struct RawLimits {
     /// Actual raw combination-parameter constructor attempts.
     parameters: u64,
     /// Actual raw reachability-update constructor attempts.
     ordinals: u64,
+    /// Direct immutable parameter comparisons, charged with the state upper.
+    equalities: u64,
 }
 
 impl Limits {
@@ -228,7 +232,7 @@ impl Profile {
     }
 
     /// Reserve raw constructor calls independently of lifecycle seed work.
-    /// The fixed raw case performs 22 immutable getters within the otherwise
+    /// The fixed raw case performs 24 immutable getters within the otherwise
     /// unused 64-getter observation group; it constructs no history or owner.
     fn raw(case: &'static str, limits: RawLimits) -> Self {
         let mut profile = Self::new(
@@ -243,7 +247,7 @@ impl Profile {
                 reachability_updates: limits.ordinals,
                 reachability_records: 0,
                 uncertainties: 0,
-                equalities: 0,
+                equalities: limits.equalities,
             },
         );
         profile.upper[Call::CombinationParameters.index()] = limits.parameters;
@@ -412,12 +416,12 @@ struct Built {
 }
 
 impl Built {
-    /// Project <=3 actual histories at a single explicit common instant.
+    /// Project <=16 actual histories at a single explicit common instant.
     /// Growth terms are zero; separately asserted tracking skew never ages twice.
     /// # Errors
     /// Reject impossible harness capacity/anchor facts or real producer failure.
     fn new(p: &Profile, sources: &[(&Source, f64, u8)], raw_at: u64) -> TestResult<Self> {
-        if sources.is_empty() || sources.len() > 3 {
+        if sources.is_empty() || sources.len() > 16 {
             return Err(io::Error::other("lifecycle fixture source capacity").into());
         }
         let at = p.call(Call::Monotonic, || MonotonicNs::new(raw_at))?;
@@ -1497,9 +1501,9 @@ fn lifecycle_cause_diagnostics() {
 /// Read the genuine ready owner without creating another observation or round.
 ///
 /// This adds eight precharged immutable getters and no producers. Together with
-/// the existing raw-neighbor loop additions, diagnostics make at most fifty-nine
+/// the existing raw-neighbor loop additions, diagnostics make at most sixty-one
 /// top-level format calls, each expected string below sixty-four UTF-8 bytes.
-/// Thus returned formatted content is at most 3,776 bytes cumulatively; this is
+/// Thus returned formatted content is at most 3,904 bytes cumulatively; this is
 /// a source-work bound, not an allocator/RSS limit or an observed format counter.
 /// # Errors
 /// Preserve pre-call getter accounting failure and an absent original source.
@@ -2117,6 +2121,42 @@ fn lifecycle_direct_replacement_clears_all_then_rechecks_supporters() -> TestRes
     Ok(())
 }
 
+/// Compare genuine admitted values whose independently varied fields matter.
+///
+/// Each attempt keeps the existing conservative complete-state comparison upper;
+/// direct parameter equality actually inspects only its two immutable bit fields.
+/// # Errors
+/// Reject incomplete fixture capture and preserve pre-call accounting failure.
+/// # Panics
+/// Signed-zero or one-field differences must not disappear; identity stays equal.
+fn compare_parameter_neighbors(
+    p: &Profile,
+    values: [Option<FixtureCombinationParameters>; 6],
+) -> TestResult {
+    let [
+        Some(ordinary),
+        Some(negative_zero),
+        Some(tiny),
+        Some(huge),
+        Some(error),
+        Some(other),
+    ] = values
+    else {
+        return Err(io::Error::other("missing admitted parameter neighbor").into());
+    };
+    for (left, right, expected) in [
+        (ordinary, ordinary, true),
+        (ordinary, negative_zero, false),
+        (ordinary, other, false),
+        (ordinary, error, false),
+        (ordinary, tiny, false),
+        (ordinary, huge, false),
+    ] {
+        assert_eq!(p.call(Call::Equality, || left == right)?, expected);
+    }
+    Ok(())
+}
+
 /// Raw parameter/ordinal constructors enforce supported scalars and preserve bits.
 ///
 /// Constructor-admitted ordinalMAX is only a shape neighbor: this case records
@@ -2131,18 +2171,21 @@ fn lifecycle_raw_parameter_and_ordinal_admission_neighbors() -> TestResult {
     let p = Profile::raw(
         "lifecycle_raw_parameter_and_ordinal_admission_neighbors",
         RawLimits {
-            parameters: 20,
+            parameters: 21,
             ordinals: 6,
+            equalities: 6,
         },
     );
     reject_raw_parameter_neighbors(&p)?;
-    for (combine, error) in [
+    let mut values = [None; 6];
+    for (slot, (combine, error)) in values.iter_mut().zip([
         (2.0, 0.0),
         (2.0, -0.0),
         (f64::MIN_POSITIVE, f64::MIN_POSITIVE),
         (f64::MAX, f64::MAX),
         (2.0, 0.03125),
-    ] {
+        (4.0, 0.0),
+    ]) {
         let admitted = p.call(Call::CombinationParameters, || {
             FixtureCombinationParameters::new(combine, error)
         })??;
@@ -2156,7 +2199,9 @@ fn lifecycle_raw_parameter_and_ordinal_admission_neighbors() -> TestResult {
             error.to_bits()
         );
         assert_fixed_debug(&admitted, "FixtureCombinationParameters { .. }");
+        *slot = Some(admitted);
     }
+    compare_parameter_neighbors(&p, values)?;
     let label = tag(202)?;
     for reachable in [false, true] {
         let rejected = p.call(Call::ReachabilityUpdate, || {
@@ -2425,4 +2470,232 @@ fn lifecycle_max_clock_error_sum_overflow_rolls_back_and_recovers() -> TestResul
         },
     )?;
     corrected_event_and_replay(&p, &mut owners, &fresh, &fresh_batch)
+}
+
+/// Reject each one-over seed input before deeper roster/metadata admission.
+///
+/// Parameters/minimum are genuine immutable values constructed once and reused.
+/// Four seed attempts include two capacity rejections and two healthy owners.
+/// # Errors
+/// Preserve real construction/accounting failures and unexpected legal rejection.
+/// # Panics
+/// Each raw seventeen-item input must report lifecycle capacity precedence.
+fn seed_capacity_owners(
+    p: &Profile,
+    built: &Built,
+    batch: &FixtureProjectedBatch<'_>,
+    oversized_roster: &[NonZeroU64],
+    oversized_strata: &[FixturePrincipalStratum],
+) -> TestResult<Owners> {
+    let principal = p.call(Call::PrincipalParameters, || {
+        FixturePrincipalParameters::new(0.125, 0.0)
+    })??;
+    let combination = p.call(Call::CombinationParameters, || {
+        FixtureCombinationParameters::new(2.0, 0.03125)
+    })??;
+    let minimum = p.call(Call::Minimum, || FixtureMinimum::new(16))??;
+    for (roster, strata) in [
+        (oversized_roster, built.strata.as_slice()),
+        (built.roster.as_slice(), oversized_strata),
+    ] {
+        let rejected = p.call(Call::Seed, || {
+            FixtureCombinationState::seed(roster, principal, combination, minimum, batch, strata)
+        })?;
+        assert!(matches!(
+            rejected,
+            Err(FixtureCombinationLifecycleError::CapacityExceeded)
+        ));
+    }
+    let state = p.call(Call::Seed, || {
+        FixtureCombinationState::seed(
+            &built.roster,
+            principal,
+            combination,
+            minimum,
+            batch,
+            &built.strata,
+        )
+    })??;
+    let control = p.call(Call::Seed, || {
+        FixtureCombinationState::seed(
+            &built.roster,
+            principal,
+            combination,
+            minimum,
+            batch,
+            &built.strata,
+        )
+    })??;
+    Ok(Owners { state, control })
+}
+
+/// Reject each one-over advance while the original observation credit is pending.
+/// # Errors
+/// Preserve pre-call accounting failures and full-state comparison failure.
+/// # Panics
+/// Capacity wins over duplicate/unknown metadata and both failures preserve credit.
+fn reject_capacity_advances(
+    p: &Profile,
+    owners: &mut Owners,
+    built: &Built,
+    batch: &FixtureProjectedBatch<'_>,
+    metadata: &[FixtureSupporterUncertainty<'_>],
+    oversized_strata: &[FixturePrincipalStratum],
+    oversized_metadata: &[FixtureSupporterUncertainty<'_>],
+) -> TestResult {
+    for (strata, uncertainties) in [
+        (oversized_strata, metadata),
+        (built.strata.as_slice(), oversized_metadata),
+    ] {
+        let rejected = p.call(Call::Advance, || {
+            owners.state.advance(batch, strata, uncertainties)
+        })?;
+        assert!(matches!(
+            rejected,
+            Err(FixtureCombinationLifecycleError::CapacityExceeded)
+        ));
+        owners.same(p)?;
+    }
+    Ok(())
+}
+
+/// Check the independent sixteen-way agreement and contributor/retained meanings.
+/// # Errors
+/// Preserve pre-call accounting and actual estimate-observer failures.
+/// # Panics
+/// Minimum/population/depth remain sixteen, principal101 is stable and no padding
+/// source appears. Sixteen equal phases/uncertainties give exact dyadic results.
+fn observe_capacity_round(
+    p: &Profile,
+    outcome: &FixtureCombinationOutcome<'_>,
+    built: &Built,
+    expected: ExpectedRound,
+) -> TestResult {
+    observe_round(p, outcome, expected)?;
+    let decision = p.get(|| outcome.principal())?;
+    let selection = p.get(|| decision.selection())?;
+    assert_eq!(p.get(|| selection.population())?, 16);
+    assert_eq!(p.get(|| selection.minimum())?, 16);
+    assert_eq!(p.get(|| selection.maximum_depth())?, 16);
+    assert!(p.get(|| selection.strict_majority())?);
+    assert!(p.get(|| selection.minimum_met())?);
+    for label in 101_u64..117 {
+        let expected_status = if expected.ordinal.is_none() {
+            FixtureCombinationSourceStatus::NotEvaluated
+        } else if label == 101 {
+            FixtureCombinationSourceStatus::Principal
+        } else {
+            FixtureCombinationSourceStatus::Contributor
+        };
+        assert_eq!(status(p, outcome, label)?, Some(expected_status));
+    }
+    assert_eq!(status(p, outcome, 117)?, None);
+    if expected.ordinal.is_some() {
+        let labels = (101_u64..117).collect::<Vec<_>>();
+        estimate(
+            p,
+            outcome,
+            built,
+            [
+                0,
+                0,
+                0x3fc0_0000_0000_0000,
+                0x3fd0_0000_0000_0000,
+                0x3f70_0000_0000_0000,
+            ],
+            &labels,
+        )?;
+    }
+    Ok(())
+}
+
+/// Advance candidate/control from the same genuine fixture without cloning credit.
+/// # Errors
+/// Preserve actual transition, observer and complete-state comparison failures.
+fn capacity_rounds(
+    p: &Profile,
+    owners: &mut Owners,
+    built: &Built,
+    batch: &FixtureProjectedBatch<'_>,
+    metadata: &[FixtureSupporterUncertainty<'_>],
+    expected: ExpectedRound,
+) -> TestResult {
+    for state in [&mut owners.state, &mut owners.control] {
+        let outcome = p.call(Call::Advance, || {
+            state.advance(batch, &built.strata, metadata)
+        })??;
+        observe_capacity_round(p, &outcome, built, expected)?;
+    }
+    owners.same(p)
+}
+
+/// Exercise the exact supported capacity beside every raw one-over admission.
+///
+/// One sixteen-source fixture owns 48 appends and sixteen projections. The exact
+/// actual-call vector is (16,48,48,16,49,96,48,264,16,16,16,1,1,1,16,1,4,0,0,6,16,4).
+/// The generic four-seed ceiling conservatively reserves four parameter/minimum
+/// constructors; only one of each occurs, because immutable checked values are
+/// reused. Added numerical work is at most48 fits and3,072 point admissions.
+/// # Errors
+/// Preserve genuine producer/constructor/transition and pre-call accounting errors.
+/// # Panics
+/// Capacity precedence, atomicity and exactly-once round emission must hold.
+#[test]
+fn lifecycle_capacity_neighbors_preserve_pending_credit() -> TestResult {
+    let p = Profile::new(
+        "lifecycle_capacity_neighbors_preserve_pending_credit",
+        Limits {
+            histories: 16,
+            appends: 48,
+            projections: 16,
+            batches: 1,
+            seeds: 4,
+            advances: 6,
+            reachability_updates: 0,
+            reachability_records: 0,
+            uncertainties: 16,
+            equalities: 4,
+        },
+    );
+    let sources = (101_u64..117)
+        .map(|label| Source::new(&p, label, [0; 3]))
+        .collect::<TestResult<Vec<_>>>()?;
+    let specification = sources
+        .iter()
+        .map(|source| (source, 0.125, 1))
+        .collect::<Vec<_>>();
+    let built = Built::new(&p, &specification, 2_000_000_000)?;
+    let batch = built.batch(&p)?;
+    let metadata = records(&p, &built, &[STANDARD; 16])?;
+    let mut oversized_roster = built.roster.clone();
+    oversized_roster.push(tag(117)?);
+    let mut oversized_strata = built.strata.clone();
+    let extra_stratum = built
+        .strata
+        .first()
+        .copied()
+        .ok_or_else(|| io::Error::other("missing capacity stratum"))?;
+    oversized_strata.push(extra_stratum);
+    let mut oversized_metadata = metadata.clone();
+    let extra_metadata = metadata
+        .first()
+        .copied()
+        .ok_or_else(|| io::Error::other("missing capacity uncertainty"))?;
+    oversized_metadata.push(extra_metadata);
+    let mut owners =
+        seed_capacity_owners(&p, &built, &batch, &oversized_roster, &oversized_strata)?;
+    reject_capacity_advances(
+        &p,
+        &mut owners,
+        &built,
+        &batch,
+        &metadata,
+        &oversized_strata,
+        &oversized_metadata,
+    )?;
+    capacity_rounds(&p, &mut owners, &built, &batch, &metadata, ready(1, 16, 16))?;
+    capacity_rounds(&p, &mut owners, &built, &batch, &metadata, retained(16))?;
+    assert_eq!(p.get(|| owners.state.emitted_rounds())?, 1);
+    assert_eq!(p.get(|| owners.control.emitted_rounds())?, 1);
+    Ok(())
 }

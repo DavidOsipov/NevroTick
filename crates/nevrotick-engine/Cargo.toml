@@ -1,0 +1,25 @@
+[package]
+name = "nevrotick-engine"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Bounded NevroTick observe-only engine transport experiment"
+
+[dependencies]
+getrandom = { version = "=0.4.3", default-features = false }
+ntp-wire = { version = "=0.0.0", path = "../ntp-wire" }
+tokio = { version = "=1.54.1", default-features = false, features = ["rt", "net", "time", "sync", "macros"] }
+
+# Keep tokio-macros 2.7.1 in the admitted lock: its Syn 2 closure is already
+# selected by garde. An update to Syn 3 requires a separate graph review.
+# Do not add an unused direct macro dependency or call its private helpers.
+
+[[bin]]
+name = "nevrotick-observe"
+path = "src/bin/nevrotick-observe.rs"
+
+[lints]
+workspace = true

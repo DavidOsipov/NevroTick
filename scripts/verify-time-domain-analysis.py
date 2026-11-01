@@ -48,10 +48,9 @@ def registry_blocks(text):
     return result
 
 
-def reviewed_fuzz_lock(product_text, control_text):
-    """Preserve Garde's reviewed closure and all original libFuzzer registry blocks."""
+def domain_registry_closure(product_text):
+    """Select actual registry dependencies of the checked time-domain local owner."""
     product = registry_blocks(product_text)
-    original = registry_blocks(control_text)
     local = [item for item in tomllib.loads(product_text)["package"] if item["name"] == "time-domain"]
     if len(local) != 1 or local[0].get("source") or local[0].get("version") != "0.0.0" or local[0].get("dependencies") != ["garde"]:
         raise Incomplete("The actual checked product-local owner is absent.")
@@ -64,6 +63,38 @@ def reviewed_fuzz_lock(product_text, control_text):
             raise Incomplete("Garde locked dependency closure is incomplete.")
         selected[name] = product[name]
         pending.extend(value.split(" ")[0] for value in product[name][0].get("dependencies", []))
+    return selected
+
+
+def admitted_domain_products(product_text, policy):
+    """Bind only the pure owner's reached nodes to selected source/grant admission.
+
+    Unrelated engine/runtime and metadata-only lock entries are not parity owners
+    for the separately admitted original libFuzzer control graph.
+    """
+    selected = domain_registry_closure(product_text)
+    try:
+        records = PRODUCT.validated_dependency_records(policy, include_metadata=False)
+    except PRODUCT.ENV.Incomplete as error:
+        raise Incomplete(str(error)) from error
+    admitted = {item["name"]: item for item in records}
+    if len(admitted) != len(records):
+        raise Incomplete("Selected product source admission contains duplicate identities.")
+    result = {}
+    for name, (locked, _block) in selected.items():
+        if name not in admitted:
+            raise Incomplete("A reached pure dependency is not a selected admitted source.")
+        item = admitted[name]
+        if any(locked.get(key) != item[key] for key in ("version", "checksum")):
+            raise Incomplete("A reached pure dependency differs from its selected source admission.")
+        result[name] = item
+    return result
+
+
+def reviewed_fuzz_lock(product_text, control_text):
+    """Preserve Garde's reviewed closure and all original libFuzzer registry blocks."""
+    selected = domain_registry_closure(product_text)
+    original = registry_blocks(control_text)
     for name, entry in original.items():
         if name in selected and selected[name][0] != entry[0]:
             raise Incomplete("Shared product/fuzz registry identity or dependency edges disagree.")
@@ -350,13 +381,14 @@ def admit_fuzz_sources(session, selected):
     control = session.base / "common/controls-source/fuzz/Cargo.lock"
     if PRODUCT.sha256(control) != original["control_lock_sha256"]:
         raise Incomplete("Original libFuzzer control graph changed.")
-    actual = reviewed_fuzz_lock((ROOT / "Cargo.lock").read_text(), control.read_text())
+    product_text = (ROOT / "Cargo.lock").read_text()
+    actual = reviewed_fuzz_lock(product_text, control.read_text())
     if actual.encode() != (ROOT / selected["lockfile"]).read_bytes():
         raise Incomplete("Standalone graph no longer preserves the original reviewed package blocks.")
-    products = {item["name"]: item for item in session.dependency_policy["packages"]}
+    products = admitted_domain_products(product_text, session.dependency_policy)
     old = {item["name"]: item for item in original["locked_registry_packages"]}
-    if len(products) != 16 or len(old) != 10:
-        raise Incomplete("Product/control source cohorts changed.")
+    if len(old) != 10 or len(original["locked_registry_packages"]) != 10:
+        raise Incomplete("Original control source cohort changed.")
     if PRODUCT.admit_vendor(session.vendor, session.dependency_policy) != session.vendor_identity:
         raise Incomplete("Product vendor changed before fuzz dependency publication.")
     grants = selected["selected_grants"]

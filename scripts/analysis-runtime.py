@@ -27,6 +27,10 @@ PUBLIC = ("/usr", "/bin", "/lib", "/lib64", "/etc/alternatives", "/etc/ld.so.cac
 PRIVATE = ("/proc", "/sys", "/dev", "/etc", "/run")
 SANITIZER_FLAGS = ("-runs=256", "-max_len=4096", "-timeout=2", "-rss_limit_mb=512",
                    "-malloc_limit_mb=256", "-max_total_time=30")
+# Explicit wire-only larger-input qualification; legacy/Core/history flags unchanged.
+WIRE_KE_SANITIZER_PROFILE = "ntp-wire-ke-framing"
+WIRE_KE_SANITIZER_FLAGS = ("-runs=256", "-max_len=131073", "-timeout=2", "-rss_limit_mb=512",
+                           "-malloc_limit_mb=256", "-max_total_time=30")
 CORE_SANITIZER_PROFILE = "time-core-s12a"
 CORE_SANITIZER_FLAGS = ("-runs=4096", "-max_len=1537", "-timeout=2", "-rss_limit_mb=512",
                         "-malloc_limit_mb=256", "-max_total_time=15")
@@ -154,6 +158,8 @@ def _sanitizer(command: list[str], profile="legacy") -> None:
     """Select one fixed reviewed profile; callers cannot supply arbitrary limits."""
     if profile == "legacy":
         flags = SANITIZER_FLAGS
+    elif profile == WIRE_KE_SANITIZER_PROFILE:
+        flags = WIRE_KE_SANITIZER_FLAGS
     elif profile == CORE_SANITIZER_PROFILE:
         flags = CORE_SANITIZER_FLAGS
     elif profile == HISTORY_SANITIZER_PROFILE:
@@ -168,10 +174,10 @@ def _sanitizer(command: list[str], profile="legacy") -> None:
                             "-ignore_", "-handle_", "-error_exitcode=", "-timeout_exitcode="))
            for item in command):
         raise Incomplete("Sanitizer subprocess campaigns and failure-handling overrides are forbidden.")
-    if profile in {CORE_SANITIZER_PROFILE, HISTORY_SANITIZER_PROFILE}:
+    if profile in {CORE_SANITIZER_PROFILE, HISTORY_SANITIZER_PROFILE, WIRE_KE_SANITIZER_PROFILE}:
         permitted = {*flags, "-artifact_prefix=/work/fuzz-artifacts/"}
         if any(item.startswith("-") and item not in permitted for item in command[1:]):
-            raise Incomplete("Core sanitizer accepts only its exact reviewed flags.")
+            raise Incomplete("Selected sanitizer accepts only its exact reviewed flags.")
 
 
 def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), sealed=(), path_dirs=(),

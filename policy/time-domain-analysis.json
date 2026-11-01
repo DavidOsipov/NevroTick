@@ -29,8 +29,8 @@
       "policy/time-domain-fuzz-target.rs": "78855e99831b8448deef8180904a0438424df18dcf31d466e82d39f235f78709",
       "policy/time-domain-fuzz-manifest.toml": "82228e73a748919ea3012883667350278fc2e26c28c855d10d2be33a89ea0b52",
       "policy/time-domain-fuzz.lock": "ab1ba0f3322d5a52528b08756e800e235f6e5ed64a2b9758f3aa6d6b6a62794e",
-      "policy/ui-m0-dependencies.json": "4953187690855763290e9f0eb551b5fdcf9c496ed5247b23e410a48c20b52377",
-      "policy/ntp-wire-analysis.json": "3b2c38a0e4f67ea1db7b179ec1290f09707ffa1570648c9748a59c79766f18c2",
+      "policy/ui-m0-dependencies.json": "1778cfc773f61b46ecee6c6bc600416630855c3b2454dcc8a02cdfd8928b6043",
+      "policy/ntp-wire-analysis.json": "8d328177b8b9ab37adb24ccf311e52bd431c3c2d984bf0c42b1ac03d2b66713f",
       "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
       "tasks/s1.1-exchange-vectors.json": "f4ef0a5e339cad487587f5417feb2a12ca4a06ac279d94131265d691181b41ae"
     },
@@ -387,7 +387,7 @@
   "mutation_equivalences": [
     {
       "id": "TD-E-001",
-      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
+      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
       "source_sha256": "366397df0c6bcd260d566b5bac310c882796734887af886a5fdf99a023bb1dc8",
       "mutant": {
         "name": "crates/time-domain/src/era.rs:115:53: replace | with ^ in unfold_ntp",
@@ -426,13 +426,13 @@
         "path": "tasks/s1.1-time-domain-equivalences.md",
         "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
         "section": "TD-E-001",
-        "reviewer": "/root/s11c_product_review",
+        "reviewer": "/root/nts_negotiation_independent_review",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "TD-E-002",
-      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
+      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
       "source_sha256": "366397df0c6bcd260d566b5bac310c882796734887af886a5fdf99a023bb1dc8",
       "mutant": {
         "name": "crates/time-domain/src/era.rs:141:25: replace || with && in unfold_ntp",
@@ -471,13 +471,13 @@
         "path": "tasks/s1.1-time-domain-equivalences.md",
         "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
         "section": "TD-E-002",
-        "reviewer": "/root/s11c_product_review",
+        "reviewer": "/root/nts_negotiation_independent_review",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "TD-E-003",
-      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
+      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
       "source_sha256": "d7208286fb97303a64b719aa880ee07ec2411fef8c17abbda9acfb5e2b33e7b6",
       "mutant": {
         "name": "crates/time-domain/src/exchange.rs:150:45: replace || with && in exchange_arithmetic",
@@ -516,13 +516,13 @@
         "path": "tasks/s1.1-time-domain-equivalences.md",
         "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
         "section": "TD-E-003",
-        "reviewer": "/root/s11c_survivor_review",
+        "reviewer": "/root/nts_negotiation_independent_review",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "TD-E-004",
-      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
+      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
       "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
       "mutant": {
         "name": "crates/time-domain/src/rounding.rs:59:9: replace || with && in round",
@@ -561,13 +561,13 @@
         "path": "tasks/s1.1-time-domain-equivalences.md",
         "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
         "section": "TD-E-004",
-        "reviewer": "/root/s11c_survivor_review",
+        "reviewer": "/root/nts_negotiation_independent_review",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "TD-E-005",
-      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
+      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
       "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
       "mutant": {
         "name": "crates/time-domain/src/rounding.rs:59:35: replace || with && in round",
@@ -606,13 +606,13 @@
         "path": "tasks/s1.1-time-domain-equivalences.md",
         "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
         "section": "TD-E-005",
-        "reviewer": "/root/s11c_survivor_review",
+        "reviewer": "/root/nts_negotiation_independent_review",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "TD-E-006",
-      "candidate_sha256": "d92a4014d634d3d79b74b21f8cecae1ac236dd8dfcac2ab63b9fbadc0cbcd404",
+      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
       "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
       "mutant": {
         "name": "crates/time-domain/src/rounding.rs:59:26: delete - in round",
@@ -651,7 +651,7 @@
         "path": "tasks/s1.1-time-domain-equivalences.md",
         "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
         "section": "TD-E-006",
-        "reviewer": "/root/s11c_survivor_review",
+        "reviewer": "/root/nts_negotiation_independent_review",
         "verdict": "independently-justified-equivalent"
       }
     }

@@ -61,6 +61,208 @@ class AdmissionControls(unittest.TestCase):
         with patch.dict(CHECK.REQUIRED_SCOPES, {"common": {"bin"}}, clear=True):
             return CHECK.check_inventory(self.base, specification)
 
+    def stable_fixture(self):
+        """Create only tiny selected payloads; omitted inventories stay absent."""
+        scopes = ["bin", "etc", "lib", "libexec", "share"]
+        for scope in scopes:
+            (self.stable / scope).mkdir(exist_ok=True)
+        manifest = json.loads((ROOT / "policy/tool-manifest.json").read_text())
+        for name in manifest["rust"]["linux_binary_sha256"]:
+            payload = ("independent stable executable " + name).encode()
+            target = self.stable / "bin" / name
+            target.write_bytes(payload)
+            target.chmod(0o500)
+            manifest["rust"]["linux_binary_sha256"][name] = hashlib.sha256(payload).hexdigest()
+        (self.stable / "lib/dependency.so").write_bytes(b"independent selected library")
+        entries = {path.relative_to(self.stable).as_posix(): {
+            "kind": "file", "bytes": path.stat().st_size,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+            for path in self.stable.rglob("*") if path.is_file()}
+        inventory = {"schema_version": 1, "analysis_installation_root": str(self.base),
+                     "tool_root": str(self.stable), "scopes": scopes, "entries": entries}
+        specification = {"name": "stable", "path": "evidence/stable.json",
+                         "root": "stable", "scopes": scopes}
+        inventory_path = self.base / specification["path"]
+        inventory_path.write_text(json.dumps(inventory))
+        specification["sha256"] = hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+        self.policy["inventories"] = [specification if item["root"] == "stable" else item
+                                      for item in self.policy["inventories"]]
+        self.write_policy()
+        (self.checkout / "policy/tool-manifest.json").write_text(json.dumps(manifest))
+        return specification, manifest
+
+    def admit_stable(self):
+        """Only the external bootstrap helper observation is replaced."""
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            try:
+                return CHECK.admit(self.checkout, self.pointer, profile="stable-core")
+            finally:
+                run.assert_not_called()
+
+    def test_stable_core_admits_only_complete_selected_payload_and_pointer_identity(self):
+        specification, _ = self.stable_fixture()
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit(self.checkout, self.pointer, profile="stable-core")
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_profile"], "stable-core")
+        self.assertEqual(admitted["readonly_roots"], tuple(self.stable / scope for scope in
+                         ("bin", "etc", "lib", "libexec", "share")))
+        self.assertEqual(admitted["installation_pointer"], str(self.pointer))
+        self.assertEqual(admitted["installation_pointer_sha256"],
+                         hashlib.sha256(self.pointer.read_bytes()).hexdigest())
+        self.assertEqual([item["root"] for item in admitted["inventories"]], ["stable"])
+        for item in self.policy["inventories"]:
+            if item["root"] != "stable":
+                self.assertFalse((self.base / item["path"]).exists())
+
+    def test_default_and_explicit_full_still_admit_all_four_roots_and_entrypoints(self):
+        self.stable_fixture()
+        entrypoints = {}
+        for item in self.policy["tools"].values():
+            path = self.base / item["entrypoint"]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"independent optional entrypoint")
+            path.chmod(0o500)
+            entrypoints[path] = item["sha256"]
+        covered = {item["entrypoint"] for item in self.policy["tools"].values()}
+        real_digest = CHECK.digest
+
+        def inventory(base, specification, stable):
+            self.assertEqual((base, stable), (self.base, self.stable))
+            return {"root": specification["root"]}, covered
+
+        def digest(path):
+            return entrypoints[path] if path in entrypoints else real_digest(path)
+
+        for options in ({}, {"profile": "full"}):
+            with self.subTest(options=options), patch.object(Path, "home", return_value=self.home), \
+                 patch.object(CHECK, "check_inventory", side_effect=inventory) as inventories, \
+                 patch.object(CHECK, "digest", side_effect=digest), \
+                 patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers:
+                admitted = CHECK.admit(self.checkout, self.pointer, **options)
+            self.assertEqual([call.args[1]["root"] for call in inventories.call_args_list],
+                             [item["root"] for item in self.policy["inventories"]])
+            self.assertEqual(inventories.call_count, 4)
+            self.assertEqual(admitted["admission_profile"], "full")
+            self.assertEqual(admitted["readonly_roots"], (self.base, self.stable))
+            helpers.assert_called_once_with(self.checkout)
+
+    def test_unknown_admission_profile_rejects_before_payload_admission(self):
+        for profile in (None, True, "", "stable", "stable-core ", []):
+            with self.subTest(profile=profile), patch.object(CHECK, "check_inventory") as inventories, \
+                 self.assertRaises(CHECK.Incomplete):
+                CHECK.admit(self.checkout, self.pointer, profile=profile)
+            inventories.assert_not_called()
+
+    def test_stable_core_keeps_full_description_schema_and_exact_selected_scopes(self):
+        self.stable_fixture()
+        healthy = copy.deepcopy(self.policy)
+        mutations = [lambda p: p.update(inventories=[]),
+                     lambda p: p["inventories"].pop(),
+                     lambda p: p["inventories"].append(copy.deepcopy(p["inventories"][0])),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "stable").update(name="renamed"),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "stable").update(scopes=["bin", "lib"]),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "stable")["scopes"].append("extra"),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "common").update(path="../outside"),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "common").update(sha256="invalid"),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "common").update(scopes=[]),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "common").update(scopes=["bin"]),
+                     lambda p: next(item for item in p["inventories"] if item["root"] == "common")["scopes"].append("bin/nested")]
+        for mutate in mutations:
+            self.policy = copy.deepcopy(healthy)
+            mutate(self.policy)
+            self.write_policy()
+            with self.subTest(mutate=mutate), self.assertRaises(CHECK.Incomplete):
+                self.admit_stable()
+        self.policy = healthy
+        self.write_policy()
+        self.assertEqual(self.admit_stable()["admission_profile"], "stable-core")
+
+    def test_stable_core_actual_inventory_faults_reject_with_healthy_neighbors(self):
+        self.stable_fixture()
+        target = self.stable / "lib/dependency.so"
+        original = target.read_bytes()
+        extra = self.stable / "bin/undeclared-dependency"
+        peer = self.scratch / "same-content-peer.so"
+        peer.write_bytes(original)
+        self.admit_stable()
+        for fault in ("missing", "changed-same-length-restored-mtime", "symlink", "undeclared"):
+            before = target.stat()
+            if fault == "missing":
+                target.unlink()
+            elif fault == "changed-same-length-restored-mtime":
+                target.write_bytes(bytes([original[0] ^ 1]) + original[1:])
+                os.utime(target, ns=(before.st_atime_ns, before.st_mtime_ns))
+            elif fault == "symlink":
+                target.unlink()
+                target.symlink_to(peer)
+            else:
+                extra.write_bytes(b"undeclared selected dependency")
+            try:
+                with self.subTest(fault=fault), self.assertRaises(CHECK.Incomplete):
+                    self.admit_stable()
+            finally:
+                if target.is_symlink():
+                    target.unlink()
+                target.write_bytes(original)
+                extra.unlink(missing_ok=True)
+            self.admit_stable()
+
+    def test_stable_core_scope_redirect_cannot_admit_same_content_payload(self):
+        self.stable_fixture()
+        self.admit_stable()
+        scope = self.stable / "lib"
+        outside = self.scratch / "same-content-library-scope"
+        scope.rename(outside)
+        scope.symlink_to(outside, target_is_directory=True)
+        with self.assertRaises(CHECK.Incomplete):
+            self.admit_stable()
+        scope.unlink()
+        outside.rename(scope)
+        self.admit_stable()
+
+    def test_stable_core_pointer_drift_during_selected_admission_is_rejected(self):
+        self.stable_fixture()
+        original = self.pointer.read_bytes()
+        real_check = CHECK.check_inventory
+
+        def drift(base, specification, stable):
+            result = real_check(base, specification, stable)
+            candidate = json.loads(original)
+            candidate["status"] = "installing"
+            self.pointer.write_text(json.dumps(candidate))
+            return result
+
+        self.admit_stable()
+        with patch.object(CHECK, "check_inventory", side_effect=drift), self.assertRaises(CHECK.Incomplete):
+            self.admit_stable()
+        self.pointer.write_bytes(original)
+        self.admit_stable()
+
+    def test_stable_core_keeps_compiler_hash_and_bootstrap_helper_admission(self):
+        _, manifest = self.stable_fixture()
+        self.admit_stable()
+        manifest_path = self.checkout / "policy/tool-manifest.json"
+        original = manifest_path.read_bytes()
+        manifest["rust"]["linux_binary_sha256"]["cargo"] = "0" * 64
+        manifest_path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(CHECK.Incomplete, "compiler executable digest"):
+            self.admit_stable()
+        manifest_path.write_bytes(original)
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.object(CHECK.RUNTIME, "_helpers", side_effect=CHECK.Incomplete("independent helper denial")), \
+             self.assertRaisesRegex(CHECK.Incomplete, "independent helper denial"):
+            CHECK.admit(self.checkout, self.pointer, profile="stable-core")
+        self.admit_stable()
+
     def test_admitted_profiles_are_exact(self):
         CHECK.validate_policy(self.policy)
         for name in CHECK.PROFILES:
@@ -208,6 +410,83 @@ class AdmissionControls(unittest.TestCase):
                 self.check_inventory(specification)
             for item in target.parent.iterdir():
                 item.unlink()
+
+    def test_inventory_terminal_name_cannot_admit_an_actual_directory(self):
+        """A named terminal remains subject to actual kind checks in workers."""
+        for kind in ("file", "symlink"):
+            for populated in (False, True):
+                specification, value, inventory_path = self.inventory()
+                target = self.base / "common/bin/analyzer"
+                target.unlink()
+                target.mkdir()
+                if populated:
+                    (target / "hidden-payload").write_bytes(b"must not be admitted")
+                if kind == "symlink":
+                    value["entries"]["bin/analyzer"] = {"kind": "symlink", "target": "missing-target"}
+                    inventory_path.write_text(json.dumps(value))
+                    specification["sha256"] = hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+                with self.subTest(kind=kind, populated=populated), \
+                     patch.object(CHECK, "digest") as payload_hash, self.assertRaises(CHECK.Incomplete):
+                    self.check_inventory(specification)
+                payload_hash.assert_not_called()
+                shutil.rmtree(target)
+
+    def test_inventory_unlisted_empty_directories_remain_harmless(self):
+        """Inventory terminal discovery still allows unlisted empty directories."""
+        specification, _, _ = self.inventory()
+        (self.base / "common/bin/empty/nested").mkdir(parents=True)
+        report, covered = self.check_inventory(specification)
+        self.assertEqual(report["entries"], 1)
+        self.assertEqual(covered, {"common/bin/analyzer"})
+
+    def test_inventory_checks_bytes_when_payload_size_and_mtime_are_preserved(self):
+        """A metadata lookalike cannot replace the exact admitted payload."""
+        specification, _, _ = self.inventory()
+        self.assertEqual(self.check_inventory(specification)[0]["entries"], 1)
+        target = self.base / "common/bin/analyzer"
+        before = target.stat()
+        payload = target.read_bytes()
+        target.write_bytes(bytes([payload[0] ^ 1]) + payload[1:])
+        os.utime(target, ns=(before.st_atime_ns, before.st_mtime_ns))
+        self.assertEqual(target.stat().st_size, before.st_size)
+        self.assertEqual(target.stat().st_mtime_ns, before.st_mtime_ns)
+        with self.assertRaises(CHECK.Incomplete):
+            self.check_inventory(specification)
+
+    def test_inventory_membership_rejections_precede_payload_hashing(self):
+        """An extra or missing terminal prevents any payload hashing."""
+        for case in ("extra-file", "extra-link", "missing"):
+            specification, _, _ = self.inventory()
+            target = self.base / "common/bin/analyzer"
+            extra = target.parent / "extra"
+            if case == "extra-file":
+                extra.write_bytes(b"unlisted")
+            elif case == "extra-link":
+                extra.symlink_to(self.scratch / "outside-the-scope")
+            else:
+                target.unlink()
+            with self.subTest(case=case), patch.object(CHECK, "digest") as payload_hash, \
+                 self.assertRaises(CHECK.Incomplete):
+                self.check_inventory(specification)
+            payload_hash.assert_not_called()
+            if extra.exists() or extra.is_symlink():
+                extra.unlink()
+
+    def test_inventory_terminal_cannot_hide_a_declared_descendant(self):
+        """Conflicting terminal/descendant entries cannot form an exact inventory."""
+        specification, value, inventory_path = self.inventory()
+        target = self.base / "common/bin/analyzer"
+        target.unlink()
+        target.mkdir()
+        child = target / "child"
+        child.write_bytes(b"independent nested bytes")
+        value["entries"]["bin/analyzer/child"] = {"kind": "file", "bytes": child.stat().st_size,
+                                                 "sha256": hashlib.sha256(child.read_bytes()).hexdigest()}
+        inventory_path.write_text(json.dumps(value))
+        specification["sha256"] = hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+        with patch.object(CHECK, "digest") as payload_hash, self.assertRaises(CHECK.Incomplete):
+            self.check_inventory(specification)
+        payload_hash.assert_not_called()
 
     def test_inventory_cannot_omit_required_scope_or_add_traversal(self):
         specification, _, _ = self.inventory()

@@ -7,6 +7,7 @@ using producer_calls; this helper does not import the verification monolith.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 from typing import Literal, NamedTuple, Protocol, TypeAlias, TypedDict, TypeGuard, assert_never
 
@@ -129,10 +130,53 @@ def is_exact_dict(value: object) -> TypeGuard[dict[object, object]]:
     return type(value) is dict
 
 
+class CaughtBridgeZeroPrefix(NamedTuple):
+    """Byte-bound structural evidence; the caller separately validates Native Caught."""
+
+    output_sha256: str
+
+
+def caught_bridge_zero_prefix(output: str) -> CaughtBridgeZeroPrefix | None:
+    """Recognize the bridge's own pre-append failure, never a healthy observation.
+
+    Only the native-Caught receiving path may request this token. It binds the
+    complete Test text and exact named bridge failure. Other callers keep the
+    strict no-zero default; no count, ceiling or raw byte is changed.
+    """
+    if type(output) is not str or len(output) > MAX_OUTPUT_CHARACTERS:
+        raise Incomplete("Caught bridge prefix requires bounded Test text.")
+    test = "combination::admission::receiving_tests::bridge_receiving_and_mask_boundaries"
+    zero = ("CORE_LIFECYCLE_BRIDGE_PROFILE case=bridge_receiving_and_mask_boundaries"
+            " appends=0 admissions=0 masks=0 garde=0")
+    markers = sum(1 for _match in re.finditer(
+        r"(?m)^(?:test " + re.escape(test) + r" \.\.\. )?" + re.escape(zero) + r"\r?$", output))
+    header = "---- " + test + " stdout ----"
+    headers = sum(1 for _match in re.finditer(r"(?m)^" + re.escape(header) + r"\r?$", output))
+    if markers != 1 or headers != 1:
+        return None
+    failures = sum(1 for _match in re.finditer(
+        r"(?m)^" + re.escape(header)
+        + r"\r?\nError: Divisor \{ issue: (?:OutOfRange|NonFinite) \}\r?\n\r?\n(?=---- |failures:)",
+        output))
+    footers = list(re.finditer(
+        r"(?m)^failures:\r?\n(?:\r?\n)?((?:    [A-Za-z_][A-Za-z0-9_:]*\r?\n)+)"
+        r"\r?\ntest result: FAILED\. ([0-9]{1,3}) passed; ([0-9]{1,3}) failed; 0 ignored;",
+        output))
+    footer_groups = [match.groups("") for match in footers]
+    if (failures != 1 or not footer_groups
+            or any(int(failed) != len(names.splitlines()) for names, _passed, failed in footer_groups)
+            or sum(name.strip() == test for names, _passed, _failed in footer_groups
+                   for name in names.splitlines()) != 1):
+        return None
+    return CaughtBridgeZeroPrefix(hashlib.sha256(output.encode("utf-8")).hexdigest())
+
+
 class CombinationAccounting(Protocol):
     """Bind the actual checked implementation; a dynamic cast is insufficient."""
 
-    def combination_counts(self, output: str, *, require_complete: bool = False) -> CombinationObservation: ...
+    def combination_counts(self, output: str, *, require_complete: bool = False,
+                           bridge_zero_prefix: CaughtBridgeZeroPrefix | None = None) -> CombinationObservation: ...
+    def caught_bridge_zero_prefix(self, output: str) -> CaughtBridgeZeroPrefix | None: ...
     def case_recipes(self) -> dict[str, PublicCalls]: ...
     def producer_calls(self, calls: PublicCalls) -> ProducerCalls: ...
     def source_work_uppers(self, calls: PublicCalls) -> dict[str, int]: ...
@@ -250,7 +294,8 @@ def case_recipes() -> dict[str, PublicCalls]:
     return {case: _counts_from_vector(values) for case, values in _recipes().items()}
 
 
-def combination_counts(output: str, *, require_complete: bool = False) -> CombinationObservation:
+def combination_counts(output: str, *, require_complete: bool = False,
+                       bridge_zero_prefix: CaughtBridgeZeroPrefix | None = None) -> CombinationObservation:
     """Parse exact terminated rows and retain absent/failed-prefix distinctions.
 
     A healthy complete stream contains every exact authored row. Partial rows
@@ -262,7 +307,9 @@ def combination_counts(output: str, *, require_complete: bool = False) -> Combin
             or type(require_complete) is not bool):
         raise Incomplete("Combination observations require bounded text and a Boolean mode.")
     recipes = _recipes()
-    recorded = _registered_rows(output)[MARKER]
+    if require_complete and bridge_zero_prefix is not None:
+        raise Incomplete("Caught bridge context cannot supply complete package observations.")
+    recorded = _registered_rows(output, bridge_zero_prefix=bridge_zero_prefix)[MARKER]
     missing = [case for case in recipes if case not in recorded]
     partial = [case for case, values in recorded.items() if values != recipes[case]]
     complete = not missing and not partial
@@ -403,7 +450,16 @@ class LifecycleBridgeCalls(TypedDict):
 
 
 class LifecycleCounterCalls(TypedDict):
+    """Actual standalone counter seam requests, not their internal validator work."""
+
     attempts: int
+    source_constructions: int
+    source_predicates: int
+    garde: int
+    fixture_setups: int
+    outcome_predicates: int
+    estimate_predicates: int
+    outcome_garde: int
 
 
 class _LifecycleObservationCommon(TypedDict):
@@ -480,11 +536,15 @@ class ReservedLifecycleAttempts(NamedTuple):
 class LifecycleAccounting(Protocol):
     """Static consumer checks the actual implementation across module loading."""
 
-    def lifecycle_counts(self, output: str, *, require_complete: bool = False) -> LifecycleObservation: ...
+    def lifecycle_counts(self, output: str, *, require_complete: bool = False,
+                         bridge_zero_prefix: CaughtBridgeZeroPrefix | None = None) -> LifecycleObservation: ...
+    def caught_bridge_zero_prefix(self, output: str) -> CaughtBridgeZeroPrefix | None: ...
     def lifecycle_case_recipes(self) -> dict[str, LifecycleCalls]: ...
     def lifecycle_case_ceilings(self) -> dict[str, LifecycleCalls]: ...
     def lifecycle_producer_calls(self, calls: LifecycleCalls) -> ProducerCalls: ...
     def lifecycle_bridge_producer_reservation(self) -> ProducerCalls: ...
+    def lifecycle_guard_fixture_calls(self) -> LifecycleCalls: ...
+    def lifecycle_guard_fixture_producer_reservation(self) -> ProducerCalls: ...
     def lifecycle_source_work_uppers(
         self, calls: LifecycleCalls, bridge_calls: LifecycleBridgeCalls,
         counter_calls: LifecycleCounterCalls,
@@ -502,7 +562,10 @@ LIFECYCLE_FIELDS: tuple[LifecycleCounterField, ...] = (
     "reachability_updates", "reachability_records", "advances", "uncertainties", "equalities",
 )
 LIFECYCLE_BRIDGE_FIELDS = ("appends", "admissions", "masks", "garde")
-LIFECYCLE_COUNTER_FIELDS = ("attempts",)
+LIFECYCLE_COUNTER_FIELDS = (
+    "attempts", "source_constructions", "source_predicates", "garde", "fixture_setups",
+    "outcome_predicates", "estimate_predicates", "outcome_garde",
+)
 
 # Exact successful source-call recipes, distinct from the pre-effect ceilings
 # below. Phases cost two getters/append, Built costs one getter/projection,
@@ -518,17 +581,18 @@ LIFECYCLE_SOURCE_RECIPES: tuple[tuple[str, tuple[int, ...]], ...] = (
     ("lifecycle_filtered_one_keeps_multiwitness_arithmetic", (2,6,6,2,9,12,6,58,5,5,5,3,3,3,5,3,3,0,0,6,9,4)),
     ("lifecycle_outside_witness_loss_waiting_and_reacquisition", (3,14,14,3,20,28,14,166,18,18,18,6,1,1,18,1,1,0,0,8,10,0)),
     ("lifecycle_direct_replacement_clears_all_then_rechecks_supporters", (3,11,11,3,14,22,11,125,9,9,9,3,1,1,9,1,1,16,16,3,9,0)),
-    ("lifecycle_raw_parameter_and_ordinal_admission_neighbors", (0,0,0,0,0,0,0,22,0,0,0,0,0,0,0,20,0,6,0,0,0,0)),
+    ("lifecycle_raw_parameter_and_ordinal_admission_neighbors", (0,0,0,0,0,0,0,24,0,0,0,0,0,0,0,21,0,6,0,0,0,6)),
     ("lifecycle_distance_limit_overflow_rolls_back_and_recovers", (2,7,7,2,10,14,7,80,6,6,6,3,2,2,6,2,2,0,0,7,6,4)),
     ("lifecycle_skew_sum_overflow_rolls_back_and_recovers", (2,7,7,2,9,14,7,78,4,4,4,2,2,2,4,2,2,0,0,7,6,4)),
     ("lifecycle_max_clock_error_sum_overflow_rolls_back_and_recovers", (2,7,7,2,9,14,7,78,4,4,4,2,2,2,4,2,2,0,0,7,6,4)),
+    ("lifecycle_capacity_neighbors_preserve_pending_credit", (16,48,48,16,49,96,48,264,16,16,16,1,1,1,16,1,4,0,0,6,16,4)),
 )
 LIFECYCLE_SOURCE_TESTS = tuple(case for case, _ in LIFECYCLE_SOURCE_RECIPES)
 
 # Limits order: histories,appends,projections,batches,seeds,advances,
 # reachability constructors,reachability records,uncertainties,equalities.
 # These literals mirror the independently authored bounded fixture contracts,
-# not an observed stream. The raw case has separate 20/6 constructor caps.
+# not an observed stream. The raw case has separate 21/6 constructor caps.
 LIFECYCLE_SOURCE_LIMITS: tuple[tuple[str, tuple[int, ...]], ...] = (
     ("lifecycle_strict_boundaries_and_original_principal", (21,63,21,10,10,10,0,0,21,0)),
     ("lifecycle_startup_replay_and_supporter_only_pauses", (2,9,10,5,1,7,0,0,10,0)),
@@ -537,16 +601,17 @@ LIFECYCLE_SOURCE_LIMITS: tuple[tuple[str, tuple[int, ...]], ...] = (
     ("lifecycle_filtered_one_keeps_multiwitness_arithmetic", (2,6,5,3,3,6,0,0,9,8)),
     ("lifecycle_outside_witness_loss_waiting_and_reacquisition", (3,14,18,6,1,8,0,0,10,0)),
     ("lifecycle_direct_replacement_clears_all_then_rechecks_supporters", (3,11,9,3,1,3,16,16,9,0)),
-    ("lifecycle_raw_parameter_and_ordinal_admission_neighbors", (0,0,0,0,0,0,6,0,0,0)),
+    ("lifecycle_raw_parameter_and_ordinal_admission_neighbors", (0,0,0,0,0,0,6,0,0,6)),
     ("lifecycle_distance_limit_overflow_rolls_back_and_recovers", (2,7,6,3,2,7,0,0,6,4)),
     ("lifecycle_skew_sum_overflow_rolls_back_and_recovers", (2,7,4,2,2,7,0,0,6,4)),
     ("lifecycle_max_clock_error_sum_overflow_rolls_back_and_recovers", (2,7,4,2,2,7,0,0,6,4)),
+    ("lifecycle_capacity_neighbors_preserve_pending_credit", (16,48,16,1,4,6,0,0,16,4)),
 )
 LIFECYCLE_BRIDGE_SOURCE_RECIPES = (("bridge_receiving_and_mask_boundaries", (6,5,5,4)),)
 LIFECYCLE_BRIDGE_SOURCE_TESTS = (
     "combination::admission::receiving_tests::bridge_receiving_and_mask_boundaries",
 )
-LIFECYCLE_COUNTER_SOURCE_RECIPES = (("lifecycle_counter_success_and_exhaustion", (4,)),)
+LIFECYCLE_COUNTER_SOURCE_RECIPES = (("lifecycle_counter_success_and_exhaustion", (4,24,24,24,1,34,18,34)),)
 LIFECYCLE_COUNTER_SOURCE_TESTS = (
     "combination::lifecycle::counter_tests::lifecycle_counter_success_and_exhaustion",
 )
@@ -598,10 +663,13 @@ def _bridge_vector(values: tuple[int, ...]) -> LifecycleBridgeCalls:
 
 
 def _counter_vector(values: tuple[int, ...]) -> LifecycleCounterCalls:
-    if (type(values) is not tuple or len(values) != 1
-            or type(values[0]) is not int or not 0 <= values[0] <= U64_MAX):
-        raise Incomplete("Private counter calls require one u64 count.")
-    return {"attempts": values[0]}
+    if (type(values) is not tuple or len(values) != 8
+            or any(type(value) is not int or not 0 <= value <= U64_MAX for value in values)):
+        raise Incomplete("Private counter calls require exactly eight u64 counts.")
+    return {"attempts": values[0], "source_constructions": values[1],
+            "source_predicates": values[2], "garde": values[3],
+            "fixture_setups": values[4], "outcome_predicates": values[5],
+            "estimate_predicates": values[6], "outcome_garde": values[7]}
 
 
 def lifecycle_case_recipes() -> dict[str, LifecycleCalls]:
@@ -620,7 +688,7 @@ def lifecycle_case_ceilings() -> dict[str, LifecycleCalls]:
     for case, values in limits.items():
         h, a, p, b, s, v, updates, records, uncertainty, equality = values
         getters = 64 * (a + p + v + records + s + 1)
-        parameters = 20 if case == "lifecycle_raw_parameter_and_ordinal_admission_neighbors" else s
+        parameters = 21 if case == "lifecycle_raw_parameter_and_ordinal_admission_neighbors" else s
         row = _lifecycle_vector((h,a,a,h,a+b,2*a,a,getters,p,p,p,b,s,s,p,parameters,
                                  s,updates,records,v,uncertainty,equality))
         if any(recipes[case][field] > row[field] for field in LIFECYCLE_FIELDS):
@@ -644,7 +712,7 @@ def _profile_families() -> tuple[_ProfileFamily, ...]:
     ceilings = {case: tuple(row[field] for field in LIFECYCLE_FIELDS)
                 for case, row in lifecycle_case_ceilings().items()}
     bridge = _named_recipes(LIFECYCLE_BRIDGE_SOURCE_RECIPES, LIFECYCLE_BRIDGE_SOURCE_TESTS, 4)
-    counter = _named_recipes(LIFECYCLE_COUNTER_SOURCE_RECIPES, LIFECYCLE_COUNTER_SOURCE_TESTS, 1)
+    counter = _named_recipes(LIFECYCLE_COUNTER_SOURCE_RECIPES, LIFECYCLE_COUNTER_SOURCE_TESTS, 8)
     return (
         _ProfileFamily(MARKER, FIELDS, kernel, kernel, SOURCE_TESTS),
         _ProfileFamily(LIFECYCLE_MARKER, LIFECYCLE_FIELDS, lifecycle, ceilings, LIFECYCLE_SOURCE_TESTS),
@@ -653,7 +721,8 @@ def _profile_families() -> tuple[_ProfileFamily, ...]:
     )
 
 
-def _registered_rows(output: str) -> dict[str, dict[str, tuple[int, ...]]]:
+def _registered_rows(output: str, *, bridge_zero_prefix: CaughtBridgeZeroPrefix | None = None,
+                     ) -> dict[str, dict[str, tuple[int, ...]]]:
     """Validate every registered row once, including families another caller ignores.
 
     Unknown or malformed family rows cannot disappear during dispatch. Other
@@ -662,6 +731,10 @@ def _registered_rows(output: str) -> dict[str, dict[str, tuple[int, ...]]]:
     """
     if type(output) is not str or len(output) > MAX_OUTPUT_CHARACTERS:
         raise Incomplete("Profile dispatch requires bounded text.")
+    if bridge_zero_prefix is not None and (
+            type(bridge_zero_prefix) is not CaughtBridgeZeroPrefix
+            or caught_bridge_zero_prefix(output) != bridge_zero_prefix):
+        raise Incomplete("Caught bridge prefix context is stale or lacks the exact native failure.")
     families = _profile_families()
     patterns: dict[str, re.Pattern[str]] = {}
     for family in families:
@@ -681,13 +754,18 @@ def _registered_rows(output: str) -> dict[str, dict[str, tuple[int, ...]]]:
             match = patterns[family.marker].fullmatch(line)
             if match is None:
                 continue
-            case = match.group(1)
-            values = tuple(int(match.group(index + 2)) for index in range(len(family.fields)))
+            captures = match.groups("")
+            case = captures[0]
+            values = tuple(int(value) for value in captures[1:])
             if (case not in family.recipes or case in result[family.marker]
                     or any(value > U64_MAX for value in values)
                     or any(value > maximum for value, maximum in zip(
                         values, family.ceilings.get(case, ()), strict=True))
-                    or not any(values)):
+                    or (not any(values) and not (
+                        bridge_zero_prefix is not None
+                        and family.marker == LIFECYCLE_BRIDGE_MARKER
+                        and case == "bridge_receiving_and_mask_boundaries"
+                        and values == (0, 0, 0, 0)))):
                 raise Incomplete("Profile case is unknown, duplicated or exceeds its source ceiling.")
             expected_test = dict(zip(family.recipes, family.tests, strict=True))[case]
             if line.startswith("test ") and not line.startswith("test " + expected_test + " ... "):
@@ -708,8 +786,9 @@ def _sum_vectors(rows: dict[str, tuple[int, ...]], width: int) -> tuple[int, ...
     return values
 
 
-def lifecycle_counts(output: str, *, require_complete: bool = False) -> LifecycleObservation:
-    """Keep eleven exact trajectory rows and both private subsets distinct.
+def lifecycle_counts(output: str, *, require_complete: bool = False,
+                     bridge_zero_prefix: CaughtBridgeZeroPrefix | None = None) -> LifecycleObservation:
+    """Keep twelve exact trajectory rows and both private subsets distinct.
 
     Completion means every authored transport recipe was reported. It says
     nothing about assertion outcomes. A prefix within a larger authored ceiling
@@ -717,7 +796,9 @@ def lifecycle_counts(output: str, *, require_complete: bool = False) -> Lifecycl
     """
     if type(require_complete) is not bool:
         raise Incomplete("Lifecycle completion mode must be Boolean.")
-    rows = _registered_rows(output)
+    if require_complete and bridge_zero_prefix is not None:
+        raise Incomplete("Caught bridge context cannot supply complete lifecycle observations.")
+    rows = _registered_rows(output, bridge_zero_prefix=bridge_zero_prefix)
     selected = tuple(family for family in _profile_families() if family.marker != MARKER)
     missing = [case for family in selected for case in family.recipes if case not in rows[family.marker]]
     partial = [case for family in selected for case, values in rows[family.marker].items()
@@ -745,7 +826,7 @@ def lifecycle_counts(output: str, *, require_complete: bool = False) -> Lifecycl
             lifecycle_observed_bridge_calls=None, lifecycle_observed_counter_calls=None)
     calls = _lifecycle_vector(_sum_vectors(rows[LIFECYCLE_MARKER], 22))
     bridge = _bridge_vector(_sum_vectors(rows[LIFECYCLE_BRIDGE_MARKER], 4))
-    counter = _counter_vector(_sum_vectors(rows[LIFECYCLE_COUNTER_MARKER], 1))
+    counter = _counter_vector(_sum_vectors(rows[LIFECYCLE_COUNTER_MARKER], 8))
     if complete:
         return LifecycleCompleteObservation(**common, lifecycle_observation_status="complete-source-recipe",
             lifecycle_observation_pending=False, lifecycle_counter_observation_complete=True,
@@ -839,6 +920,33 @@ def lifecycle_bridge_producer_reservation() -> ProducerCalls:
             "state_clones": 0, "value_equalities": 0, "state_formats": 0}
 
 
+def lifecycle_guard_fixture_calls() -> LifecycleCalls:
+    """Return a fixed source reservation, never an observed lifecycle call row.
+
+    One private raw-output setup enters four genuine three-row histories, six
+    projections/batches and eleven public lifecycle owners, with twelve advances.
+    Its independent 4,096 getter ceiling covers the fixture's direct accessor
+    work. Direct raw predicates and three additional Inner clones are separate.
+    Twelve fits/768 points belong to the delegated producer, not this module.
+    """
+    return _lifecycle_vector((4,12,12,4,24,4,4,4096,6,6,6,6,11,11,16,11,
+                              11,0,0,12,16,0))
+
+
+def lifecycle_guard_fixture_producer_reservation() -> ProducerCalls:
+    """Project one genuine setup once, retaining all fifteen principal clones.
+
+    Twelve outer lifecycle advances each clone the principal. Three explicitly
+    uncommitted raw Inner candidates add three more copies of that same owner.
+    The corresponding fixed source-array copies belong to the module-work bound.
+    No raw probe count is interpreted as an additional numerical producer call.
+    """
+    calls = lifecycle_producer_calls(lifecycle_guard_fixture_calls())
+    calls["state_clones"] += 3
+    return calls
+
+
+
 def lifecycle_source_work_uppers(
     calls: LifecycleCalls, bridge_calls: LifecycleBridgeCalls, counter_calls: LifecycleCounterCalls,
 ) -> dict[str, int]:
@@ -852,16 +960,36 @@ def lifecycle_source_work_uppers(
     enter either receiving or mask predicates, so each unit gets its own upper.
     Parent reduction uses18*n+5<=293 binaries, three roots and48 denominator guards.
     Source getter bounds cover the nested16-by16 scans and fixed provenance chains.
+    The private raw-counter matrix separately requests constructors, predicates
+    and Garde validation. Each constructor performs one validation/callback and
+    two source predicates; direct Garde performs one callback/predicate. Direct
+    predicates add one only. Thus 24/24/24 requests cost at most 48 validations,
+    48 source callbacks and 96 predicates; callbacks overlap these same owners.
+    One precharged raw-output fixture contributes its fixed lifecycle setup once.
+    Its direct outcome/Garde calls contribute two separate predicate requests;
+    direct estimate calls retain their own counter unit and getter-work bound.
+    Three raw Inner clones add 48 source cells per fixture. Standalone source
+    constructors retain an eight-getter upper even before fixture setup starts.
     Callback/predicate/validation counts describe overlapping subsets, not CPU work.
     """
     calls = _lifecycle_vector(_exact_vector(calls, LIFECYCLE_FIELDS))
     bridge_calls = _bridge_vector(_exact_vector(bridge_calls, LIFECYCLE_BRIDGE_FIELDS))
     counter_calls = _counter_vector(_exact_vector(counter_calls, LIFECYCLE_COUNTER_FIELDS))
+    fixtures = counter_calls["fixture_setups"]
+    fixture_calls = lifecycle_guard_fixture_calls()
+    calls = _lifecycle_vector(tuple(calls[field] + fixtures * fixture_calls[field]
+                                    for field in LIFECYCLE_FIELDS))
     advances, seeds, records = calls["advances"], calls["seeds"], calls["reachability_records"]
     parameters, updates = calls["combination_parameters"], calls["reachability_updates"]
     admissions = advances + bridge_calls["admissions"]
     reductions = advances + bridge_calls["masks"]
     direct_garde = bridge_calls["garde"]
+    source_constructions = counter_calls["source_constructions"]
+    source_predicates = counter_calls["source_predicates"]
+    source_garde = counter_calls["garde"]
+    outcome_garde = counter_calls["outcome_garde"]
+    raw_outcomes = counter_calls["outcome_predicates"] + outcome_garde
+    raw_estimates = counter_calls["estimate_predicates"]
     # The fixed private receiving fixture constructs exactly three uncertainties.
     # This is a source upper on entry, not an observed missing counter field.
     private_uncertainty = 3 if any(bridge_calls.values()) else 0
@@ -871,22 +999,28 @@ def lifecycle_source_work_uppers(
         "lifecycle_parameter_garde_callbacks_upper": 2 * parameters,
         "lifecycle_parameter_predicate_calls_upper": 4 * parameters,
         "lifecycle_raw_ordinal_constructor_attempts_upper": updates,
-        "lifecycle_garde_validate_calls_upper": parameters + updates + 16*seeds + 49*advances + 2*records,
-        "lifecycle_source_counter_constructions_upper": 16*seeds + 48*advances + records,
-        "lifecycle_source_counter_predicate_calls_upper": 32*seeds + 96*advances + 2*records,
+        "lifecycle_garde_validate_calls_upper": (parameters + updates + 16*seeds
+                                                + 49*advances + 2*records
+                                                + source_constructions + source_garde + outcome_garde),
+        "lifecycle_source_counter_constructions_upper": 16*seeds + 48*advances + records + source_constructions,
+        "lifecycle_source_counter_predicate_calls_upper": (32*seeds + 96*advances + 2*records
+                                                         + 2*source_constructions
+                                                         + source_predicates + source_garde),
         "lifecycle_event_admission_predicate_calls_upper": 2*records,
         "lifecycle_checked_next_calls_upper": advances + 2*records + counter_calls["attempts"],
         "lifecycle_compatibility_checked_binary_calls_upper": 62*advances,
         "lifecycle_compatibility_source_visits_upper": 16*advances,
         "lifecycle_source_index_label_probes_upper": 256*advances + 32*records,
-        "lifecycle_witness_membership_label_probes_upper": 768*advances,
-        "lifecycle_output_contributor_label_probes_upper": 512*advances,
-        "lifecycle_output_predicate_calls_upper": 2*advances,
+        "lifecycle_witness_membership_label_probes_upper": 768*advances + 256*raw_outcomes,
+        "lifecycle_output_contributor_label_probes_upper": 512*advances + 256*raw_outcomes,
+        "lifecycle_output_predicate_calls_upper": 2*advances + raw_outcomes,
         "lifecycle_source_slot_writes_upper": 16*seeds + 48*advances + records,
-        "lifecycle_staged_source_copy_cells_upper": 16*advances,
+        "lifecycle_staged_source_copy_cells_upper": 16*advances + 48*fixtures,
         "lifecycle_state_equality_source_cells_upper": 16*calls["equalities"],
         "lifecycle_state_equality_fixed_fields_upper": 4*calls["equalities"],
-        "lifecycle_internal_product_getter_requests_upper": 8192*advances + 64*records + 16*seeds,
+        "lifecycle_internal_product_getter_requests_upper": (8192*advances + 64*records + 16*seeds
+                                                             + 8*source_constructions
+                                                             + 8192*(raw_outcomes + raw_estimates)),
         "bridge_admission_entry_attempts_upper": admissions,
         "bridge_complete_receiving_passes_upper": 2*admissions + direct_garde,
         "bridge_receiving_pointer_comparisons_upper": 256*(2*admissions + direct_garde),
@@ -917,7 +1051,7 @@ def lifecycle_full_package_reservation() -> LifecycleReservation:
     bridge = _bridge_vector(_sum_vectors(_named_recipes(
         LIFECYCLE_BRIDGE_SOURCE_RECIPES, LIFECYCLE_BRIDGE_SOURCE_TESTS, 4), 4))
     counter = _counter_vector(_sum_vectors(_named_recipes(
-        LIFECYCLE_COUNTER_SOURCE_RECIPES, LIFECYCLE_COUNTER_SOURCE_TESTS, 1), 1))
+        LIFECYCLE_COUNTER_SOURCE_RECIPES, LIFECYCLE_COUNTER_SOURCE_TESTS, 8), 8))
     return {"lifecycle_reserved_calls": calls, "lifecycle_reserved_bridge_calls": bridge,
             "lifecycle_reserved_counter_calls": counter,
             "lifecycle_reserved_module_work_uppers": lifecycle_source_work_uppers(calls, bridge, counter),

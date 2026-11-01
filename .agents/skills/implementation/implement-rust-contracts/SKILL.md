@@ -86,6 +86,11 @@ consumer checks for privacy guarantees. Use the
 [configured analysis lanes](../../testing/references/configured-tooling.md#additional-rust-analysis)
 and qualify each product harness independently of tool controls.
 
+When adding proof annotations or evaluating Verus, apply
+[formal-verification evaluation](../../testing/references/formal-verification.md).
+Bind the complete success/error contract to the executable body and preserve
+runtime checks for unverified callers; proof preconditions replace no admission.
+
 Use [evolution](../evolve-data-contracts/SKILL.md) before acceptance, normalization,
 meaning, version, storage or consumer-compatibility changes. Share pure UI/service
 validators; receiver independently decodes, constructs and authorizes. Report changed

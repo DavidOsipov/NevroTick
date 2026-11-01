@@ -762,11 +762,26 @@ def _require_private_output(root, output):
         raise Incomplete("Portable analysis requires at least 2 GiB free Linux work space.")
 
 
+def admission_profile(args, scope, policy):
+    """Require explicit, policy-bound opt-in before narrowing core tool custody."""
+    profile = getattr(args, "tool_admission_profile", "full")
+    if type(profile) is not str or profile not in ANALYSIS.ADMISSION_PROFILES:
+        raise Incomplete("Unknown analysis admission profile.")
+    if policy.get("tool_admission_profile", "full") != profile:
+        raise Incomplete("Analysis admission profile differs from the current policy.")
+    if profile == "stable-core" and (
+            scope.package != "time-core" or scope.policy != "policy/time-core-analysis.json"
+            or args.lane not in {"contracts", "coverage", "mutation"}):
+        raise Incomplete("Stable-core admission is restricted to native core contracts/coverage/mutation.")
+    return profile
+
+
 class Session:
     """One immutable candidate, admitted graph/tools and private bounded work tree."""
 
     def __init__(self, root, args, report, scope, policy, extra_inputs):
         self.root, self.report, self.scope, self.policy = Path(root), report, scope, policy
+        self.admission_profile = admission_profile(args, scope, policy)
         _require_private_output(self.root, args.output_dir)
         self.dependency_policy, self.product_identity = PRODUCT.admit_product(self.root)
         self.identity = dict(self.product_identity)
@@ -776,8 +791,11 @@ class Session:
                  "scripts/prepare-product.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
                  "policy/analysis-tools.json", "policy/verification-manifest.toml", *extra_inputs, *proof_inputs)
         self.identity.update({name: PRODUCT.sha256(self.root / name) for name in names})
-        self.admitted = ANALYSIS.admit(self.root)
+        self.admitted = (ANALYSIS.admit(self.root, profile="stable-core")
+                         if self.admission_profile == "stable-core" else ANALYSIS.admit(self.root))
         self.base, self.stable = self.admitted["base"], self.admitted["stable"]
+        self.payload_readonly = (self.admitted["readonly_roots"] if self.admission_profile == "stable-core"
+                                 else (self.base, self.stable))
         self.vendor = args.vendor_dir.resolve(strict=True)
         self.vendor_identity = PRODUCT.admit_vendor(self.vendor, self.dependency_policy)
         self.output = args.output_dir
@@ -812,6 +830,15 @@ class Session:
         self.protected_islands = {}
         report.update(source_sha256=self.identity, analysis_policy_sha256=self.admitted["policy_sha256"],
                       tools_sha256=self.protected_tools[self.tools], lanes=[], work=str(self.work))
+        report["tool_admission_profile"] = self.admission_profile
+        report["analysis_admission"] = {
+            "profile": self.admission_profile,
+            "inventories": self.admitted["inventories"],
+            "readonly_roots": [str(path) for path in self.payload_readonly],
+        }
+        if self.admission_profile == "stable-core":
+            report["analysis_admission"].update({
+                key: self.admitted[key] for key in ("installation_pointer", "installation_pointer_sha256")})
 
     def configure(self, text):
         """Publish exactly the caller-reviewed sealed vendor mapping between lanes."""
@@ -850,6 +877,8 @@ class Session:
                                       expected_message_format=mutation_message_format(self.policy))
         compiler = compiler or self.stable
         night = self.base / self.admitted["policy"]["common_nightly"]
+        if self.admission_profile == "stable-core" and (compiler != self.stable or extra_tools is not None):
+            raise Incomplete("Stable-core cannot use a nightly compiler or extra tool island.")
         if compiler not in (self.stable, night):
             raise Incomplete("Unadmitted analysis compiler.")
         if extra_tools is not None and extra_tools not in self.protected_tools:
@@ -861,7 +890,7 @@ class Session:
                        "RUST_TEST_THREADS": str(inner_jobs)}
         if compiler != self.stable:
             environment.update(RUSTUP_HOME=str(self.base / "common/rustup"), RUSTUP_TOOLCHAIN=ANALYSIS.NIGHTLY)
-        readonly = [self.base, self.stable, self.vendor, self.tools, *([extra_tools] if extra_tools else [])]
+        readonly = [*self.payload_readonly, self.vendor, self.tools, *([extra_tools] if extra_tools else [])]
         paths = [*([extra_tools] if extra_tools else []), compiler / "bin", self.tools]
         islands = []
         for path in [self.source, self.config, *self.protected_islands, *sealed]:
@@ -904,10 +933,18 @@ class Session:
         return PRODUCT.ENV.require_ok(result)
 
     def finish(self):
-        """Full source/vendor/tool/payload admission is required after every selected lane."""
+        """Re-admit all source/vendor/tool inputs and the same selected payload closure."""
         self.check()
         if PRODUCT.admit_vendor(self.vendor, self.dependency_policy) != self.vendor_identity:
             raise Incomplete("Vendor bytes changed during portable qualification.")
-        after = ANALYSIS.admit(self.root)
-        if any(after[key] != self.admitted[key] for key in ("base", "stable", "policy_sha256", "inventories")):
+        after = (ANALYSIS.admit(self.root, profile="stable-core")
+                 if self.admission_profile == "stable-core" else ANALYSIS.admit(self.root))
+        keys = ("base", "stable", "policy_sha256", "inventories")
+        if self.admission_profile == "stable-core":
+            keys += ("admission_profile", "readonly_roots", "installation_pointer", "installation_pointer_sha256")
+        if any(after[key] != self.admitted[key] for key in keys):
             raise Incomplete("Analysis installation/payload identities changed during execution.")
+        self.report["analysis_admission_after"] = {
+            "profile": self.admission_profile, "inventories": after["inventories"],
+            "unchanged": True,
+        }

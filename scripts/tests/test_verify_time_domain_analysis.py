@@ -1,6 +1,7 @@
 """Independent exact graph/seed/feature controls; no compiler or package code runs."""
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -15,10 +16,189 @@ ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("time_analysis_test", ROOT / "scripts/verify-time-domain-analysis.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+PURE_REGISTRY_NAMES = frozenset({
+    "castaway", "cfg-if", "compact_str", "garde", "garde_derive", "itoa",
+    "proc-macro2", "quote", "rustversion", "ryu", "smallvec",
+    "static_assertions", "syn", "unicode-ident",
+})
 
 
 class DomainAnalysisTests(unittest.TestCase):
     """Valid neighbors discriminate missing graph checks and meaningless seeds."""
+
+    def source_parity_fixture(self):
+        """Own small real source/archive pins; native code and Cargo never execute."""
+        temporary = tempfile.TemporaryDirectory(prefix="domain-source-parity-")
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name) / "product"
+        base = Path(temporary.name) / "installation"
+        (root / "policy").mkdir(parents=True)
+        original = json.loads((ROOT / "policy/ntp-wire-analysis.json").read_text())["coverage_guided_fuzzing"]
+        selected = json.loads((ROOT / "policy/time-domain-analysis.json").read_text())["coverage_guided_fuzzing"]
+        product_policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        product_text = (ROOT / "Cargo.lock").read_text()
+        expected_text = (ROOT / "policy/time-domain-fuzz.lock").read_text()
+
+        def file_map(directory):
+            return {path.relative_to(directory).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in directory.rglob("*") if path.is_file()}
+
+        for entry in original["locked_registry_packages"]:
+            name, version = entry["name"], entry["version"]
+            directory = base / "common/cargo/registry/src/fixture" / f"{name}-{version}"
+            directory.mkdir(parents=True)
+            manifest = (f'[package]\nname={json.dumps(name)}\nversion={json.dumps(version)}\n'
+                        f'license={json.dumps(entry["declared_license"])}\n')
+            if entry["build_script"] is not False:
+                manifest += "build=" + json.dumps(entry["build_script"]) + "\n"
+                (directory / "build.rs").write_text("// Fixture only; never compiled.\n")
+            (directory / "Cargo.toml").write_text(manifest)
+            (directory / "src").mkdir()
+            (directory / "src/lib.rs").write_text("//! Fixture only; never compiled.\n")
+            if name == "libfuzzer-sys":
+                (directory / "libfuzzer").mkdir()
+                native = directory / "libfuzzer/Fixture.cpp"
+                native.write_text("// Independently pinned control fixture; never compiled.\n")
+                original["native_files"] = {"Fixture.cpp": {"sha256": hashlib.sha256(native.read_bytes()).hexdigest()}}
+            archive = base / "common/cargo/registry/cache/fixture" / f"{name}-{version}.crate"
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            archive.write_bytes(("Unexecuted source-parity archive fixture: " + name).encode())
+            previous = entry["checksum"]
+            entry["checksum"] = hashlib.sha256(archive.read_bytes()).hexdigest()
+            expected_text = expected_text.replace(previous, entry["checksum"])
+            files_hash = hashlib.sha256(json.dumps(file_map(directory), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            entry["source_files_sha256"] = files_hash
+            if name in PURE_REGISTRY_NAMES:
+                product_text = product_text.replace(previous, entry["checksum"])
+                admitted = next(item for item in product_policy["packages"] if item["name"] == name)
+                admitted.update(checksum=entry["checksum"], files_sha256=files_hash)
+        control_names = {item["name"] for item in original["locked_registry_packages"]}
+        control_blocks = []
+        for raw in expected_text.split("[[package]]")[1:]:
+            block = "[[package]]\n" + raw.strip() + "\n"
+            if tomllib.loads(block)["package"][0]["name"] in control_names:
+                control_blocks.append(block)
+        control = base / "common/controls-source/fuzz/Cargo.lock"
+        control.parent.mkdir(parents=True)
+        control.write_text("version = 4\n\n" + "\n".join(control_blocks))
+        original["control_lock_sha256"] = hashlib.sha256(control.read_bytes()).hexdigest()
+        notice = root / original["llvm_notice"]
+        notice.parent.mkdir(parents=True, exist_ok=True)
+        notice.write_text("Independent control notice fixture.\n")
+        original["llvm_notice_sha256"] = hashlib.sha256(notice.read_bytes()).hexdigest()
+        (root / "policy/ntp-wire-analysis.json").write_text(json.dumps({"coverage_guided_fuzzing": original}))
+        (root / "Cargo.lock").write_text(product_text)
+        lock = root / selected["lockfile"]
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        lock.write_text(expected_text)
+        selected["locked_registry_packages"] = [item for item in tomllib.loads(expected_text)["package"] if "source" in item]
+        session = SimpleNamespace(base=base, vendor=Path(temporary.name) / "vendor",
+                                  dependency_policy=product_policy, vendor_identity={"qualified-vendor": "a" * 64})
+        return root, session, selected, original
+
+    def test_source_parity_keeps_unrelated_runtime_and_original_control_independent(self):
+        root, session, selected, original = self.source_parity_fixture()
+        self.assertIn("tokio", {item["name"] for item in session.dependency_policy["packages"]})
+        main_libc = next(item for item in session.dependency_policy["packages"] if item["name"] == "libc")
+        control_libc = next(item for item in original["locked_registry_packages"] if item["name"] == "libc")
+        self.assertNotEqual(main_libc["checksum"], control_libc["checksum"])
+        with patch.object(MODULE, "ROOT", root), \
+                patch.object(MODULE.PRODUCT, "admit_vendor", return_value=session.vendor_identity) as vendor:
+            self.assertEqual(MODULE.admit_fuzz_sources(session, selected), original)
+            vendor.assert_called_once_with(session.vendor, session.dependency_policy)
+
+    def test_actual_domain_closure_uses_only_fourteen_validated_selected_records(self):
+        policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        with patch.object(MODULE.PRODUCT, "validated_dependency_records",
+                          wraps=MODULE.PRODUCT.validated_dependency_records) as validation:
+            products = MODULE.admitted_domain_products((ROOT / "Cargo.lock").read_text(), policy)
+        validation.assert_called_once_with(policy, include_metadata=False)
+        self.assertEqual(set(products), PURE_REGISTRY_NAMES)
+        self.assertTrue(set(products).isdisjoint({"tokio", "getrandom", "libc", "r-efi", "wasi"}))
+
+    def test_reached_registry_nodes_require_selected_role_and_exact_identity(self):
+        policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        garde = next(item for item in policy["packages"] if item["name"] == "garde")
+
+        def block(item, dependencies=()):
+            result = ('[[package]]\nname=' + json.dumps(item["name"]) +
+                      '\nversion=' + json.dumps(item["version"]) +
+                      '\nsource=' + json.dumps(MODULE.REGISTRY) +
+                      '\nchecksum=' + json.dumps(item["checksum"]) + '\n')
+            if dependencies:
+                result += "dependencies=" + json.dumps(list(dependencies)) + "\n"
+            return result
+
+        local = 'version=4\n[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n'
+        healthy = local + block(garde)
+        self.assertEqual(set(MODULE.admitted_domain_products(healthy, policy)), {"garde"})
+        metadata = next(item for item in policy["metadata_only_packages"] if item["name"] == "r-efi")
+        unselected = {"name": "unreviewed-child", "version": "1.0.0", "checksum": "f" * 64}
+        variants = {
+            "missing-locked-node": local + block(garde, ["missing"]),
+            "duplicate-locked-node": healthy + block(garde),
+            "wrong-version": local + block({**garde, "version": "0.23.1"}),
+            "wrong-checksum": local + block({**garde, "checksum": "f" * 64}),
+            "unselected-node": local + block(garde, [unselected["name"]]) + block(unselected),
+            "metadata-only-node": local + block(garde, [metadata["name"]]) + block(metadata),
+            "duplicate-local-owner": healthy + local[local.index("[[package]]"):],
+            "changed-local-edge": healthy.replace('dependencies=["garde"]', 'dependencies=["tokio"]'),
+        }
+        for change, text in variants.items():
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.admitted_domain_products(text, policy)
+        for change in ("missing-selected-record", "duplicate-selected-record", "metadata-role-promotion"):
+            bad = json.loads(json.dumps(policy))
+            if change == "missing-selected-record":
+                bad["packages"] = [item for item in bad["packages"] if item["name"] != "garde"]
+            elif change == "duplicate-selected-record":
+                bad["packages"].append(dict(garde))
+            else:
+                bad["packages"].append(dict(metadata))
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.admitted_domain_products(healthy, bad)
+
+    def test_actual_reviewed_fuzz_lock_remains_the_exact_existing_twenty_three_package_bytes(self):
+        expected = (ROOT / "policy/time-domain-fuzz.lock").read_text()
+        original = json.loads((ROOT / "policy/ntp-wire-analysis.json").read_text())["coverage_guided_fuzzing"]
+        names = {item["name"] for item in original["locked_registry_packages"]}
+        blocks = []
+        for raw in expected.split("[[package]]")[1:]:
+            block = "[[package]]\n" + raw.strip() + "\n"
+            if tomllib.loads(block)["package"][0]["name"] in names:
+                blocks.append(block)
+        control = "version = 4\n\n" + "\n".join(blocks)
+        self.assertEqual(MODULE.reviewed_fuzz_lock((ROOT / "Cargo.lock").read_text(), control), expected)
+
+    def test_source_parity_preserves_both_pure_and_original_control_grant_checks(self):
+        for name, diagnostic in (("garde", "Garde product graph/grant parity"),
+                                 ("libc", "Original fuzz identity/grant parity")):
+            root, session, selected, _original = self.source_parity_fixture()
+            selected["selected_grants"][name] = "BSD-3-Clause"
+            with self.subTest(name=name), patch.object(MODULE, "ROOT", root), \
+                    patch.object(MODULE.PRODUCT, "admit_vendor", return_value=session.vendor_identity), \
+                    self.assertRaisesRegex(MODULE.Incomplete, diagnostic):
+                MODULE.admit_fuzz_sources(session, selected)
+
+    def test_source_parity_preserves_original_archive_and_exact_ten_record_checks(self):
+        for change in ("archive-bytes", "missing-control-record", "duplicate-control-record"):
+            root, session, selected, original = self.source_parity_fixture()
+            if change == "archive-bytes":
+                libc = next(item for item in original["locked_registry_packages"] if item["name"] == "libc")
+                archive = session.base / "common/cargo/registry/cache/fixture" / f"libc-{libc['version']}.crate"
+                archive.write_bytes(b"changed after source admission")
+                diagnostic = "Original fuzz source/archive"
+            else:
+                if change == "missing-control-record":
+                    original["locked_registry_packages"].pop()
+                else:
+                    original["locked_registry_packages"].append(dict(original["locked_registry_packages"][0]))
+                (root / "policy/ntp-wire-analysis.json").write_text(json.dumps({"coverage_guided_fuzzing": original}))
+                diagnostic = "Original control source cohort"
+            with self.subTest(change=change), patch.object(MODULE, "ROOT", root), \
+                    patch.object(MODULE.PRODUCT, "admit_vendor", return_value=session.vendor_identity), \
+                    self.assertRaisesRegex(MODULE.Incomplete, diagnostic):
+                MODULE.admit_fuzz_sources(session, selected)
 
     def test_reviewed_lock_preserves_exact_registry_blocks_and_real_local_nodes(self):
         product = 'version=4\n[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n'
@@ -102,7 +282,7 @@ class DomainAnalysisTests(unittest.TestCase):
         product = {item["name"]: item for item in tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]}
         old = {item["name"]: item for item in json.loads((ROOT / "policy/ntp-wire-analysis.json").read_text())["coverage_guided_fuzzing"]["locked_registry_packages"]}
         for item in registry:
-            if item["name"] in product:
+            if item["name"] in PURE_REGISTRY_NAMES:
                 self.assertEqual(item, product[item["name"]])
             if item["name"] in old:
                 self.assertEqual({key: item[key] for key in ("name", "version", "source", "checksum")},

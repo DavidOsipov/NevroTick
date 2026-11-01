@@ -97,11 +97,11 @@ class CohortPlanTests(unittest.TestCase):
                 self.assertRaisesRegex(MODULE.Incomplete, 'listing ceiling'):
             MODULE.admit_plan(plan, **args)
 
-    def test_reviewed_487_field_width_accepts_exact_limit_and_rejects_next(self):
-        exact = {f"metric{index}": 1 for index in range(487)}
+    def test_reviewed_494_field_width_accepts_exact_limit_and_rejects_next(self):
+        exact = {f"metric{index}": 1 for index in range(494)}
         self.assertEqual(MODULE._budget(exact), exact)
         with self.assertRaises(MODULE.Incomplete):
-            MODULE._budget({**exact, 'metric487': 1})
+            MODULE._budget({**exact, 'metric494': 1})
 
     def test_typed_budget_projection_rejects_boolean_and_unbounded_counts(self):
         self.assertEqual(MODULE._budget({"fits": 0, "points": (1 << 63) - 1}),

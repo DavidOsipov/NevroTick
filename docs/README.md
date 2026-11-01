@@ -4,7 +4,7 @@
 **Snapshot date:** 29 October 2026  
 **Canonical architecture:** RWTC-ARCH-001, revision 1.4
 
-The maintained set contains ten principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report, a critical architecture-contract assessment and a state-guided fuzzing experiment report. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
+The maintained set contains ten principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report, a critical architecture-contract assessment, a state-guided fuzzing experiment report and a Verus assessment. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
 
 ## Plans, acceptance and execution evidence
 
@@ -46,6 +46,28 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Engine workspace integration, 1 November 2026:** the bounded loopback engine is
+now the sixth main workspace member. Its
+[current checkpoint](../tasks/engine-transport-pilot.md#main-workspace-checkpoint)
+records actual GNU portable tests/doctests/optimized cases, both frozen dependency
+rows, real controlled-loopback CLI execution and Windows cross-linking. The
+[native checkpoint](../tasks/engine-transport-pilot.md#native-windows-cli-checkpoint)
+adds eight actual ordinary-user Windows CLI cases while retaining an earlier
+observer timing failure. Four additional
+[public-API cases](../tasks/engine-transport-pilot.md#native-live-process-port-release-checkpoint)
+observe port reuse while their Windows children remain alive. Remaining native
+completion/heap/resource gates and final engine coverage/mutation stay open;
+this does not complete P1/P2 or introduce production acquisition/clock effects.
+
+**Verus assessment, 1 November 2026:** the
+[research report](supporting-reviews/verus-assessment.md) recommends deferring
+integration until a bounded actual-code comparison demonstrates additional value.
+A valuable contract and a justified benefit hypothesis can trigger that pilot;
+prior Kani failure is not required. The report retains candidate properties, the
+Kani alternative, proof/trust boundaries and failure triage. No application proof
+was executed or new tool/CI gate adopted; the [S1.1c task](../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026)
+owns assessment history and review results.
 
 **State-guided fuzzing experiment, 1 November 2026:** the
 [completed experiment report](supporting-reviews/state-guided-fuzzing-experiment.md)
@@ -160,6 +182,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.
+- [verus-assessment.md](supporting-reviews/verus-assessment.md): source-based evaluation, deferred integration, candidate properties, comparison with Kani, proof boundaries and conditions for a future pilot.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 

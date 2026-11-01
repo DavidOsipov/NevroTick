@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the admitted UI-M0, wire, time-domain, exchange and synthetic regression rows in an isolated sandbox.
+"""Run the six admitted fixture/engine owners in an isolated sandbox.
 
 Acquisition is separate. Missing tools, vendor bytes or product tests fail closed.
 Windows cross-linking supplies no native UI, service or release qualification.
@@ -31,11 +31,28 @@ STRICT_SPEC.loader.exec_module(STRICT)
 PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
 PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
-            "ntp-exchange": "crates/ntp-exchange", "time-core": "crates/time-core"}
+            "ntp-exchange": "crates/ntp-exchange", "time-core": "crates/time-core",
+            "nevrotick-engine": "crates/nevrotick-engine"}
+HOST_TARGET = "x86_64-unknown-linux-gnu"
+REGISTRY_VERSIONS = {
+    "castaway": "0.2.4", "cfg-if": "1.0.5", "compact_str": "0.9.1", "garde": "0.23.0",
+    "garde_derive": "0.23.0", "getrandom": "0.4.3", "itoa": "1.0.18", "libc": "0.2.191",
+    "mio": "1.2.4", "pin-project-lite": "0.2.17", "proc-macro2": "1.0.107", "quote": "1.0.47",
+    "rustversion": "1.0.23", "ryu": "1.0.23", "smallvec": "1.16.4", "socket2": "0.6.5",
+    "static_assertions": "1.1.0", "syn": "2.0.119", "tokio": "1.54.1", "tokio-macros": "2.7.1",
+    "unicode-ident": "1.0.27", "windows-link": "0.2.1", "windows-sys": "0.61.2",
+}
+METADATA_ONLY_VERSIONS = {"r-efi": "6.0.0", "wasi": "0.11.1+wasi-snapshot-preview1"}
+BUILD_SCRIPTS = {"getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107",
+                 "quote@1.0.47", "rustversion@1.0.23"}
+# Bound concurrent LLVM test-binary links within the ordinary128-task sandbox.
+# Test execution and ten-worker mutation scheduling have separate policies.
+CORE_TEST_BUILD_JOBS = 6
 OPTIMIZED_DISCRIMINATORS = {
     "time-domain": "release_build_preserves_checked_admission",
     "ntp-exchange": "release_build_preserves_exchange_admission",
     "time-core": "release_build_preserves_regression_admission",
+    "nevrotick-engine": "prepare_rejects_entered_runtime_before_native_startup",
 }
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
@@ -67,8 +84,160 @@ def inventory(directory: Path) -> dict[str, str]:
     return result
 
 
+def read_dependency_policy(path: Path) -> dict:
+    """Decode bounded policy JSON without duplicate fields or non-JSON numbers."""
+    if path.is_symlink() or not path.is_file():
+        raise ENV.Incomplete("Missing regular dependency admission.")
+    with path.open("rb") as stream:
+        payload = stream.read(512 * 1024 + 1)
+    if len(payload) > 512 * 1024:
+        raise ENV.Incomplete("Dependency admission exceeds its byte bound.")
+
+    def unique_fields(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ENV.Incomplete("Duplicate dependency admission field.")
+            result[key] = value
+        return result
+
+    def invalid_number(_value):
+        raise ENV.Incomplete("Non-JSON dependency admission number.")
+
+    try:
+        policy = json.loads(payload.decode("utf-8"), object_pairs_hook=unique_fields, parse_constant=invalid_number)
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise ENV.Incomplete("Invalid dependency admission JSON.") from error
+    if type(policy) is not dict:
+        raise ENV.Incomplete("Dependency admission must be an object.")
+    return policy
+
+
+def validate_dependency_policy(policy: dict) -> None:
+    """Admit exact selected/metadata roles and two bounded target feature rows."""
+    required = {"schema_version", "scope", "lockfile_sha256", "manifests_sha256",
+                "packages", "metadata_only_packages", "rows"}
+    if (type(policy) is not dict or set(policy) != required or type(policy["schema_version"]) is not int
+            or policy["schema_version"] != 2 or type(policy["scope"]) is not str
+            or not 0 < len(policy["scope"]) <= 8192):
+        raise ENV.Incomplete("Unadmitted dependency policy schema.")
+    manifests = {"Cargo.toml", *(member + "/Cargo.toml" for member in PACKAGES.values())}
+    if (type(policy["lockfile_sha256"]) is not str
+            or not re.fullmatch(r"[0-9a-f]{64}", policy["lockfile_sha256"])
+            or type(policy["manifests_sha256"]) is not dict
+            or set(policy["manifests_sha256"]) != manifests
+            or any(type(value) is not str or not re.fullmatch(r"[0-9a-f]{64}", value)
+                   for value in policy["manifests_sha256"].values())):
+        raise ENV.Incomplete("Dependency manifest/lock identities are malformed.")
+    for field, versions in (("packages", REGISTRY_VERSIONS),
+                            ("metadata_only_packages", METADATA_ONLY_VERSIONS)):
+        records = policy[field]
+        if type(records) is not list or len(records) != len(versions):
+            raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
+        keys = {"name", "version", "checksum", "license", "files_sha256"}
+        keys |= {"selected_license", "build_script", "upstream_revision"} if field == "packages" else {"role"}
+        identities = set()
+        for entry in records:
+            if type(entry) is not dict or set(entry) != keys:
+                raise ENV.Incomplete("Unadmitted dependency record fields or role promotion.")
+            name, version = entry["name"], entry["version"]
+            if (type(name) is not str or type(version) is not str or versions.get(name) != version
+                    or name in identities):
+                raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
+            identities.add(name)
+            if (any(type(entry[key]) is not str or not re.fullmatch(r"[0-9a-f]{64}", entry[key])
+                    for key in ("checksum", "files_sha256"))
+                    or type(entry["license"]) is not str or not 0 < len(entry["license"]) <= 256):
+                raise ENV.Incomplete("Dependency source/checksum admission is malformed.")
+            if field == "metadata_only_packages":
+                if entry["role"] != "metadata-only":
+                    raise ENV.Incomplete("Unadmitted metadata-only dependency role.")
+            else:
+                grant = "BSL-1.0" if name == "ryu" else "MIT AND Unicode-3.0" if name == "unicode-ident" else "MIT"
+                if (entry["selected_license"] != grant or type(entry["build_script"]) is not bool
+                        or entry["build_script"] != (name + "@" + version in BUILD_SCRIPTS)
+                        or type(entry["upstream_revision"]) is not str
+                        or not re.fullmatch(r"[0-9a-f]{40}", entry["upstream_revision"])):
+                    raise ENV.Incomplete("The product license/build-script admission needs a reviewed policy change.")
+    if type(policy["rows"]) is not dict or set(policy["rows"]) != {HOST_TARGET, ENV.WINDOWS_TARGET}:
+        raise ENV.Incomplete("Dependency target rows are missing or unexpected.")
+    for target, row in policy["rows"].items():
+        excluded = {"windows-link", "windows-sys"} if target == HOST_TARGET else {"libc"}
+        expected = sorted(name + "@" + version for name, version in REGISTRY_VERSIONS.items() if name not in excluded)
+        if (type(row) is not dict or set(row) != {"external_packages", "features", "allowed_build_scripts"}
+                or row["external_packages"] != expected or type(row["features"]) is not dict
+                or set(row["features"]) != set(expected)
+                or row["allowed_build_scripts"] != sorted(BUILD_SCRIPTS & set(expected))):
+            raise ENV.Incomplete("Dependency target package/build-script row differs from the reviewed graph.")
+        for features in row["features"].values():
+            if (type(features) is not list or len(features) > 256
+                    or any(type(feature) is not str or not 0 < len(feature) <= 128 for feature in features)
+                    or features != sorted(set(features))):
+                raise ENV.Incomplete("Dependency target feature row is malformed.")
+
+
+def validated_dependency_records(policy: dict, *, include_metadata: bool = False) -> list[dict]:
+    """Return copied selected records, optionally including inert resolution sources."""
+    validate_dependency_policy(policy)
+    if type(include_metadata) is not bool:
+        raise ENV.Incomplete("Dependency record role selection must be explicit.")
+    records = policy["packages"] + (policy["metadata_only_packages"] if include_metadata else [])
+    return [dict(record) for record in records]
+
+
+def validate_dependency_metadata(target: str, output: str, policy: dict) -> dict:
+    """Compare actual frozen Cargo target identities/features with admitted policy."""
+    validate_dependency_policy(policy)
+    if target not in policy["rows"] or len(output.encode("utf-8")) > ENV.MAX_OUTPUT:
+        raise ENV.Incomplete("Unadmitted or oversized dependency metadata row.")
+    try:
+        data = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise ENV.Incomplete("Invalid dependency metadata JSON.") from error
+    if (type(data) is not dict or type(data.get("packages")) is not list
+            or len(data["packages"]) > 64 or type(data.get("resolve")) is not dict
+            or type(data["resolve"].get("nodes")) is not list
+            or len(data["resolve"]["nodes"]) > 64):
+        raise ENV.Incomplete("Dependency metadata lacks its bounded resolved graph.")
+    nodes = {}
+    for node in data["resolve"]["nodes"]:
+        if (type(node) is not dict or type(node.get("id")) is not str
+                or node["id"] in nodes or type(node.get("features")) is not list):
+            raise ENV.Incomplete("Dependency metadata has missing or duplicate nodes.")
+        nodes[node["id"]] = node
+    selected, locals_seen, package_ids = {}, set(), set()
+    for package in data["packages"]:
+        if (type(package) is not dict or type(package.get("id")) is not str
+                or package["id"] in package_ids or package["id"] not in nodes):
+            raise ENV.Incomplete("Dependency metadata package/node identities differ.")
+        package_ids.add(package["id"])
+        name, version = package.get("name"), package.get("version")
+        if type(name) is not str or type(version) is not str or "source" not in package:
+            raise ENV.Incomplete("Dependency metadata package identity is malformed.")
+        if package.get("source") is None:
+            if name not in PACKAGES or version != "0.0.0" or name in locals_seen:
+                raise ENV.Incomplete("Dependency metadata contains an unreviewed local owner.")
+            locals_seen.add(name)
+        else:
+            if (package["source"] != "registry+https://github.com/rust-lang/crates.io-index"
+                    or type(name) is not str or type(version) is not str):
+                raise ENV.Incomplete("Dependency metadata contains an unadmitted source.")
+            identity = name + "@" + version
+            if identity in selected:
+                raise ENV.Incomplete("Dependency metadata contains duplicate package versions.")
+            features = nodes[package["id"]]["features"]
+            if (any(type(feature) is not str for feature in features)
+                    or len(features) > 256 or len(set(features)) != len(features)):
+                raise ENV.Incomplete("Dependency metadata features are malformed.")
+            selected[identity] = sorted(features)
+    if (package_ids != set(nodes) or locals_seen != set(PACKAGES)
+            or selected != policy["rows"][target]["features"]):
+        raise ENV.Incomplete("Actual dependency target packages/features differ from admission.")
+    return {"target": target, "external_packages": sorted(selected), "features": selected}
+
+
 def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
-    """Admit the five reviewed members, policy inheritance and exact locked graph."""
+    """Admit six reviewed members, explicit engine effects and the exact locked graph."""
     try:
         STRICT.read_configuration(root)
     except STRICT.ENV.Incomplete as error:
@@ -82,7 +251,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     workspace = tomllib.loads((root / "Cargo.toml").read_text())
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
     if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):
-        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, NTP-wire, time-domain, exchange and time-core workspace members.")
+        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, wire, domain, exchange, core and engine workspace members.")
     if (workspace["workspace"].get("lints") != fragment["workspace"]["lints"]
             or workspace.get("profile") != fragment["profile"]):
         raise ENV.Incomplete("Workspace lint/profile policy differs from its owner.")
@@ -94,6 +263,16 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             raise ENV.Incomplete("A member identity or inherited lints are missing.")
         if member["package"].get("build") not in (None, False) or (root / directory / "build.rs").exists():
             raise ENV.Incomplete("An unadmitted first-party build script is present.")
+        if package == PACKAGE:
+            tables = [member, *member.get("target", {}).values()]
+            for table in tables:
+                for kind in ("dependencies", "dev-dependencies", "build-dependencies"):
+                    for name, declaration in table.get(kind, {}).items():
+                        if isinstance(declaration, dict) and "workspace" in declaration:
+                            raise ENV.Incomplete("UI dependency inheritance is not admitted; runtime dependencies belong only to the engine.")
+                        identity = declaration.get("package", name) if isinstance(declaration, dict) else name
+                        if identity in {"tokio", "tokio-macros", "getrandom", "nevrotick-engine"}:
+                            raise ENV.Incomplete("Runtime and transport dependencies belong only to the engine.")
         if package == "ntp-wire" and set(member) != {"package", "lints"}:
             raise ENV.Incomplete("The pure NTP-wire member may not add dependencies, features or targets.")
         if package in {"time-domain", "time-core"}:
@@ -116,27 +295,44 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     or member.get("dependencies") != required
                     or member.get("dev-dependencies") != required_dev):
                 raise ENV.Incomplete("The ntp-exchange member requires only exact local ntp-wire and time-domain normal dependencies and the time-core dev dependency.")
+        if package == "nevrotick-engine":
+            required = {
+                "getrandom": {"version": "=0.4.3", "default-features": False},
+                "ntp-wire": {"version": "=0.0.0", "path": "../ntp-wire"},
+                "tokio": {"version": "=1.54.1", "default-features": False,
+                          "features": ["rt", "net", "time", "sync", "macros"]},
+            }
+            if (set(member) != {"package", "lints", "dependencies", "bin"}
+                    or member["package"].get("version") != "0.0.0"
+                    or member.get("dependencies") != required
+                    or type(member["dependencies"]["getrandom"].get("default-features")) is not bool
+                    or type(member["dependencies"]["tokio"].get("default-features")) is not bool
+                    or member.get("bin") != [{"name": "nevrotick-observe", "path": "src/bin/nevrotick-observe.rs"}]):
+                raise ENV.Incomplete("The engine requires its exact reviewed runtime/wire dependencies and observe entrypoint.")
         local_packages.add((package, member["package"]["version"]))
-    policy = json.loads((root / "policy/ui-m0-dependencies.json").read_text())
-    if policy.get("schema_version") != 1 or policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
+    policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
+    if policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
         raise ENV.Incomplete("The product lockfile differs from its dependency admission.")
     manifests = {name: sha256(root / name)
                  for name in ("Cargo.toml", *(member + "/Cargo.toml" for member in PACKAGES.values()))}
     if policy.get("manifests_sha256") != manifests:
         raise ENV.Incomplete("Product manifest/features differ from the reviewed dependency admission.")
-    expected = {(p["name"], p["version"], p["checksum"]) for p in policy["packages"]}
-    if not expected or len(expected) != len(policy["packages"]):
+    admitted = validated_dependency_records(policy, include_metadata=True)
+    expected = {(p["name"], p["version"], p["checksum"]) for p in admitted}
+    if not expected or len(expected) != len(admitted):
         raise ENV.Incomplete("Dependency admission must contain unique nonempty packages.")
     packages = tomllib.loads((root / "Cargo.lock").read_text()).get("package", [])
     external = {(p["name"], p["version"], p.get("checksum")) for p in packages if "source" in p}
     local = [p for p in packages if "source" not in p]
-    if (external != expected or len(local) != len(local_packages)
+    if (external != expected or len([p for p in packages if "source" in p]) != len(expected)
+            or len(local) != len(local_packages)
             or {(p["name"], p["version"]) for p in local} != local_packages
             or any(p.get("dependencies") for p in local if p["name"] == "ntp-wire")
             or any(p.get("dependencies") != ["garde"] for p in local if p["name"] == "time-domain")
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
             or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
+            or any(p.get("dependencies") != ["getrandom", "ntp-wire", "tokio"] for p in local if p["name"] == "nevrotick-engine")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):
@@ -149,14 +345,20 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             inputs[f"{member}/{name}"] = digest
         if f"{member}/src/lib.rs" not in inputs:
             raise ENV.Incomplete("A required product library is absent.")
+    for name in ("src/bin/nevrotick-observe.rs", "tests/runtime_boundary.rs"):
+        if "crates/nevrotick-engine/" + name not in inputs:
+            raise ENV.Incomplete("The required engine entrypoint or runtime-boundary suite is absent.")
     for name in (*STRICT.CONFIG_FILES, *CHECKER_FILES, "policy/ui-m0-dependencies.json", "policy/tool-manifest.json"):
         inputs[name] = sha256(root / name)
     return policy, inputs
 
 
-def product_deny(base: str, policy: dict) -> str:
+def product_deny(base: str, policy: dict, target: str) -> str:
     """Add only this reviewed graph's license grants and exact build-script versions."""
     parsed = tomllib.loads(base)
+    validate_dependency_policy(policy)
+    if target not in policy["rows"]:
+        raise ENV.Incomplete("Unadmitted dependency policy target.")
     expressions = {entry["selected_license"] for entry in policy["packages"]}
     if expressions != {"BSL-1.0", "MIT", "MIT AND Unicode-3.0"}:
         raise ENV.Incomplete("The product license/build-script admission needs a reviewed policy change.")
@@ -165,9 +367,7 @@ def product_deny(base: str, policy: dict) -> str:
     licenses = ["BSL-1.0", "MIT", "Unicode-3.0"]
     # cargo-deny 0.20.2 PackageSpec uses '@' for an exact version. '=' alone
     # remains part of the crate name and would reject the reviewed scripts.
-    builds = sorted(f"{entry['name']}@{entry['version']}" for entry in policy["packages"] if entry.get("build_script"))
-    if builds != ["proc-macro2@1.0.107", "quote@1.0.47", "rustversion@1.0.23"]:
-        raise ENV.Incomplete("The product license/build-script admission needs a reviewed policy change.")
+    builds = policy["rows"][target]["allowed_build_scripts"]
     if parsed["licenses"]["allow"] != ["GPL-2.0-only"] or parsed["bans"]["build"]["allow-build-scripts"]:
         raise ENV.Incomplete("Bootstrap dependency policy was unexpectedly broadened.")
     before = 'allow = ["GPL-2.0-only"]'
@@ -199,7 +399,10 @@ def product_nextest(base: str) -> str:
 
 def admit_vendor(directory: Path, policy: dict) -> dict[str, str]:
     """Verify each vendored file against its reviewed package and Cargo checksum map."""
-    wanted = {f"{p['name']}-{p['version']}": p for p in policy["packages"]}
+    records = policy["packages"] + policy.get("metadata_only_packages", [])
+    wanted = {f"{p['name']}-{p['version']}": p for p in records}
+    if len(wanted) != len(records):
+        raise ENV.Incomplete("Vendor package roles are duplicated.")
     if not directory.is_dir() or {p.name for p in directory.iterdir()} != set(wanted):
         raise ENV.Incomplete("Vendor directory has missing or unexpected packages.")
     for name, admission in wanted.items():
@@ -251,20 +454,26 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
     if lane == "portable":
         return [
             ("format", ["cargo", "fmt", "--all", "--", "--check"]),
-            ("compiler", [*cargo, "check", *base, "--lib", "--tests"]),
-            ("clippy", [*cargo, "clippy", *base, "--lib", "--tests", "--", "-D", "warnings"]),
+            ("compiler", [*cargo, "check", *base, "--all-targets"]),
+            ("clippy", [*cargo, "clippy", *base, "--all-targets", "--", "-D", "warnings"]),
+            ("host-engine-build", [*cargo, "build", "--package", "nevrotick-engine", "--frozen",
+                                   "--jobs", "12", "--bin", "nevrotick-observe"]),
             ("rustdoc", [*cargo, "doc", *base, "--lib", "--no-deps"]),
         ] + [
             ("product-tests:" + package, [*cargo, "nextest", "run", "--package", package,
-                                         "--frozen", "--build-jobs", "12", "--lib", "--tests",
+                                         "--frozen", "--build-jobs",
+                                         str(CORE_TEST_BUILD_JOBS) if package == "time-core" else "12",
+                                         *(["--test", "runtime_boundary"] if package == "nevrotick-engine" else ["--lib", "--tests"]),
                                          "--user-config-file", "none", "--no-tests=fail"])
             for package in PACKAGES
         ] + [("doctests:" + package, [*cargo, "test", "--package", package,
                                       "--frozen", "--jobs", "12", "--doc"])
              for package in PACKAGES] + [
             ("optimized-tests:" + package, [*cargo, "nextest", "run", "--package", package,
-                                           "--cargo-profile", "release", "--frozen", "--build-jobs", "12",
-                                           "--lib", "--tests", "--user-config-file", "none", "--no-tests=fail"])
+                                           "--cargo-profile", "release", "--frozen", "--build-jobs",
+                                           str(CORE_TEST_BUILD_JOBS) if package == "time-core" else "12",
+                                           *(["--test", "runtime_boundary"] if package == "nevrotick-engine" else ["--lib", "--tests"]),
+                                           "--user-config-file", "none", "--no-tests=fail"])
             for package in OPTIMIZED_DISCRIMINATORS]
     if lane == "windows":
         target = [*base, "--target", ENV.WINDOWS_TARGET]
@@ -272,37 +481,82 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
                 ("windows-clippy", [*cargo, "clippy", *target, "--all-targets", "--", "-D", "warnings"]),
                  ("windows-link", [*cargo, "--config", f'target.{ENV.WINDOWS_TARGET}.linker="/work/linker"',
                                    "build", "--release", "--package", PACKAGE, "--frozen", "--jobs", "12",
-                                   "--target", ENV.WINDOWS_TARGET, "--bin", PACKAGE])]
+                                   "--target", ENV.WINDOWS_TARGET, "--bin", PACKAGE]),
+                ("windows-engine-link", [*cargo, "--config", f'target.{ENV.WINDOWS_TARGET}.linker="/work/linker"',
+                                         "build", "--release", "--package", "nevrotick-engine", "--frozen", "--jobs", "12",
+                                         "--target", ENV.WINDOWS_TARGET, "--bin", "nevrotick-observe"])]
     if lane == "dependencies":
-        return [("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
-                                         "check", "--deny", "warnings"])
-                for target in ("x86_64-unknown-linux-gnu", ENV.WINDOWS_TARGET)]
+        rows = []
+        for target in (HOST_TARGET, ENV.WINDOWS_TARGET):
+            rows.extend([
+                ("dependency-metadata-" + target, [*cargo, "metadata", "--frozen", "--offline",
+                                                   "--format-version", "1", "--filter-platform", target]),
+                ("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
+                                          "check", "--deny", "warnings"]),
+            ])
+        return rows
     raise ENV.Incomplete("Unknown product verification row.")
 
 
 def export_windows_artifacts(work: Path, output: Path) -> dict:
-    """Export the release executable and its unique matching PDB to fresh output.
+    """Export both release executables and their unique PDBs to fresh output.
 
-    Admit both regular files before copying; missing/ambiguous symbols or existing
-    destinations fail. Cargo may use the binary name or normalized crate name for
-    the PDB. This records cross-linked artifacts, not native Windows execution.
+    Admit the complete UI/engine file sets before copying; missing/ambiguous
+    symbols or existing destinations fail without a partial export. Retain the
+    UI metadata keys and add the engine entry separately. This records linked
+    artifacts, not native Windows execution.
     """
     build = work / "target" / ENV.WINDOWS_TARGET / "release"
-    binary = build / f"{PACKAGE}.exe"
-    names = {f"{PACKAGE}.pdb", f"{PACKAGE.replace('-', '_')}.pdb"}
-    symbols = [build / name for name in sorted(names) if (build / name).is_file()]
-    if len(symbols) != 1:
-        raise ENV.Incomplete("Release Windows artifact needs exactly one matching PDB.")
-    pdb = symbols[0]
-    identities = {source: sha256(source) for source in (binary, pdb)}
+    artifacts, identities = {}, {}
+    for role, name in (("ui", PACKAGE), ("engine", "nevrotick-observe")):
+        binary = build / f"{name}.exe"
+        names = {f"{name}.pdb", f"{name.replace('-', '_')}.pdb"}
+        symbols = [build / candidate for candidate in sorted(names) if (build / candidate).is_file()]
+        if len(symbols) != 1:
+            raise ENV.Incomplete("Release Windows artifact needs exactly one matching PDB.")
+        pdb = symbols[0]
+        identities.update({source: sha256(source) for source in (binary, pdb)})
+        artifacts[role] = (binary, pdb)
     if any((output / source.name).exists() or (output / source.name).is_symlink()
            for source in identities):
         raise ENV.Incomplete("Windows artifact export refuses existing destinations.")
     for source in identities:
         shutil.copyfile(source, output / source.name)
-    return {"path": str(output / binary.name), "sha256": identities[binary],
-            "profile": "release", "target": ENV.WINDOWS_TARGET,
-            "symbols": {"path": str(output / pdb.name), "sha256": identities[pdb]}}
+    result = {}
+    for role, (binary, pdb) in artifacts.items():
+        entry = {"path": str(output / binary.name), "sha256": identities[binary],
+                 "profile": "release", "target": ENV.WINDOWS_TARGET,
+                 "symbols": {"path": str(output / pdb.name), "sha256": identities[pdb]}}
+        if role == "ui":
+            result.update(entry)
+        else:
+            result["engine"] = entry
+    return result
+
+
+def export_host_engine_artifact(work: Path, output: Path) -> dict:
+    """Retain only the current host build, checking bytes and executable ownership.
+
+    Reject absent/linked/nonexecutable source and existing destination before
+    copying. Export to an exclusively created regular file, restrict execution
+    to its owner, then verify unchanged source and exact copied bytes. This is
+    artifact custody; it does not execute or qualify transport behavior.
+    """
+    source = work / "target/debug/nevrotick-observe"
+    if (source.is_symlink() or not source.is_file() or source.resolve() != source
+            or not source.stat().st_mode & 0o100):
+        raise ENV.Incomplete("Current host engine build must be a regular nonlinked owner-executable file.")
+    destination = output / "nevrotick-observe"
+    if destination.exists() or destination.is_symlink():
+        raise ENV.Incomplete("Host engine export refuses an existing destination.")
+    expected = sha256(source)
+    with source.open("rb") as origin, destination.open("xb") as target:
+        shutil.copyfileobj(origin, target)
+    destination.chmod(0o700)
+    if sha256(source) != expected or sha256(destination) != expected:
+        raise ENV.Incomplete("Host engine source or copied bytes changed during export.")
+    return {"path": str(destination), "sha256": expected, "profile": "dev",
+            "target": HOST_TARGET, "binary_name": "nevrotick-observe"}
 
 
 def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
@@ -516,8 +770,7 @@ def execute(root: Path, args, report: dict) -> None:
             shutil.copyfile(root / name, destination)
         if {name: sha256(source / name) for name in source_identity} != source_identity:
             raise ENV.Incomplete("Product inputs changed during snapshotting.")
-        if args.lane == "dependencies":
-            (source / "deny.toml").write_text(product_deny((source / "deny.toml").read_text(), policy))
+        deny_base = (source / "deny.toml").read_text()
         if args.lane == "portable":
             config = source / ".config/nextest.toml"
             config.write_text(product_nextest(config.read_text()))
@@ -530,10 +783,19 @@ def execute(root: Path, args, report: dict) -> None:
         libraries = library_inputs[0] if library_inputs else None
         if library_inputs:
             report["windows_library_sha256"] = library_inputs[1]
-        report["effective_deny_sha256"] = sha256(source / "deny.toml")
+        if args.lane == "dependencies":
+            report["bootstrap_deny_sha256"] = sha256(source / "deny.toml")
+        else:
+            report["effective_deny_sha256"] = sha256(source / "deny.toml")
         report["effective_nextest_sha256"] = sha256(source / ".config/nextest.toml")
         report["checker_sha256"] = {name: source_identity[name] for name in CHECKER_FILES}
         def run(label, command):
+            target: str | None = None
+            if label.startswith("dependency-"):
+                flag = "--filter-platform" if label.startswith("dependency-metadata-") else "--target"
+                target = command[command.index(flag) + 1]
+                (source / "deny.toml").write_text(product_deny(deny_base, policy, target))
+                report.setdefault("effective_deny_sha256_by_target", {})[target] = sha256(source / "deny.toml")
             clear_test_report(label, work)
             result = ENV.run(sandbox(toolchain, work, source, vendor, command, extension, libraries,
                                     "cargo-deny" if args.lane == "dependencies" else "cargo-nextest"),
@@ -543,6 +805,10 @@ def execute(root: Path, args, report: dict) -> None:
                       "failure": result["failure"], "output": result["output"]}
             report["lanes"].append(record)
             output = ENV.require_ok(result)
+            if label.startswith("dependency-metadata-"):
+                if target is None:
+                    raise ENV.Incomplete("Dependency metadata lacks its selected target.")
+                record["dependency_metadata"] = validate_dependency_metadata(target, output, policy)
             counts = validate_test_result(label, output, work)
             if counts:
                 record["tests"] = counts
@@ -572,6 +838,8 @@ def execute(root: Path, args, report: dict) -> None:
             output.mkdir(mode=0o700)
             if args.lane == "windows":
                 report["artifact"] = export_windows_artifacts(work, output)
+            elif args.lane == "portable":
+                report["engine_artifact"] = export_host_engine_artifact(work, output)
             (output / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
 
 
@@ -583,7 +851,7 @@ def main(argv=None) -> int:
                  "advisory-receipt", "output-dir", "json"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
-    report = {"scope": f"UI-M0, NTP-wire, time-domain, exchange and synthetic regression {args.lane} product verification", "status": "incomplete",
+    report = {"scope": f"UI-M0, wire, domain, exchange, synthetic regression and controlled-loopback engine pilot {args.lane} verification", "status": "incomplete",
               "native_windows_execution": "not performed", "advisory_freshness": "not checked by this row"}
     try:
         defaults = json.loads(POINTER.read_text()) if POINTER.is_file() else {}

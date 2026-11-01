@@ -1,4 +1,6 @@
-"""Independent archive/admission controls for UI-M0 acquisition; no network or Cargo."""
+"""Independent archive/admission controls for product acquisition; no network or Cargo."""
+import contextlib
+import copy
 import hashlib
 import importlib.util
 import io
@@ -22,6 +24,21 @@ def sha(data):
 def file_map_digest(files):
     hashes = {name: sha(value) for name, value in files.items()}
     return sha(json.dumps(hashes, sort_keys=True, separators=(",", ":")).encode())
+
+
+def admission_archive(name, version):
+    """Create independent bounded source bytes for an exact identity, without Cargo."""
+    files = {"Cargo.toml": f'[package]\nname="{name}"\nversion="{version}"\n'.encode(),
+             "src/lib.rs": b"//! Inert mocked-acquisition control, never compiled.\n"}
+    stream = io.BytesIO()
+    with tarfile.open(fileobj=stream, mode="w:gz") as archive:
+        for relative, contents in files.items():
+            member = tarfile.TarInfo(f"{name}-{version}/{relative}")
+            member.size = len(contents)
+            archive.addfile(member, io.BytesIO(contents))
+    data = stream.getvalue()
+    return {"name": name, "version": version, "checksum": sha(data),
+            "files_sha256": file_map_digest(files)}, data, files
 
 
 class ArchiveControls(unittest.TestCase):
@@ -168,6 +185,146 @@ class PublicationControls(unittest.TestCase):
             with self.assertRaises((ValueError, FileExistsError, OSError)):
                 PREPARE.acquire(self.vendor, {"packages": [self.package]})
         self.assertEqual(list(self.vendor.iterdir()), [])
+
+
+class AcquisitionIdentityControls(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="product-identity-control-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.vendor = self.root / "vendor"
+
+    def test_metadata_build_version_is_acquired_without_a_selected_grant(self):
+        package, data, files = admission_archive("wasi", "0.11.1+wasi-snapshot-preview1")
+        package["role"] = "metadata-only"
+        policy = {"packages": [], "metadata_only_packages": [package]}
+        before = copy.deepcopy(policy)
+        with patch.object(PREPARE.urllib.request, "urlopen", return_value=io.BytesIO(data)) as network:
+            PREPARE.acquire(self.vendor, policy)
+        self.assertEqual(network.call_count, 1)
+        self.assertEqual(network.call_args.args[0].full_url,
+                         "https://static.crates.io/crates/wasi/wasi-0.11.1+wasi-snapshot-preview1.crate")
+        directory = self.vendor / "wasi-0.11.1+wasi-snapshot-preview1"
+        self.assertEqual((directory / "src/lib.rs").read_bytes(), files["src/lib.rs"])
+        checksum = json.loads((directory / ".cargo-checksum.json").read_text())
+        self.assertEqual(checksum, {"package": package["checksum"],
+                                   "files": {name: sha(value) for name, value in files.items()}})
+        self.assertEqual(policy, before)
+        self.assertNotIn("selected_license", policy["metadata_only_packages"][0])
+        self.assertNotIn("build_script", policy["metadata_only_packages"][0])
+
+    def test_unsafe_or_non_semver_versions_fail_before_any_download(self):
+        package, _, _ = admission_archive("bounded-control", "1.0.0")
+        versions = ("1.0.0+", "1.0.0+a..b", "01.0.0", "1.0.0+../../outside",
+                    "1.0.0+a/b", "1.0.0+a\\b", "1.0.0+a%2Fb", "1.0.0+a?b",
+                    "1.0.0+a#b", "1.0.0+a:b", "1.0.0+white space", "\u0661.0.0", 1)
+        for version in versions:
+            with self.subTest(version=version):
+                rejected = dict(package, version=version)
+                with patch.object(PREPARE.urllib.request, "urlopen") as network:
+                    with self.assertRaisesRegex(ValueError, "package identity"):
+                        PREPARE.acquire(self.vendor, {"packages": [rejected]})
+                    network.assert_not_called()
+                self.assertFalse(self.vendor.exists())
+                self.assertFalse(list(self.root.glob(".ui-m0-acquire-*")))
+
+    def test_late_unsafe_metadata_identity_prevents_earlier_download(self):
+        package, data, _ = admission_archive("bounded-control", "1.0.0")
+        unsafe = dict(package, name="../outside", role="metadata-only")
+        with patch.object(PREPARE.urllib.request, "urlopen", return_value=io.BytesIO(data)) as network:
+            with self.assertRaisesRegex(ValueError, "package identity"):
+                PREPARE.acquire(self.vendor, {"packages": [package],
+                                             "metadata_only_packages": [unsafe]})
+            network.assert_not_called()
+        self.assertFalse(self.vendor.exists())
+
+
+class CompletePolicyAcquisitionControls(unittest.TestCase):
+    """Reach the real CLI main with a schema2 policy and mocked archive transport."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="product-policy-acquisition-control-")
+        self.addCleanup(temporary.cleanup)
+        self.directory = Path(temporary.name)
+        self.checkout = self.directory / "checkout"
+        (self.checkout / "policy").mkdir(parents=True)
+        self.vendor = self.directory / "vendor"
+        self.policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        self.assertEqual(self.policy["schema_version"], 2)
+        self.responses = {}
+        self.sources = {}
+        for package in self.policy["packages"] + self.policy["metadata_only_packages"]:
+            pins, data, files = admission_archive(package["name"], package["version"])
+            package.update(checksum=pins["checksum"], files_sha256=pins["files_sha256"])
+            self.responses[f"https://static.crates.io/crates/{package['name']}/{package['name']}-{package['version']}.crate"] = data
+            self.sources[f"{package['name']}-{package['version']}"] = files
+        self.lock_packages = copy.deepcopy(self.policy["packages"] + self.policy["metadata_only_packages"])
+        self.write_inputs()
+
+    def write_inputs(self):
+        lock = "version = 4\n"
+        for package in self.lock_packages:
+            lock += ("\n[[package]]\n"
+                     f"name = {json.dumps(package['name'])}\n"
+                     f"version = {json.dumps(package['version'])}\n"
+                     'source = "registry+https://github.com/rust-lang/crates.io-index"\n'
+                     f"checksum = {json.dumps(package['checksum'])}\n")
+        (self.checkout / "Cargo.lock").write_text(lock)
+        self.policy["lockfile_sha256"] = sha(lock.encode())
+        (self.checkout / "policy/ui-m0-dependencies.json").write_text(json.dumps(self.policy))
+
+    def invoke_main(self):
+        def response(request, **_kwargs):
+            return io.BytesIO(self.responses[request.full_url])
+        output = io.StringIO()
+        with patch.object(PREPARE, "ROOT", self.checkout), \
+                patch("sys.argv", ["prepare-product.py", "--vendor-dir", str(self.vendor)]), \
+                patch.object(PREPARE.urllib.request, "urlopen", side_effect=response) as network, \
+                contextlib.redirect_stdout(output):
+            code = PREPARE.main()
+        return code, network, output.getvalue()
+
+    def test_main_acquires_all_23_selected_and_two_resolution_only_sources(self):
+        code, network, output = self.invoke_main()
+        self.assertEqual(code, 0, output)
+        self.assertEqual(network.call_count, 25)
+        self.assertEqual({call.args[0].full_url for call in network.call_args_list}, set(self.responses))
+        self.assertEqual({path.name for path in self.vendor.iterdir()}, set(self.sources))
+        for name, files in self.sources.items():
+            self.assertEqual((self.vendor / name / "src/lib.rs").read_bytes(), files["src/lib.rs"])
+            checksum = json.loads((self.vendor / name / ".cargo-checksum.json").read_text())
+            self.assertEqual(checksum["files"], {relative: sha(data) for relative, data in files.items()})
+        self.assertEqual(len(self.policy["packages"]), 23)
+        self.assertEqual({(p["name"], p["version"], p["role"]) for p in self.policy["metadata_only_packages"]},
+                         {("r-efi", "6.0.0", "metadata-only"),
+                          ("wasi", "0.11.1+wasi-snapshot-preview1", "metadata-only")})
+
+    def test_missing_metadata_lock_record_rejects_before_download(self):
+        self.lock_packages = [p for p in self.lock_packages if p["name"] != "wasi"]
+        self.write_inputs()
+        code, network, output = self.invoke_main()
+        self.assertEqual(code, 1)
+        self.assertIn("package inventory differs from Cargo.lock", output)
+        network.assert_not_called()
+        self.assertFalse(self.vendor.exists())
+
+    def test_metadata_role_promotion_rejects_before_download(self):
+        self.policy["metadata_only_packages"][0]["selected_license"] = "MIT"
+        self.write_inputs()
+        code, network, output = self.invoke_main()
+        self.assertEqual(code, 1)
+        self.assertIn("role promotion", output)
+        network.assert_not_called()
+        self.assertFalse(self.vendor.exists())
+
+    def test_unexpected_metadata_identity_rejects_before_download(self):
+        self.policy["metadata_only_packages"][0]["name"] = "unreviewed-resolution-node"
+        self.write_inputs()
+        code, network, output = self.invoke_main()
+        self.assertEqual(code, 1)
+        self.assertIn("missing or unexpected packages", output)
+        network.assert_not_called()
+        self.assertFalse(self.vendor.exists())
 
 
 if __name__ == "__main__":

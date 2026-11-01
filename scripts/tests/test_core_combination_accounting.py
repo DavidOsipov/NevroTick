@@ -212,17 +212,22 @@ LIFECYCLE_ROWS = (
     ("lifecycle_filtered_one_keeps_multiwitness_arithmetic", (2,6,6,2,9,12,6,58,5,5,5,3,3,3,5,3,3,0,0,6,9,4)),
     ("lifecycle_outside_witness_loss_waiting_and_reacquisition", (3,14,14,3,20,28,14,166,18,18,18,6,1,1,18,1,1,0,0,8,10,0)),
     ("lifecycle_direct_replacement_clears_all_then_rechecks_supporters", (3,11,11,3,14,22,11,125,9,9,9,3,1,1,9,1,1,16,16,3,9,0)),
-    ("lifecycle_raw_parameter_and_ordinal_admission_neighbors", (0,0,0,0,0,0,0,22,0,0,0,0,0,0,0,20,0,6,0,0,0,0)),
+    ("lifecycle_raw_parameter_and_ordinal_admission_neighbors", (0,0,0,0,0,0,0,24,0,0,0,0,0,0,0,21,0,6,0,0,0,6)),
     ("lifecycle_distance_limit_overflow_rolls_back_and_recovers", (2,7,7,2,10,14,7,80,6,6,6,3,2,2,6,2,2,0,0,7,6,4)),
     ("lifecycle_skew_sum_overflow_rolls_back_and_recovers", (2,7,7,2,9,14,7,78,4,4,4,2,2,2,4,2,2,0,0,7,6,4)),
     ("lifecycle_max_clock_error_sum_overflow_rolls_back_and_recovers", (2,7,7,2,9,14,7,78,4,4,4,2,2,2,4,2,2,0,0,7,6,4)),
+    ("lifecycle_capacity_neighbors_preserve_pending_credit", (16,48,48,16,49,96,48,264,16,16,16,1,1,1,16,1,4,0,0,6,16,4)),
 )
 BRIDGE_CASE = "bridge_receiving_and_mask_boundaries"
 BRIDGE_TEST = "combination::admission::receiving_tests::" + BRIDGE_CASE
 COUNTER_CASE = "lifecycle_counter_success_and_exhaustion"
 COUNTER_TEST = "combination::lifecycle::counter_tests::" + COUNTER_CASE
 BRIDGE_ROW = "CORE_LIFECYCLE_BRIDGE_PROFILE case=" + BRIDGE_CASE + " appends=6 admissions=5 masks=5 garde=4\n"
-COUNTER_ROW = "CORE_LIFECYCLE_COUNTER_PROFILE case=" + COUNTER_CASE + " attempts=4\n"
+COUNTER_FIELDS = ("attempts", "source_constructions", "source_predicates", "garde", "fixture_setups",
+                  "outcome_predicates", "estimate_predicates", "outcome_garde")
+COUNTER_ROW = ("CORE_LIFECYCLE_COUNTER_PROFILE case=" + COUNTER_CASE
+                + " attempts=4 source_constructions=24 source_predicates=24 garde=24"
+               + " fixture_setups=1 outcome_predicates=34 estimate_predicates=18 outcome_garde=34\n")
 
 
 def lifecycle_row(case=LIFECYCLE_FIRST, values=(1,) + (0,) * 21):
@@ -237,6 +242,16 @@ def complete_lifecycle_text():
     return "".join(lifecycle_row(case, values) for case, values in LIFECYCLE_ROWS) + BRIDGE_ROW + COUNTER_ROW
 
 
+def zero_bridge_caught_text(issue="OutOfRange", *, complete=False):
+    """Independent inert bridge failure; no retained log or Native claim."""
+    zero = ("CORE_LIFECYCLE_BRIDGE_PROFILE case=" + BRIDGE_CASE
+            + " appends=0 admissions=0 masks=0 garde=0\n")
+    rows = complete_lifecycle_text().replace(BRIDGE_ROW, zero) if complete else zero
+    return (rows + "FAILED\n\nfailures:\n\n---- " + BRIDGE_TEST + " stdout ----\n"
+            + "Error: Divisor { issue: " + issue + " }\n\nfailures:\n\n    "
+            + BRIDGE_TEST + "\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored;\n")
+
+
 class LifecycleDispatchTests(unittest.TestCase):
     """The kernel receiver must coexist with exact registered lifecycle rows."""
 
@@ -246,6 +261,62 @@ class LifecycleDispatchTests(unittest.TestCase):
         self.assertEqual(observed["combination_observation_status"], "complete-source-recipe")
         self.assertEqual(observed["combination_observed_calls"]["combinations"], 60)
 
+    def test_caught_zero_bridge_stays_partial_with_all_families_present(self):
+        healthy = MODULE.lifecycle_counts(complete_lifecycle_text(), require_complete=True)
+        self.assertEqual(healthy["lifecycle_observation_status"], "complete-source-recipe")
+        for issue in ("OutOfRange", "NonFinite"):
+            for newline in ("\n", "\r\n"):
+                output = zero_bridge_caught_text(issue, complete=True).replace("\n", newline)
+                context = MODULE.caught_bridge_zero_prefix(output)
+                self.assertIsNotNone(context)
+                observed = MODULE.lifecycle_counts(output, bridge_zero_prefix=context)
+                self.assertEqual(observed["lifecycle_missing_cases"], [])
+                self.assertEqual(observed["lifecycle_partial_cases"], [BRIDGE_CASE])
+                self.assertEqual(observed["lifecycle_observation_status"], "partial-source-recipe")
+                self.assertEqual(observed["lifecycle_bridge_profiles"],
+                                 {BRIDGE_CASE: {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}})
+                self.assertIsNone(observed["lifecycle_observed_bridge_calls"])
+                self.assertIsNone(MODULE.lifecycle_observation_attempts(observed))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.complete_lifecycle_attempts(observed)
+
+    def test_zero_bridge_requires_exact_current_context_and_never_complete_mode(self):
+        output = zero_bridge_caught_text()
+        context = MODULE.caught_bridge_zero_prefix(output)
+        for function in (MODULE.lifecycle_counts, MODULE.combination_counts):
+            with self.assertRaises(MODULE.Incomplete):
+                function(output)
+            with self.assertRaises(MODULE.Incomplete):
+                function(output, require_complete=True, bridge_zero_prefix=context)
+            for bad_context in (MODULE.CaughtBridgeZeroPrefix("0" * 64), True):
+                with self.subTest(bad_context=bad_context), self.assertRaises(MODULE.Incomplete):
+                    function(output, bridge_zero_prefix=bad_context)
+            with self.assertRaises(MODULE.Incomplete):
+                function(output + "changed-byte\n", bridge_zero_prefix=context)
+        wrong = (output.replace("issue: OutOfRange", "issue: Unknown"),
+                 output.replace("---- " + BRIDGE_TEST, "---- another_test"),
+                 output.replace("    " + BRIDGE_TEST + "\n", "    another_test\n"))
+        for value in wrong:
+            with self.subTest(value=value[:90]):
+                self.assertIsNone(MODULE.caught_bridge_zero_prefix(value))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.lifecycle_counts(value)
+
+    def test_caught_bridge_context_keeps_other_rows_and_limits_closed(self):
+        output = zero_bridge_caught_text()
+        variants = (output + BRIDGE_ROW,
+                    output + BRIDGE_ROW.replace(BRIDGE_CASE, "unknown"),
+                    output + row(values=(3,) + ROWS[0][1][1:]),
+                    output + row(values=(0,) * 22),
+                    output + lifecycle_row(values=(0,) * 22),
+                    output.replace(" masks=0", " unknown=0"),
+                    output.replace(" garde=0\n", " garde=18446744073709551616\n"))
+        for value in variants:
+            context = MODULE.caught_bridge_zero_prefix(value)
+            for function in (MODULE.lifecycle_counts, MODULE.combination_counts):
+                with self.subTest(value=value[-120:], function=function.__name__), self.assertRaises(MODULE.Incomplete):
+                    function(value, bridge_zero_prefix=context)
+
     def test_lifecycle_receiver_keeps_a_registered_failed_prefix_partial(self):
         observed = MODULE.lifecycle_counts(lifecycle_row())
         self.assertEqual(observed["lifecycle_counter_records"], 1)
@@ -253,7 +324,7 @@ class LifecycleDispatchTests(unittest.TestCase):
         self.assertIsNone(observed["lifecycle_observed_calls"])
         self.assertEqual(observed["lifecycle_observation_status"], "partial-source-recipe")
 
-    def test_all_thirteen_literal_rows_and_mixed_kernel_stream_complete(self):
+    def test_all_fourteen_literal_rows_and_mixed_kernel_stream_complete(self):
         plain = complete_lifecycle_text()
         prefixed = "".join("test " + case + " ... " + lifecycle_row(case, values)
                            for case, values in LIFECYCLE_ROWS)
@@ -263,22 +334,25 @@ class LifecycleDispatchTests(unittest.TestCase):
         for text in (plain, plain.replace("\n", "\r\n"), prefixed, kernel + plain, plain + kernel):
             with self.subTest(prefix=text[:70]):
                 observed = MODULE.lifecycle_counts(text, require_complete=True)
-                self.assertEqual(observed["lifecycle_counter_records"], 13)
+                self.assertEqual(observed["lifecycle_counter_records"], 14)
                 self.assertEqual(observed["lifecycle_missing_cases"], [])
                 self.assertEqual(observed["lifecycle_partial_cases"], [])
-                self.assertEqual(observed["lifecycle_observed_calls"]["histories"], 41)
-                self.assertEqual(observed["lifecycle_observed_calls"]["appends"], 184)
-                self.assertEqual(observed["lifecycle_observed_calls"]["advances"], 161)
+                self.assertEqual(observed["lifecycle_observed_calls"]["histories"], 57)
+                self.assertEqual(observed["lifecycle_observed_calls"]["appends"], 232)
+                self.assertEqual(observed["lifecycle_observed_calls"]["advances"], 167)
                 self.assertEqual(observed["lifecycle_observed_bridge_calls"],
                                  {"appends": 6, "admissions": 5, "masks": 5, "garde": 4})
-                self.assertEqual(observed["lifecycle_observed_counter_calls"], {"attempts": 4})
+                self.assertEqual(observed["lifecycle_observed_counter_calls"],
+                                 {"attempts": 4, "source_constructions": 24,
+                                  "source_predicates": 24, "garde": 24, "fixture_setups": 1,
+                                  "outcome_predicates": 34, "estimate_predicates": 18, "outcome_garde": 34})
                 self.assertNotIn("native_outcome", observed)
 
     def test_missing_private_or_public_families_are_not_complete(self):
         missing = MODULE.lifecycle_counts("unrelated core output\n")
         self.assertEqual(missing["lifecycle_observation_status"], "missing")
         self.assertIsNone(missing["lifecycle_recorded_call_subtotals"])
-        self.assertEqual(len(missing["lifecycle_missing_cases"]), 13)
+        self.assertEqual(len(missing["lifecycle_missing_cases"]), 14)
         for text in (BRIDGE_ROW, COUNTER_ROW, BRIDGE_ROW + COUNTER_ROW,
                      complete_lifecycle_text().replace(BRIDGE_ROW, ""),
                      complete_lifecycle_text().replace(COUNTER_ROW, "")):
@@ -296,7 +370,7 @@ class LifecycleDispatchTests(unittest.TestCase):
         prefix = lifecycle_row(values=tuple(raw))
         partial = MODULE.lifecycle_counts(prefix)
         self.assertEqual(partial["lifecycle_partial_cases"], [LIFECYCLE_FIRST])
-        self.assertEqual(partial["lifecycle_recorded_call_subtotals"]["getters"], 366)
+        self.assertEqual(partial["lifecycle_recorded_call_subtotals"]["getters"], 374)
         self.assertIsNone(partial["lifecycle_observed_calls"])
         reserved = MODULE.lifecycle_full_package_reservation()
         self.assertGreater(reserved["lifecycle_reserved_calls"]["getters"], 366)
@@ -323,7 +397,11 @@ class LifecycleDispatchTests(unittest.TestCase):
                    BRIDGE_ROW.replace("admissions=5", "admissions=6"),
                    "test " + COUNTER_TEST + " ... " + BRIDGE_ROW,
                    COUNTER_ROW.replace("attempts=4", "attempts=5"), COUNTER_ROW + COUNTER_ROW,
-                   COUNTER_ROW.replace("attempts=4", "attempts=0"), COUNTER_ROW.rstrip("\n"))
+                   COUNTER_ROW.replace("attempts=4 source_constructions=24 source_predicates=24 garde=24",
+                                       "attempts=0 source_constructions=0 source_predicates=0 garde=0")
+                              .replace("fixture_setups=1 outcome_predicates=34 estimate_predicates=18 outcome_garde=34",
+                                       "fixture_setups=0 outcome_predicates=0 estimate_predicates=0 outcome_garde=0"),
+                   COUNTER_ROW.rstrip("\n"))
         kernel = "".join(row(case, values) for case, values in ROWS)
         for text in invalid:
             for function in (MODULE.lifecycle_counts, MODULE.combination_counts):
@@ -341,7 +419,7 @@ class LifecycleDispatchTests(unittest.TestCase):
         self.assertEqual(observed.calls["appends"], reserved.calls["appends"])
         self.assertLess(observed.calls["getters"], reserved.calls["getters"])
         observed.calls["appends"] = 0
-        self.assertEqual(observation["lifecycle_observed_calls"]["appends"], 184)
+        self.assertEqual(observation["lifecycle_observed_calls"]["appends"], 232)
         for record in (MODULE.lifecycle_counts(""), MODULE.lifecycle_counts(lifecycle_row())):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.complete_lifecycle_attempts(record)
@@ -350,26 +428,167 @@ class LifecycleDispatchTests(unittest.TestCase):
         for bad in ({}, {**raw, "extra": 0}, {**raw, "advances": True},
                     {**raw, "equalities": -1}, {**raw, "seeds": 1 << 64}):
             for function in (MODULE.lifecycle_producer_calls,
-                             lambda value: MODULE.lifecycle_source_work_uppers(value, zero_bridge, {"attempts": 0})):
+                             lambda value: MODULE.lifecycle_source_work_uppers(value, zero_bridge, dict.fromkeys(COUNTER_FIELDS, 0))):
                 with self.subTest(bad=bad), self.assertRaises(MODULE.Incomplete):
                     function(bad)
         for bad in ({}, {**zero_bridge, "garde": True}, {**zero_bridge, "extra": 0}):
             with self.assertRaises(MODULE.Incomplete):
-                MODULE.lifecycle_source_work_uppers(raw, bad, {"attempts": 0})
-        for bad in ({}, {"attempts": True}, {"attempts": -1}, {"attempts": 1 << 64}):
-            with self.assertRaises(MODULE.Incomplete):
-                MODULE.lifecycle_source_work_uppers(raw, zero_bridge, bad)
+                MODULE.lifecycle_source_work_uppers(raw, bad, dict.fromkeys(COUNTER_FIELDS, 0))
+        zero_counter = dict.fromkeys(COUNTER_FIELDS, 0)
+        for field in COUNTER_FIELDS:
+            missing = {key: value for key, value in zero_counter.items() if key != field}
+            invalid = (missing, {**zero_counter, "extra": 0},
+                       *({**zero_counter, field: value}
+                         for value in (True, -1, 1.0, 1 << 64)))
+            for bad in invalid:
+                with self.subTest(field=field, bad=bad), self.assertRaises(MODULE.Incomplete):
+                    MODULE.lifecycle_source_work_uppers(raw, zero_bridge, bad)
+
+    def test_counter_source_matrix_prefix_is_partial_and_full_recipe_is_complete(self):
+        prefix = (COUNTER_ROW.replace("source_constructions=24 source_predicates=24 garde=24",
+                                      "source_constructions=12 source_predicates=12 garde=12")
+                  .replace("fixture_setups=1 outcome_predicates=34 estimate_predicates=18 outcome_garde=34",
+                           "fixture_setups=0 outcome_predicates=0 estimate_predicates=0 outcome_garde=0"))
+        text = complete_lifecycle_text().replace(COUNTER_ROW, prefix)
+        partial = MODULE.lifecycle_counts(text)
+        self.assertEqual(partial["lifecycle_partial_cases"], [COUNTER_CASE])
+        self.assertEqual(partial["lifecycle_recorded_counter_subtotals"],
+                         {"attempts": 4, "source_constructions": 12,
+                          "source_predicates": 12, "garde": 12, "fixture_setups": 0,
+                          "outcome_predicates": 0, "estimate_predicates": 0, "outcome_garde": 0})
+        self.assertIsNone(partial["lifecycle_observed_counter_calls"])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.lifecycle_counts(text, require_complete=True)
+        reserved = MODULE.lifecycle_full_package_reservation()
+        self.assertEqual(reserved["lifecycle_reserved_counter_calls"],
+                         {"attempts": 4, "source_constructions": 24,
+                          "source_predicates": 24, "garde": 24, "fixture_setups": 1,
+                                  "outcome_predicates": 34, "estimate_predicates": 18, "outcome_garde": 34})
+        self.assertEqual(MODULE.lifecycle_counts(complete_lifecycle_text(), require_complete=True)
+                         ["lifecycle_observed_counter_calls"], reserved["lifecycle_reserved_counter_calls"])
+
+    def test_counter_source_matrix_transport_is_closed_and_individually_bounded(self):
+        kernel = "".join(row(case, values) for case, values in ROWS)
+        invalid = ["CORE_LIFECYCLE_COUNTER_PROFILE case=" + COUNTER_CASE + " attempts=4\n",
+                   "CORE_LIFECYCLE_COUNTER_PROFILE case=" + COUNTER_CASE
+                   + " attempts=4 source_constructions=24 source_predicates=24 garde=24\n",
+                   COUNTER_ROW.replace(" source_constructions=24 source_predicates=24 garde=24", ""),
+                   COUNTER_ROW.replace("attempts=4 source_constructions=24",
+                                       "source_constructions=24 attempts=4"),
+                   COUNTER_ROW.replace(" garde=24", " garde=24 unknown=0"),
+                   COUNTER_ROW + COUNTER_ROW, COUNTER_ROW.rstrip("\n")]
+        for field, value in zip(COUNTER_FIELDS, (4, 24, 24, 24, 1, 34, 18, 34), strict=True):
+            token = " " + field + "=" + str(value)
+            invalid.extend((COUNTER_ROW.replace(token, ""),
+                            COUNTER_ROW.replace(token, token + token),
+                            *(COUNTER_ROW.replace(token, " " + field + "=" + bad)
+                              for bad in (str(value + 1), "-1", "true", "1.0", "+1",
+                                          "18446744073709551616"))))
+        for text in invalid:
+            for function in (MODULE.lifecycle_counts, MODULE.combination_counts):
+                with self.subTest(row=text[:120], receiver=function.__name__), \
+                        self.assertRaises(MODULE.Incomplete):
+                    function(kernel + text)
+
+    def test_private_source_counter_work_counts_direct_and_nested_requests_once(self):
+        zero = dict.fromkeys(LIFECYCLE_FIELDS, 0)
+        bridge = {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}
+        counter = dict.fromkeys(COUNTER_FIELDS, 0)
+        cases = (
+            ({**counter, "source_constructions": 3}, (3, 3, 6, 0, 24)),
+            ({**counter, "source_predicates": 5}, (0, 0, 5, 0, 0)),
+            ({**counter, "garde": 7}, (7, 0, 7, 0, 0)),
+            ({**counter, "attempts": 4}, (0, 0, 0, 4, 0)),
+            ({**counter, "attempts": 4, "source_constructions": 24,
+              "source_predicates": 24, "garde": 24}, (48, 24, 96, 4, 192)),
+        )
+        fields = ("lifecycle_garde_validate_calls_upper",
+                  "lifecycle_source_counter_constructions_upper",
+                  "lifecycle_source_counter_predicate_calls_upper",
+                  "lifecycle_checked_next_calls_upper",
+                  "lifecycle_internal_product_getter_requests_upper")
+        for calls, expected in cases:
+            with self.subTest(calls=calls):
+                work = MODULE.lifecycle_source_work_uppers(zero, bridge, calls)
+                self.assertEqual(tuple(work[field] for field in fields), expected)
+                self.assertTrue(all(value == 0 for field, value in work.items() if field not in fields))
+                self.assertNotIn("charged_fit_work_upper", work)
+                self.assertNotIn("point_admissions_upper", work)
+
+    def test_raw_parameter_comparisons_have_independent_observed_and_reserved_counts(self):
+        case = "lifecycle_raw_parameter_and_ordinal_admission_neighbors"
+        observed = MODULE.lifecycle_counts(complete_lifecycle_text(), require_complete=True)
+        calls = observed["lifecycle_profiles"][case]
+        self.assertEqual((calls["combination_parameters"], calls["getters"], calls["equalities"]),
+                         (21, 24, 6))
+        ceiling = MODULE.lifecycle_case_ceilings()[case]
+        self.assertEqual((ceiling["combination_parameters"], ceiling["equalities"]), (21, 6))
+        self.assertGreaterEqual(ceiling["getters"], 24)
+
+    def test_guard_fixture_has_a_separate_fixed_source_reservation(self):
+        expected = (4,12,12,4,24,4,4,4096,6,6,6,6,11,11,16,11,11,0,0,12,16,0)
+        calls = MODULE.lifecycle_guard_fixture_calls()
+        self.assertEqual(tuple(calls[field] for field in LIFECYCLE_FIELDS), expected)
+        producer = MODULE.lifecycle_guard_fixture_producer_reservation()
+        self.assertEqual(producer, {
+            "histories": 4, "appends": 12, "observations": 12, "contexts": 4,
+            "monotonic": 24, "coordinates": 4, "exchanges": 4, "getters": 4096,
+            "terms": 6, "projections": 6, "enclosures": 6, "batches": 6,
+            "minima": 11, "parameters": 11, "strata": 16, "seeds": 11,
+            "advances": 12, "state_clones": 15, "value_equalities": 0, "state_formats": 0,
+        })
+        calls["appends"] = 0
+        producer["state_clones"] = 0
+        self.assertEqual(MODULE.lifecycle_guard_fixture_calls()["appends"], 12)
+        self.assertEqual(MODULE.lifecycle_guard_fixture_producer_reservation()["state_clones"], 15)
+
+    def test_direct_outcome_and_estimate_work_does_not_repeat_fixture_producers(self):
+        zero = dict.fromkeys(LIFECYCLE_FIELDS, 0)
+        bridge = {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}
+        counter = dict.fromkeys(COUNTER_FIELDS, 0)
+        raw = {**counter, "outcome_predicates": 34, "outcome_garde": 34, "estimate_predicates": 18}
+        work = MODULE.lifecycle_source_work_uppers(zero, bridge, raw)
+        self.assertEqual(work["lifecycle_output_predicate_calls_upper"], 68)
+        self.assertEqual(work["lifecycle_garde_validate_calls_upper"], 34)
+        self.assertEqual(work["lifecycle_internal_product_getter_requests_upper"], 704512)
+        self.assertEqual(work["lifecycle_witness_membership_label_probes_upper"], 17408)
+        self.assertEqual(work["lifecycle_output_contributor_label_probes_upper"], 17408)
+        self.assertEqual(work["lifecycle_checked_next_calls_upper"], 0)
+        self.assertEqual(work["bridge_reduction_entry_attempts_upper"], 0)
+        self.assertEqual(work["lifecycle_source_counter_constructions_upper"], 0)
+        full = {"attempts": 4, "source_constructions": 24, "source_predicates": 24, "garde": 24,
+                "fixture_setups": 1, "outcome_predicates": 34, "estimate_predicates": 18, "outcome_garde": 34}
+        complete = MODULE.lifecycle_source_work_uppers(zero, bridge, full)
+        self.assertEqual(complete["lifecycle_output_predicate_calls_upper"], 92)
+        self.assertEqual(complete["lifecycle_garde_validate_calls_upper"], 857)
+        self.assertEqual(complete["lifecycle_source_counter_constructions_upper"], 776)
+        self.assertEqual(complete["lifecycle_source_counter_predicate_calls_upper"], 1600)
+        self.assertEqual(complete["lifecycle_checked_next_calls_upper"], 16)
+        self.assertEqual(complete["lifecycle_staged_source_copy_cells_upper"], 240)
+        self.assertEqual(complete["lifecycle_internal_product_getter_requests_upper"], 803184)
+        self.assertEqual(complete["bridge_reduction_entry_attempts_upper"], 12)
+        self.assertNotIn("charged_fit_work_upper", complete)
+        self.assertNotIn("point_admissions_upper", complete)
+
+    def test_capacity_source_recipe_preserves_exact_calls_and_larger_ceilings(self):
+        case = "lifecycle_capacity_neighbors_preserve_pending_credit"
+        exact = MODULE.lifecycle_case_recipes()[case]
+        ceiling = MODULE.lifecycle_case_ceilings()[case]
+        self.assertEqual((exact["seeds"], exact["principal_parameters"], exact["combination_parameters"],
+                          exact["minima"], exact["getters"], exact["advances"]), (4, 1, 1, 1, 264, 6))
+        self.assertEqual((ceiling["seeds"], ceiling["principal_parameters"], ceiling["combination_parameters"],
+                          ceiling["minima"], ceiling["getters"], ceiling["advances"]), (4, 4, 4, 4, 4800, 6))
 
     def test_source_reservation_charges_inherited_work_once_and_module_units_separately(self):
         reserved = MODULE.lifecycle_full_package_reservation()
         calls = reserved["lifecycle_reserved_calls"]
-        self.assertEqual(calls["appends"], 184)
-        self.assertEqual(calls["getters"], 38912)
-        self.assertEqual(calls["advances"], 161)
+        self.assertEqual(calls["appends"], 232)
+        self.assertEqual(calls["getters"], 43712)
+        self.assertEqual(calls["advances"], 167)
         producer = MODULE.lifecycle_producer_calls(calls)
-        self.assertEqual(producer["appends"], 184)
-        self.assertEqual(producer["state_clones"], 161)
-        self.assertEqual(producer["parameters"], 27)
+        self.assertEqual(producer["appends"], 232)
+        self.assertEqual(producer["state_clones"], 167)
+        self.assertEqual(producer["parameters"], 31)
         self.assertNotIn("combination_parameters", producer)
         private = MODULE.lifecycle_bridge_producer_reservation()
         self.assertEqual(private["appends"], 6)
@@ -378,17 +597,20 @@ class LifecycleDispatchTests(unittest.TestCase):
         own = reserved["lifecycle_reserved_module_work_uppers"]
         self.assertNotIn("charged_fit_work_upper", own)
         self.assertNotIn("point_admissions_upper", own)
-        self.assertEqual(own["lifecycle_compatibility_checked_binary_calls_upper"], 9982)
-        self.assertEqual(own["lifecycle_checked_next_calls_upper"], 249)
-        self.assertEqual(own["bridge_complete_receiving_passes_upper"], 336)
-        self.assertEqual(own["uncertainty_constructor_attempts_upper"], 186)
+        self.assertEqual(own["lifecycle_compatibility_checked_binary_calls_upper"], 11098)
+        self.assertEqual(own["lifecycle_checked_next_calls_upper"], 267)
+        self.assertEqual(own["lifecycle_garde_validate_calls_upper"], 9721)
+        self.assertEqual(own["lifecycle_source_counter_constructions_upper"], 9330)
+        self.assertEqual(own["lifecycle_source_counter_predicate_calls_upper"], 18708)
+        self.assertEqual(own["bridge_complete_receiving_passes_upper"], 372)
+        self.assertEqual(own["uncertainty_constructor_attempts_upper"], 218)
         zero = dict.fromkeys(LIFECYCLE_FIELDS, 0)
         zero_work = MODULE.lifecycle_source_work_uppers(
-            zero, {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}, {"attempts": 0})
+            zero, {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}, dict.fromkeys(COUNTER_FIELDS, 0))
         self.assertTrue(all(value == 0 for value in zero_work.values()))
         with self.assertRaises(MODULE.Incomplete):
             MODULE.lifecycle_source_work_uppers({**zero, "advances": (1 << 64) - 1},
-                {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}, {"attempts": 0})
+                {"appends": 0, "admissions": 0, "masks": 0, "garde": 0}, dict.fromkeys(COUNTER_FIELDS, 0))
 
     def test_pending_or_malformed_new_source_metadata_fails_closed(self):
         for recipes in (None, (), (("bad",),), (("bad-name", (1,) * 22),),
@@ -396,6 +618,12 @@ class LifecycleDispatchTests(unittest.TestCase):
                         ((LIFECYCLE_FIRST, LIFECYCLE_ROWS[0][1]),) * 2):
             with patch.object(MODULE, "LIFECYCLE_SOURCE_RECIPES", recipes), self.subTest(recipes=recipes), \
                     self.assertRaises(MODULE.Incomplete):
+                MODULE.lifecycle_full_package_reservation()
+        for values in ((4,), (4, 24, 24, 24), (4, 24, 24, 24, True, 34, 18, 34),
+                       (4, 24, 24, 24, 1, 34, 18, 1 << 64), (0,) * 8):
+            recipes = ((COUNTER_CASE, values),)
+            with patch.object(MODULE, "LIFECYCLE_COUNTER_SOURCE_RECIPES", recipes), \
+                    self.subTest(counter_values=values), self.assertRaises(MODULE.Incomplete):
                 MODULE.lifecycle_full_package_reservation()
         with patch.object(MODULE, "LIFECYCLE_SOURCE_TESTS", ()), self.assertRaises(MODULE.Incomplete):
             MODULE.lifecycle_counts(complete_lifecycle_text())

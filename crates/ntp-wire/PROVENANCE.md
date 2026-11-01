@@ -96,3 +96,41 @@ application's licence graph.
 
 Local Rust adaptation and independent raw-input tests: David Osipov with AI
 assistance, 29 October 2026. No new external dependency is introduced by this crate.
+
+## Inert NTS-KE framing preparation
+
+`src/nts_ke.rs` is an original safe Rust implementation of the
+record-envelope and End-of-Message facts in
+[RFC 8915 section 4](https://www.rfc-editor.org/rfc/rfc8915.html#section-4),
+reviewed 1 November 2026. No upstream C or RFC code component is copied. Its
+body-only length and unaligned bodies are separate from the retained Chrony/RFC
+NTP extension-field grammar above. Existing upstream notices remain unchanged.
+
+This representation layer preserves every non-EOM record as opaque bytes, even
+when its critical bit is set. A later semantic receiver must reject unsupported
+critical types, ignore unsupported noncritical records and check complete
+request/success/error-response rules before admitting any negotiated state.
+No TLS/provider, cryptographic, trust, endpoint, cookie or association policy is
+adopted. Explicit byte/count experiment bounds are not shipped transport defaults.
+
+## Pure NTPv4 negotiation preparation
+
+`src/nts_negotiation.rs` is original safe Rust derived from the protocol facts in
+[RFC 8915 sections 4–4.1.8](https://www.rfc-editor.org/rfc/rfc8915.html#section-4),
+reviewed 1 November 2026. No RFC code component or upstream implementation is
+copied, and no dependency is added. It builds on the inert framing owner rather
+than changing its envelope grammar or the retained Chrony source notices.
+
+The current request profile offers only protocol zero (NTPv4); other protocol
+identifiers receive an explicit unsupported-profile rejection. An actual checked
+request supplies the offered algorithm identifiers against which a complete
+response is compared. Empty protocol/algorithm lists remain refusal outcomes;
+Error and unrecognized Warning records never produce a successful negotiation.
+Cookies remain opaque borrowed bodies, including empty bodies. Repeated port
+records are rejected as an explicit local ambiguity rule, not an RFC-mandated
+cardinality rule. Limited ASCII server hints remain unapproved input for a later
+complete endpoint parser, absolute-DNS handling and current destination policy.
+
+This pure result qualifies no provider, algorithm implementation, TLS identity or
+closure, exporter keys, endpoint permission, cookie lifecycle, usable association
+or atomic publication. The later effect owner must establish those guarantees.

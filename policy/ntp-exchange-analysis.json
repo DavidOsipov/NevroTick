@@ -17,14 +17,14 @@
   "test_threads": 12,
   "mutation_equivalences": [],
   "inputs_sha256": {
-    "Cargo.toml": "1ff169cd1e5ef9eea5df503b706c52938e1793201dfaf1aa014449eae07ca6a8",
-    "Cargo.lock": "e5dff6283c649af7f47c4b7220af2f7f1520a978293dbb8aab5f1668da65fe32",
+    "Cargo.toml": "008eea7d34f859482cbca1688b54a25e879ce0f655bb8f87a18b8e4f90c03d71",
+    "Cargo.lock": "416b349d87cc0e53562d79d494316fd20c210ede2e45c2568f5973652753ec8f",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
     "crates/ntp-exchange/src/lib.rs": "68811f208aff164ddc3ef911beb85bff470a1469bacaa7b5e5e5708db08b1143",
     "crates/ntp-exchange/src/context.rs": "3d84e94e9d930315a0bbc9983c21d97841cb17ed4e01c4f5e2a30e69037f10c7",
     "crates/ntp-exchange/src/association.rs": "627a342203a7bd3c9c540fdc5490b4e2701bb955cc5413ae3569b5e6c17dce39",
-    "policy/ui-m0-dependencies.json": "4953187690855763290e9f0eb551b5fdcf9c496ed5247b23e410a48c20b52377",
-    "policy/verification-manifest.toml": "873c7179b951f940d088d5b9ba8ef7f0b9e38d83b3dc329d78ebf931d4dd8933",
+    "policy/ui-m0-dependencies.json": "1778cfc773f61b46ecee6c6bc600416630855c3b2454dcc8a02cdfd8928b6043",
+    "policy/verification-manifest.toml": "6208d3876f420ba4e70d62b8d29e05008da98e4f64bef002bd76b57e98716a92",
     "tasks/s1.1-exchange-vectors.json": "f4ef0a5e339cad487587f5417feb2a12ca4a06ac279d94131265d691181b41ae",
     "policy/ntp-exchange-resource-observer.rs": "f78b602115c360eaa182d289604d4ef5751e269fef58eb1d5d0c3df023654d12"
   },

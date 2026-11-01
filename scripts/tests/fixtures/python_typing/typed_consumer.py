@@ -11,7 +11,9 @@ import core_combination_accounting as combination
 
 
 class CombinationInterface(Protocol):
-    def combination_counts(self, output: str, *, require_complete: bool = False) -> combination.CombinationObservation: ...
+    def combination_counts(self, output: str, *, require_complete: bool = False,
+                           bridge_zero_prefix: combination.CaughtBridgeZeroPrefix | None = None) -> combination.CombinationObservation: ...
+    def caught_bridge_zero_prefix(self, output: str) -> combination.CaughtBridgeZeroPrefix | None: ...
     def case_recipes(self) -> dict[str, combination.PublicCalls]: ...
     def producer_calls(self, calls: combination.PublicCalls) -> combination.ProducerCalls: ...
     def source_work_uppers(self, calls: combination.PublicCalls) -> dict[str, int]: ...
@@ -30,11 +32,15 @@ class CohortInterface(Protocol):
 
 
 class LifecycleInterface(Protocol):
-    def lifecycle_counts(self, output: str, *, require_complete: bool = False) -> combination.LifecycleObservation: ...
+    def lifecycle_counts(self, output: str, *, require_complete: bool = False,
+                         bridge_zero_prefix: combination.CaughtBridgeZeroPrefix | None = None) -> combination.LifecycleObservation: ...
+    def caught_bridge_zero_prefix(self, output: str) -> combination.CaughtBridgeZeroPrefix | None: ...
     def lifecycle_case_recipes(self) -> dict[str, combination.LifecycleCalls]: ...
     def lifecycle_case_ceilings(self) -> dict[str, combination.LifecycleCalls]: ...
     def lifecycle_producer_calls(self, calls: combination.LifecycleCalls) -> combination.ProducerCalls: ...
     def lifecycle_bridge_producer_reservation(self) -> combination.ProducerCalls: ...
+    def lifecycle_guard_fixture_calls(self) -> combination.LifecycleCalls: ...
+    def lifecycle_guard_fixture_producer_reservation(self) -> combination.ProducerCalls: ...
     def lifecycle_source_work_uppers(self, calls: combination.LifecycleCalls,
                                    bridge_calls: combination.LifecycleBridgeCalls,
                                    counter_calls: combination.LifecycleCounterCalls) -> dict[str, int]: ...
@@ -83,3 +89,34 @@ def lifecycle_reserved() -> combination.ReservedLifecycleAttempts:
     """Keep pre-effect lifecycle reservations distinct from observed attempts."""
     return combination.reserved_lifecycle_attempts(
         lifecycle_accounting.lifecycle_full_package_reservation())
+
+
+def lifecycle_counter_units(value: combination.ObservedLifecycleAttempts) -> tuple[int, int, int, int, int, int, int, int]:
+    """A complete nominal observation exposes every precise private-counter field."""
+    calls = value.counter_calls
+    return (calls["attempts"], calls["source_constructions"],
+            calls["source_predicates"], calls["garde"], calls["fixture_setups"],
+            calls["outcome_predicates"], calls["estimate_predicates"], calls["outcome_garde"])
+
+
+def combination_caught_prefix(output: str) -> combination.CombinationObservation | None:
+    """Type the optional context seam; Native Caught authority belongs to Core."""
+    context = accounting.caught_bridge_zero_prefix(output)
+    if context is None:
+        return None
+    return accounting.combination_counts(output, bridge_zero_prefix=context)
+
+
+def lifecycle_caught_prefix(output: str) -> combination.LifecyclePartialObservation | None:
+    """A valid structural context never supplies a complete observed attempt unit."""
+    context = lifecycle_accounting.caught_bridge_zero_prefix(output)
+    if context is None:
+        return None
+    record = lifecycle_accounting.lifecycle_counts(output, bridge_zero_prefix=context)
+    if record["lifecycle_observation_status"] == "partial-source-recipe":
+        return record
+    if record["lifecycle_observation_status"] == "complete-source-recipe":
+        return None
+    if record["lifecycle_observation_status"] == "missing":
+        return None
+    assert_never(record)

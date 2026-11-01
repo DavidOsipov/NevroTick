@@ -180,6 +180,109 @@ class EvidenceTests(unittest.TestCase):
             self.assertFalse(case.output.exists())
             self.assertEqual(case.report, {})
 
+    def test_stable_core_profile_requires_explicit_exact_policy_scope_and_lane(self):
+        core = MODULE.Scope("time-core", CORE_FILES, "policy/time-core-analysis.json")
+        self.assertEqual(MODULE.admission_profile(SimpleNamespace(lane="contracts"), SCOPE, {}), "full")
+        policy = {"tool_admission_profile": "stable-core"}
+        for lane in ("contracts", "coverage", "mutation"):
+            args = SimpleNamespace(lane=lane, tool_admission_profile="stable-core")
+            self.assertEqual(MODULE.admission_profile(args, core, policy), "stable-core")
+        for lane, profile, scope, selected_policy in (
+                ("contracts", "stable-core", core, {}),
+                ("contracts", "full", core, policy),
+                ("contracts", "stable-core", SCOPE, policy),
+                ("contracts", "stable-core", MODULE.Scope("time-core", CORE_FILES, "other.json"), policy),
+                *((lane, "stable-core", core, policy) for lane in ("fuzz", "all", "inventory", "cohort-union")),
+                *(("contracts", value, core, {}) for value in (None, True, "", "stable", "unknown"))):
+            with self.subTest(lane=lane, profile=profile, scope=scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile=profile),
+                                         scope, selected_policy)
+
+    @contextmanager
+    def stable_session(self):
+        """Real private input trees; only external product/native operations are stubbed."""
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            session = MODULE.Session.__new__(MODULE.Session)
+            session.root, session.output = parent / "checkout", parent / "output"
+            session.root.mkdir(); session.output.mkdir()
+            session.work = session.output / "work"; session.work.mkdir(mode=0o700)
+            session.source = session.work / "source"; session.source.mkdir()
+            (session.root / "input").write_text("frozen")
+            (session.source / "input").write_text("frozen")
+            session.identity = {"input": MODULE.PRODUCT.sha256(session.root / "input")}
+            session.product_identity = dict(session.identity)
+            session.source_inventory = MODULE.PRODUCT.inventory(session.source)
+            session.config = session.work / "config.toml"; session.config.write_text("fixed")
+            session.config_sha256 = MODULE.PRODUCT.sha256(session.config)
+            session.base, session.stable = parent / "omitted", parent / "stable"
+            session.base.mkdir(); session.stable.mkdir()
+            for name in MODULE.ANALYSIS.STABLE_CORE_SCOPES:
+                (session.stable / name).mkdir()
+            session.vendor, session.tools = parent / "vendor", parent / "tools"
+            session.vendor.mkdir(); session.tools.mkdir()
+            (session.tools / "selected-extension").write_text("sealed")
+            session.protected_tools = {session.tools: MODULE.PRODUCT.inventory(session.tools)}
+            session.protected_islands = {}
+            session.admission_profile = "stable-core"
+            session.payload_readonly = tuple(session.stable / name for name in MODULE.ANALYSIS.STABLE_CORE_SCOPES)
+            session.admitted = {"base": session.base, "stable": session.stable,
+                               "policy": {"common_nightly": "common/nightly"},
+                               "policy_sha256": "a" * 64, "inventories": [{"root": "stable"}],
+                               "admission_profile": "stable-core", "readonly_roots": session.payload_readonly,
+                               "installation_pointer": str(parent / "pointer"),
+                               "installation_pointer_sha256": "b" * 64}
+            session.dependency_policy, session.vendor_identity = {}, {}
+            session.policy = {"tool_admission_profile": "stable-core"}
+            session.report = {"lanes": []}
+            with patch.object(MODULE, "require_current_candidate"):
+                yield session
+
+    def test_stable_core_run_omits_base_and_rejects_compiler_and_island_escalation(self):
+        with self.stable_session() as session:
+            success = {"exit_code": 0, "failure": None, "output": "healthy"}
+            with patch.object(MODULE.RUNTIME, "run", return_value=success) as native:
+                self.assertEqual(session.run("control", ["fixture"], 1), "healthy")
+                self.assertEqual(native.call_args.kwargs["readonly"],
+                                 [*session.payload_readonly, session.vendor, session.tools])
+                self.assertNotIn(session.base, native.call_args.kwargs["readonly"])
+                self.assertNotIn(session.stable, native.call_args.kwargs["readonly"])
+                native.reset_mock()
+                session.protected_tools[session.base] = MODULE.PRODUCT.inventory(session.base)
+                for options in ({"compiler": session.base / "common/nightly"}, {"extra_tools": session.base}):
+                    with self.subTest(options=options), self.assertRaisesRegex(MODULE.Incomplete, "nightly compiler or extra"):
+                        session.run("control", ["fixture"], 1, **options)
+                native.assert_not_called()
+
+    def test_stable_core_keeps_pre_and_post_command_sealed_input_guards(self):
+        with self.stable_session() as session:
+            with patch.object(MODULE.RUNTIME, "run") as native:
+                (session.tools / "undeclared").write_text("unadmitted dependency")
+                with self.assertRaisesRegex(MODULE.Incomplete, "sealed tool"):
+                    session.run("control", ["fixture"], 1)
+                native.assert_not_called()
+                (session.tools / "undeclared").unlink()
+            def change_after_launch(*args, **kwargs):
+                session.config.write_text("changed")
+                return {"exit_code": 0, "failure": None, "output": "healthy"}
+            with patch.object(MODULE.RUNTIME, "run", side_effect=change_after_launch) as native:
+                with self.assertRaisesRegex(MODULE.Incomplete, "Cargo configuration"):
+                    session.run("control", ["fixture"], 1)
+                native.assert_called_once()
+
+    def test_stable_core_finish_rehashes_same_profile_and_rejects_pointer_drift(self):
+        with self.stable_session() as session:
+            with patch.object(MODULE.PRODUCT, "admit_vendor", return_value={}), \
+                 patch.object(MODULE.ANALYSIS, "admit", return_value=dict(session.admitted)) as admit:
+                session.finish()
+                admit.assert_called_once_with(session.root, profile="stable-core")
+                self.assertTrue(session.report["analysis_admission_after"]["unchanged"])
+            changed = {**session.admitted, "installation_pointer_sha256": "c" * 64}
+            with patch.object(MODULE.PRODUCT, "admit_vendor", return_value={}), \
+                 patch.object(MODULE.ANALYSIS, "admit", return_value=changed):
+                with self.assertRaisesRegex(MODULE.Incomplete, "installation/payload"):
+                    session.finish()
+
     def test_mutation_json_policy_emits_flag_in_listing_and_campaign(self):
         """Core's JSON mode reaches both commands and exact command guards."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -340,6 +443,8 @@ class EvidenceTests(unittest.TestCase):
             session.output = root
             session.base = root / "base"
             session.stable = root / "stable"
+            session.admission_profile = "full"
+            session.payload_readonly = (session.base, session.stable)
             session.vendor = root / "vendor"
             session.tools = root / "tools"
             session.source = root / "source"
@@ -407,6 +512,8 @@ class EvidenceTests(unittest.TestCase):
             session.output = root
             session.base = root / "base"
             session.stable = root / "stable"
+            session.admission_profile = "full"
+            session.payload_readonly = (session.base, session.stable)
             session.vendor = root / "vendor"
             session.tools = root / "tools"
             session.source = root / "source"
@@ -1258,6 +1365,8 @@ class EvidenceTests(unittest.TestCase):
             session.output, session.config = base / "output", base / "work/cargo-home/config.toml"
             session.output.mkdir()
             session.base, session.stable, session.vendor, session.tools = (base / n for n in ("payload", "stable", "vendor", "tools"))
+            session.admission_profile = "full"
+            session.payload_readonly = (session.base, session.stable)
             session.admitted = {"policy": {"common_nightly": "nightly"}}
             session.protected_islands = {base / "work/deps": {}, base / "work/consumers": {}}
             session.protected_tools = {session.tools: {}}

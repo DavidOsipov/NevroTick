@@ -70,6 +70,8 @@ REQUIRED_SCOPES = {
 }
 HEX = re.compile(r"[a-f0-9]{64}\Z")
 MAX_JSON = 32 * 1024 * 1024
+ADMISSION_PROFILES = ("full", "stable-core")
+STABLE_CORE_SCOPES = ("bin", "etc", "lib", "libexec", "share")
 
 
 def unique_object(pairs):
@@ -190,11 +192,11 @@ def load_installation(record, root):
     return base, stable
 
 
-def check_inventory(base, specification, stable=None):
+def inventory_specification(specification):
+    """Validate a complete inventory description without opening its payload."""
     scope_root = specification.get("root")
     if not isinstance(scope_root, str) or scope_root not in REQUIRED_SCOPES:
         raise Incomplete("Unknown inventory root.")
-    folder = Path(stable) if scope_root == "stable" and stable else internal(base, scope_root)
     scopes = specification.get("scopes")
     if (not isinstance(scopes, list) or not scopes or not all(isinstance(item, str) for item in scopes)
             or len(scopes) != len(set(scopes))
@@ -210,6 +212,12 @@ def check_inventory(base, specification, stable=None):
     inventory_path = relative(specification.get("path"))
     if not inventory_path.startswith("evidence/"):
         raise Incomplete("Inventory must be a pinned evidence file.")
+    return scope_root, scopes, inventory_path, expected_hash
+
+
+def check_inventory(base, specification, stable=None):
+    scope_root, scopes, inventory_path, expected_hash = inventory_specification(specification)
+    folder = Path(stable) if scope_root == "stable" and stable else internal(base, scope_root)
     data = read_once(internal(base, inventory_path))
     if hashlib.sha256(data).hexdigest() != expected_hash:
         raise Incomplete("Inventory SHA256 mismatch; refusing to parse substituted bytes.")
@@ -226,20 +234,51 @@ def check_inventory(base, specification, stable=None):
         if not any(PurePosixPath(path).is_relative_to(scope) for scope in scopes):
             raise Incomplete("Inventory entry is outside declared scopes.")
     found = set()
-    files = []
+    terminals = []
 
     def inspect(path):
+        """Discover directories serially; inventory names are terminal hints only.
+
+        A declared file or link is queued without a serial metadata read. The
+        worker still checks its actual kind before hashing: a directory cannot
+        satisfy a declared terminal, even if it has no children. Unlisted
+        directories retain the existing no-follow lstat/scandir traversal.
+        """
         key = path.relative_to(folder).as_posix()
+        if key in entries:
+            found.add(key)
+            expected = entries[key]
+            if not isinstance(expected, dict):
+                raise Incomplete(f"Unexpected payload entry: {scope_root}/{key}")
+            terminals.append((path, expected))
+            return
         details = path.lstat()
         if stat.S_ISDIR(details.st_mode):
             with os.scandir(path) as children:
                 for child in children:
                     inspect(Path(child.path))
             return
-        found.add(key)
-        expected = entries.get(key)
-        if not isinstance(expected, dict):
-            raise Incomplete(f"Unexpected payload entry: {scope_root}/{key}")
+        raise Incomplete(f"Unexpected payload entry: {scope_root}/{key}")
+
+    for scope in scopes:
+        path = folder / scope
+        # Parent directories must not redirect before reaching a listed scope.
+        if path.parent.resolve(strict=True) != path.parent:
+            raise Incomplete("Inventory scope parent redirects through a symlink.")
+        inspect(path)
+    if found != set(entries):
+        raise Incomplete("Missing payload inventory entries.")
+
+    def verify_terminal(item):
+        """Validate actual terminal metadata, then hash every regular payload.
+
+        Inventory membership is not a kind/size/content proof. Keep all original
+        lstat, link-containment and descriptor-based digest checks, and propagate
+        every worker rejection before the caller can execute an admitted tool.
+        """
+        path, expected = item
+        key = path.relative_to(folder).as_posix()
+        details = path.lstat()
         if stat.S_ISLNK(details.st_mode):
             target = path.resolve(strict=True)
             if (expected.get("kind") != "symlink" or os.readlink(path) != expected.get("target")
@@ -254,34 +293,32 @@ def check_inventory(base, specification, stable=None):
                     or details.st_size != expected["bytes"] or not isinstance(expected.get("sha256"), str)
                     or not HEX.fullmatch(expected["sha256"])):
                 raise Incomplete(f"Payload digest/size mismatch: {scope_root}/{key}")
-            files.append((path, expected["sha256"]))
+            if digest(path) != expected["sha256"]:
+                raise Incomplete(f"Payload digest/size mismatch: {scope_root}/{key}")
+        elif stat.S_ISDIR(details.st_mode):
+            raise Incomplete(f"Inventory terminal is a directory: {scope_root}/{key}")
         else:
             raise Incomplete("Special files are forbidden in payload scopes.")
 
-    for scope in scopes:
-        path = folder / scope
-        # Parent directories must not redirect before reaching a listed scope.
-        if path.parent.resolve(strict=True) != path.parent:
-            raise Incomplete("Inventory scope parent redirects through a symlink.")
-        inspect(path)
-    if found != set(entries):
-        raise Incomplete("Missing payload inventory entries.")
-
-    def verify_file(item):
-        path, expected = item
-        if digest(path) != expected:
-            raise Incomplete(f"Payload digest/size mismatch: {scope_root}/{path.relative_to(folder)}")
-
-    # Directory traversal remains a single no-follow pass. Bounded parallel
-    # streaming reads avoid serial Drvfs round trips without weakening hashes.
+    # Discover every terminal first, so extra/missing membership fails before
+    # hashing. Reuse the same twelve workers for file metadata and exact bytes;
+    # neither admission scopes, mounted roots nor pre/post custody are narrowed.
     with ThreadPoolExecutor(max_workers=12) as workers:
-        for _ in workers.map(verify_file, files):
+        for _ in workers.map(verify_terminal, terminals):
             pass
     return {"name": specification["name"], "sha256": expected_hash, "entries": len(found),
             "root": scope_root}, {f"{scope_root}/{key}" for key in found}
 
 
-def admit(root=ROOT, installation_record=None):
+def admit(root=ROOT, installation_record=None, *, profile="full"):
+    """Hash the complete selected payload closure; full admission stays default.
+
+    Stable-core admits the existing complete stable inventory only. Its caller
+    must restrict execution to stable core lanes and mount only readonly_roots;
+    no omitted analysis-store payload is admitted or made available implicitly.
+    """
+    if type(profile) is not str or profile not in ADMISSION_PROFILES:
+        raise Incomplete("Unknown analysis admission profile.")
     root = Path(root).resolve(strict=True)
     if os.name != "posix" or not sys.platform.startswith("linux") or os.geteuid() == 0:
         raise Incomplete("Analysis admission requires an ordinary Linux user.")
@@ -289,6 +326,9 @@ def admit(root=ROOT, installation_record=None):
     policy = decode(data)
     validate_policy(policy)
     pointer = installation_record or Path.home() / ".local/share/nevrotick/analysis-installation.json"
+    if profile == "stable-core":
+        pointer = Path(pointer).expanduser()
+    pointer_data = read_once(pointer, maximum=4096, private=True) if profile == "stable-core" else b""
     base, stable = load_installation(pointer, root)
     inventories = policy.get("inventories")
     if (not isinstance(inventories, list) or not all(isinstance(item, dict) for item in inventories)
@@ -296,12 +336,23 @@ def admit(root=ROOT, installation_record=None):
             or {item.get("root") for item in inventories} != set(REQUIRED_SCOPES)
             or len({item.get("name") for item in inventories}) != len(inventories)):
         raise Incomplete("Complete common/Kani/Lockbud/stable payload inventories are required.")
+    selected = inventories
+    readonly = (base, stable)
+    if profile == "stable-core":
+        for item in inventories:
+            inventory_specification(item)
+        selected = [item for item in inventories if item["root"] == "stable"]
+        if (len(selected) != 1 or selected[0].get("name") != "stable"
+                or selected[0].get("scopes") != list(STABLE_CORE_SCOPES)):
+            raise Incomplete("Stable-core requires exactly the existing complete stable inventory scopes.")
+        readonly = tuple(RUNTIME._directory(internal(stable, scope), "Stable-core payload scope")
+                         for scope in STABLE_CORE_SCOPES)
     reports, covered = [], set()
-    for item in inventories:
+    for item in selected:
         report, paths = check_inventory(base, item, stable)
         reports.append(report)
         covered.update(paths)
-    for name in TOOLS:
+    for name in TOOLS if profile == "full" else ():
         item = policy["tools"][name]
         path = internal(base, item["entrypoint"])
         if item["entrypoint"] not in covered or digest(path) != item["sha256"]:
@@ -315,8 +366,15 @@ def admit(root=ROOT, installation_record=None):
         if digest(internal(stable, "bin/" + relative(name))) != checksum:
             raise Incomplete("Stable compiler executable digest mismatch.")
     RUNTIME._helpers(root)
-    return {"root": root, "base": base, "stable": stable, "policy": policy,
-            "policy_sha256": hashlib.sha256(data).hexdigest(), "inventories": reports}
+    admitted = {"root": root, "base": base, "stable": stable, "policy": policy,
+                "policy_sha256": hashlib.sha256(data).hexdigest(), "inventories": reports,
+                "admission_profile": profile, "readonly_roots": readonly}
+    if profile == "stable-core":
+        if read_once(pointer, maximum=4096, private=True) != pointer_data:
+            raise Incomplete("Installation pointer changed during stable-core admission.")
+        admitted.update(installation_pointer=str(Path(pointer).expanduser()),
+                        installation_pointer_sha256=hashlib.sha256(pointer_data).hexdigest())
+    return admitted
 
 
 def source_hashes(path):

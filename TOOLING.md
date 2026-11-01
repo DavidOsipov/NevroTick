@@ -949,10 +949,23 @@ graph and extended runner have separate admission; checked inputs and rejecting
 transition stubs are the initial test baseline. Candidate-specific behavioral
 results belong to that task.
 
-The exact [lockfile](Cargo.lock), manifest/feature identities, sixteen external
-packages, selected license grants and source-file maps are recorded in
-[the UI-M0 dependency policy](policy/ui-m0-dependencies.json). Garde uses only
-`derive`; the five selected `windows-sys` feature groups are Windows-only.
+The sixth member, [nevrotick-engine](crates/nevrotick-engine/Cargo.toml), owns the
+[bounded engine transport pilot](tasks/engine-transport-pilot.md) and its
+`nevrotick-observe` CLI. It requires two explicit loopback peers and an explicit
+timeout. This experiment has no production profile, eligible samples,
+authentication, clock effects or UI integration. Tokio remains engine-only.
+
+The exact [lockfile](Cargo.lock), manifest/feature identities, selected grants
+and source-file maps are recorded in
+[the dependency policy](policy/ui-m0-dependencies.json). Its schema 2 distinguishes
+twenty-three packages selected across the two targets from two metadata-only
+resolution sources (`r-efi` and `wasi`). All twenty-five are needed for offline
+lock resolution; those two gain no runtime, build-script or selected-license
+admission. Frozen metadata checks require the exact twenty-one Linux and
+twenty-two Windows packages and their feature sets before per-target cargo-deny.
+All original sixteen package/grant/file-map records are retained. Garde still
+uses only `derive`; the Windows binding feature union now also includes Tokio's
+reviewed networking bindings. Runtime and native qualification remain separate.
 On 29 October, `dependency-check-6.json` recorded successful frozen advisory,
 license, source and build-script checks for Linux and Windows. The receipt lives
 under `%LOCALAPPDATA%\NevroTick\ui-m0`; this proves that graph at its recorded
@@ -963,7 +976,8 @@ The pure wire owners' additional evidence uses
 [verify-wire-analysis.py](scripts/verify-wire-analysis.py) and
 [its scoped policy](policy/ntp-wire-analysis.json), after the ordinary graph and
 portable rows. Select `--lane contracts`, `coverage`, `mutation`, `fuzz` or `all`,
-and `--subject header`, `datagram` or `all` (default) for coverage/mutation scope,
+and `--subject header`, `datagram`, `nts_ke`, `nts_negotiation` or `all` (default)
+for coverage/mutation scope,
 with `--output-dir /new/private/Linux/output` and, when selecting another copy,
 `--vendor-dir /admitted/vendor`. The output path must be new. These are owned
 isolated analyses with explicit source/tool/graph inventories, not host Cargo
@@ -974,15 +988,41 @@ The coverage row reports each selected security file's executable-line denominat
 from one actual package run. Mutation reconciles separate complete nonempty
 per-file enumerations and treats build failures as unviable; the selected campaign
 shares the fixed total mutant/time budgets. External consumer checks require a
-compiling legal caller and exact privacy/borrow error causes. Contracts and fuzz
-always cover both wire owners; `--subject` never narrows those lanes. The fixed
-GNU-host fuzz harness separately admits
-its locked source/features and native LLVM-exception notice, uses archive-verified
-vendor metadata and retains the 256-run sanitizer profile plus seeded fault
-control. This test-only graph is not production NTS/TLS or distribution admission.
-Current successes, first failures and incomplete rows remain in
+compiling legal caller and exact privacy/borrow error causes. Contracts cover all
+four registered owners; `--subject` does not narrow that lane. Registration of
+the pending NTPv4 negotiation owner does not establish an executed gate.
+The test-only fuzz target covers all four pure owners, including request-bound
+pending negotiation. Contracts and fuzz exercise their complete scope;
+`--subject` narrows coverage/mutation only. An independently written byte-state
+model supplies request acceptance and fixed-offer response acceptance/projection
+expectations. Rejection classes/precedence and refusal contexts without algorithm
+15 remain direct-test evidence. The
+`ntp-wire-ke-framing` sanitizer profile permits 131,073-byte inputs (one above the
+parser ceiling) with fixed 256 runs, two-second input timeout, 512 MiB RSS,
+256 MiB allocation and 30-second total limits. Its explicit caller/profile routing
+rejects foreign, duplicate, missing and extra flags. Legacy/Core/history profiles
+retain their separate limits. Four distinct retained executables provide the
+healthy run and datagram, raw KE and negotiation count sensitivity controls; those
+assertions do not themselves qualify an ASan detector.
+
+The GNU-host harness separately admits its locked source/features and native
+LLVM-exception notice and uses archive-verified vendor metadata. This test-only
+graph is not production NTS/TLS or distribution admission. New profile/target
+qualification passed for the frozen 108-input raw-framing candidate, with 256
+healthy callbacks and both intended semantic-oracle controls. The
+[bounded raw-framing checkpoint](tasks/s0.1-protocol-comparison.md#bounded-raw-framing-host-checkpoint)
+records its exact receipts and separate Windows cross-build result; neither
+establishes semantic/TLS integration or native Windows execution.
+Historical successes, first failures and incomplete rows remain in
 [S1.1a's candidate record](tasks/s1.1-header.md) and
-[S1.1b's execution record](tasks/s1.1-framing.md); the CLI's existence is no pass.
+[S1.1b's execution record](tasks/s1.1-framing.md); source/CLI presence is no pass.
+
+The later [pending NTPv4 negotiation checkpoint](tasks/s0.1-protocol-comparison.md#pending-ntpv4-negotiation-implementation--1-november-2026)
+records the frozen 110-input host gates and extended four-owner fuzz result:
+256 healthy runs and all three intended count sensitivity failures, with four
+distinct retained binaries. These checks admit pending negotiation data only;
+TLS, provider support, complete endpoint policy and usable-association publication
+remain separate qualifications.
 
 The domain owner's equivalent explicit-scope entry point is
 [verify-time-domain-analysis.py](scripts/verify-time-domain-analysis.py), with
@@ -1029,6 +1069,59 @@ configured portable row, seven-file line coverage, all seven mutation cohorts,
 consumer contracts and bounded history semantic fuzz passed within the declared
 86-input host-fixture checkpoint in S1.3. The repaired merger separately bounds
 native receipts to eight MiB while keeping admission cards/plans at 512 KiB.
+
+**1 November lifecycle receipt refinement:** the expanded native report exceeded
+that earlier limit. Native core receipts now have a 64 MiB UTF-8 byte cap and a
+lossless compact final writer; admission cards and plans retain 512 KiB. Both
+roles reject duplicate keys, truncation, symlinks and nonfinite values, including
+finite-looking exponent overflow such as `1e999`. Five direct reader/writer
+controls pass. A retained 16,393,749-byte failed-campaign report round-trips to
+11,315,999 compact bytes with all values and its failed gate preserved; this
+executes no native command and changes no raw receipt. The 64 MiB cap covers the
+current admitted schema/cohorts and must be reassessed if their shape grows.
+
+The ordinary and optimized portable `time-core` nextest rows compile with six
+build jobs after a retained twelve-job linker thread-resource failure. Other
+portable build rows keep twelve jobs, and test execution keeps twelve workers.
+The focused verifier regression passes 75 controls. This changes no shipping
+compiler flags, target baseline or toolchain. Full mutation campaigns retain ten
+outer workers, one inner Cargo/test slot and their admitted 512-task envelope.
+
+**Stable-core admission, 1 November:** the current time-core policy explicitly
+selects `tool_admission_profile = "stable-core"`. Its native contracts, coverage
+and mutation commands therefore require `--tool-admission-profile stable-core`.
+Full admission remains the API/CLI default and is retained for other consumers
+and the inventory-listing lane. Metadata-only cohort union uses its default flag
+and verifies the native receipts' profile against the plan-bound policy.
+
+The [later full-admission metadata optimization](tasks/s0.1-protocol-comparison.md#full-tool-admission-metadata-optimization--1-november-2026)
+keeps those scopes and mounts intact. Inventory names schedule terminal checks;
+the existing twelve-worker pool verifies actual types/sizes, symlink identity and
+containment, and descriptor-read hashes. Exact membership still precedes hashing.
+Two unprofiled sample pairs reduced mean full admission from 58.58 to 40.22 seconds
+with identical complete results. The Linux stable inventory was slightly slower;
+this is no claim about every profile or total development speed. All 152 selected
+admission/caller/runtime controls passed. Historical execution receipts retain
+their original checker identity.
+
+The narrower profile hashes the complete pinned stable inventory, validates all
+four inventory descriptions, and retains private installation-pointer, policy,
+compiler-entrypoint and bootstrap-helper checks. Its five readonly stable scopes
+replace the broad analysis-store mount; selected extension tools, vendor inputs,
+source/configuration and per-command sealed-tree checks remain. Nightly compiler
+or extra-tool-island requests are rejected. Sixteen new controls and 270 affected
+regression tests pass, including actual private namespace observations that an
+omitted executable is inaccessible and produces no effect. No compiler flag,
+toolchain, Rust source, dependency or shipping policy changes in this refinement.
+
+The paired current-candidate coverage sample executes the same 177 tests with
+identical six-owner coverage and counter objects: full admission takes 127.94 s
+overall/120.98 s in admission, versus 15.40 s overall/8.32 s in admission under
+stable-core. This is one sequential profiled pair, not a general development-speed
+measurement. Both profiles verify the selected inventory; unused stores are not
+mounted in stable-core. Actual selected-profile contracts also pass all 27 native
+commands. Source, scope, raw receipts and the comparison's limitations are in the
+[current S1.3 checkpoint](tasks/s1.3-source-selection-readiness.md#stable-core-admission-and-current-campaign).
 Its 163 controls and retained-native receiving-function check passed; historical
 native reports keep their original tool identity and are not a fresh CLI campaign.
 The new projection/cohort readers and existing wrapper
@@ -1131,9 +1224,9 @@ python3 -B scripts/verify.py
 
 | Row | Work and evidence limit |
 | --- | --- |
-| `--lane portable` (default) | Format, compiler, Clippy and rustdoc for the admitted workspace members; separate per-package library/integration tests and doctests, plus the configured optimized owner tests with their release-only discriminators. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
-| `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows graph checks using a separately acquired RustSec/index snapshot, bound to the lockfile and at most 24 hours old. |
-| `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and release binary linking; copies the executable, matching PDB and receipt to a new external directory. Native execution remains a separate observation. |
+| `--lane portable` (default) | Format, all-target compiler/Clippy and library rustdoc for the six admitted members; explicit observe CLI build, separate per-package library/integration tests and nonempty doctests, plus configured optimized owner tests with actual discriminating cases. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
+| `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows metadata/feature checks followed by target-specific cargo-deny, using a separately acquired RustSec/index snapshot bound to the lockfile and at most 24 hours old. |
+| `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and observe CLI; exports both executables and matching PDBs to new external output, preserving existing UI receipt keys and adding the engine artifact record. Native execution remains separate. |
 
 Rows run with a read-only source snapshot, cleared environment, isolated network
 and owned output inside bubblewrap. The verifier admits pinned tools and source
@@ -1143,6 +1236,11 @@ cumulative quotas. There is no host-execution fallback and no automatic download
 `--json /path/to/new-receipt.json` retains the selected row's output. The nextest
 store is redirected only in the owned snapshot so reports stay in writable output;
 test policy and the repository configuration remain unchanged.
+For a later GNU runtime observation, give the portable lane a new `--output-dir`.
+It retains the actual `nevrotick-observe` image before temporary build disposal,
+with its exact hash/profile/target in `engine_artifact`; it verifies copied bytes
+and owner execution permission. A compiler/test pass alone supplies no CLI journey
+or native Windows observation.
 
 For first setup, select new external destinations and run acquisition separately:
 
@@ -1154,7 +1252,8 @@ python3 -B scripts/verify.py
 ```
 
 `prepare-product.py` verifies bounded archives and their reviewed extracted-file
-maps without executing package code. `--configure` requires an absent private
+maps for the complete twenty-five-source resolution view without executing
+package code. `--configure` requires an absent private
 `~/.local/share/nevrotick/ui-m0.json` pointer; it never replaces an existing one.
 The verifier reads `vendor_dir` and `scratch_root` from that pointer, while explicit
 `--vendor-dir` and `--scratch-root` select another admitted location. Put large build
@@ -1163,13 +1262,18 @@ of vendor/metadata inputs can avoid DrvFS per-file overhead; preserve and verify
 the same file maps. Refresh metadata into new locations when needed and pass the
 new receipt explicitly. Portable/Windows rows do not silently refresh or rerun the
 dependency row; complete that admission before executing newly admitted graph code.
+An existing sixteen-source vendor pointer cannot admit this new graph. Select an
+already admitted complete vendor explicitly with `--vendor-dir`; do not overwrite
+shared host configuration or fetch during verification.
 
 The root [deny.toml](deny.toml) deliberately retains the bootstrap GPL-only and
 no-build-script baseline. The dependency row generates a configuration solely
 inside its owned source snapshot: GPL-2.0-only, MIT, BSL-1.0 and Unicode-3.0 grants
-for this frozen graph, and exactly `proc-macro2@1.0.107`, `quote@1.0.47` and
-`rustversion@1.0.23` build-script allowances. The `MIT AND Unicode-3.0` conjunction
-is preserved. All held-provider, advisory, source and other ban rules remain.
+for this frozen graph, and exact build-script allowances for
+`proc-macro2@1.0.107`, `quote@1.0.47`, `rustversion@1.0.23` and
+`getrandom@0.4.3` on both targets, plus `libc@0.2.191` on Linux only.
+The `MIT AND Unicode-3.0` conjunction is preserved. All held-provider, advisory,
+source and other ban rules remain.
 These license identifiers are scoped by the immutable graph, not package-specific
 license exceptions. Running direct `cargo deny` with the root baseline will reject
 this product graph; use the shared dependency row.

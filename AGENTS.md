@@ -101,6 +101,11 @@ fixture association under [S1.1d](tasks/s1.1-exchange-association.md) and the
 normalization and fixed-capacity fixture-history code described by
 [S1.2](tasks/s1.2-regression-readiness.md). Its checked fixture results do not
 establish production sample eligibility, selection, clock authority or P1.
+[nevrotick-engine](crates/nevrotick-engine/Cargo.toml) owns the engine-only
+[bounded transport pilot](tasks/engine-transport-pilot.md): two explicit loopback
+peers, a private current-thread runtime and the unauthenticated, ineligible
+`nevrotick-observe` CLI. Its host experiment does not qualify production
+acquisition, native Windows teardown, NTS, services or clock effects.
 Other proposed components remain architecture plans until their source exists.
 Inspect current manifests/source before choosing commands;
 never scaffold product crates merely to pass documentation/tool checks.

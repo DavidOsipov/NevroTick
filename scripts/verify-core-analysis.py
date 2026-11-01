@@ -68,6 +68,10 @@ BOUND_INPUTS = (
     'Cargo.lock',
     'Cargo.toml',
     'clippy.toml',
+    'crates/nevrotick-engine/Cargo.toml',
+    'crates/nevrotick-engine/src/bin/nevrotick-observe.rs',
+    'crates/nevrotick-engine/src/lib.rs',
+    'crates/nevrotick-engine/tests/runtime_boundary.rs',
     'crates/nevrotick-ui/Cargo.toml',
     'crates/nevrotick-ui/src/lib.rs',
     'crates/nevrotick-ui/src/main.rs',
@@ -93,8 +97,12 @@ BOUND_INPUTS = (
     'crates/ntp-wire/src/datagram.rs',
     'crates/ntp-wire/src/header.rs',
     'crates/ntp-wire/src/lib.rs',
+    'crates/ntp-wire/src/nts_ke.rs',
+    'crates/ntp-wire/src/nts_negotiation.rs',
     'crates/ntp-wire/tests/datagram.rs',
     'crates/ntp-wire/tests/header.rs',
+    'crates/ntp-wire/tests/nts_ke.rs',
+    'crates/ntp-wire/tests/nts_negotiation.rs',
     'crates/ntp-wire/tests/support/vectors.rs',
     'crates/time-core/COPYING',
     'crates/time-core/Cargo.toml',
@@ -168,7 +176,7 @@ BOUND_INPUTS = (
     'scripts/check-strict.py',
     'scripts/verify.py',
 )
-SOURCE_FILE_COUNT = 106
+SOURCE_FILE_COUNT = 114
 # Discovery remains separately admitted and never grants a campaign.
 INVENTORY_ADMISSION = "tasks/s1.3-combination-lifecycle-inventory-admission.json"
 INVENTORY_SUBJECTS = dict(SUBJECTS)
@@ -272,7 +280,7 @@ HISTORICAL_PROJECTION_TEST_COUNTS = {
   "doctests": 5,
   "baseline": 112
 }
-FINAL_PACKAGE_TEST_COUNTS = {'ordinary': 176, 'doctests': 5, 'baseline': 181}
+FINAL_PACKAGE_TEST_COUNTS = {'ordinary': 177, 'doctests': 5, 'baseline': 182}
 COORDINATOR_COHORTS = {"status": 'admitted-exact-source-and-cohorts', "schema_version": 4,
                       "maximum_variants_per_cohort": 512, "listing_maximum_total": 3072,
                       "partition": "six-disjoint-changed-or-coupled-owner-cohorts",
@@ -731,8 +739,10 @@ LIFECYCLE_TELEMETRY = {
         name: dict(zip(COMBINATION.LIFECYCLE_COUNTER_FIELDS, values, strict=True))
         for name, values in COMBINATION.LIFECYCLE_COUNTER_SOURCE_RECIPES},
     'private_bridge_producer_source_upper': COMBINATION.lifecycle_bridge_producer_reservation(),
+    'private_guard_fixture_calls_upper': COMBINATION.lifecycle_guard_fixture_calls(),
+    'private_guard_producer_source_upper': COMBINATION.lifecycle_guard_fixture_producer_reservation(),
     'global_limits': None, 'literal_doctests_added': 0,
-    'scope': 'Eleven public lifecycle trajectories and two private boundaries; genuine producers charged once, module work disjoint and attempted transport separate from native assertions.',
+    'scope': 'Twelve public lifecycle trajectories and two private boundaries, including raw counter/output guards; genuine producers charged once, module work disjoint and attempted transport separate from native assertions.',
 }
 
 
@@ -807,11 +817,19 @@ def inventory_admission_live(policy):
         raise Incomplete("Inventory admission is not within its fixed one-hour validity window.")
 
 
+# Current source-bound cohorts retain full per-invocation observations. The
+# measured 213-row report exceeds16MiB; compact serialization removes duplicated
+# whitespace without dropping evidence. This finite role limit covers current
+# admitted cohorts; reassess it with future schema/output growth. Inventory cards
+# and coordinator plans keep their separate512KiB allowance.
+NATIVE_RECEIPT_MAX_BYTES = 64 * 1024 * 1024
+
+
 def _core_json_document(path, *, role):
     """Decode one complete bounded regular JSON document under a closed role."""
     if type(role) is not str or role not in {"inventory", "native-receipt"}:
         raise Incomplete("Unreviewed core JSON document role.")
-    maximum = 512 * 1024 if role == "inventory" else 8 * 1024 * 1024
+    maximum = 512 * 1024 if role == "inventory" else NATIVE_RECEIPT_MAX_BYTES
     label = "Inventory admission" if role == "inventory" else "Native mutation receipt"
     if path.resolve(strict=True) != path or not path.is_file():
         kind = "Inventory document" if role == "inventory" else "Native mutation receipt"
@@ -832,7 +850,14 @@ def _core_json_document(path, *, role):
     def constant(_value):
         raise Incomplete(label + " contains a non-finite JSON number.")
 
-    return json.loads(data, object_pairs_hook=pairs, parse_constant=constant)
+    def finite_float(token):
+        value = float(token)
+        if not math.isfinite(value):
+            raise Incomplete(label + " contains a non-finite JSON number.")
+        return value
+
+    return json.loads(data, object_pairs_hook=pairs, parse_constant=constant,
+                      parse_float=finite_float)
 
 
 def inventory_document(path):
@@ -841,7 +866,7 @@ def inventory_document(path):
 
 
 def native_receipt_document(path):
-    """Read one native mutation verification receipt, bounded to eight MiB."""
+    """Read a complete native receipt under its finite64MiB byte allowance."""
     return _core_json_document(path, role="native-receipt")
 
 
@@ -936,8 +961,12 @@ def historical_admit_core_equivalence_scope(entries):
 COMBINATION_EQUIVALENCE_SOURCES = {
     'crates/time-core/src/combination.rs': '67e083d7a0e752566879754e9fb406bde7e1d89243a3866743a9a0fc601db47f',
     'crates/time-core/src/principal.rs': 'aa7256364c3006943f614a9eb21d4ef94a0e0f30ecd147439c93d34fa17e7da9',
+    'crates/time-core/src/combination/lifecycle.rs': '3d1294fedcc5d3a7036b43512ccd8a1d2b52167f8867b820eb6a7a71af35f17d',
+    'crates/time-core/src/combination/admission.rs': '9225260bf71cebf50618057984d2e3f8b865830bf48bbde7b0904f17d546c5b4',
 }
-COMBINATION_EQUIVALENCE_CANDIDATE = 'f4f9510e1782266acd54f78fd827bacbc97d2d0ca2b6e01834110ba820a75df9'
+# Existing seven faults were independently re-reviewed for this exact six-member
+# source context; historical native outcomes keep their original candidate.
+COMBINATION_EQUIVALENCE_CANDIDATE = '83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594'
 COMBINATION_EQUIVALENCE_PROOF = 'tasks/s1.3-lifecycle-equivalences.md'
 COMBINATION_EQUIVALENCE_IDENTITIES = {
     'S13-C-E-001': ('crates/time-core/src/combination.rs', '&&',
@@ -948,19 +977,25 @@ COMBINATION_EQUIVALENCE_IDENTITIES = {
                     'crates/time-core/src/combination.rs:1015:26: replace || with && in combine_fixture_supporters'),
     'S13-P-E-001': ('crates/time-core/src/principal.rs', '<=',
                     'crates/time-core/src/principal.rs:945:17: replace < with <= in updated_score'),
+    'S13-L-E-001': ('crates/time-core/src/combination/lifecycle.rs', '&&',
+                    'crates/time-core/src/combination/lifecycle.rs:1031:13: replace || with && in estimate_relation_valid'),
+    'S13-A-E-001': ('crates/time-core/src/combination/admission.rs', '&&',
+                    'crates/time-core/src/combination/admission.rs:104:21: replace || with && in admit_lifecycle_supporters'),
+    'S13-A-E-002': ('crates/time-core/src/combination/admission.rs', '&&',
+                    'crates/time-core/src/combination/admission.rs:150:28: replace || with && in contributor_count'),
 }
 
 
 def admit_core_equivalence_scope(entries):
-    """Restrict E scope to the empty set or one exact lifecycle-candidate quartet.
+    """Restrict E scope to the empty set or seven exact reviewed candidate faults.
 
     This does not approve proof substance or confer E on an actual outcome.
     The shared reader still validates full descriptors, current candidate/source,
     proof bytes and independent-review references before campaign accounting.
     Earlier exact fault sets remain available only to historical receipt readers.
     """
-    if type(entries) is not list or len(entries) not in (0, 4):
-        raise Incomplete('Current lifecycle equivalences require one exact reviewed closed quartet.')
+    if type(entries) is not list or len(entries) not in (0, 7):
+        raise Incomplete('Current lifecycle equivalences require one exact reviewed seven-entry set.')
     identifiers = set()
     for entry in entries:
         if type(entry) is not dict or type(entry.get('id')) is not str:
@@ -969,7 +1004,7 @@ def admit_core_equivalence_scope(entries):
         mutant, proof = entry.get('mutant'), entry.get('proof')
         if (identifier not in COMBINATION_EQUIVALENCE_IDENTITIES or identifier in identifiers
                 or type(mutant) is not dict or type(proof) is not dict):
-            raise Incomplete('Current lifecycle equivalence identities are not one exact closed quartet.')
+            raise Incomplete('Current lifecycle equivalence identities are not one exact seven-entry set.')
         filename, replacement, name = COMBINATION_EQUIVALENCE_IDENTITIES[identifier]
         if (entry.get('source_sha256') != COMBINATION_EQUIVALENCE_SOURCES[filename]
                 or entry.get('candidate_sha256') != COMBINATION_EQUIVALENCE_CANDIDATE
@@ -989,6 +1024,11 @@ def read_policy(root, lane="all"):
     policy = json.loads((root / POLICY).read_text())
     permitted = {*FIXED, "admission_status", "scope", "inputs_sha256", "mutation_equivalences", "coverage_guided_fuzzing",
                  "historical_projection_inputs_sha256", "historical_projection_scope"}
+    if "tool_admission_profile" in policy:
+        permitted.add("tool_admission_profile")
+    if (type(policy.get("tool_admission_profile", "full")) is not str
+            or policy.get("tool_admission_profile", "full") not in COMMON.ANALYSIS.ADMISSION_PROFILES):
+        raise Incomplete("Unknown core analysis admission profile.")
     if set(policy) != permitted or any(not exact(policy.get(k), v) for k, v in FIXED.items()):
         raise Incomplete("Unreviewed core analysis scope, threshold or budget.")
     if policy["admission_status"] != "admitted-final-source":
@@ -1037,6 +1077,10 @@ def read_policy(root, lane="all"):
             or not exact(policy['lifecycle_telemetry']['fields'], list(COMBINATION.LIFECYCLE_FIELDS))
             or not exact(policy['lifecycle_telemetry']['private_bridge_producer_source_upper'],
                          COMBINATION.lifecycle_bridge_producer_reservation())
+            or not exact(policy['lifecycle_telemetry']['private_guard_fixture_calls_upper'],
+                         COMBINATION.lifecycle_guard_fixture_calls())
+            or not exact(policy['lifecycle_telemetry']['private_guard_producer_source_upper'],
+                         COMBINATION.lifecycle_guard_fixture_producer_reservation())
             or policy['lifecycle_telemetry']['literal_doctests_added'] != 0):
         raise Incomplete('Lifecycle complete profiles and private producer/source binding remain pending.')
     admit_lifecycle_allowances(policy['lifecycle_telemetry']['global_limits'])
@@ -1480,12 +1524,20 @@ def lifecycle_source_work(calls, bridge_calls, counter_calls, *, private_bridge=
     A declared/reported private bridge adds that source reservation once, never
     another fit chain from the same observed append field. Missing bridge rows
     remain unknown; a present zero prefix can still reserve its fixed setup.
+    The independently precharged raw-output fixture delegates its fixed producer
+    once. Its lifecycle operations are already included in the module helper;
+    adding them again here would duplicate module work.
     """
     if type(private_bridge) is not bool:
         raise Incomplete('Private bridge presence must be an explicit Boolean.')
     try:
         producer_calls = COMBINATION.lifecycle_producer_calls(calls)
         own = COMBINATION.lifecycle_source_work_uppers(calls, bridge_calls, counter_calls)
+        fixtures = counter_calls['fixture_setups']
+        if fixtures:
+            private = COMBINATION.lifecycle_guard_fixture_producer_reservation()
+            producer_calls = {key: value + fixtures * private[key]
+                              for key, value in producer_calls.items()}
         if private_bridge or any(bridge_calls.values()):
             private = COMBINATION.lifecycle_bridge_producer_reservation()
             producer_calls = {key: value + private[key] for key, value in producer_calls.items()}
@@ -1586,7 +1638,7 @@ def principal_counts(output, *, require_complete=False):
 def profile_counts(output, *, require_fit=True, require_runs=False, validate_runs_receipt=True,
                    require_selection=False, require_projection=False, require_enclosure=False,
                    require_projected_batch=False, require_principal=False, require_combination=False,
-                   require_lifecycle=False):
+                   require_lifecycle=False, bridge_zero_prefix=None):
     """Observe disjoint external owners; charge hidden history work only as uppers.
 
     Raw text has complete exact-u64 rows. History fields denote external public
@@ -1634,13 +1686,15 @@ def profile_counts(output, *, require_fit=True, require_runs=False, validate_run
                        principal['principal_private_case_source_upper_present'])
                       if principal_calls is not None else None)
     try:
-        combination = COMBINATION.combination_counts(output, require_complete=require_combination)
+        combination = COMBINATION.combination_counts(
+            output, require_complete=require_combination, bridge_zero_prefix=bridge_zero_prefix)
     except COMBINATION.Incomplete as error:
         raise Incomplete(str(error)) from error
     combination_calls = combination['combination_recorded_call_subtotals']
     combination_work = combination_source_work(combination_calls) if combination_calls is not None else None
     try:
-        lifecycle = COMBINATION.lifecycle_counts(output, require_complete=require_lifecycle)
+        lifecycle = COMBINATION.lifecycle_counts(
+            output, require_complete=require_lifecycle, bridge_zero_prefix=bridge_zero_prefix)
     except COMBINATION.Incomplete as error:
         raise Incomplete(str(error)) from error
     lifecycle_calls = lifecycle['lifecycle_recorded_call_subtotals']
@@ -2500,6 +2554,21 @@ def cargo_json_records(output, *, test_phase=False):
          '            ArithmeticOperation::Multiply, issue: ArithmeticIssue::NonFinite',
          '        },',
          '    }))'),
+        ('assertion failed: actual.is_some_and(|cause|',
+         '        {',
+         '            cause.downcast_ref::<FitError>().is_some_and(|inner|',
+         '                    std::ptr::eq(inner, source))',
+         '        })'),
+        ('assertion failed: actual.is_some_and(|cause|',
+         '        {',
+         '            cause.downcast_ref::<FixtureCombinationError>().is_some_and(|inner|',
+         '                    std::ptr::eq(inner, source))',
+         '        })'),
+        ('assertion failed: actual.is_some_and(|cause|',
+         '        {',
+         '            cause.downcast_ref::<FixturePrincipalError>().is_some_and(|inner|',
+         '                    std::ptr::eq(inner, source))',
+         '        })'),
         ('assertion failed: matches!(rejected,',
          '    Err(FixtureCombinationLifecycleError::Arithmetic',
          '    {',
@@ -2509,6 +2578,34 @@ def cargo_json_records(output, *, test_phase=False):
          '            ArithmeticIssue::NonFinite,',
          '        },',
          '    }) if step == fact.step && operation == fact.operation)'),
+        ('assertion failed: matches!(rejected,',
+         '    Err(FixtureCombinationLifecycleError::InvalidParameter',
+         '    {',
+         '        field: FixtureCombinationParameterField::MaxClockError, issue: actual,',
+         '    }) if actual == issue)'),
+        ('assertion failed: matches!(rejected,',
+         '    Err(FixtureCombinationLifecycleError::InvalidParameter',
+         '    { field: FixtureCombinationParameterField::CombineLimit, issue: actual, })',
+         '    if actual == issue)'),
+        ('assertion failed: matches!(missing,',
+         '    Err(FixtureCombinationLifecycleError::Combination',
+         '    { source: FixtureCombinationError::MetadataCountMismatch }))'),
+        ('assertion failed: matches!(rejected,',
+         '    Err(FixtureCombinationLifecycleError::Combination',
+         '    {',
+         '        source: FixtureCombinationError::ZeroDenominator',
+         '        { index: 0, field: FixtureCombinationDenominatorField::RootDistance }',
+         '    }))'),
+        ('assertion failed: matches!(rejected,',
+         '    Err(FixtureCombinationLifecycleError::Arithmetic',
+         '    {',
+         '        step: FixtureCombinationLifecycleStep::RateLimit, source:',
+         '        FitError::Arithmetic',
+         '        {',
+         '            stage: ArithmeticStage::Combination, operation:',
+         '            ArithmeticOperation::Multiply, issue: ArithmeticIssue::NonFinite',
+         '        }',
+         '    }))'),
     )
     lines = output.splitlines(keepends=True)
     source_assertion_lines = set()
@@ -2818,15 +2915,18 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
     if any(record['reason'] == 'compiler-message' and record['message']['level'] == 'error'
            for record in (*build_records, *test_records)):
         raise Incomplete('Successful Cargo build receipt conflicts with an error diagnostic.')
+    bridge_zero_prefix = None
     if caught:
         caught_native_test_failure(outcome, test_output)
+        bridge_zero_prefix = COMBINATION.caught_bridge_zero_prefix(test_output)
     elif COMMON.test_count(test_output) != final_package_test_count('baseline'):
         raise Incomplete(f'Successful core package invocation did not execute all {final_package_test_count("baseline")} admitted tests/doctests.')
     observed = profile_counts(test_output, require_fit=baseline, require_runs=not caught,
                               validate_runs_receipt=not caught, require_selection=not caught,
                               require_projection=not caught, require_enclosure=not caught,
                               require_projected_batch=not caught, require_principal=not caught,
-                              require_combination=not caught, require_lifecycle=not caught)
+                              require_combination=not caught, require_lifecycle=not caught,
+                              bridge_zero_prefix=bridge_zero_prefix)
     reserved['observed_counts'] = account_literal_doctests(observed)
     reserved['observation_pending'] = False
     reserved['raw_log_sha256'] = PRODUCT.sha256(log)
@@ -4613,6 +4713,9 @@ def execute_cohort_union(args, report):
     policy = read_policy(ROOT, 'contracts')
     plan, admitted, _ = read_cohort_plan(ROOT, args.cohort_plan, policy)
     receipts = [native_receipt_document(path.resolve(strict=True)) for path in args.cohort_receipt]
+    expected_profile = policy.get("tool_admission_profile", "full")
+    if any(receipt.get("tool_admission_profile", "full") != expected_profile for receipt in receipts):
+        raise Incomplete("Focused receipt analysis admission profile differs from the plan-bound policy.")
     try:
         union = COHORTS.reconcile_receipts(plan, receipts, subjects=SUBJECTS)
     except COHORTS.Incomplete as error:
@@ -4709,6 +4812,10 @@ def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
     if args.lane not in {'inventory', 'contracts', 'coverage', 'mutation', 'cohort-union'}:
         raise Incomplete('Unsupported checkpoint lane; optional fuzz/all execution is not admitted.')
+    requested_profile = getattr(args, "tool_admission_profile", "full")
+    if (type(requested_profile) is not str or requested_profile not in COMMON.ANALYSIS.ADMISSION_PROFILES
+            or (requested_profile == "stable-core" and args.lane not in {"contracts", "coverage", "mutation"})):
+        raise Incomplete("Stable-core admission is restricted to native core contracts/coverage/mutation.")
     if args.lane == "inventory":
         return execute_inventory(args, report)
     if args.lane == 'cohort-union':
@@ -4806,6 +4913,22 @@ def retain_secondary_error(report, phase, error):
         'phase': phase, 'type': type(error).__name__, 'error': str(error)})
 
 
+def native_receipt_text(report):
+    """Serialize all native facts compactly, rejecting invalid/oversized JSON.
+
+    Whitespace changes no fields, values, native outcomes or source bindings.
+    The receiving role and writer share a byte limit; a larger future schema
+    requires explicit review rather than silently emitting an unreadable receipt.
+    """
+    try:
+        text = json.dumps(report, separators=(',', ':'), allow_nan=False) + '\n'
+    except (TypeError, ValueError, OverflowError) as error:
+        raise Incomplete('Native verification receipt is not finite JSON.') from error
+    if len(text.encode('utf-8')) > NATIVE_RECEIPT_MAX_BYTES:
+        raise Incomplete('Native verification receipt exceeds its fixed byte allowance.')
+    return text
+
+
 def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -4817,7 +4940,10 @@ def main(argv=None):
     parser.add_argument('--cohort-receipt', type=Path, action='append', default=[])
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--tool-admission-profile", choices=COMMON.ANALYSIS.ADMISSION_PROFILES, default="full")
     args = parser.parse_args(argv)
+    if args.tool_admission_profile == "stable-core" and args.lane not in {"contracts", "coverage", "mutation"}:
+        parser.error("--tool-admission-profile stable-core requires contracts, coverage or mutation")
     if args.lane == "inventory" and (args.inventory_admission is None or args.subject != "all"):
         parser.error("--lane inventory requires --subject all and --inventory-admission")
     if args.lane != "inventory" and args.inventory_admission is not None:
@@ -4845,7 +4971,7 @@ def main(argv=None):
     except REPORT_FAILURES as error:
         report["error"] = str(error)
     if report.get("owned_output") == str(args.output_dir):
-        (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
+        (args.output_dir / "verification.json").write_text(native_receipt_text(report))
     print(report["status"].upper() + ": " + report["scope"], flush=True)
     if report.get("error"):
         print(report["error"], file=sys.stderr)

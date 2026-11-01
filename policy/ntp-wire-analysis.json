@@ -12,7 +12,7 @@
   "test_threads": 12,
   "coverage_guided_fuzzing": {
     "status": "admitted-test-only-source",
-    "scope": "fixed GNU-host header and complete no-legacy-MAC framing harness only; no production graph or distribution admission",
+    "scope": "fixed GNU-host header, datagram, inert complete-buffer NTS-KE framing and request-bound pending NTPv4 negotiation; no TLS, keys, authenticated association, destination authorization or production graph admission",
     "metadata_discrepancy": "libfuzzer-sys metadata NCSA differs from all55 bundled SPDXheaders; select wrapperMIT and exact pinned native Apache-2.0 WITH LLVM-exception, not NCSA metadata",
     "upstream_revision": "a47b42eb9f9b302167b4fc413e6c92798d65dd0b",
     "upstream_url": "https://github.com/llvm/llvm-project/tree/a47b42eb9f9b302167b4fc413e6c92798d65dd0b/compiler-rt/lib/fuzzer",
@@ -23,7 +23,7 @@
     "llvm_notice_sha256": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
     "control_lock_sha256": "945748a17cd2ccd01376b3326f9c7b37612a0bc19c725bacffeff6fdb36a333b",
     "target_source": "policy/ntp-wire-fuzz-target.rs",
-    "target_source_sha256": "fa8e095c4f648e88ca170f8d98c8c4f6d063bf9d880027d5d78755a105af7ba7",
+    "target_source_sha256": "c83d9bf82a3b170fc7a1efc14198ec6ed2f4cbd32e70793d9b2cba204973497d",
     "native_files": {
       "FuzzerBuiltins.h": {
         "sha256": "766b0c57707d1ec953034a852b152b3f0daa35ee705bed8952b501705f0799cf",
@@ -393,7 +393,7 @@
     },
     "fuzzer_flags": [
       "-runs=256",
-      "-max_len=4096",
+      "-max_len=131073",
       "-timeout=2",
       "-rss_limit_mb=512",
       "-malloc_limit_mb=256",
@@ -402,6 +402,10 @@
   },
   "critical_files": [
     "crates/ntp-wire/src/header.rs",
-    "crates/ntp-wire/src/datagram.rs"
-  ]
+    "crates/ntp-wire/src/datagram.rs",
+    "crates/ntp-wire/src/nts_ke.rs",
+    "crates/ntp-wire/src/nts_negotiation.rs"
+  ],
+  "mutation_jobs": 10,
+  "mutation_process_limit": 512
 }

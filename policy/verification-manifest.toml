@@ -1,13 +1,17 @@
-# UI-M0, pure wire, checked time-domain, fixture exchange and thirteen pure core owners.
+# UI-M0, pure wire/domain/exchange/core owners and the bounded loopback engine pilot.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
-status = "five-member-scope-recorded-qualification-candidate-specific"
+status = "six-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
+    { name = "engine-loopback-runtime-owner", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/lib.rs"], scope = "bounded two-peer loopback transport experiment; entropy/socket/runtime lifetime and current-generation admission; final contract, coverage, mutation, resource and native Windows qualification pending; no eligible sample, authentication or clock authority" },
+    { name = "engine-observe-cli-admission", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/bin/nevrotick-observe.rs"], scope = "explicit loopback peer/timeout admission and bounded unauthenticated ineligible transport diagnostics; final contract, coverage, mutation and native Windows qualification pending; no production defaults or protected effects" },
     { name = "preview-admission", package = "nevrotick-ui", files = ["crates/nevrotick-ui/src/model.rs"], scope = "local prototype fields only; no production authority" },
     { name = "ntp-fixed-header", package = "ntp-wire", files = ["crates/ntp-wire/src/header.rs"], scope = "inert fixed binary header only; no exchange, authentication, time or clock authority" },
     { name = "ntp-outer-framing", package = "ntp-wire", files = ["crates/ntp-wire/src/datagram.rs"], scope = "bounded complete no-legacy-MAC outer framing only; no exchange, authentication, era or sample admission" },
+    { name = "nts-ke-raw-framing", package = "ntp-wire", files = ["crates/ntp-wire/src/nts_ke.rs"], scope = "bounded complete-buffer record/EOM representation only; no semantic receiver, TLS, authentication, EOF or association admission" },
+    { name = "nts-ke-ntpv4-negotiation", package = "ntp-wire", files = ["crates/ntp-wire/src/nts_negotiation.rs"], scope = "bounded request-bound NTPv4 offer and pending response negotiation; contract, coverage and mutation qualification pending; no TLS identity, exporter keys, approved endpoint, authentication or usable association" },
     { name = "time-coordinate-construction", package = "time-domain", files = ["crates/time-domain/src/coordinate.rs"], scope = "private checked Q32 coordinate envelope; caller-supplied values establish no UTC truth" },
     { name = "time-era-resolution", package = "time-domain", files = ["crates/time-domain/src/era.rs"], scope = "mandatory garde window construction and exact unique-era resolution; no trusted-anchor acquisition" },
     { name = "time-exchange-arithmetic", package = "time-domain", files = ["crates/time-domain/src/exchange.rs"], scope = "exact offset and signed RTT arithmetic; no live exchange, authentication or sample admission" },
@@ -20,7 +24,8 @@ security_modules = [
     { name = "fixture-observation-normalization", package = "time-core", files = ["crates/time-core/src/regression/normalization.rs"], scope = "checked fixture context/Q33 admission and exact newest-reference normalization to a fresh owned FitInput; bounded read-only point observation; no history, eligible sample, native clock or authenticated provenance" },
     { name = "fixture-history-atomic-append-and-report", package = "time-core", files = ["crates/time-core/src/regression/history.rs"], scope = "exclusive bounded fixture append, context/order admission, staged oldest-only replacement and failure-atomic same-input report commit; no production retention, prune/reset/freshness, provenance, native clock or correction authority" },
     { name = "fixture-residual-runs-and-suffix-selection", package = "time-core", files = ["crates/time-core/src/regression/runs.rs"], scope = "bounded immutable fixture suffix search, extended residual runs, checked stage/position errors and associated same-fit diagnostics; no history pruning, source selection, physical uncertainty or clock authority" },
-    { name = "fixture-closed-real-interval-wction", package = "time-core", files = ["crates/time-core/src/regression/projection.rs"], scope = "source-authored same-history anchor/rate projection, exact elapsed clocks and separate asserted uncertainty/growth; final source inventory/cohort binding and execution pending; no confidence, new observation, production eligibility or clock authority" },
+    { name = "fixture-closed-real-interval-majority", package = "time-core", files = ["crates/time-core/src/selection.rs"], scope = "checked synthetic labels and closed-real interval-majority fixture, independent minimum, complete common witness and fixed-capacity results; no source eligibility, identity, trust, principal, freshness or clock authority" },
+    { name = "fixture-same-history-anchor-projection", package = "time-core", files = ["crates/time-core/src/regression/projection.rs"], scope = "source-authored same-history anchor/rate projection, exact elapsed clocks and separate asserted uncertainty/growth; final source inventory/cohort binding and execution pending; no confidence, new observation, production eligibility or clock authority" },
     { name = "fixture-projection-q33-enclosure", package = "time-core", files = ["crates/time-core/src/projection_enclosure.rs"], scope = "exact outward Q33 enclosure of the computed binary64 projection operands with immutable original projection and source-derived label; source inventory/cohort binding and execution pending; no physical confidence, source eligibility, common-frame batch admission or clock authority" },
     { name = "fixture-projected-batch-context-admission", package = "time-core", files = ["crates/time-core/src/projected_batch.rs"], scope = "borrowed immutable projected entries with declared common frame, mapping generation and exact evaluation instant; ordered mandatory contextual validation and actual checked-batch/selector delegation; source, inventory, budgets and execution pending; no genuine mapping, physical confidence, production source eligibility or clock authority" },
     { name = "fixture-principal-state-and-hysteresis", package = "time-core", files = ["crates/time-core/src/principal.rs"], scope = "mandatory fixed-roster/context/event admission, atomic same-batch source scoring and bounded observation credit; initial focused RED/GREEN only, expanded contracts and per-file analysis pending; no production eligibility, freshness, reference update or clock authority" },
@@ -29,12 +34,16 @@ security_modules = [
     { name = "fixture-combination-atomic-lifecycle", package = "time-core", files = ["crates/time-core/src/combination/lifecycle.rs"], scope = "fixed-roster ordered reachability, startup/mature compatibility penalties, actual staged principal credit, ready-only emission and full failure atomicity; qualification pending; no production acquisition, freshness, trust, policy defaults or clock authority" },
 ]
 critical_files = [
+    "crates/nevrotick-engine/src/lib.rs",
+    "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
     "crates/nevrotick-ui/src/model.rs",
     "crates/nevrotick-ui/src/native.rs",
     "crates/nevrotick-ui/src/native/controls.rs",
     "crates/nevrotick-ui/src/native/view.rs",
     "crates/ntp-wire/src/header.rs",
     "crates/ntp-wire/src/datagram.rs",
+    "crates/ntp-wire/src/nts_ke.rs",
+    "crates/ntp-wire/src/nts_negotiation.rs",
     "crates/time-domain/src/coordinate.rs",
     "crates/time-domain/src/era.rs",
     "crates/time-domain/src/exchange.rs",
@@ -57,9 +66,11 @@ critical_files = [
     "crates/time-core/src/combination/lifecycle.rs",
 ]
 feature_matrix = [
+    { package = "nevrotick-engine", target = "x86_64-unknown-linux-gnu", scope = "laboratory loopback engine library and observe CLI, runtime-boundary tests, doctests and separate real entrypoint observations; no production acquisition qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "nevrotick-engine", target = "x86_64-pc-windows-msvc", scope = "engine library/test-consumer compilation and observe CLI link; actual Windows AFD, entropy, teardown, resources and runtime qualification remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-ui", target = "x86_64-pc-windows-msvc", scope = "fixture native UI; native observations separate", dependency_owner = "policy/ui-m0-dependencies.json" },
-    { package = "ntp-wire", target = "x86_64-unknown-linux-gnu", scope = "pure header decode and complete outer framing, tests and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "ntp-wire", target = "x86_64-unknown-linux-gnu", scope = "pure header decode, datagram, inert NTS-KE framing and pending NTPv4 negotiation, tests and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "ntp-wire", target = "x86_64-pc-windows-msvc", scope = "pure library and test-consumer compilation; native authority evidence separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-domain", target = "x86_64-unknown-linux-gnu", scope = "checked scalar/era/exchange/clock/rounding; ordinary and release tests plus separate doctests", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-domain", target = "x86_64-pc-windows-msvc", scope = "pure domain library and test-consumer compilation; native mappings and clock effects remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },

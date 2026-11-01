@@ -38,7 +38,10 @@ checked transformations and release-active failure behavior.
 For static lock defects, select the guarded experimental Lockbud lane only on
 source/features compatible with its separate compiler. For small finite
 properties, select Kani with reachable harnesses and justified assumptions;
-record failed/incomplete obligations. Miri, Loom and cargo-fuzz answer different
+record failed/incomplete obligations. For a new verifier or formal proof, apply
+[formal-verification evaluation](../references/formal-verification.md): compare
+the complete contract on actual executable code, review trust assumptions and
+require meaningful defect controls before adoption. Miri, Loom and cargo-fuzz answer different
 execution/model questions; route those gaps through
 [Rust techniques](../references/rust-techniques.md), not a static-pass label.
 

@@ -46,6 +46,49 @@ class RuntimeControls(unittest.TestCase):
         binds = [argv[index + 1:index + 3] for index, item in enumerate(argv) if item == "--bind"]
         self.assertEqual(binds, [[str(self.work), "/work"], [str(self.work / "tmp"), "/tmp"]])
 
+    def test_stable_core_session_namespace_denies_omitted_payload_canary(self):
+        """Actual bwrap control: a broad fixture mount exposes the omitted executable.
+
+        This tests Session -> runtime -> namespace wiring, not Rust admission.
+        Admission and source-drift controls use their separate real readers.
+        All payloads/effects here belong to this private temporary fixture.
+        """
+        spec = importlib.util.spec_from_file_location("namespace_portable", ROOT / "scripts/portable-analysis.py")
+        portable = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(portable)
+        session = portable.Session.__new__(portable.Session)
+        session.root, session.work, session.output = ROOT, self.work, self.scratch
+        session.base, session.stable = self.scratch / "payload", self.scratch / "stable"
+        canary = session.base / "common/bin/omitted-canary"
+        canary.parent.mkdir(parents=True)
+        canary.write_text("#!/bin/sh\nprintf effect > /work/canary-effect\nprintf CANARY\n")
+        canary.chmod(0o500)
+        scopes = tuple(session.stable / name for name in portable.ANALYSIS.STABLE_CORE_SCOPES)
+        for scope in scopes:
+            scope.mkdir(parents=True)
+        session.vendor, session.tools = self.scratch / "vendor", self.scratch / "tools"
+        session.vendor.mkdir(); session.tools.mkdir()
+        session.source = self.work / "source"; session.source.mkdir()
+        session.config = self.work / "config.toml"; session.config.write_text("fixed")
+        session.protected_islands, session.protected_tools = {}, {}
+        session.admitted = {"policy": {"common_nightly": "common/nightly"}}
+        session.policy, session.report = {}, {"lanes": []}
+        guard_calls = []
+        session.check = lambda: guard_calls.append("checked")
+        probe = ("import subprocess\ntry:\n"
+                 " result=subprocess.run([" + repr(str(canary)) + "],check=True,capture_output=True,text=True)\n"
+                 " print(result.stdout)\nexcept FileNotFoundError:\n print('ABSENT')\n")
+        session.admission_profile, session.payload_readonly = "full", (session.base, session.stable)
+        self.assertEqual(session.run("namespace-full-control", ["/usr/bin/python3", "-c", probe], 10), "CANARY")
+        effect = self.work / "canary-effect"
+        self.assertEqual(effect.read_text(), "effect")
+        effect.unlink()
+        session.admission_profile, session.payload_readonly = "stable-core", scopes
+        self.assertEqual(session.run("namespace-stable-control", ["/usr/bin/python3", "-c", probe], 10), "ABSENT")
+        self.assertFalse(effect.exists())
+        self.assertEqual(guard_calls, ["checked"] * 4)
+        self.assertEqual([row["exit_code"] for row in session.report["lanes"]], [0, 0])
+
     def test_missing_or_substituted_helpers_fail_before_execution(self):
         with patch.object(RUNTIME.ENV, "require_admitted_binary", side_effect=RUNTIME.Incomplete("digest mismatch")):
             with self.assertRaisesRegex(RUNTIME.Incomplete, "digest mismatch"):
@@ -317,6 +360,59 @@ class RuntimeControls(unittest.TestCase):
                       [*RUNTIME.SANITIZER_FLAGS, "-ignore_crashes=1"]):
             with self.assertRaises(RUNTIME.Incomplete):
                 self.build(["/work/fuzz-target", *flags], mode="sanitizer")
+
+    def test_wire_ke_profile_and_existing_sanitizer_limits_are_explicit(self):
+        profiles = (
+            ("legacy", RUNTIME.SANITIZER_FLAGS,
+             ("-runs=256", "-max_len=4096", "-timeout=2", "-rss_limit_mb=512",
+              "-malloc_limit_mb=256", "-max_total_time=30")),
+            ("time-core-s12a", RUNTIME.CORE_SANITIZER_FLAGS,
+             ("-runs=4096", "-max_len=1537", "-timeout=2", "-rss_limit_mb=512",
+              "-malloc_limit_mb=256", "-max_total_time=15")),
+            ("time-core-history-s12d", RUNTIME.HISTORY_SANITIZER_FLAGS,
+             ("-runs=4096", "-max_len=1561", "-timeout=2", "-rss_limit_mb=512",
+              "-malloc_limit_mb=256", "-max_total_time=15")),
+            ("ntp-wire-ke-framing", RUNTIME.WIRE_KE_SANITIZER_FLAGS,
+             ("-runs=256", "-max_len=131073", "-timeout=2", "-rss_limit_mb=512",
+              "-malloc_limit_mb=256", "-max_total_time=30")),
+        )
+        self.assertEqual(RUNTIME.WIRE_KE_SANITIZER_PROFILE, "ntp-wire-ke-framing")
+        for profile, actual, expected in profiles:
+            with self.subTest(profile=profile):
+                self.assertEqual(actual, expected)
+                command = self.build(["/work/fuzz-target", "-artifact_prefix=/work/fuzz-artifacts/", *expected],
+                                     mode="sanitizer", sanitizer_profile=profile)
+                self.assertFalse(any(item.startswith("--as=") for item in command))
+                self.assertIn("--nproc=128", command)
+                for flag in expected:
+                    self.assertEqual(command.count(flag), 1)
+        ordinary = self.build()
+        self.assertIn("--as=8589934592", ordinary)
+        self.assertIn("--nproc=128", ordinary)
+
+    def test_wire_ke_sanitizer_rejects_missing_duplicate_foreign_and_extra_flags(self):
+        flags = ("-runs=256", "-max_len=131073", "-timeout=2", "-rss_limit_mb=512",
+                 "-malloc_limit_mb=256", "-max_total_time=30")
+        invalid = [flags[:index] + flags[index + 1:] for index in range(len(flags))]
+        invalid += [(*flags, flag) for flag in flags]
+        invalid += [RUNTIME.SANITIZER_FLAGS, RUNTIME.CORE_SANITIZER_FLAGS, RUNTIME.HISTORY_SANITIZER_FLAGS]
+        invalid += [tuple("-max_len=" + str(size) if value.startswith("-max_len=") else value
+                          for value in flags) for size in (131072, 131074)]
+        invalid += [(*flags, value) for value in
+                    ("-jobs=2", "-ignore_crashes=1", "-print_final_stats=1", "-artifact_prefix=/outside/")]
+        with patch.object(RUNTIME.ENV, "run") as execute:
+            for values in invalid:
+                with self.subTest(flags=values), self.assertRaises(RUNTIME.Incomplete):
+                    RUNTIME.run(ROOT, self.work, ["/work/fuzz-target", *values], mode="sanitizer",
+                                sanitizer_profile="ntp-wire-ke-framing")
+            for profile in ("legacy", "time-core-s12a", "time-core-history-s12d", "unknown", None, True):
+                with self.subTest(profile=profile), self.assertRaises(RUNTIME.Incomplete):
+                    RUNTIME.run(ROOT, self.work, ["/work/fuzz-target", *flags], mode="sanitizer",
+                                sanitizer_profile=profile)
+            with self.assertRaises(RUNTIME.Incomplete):
+                RUNTIME.run(ROOT, self.work, ["/usr/bin/true"], mode="ordinary",
+                            sanitizer_profile="ntp-wire-ke-framing")
+            execute.assert_not_called()
 
     def test_run_passes_no_ambient_environment_and_preserves_native_exit(self):
         native = {"exit_code": 7, "output": "controlled", "failure": None}

@@ -26,6 +26,48 @@ ASSERTION = (
 CARGO = '{"reason":"build-finished","success":true}\n'
 
 
+# Literal native assertions in retained lifecycle-v2 outcomes8,17,87,104.
+ADDITIONAL_ASSERTIONS = ('assertion failed: matches!(rejected,\n'
+ '    Err(FixtureCombinationLifecycleError::InvalidParameter\n'
+ '    {\n'
+ '        field: FixtureCombinationParameterField::MaxClockError, issue: actual,\n'
+ '    }) if actual == issue)\n',
+ 'assertion failed: matches!(rejected,\n'
+ '    Err(FixtureCombinationLifecycleError::InvalidParameter\n'
+ '    { field: FixtureCombinationParameterField::CombineLimit, issue: actual, })\n'
+ '    if actual == issue)\n',
+ 'assertion failed: matches!(rejected,\n'
+ '    Err(FixtureCombinationLifecycleError::Combination\n'
+ '    {\n'
+ '        source: FixtureCombinationError::ZeroDenominator\n'
+ '        { index: 0, field: FixtureCombinationDenominatorField::RootDistance }\n'
+ '    }))\n',
+ 'assertion failed: matches!(rejected,\n'
+ '    Err(FixtureCombinationLifecycleError::Arithmetic\n'
+ '    {\n'
+ '        step: FixtureCombinationLifecycleStep::RateLimit, source:\n'
+ '        FitError::Arithmetic\n'
+ '        {\n'
+ '            stage: ArithmeticStage::Combination, operation:\n'
+ '            ArithmeticOperation::Multiply, issue: ArithmeticIssue::NonFinite\n'
+ '        }\n'
+ '    }))\n',
+ 'assertion failed: actual.is_some_and(|cause|\n'
+ '        {\n'
+ '            cause.downcast_ref::<FitError>().is_some_and(|inner|\n'
+ '                    std::ptr::eq(inner, source))\n'
+ '        })\n',
+ 'assertion failed: actual.is_some_and(|cause|\n'
+ '        {\n'
+ '            cause.downcast_ref::<FixtureCombinationError>().is_some_and(|inner|\n'
+ '                    std::ptr::eq(inner, source))\n'
+ '        })\n',
+ 'assertion failed: actual.is_some_and(|cause|\n'
+ '        {\n'
+ '            cause.downcast_ref::<FixturePrincipalError>().is_some_and(|inner|\n'
+ '                    std::ptr::eq(inner, source))\n'
+ '        })\n')
+
 class LifecycleAssertionTransportTests(unittest.TestCase):
     def test_healthy_neighbor_retains_only_native_text(self):
         records, raw = MODULE.cargo_json_records(CARGO + 'test healthy ... ok\n', test_phase=True)
@@ -40,6 +82,22 @@ class LifecycleAssertionTransportTests(unittest.TestCase):
                     CARGO.replace('\n', newline) + raw, test_phase=True)
                 self.assertEqual(records, [{'reason': 'build-finished', 'success': True}])
                 self.assertEqual(observed, raw)
+
+    def test_additional_observed_blocks_are_preserved_only_in_test_phase(self):
+        for block in ADDITIONAL_ASSERTIONS:
+            for newline in ('\n', '\r\n'):
+                with self.subTest(block=block, newline=repr(newline)):
+                    expected = block.replace('\n', newline)
+                    records, raw = MODULE.cargo_json_records(
+                        CARGO.replace('\n', newline) + expected, test_phase=True)
+                    self.assertEqual(records, [{'reason': 'build-finished', 'success': True}])
+                    self.assertEqual(raw, expected)
+            with self.subTest(context='Build', block=block), self.assertRaises(MODULE.Incomplete):
+                MODULE.cargo_json_records(CARGO + block)
+            for invalid in (block.rstrip('\n'), block.rsplit('\n', 2)[0] + '\n',
+                            block.replace('assertion failed:', 'assertion failed: altered', 1)):
+                with self.subTest(invalid=invalid), self.assertRaises(MODULE.Incomplete):
+                    MODULE.cargo_json_records(CARGO + invalid, test_phase=True)
 
     def test_build_transport_keeps_the_assertion_closed(self):
         with self.assertRaises(MODULE.Incomplete):

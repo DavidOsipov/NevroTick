@@ -116,10 +116,10 @@ MAX_COHORT_VARIANTS = 512
 MAX_LISTING_VARIANTS = 3072
 MAX_OWNERS = 6
 MAX_INPUTS = 256
-# Preserve the predecessor's 366 units and add exactly 121 lifecycle units:
-# 22 public, four bridge and one counter call fields; 38 module-work fields;
+# Preserve the predecessor's 366 units and add exactly 128 lifecycle units:
+# 22 public, four bridge and eight counter call fields; 38 module-work fields;
 # and 56 delegated-principal fields. Unknown/extra fields still fail.
-MAX_BUDGET_FIELDS = 487
+MAX_BUDGET_FIELDS = 494
 PLAN_KEYS = frozenset({
     "schema_version", "status", "candidate_sha256", "product_inputs_sha256",
     "tool_inputs_sha256", "tool_payloads_sha256", "recipe_sha256", "inventories",

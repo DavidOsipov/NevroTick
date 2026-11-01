@@ -10,6 +10,11 @@ Compare selection/principal/supporter/rejected membership/reasons, common-instan
 
 Keep exact NTP timestamp differences and Windows conversions in checked integer/fixed-point arithmetic before deliberately using floating point for small deltas. Declare physical error envelopes and numerical tolerances before execution. Test NaN/infinity, cancellation, saturation/overflow boundaries, quantization and signed rounding independently. Differential comparison with pinned chrony is useful but cannot be the only oracle for a ported algorithm. Record upstream revision/port-ledger identity.
 
+When translating integer logic into a model or proof, reconcile
+[specification and machine semantics](formal-verification.md#relate-integer-specifications-to-machine-operations),
+especially negative division/remainder, casts and required-success overflow paths.
+This semantic review does not require adopting a formal verifier.
+
 For a numerical kernel or threshold, use the
 [numerical procedure](../../implementation/implement-rust/references/numerical-kernels.md).
 Retain separate exact mathematical expectations and independently modeled rounded

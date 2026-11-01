@@ -17,15 +17,54 @@ SPEC.loader.exec_module(VERIFY)
 EXPECTED_PACKAGES = {
     "nevrotick-ui": "crates/nevrotick-ui", "ntp-wire": "crates/ntp-wire",
     "time-domain": "crates/time-domain", "ntp-exchange": "crates/ntp-exchange",
-    "time-core": "crates/time-core",
+    "time-core": "crates/time-core", "nevrotick-engine": "crates/nevrotick-engine",
 }
-EXPECTED_MEMBERS = 'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core"]'
+EXPECTED_MEMBERS = 'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine"]'
 EXCHANGE_LOCK = ('[[package]]\nname="ntp-exchange"\nversion="0.0.0"\n'
                  'dependencies=["ntp-wire","time-core","time-domain"]\n')
 
 
 CORE_LOCK = ('[[package]]\nname="time-core"\nversion="0.0.0"\n'
              'dependencies=["garde","time-domain"]\n')
+
+
+ENGINE_LOCK = ('[[package]]\nname="nevrotick-engine"\nversion="0.0.0"\n'
+               'dependencies=["getrandom","ntp-wire","tokio"]\n')
+# Independent fixture identities: no production helper supplies these expectations.
+SELECTED_VERSIONS = {
+    "castaway": "0.2.4", "cfg-if": "1.0.5", "compact_str": "0.9.1", "garde": "0.23.0",
+    "garde_derive": "0.23.0", "getrandom": "0.4.3", "itoa": "1.0.18", "libc": "0.2.191",
+    "mio": "1.2.4", "pin-project-lite": "0.2.17", "proc-macro2": "1.0.107", "quote": "1.0.47",
+    "rustversion": "1.0.23", "ryu": "1.0.23", "smallvec": "1.16.4", "socket2": "0.6.5",
+    "static_assertions": "1.1.0", "syn": "2.0.119", "tokio": "1.54.1", "tokio-macros": "2.7.1",
+    "unicode-ident": "1.0.27", "windows-link": "0.2.1", "windows-sys": "0.61.2",
+}
+RESOLUTION_VERSIONS = {"r-efi": "6.0.0", "wasi": "0.11.1+wasi-snapshot-preview1"}
+FIXTURE_BUILD_SCRIPTS = {"getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107",
+                         "quote@1.0.47", "rustversion@1.0.23"}
+
+
+def dependency_fixture():
+    """Declare inert registry/role facts; no Cargo or real package source is used."""
+    selected, metadata = [], []
+    for name, version in SELECTED_VERSIONS.items():
+        grant = "BSL-1.0" if name == "ryu" else "MIT AND Unicode-3.0" if name == "unicode-ident" else "MIT"
+        selected.append({"name": name, "version": version, "checksum": digest((name+"@"+version).encode()),
+                         "license": grant, "selected_license": grant, "build_script": name+"@"+version in FIXTURE_BUILD_SCRIPTS,
+                         "files_sha256": "f"*64, "upstream_revision": "a"*40})
+    for name, version in RESOLUTION_VERSIONS.items():
+        metadata.append({"name": name, "version": version, "checksum": digest((name+"@"+version).encode()),
+                         "license": "MIT", "files_sha256": "e"*64, "role": "metadata-only"})
+    rows = {}
+    for target, excluded in (("x86_64-unknown-linux-gnu", {"windows-link", "windows-sys"}),
+                             ("x86_64-pc-windows-msvc", {"libc"})):
+        identities = sorted(name+"@"+version for name, version in SELECTED_VERSIONS.items() if name not in excluded)
+        rows[target] = {"external_packages": identities, "features": {identity: [] for identity in identities},
+                        "allowed_build_scripts": sorted(FIXTURE_BUILD_SCRIPTS & set(identities))}
+    return {"schema_version": 2, "scope": "Independent inert verifier control", "lockfile_sha256": "0"*64,
+            "manifests_sha256": {name: "c"*64 for name in
+                ("Cargo.toml", *(directory+"/Cargo.toml" for directory in EXPECTED_PACKAGES.values()))},
+            "packages": selected, "metadata_only_packages": metadata, "rows": rows}
 
 
 def digest(data):
@@ -65,40 +104,45 @@ class ProductAdmissionTests(unittest.TestCase):
                     stream.write('[dependencies]\nntp-wire={version="=0.0.0",path="../ntp-wire"}\n'
                                  'time-domain={version="=0.0.0",path="../time-domain"}\n'
                                  '[dev-dependencies]\ntime-core={version="=0.0.0",path="../time-core"}\n')
+            if package == "nevrotick-engine":
+                with (member / "Cargo.toml").open("a") as stream:
+                    stream.write('[dependencies]\ngetrandom={version="=0.4.3",default-features=false}\n'
+                                 'ntp-wire={version="=0.0.0",path="../ntp-wire"}\n'
+                                 'tokio={version="=1.54.1",default-features=false,features=["rt","net","time","sync","macros"]}\n'
+                                 '[[bin]]\nname="nevrotick-observe"\npath="src/bin/nevrotick-observe.rs"\n')
+                (member / "src/bin").mkdir()
+                (member / "src/bin/nevrotick-observe.rs").write_text("fn main() {}\n")
+                (member / "tests").mkdir()
+                (member / "tests/runtime_boundary.rs").write_text("// Inert admission fixture; never compiled.\n")
             (member / "src/lib.rs").write_text('//! Test control; never compiled.\n')
-        self.archive_hash = "1" * 64
-        (self.root / "Cargo.lock").write_text(
-            'version = 4\n' + CORE_LOCK + '[[package]]\nname="nevrotick-ui"\nversion="0.0.0"\n'
-            '[[package]]\nname="ntp-wire"\nversion="0.0.0"\n'
-            '[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n' + EXCHANGE_LOCK +
-            '[[package]]\nname="garde"\nversion="0.23.0"\n'
-            'source="registry+https://github.com/rust-lang/crates.io-index"\n'
-            'checksum="' + "2" * 64 + '"\n'
-            '[[package]]\nname="fixture-dependency"\nversion="1.0.0"\n'
-            'source="registry+https://github.com/rust-lang/crates.io-index"\n'
-            f'checksum="{self.archive_hash}"\n')
-        self.policy = {"schema_version": 1,
-                       "lockfile_sha256": VERIFY.sha256(self.root / "Cargo.lock"),
-                       "manifests_sha256": {name: VERIFY.sha256(self.root / name)
-                                            for name in ("Cargo.toml", "crates/nevrotick-ui/Cargo.toml",
-                                                         "crates/ntp-wire/Cargo.toml", "crates/time-domain/Cargo.toml",
-                                                         "crates/ntp-exchange/Cargo.toml", "crates/time-core/Cargo.toml")},
-                       "packages": [{"name": "fixture-dependency", "version": "1.0.0",
-                                     "checksum": self.archive_hash},
-                                    {"name": "garde", "version": "0.23.0", "checksum": "2" * 64}]}
+        self.policy = dependency_fixture()
+        records = self.policy["packages"] + self.policy["metadata_only_packages"]
+        lock = ('version = 4\n' + CORE_LOCK + ENGINE_LOCK +
+                '[[package]]\nname="nevrotick-ui"\nversion="0.0.0"\n'
+                '[[package]]\nname="ntp-wire"\nversion="0.0.0"\n'
+                '[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n' + EXCHANGE_LOCK)
+        for entry in records:
+            lock += ('[[package]]\nname="'+entry["name"]+'"\nversion="'+entry["version"]+'"\n'
+                     'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="'+entry["checksum"]+'"\n')
+        (self.root / "Cargo.lock").write_text(lock)
+        self.policy["lockfile_sha256"] = VERIFY.sha256(self.root / "Cargo.lock")
+        self.policy["manifests_sha256"] = {name: VERIFY.sha256(self.root / name)
+            for name in ("Cargo.toml", *(directory+"/Cargo.toml" for directory in EXPECTED_PACKAGES.values()))}
         self.write_policy()
 
     def write_policy(self):
         (self.root / "policy/ui-m0-dependencies.json").write_text(json.dumps(self.policy))
 
-    def test_build_and_lint_rows_use_the_twelve_job_budget(self):
+    def test_build_rows_keep_twelve_jobs_except_bounded_core_test_linking(self):
         for lane in ("portable", "windows"):
             for label, command in VERIFY.commands(lane):
                 if label == "format":
                     continue
                 with self.subTest(lane=lane, row=label):
                     flag = "--build-jobs" if "nextest" in command else "--jobs"
-                    self.assertEqual(command[command.index(flag) + 1], "12")
+                    expected = ("6" if lane == "portable" and label in (
+                        "product-tests:time-core", "optimized-tests:time-core") else "12")
+                    self.assertEqual(command[command.index(flag) + 1], expected)
 
     def test_prior_single_member_graph_no_longer_hides_missing_protocol_member(self):
         path = self.root / "Cargo.toml"
@@ -122,12 +166,114 @@ class ProductAdmissionTests(unittest.TestCase):
         self.assertIn("crates/ntp-wire/src/lib.rs", files)
         self.assertIn("crates/nevrotick-ui/src/lib.rs", files)
 
-    def test_reviewed_five_member_graph_is_accepted(self):
+    def test_reviewed_six_member_graph_is_accepted(self):
         with patch.object(VERIFY.ENV, "run") as run:
             _, files = VERIFY.admit_product(self.root)
             run.assert_not_called()
         for directory in EXPECTED_PACKAGES.values():
             self.assertIn(directory + "/src/lib.rs", files)
+
+    def test_prior_five_members_cannot_hide_engine(self):
+        path = self.root / "Cargo.toml"
+        path.write_text(path.read_text().replace(', "crates/nevrotick-engine"]', ']'))
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed.*workspace members"):
+            VERIFY.admit_product(self.root)
+
+    def test_engine_manifest_effects_are_exact_even_with_refreshed_hash(self):
+        path = self.root / "crates/nevrotick-engine/Cargo.toml"
+        healthy = path.read_text()
+        variants = [healthy.replace('version="=1.54.1"', 'version="=1.54.2"'),
+                    healthy.replace('features=["rt","net","time","sync","macros"]', 'features=["full"]'),
+                    healthy.replace('default-features=false', 'default-features=true'),
+                    healthy.replace('default-features=false', 'default-features=0'),
+                    healthy.replace('ntp-wire={version="=0.0.0",path="../ntp-wire"}', 'ntp-wire={path="../ntp-wire"}'),
+                    healthy.replace('name="nevrotick-observe"', 'name="other"'),
+                    healthy.replace('path="src/bin/nevrotick-observe.rs"', 'path="src/lib.rs"')]
+        variants.extend(healthy + extra for extra in (
+            '\n[dev-dependencies]\nextra="=1.0.0"\n', '\n[features]\nextra=[]\n',
+            '\n[build-dependencies]\nextra="=1.0.0"\n',
+            '\n[target.\'cfg(windows)\'.dependencies]\nextra="=1.0.0"\n'))
+        variants.append(healthy.replace('[dependencies]\n', '[dependencies]\ntokio-macros="=2.7.1"\n'))
+        for text in variants:
+            with self.subTest(text=text):
+                path.write_text(text)
+                self.policy["manifests_sha256"]["crates/nevrotick-engine/Cargo.toml"] = VERIFY.sha256(path)
+                self.write_policy()
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "engine requires"):
+                    VERIFY.admit_product(self.root)
+
+    def test_ui_cannot_acquire_engine_runtime_even_with_updated_manifest_admission(self):
+        path = self.root / "crates/nevrotick-ui/Cargo.toml"
+        healthy = path.read_text()
+        for declaration in ('tokio={version="=1.54.1"}',
+                            'clock-runtime={package="tokio",version="=1.54.1"}',
+                            'nevrotick-engine={version="=0.0.0",path="../nevrotick-engine"}'):
+            path.write_text(healthy + '\n[dependencies]\n' + declaration + '\n')
+            self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(path)
+            self.write_policy()
+            with self.subTest(declaration=declaration), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "only to the engine"):
+                VERIFY.admit_product(self.root)
+
+    def test_ui_cannot_inherit_a_workspace_runtime_alias_after_refreshing_all_pins(self):
+        workspace = self.root / "Cargo.toml"
+        workspace.write_text(workspace.read_text() + '\n[workspace.dependencies]\n'
+                             'clock-runtime={package="tokio",version="=1.54.1",default-features=false,features=["rt","net","time","sync","macros"]}\n')
+        member = self.root / "crates/nevrotick-ui/Cargo.toml"
+        member.write_text(member.read_text() + '\n[dependencies]\nclock-runtime={workspace=true}\n')
+        lock = self.root / "Cargo.lock"
+        lock.write_text(lock.read_text().replace('name="nevrotick-ui"\nversion="0.0.0"',
+                                                'name="nevrotick-ui"\nversion="0.0.0"\ndependencies=["tokio"]'))
+        self.policy["manifests_sha256"]["Cargo.toml"] = VERIFY.sha256(workspace)
+        self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(member)
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        self.write_policy()
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "only to the engine"):
+            VERIFY.admit_product(self.root)
+
+    def test_engine_lock_edges_entrypoint_and_runtime_suite_are_mandatory(self):
+        lock = self.root / "Cargo.lock"
+        healthy = lock.read_text()
+        lock.write_text(healthy.replace(ENGINE_LOCK, ENGINE_LOCK.replace('["getrandom","ntp-wire","tokio"]', '["tokio"]')))
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        self.write_policy()
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpected packages"):
+            VERIFY.admit_product(self.root)
+        lock.write_text(healthy)
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        self.write_policy()
+        for name in ("src/bin/nevrotick-observe.rs", "tests/runtime_boundary.rs"):
+            path = self.root / "crates/nevrotick-engine" / name
+            raw = path.read_bytes()
+            path.unlink()
+            with self.subTest(name=name), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "entrypoint or runtime-boundary"):
+                VERIFY.admit_product(self.root)
+            path.write_bytes(raw)
+
+    def test_metadata_only_cannot_be_promoted_or_changed_with_updated_lock_hash(self):
+        original = json.loads(json.dumps(self.policy))
+        for change in ("promote", "role", "build", "macro"):
+            self.policy = json.loads(json.dumps(original))
+            if change == "promote":
+                self.policy["packages"].append(self.policy["metadata_only_packages"].pop())
+            elif change == "role":
+                self.policy["metadata_only_packages"][0]["role"] = "runtime"
+            elif change == "build":
+                self.policy["metadata_only_packages"][0]["build_script"] = True
+            else:
+                next(p for p in self.policy["packages"] if p["name"] == "tokio-macros")["version"] = "2.7.2"
+            self.write_policy()
+            with self.subTest(change=change), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.admit_product(self.root)
+
+    def test_dependency_json_is_bounded_strict_and_has_no_duplicate_fields(self):
+        path = self.root / "policy/ui-m0-dependencies.json"
+        healthy = path.read_text()
+        for payload in ('{"schema_version":2,"schema_version":2}', '{"number":NaN}', '[]', ' ' * (512 * 1024 + 1)):
+            path.write_text(payload)
+            with self.subTest(prefix=payload[:40]), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.read_dependency_policy(path)
+        path.write_text(healthy)
+        self.assertEqual(VERIFY.read_dependency_policy(path), self.policy)
 
     def test_all_pure_role_clippy_configurations_are_frozen_product_inputs(self):
         _, files = VERIFY.admit_product(self.root)
@@ -500,6 +646,23 @@ class VendorIntegrityTests(unittest.TestCase):
     def test_verified_source_inventory_is_accepted(self):
         self.assertEqual(len(VERIFY.admit_vendor(self.root, self.policy)), 2)
 
+    def test_metadata_only_source_is_required_without_becoming_selected(self):
+        metadata = {"name": "wasi", "version": "0.11.1+wasi-snapshot-preview1",
+                    "checksum": "3" * 64, "files_sha256": self.policy["packages"][0]["files_sha256"],
+                    "role": "metadata-only"}
+        self.policy["metadata_only_packages"] = [metadata]
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "missing or unexpected"):
+            VERIFY.admit_vendor(self.root, self.policy)
+        package = self.root / "wasi-0.11.1+wasi-snapshot-preview1"
+        package.mkdir()
+        (package / "lib.rs").write_bytes(self.payload.read_bytes())
+        (package / ".cargo-checksum.json").write_text(json.dumps({"package": "3" * 64, "files": self.files}))
+        self.assertEqual(len(VERIFY.admit_vendor(self.root, self.policy)), 4)
+        self.assertEqual(len(self.policy["packages"]), 1)
+        self.policy["packages"].append(metadata)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "roles are duplicated"):
+            VERIFY.admit_vendor(self.root, self.policy)
+
     def test_modified_source_is_rejected(self):
         self.payload.write_text("//! Tampered source.\n")
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "source bytes"):
@@ -526,37 +689,78 @@ class VendorIntegrityTests(unittest.TestCase):
 class DependencyPolicyTests(unittest.TestCase):
     def setUp(self):
         self.base = (ROOT / "deny.toml").read_text()
-        self.policy = {"packages": [
-            {"name": "proc-macro2", "version": "1.0.107", "selected_license": "MIT", "build_script": True},
-            {"name": "quote", "version": "1.0.47", "selected_license": "MIT", "build_script": True},
-            {"name": "rustversion", "version": "1.0.23", "selected_license": "MIT", "build_script": True},
-            {"name": "bounded-helper", "version": "1.0.0", "selected_license": "BSL-1.0"},
-            {"name": "unicode-control", "version": "1.0.0", "selected_license": "MIT AND Unicode-3.0"},
-        ]}
+        self.policy = dependency_fixture()
 
     def test_only_exact_grants_change_and_held_rules_survive(self):
-        result = tomllib.loads(VERIFY.product_deny(self.base, self.policy))
+        result = tomllib.loads(VERIFY.product_deny(self.base, self.policy, "x86_64-unknown-linux-gnu"))
         original = tomllib.loads(self.base)
         self.assertEqual(result["bans"]["build"]["allow-build-scripts"],
-                         ["proc-macro2@1.0.107", "quote@1.0.47", "rustversion@1.0.23"])
+                         ["getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107", "quote@1.0.47", "rustversion@1.0.23"])
         self.assertEqual(set(result["licenses"]["allow"]), {"GPL-2.0-only", "MIT", "BSL-1.0", "Unicode-3.0"})
         result["licenses"]["allow"] = original["licenses"]["allow"]
         result["bans"]["build"]["allow-build-scripts"] = original["bans"]["build"]["allow-build-scripts"]
         self.assertEqual(result, original)
 
+    def test_windows_build_allowance_excludes_linux_script_and_keeps_old_three(self):
+        result = tomllib.loads(VERIFY.product_deny(self.base, self.policy, "x86_64-pc-windows-msvc"))
+        self.assertEqual(result["bans"]["build"]["allow-build-scripts"],
+                         ["getrandom@0.4.3", "proc-macro2@1.0.107", "quote@1.0.47", "rustversion@1.0.23"])
+        self.policy["rows"]["x86_64-pc-windows-msvc"]["allowed_build_scripts"].insert(1, "libc@0.2.191")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "target package/build-script"):
+            VERIFY.product_deny(self.base, self.policy, "x86_64-pc-windows-msvc")
+
+    def test_frozen_metadata_is_compared_before_target_policy_scan(self):
+        rows = VERIFY.commands("dependencies")
+        self.assertEqual([label for label, _ in rows], [
+            "dependency-metadata-x86_64-unknown-linux-gnu", "dependency-x86_64-unknown-linux-gnu",
+            "dependency-metadata-x86_64-pc-windows-msvc", "dependency-x86_64-pc-windows-msvc"])
+        for label, command in rows:
+            self.assertIn("--frozen", command)
+            if label.startswith("dependency-metadata-"):
+                self.assertIn("--offline", command)
+                self.assertIn("metadata", command)
+
+    def test_actual_target_metadata_rejects_feature_source_and_role_drift(self):
+        target = "x86_64-unknown-linux-gnu"
+        expected = self.policy["rows"][target]["features"]
+        packages = [{"id": name, "name": name, "version": "0.0.0", "source": None}
+                    for name in EXPECTED_PACKAGES]
+        packages += [{"id": identity, "name": identity.split("@")[0], "version": identity.split("@")[1],
+                      "source": "registry+https://github.com/rust-lang/crates.io-index"} for identity in expected]
+        healthy = {"packages": packages, "resolve": {"nodes": [{"id": p["id"], "features": []} for p in packages]}}
+        self.assertEqual(VERIFY.validate_dependency_metadata(target, json.dumps(healthy), self.policy)["external_packages"],
+                         sorted(expected))
+        for variant in ("feature", "source", "extra", "duplicate", "missing", "local"):
+            data = json.loads(json.dumps(healthy))
+            if variant == "feature":
+                next(n for n in data["resolve"]["nodes"] if n["id"] == "tokio@1.54.1")["features"] = ["full"]
+            elif variant == "source":
+                data["packages"][-1]["source"] = "git+https://example.invalid/unreviewed"
+            elif variant == "extra":
+                data["packages"].append({"id": "r-efi@6.0.0", "name": "r-efi", "version": "6.0.0", "source": "registry+https://github.com/rust-lang/crates.io-index"})
+                data["resolve"]["nodes"].append({"id": "r-efi@6.0.0", "features": []})
+            elif variant == "duplicate":
+                data["resolve"]["nodes"].append(data["resolve"]["nodes"][-1])
+            elif variant == "missing":
+                data["packages"].pop()
+            else:
+                data["packages"][0]["name"] = "unreviewed-owner"
+            with self.subTest(variant=variant), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.validate_dependency_metadata(target, json.dumps(data), self.policy)
+
     def test_new_build_script_or_version_requires_review(self):
-        self.policy["packages"][0]["version"] = "1.0.108"
-        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed policy change"):
-            VERIFY.product_deny(self.base, self.policy)
+        next(p for p in self.policy["packages"] if p["name"] == "proc-macro2")["version"] = "1.0.108"
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpected packages"):
+            VERIFY.product_deny(self.base, self.policy, "x86_64-unknown-linux-gnu")
 
     def test_new_license_and_broadened_bootstrap_are_rejected(self):
         self.policy["packages"][0]["selected_license"] = "Apache-2.0"
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed policy change"):
-            VERIFY.product_deny(self.base, self.policy)
+            VERIFY.product_deny(self.base, self.policy, "x86_64-unknown-linux-gnu")
         self.policy["packages"][0]["selected_license"] = "MIT"
         base = self.base.replace('allow = ["GPL-2.0-only"]', 'allow = ["GPL-2.0-only", "MIT"]')
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpectedly broadened"):
-            VERIFY.product_deny(base, self.policy)
+            VERIFY.product_deny(base, self.policy, "x86_64-unknown-linux-gnu")
 
 
 class ExecutionAccountingTests(unittest.TestCase):
@@ -665,6 +869,96 @@ class ExecutionAccountingTests(unittest.TestCase):
                               '</testsuite></testsuites>')
         self.assertEqual(VERIFY.validate_test_result("optimized-tests:time-core", "", self.work)["executed"], 1)
 
+    def test_engine_entrypoint_is_checked_and_built_on_both_targets(self):
+        portable = dict(VERIFY.commands("portable"))
+        for label in ("compiler", "clippy"):
+            self.assertIn("--all-targets", portable[label])
+        host = portable["host-engine-build"]
+        self.assertEqual(host[host.index("--package") + 1], "nevrotick-engine")
+        self.assertEqual(host[host.index("--bin") + 1], "nevrotick-observe")
+        self.assertIn("build", host)
+        windows = dict(VERIFY.commands("windows"))
+        engine = windows["windows-engine-link"]
+        self.assertEqual(engine[engine.index("--package") + 1], "nevrotick-engine")
+        self.assertEqual(engine[engine.index("--bin") + 1], "nevrotick-observe")
+        self.assertIn("--release", engine)
+        self.assertIn("x86_64-pc-windows-msvc", engine)
+        self.assertNotIn("run", engine)
+        self.assertEqual(windows["windows-link"][windows["windows-link"].index("--package") + 1],
+                         "nevrotick-ui")
+
+    def test_engine_runtime_boundary_and_existing_release_guard_are_required(self):
+        rows = dict(VERIFY.commands("portable"))
+        for label in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
+            command = rows[label]
+            self.assertEqual(command[command.index("--package") + 1], "nevrotick-engine")
+            self.assertEqual(command[command.index("--test") + 1], "runtime_boundary")
+            self.assertIn("--no-tests=fail", command)
+        optimized = rows["optimized-tests:nevrotick-engine"]
+        self.assertEqual(optimized[optimized.index("--cargo-profile") + 1], "release")
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine::runtime_boundary">'
+                              '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
+                              '</testsuite></testsuites>')
+        self.assertEqual(VERIFY.validate_test_result("optimized-tests:nevrotick-engine", "", self.work)
+                         ["executed"], 1)
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine::runtime_boundary">'
+                              '<testcase name="prepare_outside_runtime_owns_and_releases_standard_sockets"/>'
+                              '</testsuite></testsuites>')
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "discriminator"):
+            VERIFY.validate_test_result("optimized-tests:nevrotick-engine", "", self.work)
+
+    def test_engine_doctests_preserve_nonempty_execution_requirement(self):
+        command = dict(VERIFY.commands("portable"))["doctests:nevrotick-engine"]
+        self.assertIn("--doc", command)
+        self.assertEqual(VERIFY.validate_test_result("doctests:nevrotick-engine",
+                         "test result: ok. 2 passed; 0 failed; 0 ignored;", self.work),
+                         {"package": "nevrotick-engine", "executed": 2})
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "nonempty"):
+            VERIFY.validate_test_result("doctests:nevrotick-engine",
+                                        "test result: ok. 0 passed; 0 failed; 0 ignored;", self.work)
+
+    def test_portable_output_retains_current_engine_before_build_directory_disposal(self):
+        """Exercise the real producer with a declared simulated build, not Rust evidence."""
+        project = self.work / "project"
+        project.mkdir()
+        names = ("Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES)
+        for name in names:
+            destination = project / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, destination)
+        identity = {name: VERIFY.sha256(project / name) for name in names}
+        for directory in ("vendor", "toolchain", "scratch"):
+            (self.work / directory).mkdir()
+        output = self.work / "export"
+        args = argparse.Namespace(lane="portable", vendor_dir=self.work / "vendor",
+                                  toolchain_dir=self.work / "toolchain", scratch_root=self.work / "scratch",
+                                  nextest=None, deny=None, output_dir=output)
+        payload = b"\x7fELFdeclared-unit-build-fixture-never-executed"
+        built = []
+
+        def simulated_build(_toolchain, work, _source, _vendor, command, *_args):
+            binary = work / "target/debug/nevrotick-observe"
+            binary.parent.mkdir(parents=True)
+            binary.write_bytes(payload)
+            binary.chmod(0o700)
+            built.append(binary)
+            return command
+
+        report = {}
+        with patch.object(VERIFY, "admit_product", return_value=({}, identity)), \
+                patch.object(VERIFY, "admit_vendor", return_value={}), \
+                patch.object(VERIFY, "admit_tools", return_value={}), \
+                patch.object(VERIFY, "commands", return_value=[("host-engine-build", ["simulated-owned-build"])]), \
+                patch.object(VERIFY, "boundary_control"), \
+                patch.object(VERIFY, "sandbox", side_effect=simulated_build), \
+                patch.object(VERIFY.ENV, "run", return_value={"exit_code": 0, "failure": None, "output": ""}), \
+                patch.object(VERIFY, "summarize_test_counts", return_value={}):
+            VERIFY.execute(project, args, report)
+        self.assertFalse(built[0].exists())
+        self.assertTrue((output / "nevrotick-observe").is_file())
+        self.assertEqual((output / "nevrotick-observe").read_bytes(), payload)
+        self.assertEqual(report["engine_artifact"]["sha256"], digest(payload))
+
     def test_exchange_commands_require_release_and_ordinary_execution(self):
         rows = dict(VERIFY.commands("portable"))
         self.assertIn("product-tests:ntp-exchange", rows)
@@ -735,6 +1029,8 @@ class ExecutionAccountingTests(unittest.TestCase):
         debug.mkdir(parents=True)
         (release / "nevrotick-ui.exe").write_bytes(b"release-control")
         (release / "nevrotick_ui.pdb").write_bytes(b"release-symbol-control")
+        (release / "nevrotick-observe.exe").write_bytes(b"engine-control")
+        (release / "nevrotick_observe.pdb").write_bytes(b"engine-symbol-control")
         (debug / "nevrotick-ui.exe").write_bytes(b"wrong-debug-control")
         output = self.work / "export"
         output.mkdir()
@@ -745,6 +1041,8 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertEqual(report["sha256"], digest(b"release-control"))
         self.assertEqual(report["symbols"]["sha256"], digest(b"release-symbol-control"))
         self.assertEqual(Path(report["symbols"]["path"]).read_bytes(), b"release-symbol-control")
+        self.assertEqual(Path(report["engine"]["path"]).read_bytes(), b"engine-control")
+        self.assertEqual(report["engine"]["symbols"]["sha256"], digest(b"engine-symbol-control"))
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "existing destinations"):
             VERIFY.export_windows_artifacts(self.work, output)
 
@@ -757,8 +1055,25 @@ class ExecutionAccountingTests(unittest.TestCase):
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
             VERIFY.export_windows_artifacts(self.work, output)
         self.assertEqual(list(output.iterdir()), [])
+
         for name in ("nevrotick-ui.pdb", "nevrotick_ui.pdb"):
             (release / name).write_bytes(b"ambiguous-symbol-control")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
+            VERIFY.export_windows_artifacts(self.work, output)
+        self.assertEqual(list(output.iterdir()), [])
+
+    def test_windows_engine_artifacts_are_admitted_before_any_ui_copy(self):
+        release = self.work / "target/x86_64-pc-windows-msvc/release"
+        release.mkdir(parents=True)
+        for name in ("nevrotick-ui.exe", "nevrotick_ui.pdb", "nevrotick-observe.exe"):
+            (release / name).write_bytes(b"independent-artifact-control")
+        output = self.work / "export"
+        output.mkdir()
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
+            VERIFY.export_windows_artifacts(self.work, output)
+        self.assertEqual(list(output.iterdir()), [])
+        (release / "nevrotick_observe.pdb").write_bytes(b"engine-symbol")
+        (release / "nevrotick-observe.pdb").write_bytes(b"ambiguous-symbol")
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "matching PDB"):
             VERIFY.export_windows_artifacts(self.work, output)
         self.assertEqual(list(output.iterdir()), [])
@@ -768,14 +1083,19 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertIn("--workspace", rows["compiler"])
         for package in VERIFY.PACKAGES:
             self.assertIn("--no-tests=fail", rows["product-tests:" + package])
-            self.assertIn("--tests", rows["product-tests:" + package])
+            if package == "nevrotick-engine":
+                self.assertIn("runtime_boundary", rows["product-tests:" + package])
+            else:
+                self.assertIn("--tests", rows["product-tests:" + package])
             self.assertIn("--doc", rows["doctests:" + package])
-        self.assertEqual(set(rows), {"format", "compiler", "clippy", "rustdoc",
+        self.assertEqual(set(rows), {"format", "compiler", "clippy", "rustdoc", "host-engine-build",
                                     "product-tests:nevrotick-ui", "product-tests:ntp-wire", "product-tests:time-domain",
                                     "product-tests:ntp-exchange", "product-tests:time-core",
                                     "doctests:nevrotick-ui", "doctests:ntp-wire", "doctests:time-domain",
                                     "doctests:ntp-exchange", "doctests:time-core", "optimized-tests:time-domain",
-                                    "optimized-tests:ntp-exchange", "optimized-tests:time-core"})
+                                    "optimized-tests:ntp-exchange", "optimized-tests:time-core",
+                                    "product-tests:nevrotick-engine", "doctests:nevrotick-engine",
+                                    "optimized-tests:nevrotick-engine"})
 
     def test_ui_report_is_removed_before_protocol_test_command(self):
         self.junit.write_text('<testsuites><testsuite name="nevrotick-ui"><testcase/></testsuite></testsuites>')
@@ -811,7 +1131,7 @@ class ExecutionAccountingTests(unittest.TestCase):
 
     def test_package_and_aggregate_accounting_require_both_test_layers(self):
         records = [{"lane": kind + ":" + package, "tests": {"package": package, "executed": count}}
-                   for package, count in (("nevrotick-ui", 3), ("ntp-wire", 2), ("time-domain", 4), ("ntp-exchange", 6), ("time-core", 8))
+                   for package, count in (("nevrotick-ui", 3), ("ntp-wire", 2), ("time-domain", 4), ("ntp-exchange", 6), ("time-core", 8), ("nevrotick-engine", 3))
                    for kind in ("product-tests", "doctests")]
         records.append({"lane": "optimized-tests:time-domain", "tests": {
             "package": "time-domain", "executed": 5,
@@ -822,13 +1142,17 @@ class ExecutionAccountingTests(unittest.TestCase):
         records.append({"lane": "optimized-tests:time-core", "tests": {
             "package": "time-core", "executed": 9,
             "test_names": ["release_build_preserves_regression_admission"]}})
+        records.append({"lane": "optimized-tests:nevrotick-engine", "tests": {
+            "package": "nevrotick-engine", "executed": 3,
+            "test_names": ["prepare_rejects_entered_runtime_before_native_startup"]}})
         self.assertEqual(VERIFY.summarize_test_counts(records),
                          {"by_package": {"nevrotick-ui": {"product-tests": 3, "doctests": 3},
                                          "ntp-wire": {"product-tests": 2, "doctests": 2},
                                          "time-domain": {"product-tests": 4, "doctests": 4, "optimized-tests": 5},
                                          "ntp-exchange": {"product-tests": 6, "doctests": 6, "optimized-tests": 7},
-                                         "time-core": {"product-tests": 8, "doctests": 8, "optimized-tests": 9}},
-                          "tests_executed": 23, "doctests_executed": 23, "optimized_tests_executed": 21})
+                                         "time-core": {"product-tests": 8, "doctests": 8, "optimized-tests": 9},
+                                         "nevrotick-engine": {"product-tests": 3, "doctests": 3, "optimized-tests": 3}},
+                          "tests_executed": 26, "doctests_executed": 26, "optimized_tests_executed": 24})
         for incomplete in (records[:-1], records[:-2] + records[-1:], records[:2], records + records[:1],
                            [{"lane": "product-tests:ntp-wire", "tests": {"package": "nevrotick-ui", "executed": 99}}]):
             with self.subTest(records=incomplete), self.assertRaises(VERIFY.ENV.Incomplete):
@@ -858,6 +1182,63 @@ class ExecutionAccountingTests(unittest.TestCase):
         with patch.object(VERIFY.ENV.shutil, "which", return_value=None):
             with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "host execution fallback is forbidden"):
                 VERIFY.sandbox(Path("/compiler"), self.work, self.work, self.work, ["cargo", "test"], None)
+
+
+class HostEngineArtifactTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="host-engine-export-control-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.work = self.root / "work"
+        self.output = self.root / "output"
+        self.output.mkdir()
+        self.binary = self.work / "target/debug/nevrotick-observe"
+        self.binary.parent.mkdir(parents=True)
+        self.payload = b"\x7fELFindependent-byte-fixture-never-executed"
+        self.binary.write_bytes(self.payload)
+        self.binary.chmod(0o700)
+
+    def test_current_binary_bytes_identity_and_owner_execution_are_retained(self):
+        artifact = VERIFY.export_host_engine_artifact(self.work, self.output)
+        copied = self.output / "nevrotick-observe"
+        self.assertEqual(copied.read_bytes(), self.payload)
+        self.assertEqual(copied.stat().st_mode & 0o777, 0o700)
+        self.assertEqual(artifact, {"path": str(copied), "sha256": digest(self.payload),
+                                   "profile": "dev", "target": "x86_64-unknown-linux-gnu",
+                                   "binary_name": "nevrotick-observe"})
+
+    def test_missing_linked_or_nonexecutable_source_is_rejected_before_copy(self):
+        self.binary.unlink()
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "regular nonlinked"):
+            VERIFY.export_host_engine_artifact(self.work, self.output)
+        other = self.root / "other"
+        other.write_bytes(self.payload)
+        other.chmod(0o700)
+        self.binary.symlink_to(other)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "regular nonlinked"):
+            VERIFY.export_host_engine_artifact(self.work, self.output)
+        self.binary.unlink()
+        self.binary.write_bytes(self.payload)
+        self.binary.chmod(0o600)
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "owner-executable"):
+            VERIFY.export_host_engine_artifact(self.work, self.output)
+        self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_existing_destination_is_unchanged(self):
+        destination = self.output / "nevrotick-observe"
+        destination.write_bytes(b"preserved-independent-artifact")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "existing destination"):
+            VERIFY.export_host_engine_artifact(self.work, self.output)
+        self.assertEqual(destination.read_bytes(), b"preserved-independent-artifact")
+
+    def test_corrupted_copy_is_rejected_by_actual_byte_hash(self):
+        def corrupt_copy(_origin, target):
+            target.write(b"different-independent-bytes")
+
+        with patch.object(VERIFY.shutil, "copyfileobj", side_effect=corrupt_copy):
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "copied bytes changed"):
+                VERIFY.export_host_engine_artifact(self.work, self.output)
+        self.assertEqual(self.binary.read_bytes(), self.payload)
 
 
 class AdvisoryAdmissionTests(unittest.TestCase):

@@ -1,7 +1,7 @@
 {
-  "schema_version": 1,
-  "scope": "Five-member pure fixture graph; ntp-exchange retains only its normal ntp-wire/time-domain local edges and adds one local time-core development edge for test-only composition. The 16 existing registry records and selected grants are unchanged; no production networking, NTS, clock or native authority.",
-  "lockfile_sha256": "e5dff6283c649af7f47c4b7220af2f7f1520a978293dbb8aab5f1668da65fe32",
+  "schema_version": 2,
+  "scope": "Six-member fixture and controlled loopback engine-pilot graph. The original 16 registry records and selected grants remain unchanged; seven selected registry packages add only the engine runtime/UDP/OS-entropy experiment. The two metadata-only locked resolution packages have no selected grant, build-script or runtime admission. Target rows pin the actual Linux/Windows package, feature and build-script closures. No TLS/NTS provider, production sample eligibility, clock authority or release qualification is admitted.",
+  "lockfile_sha256": "416b349d87cc0e53562d79d494316fd20c210ede2e45c2568f5973652753ec8f",
   "packages": [
     {
       "name": "castaway",
@@ -54,6 +54,16 @@
       "upstream_revision": "64dc05aa9cabb58219c0779acc9b95d8b0a4906a"
     },
     {
+      "name": "getrandom",
+      "version": "0.4.3",
+      "checksum": "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099",
+      "license": "MIT OR Apache-2.0",
+      "selected_license": "MIT",
+      "build_script": true,
+      "files_sha256": "5b0a990a1038b0f671d9785541ea930fb9a85a7b100287a5eeeb269b4682140a",
+      "upstream_revision": "5e7cd5733536844a9856dc7259bd4696bbe5e3ae"
+    },
+    {
       "name": "itoa",
       "version": "1.0.18",
       "checksum": "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682",
@@ -62,6 +72,36 @@
       "build_script": false,
       "files_sha256": "eb82b94ffd62019112c4c607a4bf5a0fb44fd81668858ee5e4d765f0fb634ebf",
       "upstream_revision": "af77385d0daf4d0e949e81f2588be2e44f69f086"
+    },
+    {
+      "name": "libc",
+      "version": "0.2.191",
+      "checksum": "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a",
+      "license": "MIT OR Apache-2.0",
+      "selected_license": "MIT",
+      "build_script": true,
+      "files_sha256": "c1fd18f50ef993b8987f7f90d0bc5db46ff83935a9090913381c34b3926594f6",
+      "upstream_revision": "ccc2ff4aaab962f7fde7b8edda7379c045b1ca12"
+    },
+    {
+      "name": "mio",
+      "version": "1.2.4",
+      "checksum": "1788edb87fdc09c7e26304471e2f5be8cdefb1b6930d6e3985fc02ff53bf86ee",
+      "license": "MIT",
+      "selected_license": "MIT",
+      "build_script": false,
+      "files_sha256": "b97d1192503f00d63e8c61d363ede39f002b58a3ad1949b9de81c87fc130b55b",
+      "upstream_revision": "79d1417c94e3a45c8bdd796e5422e22e8c488086"
+    },
+    {
+      "name": "pin-project-lite",
+      "version": "0.2.17",
+      "checksum": "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd",
+      "license": "Apache-2.0 OR MIT",
+      "selected_license": "MIT",
+      "build_script": false,
+      "files_sha256": "7633c3a8184812edcf4c48d74b86209b6e02edff22b067dca6513d97467db0db",
+      "upstream_revision": "3bdf763446aa78f90e3bdac1ef583e014832ab4c"
     },
     {
       "name": "proc-macro2",
@@ -114,6 +154,16 @@
       "upstream_revision": "eab77462eda2767d2386f1d251928f474827e1c7"
     },
     {
+      "name": "socket2",
+      "version": "0.6.5",
+      "checksum": "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4",
+      "license": "MIT OR Apache-2.0",
+      "selected_license": "MIT",
+      "build_script": false,
+      "files_sha256": "3b1c608f92223c993bf3fa12669250bf716e110e28038be8f51f7f4984809fd7",
+      "upstream_revision": "239dd83a4ced08e514d2c38942aab99791119f0d"
+    },
+    {
       "name": "static_assertions",
       "version": "1.1.0",
       "checksum": "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f",
@@ -132,6 +182,26 @@
       "build_script": false,
       "files_sha256": "c73afaca38c11781e988c2b9557e9785a42a503ecfc965a22baecd0727792ac7",
       "upstream_revision": "3295f9e9841785ac88a5e558c884854d5fb7d67f"
+    },
+    {
+      "name": "tokio",
+      "version": "1.54.1",
+      "checksum": "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3",
+      "license": "MIT",
+      "selected_license": "MIT",
+      "build_script": false,
+      "files_sha256": "d4df66500497db176cb7048d37ce5e5653eccb20c77f1453e80c1b38956aeb95",
+      "upstream_revision": "b53b2001ed2ccfd9b87e32a0c6da1a1eebdc80b8"
+    },
+    {
+      "name": "tokio-macros",
+      "version": "2.7.1",
+      "checksum": "6328af13490e73a9b4694030fafd93f8c8c6a9dede33e821c3fc63eddf8042ba",
+      "license": "MIT",
+      "selected_license": "MIT",
+      "build_script": false,
+      "files_sha256": "792125c4d9e697ddd2f85b81f9f5a27069633a6aaca37feaf86390ae299fa01f",
+      "upstream_revision": "50f76c71ec7203013f7f0cda59deaa9016e93939"
     },
     {
       "name": "unicode-ident",
@@ -164,12 +234,244 @@
       "upstream_revision": "32c3144490c016fe496a0aed769bce60987a2e9d"
     }
   ],
+  "metadata_only_packages": [
+    {
+      "name": "r-efi",
+      "version": "6.0.0",
+      "checksum": "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf",
+      "license": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+      "files_sha256": "efd7db21175ad8894147b62d44a7cb27af7da5f3c6cc8dc6bc9e51374fa3e350",
+      "role": "metadata-only"
+    },
+    {
+      "name": "wasi",
+      "version": "0.11.1+wasi-snapshot-preview1",
+      "checksum": "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b",
+      "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
+      "files_sha256": "9e50339c7021642da625f6669fa2384705b8b6f20abcd36cda23a7116c56db5f",
+      "role": "metadata-only"
+    }
+  ],
+  "rows": {
+    "x86_64-unknown-linux-gnu": {
+      "external_packages": [
+        "castaway@0.2.4",
+        "cfg-if@1.0.5",
+        "compact_str@0.9.1",
+        "garde@0.23.0",
+        "garde_derive@0.23.0",
+        "getrandom@0.4.3",
+        "itoa@1.0.18",
+        "libc@0.2.191",
+        "mio@1.2.4",
+        "pin-project-lite@0.2.17",
+        "proc-macro2@1.0.107",
+        "quote@1.0.47",
+        "rustversion@1.0.23",
+        "ryu@1.0.23",
+        "smallvec@1.16.4",
+        "socket2@0.6.5",
+        "static_assertions@1.1.0",
+        "syn@2.0.119",
+        "tokio-macros@2.7.1",
+        "tokio@1.54.1",
+        "unicode-ident@1.0.27"
+      ],
+      "features": {
+        "castaway@0.2.4": [
+          "alloc"
+        ],
+        "cfg-if@1.0.5": [],
+        "compact_str@0.9.1": [],
+        "garde@0.23.0": [
+          "derive"
+        ],
+        "garde_derive@0.23.0": [],
+        "getrandom@0.4.3": [],
+        "itoa@1.0.18": [],
+        "libc@0.2.191": [
+          "default",
+          "std"
+        ],
+        "mio@1.2.4": [
+          "net",
+          "os-ext",
+          "os-poll"
+        ],
+        "pin-project-lite@0.2.17": [],
+        "proc-macro2@1.0.107": [
+          "default",
+          "proc-macro"
+        ],
+        "quote@1.0.47": [
+          "default",
+          "proc-macro"
+        ],
+        "rustversion@1.0.23": [],
+        "ryu@1.0.23": [],
+        "smallvec@1.16.4": [],
+        "socket2@0.6.5": [
+          "all"
+        ],
+        "static_assertions@1.1.0": [],
+        "syn@2.0.119": [
+          "clone-impls",
+          "default",
+          "derive",
+          "full",
+          "parsing",
+          "printing",
+          "proc-macro"
+        ],
+        "tokio@1.54.1": [
+          "libc",
+          "macros",
+          "mio",
+          "net",
+          "rt",
+          "socket2",
+          "sync",
+          "time",
+          "tokio-macros",
+          "windows-sys"
+        ],
+        "tokio-macros@2.7.1": [],
+        "unicode-ident@1.0.27": []
+      },
+      "allowed_build_scripts": [
+        "getrandom@0.4.3",
+        "libc@0.2.191",
+        "proc-macro2@1.0.107",
+        "quote@1.0.47",
+        "rustversion@1.0.23"
+      ]
+    },
+    "x86_64-pc-windows-msvc": {
+      "external_packages": [
+        "castaway@0.2.4",
+        "cfg-if@1.0.5",
+        "compact_str@0.9.1",
+        "garde@0.23.0",
+        "garde_derive@0.23.0",
+        "getrandom@0.4.3",
+        "itoa@1.0.18",
+        "mio@1.2.4",
+        "pin-project-lite@0.2.17",
+        "proc-macro2@1.0.107",
+        "quote@1.0.47",
+        "rustversion@1.0.23",
+        "ryu@1.0.23",
+        "smallvec@1.16.4",
+        "socket2@0.6.5",
+        "static_assertions@1.1.0",
+        "syn@2.0.119",
+        "tokio-macros@2.7.1",
+        "tokio@1.54.1",
+        "unicode-ident@1.0.27",
+        "windows-link@0.2.1",
+        "windows-sys@0.61.2"
+      ],
+      "features": {
+        "castaway@0.2.4": [
+          "alloc"
+        ],
+        "cfg-if@1.0.5": [],
+        "compact_str@0.9.1": [],
+        "garde@0.23.0": [
+          "derive"
+        ],
+        "garde_derive@0.23.0": [],
+        "getrandom@0.4.3": [],
+        "itoa@1.0.18": [],
+        "mio@1.2.4": [
+          "net",
+          "os-ext",
+          "os-poll"
+        ],
+        "pin-project-lite@0.2.17": [],
+        "proc-macro2@1.0.107": [
+          "default",
+          "proc-macro"
+        ],
+        "quote@1.0.47": [
+          "default",
+          "proc-macro"
+        ],
+        "rustversion@1.0.23": [],
+        "ryu@1.0.23": [],
+        "smallvec@1.16.4": [],
+        "socket2@0.6.5": [
+          "all"
+        ],
+        "static_assertions@1.1.0": [],
+        "syn@2.0.119": [
+          "clone-impls",
+          "default",
+          "derive",
+          "full",
+          "parsing",
+          "printing",
+          "proc-macro"
+        ],
+        "tokio@1.54.1": [
+          "libc",
+          "macros",
+          "mio",
+          "net",
+          "rt",
+          "socket2",
+          "sync",
+          "time",
+          "tokio-macros",
+          "windows-sys"
+        ],
+        "tokio-macros@2.7.1": [],
+        "unicode-ident@1.0.27": [],
+        "windows-link@0.2.1": [],
+        "windows-sys@0.61.2": [
+          "Wdk",
+          "Wdk_Foundation",
+          "Wdk_Storage",
+          "Wdk_Storage_FileSystem",
+          "Wdk_System",
+          "Wdk_System_IO",
+          "Win32",
+          "Win32_Foundation",
+          "Win32_Graphics",
+          "Win32_Graphics_Gdi",
+          "Win32_Networking",
+          "Win32_Networking_WinSock",
+          "Win32_Security",
+          "Win32_Storage",
+          "Win32_Storage_FileSystem",
+          "Win32_System",
+          "Win32_System_IO",
+          "Win32_System_LibraryLoader",
+          "Win32_System_Pipes",
+          "Win32_System_SystemServices",
+          "Win32_System_Threading",
+          "Win32_System_WindowsProgramming",
+          "Win32_UI",
+          "Win32_UI_Controls",
+          "Win32_UI_WindowsAndMessaging",
+          "default"
+        ]
+      },
+      "allowed_build_scripts": [
+        "getrandom@0.4.3",
+        "proc-macro2@1.0.107",
+        "quote@1.0.47",
+        "rustversion@1.0.23"
+      ]
+    }
+  },
   "manifests_sha256": {
-    "Cargo.toml": "1ff169cd1e5ef9eea5df503b706c52938e1793201dfaf1aa014449eae07ca6a8",
+    "Cargo.toml": "008eea7d34f859482cbca1688b54a25e879ce0f655bb8f87a18b8e4f90c03d71",
     "crates/nevrotick-ui/Cargo.toml": "cf4d4ac8953f22c2060e3d99550bea9db6a394dd94c924123a40f68b2276475a",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
-    "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6"
+    "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
+    "crates/nevrotick-engine/Cargo.toml": "8399d79a18b2746d2a93aa5299df631fd4297f146b880831a84b3b6b2abd42e1"
   }
 }

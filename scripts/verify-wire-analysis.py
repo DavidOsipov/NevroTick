@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify the admitted NTP header and outer-framing portable analysis scopes.
+"""Qualify pure NTP wire and pending NTS-KE negotiation analysis scopes.
 
 No downloads, installations, host Cargo fallback or product dependency changes.
 The full candidate is sealed; cargo-mutants mutates only its owned temporary copy.
@@ -25,7 +25,14 @@ ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "ntp-wire"
 HEADER = "crates/ntp-wire/src/header.rs"
 DATAGRAM = "crates/ntp-wire/src/datagram.rs"
-SUBJECTS = {"header": HEADER, "datagram": DATAGRAM}
+NTS_KE = "crates/ntp-wire/src/nts_ke.rs"
+NTS_NEGOTIATION = "crates/ntp-wire/src/nts_negotiation.rs"
+SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
+            "nts_negotiation": NTS_NEGOTIATION}
+# The extended source-admitted target compares all four pure owners with
+# independent framing and request/response negotiation expectations.
+FUZZ_SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
+                 "nts_negotiation": NTS_NEGOTIATION}
 POLICY = "policy/ntp-wire-analysis.json"
 FUZZ_CARGO_CONFIG = ('[source.crates-io]\nreplace-with="fuzz-reviewed"\n'
                      '[source.fuzz-reviewed]\ndirectory="/work/fuzz-vendor"\n')
@@ -57,7 +64,7 @@ def read_policy(root: Path) -> dict:
            for key, value in required.items()):
         raise Incomplete("Unreviewed NTP analysis scope, threshold or budget.")
     fuzz = policy.get("coverage_guided_fuzzing", {})
-    if fuzz.get("status") != "admitted-test-only-source" or fuzz.get("fuzzer_flags") != list(RUNTIME.SANITIZER_FLAGS):
+    if fuzz.get("status") != "admitted-test-only-source" or fuzz.get("fuzzer_flags") != list(RUNTIME.WIRE_KE_SANITIZER_FLAGS):
         raise Incomplete("The fixed test-only libFuzzer source/profile admission is absent.")
     manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
     for filename in SUBJECTS.values():
@@ -70,12 +77,25 @@ def read_policy(root: Path) -> dict:
 
 
 def select_subjects(subject: str) -> dict[str, str]:
-    """Return only the fixed reviewed file mapping; all includes both owners."""
+    """Return only the fixed reviewed file mapping; all includes all four owners."""
     if subject == "all":
         return dict(SUBJECTS)
     if subject not in SUBJECTS:
         raise Incomplete("Unknown NTP analysis subject.")
     return {subject: SUBJECTS[subject]}
+
+
+def admit_fuzz_subject(lane: str, subject: str) -> None:
+    """Admit only fixed source-reviewed fuzz owners and known lane selections.
+
+    The extended target covers all four owners; subject selection narrows only
+    coverage/mutation, while contracts and fuzz retain their complete scope.
+    Actual fuzz execution still requires the extended target's exact source hash.
+    """
+    if lane not in {"contracts", "coverage", "mutation", "fuzz", "all"} or subject not in {*SUBJECTS, "all"}:
+        raise Incomplete("Unknown wire analysis lane or subject.")
+    if lane in {"fuzz", "all"} and subject not in {*FUZZ_SUBJECTS, "all"}:
+        raise Incomplete("A selected wire owner lacks admitted fuzz target coverage.")
 
 
 def selected_file(filename: str) -> str:
@@ -145,13 +165,13 @@ def privacy_error(result: dict, expected: str) -> None:
 
 
 def contract_examples() -> dict[str, tuple[str, str | None]]:
-    """Keep independent legal, privacy and borrow specimens for both wire owners."""
+    """Keep independent legal, privacy and borrow specimens for all four wire owners."""
     setup = ('let Ok(limits) = ntp_wire::FrameLimits::new(76, 1) else { return; }; '
              'let mut input = vec![0u8; 76]; input[51] = 28; ')
     frame = ('let Ok(frame) = ntp_wire::frame_no_legacy_mac_datagram(&input, limits) '
              'else { return; }; ')
     field = 'let Some(mut field) = frame.extensions().next() else { return; }; '
-    return {
+    examples = {
         "legal": (
             'fn main() { let Ok(header) = ntp_wire::decode_fixed_header(&[0; 48]) else { return; }; '
             'let _ = (header.version(), header.receive_timestamp().seconds()); '
@@ -199,6 +219,132 @@ def contract_examples() -> dict[str, tuple[str, str | None]]:
             'fn main() { ' + setup + frame
             + 'let fields = frame.extensions(); let _ = format!("{fields:?}"); }', "E0277"),
     }
+    examples.update(nts_ke_contract_examples())
+    examples.update(nts_negotiation_contract_examples())
+    # Direct rustc consumers get no rustdoc main wrapper. This is structural
+    # preflight only; the actual compiler still owns syntax/type diagnostics.
+    if any(re.search(r"\bfn\s+main\s*\(", text) is None for text, _ in examples.values()):
+        raise Incomplete("Direct external Rust consumer lacks an explicit main.")
+    return examples
+
+def nts_ke_contract_examples() -> dict[str, tuple[str, str | None]]:
+    """Literal external type/privacy/borrow specimens; behavioral bytes have public tests."""
+    return {
+        'nts_ke_limits_construction': ('fn main() {\n    use ntp_wire::NtsKeFrameLimits;\n    let _ = NtsKeFrameLimits { max_message_bytes: 0, max_records: 0 };\n}', 'E0451'),
+        'nts_ke_limits_default': ('fn main() {\n    use ntp_wire::NtsKeFrameLimits;\n    let _: NtsKeFrameLimits = Default::default();\n}', 'E0277'),
+        'nts_ke_legal': ('use ntp_wire::{NtsKeFrameError, NtsKeFrameLimits, frame_nts_ke_message};\nfn main() -> Result<(), NtsKeFrameError> {\nlet bytes = [0x80, 0x00, 0x00, 0x00];\nlet mut records = {\n    let message = frame_nts_ke_message(&bytes, NtsKeFrameLimits::new(4, 1)?)?;\n    message.records()\n};\nlet record = records.next().ok_or(NtsKeFrameError::MissingEndOfMessage)?;\nassert_eq!(record.record_type(), 0);\nassert!(record.critical());\nassert!(record.body().is_empty());\nassert!(records.next().is_none());\nOk(())\n}', None),
+        'nts_ke_message_construction': ('fn main() {\n    use ntp_wire::RawNtsKeMessage;\n    let _ = RawNtsKeMessage { bytes: &[], count: 0 };\n}', 'E0451'),
+        'nts_ke_message_mutation': ('use ntp_wire::{NtsKeFrameError, NtsKeFrameLimits, frame_nts_ke_message};\nfn main() -> Result<(), NtsKeFrameError> {\nlet bytes = [0x80, 0x00, 0x00, 0x00];\nlet mut message = frame_nts_ke_message(&bytes, NtsKeFrameLimits::new(4, 1)?)?;\nmessage.count = usize::MAX;\nOk(())\n}', 'E0616'),
+        'nts_ke_message_default': ("fn main() {\n    use ntp_wire::RawNtsKeMessage;\n    let _: RawNtsKeMessage<'static> = Default::default();\n}", 'E0277'),
+        'nts_ke_message_borrow_escape': ('use ntp_wire::{NtsKeFrameError, NtsKeFrameLimits, frame_nts_ke_message};\nfn main() -> Result<(), NtsKeFrameError> {\nlet message;\n{\n    let bytes = [0x80, 0x00, 0x00, 0x00];\n    message = frame_nts_ke_message(&bytes, NtsKeFrameLimits::new(4, 1)?)?;\n}\nassert_eq!(message.record_count(), 1);\nOk(())\n}', 'E0597'),
+        'nts_ke_live_input_mutation': ('use ntp_wire::{NtsKeFrameError, NtsKeFrameLimits, frame_nts_ke_message};\nfn main() -> Result<(), NtsKeFrameError> {\nlet mut bytes = [0x80, 0x00, 0x00, 0x00];\nlet message = frame_nts_ke_message(&bytes, NtsKeFrameLimits::new(4, 1)?)?;\nbytes[0] = 0x00;\nassert_eq!(message.bytes()[0], 0x80);\nOk(())\n}', 'E0506'),
+        'nts_ke_message_debug': ("fn main() {\n    use ntp_wire::RawNtsKeMessage;\n    fn requires_debug<T: core::fmt::Debug>() {}\n    requires_debug::<RawNtsKeMessage<'static>>();\n}", 'E0277'),
+        'nts_ke_record_construction': ('fn main() {\n    use ntp_wire::RawNtsKeRecord;\n    let _ = RawNtsKeRecord { bytes: &[] };\n}', 'E0451'),
+        'nts_ke_record_borrow_escape': ('use ntp_wire::{NtsKeFrameError, NtsKeFrameLimits, frame_nts_ke_message};\nfn main() -> Result<(), NtsKeFrameError> {\nlet record;\n{\n    let bytes = [0x80, 0x00, 0x00, 0x00];\n    let message = frame_nts_ke_message(&bytes, NtsKeFrameLimits::new(4, 1)?)?;\n    record = message.records().next().ok_or(NtsKeFrameError::MissingEndOfMessage)?;\n}\nassert_eq!(record.record_type(), 0);\nOk(())\n}', 'E0597'),
+        'nts_ke_record_debug': ("fn main() {\n    use ntp_wire::RawNtsKeRecord;\n    fn requires_debug<T: core::fmt::Debug>() {}\n    requires_debug::<RawNtsKeRecord<'static>>();\n}", 'E0277'),
+        'nts_ke_iterator_construction': ('fn main() {\n    use ntp_wire::NtsKeRecords;\n    let _ = NtsKeRecords { remaining: &[] };\n}', 'E0451'),
+        'nts_ke_iterator_borrow_escape': ('use ntp_wire::{NtsKeFrameError, NtsKeFrameLimits, frame_nts_ke_message};\nfn main() -> Result<(), NtsKeFrameError> {\nlet mut records;\n{\n    let bytes = [0x80, 0x00, 0x00, 0x00];\n    let message = frame_nts_ke_message(&bytes, NtsKeFrameLimits::new(4, 1)?)?;\n    records = message.records();\n}\nassert!(records.next().is_some());\nOk(())\n}', 'E0597'),
+        'nts_ke_iterator_debug': ("fn main() {\n    use ntp_wire::NtsKeRecords;\n    fn requires_debug<T: core::fmt::Debug>() {}\n    requires_debug::<NtsKeRecords<'static>>();\n}", 'E0277'),
+    }
+
+
+def nts_negotiation_contract_examples() -> dict[str, tuple[str, str | None]]:
+    """Compile literal legal and bypass callers at the pending negotiation API.
+
+    These external specimens establish private construction, unchanged borrows
+    and absence of payload defaults/debug traits. Actual protocol results remain
+    the responsibility of independent public integration tests.
+    """
+    imports = (
+        "use ntp_wire::{NtsKeFrameLimits, NtsKeNtpv4Offer, NtsKeNtpv4Negotiation, "
+        "NtsKeCookies, frame_nts_ke_message, read_nts_ke_ntpv4_offer, negotiate_nts_ke_ntpv4};\n"
+    )
+    limits = "let limits = NtsKeFrameLimits::new(131_072, 32_768).unwrap();\n"
+    request = (
+        "let request = [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0];\n"
+    )
+    offered = (
+        "let request_frame = frame_nts_ke_message(&request, limits).unwrap();\n"
+        "let offer = read_nts_ke_ntpv4_offer(&request_frame).unwrap();\n"
+    )
+    response = (
+        "let response = [0x80, 1, 0, 2, 0, 0, 0, 4, 0, 2, 0, 15, "
+        "0, 5, 0, 1, 0xa5, 0x80, 0, 0, 0];\n"
+    )
+    negotiated = (
+        "let response_frame = frame_nts_ke_message(&response, limits).unwrap();\n"
+        "let negotiation = negotiate_nts_ke_ntpv4(&offer, response_frame).unwrap();\n"
+    )
+
+    def main(body: str) -> str:
+        """Wrap a fixed external body; direct rustc supplies no rustdoc main."""
+        return imports + "fn main() {\n" + body + "}\n"
+
+    examples = {
+        "nts_negotiation_legal": (main(
+            limits + request + offered + response + negotiated
+            + "assert_eq!(offer.request_bytes(), &request);\n"
+            + "assert_eq!(offer.offered_aead_bytes(), &[0, 15]);\n"
+            + "assert_eq!(negotiation.bytes(), &response);\n"
+            + "assert_eq!(negotiation.aead_id(), 15);\n"
+            + "assert_eq!(negotiation.cookie_count(), 1);\n"
+            + "assert_eq!(negotiation.server_hint(), None);\n"
+            + "assert_eq!(negotiation.port_hint(), None);\n"
+            + "let mut cookies = negotiation.cookies();\n"
+            + "assert_eq!(cookies.next(), Some(&[0xa5][..]));\n"
+            + "assert!(cookies.next().is_none());\n"
+            + "assert!(cookies.next().is_none());\n"), None),
+        "nts_negotiation_offer_construction": (main(
+            "let _ = NtsKeNtpv4Offer { request: &[], aeads: &[] };\n"), "E0451"),
+        "nts_negotiation_offer_mutation": (main(
+            limits + request + offered
+            + "let mut offer = offer; offer.aeads = &[];\n"), "E0616"),
+        "nts_negotiation_pending_construction": (main(
+            limits + "let bytes = [0x80, 0, 0, 0];\n"
+            + "let message = frame_nts_ke_message(&bytes, limits).unwrap();\n"
+            + "let _ = NtsKeNtpv4Negotiation { message, aead_id: 15, cookie_count: 0, "
+              "server_hint: None, port_hint: None };\n"), "E0451"),
+        "nts_negotiation_pending_mutation": (main(
+            limits + request + offered + response + negotiated
+            + "let mut negotiation = negotiation; negotiation.cookie_count = 0;\n"), "E0616"),
+        "nts_negotiation_cookies_construction": (main(
+            limits + "let bytes = [0x80, 0, 0, 0];\n"
+            + "let message = frame_nts_ke_message(&bytes, limits).unwrap();\n"
+            + "let _ = NtsKeCookies { records: message.records() };\n"), "E0451"),
+        "nts_negotiation_cookies_mutation": (main(
+            limits + request + offered + response + negotiated
+            + "let mut cookies = negotiation.cookies();\n"
+            + "cookies.records = frame_nts_ke_message(&request, limits).unwrap().records();\n"), "E0616"),
+        "nts_negotiation_offer_borrow_escape": (main(
+            limits + "let offer;\n{\n" + request
+            + "let frame = frame_nts_ke_message(&request, limits).unwrap();\n"
+            + "offer = read_nts_ke_ntpv4_offer(&frame).unwrap();\n}\n"
+            + "assert_eq!(offer.offered_aead_bytes(), &[0, 15]);\n"), "E0597"),
+        "nts_negotiation_pending_borrow_escape": (main(
+            limits + request + offered + "let negotiation;\n{\n" + response
+            + "let frame = frame_nts_ke_message(&response, limits).unwrap();\n"
+            + "negotiation = negotiate_nts_ke_ntpv4(&offer, frame).unwrap();\n}\n"
+            + "assert_eq!(negotiation.cookie_count(), 1);\n"), "E0597"),
+        "nts_negotiation_cookies_borrow_escape": (main(
+            limits + request + offered + "let mut cookies;\n{\n" + response + negotiated
+            + "cookies = negotiation.cookies();\n}\n"
+            + "assert!(cookies.next().is_some());\n"), "E0597"),
+        "nts_negotiation_request_live_mutation": (main(
+            limits + request.replace("let request =", "let mut request =") + offered
+            + "request[0] = 0;\nlet _ = offer.request_bytes();\n"), "E0506"),
+        "nts_negotiation_response_live_mutation": (main(
+            limits + request + offered
+            + response.replace("let response =", "let mut response =") + negotiated
+            + "response[0] = 0;\nlet _ = negotiation.cookies().next();\n"), "E0506"),
+    }
+    for owner, typename in (("offer", "NtsKeNtpv4Offer"),
+                            ("pending", "NtsKeNtpv4Negotiation"), ("cookies", "NtsKeCookies")):
+        examples["nts_negotiation_" + owner + "_default"] = (
+            main("let _: " + typename + "<'static> = Default::default();\n"), "E0277")
+        examples["nts_negotiation_" + owner + "_debug"] = (
+            main("fn requires_debug<T: core::fmt::Debug>() {}\n"
+                 + "requires_debug::<" + typename + "<'static>>();\n"), "E0277")
+    return examples
 
 
 def fuzz_seeds() -> dict[str, bytes]:
@@ -218,7 +364,107 @@ def fuzz_seeds() -> dict[str, bytes]:
     seeds["malformed-good-prefix-tail"] = header + extension(0xabcd, 28) + b"\x00"
     for length in (4092, 4096):
         seeds["byte-edge-" + str(length)] = header + extension(0xabcd, length - 48)
+    seeds.update(ke_fuzz_seeds())
+    seeds.update(negotiation_fuzz_seeds())
     return seeds
+
+
+def ke_fuzz_seeds() -> dict[str, bytes]:
+    """Literal body-only envelopes, independent of product serialization."""
+    end = bytes.fromhex("80 00 00 00")
+    seeds = {"ke-eom": end, "ke-noncritical-eom": bytes(4),
+             "ke-missing-body": bytes.fromhex("12 34 ff ff"),
+             "ke-eom-tail": end + b"x", "ke-short-header": b"\x80\x00\x00",
+             "ke-odd-critical": bytes.fromhex("92 34 00 03 aa bb cc") + end,
+             "ke-three-records": bytes.fromhex("12 34 00 00 12 35 00 00") + end}
+    for total, low in ((65_535, 0xf7), (65_536, 0xf8), (65_537, 0xf9)):
+        seeds["ke-byte-" + str(total)] = bytes([0x12, 0x34, 0xff, low]) + b"Z" * (total - 8) + end
+    seeds["ke-max-body"] = bytes.fromhex("12 34 ff ff") + b"Z" * 65_535 + end
+    seeds["ke-max-body-truncated"] = seeds["ke-max-body"][:65_538]
+    seeds["ke-complete-body-no-eom"] = seeds["ke-max-body"][:65_539]
+    seeds["ke-max-records"] = bytes.fromhex("12 34 00 00") * 32_767 + end
+    seeds["ke-nonempty-eom"] = bytes.fromhex("80 00 00 01 5a")
+    seeds["ke-duplicate-eom"] = end + end
+    for total, low in ((131_071, 0xf4), (131_072, 0xf5), (131_073, 0xf6)):
+        seeds["ke-cap-" + str(total)] = (bytes.fromhex("12 34 ff ff") + b"Z" * 65_535
+            + bytes([0x12, 0x35, 0xff, low]) + b"Z" * (total - 65_547) + end)
+    return seeds
+
+
+def negotiation_fuzz_seeds() -> dict[str, bytes]:
+    """Independent literal negotiation facts, with no production serialization."""
+    end = bytes.fromhex("80 00 00 00")
+    protocol = bytes.fromhex("80 01 00 02 00 00")
+    aead15 = bytes.fromhex("00 04 00 02 00 0f")
+    aead16 = bytes.fromhex("80 04 00 02 00 10")
+    cookie = bytes.fromhex("00 05 00 01 a5")
+    request = protocol + bytes.fromhex("00 04 00 04 00 0f 00 10")
+    response = protocol + aead15 + cookie
+    port = bytes.fromhex("00 07 00 02 00 7b")
+    server = bytes.fromhex("00 06 00 0c") + b"time.example"
+    seeds = {
+        "ke-neg-request": request + end,
+        "ke-neg-request-critical-aead": protocol + bytes.fromhex("80 04 00 04 00 0f 00 10") + end,
+        "ke-neg-response15": response + end,
+        "ke-neg-response16-critical": protocol + aead16 + bytes.fromhex("80 05 00 01 a5") + end,
+        "ke-neg-empty-cookie": protocol + aead15 + bytes.fromhex("00 05 00 00") + end,
+        "ke-neg-two-cookies": response + bytes.fromhex("80 05 00 00") + end,
+        "ke-neg-server-port": response + server + port + end,
+        "ke-neg-zero-port": response + bytes.fromhex("80 07 00 02 00 00") + end,
+        "ke-neg-v6-hint": response + bytes.fromhex("80 06 00 0b") + b"2001:db8::1" + end,
+        "ke-neg-unknown-noncritical": response + bytes.fromhex("12 34 00 03 00 81 ff") + end,
+        "ke-neg-unknown-critical": response + bytes.fromhex("92 34 00 03 00 81 ff") + end,
+        "ke-neg-error": bytes.fromhex("80 02 00 02 00 01") + end,
+        "ke-neg-error-with-negotiation": response + bytes.fromhex("80 02 00 02 00 02") + end,
+        "ke-neg-warning": response + bytes.fromhex("80 03 00 02 ff ff") + end,
+        "ke-neg-refusal": bytes.fromhex("80 01 00 00") + end,
+        "ke-neg-empty-aead": protocol + bytes.fromhex("00 04 00 00") + end,
+        "ke-neg-unoffered-aead": protocol + bytes.fromhex("00 04 00 02 00 11") + cookie + end,
+        "ke-neg-duplicate-protocol": protocol + response + end,
+        "ke-neg-duplicate-aead": response + aead15 + end,
+        "ke-neg-duplicate-server": response + server + server + end,
+        "ke-neg-duplicate-port": response + port + port + end,
+        "ke-neg-noncritical-protocol": bytes.fromhex("00 01 00 02 00 00") + aead15 + cookie + end,
+        "ke-neg-odd-protocol": bytes.fromhex("80 01 00 01 00") + aead15 + cookie + end,
+        "ke-neg-wide-response-aead": request + cookie + end,
+        "ke-neg-odd-aead": protocol + bytes.fromhex("00 04 00 01 0f") + cookie + end,
+        "ke-neg-bad-error": response + bytes.fromhex("00 02 00 02 00 01") + end,
+        "ke-neg-short-warning": response + bytes.fromhex("80 03 00 01 00") + end,
+        "ke-neg-short-port": response + bytes.fromhex("00 07 00 01 7b") + end,
+        "ke-neg-empty-server": response + bytes.fromhex("00 06 00 00") + end,
+        "ke-neg-bad-server": response + bytes.fromhex("00 06 00 01 25") + end,
+        "ke-neg-missing-cookie": protocol + aead15 + end,
+        "ke-neg-request-cookie": request + cookie + end,
+        "ke-neg-max-cookie": protocol + aead15 + bytes.fromhex("00 05 ff ff") + b"Z" * 65_535 + end,
+        "ke-neg-max-offer": protocol + bytes.fromhex("00 04 ff fe 00 0f") + bytes.fromhex("00 10") * 32_766 + end,
+        "ke-neg-semantic-max-records": protocol + aead15 + bytes.fromhex("00 05 00 00")
+            + bytes.fromhex("12 34 00 00") * 32_763 + end,
+    }
+    # Each positive boundary remains semantically complete: padding is an ignored
+    # noncritical record. The one-above input is rejected by the existing byte cap.
+    for total in (65_535, 65_536, 65_537, 131_071, 131_072, 131_073):
+        remaining = total - len(response) - len(end)
+        padding = bytearray()
+        while remaining:
+            length = min(remaining - 4, 65_535)
+            padding.extend(bytes.fromhex("12 34") + length.to_bytes(2, "big") + b"Z" * length)
+            remaining -= length + 4
+        seeds["ke-neg-byte-" + str(total)] = response + bytes(padding) + end
+    return seeds
+
+
+def fuzz_case_options(case: str) -> tuple[list[str], str | None]:
+    """Return one fixed test-only feature and its intended reached fault marker."""
+    cases: dict[str, tuple[list[str], str | None]] = {
+        "healthy": ([], None),
+        "defect": (["--features", "seeded-defect"], "independent datagram field-count oracle"),
+        "ke-defect": (["--features", "seeded-ke-defect"], "independent NTS-KE record-count oracle"),
+        "negotiation-defect": (["--features", "seeded-negotiation-defect"],
+                               "independent NTS-KE negotiation cookie-count oracle"),
+    }
+    if type(case) is not str or case not in cases:
+        raise Incomplete("Unknown bounded wire fuzz control.")
+    return cases[case]
 
 
 def fuzz_metadata(metadata: dict, policy: dict) -> dict:
@@ -349,6 +595,7 @@ def execute(args, report: dict) -> None:
     """Freeze graph/tools, execute the selected isolated lane, then reject drift."""
     policy = read_policy(ROOT)
     subjects = select_subjects(args.subject)
+    admit_fuzz_subject(args.lane, args.subject)
     report["subjects"] = subjects
     dependency_policy, identity = PRODUCT.admit_product(ROOT)
     product_identity = dict(identity)
@@ -401,21 +648,28 @@ def execute(args, report: dict) -> None:
                   coverage_guided_fuzzing=policy["coverage_guided_fuzzing"])
 
     def run(label: str, command: list[str], timeout: int, *, expected_error=None, sealed=(),
-            compiler=None, extra_tools=None, mode="ordinary", negative=None, cwd=None, mutation_subject=None):
+            compiler=None, extra_tools=None, mode="ordinary", negative=None, cwd=None, mutation_subject=None,
+            sanitizer_profile="legacy"):
         """Run immutable selected source with cleared environment and finite custody."""
+        if ((mode == "sanitizer" and sanitizer_profile != RUNTIME.WIRE_KE_SANITIZER_PROFILE)
+                or (mode != "sanitizer" and sanitizer_profile != "legacy")):
+            raise Incomplete("Wire fuzz execution requires its exact sanitizer profile and mode.")
         if mutation_subject is not None:
             if (label != "mutation-campaign:" + mutation_subject or expected_error or negative
                     or compiler is not None or extra_tools is not None or mode != "ordinary" or cwd is not None):
                 raise Incomplete("Mutation campaign cannot borrow another execution mode or failure handler.")
-            COMMON.mutation_campaign_command(SCOPE, tools, mutation_subject, command)
+            COMMON.mutation_campaign_command(
+                SCOPE, tools, mutation_subject, command,
+                expected_jobs=COMMON.mutation_jobs(policy),
+                expected_message_format=COMMON.mutation_message_format(policy))
         require_unchanged(ROOT, identity)
         require_current_candidate(ROOT, product_identity)
         require_unchanged(source, identity)
         if any(PRODUCT.inventory(folder) != expected for folder, expected in protected_tools.items()):
             raise Incomplete("An admitted analysis extension changed before execution.")
         compiler = compiler or stable
-        # Bound the total mutation fan-out: twelve outer copies, serial Cargo
-        # and libtest within each copy. Other build/test lanes use twelve slots.
+        # Mutation workers use the admitted policy count with serial Cargo and
+        # libtest inside each private copy. Other lanes keep twelve build slots.
         inner_jobs = 1 if label.startswith("mutation-") else RUNTIME.MAX_JOBS
         environment = {"RUSTC": str(compiler / "bin/rustc"),
                        "RUSTDOC": str(compiler / "bin/rustdoc"), "RUST_TEST_THREADS": str(inner_jobs)}
@@ -423,10 +677,14 @@ def execute(args, report: dict) -> None:
             environment.update(RUSTUP_HOME=str(base / "common/rustup"), RUSTUP_TOOLCHAIN=ANALYSIS.NIGHTLY)
         readonly = [base, stable, vendor, tools, *([extra_tools] if extra_tools else [])]
         paths = [*([extra_tools] if extra_tools else []), compiler / "bin", tools]
+        profile_options = ({"cargo_target_mode": "worker",
+                            "process_limit": COMMON.mutation_process_limit(policy)}
+                           if mutation_subject is not None else {})
         result = RUNTIME.run(ROOT, work, command, readonly=readonly,
                              sealed=[source, work / "cargo-home/config.toml", *sealed], path_dirs=paths, cwd=cwd or source,
-                             environment=environment, mode=mode,
-                             timeout=timeout, cpu_seconds=min(timeout, 600), build_jobs=inner_jobs)
+                             environment=environment, mode=mode, sanitizer_profile=sanitizer_profile,
+                             timeout=timeout, cpu_seconds=min(timeout, 600), build_jobs=inner_jobs,
+                             **profile_options)
         report["lanes"].append({"lane": label, "command": command, **result})
         (output / "progress.json").write_text(json.dumps(report, indent=2) + "\n")
         require_unchanged(source, identity)
@@ -435,7 +693,10 @@ def execute(args, report: dict) -> None:
         if any(PRODUCT.inventory(folder) != expected for folder, expected in protected_tools.items()):
             raise Incomplete("An admitted analysis extension changed during execution.")
         if mutation_subject is not None:
-            return COMMON.mutation_campaign_result(SCOPE, tools, mutation_subject, command, result)
+            return COMMON.mutation_campaign_result(
+                SCOPE, tools, mutation_subject, command, result,
+                expected_jobs=COMMON.mutation_jobs(policy),
+                expected_message_format=COMMON.mutation_message_format(policy))
         if expected_error:
             privacy_error(result, expected_error)
             return result["output"]
@@ -443,7 +704,8 @@ def execute(args, report: dict) -> None:
             if result["failure"] or result["exit_code"] == 0 or negative not in result["output"]:
                 raise Incomplete("The seeded fuzz control did not reach its intended failure.")
             return result["output"]
-        return PRODUCT.ENV.require_ok(result)
+        PRODUCT.ENV.require_ok(result)
+        return result["output"]
 
     if args.lane in {"contracts", "all"}:
         consumers = work / "contract-inputs"
@@ -463,14 +725,14 @@ def execute(args, report: dict) -> None:
                  "--extern", "ntp_wire=/work/contracts/libntp_wire.rlib", "--out-dir", "/work/contracts"],
                 120, sealed=[consumers],
                 expected_error=diagnostic)
-        report["contracts"] = {"legal_consumers_compiled": 1,
+        report["contracts"] = {"legal_consumers_compiled": sum(diagnostic is None for _, diagnostic in examples.values()),
                                "privacy_bypasses_rejected": sum(
                                    diagnostic in {"E0451", "E0616"} for _, diagnostic in examples.values()),
                                "subjects": dict(SUBJECTS),
                                "construction_or_mutation_bypasses_rejected": sum(
                                    diagnostic in {"E0451", "E0616"} for _, diagnostic in examples.values()),
                                "borrow_bypasses_rejected": sum(
-                                   diagnostic in {"E0502", "E0515"} for _, diagnostic in examples.values()),
+                                   diagnostic in {"E0502", "E0515", "E0506", "E0597"} for _, diagnostic in examples.values()),
                                "default_or_payload_debug_bypasses_rejected": sum(
                                    diagnostic == "E0277" for _, diagnostic in examples.values()),
                                "required_diagnostics": {name: diagnostic for name, (_, diagnostic) in examples.items()
@@ -483,7 +745,7 @@ def execute(args, report: dict) -> None:
         fuzz.mkdir()
         (fuzz / "Cargo.toml").write_text(
             '[package]\nname="ntp-wire-fuzz"\nversion="0.0.0"\nedition="2024"\npublish=false\n'
-            '[workspace]\n[package.metadata]\ncargo-fuzz=true\n[features]\nseeded-defect=[]\n'
+            '[workspace]\n[package.metadata]\ncargo-fuzz=true\n[features]\nseeded-defect=[]\nseeded-ke-defect=[]\nseeded-negotiation-defect=[]\n'
             '[dependencies]\nlibfuzzer-sys="=0.4.13"\nntp-wire={path="../source/crates/ntp-wire"}\n'
             '[[bin]]\nname="wire"\npath="target.rs"\ntest=false\ndoc=false\nbench=false\n')
         (fuzz / "Cargo.lock").write_text(fuzz_lock((base / "common/controls-source/fuzz/Cargo.lock").read_text()))
@@ -527,12 +789,12 @@ def execute(args, report: dict) -> None:
         (work / "fuzz-artifacts").mkdir()
         (work / "fuzz-binaries").mkdir()
         retained_binaries = {}
-        for case in ("healthy", "defect"):
+        for case in ("healthy", "defect", "ke-defect", "negotiation-defect"):
             command = [str(fuzz_tools / "cargo-fuzz"), "fuzz", "build", "wire", "--fuzz-dir", "/work/fuzz",
                        "--sanitizer", "address", "--target", ANALYSIS.PLATFORM,
                        "--target-dir", "/work/target-fuzz"]
-            if case == "defect":
-                command.extend(["--features", "seeded-defect"])
+            features, negative = fuzz_case_options(case)
+            command.extend(features)
             # Only identical dependency compilation is reused. Preserve each
             # feature-specific executable as an independent immutable byte copy.
             run("fuzz-build-" + case, command, 600, compiler=night, extra_tools=fuzz_tools,
@@ -551,19 +813,27 @@ def execute(args, report: dict) -> None:
             report.setdefault("fuzz_binaries_sha256", {})[case] = binary_sha256
             report.setdefault("fuzz_binary_paths", {})[case] = str(actual_binary)
             text = run("fuzz-" + case, [binary, "/work/fuzz-corpus", "-artifact_prefix=/work/fuzz-artifacts/",
-                                        *RUNTIME.SANITIZER_FLAGS], 90, compiler=night, extra_tools=fuzz_tools,
+                                        *RUNTIME.WIRE_KE_SANITIZER_FLAGS], 90, compiler=night, extra_tools=fuzz_tools,
                        sealed=[*sealed, *retained_binaries], cwd=fuzz, mode="sanitizer",
-                       negative="independent datagram field-count oracle" if case == "defect" else None)
+                       sanitizer_profile=RUNTIME.WIRE_KE_SANITIZER_PROFILE,
+                       negative=negative)
             if case == "healthy":
                 count = re.search(r"Done (\d+) runs", text)
                 if not count or int(count[1]) != 256:
                     raise Incomplete("The actual healthy fuzz target did not complete its finite 256 runs.")
-                report["fuzz"] = {"observed_runs": 256, "subjects": dict(SUBJECTS),
+                report["fuzz"] = {"observed_runs": 256, "subjects": dict(FUZZ_SUBJECTS),
+                                  "unqualified_subjects": {},
+                                  "sanitizer_profile": RUNTIME.WIRE_KE_SANITIZER_PROFILE,
+                                  "maximum_input_bytes": 131_073,
                                   "seed_lengths": sorted({len(data) for data in seeds.values()}),
                                   "seed_files_sha256": seed_identity,
                                   "seeded_fault": "pending", "sanitizer": "address", "target": ANALYSIS.PLATFORM}
-            else:
+            elif case == "defect":
                 report["fuzz"]["seeded_fault"] = "observed intended datagram field-count failure"
+            elif case == "ke-defect":
+                report["fuzz"]["nts_ke_seeded_fault"] = "observed intended NTS-KE record-count failure"
+            else:
+                report["fuzz"]["nts_negotiation_seeded_fault"] = "observed intended NTS-KE negotiation cookie-count failure"
             if any(PRODUCT.sha256(path) != digest for path, digest in retained_binaries.items()):
                 raise Incomplete("A retained ASan executable changed during a build or execution.")
             if (fuzz_input_snapshot(work, sealed) != sealed_before
@@ -588,11 +858,11 @@ def main(argv=None) -> int:
     """Run only explicit fixed lanes, retaining partial results when a gate fails."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("contracts", "coverage", "mutation", "fuzz", "all"), default="all")
-    parser.add_argument("--subject", choices=("header", "datagram", "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
-    report = {"status": "incomplete", "scope": "ntp-wire header/outer-framing portable contracts/coverage/mutation/fuzz",
+    report = {"status": "incomplete", "scope": "ntp-wire header/datagram/raw NTS-KE and pending NTPv4 negotiation contracts/coverage/mutation; fuzz compares all four pure owners without TLS, keys or endpoint authority",
               "native_qualification": "not performed"}
     try:
         if args.vendor_dir is None:

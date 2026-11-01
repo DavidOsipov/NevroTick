@@ -1,4 +1,4 @@
-//! Pure bounded NTP wire representation decoding and outer framing.
+//! Pure bounded NTP wire decoding and inert NTS-KE record framing.
 //!
 //! S1.1a handles exactly one 48-byte fixed header. Its immutable outputs retain
 //! every raw field without admitting a time sample, peer, profile, authentication
@@ -14,9 +14,21 @@
 
 mod datagram;
 mod header;
+mod nts_ke;
+mod nts_negotiation;
 
 pub use datagram::{
     ExtensionFields, FrameError, FrameLimits, RawDatagram, RawExtension,
     frame_no_legacy_mac_datagram,
 };
 pub use header::{FIXED_HEADER_LEN, HeaderError, NtpTimestamp, RawHeader, decode_fixed_header};
+
+pub use nts_ke::{
+    NtsKeFrameError, NtsKeFrameLimits, NtsKeRecords, RawNtsKeMessage, RawNtsKeRecord,
+    frame_nts_ke_message,
+};
+
+pub use nts_negotiation::{
+    NtsKeCookies, NtsKeNegotiationError, NtsKeNtpv4Negotiation, NtsKeNtpv4Offer,
+    negotiate_nts_ke_ntpv4, read_nts_ke_ntpv4_offer,
+};

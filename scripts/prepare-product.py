@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Acquire the exact reviewed UI-M0 crate archives without executing Cargo/code.
+"""Acquire the exact reviewed product crate sources without executing Cargo/code.
 
 Writes only a new external vendor directory. --configure additionally creates a
 private local pointer for verify.py; existing outputs/pointers are not replaced.
+Metadata-only locked sources gain no selected grant, build or runtime admission.
 """
 
 from __future__ import annotations
@@ -10,6 +11,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -22,9 +24,14 @@ import tomllib
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
+SPEC = importlib.util.spec_from_file_location("product_acquisition_verifier", ROOT / "scripts/verify.py")
+VERIFY = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(VERIFY)
 MAX_ARCHIVE = 16 * 1024 * 1024
 MAX_EXPANDED = 80 * 1024 * 1024
 MAX_MEMBERS = 10000
+MAX_PACKAGES = 25
+VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
 
 
 def sha(data: bytes) -> str:
@@ -84,17 +91,57 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
     return files
 
 
+def acquisition_records(policy: dict) -> list[dict]:
+    """Precheck every source identity before I/O; do not merge its admission role.
+
+    The CLI invokes the shared strict schema2 owner first. Small archive controls
+    may use a selected-only envelope, while this lower boundary always bounds
+    names, non-prerelease SemVer/build metadata, pins, duplicate identities and
+    total work. Metadata-only records remain source inputs, never selected grants
+    or build jobs.
+    """
+    if type(policy) is not dict or type(policy.get("packages")) is not list:
+        raise ValueError("Invalid acquisition package inventory")
+    metadata = policy.get("metadata_only_packages", [])
+    if type(metadata) is not list or len(policy["packages"]) + len(metadata) > MAX_PACKAGES:
+        raise ValueError("Acquisition package inventory exceeds its bound")
+    records = []
+    identities = set()
+    for role, packages in (("selected", policy["packages"]), ("metadata-only", metadata)):
+        for package in packages:
+            if type(package) is not dict:
+                raise ValueError("Invalid admitted package identity")
+            name, version = package.get("name"), package.get("version")
+            if (type(name) is not str or type(version) is not str
+                    or not 0 < len(name) <= 128 or not 0 < len(version) <= 128
+                    or not re.fullmatch(r"[A-Za-z0-9_-]+", name)
+                    or not re.fullmatch(VERSION, version)):
+                raise ValueError("Invalid admitted package identity")
+            if any(type(package.get(key)) is not str or not re.fullmatch(r"[0-9a-f]{64}", package[key])
+                   for key in ("checksum", "files_sha256")):
+                raise ValueError("Invalid admitted archive/source pin")
+            if (role == "metadata-only" and (package.get("role") != "metadata-only"
+                    or {"selected_license", "build_script"} & set(package))):
+                raise ValueError("Invalid metadata-only acquisition role")
+            if role == "selected" and "role" in package:
+                raise ValueError("Invalid selected acquisition role")
+            if (name, version) in identities:
+                raise ValueError("Duplicate acquisition package identity")
+            identities.add((name, version))
+            records.append(dict(package))
+    return records
+
+
 def acquire(vendor: Path, policy: dict) -> None:
-    """Publish a complete new vendor directory after every archive validates."""
+    """Publish validated selected and metadata-only sources without executing them."""
     if vendor.exists() or vendor.is_symlink() or vendor.is_relative_to(ROOT):
         raise ValueError("Vendor destination must be new and outside the checkout")
+    packages = acquisition_records(policy)
     vendor.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".ui-m0-acquire-", dir=vendor.parent))
     try:
-        for package in policy["packages"]:
+        for package in packages:
             name, version = package["name"], package["version"]
-            if not re.fullmatch(r"[A-Za-z0-9_-]+", name) or not re.fullmatch(r"\d+\.\d+\.\d+", version):
-                raise ValueError("Invalid admitted package identity")
             url = f"https://static.crates.io/crates/{name}/{name}-{version}.crate"
             request = urllib.request.Request(url, headers={"User-Agent": "NevroTick-UI-M0-admission"})
             with urllib.request.urlopen(request, timeout=60) as response:
@@ -127,13 +174,15 @@ def main() -> int:
     parser.add_argument("--scratch-root", type=Path)
     args = parser.parse_args()
     try:
-        policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
-        if policy["schema_version"] != 1 or sha((ROOT / "Cargo.lock").read_bytes()) != policy["lockfile_sha256"]:
+        policy = VERIFY.read_dependency_policy(ROOT / "policy/ui-m0-dependencies.json")
+        admitted = VERIFY.validated_dependency_records(policy, include_metadata=True)
+        if sha((ROOT / "Cargo.lock").read_bytes()) != policy["lockfile_sha256"]:
             raise ValueError("Lockfile does not match the reviewed graph")
         packages = tomllib.loads((ROOT / "Cargo.lock").read_text())["package"]
         expected = {(p["name"], p["version"], p["checksum"]) for p in packages if "source" in p}
-        actual = {(p["name"], p["version"], p["checksum"]) for p in policy["packages"]}
-        if expected != actual or len(actual) != len(policy["packages"]):
+        actual = {(p["name"], p["version"], p["checksum"]) for p in admitted}
+        if (expected != actual or len(actual) != len(admitted)
+                or len([p for p in packages if "source" in p]) != len(expected)):
             raise ValueError("Reviewed package inventory differs from Cargo.lock")
         pointer = Path.home() / ".local/share/nevrotick/ui-m0.json"
         if args.configure and (pointer.exists() or pointer.is_symlink() or args.scratch_root is None):
@@ -151,7 +200,7 @@ def main() -> int:
                            "xwin_config": str(pointer.parent / "xwin.json")}, output, indent=2)
         print("Acquisition complete; no dependency build or application check executed.")
         return 0
-    except (OSError, ValueError, KeyError, tarfile.TarError) as error:
+    except (OSError, ValueError, KeyError, tarfile.TarError, VERIFY.ENV.Incomplete) as error:
         print(f"INCOMPLETE: {error}")
         return 1
 
