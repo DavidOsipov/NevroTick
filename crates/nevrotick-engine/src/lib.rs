@@ -463,6 +463,84 @@ impl TransportFacts {
     }
 }
 
+/// The sole terminal I/O distinction; neither variant retains formatted error text.
+enum IoOutcome {
+    /// An actual operation's captured category and optional raw platform code.
+    Native(IoCause),
+    /// A send returned an anomalous length, without an operating-system error.
+    ShortSend,
+}
+
+/// A terminal status and its matching payload form one indivisible owner value.
+/// Independent send/rejection history remains outside this value.
+enum TerminalOutcome {
+    /// One validated ordinary header with its stratum and native-path observations.
+    Header {
+        /// The validated ordinary header's nonzero stratum.
+        stratum: u8,
+        /// The native-path observations captured for this accepted header.
+        facts: TransportFacts,
+    },
+    /// Correlated stratum-zero control with opaque reference-ID bits.
+    Control {
+        /// The correlated control header's opaque reference-ID bits.
+        code: u32,
+    },
+    /// The exclusive processing deadline was reached before completion.
+    Timeout,
+    /// The owner admitted stop before this slot completed.
+    Stopped,
+    /// The owner admitted a new generation before this slot completed.
+    Stale,
+    /// A declared work budget was exhausted.
+    Budget,
+    /// A captured native failure or an anomalous send length ended the slot.
+    Io(IoOutcome),
+}
+impl TerminalOutcome {
+    /// Project the fixed historical status without exposing the private representation.
+    fn status(&self) -> Status {
+        match self {
+            Self::Header { .. } => Status::Header,
+            Self::Control { .. } => Status::Control,
+            Self::Timeout => Status::Timeout,
+            Self::Stopped => Status::Stopped,
+            Self::Stale => Status::Stale,
+            Self::Budget => Status::Budget,
+            Self::Io(_) => Status::Io,
+        }
+    }
+    /// Return an ordinary-header stratum only with its matching facts.
+    fn stratum(&self) -> Option<u8> {
+        match self {
+            Self::Header { stratum, .. } => Some(*stratum),
+            _ => None,
+        }
+    }
+    /// Borrow facts only from the ordinary-header outcome that owns them.
+    fn facts(&self) -> Option<&TransportFacts> {
+        match self {
+            Self::Header { facts, .. } => Some(facts),
+            _ => None,
+        }
+    }
+    /// Return opaque reference bits only from their correlated control outcome.
+    fn control_code(&self) -> Option<u32> {
+        match self {
+            Self::Control { code } => Some(*code),
+            _ => None,
+        }
+    }
+    /// Preserve a captured cause even when that cause has no raw platform code.
+    /// An anomalous send length deliberately has no native cause.
+    fn io_cause(&self) -> Option<IoCause> {
+        match self {
+            Self::Io(IoOutcome::Native(cause)) => Some(*cause),
+            _ => None,
+        }
+    }
+}
+
 /// Bounded historical per-association output; no packet/token formatting route.
 /// A completed result remains historical after later stop/invalidation; it
 /// confers no current confidence, sample eligibility or authentication authority.
@@ -471,22 +549,14 @@ pub struct SlotReport {
     slot: u8,
     /// Actual bound local endpoint.
     local: SocketAddr,
-    /// Single terminal owner outcome.
-    status: Status,
+    /// Single terminal owner outcome, inseparable from its matching payload.
+    outcome: TerminalOutcome,
     /// Whether a complete 48-byte native send was confirmed.
     sent: bool,
     /// Selected actual datagram results, including native oversize errors, at most 64.
     received: u16,
     /// Selected datagrams not committed as header/control; at most received.
     rejected: u16,
-    /// Present only for a completed ordinary header.
-    stratum: Option<u8>,
-    /// Present only for a completed ordinary header.
-    facts: Option<TransportFacts>,
-    /// Opaque reference-ID bits only for a correlated stratum-zero control.
-    control_code: Option<u32>,
-    /// Bounded actual I/O cause when an operation ended the slot.
-    io_cause: Option<IoCause>,
     /// Most recent protocol/parser failure, without retained packet contents.
     last_rejection: Option<Rejection>,
 }
@@ -504,7 +574,7 @@ impl SlotReport {
     /// Return this association's historical terminal owner status, not current confidence.
     #[must_use]
     pub fn status(&self) -> Status {
-        self.status
+        self.outcome.status()
     }
     /// Report whether one complete 48-byte native send was confirmed.
     #[must_use]
@@ -524,22 +594,22 @@ impl SlotReport {
     /// Return a stratum only for a completed ordinary raw header.
     #[must_use]
     pub fn stratum(&self) -> Option<u8> {
-        self.stratum
+        self.outcome.stratum()
     }
     /// Borrow committed native-path facts, without a sample/trust conversion.
     #[must_use]
     pub fn facts(&self) -> Option<&TransportFacts> {
-        self.facts.as_ref()
+        self.outcome.facts()
     }
     /// Return opaque reference bits only for a completed stratum-zero control.
     #[must_use]
     pub fn control_code(&self) -> Option<u32> {
-        self.control_code
+        self.outcome.control_code()
     }
     /// Return the bounded actual runtime I/O cause, if one ended this slot.
     #[must_use]
     pub fn io_cause(&self) -> Option<IoCause> {
-        self.io_cause
+        self.outcome.io_cause()
     }
     /// Return the most recent protocol/parser rejection, if that stage was reached.
     ///
@@ -589,14 +659,13 @@ struct SendBracket {
     after: SoftwareClock,
 }
 /// Private one-way query lifecycle; no terminal slot can be rearmed.
-#[derive(Clone, Copy)]
 enum Phase {
     /// Waiting for writable readiness before the sole actual send.
     Sending,
     /// Full send confirmed; one matching result may still complete.
     Pending(SendBracket),
     /// Terminal for this pilot; capacity is not reused for another query.
-    Done(Status),
+    Done(TerminalOutcome),
 }
 
 /// Exclusive runtime owner; no rearm or socket-cloning API.
@@ -619,14 +688,6 @@ struct LiveSlot {
     rejected: u16,
     /// At most `SEND_READY_CAP` readiness-driven `try_send_to` attempts.
     send_attempts: u16,
-    /// Ordinary-header stratum after final commit.
-    stratum: Option<u8>,
-    /// Committed raw native observations, without sample eligibility.
-    facts: Option<TransportFacts>,
-    /// Committed opaque stratum-zero reference bits.
-    control_code: Option<u32>,
-    /// Actual native I/O code, without formatted messages.
-    io_cause: Option<IoCause>,
     /// Latest bounded parser/protocol rejection; lifecycle rejection is separate.
     last_rejection: Option<Rejection>,
 }
@@ -648,37 +709,40 @@ impl LiveSlot {
             received: 0,
             rejected: 0,
             send_attempts: 0,
-            stratum: None,
-            facts: None,
-            control_code: None,
-            io_cause: None,
             last_rejection: None,
         })
     }
-    /// Commit a terminal status once; a completed slot cannot be reopened or overwritten.
-    fn finish(&mut self, status: Status) {
+    /// Commit a complete terminal outcome once; later outcomes cannot overwrite history.
+    fn finish(&mut self, outcome: TerminalOutcome) {
         if !self.done() {
-            self.phase = Phase::Done(status);
+            self.phase = Phase::Done(outcome);
+        }
+    }
+    /// Borrow the coupled terminal outcome; active sending/pending phases have none.
+    fn terminal(&self) -> Option<&TerminalOutcome> {
+        match &self.phase {
+            Phase::Done(outcome) => Some(outcome),
+            _ => None,
         }
     }
     /// Report whether this one-query slot is terminal.
     fn done(&self) -> bool {
-        matches!(self.phase, Phase::Done(_))
+        self.terminal().is_some()
     }
     /// Report whether the sole request still waits for writable readiness.
     fn can_send(&self) -> bool {
-        matches!(self.phase, Phase::Sending)
+        matches!(&self.phase, Phase::Sending)
     }
     /// Report pending state and remaining declared receive-work budget.
     fn can_receive(&self) -> bool {
-        matches!(self.phase, Phase::Pending(_)) && self.received < RECEIVE_CAP
+        matches!(&self.phase, Phase::Pending(_)) && self.received < RECEIVE_CAP
     }
     /// Retire only from the trusted owner deadline; an exhausted read budget reports Budget.
     fn expire(&mut self) {
         self.finish(if self.received == RECEIVE_CAP {
-            Status::Budget
+            TerminalOutcome::Budget
         } else {
-            Status::Timeout
+            TerminalOutcome::Timeout
         });
     }
     /// Consume a terminal owner and drop its unique Rust socket ownership.
@@ -686,20 +750,16 @@ impl LiveSlot {
     /// # Errors
     /// Reject a nonterminal internal state instead of manufacturing successful output.
     fn into_report(self, slot: u8) -> Result<SlotReport, PilotError> {
-        let Phase::Done(status) = self.phase else {
+        let Phase::Done(outcome) = self.phase else {
             return Err(PilotError::InternalState);
         };
         let report = SlotReport {
             slot,
             local: self.local,
-            status,
+            outcome,
             sent: self.sent,
             received: self.received,
             rejected: self.rejected,
-            stratum: self.stratum,
-            facts: self.facts,
-            control_code: self.control_code,
-            io_cause: self.io_cause,
             last_rejection: self.last_rejection,
         };
         drop(self.socket);
@@ -739,11 +799,11 @@ fn latest(receiver: &mut watch::Receiver<Control>) -> Control {
 fn retire_for_control(slots: &mut [LiveSlot; 2], state: Control) {
     if state.stop {
         for slot in slots {
-            slot.finish(Status::Stopped);
+            slot.finish(TerminalOutcome::Stopped);
         }
     } else if state.epoch != 0 {
         for slot in slots {
-            slot.finish(Status::Stale);
+            slot.finish(TerminalOutcome::Stale);
         }
     }
 }
@@ -754,7 +814,7 @@ fn attempt_send(slot: &mut LiveSlot, deadline: Instant) {
         return;
     }
     if slot.send_attempts == SEND_READY_CAP {
-        slot.finish(Status::Budget);
+        slot.finish(TerminalOutcome::Budget);
         return;
     }
     slot.send_attempts += 1;
@@ -770,11 +830,12 @@ fn attempt_send(slot: &mut LiveSlot, deadline: Instant) {
             slot.sent = true;
             slot.phase = Phase::Pending(SendBracket { before, after });
         }
-        Ok(_) => slot.finish(Status::Io), // No automatic repeat after an anomalous send.
+        Ok(_) => slot.finish(TerminalOutcome::Io(IoOutcome::ShortSend)), // No automatic repeat after an anomalous send.
         Err(error) if error.kind() == io::ErrorKind::WouldBlock => {} // Readiness re-arm, not a query retry.
         Err(error) => {
-            slot.io_cause = Some(IoCause::capture(&error));
-            slot.finish(Status::Io);
+            slot.finish(TerminalOutcome::Io(IoOutcome::Native(IoCause::capture(
+                &error,
+            ))));
         }
     }
 }
@@ -837,9 +898,10 @@ fn stage_reply(
     read: SoftwareClock,
     limits: FrameLimits,
 ) -> Result<StagedReply, Rejection> {
-    let Phase::Pending(sent) = slot.phase else {
+    let Phase::Pending(sent) = &slot.phase else {
         return Err(Rejection::NoPending);
     };
+    let sent = *sent;
     if bytes.len() != PACKET_BYTES {
         return Err(Rejection::Length);
     }
@@ -949,19 +1011,21 @@ fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instan
         return;
     }
     if candidate.stratum == 0 {
-        slot.control_code = Some(candidate.code);
-        slot.finish(Status::Control);
-    } else {
-        slot.stratum = Some(candidate.stratum);
-        slot.facts = Some(TransportFacts {
-            send_before: candidate.sent.before,
-            send_after: candidate.sent.after,
-            read_return: candidate.read,
-            processing,
-            peer_receive_bits: candidate.receive_bits,
-            peer_transmit_bits: candidate.transmit_bits,
+        slot.finish(TerminalOutcome::Control {
+            code: candidate.code,
         });
-        slot.finish(Status::Header);
+    } else {
+        slot.finish(TerminalOutcome::Header {
+            stratum: candidate.stratum,
+            facts: TransportFacts {
+                send_before: candidate.sent.before,
+                send_after: candidate.sent.after,
+                read_return: candidate.read,
+                processing,
+                peer_receive_bits: candidate.receive_bits,
+                peer_transmit_bits: candidate.transmit_bits,
+            },
+        });
     }
 }
 
@@ -1036,8 +1100,9 @@ fn handle_wake(
                 return;
             }
             if let Err(error) = result {
-                slot.io_cause = Some(IoCause::capture(&error));
-                slot.finish(Status::Io);
+                slot.finish(TerminalOutcome::Io(IoOutcome::Native(IoCause::capture(
+                    &error,
+                ))));
             } else {
                 attempt_send(slot, deadline);
             }
@@ -1078,8 +1143,9 @@ fn handle_wake(
                     slots[index].rejected += 1;
                 }
                 Err(error) => {
-                    slots[index].io_cause = Some(IoCause::capture(&error));
-                    slots[index].finish(Status::Io);
+                    slots[index].finish(TerminalOutcome::Io(IoOutcome::Native(IoCause::capture(
+                        &error,
+                    ))));
                 }
             }
             // At the read cap, preserve pending ownership until retirement.
@@ -1371,3 +1437,8 @@ pub fn execute(pilot: PreparedPilot, schedule: ControlSchedule) -> Result<PilotR
         report
     })
 }
+
+/// Focused private-owner checks, kept outside production coverage file totals.
+#[cfg(test)]
+#[path = "../tests/private/processing_guards.rs"]
+mod processing_guard_tests;

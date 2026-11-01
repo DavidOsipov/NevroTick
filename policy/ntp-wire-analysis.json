@@ -12,7 +12,7 @@
   "test_threads": 12,
   "coverage_guided_fuzzing": {
     "status": "admitted-test-only-source",
-    "scope": "fixed GNU-host header, datagram, inert complete-buffer NTS-KE framing and request-bound pending NTPv4 negotiation; no TLS, keys, authenticated association, destination authorization or production graph admission",
+    "scope": "fixed GNU-host header, datagram, inert complete-buffer NTS-KE framing and pending NTPv4 negotiation, including paired request/response acceptance and projection checks with independent request-offer membership; seeded forwarding/observation controls are harness sensitivity, not product mutation or ASan detector qualification; no TLS, keys, authenticated association, destination authorization or production graph admission",
     "metadata_discrepancy": "libfuzzer-sys metadata NCSA differs from all55 bundled SPDXheaders; select wrapperMIT and exact pinned native Apache-2.0 WITH LLVM-exception, not NCSA metadata",
     "upstream_revision": "a47b42eb9f9b302167b4fc413e6c92798d65dd0b",
     "upstream_url": "https://github.com/llvm/llvm-project/tree/a47b42eb9f9b302167b4fc413e6c92798d65dd0b/compiler-rt/lib/fuzzer",
@@ -23,7 +23,7 @@
     "llvm_notice_sha256": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
     "control_lock_sha256": "945748a17cd2ccd01376b3326f9c7b37612a0bc19c725bacffeff6fdb36a333b",
     "target_source": "policy/ntp-wire-fuzz-target.rs",
-    "target_source_sha256": "c83d9bf82a3b170fc7a1efc14198ec6ed2f4cbd32e70793d9b2cba204973497d",
+    "target_source_sha256": "60c59be09b554e7c3d6a90e1aaf58890545efb2ea635f11f0899f723c2be957e",
     "native_files": {
       "FuzzerBuiltins.h": {
         "sha256": "766b0c57707d1ec953034a852b152b3f0daa35ee705bed8952b501705f0799cf",

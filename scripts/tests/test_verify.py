@@ -892,20 +892,66 @@ class ExecutionAccountingTests(unittest.TestCase):
         for label in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
             command = rows[label]
             self.assertEqual(command[command.index("--package") + 1], "nevrotick-engine")
-            self.assertEqual(command[command.index("--test") + 1], "runtime_boundary")
+            self.assertIn("--lib", command)
+            self.assertIn("--tests", command)
+            self.assertNotIn("--test", command)
             self.assertIn("--no-tests=fail", command)
         optimized = rows["optimized-tests:nevrotick-engine"]
         self.assertEqual(optimized[optimized.index("--cargo-profile") + 1], "release")
-        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine::runtime_boundary">'
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
+                              '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
+                              '</testsuite><testsuite name="nevrotick-engine::runtime_boundary">'
                               '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
                               '</testsuite></testsuites>')
         self.assertEqual(VERIFY.validate_test_result("optimized-tests:nevrotick-engine", "", self.work)
-                         ["executed"], 1)
-        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine::runtime_boundary">'
+                         ["executed"], 2)
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
+                              '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
+                              '</testsuite><testsuite name="nevrotick-engine::runtime_boundary">'
                               '<testcase name="prepare_outside_runtime_owns_and_releases_standard_sockets"/>'
                               '</testsuite></testsuites>')
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "discriminator"):
             VERIFY.validate_test_result("optimized-tests:nevrotick-engine", "", self.work)
+
+    def test_engine_runtime_only_junit_cannot_hide_missing_processing_unit(self):
+        """The three historical integration passes do not execute the library guard."""
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine::runtime_boundary">'
+                              '<testcase name="prepare_outside_runtime_owns_and_releases_standard_sockets"/>'
+                              '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
+                              '<testcase name="execute_rejects_entered_runtime_without_nested_runtime_creation"/>'
+                              '</testsuite></testsuites>')
+        for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
+            with self.subTest(lane=lane), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "processing guard"):
+                VERIFY.validate_test_result(lane, "", self.work)
+
+    def test_engine_processing_unit_has_healthy_ordinary_and_optimized_neighbors(self):
+        self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
+                              '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
+                              '</testsuite><testsuite name="nevrotick-engine::runtime_boundary">'
+                              '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
+                              '<testcase name="future_additional_cli_case"/></testsuite></testsuites>')
+        for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
+            with self.subTest(lane=lane):
+                result = VERIFY.validate_test_result(lane, "", self.work)
+                self.assertEqual(result["executed"], 3)
+                self.assertIn("future_additional_cli_case", result["test_names"])
+
+    def test_engine_processing_name_does_not_override_failed_or_wrong_owner_junit(self):
+        for lane in ("product-tests:nevrotick-engine", "optimized-tests:nevrotick-engine"):
+            for outcome in ("skipped", "failure", "error"):
+                self.junit.write_text('<testsuites><testsuite name="nevrotick-engine">'
+                                      '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control">'
+                                      f'<{outcome}/></testcase>'
+                                      '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
+                                      '</testsuite></testsuites>')
+                with self.subTest(lane=lane, outcome=outcome), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "empty, skipped or failed"):
+                    VERIFY.validate_test_result(lane, "", self.work)
+            self.junit.write_text('<testsuites><testsuite name="time-core">'
+                                  '<testcase name="processing_guard_tests::processing_uses_fresh_deadline_and_current_control"/>'
+                                  '<testcase name="prepare_rejects_entered_runtime_before_native_startup"/>'
+                                  '</testsuite></testsuites>')
+            with self.subTest(lane=lane, outcome="wrong-owner"), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "empty, skipped or failed"):
+                VERIFY.validate_test_result(lane, "", self.work)
 
     def test_engine_doctests_preserve_nonempty_execution_requirement(self):
         command = dict(VERIFY.commands("portable"))["doctests:nevrotick-engine"]
@@ -1083,10 +1129,8 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertIn("--workspace", rows["compiler"])
         for package in VERIFY.PACKAGES:
             self.assertIn("--no-tests=fail", rows["product-tests:" + package])
-            if package == "nevrotick-engine":
-                self.assertIn("runtime_boundary", rows["product-tests:" + package])
-            else:
-                self.assertIn("--tests", rows["product-tests:" + package])
+            self.assertIn("--lib", rows["product-tests:" + package])
+            self.assertIn("--tests", rows["product-tests:" + package])
             self.assertIn("--doc", rows["doctests:" + package])
         self.assertEqual(set(rows), {"format", "compiler", "clippy", "rustdoc", "host-engine-build",
                                     "product-tests:nevrotick-ui", "product-tests:ntp-wire", "product-tests:time-domain",

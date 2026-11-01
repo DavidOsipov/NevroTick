@@ -1061,8 +1061,23 @@ workspace and optimized checks. Follow the exact candidate and scope in those
 receipts; neither tool admission nor these pure
 fixtures establish production, native Windows or release qualification.
 
+**Engine analysis entry point, 1 November 2026:**
+[verify-engine-analysis.py](scripts/verify-engine-analysis.py) and
+[engine-analysis.json](policy/engine-analysis.json) select the engine library and
+CLI critical files through the existing **full** tool-admission profile. Use
+`--lane enumerate`, `coverage` or `mutation`, `--subject library`, `cli` or `all`,
+an explicit admitted `--vendor-dir` and a fresh external Linux `--output-dir`.
+Enumeration retains complete descriptors and reports `enumerated`, with
+qualification/campaign admission false. Mutation requires reviewed exact inventory
+bindings; these are initially empty. The 90% executable-line and 95% per-file
+mutation gates remain unchanged. The controller's 24 Python controls pass,
+including a demonstrated snapshot-drift RED/GREEN; these are not actual engine
+coverage or mutation results. The current [engine task](tasks/engine-transport-pilot.md#s29-engine-analysis-admission-and-cargo-test-layout)
+records the isolated API-test layout, Cargo baseline and remaining resource/native
+gates. A serial Cargo observation does not establish ten-worker readiness.
+
 The next fixture projection owner and its tests are now source-authored in the
-main checkout. The actual product census is 86 inputs. Its exact 557-variant
+main checkout. That earlier checkpoint's product census is 86 inputs. Its exact 557-variant
 inventory is admitted through a complete seven-file cohort plan; the whole union
 remains subject to the cumulative reservation and receipt reconciliation. The
 configured portable row, seven-file line coverage, all seven mutation cohorts,

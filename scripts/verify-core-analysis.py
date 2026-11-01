@@ -71,6 +71,10 @@ BOUND_INPUTS = (
     'crates/nevrotick-engine/Cargo.toml',
     'crates/nevrotick-engine/src/bin/nevrotick-observe.rs',
     'crates/nevrotick-engine/src/lib.rs',
+    'crates/nevrotick-engine/tests/execute_entered.rs',
+    'crates/nevrotick-engine/tests/prepare_entered.rs',
+    'crates/nevrotick-engine/tests/prepare_release.rs',
+    'crates/nevrotick-engine/tests/private/processing_guards.rs',
     'crates/nevrotick-engine/tests/runtime_boundary.rs',
     'crates/nevrotick-ui/Cargo.toml',
     'crates/nevrotick-ui/src/lib.rs',
@@ -176,7 +180,7 @@ BOUND_INPUTS = (
     'scripts/check-strict.py',
     'scripts/verify.py',
 )
-SOURCE_FILE_COUNT = 114
+SOURCE_FILE_COUNT = 118
 # Discovery remains separately admitted and never grants a campaign.
 INVENTORY_ADMISSION = "tasks/s1.3-combination-lifecycle-inventory-admission.json"
 INVENTORY_SUBJECTS = dict(SUBJECTS)
@@ -966,7 +970,7 @@ COMBINATION_EQUIVALENCE_SOURCES = {
 }
 # Existing seven faults were independently re-reviewed for this exact six-member
 # source context; historical native outcomes keep their original candidate.
-COMBINATION_EQUIVALENCE_CANDIDATE = '83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594'
+COMBINATION_EQUIVALENCE_CANDIDATE = '4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b'
 COMBINATION_EQUIVALENCE_PROOF = 'tasks/s1.3-lifecycle-equivalences.md'
 COMBINATION_EQUIVALENCE_IDENTITIES = {
     'S13-C-E-001': ('crates/time-core/src/combination.rs', '&&',

@@ -1,7 +1,7 @@
 # Engine transport/runtime pilot
 
 **Status:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is now the
-sixth main workspace member. The current 114-input candidate passes the
+sixth main workspace member. The S25 114-input candidate passes the
 configured dependency, complete GNU portable and Windows cross-build lanes,
 plus twenty-four real GNU CLI cases and eight ordinary-user Windows CLI cases.
 Its [main checkpoint](#main-workspace-checkpoint) and
@@ -12,6 +12,21 @@ alive. Native completion/heap diagnostics and the remaining qualification gates
 are still open. This is the engine-only P0
 experiment in architecture §18.6.1, preparing S2.1 under the
 [development plan](../docs/plans/development-plan.md). It does not close P1/P2.
+
+The [S27 checkpoint](#s27-terminal-outcomes-and-cargo-discovered-cli-consumers)
+implements QF-01's private terminal-outcome coupling and adds Cargo-discovered
+current-worker CLI consumers. Its 115-input candidate passes seven ordinary
+tests, seven optimized tests and two doctests. S25's native/full-workspace and
+S26's processing-unit results below retain their recorded candidates. The
+[QF-03 fuzz checkpoint](s0.1-protocol-comparison.md#qf-03-variable-offer-fuzz-checkpoint)
+now qualifies the variable-offer harness. Engine critical-file coverage/mutation,
+affected Windows regression and the remaining native/resource gates are next.
+
+The current [S29 Cargo baseline](#s29-engine-analysis-admission-and-cargo-test-layout)
+binds 118 inputs after separating the API test binaries. Both default Cargo
+profiles pass seven unit/integration tests plus two doctests; formatting,
+compilation, Clippy and custody checks pass. This is a serial Cargo observation,
+not engine coverage/mutation or ten-worker resource qualification.
 
 ## Authority and current inputs
 
@@ -442,3 +457,189 @@ The coordinator receipt `s25-engine-main-native-checkpoint-v1.json`, SHA-256
 `e2f21384551052ebf8b5d9e8f59ba1809f1a177b2e00ee1ace7915e1afc6b70a`,
 binds the nine underlying admission/execution receipts, preserved incomplete
 attempts, current source archive, actual counts and next action.
+
+## S26 processing and current-control checkpoint
+
+**1 November 2026.** Candidate
+`5dcb333a01b216bbf6287fb956970bf3d776a10f3c2868a6cb45638ac2e6bb92`
+binds 114 inputs. Only the engine library changed from S25: its complete original
+production prefix remains byte-identical (`c08a2264…`), followed by one test-only
+module. The formatted whole-file SHA-256 is
+`2e4f42b59251e5aa36c73099b42aec058bd12af8c783d010a707734261cf1090`.
+
+The aggregate unit reaches Pending through real bounded sends and reads using
+owned loopback peers and distinct nonzero OS-generated tokens. It first commits
+and snapshots the healthy neighbor, then processes the target's valid reply
+through the actual `handle_wake` → `process_reply` consumer. Four independent
+expectations cover expired processing despite earlier receipt, a future deadline,
+delivered stop and advanced generation. Assertions check rejection accounting,
+absence/presence of committed facts, and all saved neighbor clock/payload fields.
+The fixture creates no clock hook or fabricated send/read provenance and does
+not repeat public `prepare`.
+
+`s26-engine-host-focused-v2/verification.json`, SHA-256
+`a2d1582339be0259f3d5ab44c2c084307f0bd0a3c0dd1c67d76f7f9c4ff89f8d`,
+passed all nine selected rows: boundary control, format, compiler, Clippy,
+ordinary/optimized discovery and execution, and doctests. Each profile discovered
+and executed the same **four tests**: the one aggregate library unit plus three
+existing runtime-boundary integrations. The four logical unit scenarios are
+not four additional test invocations. Both JUnit artifacts have no failure,
+error or skip; both construction doctests executed. All four isolated nextest
+namespaces observed owned IPv4/IPv6 loopback readiness. The body took 26.362 seconds.
+
+The unchanged graph/license evidence was reused after checking every relevant
+manifest, lock, feature/policy/configuration and complete 25-source vendor input.
+The fresh advisory snapshot was reused without a new acquisition claim. Every
+source, tool, vendor, advisory and owned-Cargo-home bookend passed. The first
+attempt remains incomplete: Clippy rejected an overlong helper, and Cargo created
+bookkeeping in an initially empty scratch home. Splitting only the test assertions
+and seeding four exact already-admitted bookkeeping files repaired those causes;
+the full Cargo-home equality check was retained. No tests ran in that attempt.
+
+The terminal receipt and raw JUnit/logs were reconciled after the execution-tool
+session handle became unavailable; no runner/compiler remained alive and no run
+was restarted merely to recover its console output. Per-command exit codes are
+retained in the receipt. A concurrent external commit/staged plan update was
+preserved; this agent performed no staging or commit.
+
+This is GNU execution of the named cases, with unchanged production bodies. It
+does not discriminate exact-deadline `>=` versus `>`, inject a control change
+during parsing, establish complete branch/critical-file coverage or qualify a
+new Windows artifact. S25 native observations retain their actual identities.
+The current plan's [QF-01](../docs/plans/development-plan.md#qf-01--couple-terminal-engine-outcomes-to-their-payloads)
+now precedes the final engine coverage/mutation candidate. Keep test helper code
+out of production coverage accounting; CLI mutation testing also needs a real
+Cargo-discovered consumer of each worker's built CLI. The original 90%/95%,
+native completion/heap/resource, S2.1/NTS and full product gates remain open.
+
+## S27 terminal outcomes and Cargo-discovered CLI consumers
+
+**1 November 2026.** QF-01 couples each private terminal outcome to its matching
+payload, including native I/O with an optional platform code versus an anomalous
+short send. Public getters, independent send/rejection history, one-way completion
+and socket-drop ownership remain unchanged. This is a representational improvement;
+no previously reachable production defect was established. Independent source review
+compared all 35 public function declarations and the actual producer/report paths.
+
+Private library tests now live under `tests/private/`, retaining their module names
+and keeping test helpers outside the existing production coverage denominator.
+The processing unit adds correlated control and rejected-origin/healthy-header
+neighbors. A second unit checks three synthetic I/O projections and terminal history;
+it does not establish actual operating-system failure or short-send branch execution.
+Two integration consumers use Cargo's worker-built CLI and independent literal packet
+and output expectations. The permanent verifier selects both library and integration
+tests and rejects JUnit that omits the original processing guard. Its focused Python
+repair passed **98 controls** after retained failing omission/selection controls.
+
+The first S27 host candidate, `ae3ba63e…`, passed formatting and compilation, then
+Clippy stopped before any tests: three private enum fields lacked documentation and
+two test bindings triggered `similar_names`. Its incomplete receipt and frozen source
+remain in `s27-engine-host-focused-v1/`; all custody checks passed. The repair adds
+only those field descriptions and local-variable renames, without a lint allowance.
+The second attempt reached the integration Clippy checks, which required an error
+contract and two condition collapses; it also executed no tests. The third attempt
+passed all static checks and executed seven ordinary tests: six passed and the
+output-sink consumer failed. Its read-only descriptor fixture did not deliver a
+write error through Rust's standard-stream wrappers. Five direct observations of
+the same unchanged CLI image distinguished healthy output, both suppressed
+bad-descriptor cases and both real broken-pipe cases. The exact broken-stdout
+diagnostic/exit and broken-stderr exit already behaved correctly. This is a harness
+repair, not a demonstrated production defect. The helper now closes the pipe's
+sole reader before spawn and independently requires `BrokenPipe` from an actual
+write; the original child exit/output assertions remain unchanged. The diagnostic
+receipt `s27-cli-sink-controls-v1/verification.json` has SHA-256
+`69317edf339b724c9d5dbf7b165b5a70f4ad3fbd7e1d9109b0c4b9c04ff92643`.
+
+Final candidate
+`be5734cfc20b1b18569ac3a66c15a51d4120e60ab3eee479d26bd17dd16189b5`
+binds 115 inputs. `s27-engine-host-focused-v4/verification.json`, SHA-256
+`fda7c1b00ef41d2cc044e8d798aea8dc4335accd7d16015af33cbacac7b05862`,
+passed all nine selected rows. Both profiles discovered and executed the same
+**seven tests**: two private library units and five integrations, including the
+two current-worker CLI consumers. Both JUnit artifacts contain zero failures,
+errors or skips; both doctests executed. All four nextest namespaces observed
+owned IPv4/IPv6 loopback readiness. The body took **28.066 seconds**. All current/
+owned source, index, tools, vendor, advisory and complete Cargo-home bookends
+passed, with unchanged 512 MiB target and 2 GiB/1.5 GiB free-space guards. The
+three incomplete attempts, their frozen sources and raw results remain separate.
+
+These results establish the named GNU observations. Current Windows regression,
+native completion/heap/resource and per-critical-file 90% line/95% mutation gates
+remain open. The later [QF-03 checkpoint](s0.1-protocol-comparison.md#qf-03-variable-offer-fuzz-checkpoint)
+records its completed bounded fuzz lane and **47 Python controls**. QF-02 remains at
+its declared next accounting-recipe/counter-family change. Full S2.1/NTS,
+production eligibility, clock authority, services and packaging remain ahead.
+The later [118-input binding/context review](s1.3-source-selection-readiness.md#engine-test-candidate-binding-and-equivalence-context-reuse)
+reconciles the analysis declarations without manufacturing another historical
+coverage/mutation execution or new equivalence credit.
+
+Before further compiler work, an authorized host-cleanup cycle removed 30 obsolete
+npm temporary downloads and 259 compiler intermediates from four closed runs. Actual
+net recovery was **556,806,144 bytes (531.0 MiB)**, leaving **3.35 GiB** available at
+that checkpoint. Git HEAD/index/diffs/changed-file custody, 1,256 protected files,
+the running Qdrant container and all 33 collections were unchanged. Executables,
+native fixtures, profiles, source snapshots and raw verification records remain.
+The external receipt `cleanup-cycle-20261101T1305Z-result.json` has SHA-256
+`41c7fa02b8cbd4aa0488f5dc507850f86e163fd11ee51cf5473e55d5ef4c09ab`.
+After the S27 checkpoint, 321 additional compiler intermediates from its four
+closed attempts were retired, preserving all executables and verification inputs/
+outputs. This recovered another **220,823,552 bytes (210.6 MiB)** net and left
+**3.14 GiB** available after the intervening builds. Git and Qdrant custody and
+all 1,208 selected protected files passed again. The receipt
+`s27-closed-compiler-retirement-v1-result.json` has SHA-256
+`3dc1243f3858c7911a10520d2fcd637c9a1f263be908adea3464875f37ca6393`.
+
+## S29 engine analysis admission and Cargo test layout
+
+**1 November 2026.** The new `scripts/verify-engine-analysis.py` and
+`policy/engine-analysis.json` bind the two existing engine critical files through
+the shared full tool-admission profile. Thresholds remain 90% executable lines
+and 95% mutation per file. Enumeration is a separate bounded lane that retains
+complete observed descriptors and cannot claim campaign or qualification success.
+Mutation inventories start empty and exclusions are empty; campaign execution
+requires reviewed exact inventories. The one-worker resource/readiness proposal
+has not yet established ten-worker readiness.
+
+Independent review found a command-admission race between the policy read and
+Session snapshot. Three inert native-collaborator controls reproduced it: changed
+product identity, copied input and copied policy each admitted a command when
+zero were expected. The healthy neighbor passed. The repair checks all three
+captured values before commands, inside final custody cleanup. All four unchanged
+controls then passed; all **24 engine Python controls** and the combined **210
+Core/domain/engine controls** passed. These are verification-infrastructure results,
+not executed engine coverage or mutation gates. The original RED/GREEN receipts
+are `s28-engine-snapshot-red-v1.json` and `s28-engine-snapshot-green-v1.json`.
+
+The native Cargo baseline also needed a fixture correction before execution.
+`prepare()` permits one call per executable run. Nextest's process isolation made
+the S27 invocation valid, while Cargo's default libtest grouping would place two
+successful startup tests in one executable. The three original API tests now live
+in `prepare_release.rs`, `prepare_entered.rs` and `execute_entered.rs`; their names,
+bodies and assertions are unchanged. The CLI integration binary retains both
+existing CLI consumers and their full helpers. Each API test executable now has
+one public `prepare()` attempt, while CLI children own their individual startup.
+
+The formatter passed without changing the four moved-layout files. Its receipt
+is `s29-engine-test-layout-format-v1.json`, SHA-256
+`066e6e7426b2d649acc401d2c02ce6b1d79377af3942665ce973dfb3bcedf00c`.
+The current 118-input product candidate is
+`4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b`.
+The actual default Cargo ordinary and release selections each executed the same
+**seven unit/integration tests and two doctests**, with zero failures, ignored or
+filtered cases. Raw output identifies the three separate API executables and the
+CLI integration executable in both profiles. The empty CLI unit-test harness is
+not counted as CLI behavioral evidence; the two real CLI consumers provide it.
+All six selected rows passed: isolation control, format, compiler, Clippy and
+both Cargo profiles. All source/index, vendor, advisory, tool/stable, complete
+Cargo-home and engine-policy bookends passed. The receipt
+`s29-engine-cargo-baseline-v1/verification.json` has SHA-256
+`3e8975f70cdd1fe5528a4f8d725b928b495735aca0de872ab5c0f5bee3a3de59`.
+
+With one Cargo build/test slot, the body took **75.170 seconds**. The sampled
+target peak was **291,405,824 bytes** and minimum ordinary-user availability was
+**1,943,072,768 bytes**, above the retained 1.5 GiB stop guard. These observations
+do not qualify aggregate mutation-worker disk/RAM use or ten-worker readiness.
+The current low storage margin must be resolved before a ten-worker campaign;
+actual descriptor enumeration and critical-file coverage/mutation remain next.
+S27 and QF-03 receipts retain their own exact candidates. Native Windows,
+completion/heap/resource, TLS and complete P0–P7 remain open.

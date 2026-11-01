@@ -285,7 +285,7 @@ struct NegotiationReference {
 /// RFC 8915 supplies criticality, direction, parity, selection and cookie rules.
 /// The candidate additionally rejects ambiguous duplicate ports and recognizes
 /// only protocol zero and a limited pending ASCII endpoint shape. Response
-/// expectations bind to the independent literal request offering IDs 15 and 16.
+/// acceptance is combined below with independently traversed actual offer bytes.
 /// Counts and body facts are evaluated after a byte-state traversal; no production
 /// scanner, iterator, constructor, formatter or error text supplies expected truth.
 fn negotiation_reference(data: &[u8], request: bool) -> Option<NegotiationReference> {
@@ -361,30 +361,20 @@ fn negotiation_reference(data: &[u8], request: bool) -> Option<NegotiationRefere
         if aeads.is_empty() {
             return None;
         }
-    } else if abort
-        || aeads.len() != 2
-        || result.cookies == 0
-        || aeads[0] != 0
-        || ![15, 16].contains(&aeads[1])
-    {
+    } else if abort || aeads.len() != 2 || result.cookies == 0 {
         return None;
     }
     Some(result)
 }
 
-/// Compare both real consumers against independent accepted/rejected record facts.
-///
-/// Each input is used unchanged as an actual request and as an actual response.
-/// Response context comes from the real request constructor over a fixed literal
-/// offer, never an unchecked test factory. All results remain pending/inert.
-fn check_negotiation(data: &[u8]) {
+/// Check a real request while retaining independent body offsets, never model
+/// membership from the production accessor. All returned bytes borrow input.
+fn check_request(data: &[u8]) -> Option<(ntp_wire::NtsKeNtpv4Offer<'_>, NegotiationReference)> {
     let expected_request = negotiation_reference(data, true);
-    let expected_response = negotiation_reference(data, false);
     let limits = NtsKeFrameLimits::new(131_072, 32_768).expect("explicit semantic fuzz limits");
     let Ok(message) = frame_nts_ke_message(data, limits) else {
         assert!(expected_request.is_none());
-        assert!(expected_response.is_none());
-        return;
+        return None;
     };
     let actual_request = read_nts_ke_ntpv4_offer(&message);
     assert_eq!(
@@ -399,17 +389,76 @@ fn check_negotiation(data: &[u8]) {
         let original = &data[expected.aead_start..expected.aead_end];
         assert_eq!(offer.offered_aead_bytes(), original);
         assert_eq!(offer.offered_aead_bytes().as_ptr(), original.as_ptr());
+        Some((offer, expected))
+    } else {
+        None
     }
+}
 
-    let fixed_request = [0x80, 1, 0, 2, 0, 0, 0, 4, 0, 4, 0, 15, 0, 16, 0x80, 0, 0, 0];
-    let fixed_raw = frame_nts_ke_message(&fixed_request, limits).expect("literal complete request");
-    let fixed_offer = read_nts_ke_ntpv4_offer(&fixed_raw).expect("literal NTPv4 offer 15 and 16");
-    let actual_response = negotiate_nts_ke_ntpv4(&fixed_offer, message);
+/// Test full-width membership in the independently located original request body.
+/// Preference order, zero identifiers and duplicate identifiers remain meaningful.
+fn model_offers(request: &[u8], offer: &NegotiationReference, selected: &[u8]) -> bool {
+    request[offer.aead_start..offer.aead_end]
+        .chunks_exact(2)
+        .any(|word| word == selected)
+}
+
+/// Literal forwarding witnesses; identifiers are opaque, not provider selections.
+const PAIR_REQUEST: &[u8] = &[
+    0x80, 1, 0, 2, 0, 0, 0, 4, 0, 4, 0xab, 0xcd, 0x12, 0x34, 0x80, 0, 0, 0,
+];
+const PAIR_RESPONSE: &[u8] = &[
+    0x80, 1, 0, 2, 0, 0, 0, 4, 0, 2, 0x12, 0x34, 0, 5, 0, 0, 0x80, 0, 0, 0,
+];
+const PAIR_WITNESS: &[u8] = &[
+    0, 0, 0, 18, 0x80, 1, 0, 2, 0, 0, 0, 4, 0, 4, 0xab, 0xcd, 0x12, 0x34, 0x80, 0, 0, 0, 0x80, 1,
+    0, 2, 0, 0, 0, 4, 0, 2, 0x12, 0x34, 0, 5, 0, 0, 0x80, 0, 0, 0,
+];
+
+/// Compare the actual response against the actual checked request and an
+/// independent byte-membership model. Raw-message and paired paths share this
+/// consumer; no result claims keys, authentication or a usable association.
+fn check_negotiation_pair(request: &[u8], data: &[u8], paired: bool) {
+    let Some((offer, offered)) = check_request(request) else {
+        return;
+    };
+    let expected_response = negotiation_reference(data, false).filter(|response| {
+        model_offers(
+            request,
+            &offered,
+            &data[response.aead_start..response.aead_end],
+        )
+    });
+    let limits = NtsKeFrameLimits::new(131_072, 32_768).expect("explicit semantic fuzz limits");
+    let Ok(message) = frame_nts_ke_message(data, limits) else {
+        assert!(expected_response.is_none());
+        return;
+    };
+    let witness = paired && request == PAIR_REQUEST && data == PAIR_RESPONSE;
+    // Test-only forwarding fault: pass a genuinely checked but disjoint request
+    // to the actual product consumer. The original independent expectation stays
+    // intact. This is a harness defect, never a product mutation/kill claim.
+    let wrong_context = witness && cfg!(feature = "seeded-context-defect");
+    let actual_response = if wrong_context {
+        let disjoint = [0x80, 1, 0, 2, 0, 0, 0, 4, 0, 2, 0xab, 0xcd, 0x80, 0, 0, 0];
+        let frame = frame_nts_ke_message(&disjoint, limits).expect("literal disjoint request");
+        let alternate = read_nts_ke_ntpv4_offer(&frame).expect("checked counterfactual context");
+        negotiate_nts_ke_ntpv4(&alternate, message)
+    } else {
+        negotiate_nts_ke_ntpv4(&offer, message)
+    };
     assert_eq!(
         actual_response.is_ok(),
         expected_response.is_some(),
-        "independent NTS-KE response-negotiation acceptance oracle"
+        "{}",
+        if wrong_context {
+            "independent NTS-KE request-context forwarding oracle"
+        } else {
+            "independent NTS-KE response-negotiation acceptance oracle"
+        }
     );
+    assert_eq!(offer.request_bytes(), request);
+    assert_eq!(offer.request_bytes().as_ptr(), request.as_ptr());
     if let Ok(pending) = actual_response {
         let expected = expected_response.expect("response acceptance agreed");
         assert_eq!(pending.bytes(), data);
@@ -445,6 +494,17 @@ fn check_negotiation(data: &[u8]) {
             expected.cookies,
             "independent NTS-KE negotiation count agreement"
         );
+        // A second harness-only observation deliberately checks only the first
+        // offered word. It runs after actual acceptance and every unchanged
+        // independent projection agree, and has a non-first full-width witness.
+        if witness && cfg!(feature = "seeded-membership-defect") {
+            let first_only = &request[offered.aead_start..offered.aead_start + 2]
+                == &data[expected.aead_start..expected.aead_end];
+            assert!(
+                first_only,
+                "independent NTS-KE full-list membership observation oracle"
+            );
+        }
         // This feature changes only a test observation, after genuine accepted
         // production input and every unmodified independent projection agree.
         let observed =
@@ -453,6 +513,42 @@ fn check_negotiation(data: &[u8]) {
             observed, expected.cookies,
             "independent NTS-KE negotiation cookie-count oracle"
         );
+    }
+}
+
+/// Split only the admitted aggregate input: four big-endian length bytes followed
+/// by request and response. Oversized declarations clamp to the remaining bytes;
+/// empty sides stay empty. An invalid request cannot manufacture a checked offer
+/// for the response consumer; every valid offer reaches that actual consumer.
+fn negotiation_pair_parts(data: &[u8]) -> Option<(&[u8], &[u8])> {
+    if data.len() < 4 || data.len() > 131_073 {
+        return None;
+    }
+    let declared = data[..4]
+        .iter()
+        .fold(0_usize, |n, byte| n * 256 + usize::from(*byte));
+    let payload = &data[4..];
+    Some(payload.split_at(declared.min(payload.len())))
+}
+
+/// Preserve raw request/response roles and their per-message byte boundaries,
+/// then add the variable-offer relationship without normalizing either slice.
+fn check_negotiation(data: &[u8]) {
+    let _ = check_request(data);
+    let fixed = [0x80, 1, 0, 2, 0, 0, 0, 4, 0, 4, 0, 15, 0, 16, 0x80, 0, 0, 0];
+    check_negotiation_pair(&fixed, data, false);
+    if let Some((request, response)) = negotiation_pair_parts(data) {
+        if data == PAIR_WITNESS {
+            assert_eq!(
+                request, PAIR_REQUEST,
+                "independent NTS-KE request-slice forwarding oracle"
+            );
+            assert_eq!(
+                response, PAIR_RESPONSE,
+                "independent NTS-KE response-slice forwarding oracle"
+            );
+        }
+        check_negotiation_pair(request, response, true);
     }
 }
 

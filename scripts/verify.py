@@ -54,6 +54,7 @@ OPTIMIZED_DISCRIMINATORS = {
     "time-core": "release_build_preserves_regression_admission",
     "nevrotick-engine": "prepare_rejects_entered_runtime_before_native_startup",
 }
+ENGINE_PROCESSING_GUARD = "processing_guard_tests::processing_uses_fresh_deadline_and_current_control"
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
@@ -463,7 +464,7 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
             ("product-tests:" + package, [*cargo, "nextest", "run", "--package", package,
                                          "--frozen", "--build-jobs",
                                          str(CORE_TEST_BUILD_JOBS) if package == "time-core" else "12",
-                                         *(["--test", "runtime_boundary"] if package == "nevrotick-engine" else ["--lib", "--tests"]),
+                                         "--lib", "--tests",
                                          "--user-config-file", "none", "--no-tests=fail"])
             for package in PACKAGES
         ] + [("doctests:" + package, [*cargo, "test", "--package", package,
@@ -472,7 +473,7 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
             ("optimized-tests:" + package, [*cargo, "nextest", "run", "--package", package,
                                            "--cargo-profile", "release", "--frozen", "--build-jobs",
                                            str(CORE_TEST_BUILD_JOBS) if package == "time-core" else "12",
-                                           *(["--test", "runtime_boundary"] if package == "nevrotick-engine" else ["--lib", "--tests"]),
+                                           "--lib", "--tests",
                                            "--user-config-file", "none", "--no-tests=fail"])
             for package in OPTIMIZED_DISCRIMINATORS]
     if lane == "windows":
@@ -581,6 +582,8 @@ def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
                 or any(any(child.tag in {"skipped", "failure", "error"} for child in case) for case in cases)):
             raise ENV.Incomplete("Required product tests are empty, skipped or failed.")
         names = [case.get("name") for case in cases]
+        if package == "nevrotick-engine" and ENGINE_PROCESSING_GUARD not in names:
+            raise ENV.Incomplete("Engine tests did not execute the processing guard unit.")
         if kind == "optimized-tests" and OPTIMIZED_DISCRIMINATORS[package] not in names:
             raise ENV.Incomplete("Optimized tests did not execute the release admission discriminator.")
         return {"package": package, "executed": len(cases), "test_names": names}

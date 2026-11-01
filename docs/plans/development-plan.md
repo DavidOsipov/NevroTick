@@ -543,6 +543,12 @@ the remaining S1.3/P1, DNS, KoD, trust or native qualification requirements. The
 [measured admission optimization](../../tasks/s0.1-protocol-comparison.md#full-tool-admission-metadata-optimization--1-november-2026)
 preserves the complete tool inventory and custody checks.
 
+Before extending the affected owners, apply the bounded
+[WIP quality follow-up](#83-wip-code-quality-feedback-and-bounded-follow-up).
+Finish the current engine processing-guard checkpoint first; the follow-up does
+not turn unfinished product features into newly discovered defects or suspend
+independent work.
+
 1. Recheck root, HEAD/index/working bytes, active owners and the selected task's
    exact source/graph admission. Follow the common/P1 skills and section 3 contracts.
 2. Use the reviewed interval/minimum, batch, continuous-axis majority/witness and
@@ -666,6 +672,145 @@ new TTL, source count, correction allowance, trust exception or reset privilege.
 Freeze the relevant docs, configuration and source at one commit plus identified
 dirty bytes for handoff. Archived design copies and older review snapshots retain
 their historical status; the current maintained authorities control.
+
+### 8.3 WIP code-quality feedback and bounded follow-up
+
+**Assessment date:** 1 November 2026. Reviewed the supplied code-quality feedback
+against `b14d4e628f7d2ea5b909bf736a7bf5f908ea4e4b` and the existing dirty S26
+engine/test-task delta. That delta adds processing/control tests without changing
+production function bodies; its task still records execution as pending.
+Recheck current bytes and active ownership before implementation. This is a
+planning amendment; no fix, product test or new qualification pass is claimed.
+
+The feedback's three proposals are useful maintenance/testing improvements;
+source review established no new reachable product defect. Its approximately
+80/100 score is an uncalibrated reviewer opinion, not a project metric or
+readiness result. The positive observations about staged lifecycle commit,
+private borrowed wire types and owned timer cleanup match the inspected code;
+they establish neither complete product correctness nor native AFD completion.
+Missing production features remain WIP under their existing stages.
+
+Keep these local finding IDs in the existing task evidence chain. They supplement
+the canonical CHECK requirements and do not restart P0–P7.
+
+#### QF-01 — couple terminal engine outcomes to their payloads
+
+**Disposition:** valid maintainability risk; no inconsistent reachable transition
+was found. **Owner/record:** engine implementer in the existing
+[transport task](../../tasks/engine-transport-pilot.md). **Timing:** finish the
+current S26 processing/deadline/control checkpoint, then perform this bounded
+cleanup before adding production states/TLS, preferably before the final engine
+coverage/mutation candidate is frozen. CHECK-6/21/25/27 apply within this scope.
+
+[`LiveSlot` and `SlotReport`](../../crates/nevrotick-engine/src/lib.rs) separately
+store terminal status and optional payloads. Replace that relationship with a
+private terminal-outcome enum: an ordinary header carries its stratum/facts,
+a control carries its code, and I/O distinguishes a captured error from an
+anomalous send length. Do not assume every I/O outcome has an OS error code:
+the existing short-send path deliberately has none. Retain genuinely independent
+send/rejection history; `sent` can differ before/after a confirmed send, and a
+previous rejection can legitimately precede a valid result. Preserve current
+public getters, CLI projection, one-way transitions and terminal history. A broad
+typestate or public API rewrite is not required.
+
+**Exit:** matching payloads are enforced by construction; real consumers retain
+healthy/control/I/O and pre/post-send outcomes, current processing/control
+rejection, completed-neighbor preservation and timer/error cleanup behavior.
+Reuse existing cases and add only missing discriminators. Ensure the selected
+runner actually executes library units as well as runtime-boundary integration
+cases; the current portable engine row selects `runtime_boundary` explicitly.
+Refresh affected admission, run configured format/compiler/Clippy, ordinary/
+optimized and consumer checks, then affected native regressions and the declared
+critical-file gates. Earlier Windows observations keep their original identities;
+host tests cannot establish native completion, retention or soak.
+
+#### QF-02 — name accounting recipes without weakening completion
+
+**Disposition:** valid mechanical maintenance cost, not faulty accounting.
+**Owner/record:** verification maintainer in the existing
+[S1.3 task](../../tasks/s1.3-source-selection-readiness.md). **Timing:** at the next
+recipe/counter-family change; unrelated engine/NTS work need not wait.
+CHECK-19/25 apply.
+
+The [Python recipes](../../scripts/core-combination-accounting.py) contain long
+positional vectors, but runtime transport already has named fields; Rust already
+has a closed operation enum and named limits. First replace authored recipes and
+limits with typed named records using explicit keyword fields and no defaults
+that conceal omissions. Preserve current field names/order, literal counts,
+bounds, emitted bytes and complete/partial/missing classifications. In particular,
+373 versus 374 getter calls must still distinguish exact recipe completion,
+even below the 6720 ceiling. Completion and assertion success remain separate.
+
+Keep independently authored numerical expectations and literal transport rows in
+tests; do not derive them from production recipes. Add field/order conformance
+controls across Rust emission and Python reception. Consolidate mechanical field
+metadata only where it removes actual duplication; introduce no cross-language
+generator or format migration as a prerequisite. If the wire format eventually
+changes, version it explicitly and retain historical readers/receipts.
+
+**Exit:** focused accounting, lifecycle-transport, native-receipt and affected
+cohort/core-verifier controls preserve legacy healthy inputs, the 373/374 case,
+missing/extra/reordered/duplicate fields, invalid numeric types/ranges, overflow,
+unknown cases, prefixes and over-ceiling rejection. Run the admitted Python
+typing checks and actual Rust emitters when changed. Qualify changed receiver
+bytes in a new receipt; preserve earlier receipts. Re-admit changed inputs and
+reuse unaffected evidence explicitly instead of automatically repeating the
+747-variant historical campaign.
+
+#### QF-03 — vary the offer used by response-negotiation fuzzing
+
+**Disposition:** valid relational-fuzz gap, not a demonstrated negotiation bug.
+**Owner/record:** wire/protocol tester in the existing
+[S0.1 negotiation task](../../tasks/s0.1-protocol-comparison.md#pending-ntpv4-negotiation-implementation--1-november-2026).
+**Timing:** before broadening negotiation/TLS integration. CHECK-6/9/25 apply.
+
+The [target](../../policy/ntp-wire-fuzz-target.rs) already fuzzes arbitrary request
+bytes. Response negotiation, however, always uses the literal offer `[15,16]`;
+the response oracle hardcodes those IDs too. Existing integration tests already
+cover variable/full-width identifiers, ordering, duplicate offered IDs and
+unoffered selection. Extend coverage of the relationship without changing that
+accepted protocol policy or claiming crypto-provider support.
+
+Add a bounded input adapter that supplies actual request/response slices, retaining
+the existing raw-message checks. Independently traverse request bytes to determine
+the offered identifiers; expected membership must not use the production offer
+accessor or negotiator. Include the same response accepted for one offer and
+rejected for another, non-first/full-width/zero selections, overlapping/disjoint
+offers, reordered/duplicate IDs, malformed duplicate records, unknown critical
+records, refusals and missing cookies. Preserve request immutability and pending
+output checks. A deterministic membership/context fault needs an intended witness;
+label harness-observation controls separately from actual product mutations.
+
+**Exit:** literal pair seeds verify slicing/forwarding and independent healthy/
+rejected neighbors. Update target hash, seed expectations and runner controls
+together; run focused wire-runner controls and its configured fuzz lane. Preserve
+the existing aggregate 131,073-byte input cap, 256-run/time/RSS/allocation limits;
+retain per-message boundary coverage in the raw path. Fuzz still exercises all
+four owners regardless of `--subject`. Bind source/corpus/binaries and retain
+earlier results. Harness-only changes need no automatic replay of unaffected
+product coverage/mutation campaigns; changed product owners require their gates.
+
+**Next permitted action:** the current engine owner finishes and records the
+existing S26 checkpoint, then takes QF-01 before expanding production state.
+QF-02/QF-03 can proceed at their named checkpoints with separate writers for
+shared policies/runners. Preserve ordinary WIP development, held trust/provider
+choices, current resource bounds and all existing release requirements.
+
+**Independent review:** `/root/quality_plan_review`, fresh context
+(`fork_turns: none`), completed read-only with no material findings;
+**ready for the S26 → QF-01 handoff**. It inspected the supplied feedback,
+affected source/tests/runners/policies, task checkpoints and canonical guidance.
+The reviewed amendment, before this receipt, had SHA-256
+`db9679b6dce12b973c81eeb161388fcddc41e46634a6644f5180e3734ae31866`.
+Its comprehension record is retained verbatim:
+
+> The amendment converts three review suggestions into bounded follow-ups: couple terminal engine outcomes to their payloads, replace positional accounting recipes with named records, and fuzz response negotiation against changing requests. It schedules these within existing tasks and preserves the current S26 checkpoint.
+
+> The current code contains a two-peer loopback engine with one-way slot transitions, borrowed pending NTS-KE types, atomic fixture-core updates, and strict accounting receipts. These provide narrower guarantees than production acquisition or native completion; the plan retains those limits.
+
+This review ran no product tests and requalified no historical receipt. Plan
+validation checked all 86 local links/anchors and whitespace; existing engine
+work and the index were preserved.
 
 ## 9. Verification commands, phase records and stop rules
 

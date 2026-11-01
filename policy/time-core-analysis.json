@@ -1066,7 +1066,7 @@
   "mutation_equivalences": [
     {
       "id": "S13-C-E-001",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "67e083d7a0e752566879754e9fb406bde7e1d89243a3866743a9a0fc601db47f",
       "mutant": {
         "file": "crates/time-core/src/combination.rs",
@@ -1111,7 +1111,7 @@
     },
     {
       "id": "S13-C-E-002",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "67e083d7a0e752566879754e9fb406bde7e1d89243a3866743a9a0fc601db47f",
       "mutant": {
         "file": "crates/time-core/src/combination.rs",
@@ -1156,7 +1156,7 @@
     },
     {
       "id": "S13-C-E-003",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "67e083d7a0e752566879754e9fb406bde7e1d89243a3866743a9a0fc601db47f",
       "mutant": {
         "file": "crates/time-core/src/combination.rs",
@@ -1201,7 +1201,7 @@
     },
     {
       "id": "S13-P-E-001",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "aa7256364c3006943f614a9eb21d4ef94a0e0f30ecd147439c93d34fa17e7da9",
       "mutant": {
         "file": "crates/time-core/src/principal.rs",
@@ -1246,7 +1246,7 @@
     },
     {
       "id": "S13-L-E-001",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "3d1294fedcc5d3a7036b43512ccd8a1d2b52167f8867b820eb6a7a71af35f17d",
       "mutant": {
         "file": "crates/time-core/src/combination/lifecycle.rs",
@@ -1291,7 +1291,7 @@
     },
     {
       "id": "S13-A-E-001",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "9225260bf71cebf50618057984d2e3f8b865830bf48bbde7b0904f17d546c5b4",
       "mutant": {
         "file": "crates/time-core/src/combination/admission.rs",
@@ -1336,7 +1336,7 @@
     },
     {
       "id": "S13-A-E-002",
-      "candidate_sha256": "83a13d0de0069c0fa7e5a6204cda617bfc725f570b4922cbc391f7dd833b5594",
+      "candidate_sha256": "4b0841c3d056f1bf701555a7bb2a0ff99dccad4903303efcaef4a11e2a7afb9b",
       "source_sha256": "9225260bf71cebf50618057984d2e3f8b865830bf48bbde7b0904f17d546c5b4",
       "mutant": {
         "file": "crates/time-core/src/combination/admission.rs",
@@ -1390,8 +1390,12 @@
     "clippy.toml": "6e6800cb3d293f1ec076d5f3efa33cfecd93850e497a952cc058d7fc6503af50",
     "crates/nevrotick-engine/Cargo.toml": "8399d79a18b2746d2a93aa5299df631fd4297f146b880831a84b3b6b2abd42e1",
     "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": "9564c4f7c2c2d76c8cdfb7a980a3933ab4efef65b2cd95ec7b716a97174bd5dc",
-    "crates/nevrotick-engine/src/lib.rs": "c08a226469819b64dfcd0920b76326bf2b5a70ef4aa366296a4ce726b8670077",
-    "crates/nevrotick-engine/tests/runtime_boundary.rs": "de40bf73a45314aa54bf68460832e0800e1a0f0bb541a749c3d81164d9c02445",
+    "crates/nevrotick-engine/src/lib.rs": "b298467785ba72c3734e92b10496821e7935300aae9a52c0f63d5d6cdd07a3fb",
+    "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
+    "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
+    "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
+    "crates/nevrotick-engine/tests/private/processing_guards.rs": "65249a48af134cec84f7cd9002c22869d791fbf2080dc16183bba2ac7bbef6c4",
+    "crates/nevrotick-engine/tests/runtime_boundary.rs": "3a239fc99157c9692172031db8517f14bf803d48875ea0a8b95e36592114b4ce",
     "crates/nevrotick-ui/Cargo.toml": "cf4d4ac8953f22c2060e3d99550bea9db6a394dd94c924123a40f68b2276475a",
     "crates/nevrotick-ui/src/lib.rs": "b03120485dc7cf1f2608887b3f90334270a4f5a87a612c2946618d8b11973930",
     "crates/nevrotick-ui/src/main.rs": "fb76561d571a6b3de3c3e9e44c5dadd5e04e8552a216143cfd9035ab71498e31",
@@ -1494,7 +1498,7 @@
     "rustfmt.toml": "b71fbf7f2204a6c2d97aea258e7712da4d1405fe6a51fb7bb8a951a5991c2406",
     "scripts/check-environment.py": "8a6ca976dcc46dc7986472c72bde8d0be0596d873afd2ec88b0419df8239d880",
     "scripts/check-strict.py": "ba2a04dbac62303cd3c37c1da837135ca16928d7455bda8b9d3a8f56d3c9c1a9",
-    "scripts/verify.py": "9c26270d1942bca2039355ebd87191bb8da2881e152a38bc2e8ebeb7cb90d8bd"
+    "scripts/verify.py": "1a2f4b6e05b7380eee52fcb01d3251bba68466bc8c051c9630dead6723fa338b"
   },
   "historical_projection_inputs_sha256": {
     "Cargo.toml": "1ff169cd1e5ef9eea5df503b706c52938e1793201dfaf1aa014449eae07ca6a8",
@@ -1865,7 +1869,7 @@
       "policy/time-domain-analysis.json": "bbd4751ed04259856a38e319448f441e68b8b8d9ebcc2db1d0b96f13b39bd76c",
       "policy/time-domain-fuzz.lock": "ab1ba0f3322d5a52528b08756e800e235f6e5ed64a2b9758f3aa6d6b6a62794e",
       "scripts/verify-time-domain-analysis.py": "1ef0f05e224980e2d908ff7388af3cbdfadbc143faeb563a5caa6585c90dc1d4",
-      "policy/ntp-wire-analysis.json": "8d328177b8b9ab37adb24ccf311e52bd431c3c2d984bf0c42b1ac03d2b66713f",
+      "policy/ntp-wire-analysis.json": "db7f2df70384cfa0e8740daf2988e3d0b18d14e634b0966ae32adb32052f3dcd",
       "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d"
     },
     "gnu_dependency_edges": {
@@ -1981,7 +1985,7 @@
     "target_contract": "FixtureHistory::try_append-and-committed-observation-report-public-entrypoints",
     "runtime_profile_reuse_review": "reviewed-history-source-and-resource-envelope"
   },
-  "source_file_count": 114,
+  "source_file_count": 118,
   "literal_doctest_limits": {
     "total_source_doctests_maximum": 5,
     "legal_source_doctests_maximum": 2,

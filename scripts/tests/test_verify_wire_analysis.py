@@ -234,21 +234,61 @@ class AccountingTests(unittest.TestCase):
                 with self.assertRaisesRegex(MODULE.Incomplete, "target changed without source admission"):
                     MODULE.admit_fuzz_sources(base, {"coverage_guided_fuzzing": selected})
 
-    def test_four_fuzz_cases_keep_distinct_features_and_intended_faults(self):
-        """The added semantic control cannot replace or combine either raw control."""
+    def test_six_fuzz_cases_keep_distinct_features_and_intended_faults(self):
+        """Relational harness faults supplement all existing raw/count controls."""
         expected = {
             "healthy": ([], None),
             "defect": (["--features", "seeded-defect"], "independent datagram field-count oracle"),
             "ke-defect": (["--features", "seeded-ke-defect"], "independent NTS-KE record-count oracle"),
             "negotiation-defect": (["--features", "seeded-negotiation-defect"],
                                    "independent NTS-KE negotiation cookie-count oracle"),
+            "context-defect": (["--features", "seeded-context-defect"],
+                               "independent NTS-KE request-context forwarding oracle"),
+            "membership-defect": (["--features", "seeded-membership-defect"],
+                                  "independent NTS-KE full-list membership observation oracle"),
         }
+        self.assertEqual(MODULE.FUZZ_CASES, tuple(expected))
         for case, options in expected.items():
             with self.subTest(case=case):
                 self.assertEqual(MODULE.fuzz_case_options(case), options)
         for bad in ("unknown", "seeded-negotiation-defect", "defect,negotiation-defect", None, True, []):
             with self.subTest(case=bad), self.assertRaises(MODULE.Incomplete):
                 MODULE.fuzz_case_options(bad)
+
+    def test_relational_controls_route_the_literal_pair_without_changing_budgets(self):
+        """Challenge the actual driver argv seam, separately from product behavior."""
+        flags = ["-runs=256", "-max_len=131073", "-timeout=2", "-rss_limit_mb=512",
+                 "-malloc_limit_mb=256", "-max_total_time=30"]
+        for case in MODULE.FUZZ_CASES:
+            witness = ("/work/fuzz-corpus/ke-pair-literal-nonfirst"
+                       if case in {"context-defect", "membership-defect"} else "/work/fuzz-corpus")
+            self.assertEqual(MODULE.fuzz_execution_argv("/work/fuzz-binaries/" + case, case),
+                             ["/work/fuzz-binaries/" + case, witness,
+                              "-artifact_prefix=/work/fuzz-artifacts/", *flags])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.fuzz_execution_argv("/work/fuzz-binaries/healthy", "unknown")
+
+    def test_relational_control_witness_rejects_changed_or_unrecorded_bytes(self):
+        """Earlier corpus-writing runs cannot silently replace the fixed stimulus."""
+        literal = bytes.fromhex(
+            "00 00 00 12 80 01 00 02 00 00 00 04 00 04 ab cd 12 34 80 00 00 00 "
+            "80 01 00 02 00 00 00 04 00 02 12 34 00 05 00 00 80 00 00 00")
+        with tempfile.TemporaryDirectory() as temporary:
+            corpus = Path(temporary)
+            witness = corpus / "ke-pair-literal-nonfirst"
+            witness.write_bytes(literal)
+            identity = {witness.name: MODULE.PRODUCT.sha256(witness)}
+            for case in ("context-defect", "membership-defect"):
+                with self.subTest(case=case):
+                    witness.write_bytes(literal)
+                    self.assertEqual(MODULE.fuzz_control_witness(corpus, case, identity), witness)
+                    with self.assertRaisesRegex(MODULE.Incomplete, "witness changed"):
+                        MODULE.fuzz_control_witness(corpus, case, {})
+                    witness.write_bytes(literal[:-1] + b"\x01")
+                    with self.assertRaisesRegex(MODULE.Incomplete, "witness changed"):
+                        MODULE.fuzz_control_witness(corpus, case, identity)
+            for case in ("healthy", "defect", "ke-defect", "negotiation-defect"):
+                self.assertIsNone(MODULE.fuzz_control_witness(corpus, case, identity))
 
     def test_nts_ke_external_contracts_cover_each_private_borrowed_owner(self):
         examples = MODULE.contract_examples()
@@ -510,6 +550,124 @@ class AccountingTests(unittest.TestCase):
         self.assertEqual(records[:16], bytes.fromhex("80 01 00 02 00 00 00 04 00 02 00 0f 00 05 00 00"))
         self.assertEqual(records[16:-4], bytes.fromhex("12 34 00 00") * 32_763)
         self.assertEqual(records[-4:], end)
+
+    def pair_seed_parts(self, data):
+        """Independently audit complete seed transport, not the Rust adapter result."""
+        self.assertGreaterEqual(len(data), 4)
+        self.assertLessEqual(len(data), 131_073)
+        split = int.from_bytes(data[:4], "big")
+        self.assertLessEqual(split, len(data) - 4)
+        return data[4:4 + split], data[4 + split:]
+
+    def pair_seed_records(self, data, kind):
+        """Read literal record bodies without applying any negotiation policy."""
+        cursor, found = 0, []
+        while cursor < len(data):
+            self.assertLessEqual(cursor + 4, len(data))
+            encoded = int.from_bytes(data[cursor:cursor + 2], "big")
+            size = int.from_bytes(data[cursor + 2:cursor + 4], "big")
+            self.assertLessEqual(cursor + 4 + size, len(data))
+            body = data[cursor + 4:cursor + 4 + size]
+            if encoded & 0x7fff == kind:
+                found.append((encoded >= 0x8000, body))
+            cursor += 4 + size
+        self.assertEqual(cursor, len(data))
+        self.assertEqual(data[-4:], bytes.fromhex("80 00 00 00"))
+        return found
+
+    def test_literal_pair_preserves_slices_and_same_response_counterfactual(self):
+        """A real non-first/full-width response must distinguish two valid offers."""
+        seeds = MODULE.negotiation_pair_fuzz_seeds()
+        request = bytes.fromhex("80 01 00 02 00 00 00 04 00 04 ab cd 12 34 80 00 00 00")
+        response = bytes.fromhex("80 01 00 02 00 00 00 04 00 02 12 34 00 05 00 00 80 00 00 00")
+        literal = bytes.fromhex(
+            "00 00 00 12 80 01 00 02 00 00 00 04 00 04 ab cd 12 34 80 00 00 00 "
+            "80 01 00 02 00 00 00 04 00 02 12 34 00 05 00 00 80 00 00 00")
+        self.assertEqual(seeds["ke-pair-literal-nonfirst"], literal)
+        self.assertEqual(self.pair_seed_parts(literal), (request, response))
+        disjoint, unchanged_response = self.pair_seed_parts(seeds["ke-pair-same-response-disjoint"])
+        self.assertEqual(unchanged_response, response)
+        self.assertEqual(disjoint,
+                         bytes.fromhex("80 01 00 02 00 00 00 04 00 02 ab cd 80 00 00 00"))
+        self.assertEqual(self.pair_seed_records(request, 4), [(False, bytes.fromhex("ab cd 12 34"))])
+        self.assertEqual(self.pair_seed_records(disjoint, 4), [(False, bytes.fromhex("ab cd"))])
+        self.assertEqual(self.pair_seed_records(response, 4), [(False, bytes.fromhex("12 34"))])
+        self.assertNotEqual(request[10:12], response[10:12])
+        self.assertEqual(request[12:14], response[10:12])
+
+    def test_relational_seed_membership_facts_keep_whole_words_order_zero_and_duplicates(self):
+        """Fixture identities independently distinguish first/byte-only matching."""
+        seeds = MODULE.negotiation_pair_fuzz_seeds()
+        cases = {
+            "same-response-overlap": ([0, 0xabcd, 0x1234], 0x1234, True),
+            "reordered": ([0x1234, 0xabcd], 0x1234, True),
+            "duplicate-identifiers": ([0xabcd, 0x1234, 0x1234], 0x1234, True),
+            "zero": ([1, 0], 0, True),
+            "unoffered-zero": ([1], 0, False),
+            "full-width": ([0xffff, 0x0100], 0x0100, True),
+            "low-byte-collision": ([0x1234], 0x0034, False),
+            "byte-overlap": ([0x0012, 0x3400], 0x1234, False),
+            "reversed-word": ([0xabcd, 0x1234], 0x3412, False),
+        }
+        for name, (offered, chosen, member) in cases.items():
+            with self.subTest(seed=name):
+                request, response = self.pair_seed_parts(seeds["ke-pair-" + name])
+                body = self.pair_seed_records(request, 4)[0][1]
+                self.assertEqual([int.from_bytes(body[i:i + 2], "big") for i in range(0, len(body), 2)], offered)
+                self.assertEqual(int.from_bytes(self.pair_seed_records(response, 4)[0][1], "big"), chosen)
+                self.assertEqual(chosen in offered, member)
+
+    def test_relational_seed_malformed_refusal_and_cookie_facts_stay_explicit(self):
+        """Record facts qualify stimulus; they do not execute a Rust acceptance oracle."""
+        seeds = MODULE.negotiation_pair_fuzz_seeds()
+        for role in ("request", "response"):
+            request, response = self.pair_seed_parts(seeds["ke-pair-" + role + "-duplicate-aead"])
+            self.assertEqual(len(self.pair_seed_records(request if role == "request" else response, 4)), 2)
+            request, response = self.pair_seed_parts(seeds["ke-pair-" + role + "-unknown-critical"])
+            self.assertEqual(self.pair_seed_records(request if role == "request" else response, 0x1234), [(True, b"x")])
+            request, response = self.pair_seed_parts(seeds["ke-pair-" + role + "-odd-aead"])
+            self.assertEqual(self.pair_seed_records(request if role == "request" else response, 4), [(False, b"\x12")])
+        _, response = self.pair_seed_parts(seeds["ke-pair-refusal"])
+        self.assertEqual(self.pair_seed_records(response, 1), [(True, b"")])
+        for name in ("no15-empty-aead", "offered15-empty-aead"):
+            _, response = self.pair_seed_parts(seeds["ke-pair-" + name])
+            self.assertEqual(self.pair_seed_records(response, 4), [(False, b"")])
+        _, response = self.pair_seed_parts(seeds["ke-pair-missing-cookie"])
+        self.assertEqual(self.pair_seed_records(response, 5), [])
+        _, response = self.pair_seed_parts(seeds["ke-pair-two-cookies"])
+        self.assertEqual(self.pair_seed_records(response, 5), [(False, b""), (True, b"")])
+        request, response = self.pair_seed_parts(seeds["ke-pair-critical-aead"])
+        self.assertEqual(self.pair_seed_records(request, 4), [(True, bytes.fromhex("ab cd 12 34"))])
+        self.assertEqual(self.pair_seed_records(response, 4), [(True, bytes.fromhex("12 34"))])
+
+    def test_relational_seed_adapter_edges_and_aggregate_caps_keep_raw_boundaries(self):
+        """The prefix counts toward the old cap; raw per-message seeds remain intact."""
+        seeds = MODULE.negotiation_pair_fuzz_seeds()
+        _, response = self.pair_seed_parts(seeds["ke-pair-zero-request"])
+        self.assertEqual(response, bytes.fromhex("80 01 00 02 00 00 00 04 00 02 12 34 00 05 00 00 80 00 00 00"))
+        request, response = self.pair_seed_parts(seeds["ke-pair-zero-response"])
+        self.assertEqual(len(request), 18)
+        self.assertEqual(response, b"")
+        self.assertEqual(seeds["ke-pair-short-prefix"], bytes(3))
+        self.assertEqual(seeds["ke-pair-overwide-split"][:4], bytes.fromhex("ff ff ff ff"))
+        self.assertGreater(int.from_bytes(seeds["ke-pair-overwide-split"][:4], "big"),
+                           len(seeds["ke-pair-overwide-split"]) - 4)
+        for total in (131_071, 131_072, 131_073):
+            data = seeds["ke-pair-cap-" + str(total)]
+            self.assertEqual(len(data), total)
+            request, response = self.pair_seed_parts(data)
+            self.assertEqual(len(request), 18)
+            self.assertEqual(len(response), total - 22)
+            self.assertTrue(all(body == b"Z" * len(body) for _, body in self.pair_seed_records(response, 0x1234)))
+        request, response = self.pair_seed_parts(seeds["ke-pair-max-offer"])
+        offered = self.pair_seed_records(request, 4)[0][1]
+        self.assertEqual(len(offered), 65_534)
+        self.assertEqual(offered, bytes.fromhex("00 0f") + bytes.fromhex("00 10") * 32_765 + bytes.fromhex("ab cd"))
+        self.assertEqual(self.pair_seed_records(response, 4), [(False, bytes.fromhex("ab cd"))])
+        complete = MODULE.fuzz_seeds()
+        self.assertEqual(complete["ke-cap-131072"], MODULE.ke_fuzz_seeds()["ke-cap-131072"])
+        self.assertEqual(complete["ke-neg-byte-131073"], MODULE.negotiation_fuzz_seeds()["ke-neg-byte-131073"])
+        self.assertTrue(all(len(data) <= 131_073 for data in complete.values()))
 
     def test_new_manifest_keeps_the_existing_header_and_ui_scope(self):
         """Adding a parser cannot remove prior critical owners to improve a score."""

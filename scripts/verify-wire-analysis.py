@@ -33,6 +33,8 @@ SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
 # independent framing and request/response negotiation expectations.
 FUZZ_SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
                  "nts_negotiation": NTS_NEGOTIATION}
+FUZZ_CASES = ("healthy", "defect", "ke-defect", "negotiation-defect",
+              "context-defect", "membership-defect")
 POLICY = "policy/ntp-wire-analysis.json"
 FUZZ_CARGO_CONFIG = ('[source.crates-io]\nreplace-with="fuzz-reviewed"\n'
                      '[source.fuzz-reviewed]\ndirectory="/work/fuzz-vendor"\n')
@@ -366,6 +368,7 @@ def fuzz_seeds() -> dict[str, bytes]:
         seeds["byte-edge-" + str(length)] = header + extension(0xabcd, length - 48)
     seeds.update(ke_fuzz_seeds())
     seeds.update(negotiation_fuzz_seeds())
+    seeds.update(negotiation_pair_fuzz_seeds())
     return seeds
 
 
@@ -453,6 +456,95 @@ def negotiation_fuzz_seeds() -> dict[str, bytes]:
     return seeds
 
 
+def negotiation_pair_fuzz_seeds() -> dict[str, bytes]:
+    """Literal two-message facts; encoding uses no product parser/serializer.
+
+    Four big-endian request-length bytes precede the original request/response.
+    Raw seeds above retain the full per-message boundaries; these pairs retain
+    the unchanged aggregate 131,073-byte ceiling, including the adapter prefix.
+    """
+    end = bytes.fromhex("80 00 00 00")
+    protocol = bytes.fromhex("80 01 00 02 00 00")
+    cookie = bytes.fromhex("00 05 00 00")
+
+    def record(kind: int, body: bytes) -> bytes:
+        """Encode only trusted bounded fixture literals, never product output."""
+        return kind.to_bytes(2, "big") + len(body).to_bytes(2, "big") + body
+
+    def request(*identifiers: int) -> bytes:
+        """Keep preference order, complete words, duplicates and zero unchanged."""
+        return protocol + record(4, b"".join(word.to_bytes(2, "big") for word in identifiers)) + end
+
+    def response(identifier: int) -> bytes:
+        """A fixed ordinary selection with one opaque empty cookie."""
+        return protocol + record(4, identifier.to_bytes(2, "big")) + cookie + end
+
+    def pair(offered: bytes, selected: bytes) -> bytes:
+        """Bind both original slices and their declared split within the aggregate cap."""
+        data = len(offered).to_bytes(4, "big") + offered + selected
+        if len(data) > 131_073:
+            raise Incomplete("A relational fuzz seed exceeds the fixed aggregate input cap.")
+        return data
+
+    offered = request(0xabcd, 0x1234)
+    selected = response(0x1234)
+    # This whole literal is independently asserted in the target's adapter and
+    # Python controls. The non-first full-width ID distinguishes both new faults.
+    literal = bytes.fromhex(
+        "00 00 00 12 80 01 00 02 00 00 00 04 00 04 ab cd 12 34 80 00 00 00 "
+        "80 01 00 02 00 00 00 04 00 02 12 34 00 05 00 00 80 00 00 00")
+    seeds = {
+        "ke-pair-literal-nonfirst": literal,
+        "ke-pair-same-response-disjoint": pair(request(0xabcd), selected),
+        "ke-pair-same-response-overlap": pair(request(0, 0xabcd, 0x1234), selected),
+        "ke-pair-reordered": pair(request(0x1234, 0xabcd), selected),
+        "ke-pair-duplicate-identifiers": pair(request(0xabcd, 0x1234, 0x1234), selected),
+        "ke-pair-critical-aead": pair(protocol + record(0x8004, bytes.fromhex("ab cd 12 34")) + end,
+                                      protocol + record(0x8004, bytes.fromhex("12 34")) + cookie + end),
+        "ke-pair-repeated-protocol-zero": pair(record(0x8001, bytes(4)) + offered[6:],
+                                               record(0x8001, bytes(4)) + selected[6:]),
+        "ke-pair-zero": pair(request(1, 0), response(0)),
+        "ke-pair-unoffered-zero": pair(request(1), response(0)),
+        "ke-pair-full-width": pair(request(0xffff, 0x0100), response(0x0100)),
+        "ke-pair-low-byte-collision": pair(request(0x1234), response(0x0034)),
+        "ke-pair-byte-overlap": pair(request(0x0012, 0x3400), selected),
+        "ke-pair-reversed-word": pair(offered, response(0x3412)),
+        "ke-pair-zero-request": bytes(4) + selected,
+        "ke-pair-zero-response": pair(offered, b""),
+        "ke-pair-short-prefix": bytes(3),
+        "ke-pair-overwide-split": bytes.fromhex("ff ff ff ff") + offered + selected,
+        "ke-pair-empty-offer": pair(request(), selected),
+        "ke-pair-refusal": pair(offered, bytes.fromhex("80 01 00 00") + end),
+        "ke-pair-no15-empty-aead": pair(offered, protocol + bytes.fromhex("00 04 00 00") + end),
+        "ke-pair-offered15-empty-aead": pair(request(15, 0x1234), protocol + bytes.fromhex("00 04 00 00") + end),
+        "ke-pair-missing-cookie": pair(offered, protocol + record(4, bytes.fromhex("12 34")) + end),
+        "ke-pair-two-cookies": pair(offered, selected[:-4] + bytes.fromhex("80 05 00 00") + end),
+        "ke-pair-request-duplicate-aead": pair(offered[:-4] + record(4, bytes.fromhex("12 34")) + end, selected),
+        "ke-pair-response-duplicate-aead": pair(offered, selected[:-4] + record(4, bytes.fromhex("12 34")) + end),
+        "ke-pair-request-odd-aead": pair(protocol + record(4, b"\x12") + end, selected),
+        "ke-pair-response-odd-aead": pair(offered, protocol + record(4, b"\x12") + cookie + end),
+        "ke-pair-duplicate-protocol": pair(offered, protocol + selected),
+        "ke-pair-request-cookie": pair(offered[:-4] + cookie + end, selected),
+        "ke-pair-request-unknown-critical": pair(offered[:-4] + record(0x9234, b"x") + end, selected),
+        "ke-pair-response-unknown-critical": pair(offered, selected[:-4] + record(0x9234, b"x") + end),
+        "ke-pair-unknown-noncritical": pair(offered[:-4] + record(0x1234, b"x") + end, selected),
+        "ke-pair-error": pair(offered, bytes.fromhex("80 02 00 02 00 01") + end),
+        "ke-pair-warning": pair(offered, selected[:-4] + bytes.fromhex("80 03 00 02 ff ff") + end),
+        "ke-pair-malformed-after-error": pair(offered, bytes.fromhex("80 02 00 02 00 01 00 07 00 01 00") + end),
+        "ke-pair-max-offer": pair(protocol + record(4, bytes.fromhex("00 0f")
+            + bytes.fromhex("00 10") * 32_765 + bytes.fromhex("ab cd")) + end, response(0xabcd)),
+    }
+    for total in (131_071, 131_072, 131_073):
+        remaining = total - len(literal)
+        padding = bytearray()
+        while remaining:
+            length = min(remaining - 4, 65_535)
+            padding.extend(record(0x1234, b"Z" * length))
+            remaining -= length + 4
+        seeds["ke-pair-cap-" + str(total)] = pair(offered, selected[:-4] + bytes(padding) + end)
+    return seeds
+
+
 def fuzz_case_options(case: str) -> tuple[list[str], str | None]:
     """Return one fixed test-only feature and its intended reached fault marker."""
     cases: dict[str, tuple[list[str], str | None]] = {
@@ -461,10 +553,38 @@ def fuzz_case_options(case: str) -> tuple[list[str], str | None]:
         "ke-defect": (["--features", "seeded-ke-defect"], "independent NTS-KE record-count oracle"),
         "negotiation-defect": (["--features", "seeded-negotiation-defect"],
                                "independent NTS-KE negotiation cookie-count oracle"),
+        "context-defect": (["--features", "seeded-context-defect"],
+                           "independent NTS-KE request-context forwarding oracle"),
+        "membership-defect": (["--features", "seeded-membership-defect"],
+                              "independent NTS-KE full-list membership observation oracle"),
     }
     if type(case) is not str or case not in cases:
         raise Incomplete("Unknown bounded wire fuzz control.")
     return cases[case]
+
+
+def fuzz_execution_argv(binary: str, case: str) -> list[str]:
+    """Route the two relational harness faults through their exact literal witness.
+
+    Healthy coverage-guided execution retains the full corpus and 256-run profile.
+    All seeded faults are harness checks, not product mutants or ASan mechanism faults.
+    """
+    fuzz_case_options(case)
+    stimulus = ("/work/fuzz-corpus/ke-pair-literal-nonfirst"
+                if case in {"context-defect", "membership-defect"} else "/work/fuzz-corpus")
+    return [binary, stimulus, "-artifact_prefix=/work/fuzz-artifacts/", *RUNTIME.WIRE_KE_SANITIZER_FLAGS]
+
+
+def fuzz_control_witness(corpus: Path, case: str, identity: dict[str, str]) -> Path | None:
+    """Recheck the named relational stimulus after earlier corpus-writing runs."""
+    fuzz_case_options(case)
+    if case not in {"context-defect", "membership-defect"}:
+        return None
+    name = "ke-pair-literal-nonfirst"
+    witness = corpus / name
+    if PRODUCT.sha256(witness) != identity.get(name):
+        raise Incomplete("The literal request/response fuzz witness changed before its control.")
+    return witness
 
 
 def fuzz_metadata(metadata: dict, policy: dict) -> dict:
@@ -745,7 +865,7 @@ def execute(args, report: dict) -> None:
         fuzz.mkdir()
         (fuzz / "Cargo.toml").write_text(
             '[package]\nname="ntp-wire-fuzz"\nversion="0.0.0"\nedition="2024"\npublish=false\n'
-            '[workspace]\n[package.metadata]\ncargo-fuzz=true\n[features]\nseeded-defect=[]\nseeded-ke-defect=[]\nseeded-negotiation-defect=[]\n'
+            '[workspace]\n[package.metadata]\ncargo-fuzz=true\n[features]\nseeded-defect=[]\nseeded-ke-defect=[]\nseeded-negotiation-defect=[]\nseeded-context-defect=[]\nseeded-membership-defect=[]\n'
             '[dependencies]\nlibfuzzer-sys="=0.4.13"\nntp-wire={path="../source/crates/ntp-wire"}\n'
             '[[bin]]\nname="wire"\npath="target.rs"\ntest=false\ndoc=false\nbench=false\n')
         (fuzz / "Cargo.lock").write_text(fuzz_lock((base / "common/controls-source/fuzz/Cargo.lock").read_text()))
@@ -783,13 +903,15 @@ def execute(args, report: dict) -> None:
         corpus = work / "fuzz-corpus"
         corpus.mkdir()
         seeds = fuzz_seeds()
+        if any(len(data) > 131_073 for data in seeds.values()):
+            raise Incomplete("A fuzz seed exceeds the fixed aggregate input cap.")
         for name, data in seeds.items():
             (corpus / name).write_bytes(data)
         seed_identity = PRODUCT.inventory(corpus)
         (work / "fuzz-artifacts").mkdir()
         (work / "fuzz-binaries").mkdir()
         retained_binaries = {}
-        for case in ("healthy", "defect", "ke-defect", "negotiation-defect"):
+        for case in FUZZ_CASES:
             command = [str(fuzz_tools / "cargo-fuzz"), "fuzz", "build", "wire", "--fuzz-dir", "/work/fuzz",
                        "--sanitizer", "address", "--target", ANALYSIS.PLATFORM,
                        "--target-dir", "/work/target-fuzz"]
@@ -812,9 +934,15 @@ def execute(args, report: dict) -> None:
             retained_binaries[actual_binary] = binary_sha256
             report.setdefault("fuzz_binaries_sha256", {})[case] = binary_sha256
             report.setdefault("fuzz_binary_paths", {})[case] = str(actual_binary)
-            text = run("fuzz-" + case, [binary, "/work/fuzz-corpus", "-artifact_prefix=/work/fuzz-artifacts/",
-                                        *RUNTIME.WIRE_KE_SANITIZER_FLAGS], 90, compiler=night, extra_tools=fuzz_tools,
-                       sealed=[*sealed, *retained_binaries], cwd=fuzz, mode="sanitizer",
+            witness = fuzz_control_witness(corpus, case, seed_identity)
+            witness_inputs = [witness] if witness is not None else []
+            if witness is not None:
+                report.setdefault("fuzz_control_witnesses", {})[case] = {
+                    "path": str(witness), "sha256": seed_identity[witness.name],
+                    "scope": "harness forwarding/observation sensitivity; not product mutation"}
+            text = run("fuzz-" + case, fuzz_execution_argv(binary, case),
+                       90, compiler=night, extra_tools=fuzz_tools,
+                       sealed=[*sealed, *retained_binaries, *witness_inputs], cwd=fuzz, mode="sanitizer",
                        sanitizer_profile=RUNTIME.WIRE_KE_SANITIZER_PROFILE,
                        negative=negative)
             if case == "healthy":
@@ -827,15 +955,25 @@ def execute(args, report: dict) -> None:
                                   "maximum_input_bytes": 131_073,
                                   "seed_lengths": sorted({len(data) for data in seeds.values()}),
                                   "seed_files_sha256": seed_identity,
+                                  "request_response_adapter": "four-byte big-endian request length, clamped to payload",
+                                  "relational_seed_files_sha256": {name: digest for name, digest in seed_identity.items()
+                                                                   if name.startswith("ke-pair-")},
+                                  "harness_control_scope": "seeded forwarding/observation faults; no product mutation or ASan mechanism claim",
                                   "seeded_fault": "pending", "sanitizer": "address", "target": ANALYSIS.PLATFORM}
             elif case == "defect":
                 report["fuzz"]["seeded_fault"] = "observed intended datagram field-count failure"
             elif case == "ke-defect":
                 report["fuzz"]["nts_ke_seeded_fault"] = "observed intended NTS-KE record-count failure"
-            else:
+            elif case == "negotiation-defect":
                 report["fuzz"]["nts_negotiation_seeded_fault"] = "observed intended NTS-KE negotiation cookie-count failure"
+            elif case == "context-defect":
+                report["fuzz"]["nts_request_context_harness_fault"] = "observed intended wrong-request forwarding failure on the literal pair"
+            else:
+                report["fuzz"]["nts_membership_harness_fault"] = "observed intended first-only membership observation failure after genuine non-first acceptance"
             if any(PRODUCT.sha256(path) != digest for path, digest in retained_binaries.items()):
                 raise Incomplete("A retained ASan executable changed during a build or execution.")
+            if witness is not None and PRODUCT.sha256(witness) != seed_identity[witness.name]:
+                raise Incomplete("The literal request/response fuzz witness changed during its control.")
             if (fuzz_input_snapshot(work, sealed) != sealed_before
                     or PRODUCT.inventory(fuzz_tools) != fuzz_tool_hashes):
                 raise Incomplete("Fuzz source, dependency or fixed Cargo launcher bytes changed.")
