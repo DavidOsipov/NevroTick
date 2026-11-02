@@ -1,6 +1,6 @@
 # System-wide Windows DNS service and adaptive cache
 
-**Document:** NV-DNS-PLAN-001, revision 1.5<br>
+**Document:** NV-DNS-PLAN-001, revision 1.6<br>
 **Date:** 3 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Future-feature design and evaluation plan. The Windows-wide product scope and DNSSEC optimization requirement are owner instructions; algorithms, integration details and numerical settings below are engineering proposals unless explicitly identified otherwise.<br>
@@ -39,6 +39,12 @@ crypto candidates below. The research does not select a provider or demonstrate
 Windows routing, origin restoration, performance or effective confinement.
 Current time-client priority, UI-M0 deferrals and the native-experiment pause
 remain in force.
+
+The [Microsoft Learn follow-up](windows11-integration-follow-up.md#5-dns-integration-and-resource-hints)
+adds concrete native completion/NRPT cases, field-preservation checks, interface
+cost hints and the independent Windows DNS Client cache privacy boundary. These
+refine existing DNS-C owners; no resolver, transport or backend is selected.
+The current Windows stop and separate fuzz hold also remain in force.
 
 ## 2. Product boundary and application coverage
 
@@ -115,6 +121,25 @@ shell commands or widening the answering service's authority.
 | Network and policy generations / DNS-C11/17 | Use interface/address/route notifications to enqueue bounded reconciliation outside callbacks. Treat initial registration separately, refresh actual state and preserve callback storage through cancellation. Add an independently qualified DNS/NRPT-policy refresh path: address/route events do not document every DNS-only edit. |
 | Namespace and environment coverage / DNS-C01/03/11/17 | Include exact/suffix/short-name rules, VPN timeout/disconnect, host encrypted-DNS/discovery policy, WSL tunneling and Docker's distinct path. Inventory managed ZTDNS conflicts; preserve the nonrecursive bootstrap graph. `DnsQueryRaw`, settings V4 and DNR support remain evidence-qualified candidates, not assumed production APIs. |
 | Service network isolation / DNS-C14/17 and existing CHECK owners | Evaluate [Windows Service Hardening](windows11-integration.md#3-constrain-service-networking-with-a-windows-owned-mechanism) before custom WFP. Preserve actual SID/token policy, distinguish its separate rules collection from ordinary firewall precedence, and observe allowed/denied IPv4/IPv6 work, activation delay, delegated certificate/DNS work and lifecycle recovery. |
+
+**Selected-field preservation.** The documented `EnableLLMNR` field also affects
+mDNS; changing only the name-server field must preserve discovery, suffixes,
+registration and profile fields. Qualify IPv4 and IPv6 separately.
+`DNS_INTERFACE_SETTINGS_EX.DisableUnconstrainedQueries` is reserved, not an
+available security control. The [follow-up source review](windows11-integration-follow-up.md#5-dns-integration-and-resource-hints)
+supplies the field contracts. Include an intervening-edit/restoration case under
+DNS-C01/17; do not disable local discovery as an incidental enrollment effect.
+
+**Native resolver lifetime, if selected.** `DnsQueryEx` has immediate paths with
+no completion callback; only `DNS_REQUEST_PENDING` establishes pending callback
+custody. Retain result/cancellation/context storage until actual completion and
+settle accounting exactly once. A matching NRPT rule supersedes
+`DNS_QUERY_REQUEST3.pCustomServers`. Compare immediate success/error, pending
+success and cancellation/late completion, plus matching/nonmatching namespaces
+and observed egress. Those native APIs do not establish the required DoQ/pin
+transport or authorize a fallback. W11-W03 and existing CHECK-27/DNS-C03/11/17
+own these adapter cases; native DNS delegation must preserve the nonrecursive
+bootstrap and private-name policy.
 
 **DHCP origin remains an unresolved native proof.** A captured effective server
 list cannot establish how to restore DHCP inheritance. The published Get/Set
@@ -457,6 +482,16 @@ task cancellation alone does not prove this boundary.
 
 Decide machine-wide versus attributable per-user statistics explicitly. A shared loopback DNS endpoint does not automatically know which interactive user originated every query. When attribution is unavailable, do not expose a shared domain history to any ordinary UI session as if it belonged only to that user. Management/read access needs an authenticated policy separate from the public local DNS query surface.
 
+Keep the Windows DNS Client cache and application caches outside claims about
+NevroTick's encrypted snapshots or completed forget barrier. Windows exposes a
+separate cache through [Get-DnsClientCache](https://learn.microsoft.com/powershell/module/dnsclient/get-dnsclientcache?view=windowsserver2025-ps);
+access under particular accounts/policies needs native evidence. Distinguish
+forgotten learning, the product's response cache and those independently retained
+answers in future privacy UI and DNS-C14/15 checks. Do not promise deletion of
+all DNS traces, continuously flush the global cache or force zero TTLs to capture
+more demand. OS/application cache hits remain outside the learner's observation
+seam, as already defined in sections 2.2 and 5.1.
+
 Do not promise automatic incognito detection without a reliable application signal. Do not infer a user/application identity from timing, a localhost source address or a DNS name and use that guess as an authorization boundary.
 
 Autonomous refresh also creates network activity: it may keep sending names to the selected resolver after the user closes an application. DoQ protects the transport, not the name from the resolver processing it. Use real-demand cooldown, context restrictions and a finite budget; local snapshot encryption does not remove this traffic effect. [R01, R06]
@@ -479,6 +514,18 @@ destination-aware `INetworkCostManager::GetCost` and system memory-resource
 notifications feed a small explicit resource state. Unknown/pending cost is not
 free. Combine those inputs with real demand, heat, TTL, validation and current
 context; the APIs supply hints, not the model or policy decision.
+
+For aggregate or tracked-interface information, compare the
+[IP Helper connectivity/cost hint APIs](windows11-integration-follow-up.md#5-dns-integration-and-resource-hints)
+with the COM candidate before adding apartment/proxy lifecycle work to the
+engine. They provide no destination argument and are not equivalent to
+destination-aware `GetCost`. Bind hints to the current network generation,
+coalesce changes and retain callback storage through cancellation. Unknown cost
+is not free; an Internet-connectivity hint does not prove endpoint reachability
+or justify suppressing every bounded NTP/DoQ attempt. Under W11-W06/DNS-C11/12/18,
+compare different-cost interfaces, route changes, unavailable hints, a reachable
+controlled endpoint despite a negative connectivity hint, and stop during a
+callback; observe actual egress and preserve foreground work and hard budgets.
 
 Low-memory notifications describe system-wide available memory and can remain
 signaled. Coalesce them with hysteresis; neither spin on the signal nor assume

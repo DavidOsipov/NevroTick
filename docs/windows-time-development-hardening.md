@@ -20,6 +20,12 @@ qualification refinements in section 9.11. They retain existing CHECK owners and
 separate configured state, effective enforcement and measured behavior; optional
 API/tool candidates are not admitted by this documentation.
 
+The [Microsoft Learn MCP follow-up](plans/windows11-integration-follow-up.md)
+adds API-specific lifetime, publication, permission and evidence cases to those
+same owners. Its source findings are not executed native results. The current
+Windows execution stop, separate fuzz no-retry hold and storage pause remain
+governed by the [development plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
 ## 1. Purpose and recommended baseline
 
 The development environment should make unsafe changes difficult to introduce, policy bypasses visible, and missing evidence impossible to report as a pass. The strongest useful setup combines a pinned compiler, strict coherent lint rules, dependency admission, isolated execution, independent behavioral tests, protected CI and verification of the actual Windows artifacts.
@@ -406,6 +412,17 @@ upstream test names and a healthy roundtrip establish no independent expected
 bytes or complete native coverage. Keep hardware counters/attestation/chunked
 snapshots/database selection in the task's conditional reserve.
 
+The [Learn follow-up](plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
+concretizes the existing outcome and privacy rows: model `ReplaceFileW` errors
+1175/1176/1177 and generic failure with/without an admitted backup slot; inspect
+actual objects and permissions before cleanup, then qualify selected-filesystem
+durability separately. Add named WER/LocalDumps/debugger collector cases rather
+than assuming NOHEAP or exclusions protect every artifact. Per-service state
+locations remain a placement comparison whose service-deletion lifetime cannot
+erase required continuity. VBS claims and side-channel-policy fields remain
+[conditional](plans/windows11-integration-follow-up.md#6-conditional-mechanisms);
+neither an API result nor requested-bit readback proves their broader claim.
+
 
 ### 6.5 Windows x64 optimization policy and evidence limits
 
@@ -787,10 +804,29 @@ gates or permission to execute paused experiments.
 | Resource/crypto owners; CHECK-21/26/27 and existing DNS-C owners | Select power/cost/memory hints, scoped EcoQoS or CNG SIMD batching only for a measured workload. Pressure, unknown cost, small loads and adversarial work preserve hard caps, foreground latency, crypto truth and completion custody; batch SIMD is distinct from bounded multicore scheduling. |
 | UI/service; CHECK-14/17/22 at D2/D3 re-entry | Build-supported UIA/local notifications reflect current state obtained through authenticated service communication, distinguish time-authentication/readiness states, deduplicate meaningful changes and revalidate actions. Actual Narrator/deployment behavior remains to be qualified; no UI-M0 integration or package identity follows from this candidate. |
 
+The [second Microsoft-source pass](plans/windows11-integration-follow-up.md)
+adds the following distinguishing cases when their existing adapter is selected:
+
+| Existing owner / checks | Refinement and healthy control |
+| --- | --- |
+| Timestamp/socket adapter; CHECK-6/11/21/27, CHECK-25 for affected construction | Stable-route timestamp-mode changes and queued old metadata cannot mislabel samples. Payload/control truncation, stale reused outputs and dual-stack IPv4/IPv6 metadata are checked separately; valid neighboring inputs still work. Direct-overlapped immediate/pending/close races retain exactly one terminal settlement and real custody without assuming a Tokio-future drop calls native cancellation. |
+| COM adapter; CHECK-16/27 | Correct apartment and allowed activation work under the final profile; incompatible apartment, late process-security initialization, cross-thread interface misuse and callback/reentrant teardown fail or drain under the declared contract. No generic COM framework or wider token is inferred. |
+| Service observer; CHECK-13/14/23/27 | Select the subscription or APC contract explicitly. Healthy new-instance reconciliation works; zero-mask/churn/delete-recreate and callback-active stop cannot deadlock, retain uninstall-blocking handles or publish stale readiness. SCM Running is not authenticated application readiness. |
+| Installer/filesystem; CHECK-1/13/15/23 | A selected declarative MSI descriptor secures owned resources under actual account/SID ordering. Verify inheritance and runtime replacement with allowed and neighboring-denied access; conflicting/invalid authoring fails usefully. Service-deletion state loss cannot erase mandatory restoration or consumed authority. |
+| Diagnostics; CHECK-1/17/21/27 | With two ETW controllers, expire product authorization while another keeps the provider enabled; capture-state respects field/resource admission and required events remain useful. Observe permitted/denied provider/session/ETL access separately; local emission expiry proves neither exclusive-session delivery nor deletion of captured data. |
+
+Pin the selected SDK/generated bindings and reconcile the follow-up's inconsistent
+timestamp-unregistration return prose and ancillary-header field definitions
+before FFI implementation. Full-page retrieval through MCP is source evidence,
+not ABI/build qualification. The actual I/O-wait timeout, unattended resume and
+adjacent cross-thread QPC cases belong to existing W11-W01/02 timing checks.
+
 Sections 6.4/6.4.1 retain the child-handle, stricter-CET and conditional-enclave
 owners; section 9.5.1 retains low-resource profile admission; section 9.8 retains
 trace/counter evidence. Preserve one complete MSI, DoQ-only DNS, optional-storage
-versus mandatory-continuity separation, UI-M0 deferrals and current S1.3 priority.
+versus mandatory-continuity separation and UI-M0 deferrals. The current portable
+Core checkpoint, broad Windows execution stop, separate fuzz no-retry hold and
+storage pause remain under the [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 ## 10. Native Windows qualification and safe experiment ownership
 

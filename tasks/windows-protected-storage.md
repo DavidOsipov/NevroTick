@@ -21,6 +21,12 @@ own pinned observations, primary sources, licence limits and adaptation caveats.
 This record turns them into bounded work and owns subsequent execution receipts;
 it does not duplicate their technical specification or authorize library adoption.
 
+The [Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md)
+adds concrete Windows API cases to these same assignments. Its later
+[routing record](#65-microsoft-learn-follow-up-routing--3-november-2026)
+preserves the original receipts and current execution holds; it creates no new
+storage work-item or acceptance catalogue.
+
 | Reconciliation with the predecessor | Disposition |
 | --- | --- |
 | Existing VBS/TPM/fresh optional state/no-cache direction, exact committed envelope, installation witness and finite slots | Retained; exact construction, default and provider/build/account/profile row remain open. No error-induced DPAPI/software/plaintext fallback. |
@@ -422,3 +428,34 @@ blob/mode/stage; the two overlapping guide/plan files preserve local intent in
 the additive merge. The staged path set remains 113. Concurrent Core work was
 preserved and may continue; no new product, analyzer or Windows test was run by
 this pull/adoption task. The documentation checksum manifest remains absent.
+
+### 6.5 Microsoft Learn follow-up routing — 3 November 2026
+
+The owner requested the completed second Microsoft Learn investigation be added
+to maintained documentation. This amendment is based on GitHub main
+`45ff247d84e5e43bd13f54de1c84aa13ce2e6efd`, tree
+`6fccf094d8eae9d8dbccfb406afed0e08e2b11f9`, in an API-derived partial snapshot;
+it establishes no local index/dirty-state observation. The research originally
+inspected `f163c193b0bb4167ec5c39e16b1db1b581509750`; earlier review and execution
+receipts above retain their own candidates. This section records assignments,
+not their execution or a separately running coordinator's acknowledgement.
+
+| Existing assignment | Additional source-bound case at its existing trigger |
+| --- | --- |
+| ST-W01/02: outcome and recovery contract | For a selected `ReplaceFileW` adapter, carry errors 1175/1176/1177 and generic failure with/without a backup slot into the independent model. Reconcile actual objects/content/permissions before cleanup or retry; unsupported write-through supplies no durability. Preserve ST-T06/07/10/16/17. |
+| ST-W03: directory and lifecycle ownership | Compare per-service directories/registry state only for a named optional/disposable class. A service-delete/recreate lifecycle can delete them; mandatory continuity stays independently owned. If declarative MSI ACLs are selected, qualify account/SID ordering, inherited parents and final runtime object owners/DACLs. Placement uses existing ST-T03/10/12/17 and CHECK-13/15/23; no new storage root is selected. |
+| ST-W04 and the existing attestation reserve | VBS claim extensions are a conditional actual-key evidence lead, with prerelease/build, attestation-key/hash/padding, exact subject, anchoring, freshness and update constraints. No added key role, root, cloud dependency or stronger label follows from sample verification. Preserve ST-T01/05/13; this remains a reserve. |
+| ST-W05 and the mitigation reserve | Side-channel-policy fields need a named role/threat, actual supported enforcement and healthy timing/resource measurements under CHECK-16/21. No field or required hardware profile is adopted. |
+| ST-W07: actual output privacy | Add named WER/LocalDumps/debugger cases with synthetic sentinels, preserving ST-T14/CHECK-17. NOHEAP/exclusions and recovery callbacks do not prove all collectors safe. Coordinate shared ETW admission/session/retention cases with W11-W08 rather than duplicating its implementation owner. |
+
+The [source supplement](../docs/plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
+and its [conditional section](../docs/plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
+own API facts, limitations and future healthy/refused cases. The integrated
+documentation review/validation is recorded in the existing
+[Windows integration task](windows11-integration.md), not credited from the older
+research review. ST-W01 remains the bounded source-only next storage assignment;
+other work retains its prerequisites. The current portable Core checkpoint, broad
+Windows execution stop, separate fuzz no-retry hold, storage-experiment pause,
+DoQ-only policy, one complete MSI, mandatory-state separation and UI-M0 deferrals
+remain unchanged. No implementation, native test, provider or dependency admission
+is claimed by these routing changes.

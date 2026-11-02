@@ -1,11 +1,19 @@
 # NevroTick: useful Windows 11 integration mechanisms
 
-**Document:** NV-WIN11-RESEARCH-001, revision 1.0<br>
+**Document:** NV-WIN11-RESEARCH-001, revision 1.1<br>
 **Date:** 3 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Owner-requested documentation integration; source research and proposed qualification, no native execution.
 
 Start with [the documentation guide](../README.md). The [architecture](../windows-time-architecture.md) owns technical contracts; the [development workstream](development-plan.md#85-windows-11-integration-research-and-qualification) owns phase placement, and [the agent task](../../tasks/windows11-integration.md) owns bounded assignments and execution evidence. The source review was completed on 2–3 November 2026.
+
+**3 November follow-up:** the [second Microsoft Learn MCP pass](windows11-integration-follow-up.md)
+adds exact native lifetime/error cases, narrower API alternatives and documented
+source discrepancies. Read it alongside this first review before dependent
+adapter work. The original inspected baseline and review claims below retain
+their original scope; the follow-up was reconciled with later `45ff247` task
+adoption and execution holds. Its findings extend the existing W11/ST-W owners,
+without selecting optional APIs or qualifying Windows behavior.
 
 ## Decision and scope
 

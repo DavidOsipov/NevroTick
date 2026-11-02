@@ -109,6 +109,7 @@ and next action in [the existing storage task](tasks/windows-protected-storage.m
 without repeating the upstream survey or creating another plan.
 
 Windows 11 integration research: use [the source review](docs/plans/windows11-integration.md),
+the [Microsoft Learn follow-up](docs/plans/windows11-integration-follow-up.md),
 [the agent task](tasks/windows11-integration.md) and the
 [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
 They map packet timestamp provenance, power/timer semantics, service/network
@@ -125,6 +126,15 @@ source-only work when the acquisition owner reaches it; other items enter at
 their named phase or conditional trigger. Before related Windows integration,
 apply the mapped contracts and controls while retaining the distinction between
 required product behavior and optional API candidates. This handoff lifts no hold.
+
+The follow-up supplies concrete callback/completion, ancillary-data, COM, MSI
+permission, ETW-session and partial-file-replacement cases for those same owners.
+Use its source discrepancies to qualify selected SDK/generated bindings, rather
+than copying overview declarations. Service-managed storage, native cost hints
+and SCM observers remain candidates; prerelease VBS claims and side-channel
+settings remain conditional. Apply the relevant refinement before dependent
+adapter work and record its disposition in the existing W11 or storage task.
+Retain the current Windows execution stop, separate fuzz hold and storage pause.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 

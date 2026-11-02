@@ -35,6 +35,12 @@ candidates; [the agent task](../tasks/windows11-integration.md) routes them to
 existing phases and CHECK/DNS-C/ST-T owners. This records research without
 changing current development priority, UI-M0, storage holds or release policy.
 
+The [Microsoft Learn MCP follow-up](plans/windows11-integration-follow-up.md)
+adds exact metadata/completion, COM, permission, diagnostic and replacement cases
+to those same owners. Conditional APIs remain unselected; the current portable
+Core work and Windows/fuzz/storage execution holds remain under the
+[next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
 The selected v1 design is **one complete per-machine MSI** under the Authenticode or initial OpenPGP release profile in section 19.5 containing a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker, and the administration helper. The user installs, updates, repairs and removes one product. The installer owns service installation and reversible Windows Time Service handover. A future MSIX, if qualified, must contain the same complete product with an equivalent lifecycle; separate UI and service distributions are excluded.
@@ -263,6 +269,18 @@ Use the existing `windows-platform` boundary for reusable Windows integration. A
 Separate clock observation from actuation: only the broker composition exposes the clock-write adapter, after its serialized current-state guard. Keep SCM service-host callbacks distinct from installer/helper service-registration and W32Time lifecycle operations. Common persistence mechanics preserve the separate engine-secret, broker-policy and journal writers/ACLs in section 12.1. Common pipe mechanics preserve the three independently authorized command surfaces in section 5. Native GUI bindings stay UI-owned so headless services do not acquire GUI dependencies.
 
 Each adapter documents exact rights, owned/borrowed resources, native destructor, error semantics, thread affinity, cancellation and callback lifetime. Use the correct resource-specific RAII owner, not a universal handle destructor. Capture native errors at the failed call and return bounded typed outcomes; uncertain effects require owner-led reconciliation. Dropping a future does not prove native work stopped, and process termination does not promise destructor-based clock restoration. Preserve section 17.1's native-job admission and completion rules.
+
+If a selected adapter uses COM, its composition owns per-thread apartment
+initialization and balanced teardown, process-wide security initialization before
+an unintended implicit initialization, and the actual proxy/callback direction.
+Record the selected class's activation, authentication/impersonation, agility or
+marshaling and object-release obligations. Final `CoUninitialize` can dispatch
+pending COM messages; retain callback state and shutdown guards through that
+potentially reentrant phase. Qualify activation under the final role's mitigations
+without widening privileges or introducing a generic COM framework. The
+[COM integration findings](plans/windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com)
+refine CHECK-16/27 only when that adapter is selected; a COM client is not thereby
+an exposed remote server.
 
 Module visibility, private constructors and selected features reduce accidental misuse; actual tokens, object ACLs, peer authentication and current broker guards enforce authority. Check each emitted binary's resolved dependency/feature closure so shared code does not pull TLS/networking, GUI or an unnecessary runtime into unrelated roles. Do not expose arbitrary commands, paths, service names, raw Win32 dispatch or caller-selected privilege escalation through a shared API.
 
@@ -919,6 +937,17 @@ transmitted/authenticated bytes. Neither timestamp precision nor NIC capability
 proves remote UTC accuracy. The [research and two-interface cases](plans/windows11-integration.md#1-measure-packets-closer-to-the-network-stack)
 remain candidates under CHECK-6/11/21/27, not a new accuracy claim.
 
+For that adapter, reconcile timestamp configuration changes even when route and
+interface identities are stable. A change callback is an invalidation signal,
+not atomic proof of the configuration behind queued packet metadata. Validate
+payload and ancillary data separately, including truncation, capacities, returned
+lengths, framing/alignment and reset of reused output fields. Keep peer identity
+distinct from the local destination/interface; qualify IPv4 packet information
+on dual-stack sockets as well as IPv6. A fallback sample must satisfy its own
+admission/provenance contract. Use the selected SDK/generated ABI declarations,
+resolving the documented type/return-value inconsistencies recorded in the
+[follow-up](plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion).
+
 Keep stable oscillator compensation separate from transient phase correction. A phase plan has a finite budget, deadline and maximum rate. On new source evidence, cancellation or generation change, account for the actual correction delivered before replacing it. Prevent multiple controllers from integrating the same phase error twice.
 
 The intended backend uses `GetSystemTimePreciseAsFileTime`, `QueryPerformanceCounter`, `GetSystemTimeAdjustmentPrecise`, `SetSystemTimeAdjustmentPrecise` and policy-authorized `SetSystemTime`. The exact semantics and achievable rate resolution must be qualified on supported Windows builds and hardware. Do not reuse Linux `adjtimex` constants or assume chrony's Linux slew limits transfer. [S07, S22, S23]
@@ -1087,6 +1116,17 @@ guarantee after abrupt death. See [lifecycle research](plans/windows11-integrati
 | Diagnostic logs | Each component to its bounded sink | Structured codes, redaction, retention limits, no secret payload dumps |
 
 Use atomic replace with validated staging, appropriate flush behavior and tested crash semantics on the selected filesystem. Guard against reparse points, symlinks/hardlinks, path traversal and time-of-check/time-of-use replacement when privileged code opens files. Prefer fixed installer-owned paths and already-open validated handles over accepting paths from IPC.
+
+Windows-managed per-service directories/registry state are optional placement
+candidates, initially for disposable or optional state. Their lifetime follows
+the service installation: deleting/recreating a service can delete that state,
+including during an upgrade that actually performs those operations. Do not move
+mandatory clock journals, consumed authority, trusted floors or restoration
+evidence there without the existing durable migration/restoration contract.
+Documented service-SID write restrictions establish neither all read/owner rights
+nor child-object isolation, encryption or secure erasure. The
+[service-state comparison](plans/windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com)
+leaves current paths and separate state owners unchanged.
 
 Replacement must preserve the intended owner-rights isolation from section 4.1,
 not just the visible allow ACEs. The correction journal implements section
@@ -1302,6 +1342,13 @@ buffers remain owned through this recovery until actual completion. The
 [transaction and durability lessons](plans/windows-protected-storage-upstream-lessons-2.md#4-an-error-is-not-always-evidence-that-nothing-happened)
 refine ST-T06/07/10/16/17 without changing mandatory-state ownership.
 
+If `ReplaceFileW` is selected, classify its documented partial failures before
+retry or cleanup: `FALSE` does not establish an unchanged namespace, object or
+metadata. Retain attributable recovery material, validate resulting identities,
+content and owner/DACLs, and qualify the actual flush sequence; its unsupported
+write-through flag supplies no durability. The [failure-state matrix](plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
+concretizes this outcome model without selecting a new commit protocol.
+
 | Condition | Permitted outcome |
 | --- | --- |
 | Authorized fresh optional epoch; qualified VBS capability unavailable/off/unsupported | Evaluate only policy-allowed TPM or NoPersistentCache under an admitted required process profile. |
@@ -1335,6 +1382,15 @@ For the frozen suite, check exact returned lengths and independent known-answer
 or interoperability fixtures as well as roundtrips. Shared defaults on both
 sides can hide a wrong parameter. [CNG source lessons](plans/windows-protected-storage-upstream-lessons-2.md#6-cng-admission-per-call-silence-real-lengths-and-explicit-parameters)
 do not select ECIES, a KDF, new provider or dependency.
+
+VBS-specific `NCryptCreateClaim`/`NCryptVerifyClaim` extensions are a conditional
+lead for this actual-key evidence gap. Their prerelease status, supported row,
+trusted origin, exact subject, freshness, accepted flags/debug/version and update
+behavior require investigation. Attestation-key/hash/padding prerequisites do not
+authorize adding an attestation role to wrapping/signing roots or provisioning
+another root. Successful verification alone establishes no accepted protection
+label, cross-boot origin or rollback resistance. The [claim research](plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
+retains Unknown/RecoveryRequired where evidence is absent.
 
 ##### Process compatibility, UI and residuals
 
@@ -1428,6 +1484,15 @@ Change only the optional filter/profile in process, without restarting clock ser
 
 Diagnostic revisions are separate from clock/source-policy generations: changing verbosity alone must not reset the estimator, cancel a valid correction or consume/refund clock authority. It does not change persistent security/source policy. Required session-change and denial events use bounded redacted fields and remain subject to the required-event route.
 
+For ETW, effective provider enable/keyword state may aggregate several sessions;
+another controller can keep it enabled after one session stops. Neither that
+state nor a controller-supplied `SourceId` authorizes product diagnostics or
+extends their deadline. Apply the local admission guard also to capture-state
+work. It controls emission, not exclusive delivery to one approved trace session
+or erasure of already captured ETL data. Provider registration/enable rights,
+session-control/consumer rights and ETL-file access/retention remain separate
+controls. See the [ETW composition cases](plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage).
+
 #### 12.3.4 Privacy, sinks and resource limits
 
 Apply field policy at emission, before formatting and buffering. For every field record purpose, sensitivity, owner, recipients and retention. Never emit NTS keys/cookies, TLS key material, credentials, approval tokens, full IPC/packet objects or arbitrary memory, at any level. Avoid broad derived `Debug`, automatic argument capture, free-form dependency error chains and attacker-chosen field names. Central formatting cannot reliably remove a secret already embedded in an arbitrary string. Bound/escape allowed text so control characters cannot forge records. [S74]
@@ -1437,6 +1502,14 @@ The proposed **10 MiB rotating local diagnostic budget is aggregate per installa
 Keep expensive formatting and sink I/O off the time-control critical path with bounded admission and writer work. Guard optional expensive work before evaluation; bound encoded bytes after escaping, rate-limit keys/cardinality and counter arithmetic. Prioritize required records within a finite allocation, coalesce floods and retain first relevant cause/counters. Expose queue loss, unavailable sinks and incomplete export through bounded diagnostic health/status; never recursively log a sink failure into itself. A failed logger must not turn rejection into success, corrupt mandatory state or block necessary clock cleanup. Shutdown flush is finite; loss after the deadline or abrupt termination is reported as a limitation, not a durability guarantee.
 
 Required security/operational events use the installed Windows event channel contract in section 15.3; optional ETW needs its own admission and does not replace that durable channel. Keep provider/channel rights, registration resources, retention and unavailable-sink behavior explicit. Crash dumps, raw EVTX and externally collected OS traces have separate access/content risks; they are not automatically redacted support exports.
+
+Record process WER policy separately from administrator-controlled LocalDumps and
+debugger collectors. NOHEAP or a memory-exclusion registration cannot be presumed
+to cover every collector; a recovery callback cannot retroactively protect a dump
+already collected. Qualify only named artifact paths with synthetic secrets and
+permitted useful diagnostic context, without changing global dump policy. The
+[collector-specific findings](plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
+refine CHECK-17 and the existing storage privacy boundary.
 
 When WPR/WPA or another ETW trace supports a timing/lifecycle claim, retain
 monotonic correlation and session loss counts; an absent event in an incomplete
@@ -2105,6 +2178,13 @@ leaves supported builds, activation/query behavior and required/optional
 disposition unqualified. Until that decision is recorded, it creates no new
 required startup gate. Preserve the independent installer-host rule above.
 
+**Side-channel-policy reserve:** evaluate individual fields of
+`PROCESS_MITIGATION_SIDE_CHANNEL_ISOLATION_POLICY` only for a named role and
+threat. Hardware, scheduler, common-page exceptions and irreversible transitions
+limit their meaning; readback is not measured protection. The [conditional review](plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
+requires compatible normal operations and timing/resource evidence under existing
+CHECK-16/21. It selects no field, blanket hardware floor or stronger privilege.
+
 **SCM child-process proof gap:** preserve the engine/broker no-child design, but establish the supported installation mechanism, effective state and denied creation under their actual SCM launch path. A policy enum, header declaration or custom-parent test is insufficient. Parent-side process-creation attributes do not establish control over SCM's launch attributes. App-specific Exploit Protection is a research candidate, not an adopted installer change. Do not introduce a launcher or change service topology merely to claim this control. [S29, S101, S104]
 
 Child restriction also depends on inaccessible powerful handles to other
@@ -2292,6 +2372,14 @@ Use explicit request/source/policy/clock generations and check them again when r
 If a call stalls indefinitely, its slot remains occupied and the engine reports diagnosed degraded/Blocked behavior while retaining policy-valid holdover only where the existing model allows it. P0 must set a finite service-stop deadline and choose coordinated engine process stop/restart behavior with SCM, generation invalidation and restart backoff. Do not use `TerminateThread`. Broker clock cleanup and ownership remain independent; an engine restart never renews correction budgets or permits stale results. CHECK-27 measures actual shutdown/recovery rather than treating cancellation as proof.
 
 Tokio timers schedule activity; they are not the precision timestamp source. Its sleep granularity can be milliseconds or coarser on Windows, while packet/model timing uses the qualified monotonic/UTC adapter. Compare proposed container/runtime changes against private bytes, thread/handle counts, wakeups, CPU, cold start and 72-hour growth with declared Windows protections enabled. Do not adopt a custom allocator or increase global timer resolution to meet an unmeasured expectation. [S73]
+
+If direct overlapped sockets are selected, qualify immediate and pending results
+against the actual completion-notification mode, including any skip-on-success
+setting. Settle each operation once; serialize issue/close, distinguish reused
+socket generations, and retain buffers/permits through actual terminal completion
+after cancellation or close. The [socket-specific cases](plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion)
+do not imply that dropping a Tokio receive future issues native cancellation or
+justify changing the selected runtime.
 
 ## 18. Rust, dependencies and engineering policy
 
@@ -2582,6 +2670,16 @@ qualification throughout install/update/repair/rollback/removal. A stopped-statu
 observation alone does not establish maintenance quiescence. [S120]
 
 Prefer Windows Installer's declarative service registration/configuration tables where they express the intended operation. `MsiServiceConfig` supports required-privilege and service-SID settings; these do not grant a missing user right and do not prove the resulting token is correct. Any additional service-right/ACL/W32Time action is narrow, typed and reversible. Actual tokens are checked before actuation. [S58]
+
+Evaluate `MsiLockPermissionsEx` before custom ACL actions for package-owned
+resources it can express. Qualify fixed descriptors, account/service-SID resolution
+and parent-before-child installation ordering. Ordinary MSI properties are not
+substituted in its `SDDLText`; ambient user/environment examples establish no
+privileged product identity. Inheritable parent permissions can protect later
+children, but the table does not reapply an individual descriptor to every runtime
+replacement. Final owner/inheritance/DACL checks remain necessary. The
+[declarative-permissions research](plans/windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com)
+selects no authored MSI table or new runtime dependency.
 
 Direct system-changing custom actions need deliberately authored rollback. Schedule the corresponding rollback action before its deferred action, handle interruption midway, and combine it with the protected product journal. Windows Installer does not automatically undo every direct external effect. If required rollback is disabled, reject installation before ownership or other dependent machine-state changes; do not continue and hope the journal is enough. [S57]
 

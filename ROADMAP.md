@@ -24,7 +24,7 @@ applying time to its own clock.
 | Workstream | Planning owner and status |
 | --- | --- |
 | Windows client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. This roadmap neither duplicates nor reorders that plan. |
-| Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, adaptive resource use, diagnostics and deferred UI integration. Source research is complete; implementation/native evidence and conditional choices remain open. This is work within the relevant existing phases, not a new predecessor to current work or KHR-0. |
+| Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, resource use, diagnostics and deferred UI integration. The follow-up adds concrete callback, COM, MSI permission, ETW and partial-replacement cases. Research is recorded; implementation/native evidence and conditional choices remain open at their existing phases. Current priorities and execution holds remain; this is no new predecessor to KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
 | Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
@@ -35,7 +35,9 @@ The [architecture](docs/windows-time-architecture.md),
 [owner decisions](docs/nevrotick-owner-decisions.md) and
 [documentation guide](docs/README.md) retain their existing authority. Windows v1
 remains client-only; this roadmap does not add a Windows NTP/NTS listener to v1.
-Existing Windows execution and its current fixture work continue independently.
+Current development follows the [next-task plan](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
+including its portable Core continuation, Windows execution stop and separate
+fuzz no-retry hold. Roadmap research does not lift those restrictions.
 
 At the reviewed baseline, portable Rust protocol/numerical fixtures are reuse
 candidates, not a production Android or NTS engine. Preserve Chrony-derived
@@ -477,6 +479,14 @@ CNG SIMD batching and bounded multicore verification remain separate concerns.
 These refinements retain the existing DNS-C owners, DoQ-only direction and
 current development ordering; no API, provider, new analyzer profile or
 machine-wide policy is enabled by this research.
+
+The [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md#5-dns-integration-and-resource-hints)
+adds native connectivity/cost hints as an alternative when interface-level
+information suffices, the immediate/pending native DNS completion distinction,
+NRPT precedence over a custom server list, and preservation of unrelated DNS
+fields. It also makes the Windows DNS Client cache's separate privacy scope
+explicit: forgetting NevroTick learning cannot promise deletion of all DNS
+traces on the computer. These refinements retain the same DNS-C owners.
 
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are

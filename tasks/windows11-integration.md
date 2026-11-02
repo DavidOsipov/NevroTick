@@ -1,14 +1,15 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; documentation/task integration independently reviewed and scoped documentation checks passed. Source-only follow-up is ready; implementation and native qualification are unexecuted.  
-**Inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies.  
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The second Microsoft Learn pass is integrated into the assignments below; its scope and evidence are recorded separately in section 4.4 onward. Source-only follow-up is ready; implementation and native qualification are unexecuted.  
+**Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
 ## 1. Authority, scope and reconciliation
 
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),
-the [Windows 11 research](../docs/plans/windows11-integration.md) and
+the [Windows 11 research](../docs/plans/windows11-integration.md), its
+[Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md) and
 [development §8.5](../docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
 The research retains primary-source contracts, proposed adaptations and support
 limits; this record owns bounded assignments and subsequent execution evidence.
@@ -22,11 +23,12 @@ or [ST-T owners](../docs/plans/windows-protected-storage.md#7-focused-threat-sce
 | Clock domains, sleep invalidation, restricted identities, maintenance inhibition, DNS ownership and fixed resource limits | Retained; native mechanisms below make existing contracts and observations more concrete. |
 | Packet timestamps, native DNS adapters, WSH, resource hints and CNG batches | Candidates to assess within their existing slice. Optional enhancement failure must have a truthful declared outcome; selecting none of these does not waive an existing required property. |
 | Modern Standby, service-setting activation, Restart Manager and powerful process handles | Added composition cases for existing timing, service, mitigation and package owners; source documentation establishes no effective state. |
-| Current development and user interface | S1.3/current work and P0–P7 order remain. UI-M0 stays fixture-only; D1, D2 and D3 remain Deferred until their existing re-entry gates. |
+| Current development and user interface | Development §7's current portable Core checkpoint and P0–P7 order remain. UI-M0 stays fixture-only; D1, D2 and D3 remain Deferred until their existing re-entry gates. |
 | DNS and storage policy | DoQ-only upstream with leaf/intermediate pins remains; no implicit DoH/DoT/DNSCrypt/plaintext fallback or ZTDNS enablement. Optional VBS/TPM/no-cache state remains separate from mandatory clock authority. |
 
-This request authorizes documentation integration. It does not lift the existing
-native-experiment pause or authorize dependency acquisition, tool installation,
+This request authorizes documentation integration. It does not lift the current
+Windows execution stop, separate fuzz no-retry hold or storage-experiment pause,
+or authorize dependency acquisition, tool installation,
 system configuration, keys, clock effects or service/package experiments. Future
 work uses its existing applicable authorization, contract and environment gates;
 this task adds no blanket approval round. Material changes to product policy or
@@ -47,7 +49,8 @@ and admitted profiles remain the execution authority.
 
 Prepare **one W11-W01 timestamp-provenance card** when the relevant acquisition
 owner is assigned. This is a ready source/documentation action alongside the
-existing plan, not a replacement for its current S1.3 or engine checkpoint.
+existing plan, not a replacement for development §7's current portable Core
+checkpoint or the engine's separately held native qualification.
 Reuse the completed research; do not restart a general Windows API survey.
 
 The card identifies the proposed producer → metadata → conversion → sample
@@ -57,6 +60,12 @@ Separate supported build/API, runtime capability, configuration activation and
 observed behavior. Leave hardware mapping and installed-token facts unresolved
 where no evidence exists. Record one selected scope, finite cases/resources,
 required environment and cleanup before later execution.
+
+Carry the [second-pass packet/FFI findings](../docs/plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion)
+into that same card: unchanged-route timestamp-mode transitions, separate data
+and control-buffer admission, and actual completion ownership if a direct
+overlapped adapter is proposed. Record the documented signature/layout conflicts
+as unresolved selected-SDK/binding questions; an MCP result is not an ABI test.
 
 **Exit:** a reviewer can trace the card's timestamp identities, uncertainty,
 invalidation and unsupported outcomes to the existing CHECK owners. It neither
@@ -88,6 +97,33 @@ Start with software timing; hardware timing requires its own evidenced benefit.
 Late TX metadata is a local measurement and cannot rewrite sent/authenticated
 wire bytes. Device configuration belongs to the lifecycle owner.
 
+**Second-pass refinement:** evaluate `RegisterInterfaceTimestampConfigChange`
+as an invalidation signal even when the route/interface identity is unchanged.
+Its callback supplies caller context, not the affected interface; coalesce and
+re-query outside the callback. Preserve context through draining unregister,
+without self-unregister or a lock needed by the callback. Notifications do not
+atomically identify the mode that produced queued RX/TX metadata. Keep the
+documentation's support-table differences and `VOID`/`DWORD` unregister conflict
+explicit until the selected SDK/generated binding is checked.
+
+For `WSARecvMsg`, validate payload and ancillary data independently, including
+`MSG_TRUNC`/`MSG_CTRUNC`, returned lengths, control-header framing/alignment and
+reinitialized capacities/flags. Dual-stack IPv4 packet information also needs
+the IPv4 option. Received `IN_PKTINFO.ipi_addr` is the local destination, not
+the peer. Resolve the `WSACMSGHDR.cmsg_len` overview's `UINT` versus dedicated
+page's `SIZE_T` discrepancy against the actual user-mode SDK/binding; do not
+hand-copy the struct. An application-timestamp fallback still needs its own
+complete admission/provenance contract. For cross-thread QPC readings, retain
+the documented adjacent-tick ordering ambiguity and checked conversion bounds.
+
+If a direct overlapped socket adapter is selected, specify close/issue
+serialization, socket generation, immediate/pending/terminal states and actual
+completion mode, including skip-on-success. Close/cancellation does not establish
+that completions were delivered; buffers and charges remain owned until their
+terminal observation. This conditional contract neither establishes how dropping
+a Tokio future affects native I/O nor selects a runtime rewrite. See the
+[packet and completion supplement](../docs/plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion).
+
 **Controls/exit:** independent vectors and healthy application/software cases
 preserve sample arithmetic. Missing metadata, stale TX IDs, socket recreation,
 two interfaces with different modes, route change, counter reset and saturated
@@ -95,6 +131,11 @@ buffers cannot admit a mislabeled sample or unbounded wait. Unsupported optional
 timing retains a qualified, honestly labelled application path. Later native
 comparisons use controlled peers and actual NIC/build/driver evidence, without
 clock writes; no UTC-accuracy improvement follows from placement alone.
+Add healthy unchanged-mode and stable-route mode-change traces, queued old TX
+metadata, burst/stop races, exact/one-short data and control buffers, extra
+control messages and reused output fields. Where direct overlapped I/O is
+selected, cover immediate success with/without skip mode, pending completion,
+cancellation losing to success, close with pending work and numeric handle reuse.
 **Mapping:** CHECK-6/11/21/27 for packet admission and adapter behavior;
 CHECK-7/25 only for affected downstream numerical and construction invariants
 at their existing phase scopes.
@@ -112,6 +153,13 @@ No timer promises a finite lease on a programmed rate. Keep residual-rate and
 unknown-cleanup outcomes, with mandatory broker work independent of optional
 saves. Evaluate process leap presentation separately from global leap ownership;
 high-resolution timers remain conditional on measured need.
+
+The [follow-up](../docs/plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion)
+adds the actual I/O wait and unattended-resume path: an IOCP timeout can exclude
+low-power time, and a dequeued batch can contain failed operations. Recheck the
+authoritative deadline on execution rather than treating that timeout as elapsed
+freshness. Cover unattended/automatic resume without UI activity and the
+sleep-to-hibernation transition; no power callback promises execution by a deadline.
 
 **Controls/exit:** pure traces distinguish elapsed freshness from active work;
 healthy recovery accepts fresh results while stale ones fail. Later permitted
@@ -139,6 +187,23 @@ and callback cancellation. Inventory namespace/suffix routes, host encrypted-DNS
 policy, WSL tunneling, Docker's distinct path and managed ZTDNS conflicts.
 `DnsQueryRaw`, settings V4 and DNR remain support-qualified candidates.
 
+The [DNS follow-up](../docs/plans/windows11-integration-follow-up.md#5-dns-integration-and-resource-hints)
+adds a selected native resolver's two completion paths: only
+`DNS_REQUEST_PENDING` establishes asynchronous callback ownership. Immediate
+success/failure and pending/late completion must settle once; retain pending
+result/cancel/context storage until actual completion. A matching NRPT rule can
+replace `DNS_QUERY_REQUEST3.pCustomServers`; an explicit server list is not
+universal egress authority. Native custom-server examples do not implement the
+adopted DoQ/pin transport. Keep this adapter's actual purpose and egress separate.
+
+For interface enrollment, changing `NameServer` must preserve suffix,
+registration, discovery and other unowned fields in both address families.
+`EnableLLMNR` also affects mDNS; a reserved field such as
+`DisableUnconstrainedQueries` is not an available security control. Privacy
+descriptions distinguish NevroTick caches/statistics from the Windows DNS Client
+and application caches: Forget does not erase every computer-wide DNS trace.
+Do not force TTL zero or flush global caches to improve heatmap visibility.
+
 **Controls/exit:** later disposable fixtures pair DHCP/static and IPv4/IPv6
 healthy enrollment with partial writes, intervening administrator/VPN edits,
 port conflicts, restart gaps, event bursts and callback-in-progress stop.
@@ -148,6 +213,9 @@ declared WSL/container routing and negative LAN probes. Unsupported/ambiguous
 origins and managed conflicts are explicit outcomes; never widen listeners,
 disable policy or enable ZTDNS to make coverage appear complete. **Mapping:**
 DNS-C01/02/03/11/17; CHECK-13/25/27 where lifecycle/adapters are affected.
+The added privacy/Forget boundary uses existing DNS-C14/15. Add paired NRPT
+matching/nonmatching names, immediate/pending resolver paths and an enrollment
+case that preserves local discovery after an intervening administrator edit.
 
 ### W11-W04 Qualify service-scoped network restrictions
 
@@ -161,6 +229,17 @@ are not product policy. Give broker denial and engine allowances distinct
 owners, activation observations and managed-conflict outcomes. Include delegated
 DNS/certificate work. Ordinary explicit firewall blocks still override ordinary
 allows; they are not interchangeable with WSH defaults/exceptions.
+
+Before selecting WSH or another COM adapter, apply the
+[COM ownership contract](../docs/plans/windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com):
+per-thread apartment/init balance (including `S_FALSE`), process-wide security
+initialization timing, interface agility/marshaling, callback direction and
+release owner. An incompatible apartment or early implicit security setup is
+a typed failure, not permission to relax the profile. Final `CoUninitialize`
+can dispatch messages; retain shutdown guards and callback state through this
+reentrant boundary. Test ordinary permitted activation under final mitigations
+beside mismatched apartment, late security initialization and shutdown callback
+cases. Do not add a generic COM runtime, process or broad security flags.
 
 **Controls/exit:** actual installed identities perform approved IPv4/IPv6 work
 while forbidden destinations and broker external traffic fail. Observe activation
@@ -187,6 +266,31 @@ and inherited/duplicated-handle review. The SCM creation-policy route remains
 unresolved; no custom launcher is selected. If preshutdown is used, give it an
 explicit budget independent of optional cache work.
 
+**Second-pass candidates:** evaluate declarative `MsiLockPermissionsEx` before
+custom ACL actions where it expresses the required descriptor. Qualify account/
+service-SID resolution and ordering, installed/reinstalled resource coverage,
+parent inheritance, conflicting conditions and final owner/DACL behavior after
+runtime replacement. Its formatted descriptor is not ordinary MSI-property
+substitution. Inheritable parent permissions can protect later children; the
+table does not reapply every individually authored descriptor to arbitrary new
+objects. Inspect the actual MSI and valid/failed repair/upgrade paths.
+
+Compare `GetServiceDirectory`/`GetServiceRegistryStateKey` only for suitably
+optional/disposable state initially. Service deletion removes that state;
+reboot persistence does not prove delete/recreate-upgrade survival. Do not move
+mandatory correction/ownership/restoration records into it without their
+existing lifecycle contract. Actual account, child-object and replacement
+access still need evidence; the shared variant has different write permissions.
+
+For a selected SCM observer, distinguish nonblocking subscription callbacks
+with draining unsubscribe from one-shot APC notification/alertable-wait rules.
+Coalesce and re-query outside callbacks; handle zero-mask and delete-pending
+cases without deadlock or retaining handles that prevent uninstall. Neither a
+notification nor SCM Running establishes authenticated product readiness.
+Future UI consumers retain D2. These [lifecycle candidates](../docs/plans/windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com)
+reuse this owner and the existing storage task; `ReplaceFileW` failure/recovery
+cases remain with [ST-W02/03](windows-protected-storage.md#st-w02-enforce-operation-outcomes-and-model-durability).
+
 **Controls/exit:** allowed service work and private-object access succeed;
 disallowed token/handle access fails under installed identities. Hold maintenance
 before commit; RM/manual/queued recovery starts must not admit normal protected
@@ -209,6 +313,16 @@ retained-reader charges, bounded scanning and allocation-error handling.
 Per-thread EcoQoS is optional for suitable actual background workers, not a
 process-wide setting on the time engine or a label on a shared runtime task.
 
+Compare the [native connectivity-hint candidate](../docs/plans/windows11-integration-follow-up.md#5-dns-integration-and-resource-hints)
+with COM cost tracking for the actual required input. Global/per-interface
+`GetNetworkConnectivityHint*` results can avoid COM plumbing if sufficient;
+they are not destination-aware `GetCost` equivalents or proof of an upstream
+route. Bind observations to network generation and actual egress; coalesce
+notifications and retain callback lifetime through cancellation. Unknown cost
+is not free, and an Internet-status hint alone must not forbid bounded attempts
+to a reachable controlled peer. Add two-interface/different-cost, route-change,
+unknown-hint and stop-during-callback cases while required work still progresses.
+
 **Controls/exit:** normal demand and required work progress under healthy states;
 persistent low-memory signal, pending cost query, battery/metered transitions,
 resume and allocation failure neither spin nor exceed caps. Pressure cannot
@@ -216,6 +330,8 @@ erase mandatory authority or extend answer freshness. Compare foreground/tail
 latency, wakeups, CPU and energy with the existing baselines on named hardware;
 no autonomous wake merely to maintain heatmaps. **Mapping:** DNS-C05/08/11/12/18;
 CHECK-21/27 where shared work is affected. Native hints are not security authority.
+The new hint cases primarily use DNS-C11/12/18; DNS-C08 applies only when the
+selected change also affects temperature or seasonal-model behavior.
 
 ### W11-W07 Evaluate bounded CNG hash batches
 
@@ -254,13 +370,31 @@ profile and healthy/deliberate-failure controls under the existing tool policy.
 Current Basics/full PageHeap admission does not admit arbitrary extra profiles;
 the `/faults` shortcut is not coverage of every native resource failure.
 
+The [diagnostics follow-up](../docs/plans/windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
+adds multiple-controller qualification. ETW enable/keyword interest is aggregated
+and cannot authorize or extend product verbose diagnostics. Retain the local
+authorization/expiry guard independently of controller-supplied `SourceId`;
+`GUID_NULL` is a GUID value, not a nullable-pointer contract. Capture-state follows
+the same field/resource policy. Provider registration/enable rights, session
+control/consumer rights and ETL-file access/retention are separate observations.
+The local guard bounds emission; it does not make events exclusive to one
+matching session or recall already collected ETL data.
+
+Exercise two controllers with different filters, expiry while one remains,
+capture-state and provider restart; required-event routing remains useful and
+synthetic secrets remain absent. For crash privacy, identify each collector:
+process WER/NOHEAP choices do not establish control of independent LocalDumps or
+every debugger path. Reuse [ST-W07](windows-protected-storage.md#st-w07-verify-sensitive-memory-lifetime-and-actual-output-privacy)
+for admitted dummy-secret checks; do not alter administrator dump policy here.
+
 **Controls/exit:** actual allowed diagnostics remain useful and synthetic secret/
 domain markers remain absent. Trace loss is reported. A selected allocation,
 handle, registration or CNG failure reaches the intended refusal/cleanup owner
 without half-applied effects or false Running. Restore the owned per-image
 profile on every exit and inspect cleanup before harness teardown. Instrumented
 fault discovery and uninstrumented resource measurements remain separate.
-**Mapping:** CHECK-17/21/27; ST-T14/16 and DNS-C12/14 for affected storage/DNS paths.
+**Mapping:** CHECK-1/17/21/27, with CHECK-1 limited to diagnostic access;
+ST-T14/16 and DNS-C12/14 for affected storage/DNS paths.
 
 ### W11-W09 Add truthful native notifications at the deferred UI stage
 
@@ -274,6 +408,8 @@ announcement spam. Local Windows App SDK notifications are a separate candidate
 with deployment/dependency cost; unpackaged support does not remove that review
 or justify package identity automatically. Keep presentation unelevated and
 revalidate current generation/authority at every notification action.
+Any selected UI COM class also uses W11-W04's class-specific apartment,
+security-initialization and teardown contract; this does not restore D2/D3 early.
 
 **Controls/exit:** meaningful current loss/recovery or optional-cache status is
 announced accurately; stale events, rapid repetition and expired actions cannot
@@ -286,7 +422,8 @@ UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
 ### W11-W10 Re-enter conditional mechanisms only for a concrete need
 
 The [conditional research](../docs/plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
-owns source contracts and limits. These reserves are not a prerequisite list.
+and [second-pass reserves](../docs/plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
+own source contracts and limits. These reserves are not a prerequisite list.
 
 | Reserve / existing owner | Re-entry condition and bounded exit |
 | --- | --- |
@@ -296,6 +433,10 @@ owns source contracts and limits. These reserves are not a prerequisite list.
 | Full VBS enclave / storage/release | A secret operation needs enclave execution beyond isolated CNG roots. Separate runtime build/VBS/HVCI from development/signing eligibility, and use the existing storage task and ST-T11/12/13; the native storage pause remains. |
 | External-location identity or WinGet / UI/packaging | A named identity-dependent feature or qualified distribution need. Keep one complete MSI, profile-specific trust and multi-user repair/removal; existing CHECK-18/23 own final-package evidence. Local notifications alone do not select identity or another updater. |
 | W32Time provider DLL / architecture/clock | An explicitly different Windows-managed-discipline goal. First reconcile controller ownership, trust and restoration in a source-only decision card; never add it as a competing controller. Existing CHECK-5/10/13 remain. |
+| VBS key claims / storage/security | Actual-key origin evidence is the named blocking question. The new `NCryptCreateClaim`/`NCryptVerifyClaim` extensions are prerelease; the base API floor does not qualify them. Define trusted anchor, subject/freshness binding, replay/version/debug/update policy and attestation-key/hash/padding prerequisites. Do not add roles to wrapping/signing roots or adopt a new root, cloud service or hardware rollback claim. Reuse the storage reserve and ST-T01/05/13. |
+| Side-channel policy fields / per-process security | A named threat, process role and supported hardware/build justify one field. Account for irreversible enablement, scheduler dependencies and common-page exceptions; readback is not an enforcement measurement. Compare healthy timing/crypto/IPC and CPU/energy costs under CHECK-16/21, without raising privileges or enabling every bit. |
+| UDP coalescing/segmentation / selected transport | A measured bottleneck justifies a backend/option comparison, such as future DoQ. Prove original datagram boundaries, short-final-segment and missing/truncated-control outcomes, per-datagram accounting and timestamp attribution. This is not DNS request coalescing or a reason to change NTP defaults/global offloads; existing CHECK-6/21/25/27 and affected DNS-C12 apply. |
+| VM Generation ID / clock/security | A restore-witness need has a supported privilege design. The documented admin/SYSTEM device access is not permission to broaden engine/broker accounts. Cover missing/access-denied device, stale read/change, restore and cancellation; a witness cannot reset consumed authority or prove a trustworthy boot counter. Reuse CHECK-11/12/15/27. |
 
 Protected Process Light is excluded as a normal utility-service option; ordinary
 publisher signing supplies no protected-service eligibility. No reserve selects
@@ -306,10 +447,10 @@ a dependency, weaker fallback, service topology or machine-wide policy here.
 | Evidence layer | Current state |
 | --- | --- |
 | Microsoft source investigation and critical source/fit review | Completed research retained in the linked document; documentation facts and engineering inferences are distinguished. No native experiments were executed. |
-| Documentation, architecture, plan and task integration | Completed independent integrated review and scoped documentation validation; both mapping findings fixed and verified. See the receipt below. |
+| Documentation, architecture, plan and task integration | Earlier integration and local-adoption review/validation retain the candidates in sections 4.1–4.3. The current second-pass integration is recorded separately from section 4.4; earlier passes do not qualify changed text. |
 | W11-W01 source contract | Ready bounded next action when assigned to the relevant acquisition owner; not executed by this integration. |
 | Portable implementation/model | No W11 work-item, CHECK, DNS-C or ST-T implementation pass established by this integration. |
-| Native Windows/service identity | Unexecuted; the native-experiment pause and applicable environment/authorization gates remain. |
+| Native Windows/service identity | Unexecuted; the current Windows execution stop, storage-experiment pause and applicable environment/authorization gates remain. The separate fuzz no-retry hold is also unchanged. |
 | Installed MSI and release | Unexecuted; installed-path, final dependency/artifact and release evidence retain their existing owners. |
 
 For later work, record the selected item and existing acceptance IDs, exact
@@ -464,3 +605,103 @@ manifest is present. New routing edits remain unstaged.
 Continuation remains the coordinator acknowledgement and owner/disposition/next
 action record in section 4.2, alongside the active S150 qualification. No W11
 implementation or native result is credited by this documentation review.
+
+### 4.4 Microsoft Learn second-pass integration — 3 November 2026
+
+David requested the completed second investigation be entered into documentation.
+The source investigation compared the published `f163c193b0bb4167ec5c39e16b1db1b581509750`
+baseline. This integration instead starts from current GitHub main
+`45ff247d84e5e43bd13f54de1c84aa13ce2e6efd`, tree
+`6fccf094d8eae9d8dbccfb406afed0e08e2b11f9`, after the intervening code/test and
+local-adoption commit. It uses an API-derived partial snapshot, not a local Git
+checkout; earlier index/staged-state observations in sections 4.2–4.3 are
+historical and do not describe this workspace.
+
+The [follow-up source record](../docs/plans/windows11-integration-follow-up.md)
+retains the Microsoft Learn MCP evidence, engineering adaptations and research
+review corrections. The assignments above now include timestamp configuration
+notifications, ancillary-data/ABI boundaries, conditional socket completion,
+COM ownership, service-state lifetime, declarative MSI ACLs, SCM subscriptions,
+native connectivity hints, DNS completion/policy/field preservation, ETW
+controller/access separation and collector-specific privacy. `ReplaceFileW`
+post-failure reconciliation stays with ST-W02/03. VBS key claims, side-channel
+fields, UDP batching and VM generation remain conditional reserves.
+
+This extends existing work items and acceptance ownership rather than adopting
+those APIs or opening another task chain. Documentation contradictions remain
+explicit selected-SDK/binding questions. Reuse the completed research when the
+acquisition owner prepares the one W11-W01 source card; do not count this import
+as that card's execution or restart a general survey.
+
+The current portable Core checkpoint in development §7, imported ST-W queue,
+Windows execution stop, separate fuzz no-retry hold and storage pause remain.
+W11-W02–08 retain their named phase/prerequisite gates; W11-W09 retains D2/D3 and
+W11-W10 its specific re-entry triggers. DoQ-only pins, complete MSI, selected
+service roles and separate mandatory clock state remain. The source/fit review
+from the investigation does not qualify these edited files; integrated review
+and documentation checks are recorded separately after the candidate is frozen.
+No product, native, SDK/ABI, MSI, security-tool or performance result is claimed.
+
+### 4.5 Second-pass integrated review and documentation validation
+
+**3 November 2026:** `/root/wlearn_docs_independent_review`, delegated read-only
+with `fork_turns: "none"`, completed review of the frozen twelve-document
+candidate. Verdict: **ready for this documentation integration stage; no material
+findings**. It checked all introduced clauses and the full new supplement against
+surrounding canonical owners, raw Microsoft evidence and current task boundaries.
+A separate fresh-context helper checked the DNS sources; three targeted complete
+Microsoft pages resolved missing raw-page coverage. No broad survey or native
+execution was repeated. Its two comprehension paragraphs are retained verbatim:
+
+> The proposed change incorporates the second Microsoft Learn investigation into NevroTick's maintained documentation and its existing W11 and storage assignments. It adds specific API transitions, source discrepancies and future healthy/refused cases to the existing technical and qualification owners. It does not select the optional mechanisms, execute the source cards or turn research into implementation evidence.
+
+> The relevant current system has portable Rust Core work in progress while Windows execution, the separately held fuzz runner and storage experiments remain stopped. The proposed production design separates the network-facing engine, narrow clock broker, ordinary-user UI and lifecycle helper within one complete MSI. Optional NTS/DNS persistence remains separate from mandatory clock continuity; future DNS retains DoQ-only upstream with leaf/intermediate pins, and UI-M0's D1/D2/D3 work remains deferred.
+
+The reviewed manifest SHA-256 is
+`2654e3b5c2b5afea59a18ba0fc1c5566c6e9cd87882dbe2ccd2992d84983768e`.
+The completed raw review SHA-256 is
+`c3c99b0aa9af4ae1adf9b58fa4bcb076f00bd50d157345914dc1c9e412eeb3f1`.
+The reviewer independently matched each candidate's byte count, SHA-256 and Git
+blob hash. The following hashes identify the pre-receipt files; this factual
+subsection is a later addition to the task, not a reviewed implementation.
+
+| Reviewed path | Pre-receipt SHA-256 |
+| --- | --- |
+| `AGENTS.md` | `cbb15ca20107b4dc586fb872fce79c2d1c3a6ce619cee99fa5bad766572fb854` |
+| `ROADMAP.md` | `57260b38b9fa18cb9f74fd91290b3d347e9733d1cfa325e5055b3e9dba42c006` |
+| `docs/README.md` | `57a8cdfb47c2c83343849e836e83065093d38a7dcd9476fa5438aacd7b5992ff` |
+| `docs/plans/development-plan.md` | `cab10179b904226fc2ada8ec438441b0308eb218ab32ace1f2bbfcae65f9d6b9` |
+| `docs/plans/system-dns-cache-design.md` | `58ae3422fff3bd7a6dfc00ddb9029dddbc35ff2335b7f535320cb756a0a9fce3` |
+| `docs/plans/windows-protected-storage.md` | `25d54e4853543165ddb17ba428b99b00d3dea7ca40f5212b4e421705cdc9adb8` |
+| `docs/plans/windows11-integration-follow-up.md` | `bf23ebd5c0ca126a6dd2d45f494aa509dc89a1c2440dd27c737925f5a0c1f3f1` |
+| `docs/plans/windows11-integration.md` | `42c51e3d28de10e6ae1872260bd0803a381a1425c2c05ba4e1d10ce195e9a478` |
+| `docs/windows-time-architecture.md` | `6e05ae398ecacc7d3ad2337f3174b1af1f99f3877b2ad08a22eefc3c9c566c56` |
+| `docs/windows-time-development-hardening.md` | `063db4884a4ff9a158d83739bdd102a9e0fc75d2ad6d48d4e2832fdd1dbb722a` |
+| `tasks/windows-protected-storage.md` | `9141911910a0d45bdd4476b9ebf2b7eea1b8bce622edac529167e5cc39944e3d` |
+| `tasks/windows11-integration.md` | `3f24a8c4f093ee891a2c959cc9190c48a8be8112305fab7e8bbc9aeb4ab6e24c` |
+
+The coordinator's scoped documentation check passed all 54 distinct introduced
+local source/target/anchor combinations, checked the new supplement's 53 used
+Microsoft source references and found no unresolved reference, conflict marker
+or invalid added whitespace. The reviewer independently resolved 71 introduced
+local-link occurrences covering those 54 combinations. These counts describe
+the frozen candidate before this receipt; they are not full-repository or remote
+availability checks. All 53 source URLs are distinct Microsoft Learn pages.
+
+Both checks preserve all 27 CHECK rows, 18 DNS-C rows and 18 ST-T rows, the whole
+current development §7, and the W11 task §§4.1–4.3/storage task §§6.1–6.4 historical
+receipts. Current `main` was rechecked at `45ff247` before review. No root
+`docs/SHA256SUMS.txt` exists; no bundle-integrity result is claimed. The candidate
+contains only the twelve Markdown paths above, including one new source supplement.
+
+Review scope excludes unrelated old claims, actual SDK headers, application
+implementation conformance and all native service/filesystem/COM/ETW/DNS/MSI
+behavior. The source discrepancies and selected-build/provider questions remain
+future evidence under their existing owners. No Rust build, analyzer/fuzz campaign,
+Windows operation, package, clock, key or dependency change was executed here.
+
+The coordinator rechecks the appended receipt and uses an expected-head,
+non-force publication with exact path/blob verification. A substantive later edit
+reopens only its affected review conclusions. W11-W01's source card, ST-W01 and
+later implementation/native assignments remain unexecuted by this integration;
+current Core work and every recorded execution hold remain controlling.

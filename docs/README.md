@@ -28,7 +28,7 @@ to own requirements, and task records own executed evidence.
 | Where are protected key storage, VBS fallback and their evidence gates owned? | [Architecture §12.1.2](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [protected-storage plan](plans/windows-protected-storage.md), [development workstream](plans/development-plan.md#84-protected-optional-storage-design-and-qualification) and [provider qualification](windows-time-development-hardening.md#641-protected-storage-provider-qualification). |
 | Where are source examples and adaptation limits for protected Windows storage? | [First upstream review](plans/windows-protected-storage-upstream-lessons.md) and [second upstream review](plans/windows-protected-storage-upstream-lessons-2.md): pinned implementation/test sources, adaptation limits and future checks. The second adds directory authority, indeterminate commits, crash/protocol models, per-call CNG contracts, behavioral mitigation checks, RedirectionGuard and conditional rollback research. |
 | What should an agent do with the protected-storage research? | [Protected-storage agent task](../tasks/windows-protected-storage.md): bounded work items, prerequisites, owners, independent expectations, healthy/defect controls and candidate-specific evidence, mapped to the existing storage plan. The native experiment pause and current development priority remain unchanged. |
-| Which Microsoft Windows 11 mechanisms should be evaluated, and where does their work belong? | [Windows 11 integration research](plans/windows11-integration.md), [phase workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent task](../tasks/windows11-integration.md): packet timestamps, sleep/timer behavior, DNS/WSH integration, effective service state, MSI restart paths, resource signals, CNG, diagnostics and future UI; conditional reserves retain separate triggers. Existing CHECK/DNS-C/ST-T owners apply; no native pass or automatic API/dependency adoption. |
+| Which Microsoft Windows 11 mechanisms should be evaluated, and where does their work belong? | [Windows 11 integration research](plans/windows11-integration.md), [Microsoft Learn follow-up](plans/windows11-integration-follow-up.md), [phase workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent task](../tasks/windows11-integration.md): packet timestamps, sleep/timer behavior, DNS/WSH integration, service/MSI/COM lifetimes, resource signals, CNG, diagnostics and future UI. The follow-up adds exact completion, metadata, permission, tracing and partial-replacement cases plus source discrepancies. Existing CHECK/DNS-C/ST-T owners and conditional triggers apply; no native pass or automatic API/dependency adoption. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
@@ -61,6 +61,20 @@ routes independent work to the current portable Core slice. The standalone
 AES-SIV checkpoint remains evidence for its recorded candidate; the separately
 held fuzz runner must not be retried through another invocation or agent.
 Neither a confirmed false positive nor host compromise is established.
+
+**Microsoft Learn MCP follow-up, 3 November 2026:** the
+[second source pass](plans/windows11-integration-follow-up.md) records callback
+invalidation and ancillary-data boundaries, conditional native socket retirement,
+COM initialization/teardown, service-managed state lifetime, declarative MSI ACLs,
+SCM observers, ETW authorization/delivery, partial file replacement and DNS/cost
+hints. It preserves contradictory Microsoft overview/ABI descriptions as explicit
+SDK/binding evidence gaps. VBS claim extensions, side-channel fields, UDP batching
+and VM-generation signals remain conditional reserves. The existing W11/ST-W
+tasks carry the applicable cases into their phase owners; no parallel plan or
+acceptance catalog is created. The integration uses the later `45ff247` baseline
+and retains its portable Core continuation, broad Windows execution stop,
+separate fuzz no-retry hold and earlier adoption/review receipts. Source research
+and this documentation amendment establish no implementation or native result.
 
 **Microsoft Windows 11 integration research, 3 November 2026:** the
 [source review](plans/windows11-integration.md) records primary Microsoft evidence,

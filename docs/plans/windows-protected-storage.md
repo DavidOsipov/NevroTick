@@ -1,6 +1,6 @@
 # Windows protected optional storage: execution and qualification plan
 
-**Document:** NV-STORAGE-PLAN-001, revision 1.2<br>
+**Document:** NV-STORAGE-PLAN-001, revision 1.3<br>
 **Date:** 3 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Maintained design and future qualification plan. Recording this direction is authorized; implementation, native experiments, exact cryptographic choices and the product default are not approved by this document.<br>
@@ -40,6 +40,14 @@ clarifies the separate full-enclave runtime, development and signing rows in
 section 5, plus future notification delivery. It leaves the construction freeze,
 ST-T owners, mandatory-state separation and native-experiment pause unchanged.
 
+**Microsoft Learn follow-up, 3 November 2026:** revision 1.3 integrates the
+[second Windows review](windows11-integration-follow-up.md) on project baseline
+`45ff247d84e5e43bd13f54de1c84aa13ce2e6efd`. It makes service-state placement,
+partial file replacement, collector-specific privacy and conditional actual-key
+evidence more concrete. Existing ST-W assignments absorb these refinements;
+the [current execution holds](development-plan.md#7-next-executable-task-for-a-development-agent)
+and separate mandatory-state owners remain unchanged.
+
 ## 2. Owners, data classes and restoration
 
 | Owner | State and permitted effect | Required separation |
@@ -61,6 +69,16 @@ Use two nonsecret durable control records. The lifecycle owner's **installation 
 The sensitive-state owner's **catalogue** binds installation/store/purpose, actual provider and key identities, public fingerprints, generated/imported origin, use/export policy, evidence category, policy/privacy revisions and active/prepared/retired disposition. It admits no enumerated “newest” key or envelope-supplied verification identity. Copying its assertions into broker storage would not make them attested.
 
 `NoPersistentCache` explicitly represents **no expected provider key and no optional secret snapshot**. It must work when no usable root can be generated. Nonsecret lifecycle/privacy metadata can remain necessary to retire old state, preserve privacy generations and distinguish deliberate absence from unexplained key loss.
+
+The [Windows-managed service-state APIs](windows11-integration-follow-up.md#3-service-lifecycle-installation-and-com)
+are optional location candidates, not a selected path change. Qualify read/write,
+owner and child-object rights under actual identities. Persistence across reboot
+or OS update does not survive deleting the service; a delete/recreate upgrade can
+remove this state. Keep mandatory journals, consumed authority, trusted floors
+and restoration evidence under their independent continuity/migration contract.
+Optional-state deletion still obeys key retirement and privacy barriers; automatic
+directory deletion is not secure erasure. Map the placement comparison to existing
+ST-T03/10/12/17 and CHECK-13/15/23.
 
 ## 3. Complete policy product and truthful state
 
@@ -143,6 +161,15 @@ mandatory continuity and privacy acknowledgements under their existing owners.
 [redb/SQLite examples](windows-protected-storage-upstream-lessons-2.md#5-model-durability-separately-then-monitor-the-operation-protocol)
 define useful cases, not native Windows durability results.
 
+For a selected `ReplaceFileW` adapter, extend that model with the
+[documented error-state matrix](windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage):
+1175, 1176, 1177 and generic failure, with/without the admitted backup slot. Observe
+names, identities, bytes and resulting owner/ACL/stream state before cleanup;
+an error need not mean the original namespace is intact. Unsupported
+`REPLACEFILE_WRITE_THROUGH` and ACL-ignore flags establish no durability or
+permission continuity. Preserve finite recovery slots and a second recovery
+failure case under ST-T06/07/10/16/17; no new flush/commit sequence is selected.
+
 ## 5. Platform admission, failure classification and privacy
 
 Qualify finite API/phase/build/provider/algorithm/profile rows. Required-VBS creation uses `NCRYPT_REQUIRE_VBS_FLAG`; `PREFER_VBS` may fall back to software. Provider-wide properties, names and unrelated probe keys do not prove protection of the actual key. Microsoft's example uses Microsoft Software KSP for required-VBS keys; the provider name alone proves neither outcome. `NCryptOpenKey` documents no REQUIRE_VBS reopen flag. Controlled origin, bound public identity and supported cross-boot reopen evidence must establish both actual roots; otherwise report Unknown/RecoveryRequired. [P1–P5]
@@ -164,6 +191,16 @@ property-query allocation and both advertised/actual returned lengths; validate
 version/flags and safely decode fields, retaining absence/unsupported/denied/error
 distinctions. The future [hardening matrix](../windows-time-development-hardening.md#641-protected-storage-provider-qualification)
 includes these controls and exact-parameter fixtures.
+
+The [VBS claim extensions](windows11-integration-follow-up.md#6-conditional-mechanisms)
+are a conditional lead for actual-root evidence under ST-T01/05/13. Their
+prerelease support, attestation-key role and hash/RSA-padding prerequisites need
+an admitted design, as do trusted anchoring, exact subject binding, freshness,
+flags/debug/security-version and update/reopen policy. Examples and successful
+verification do not supply those decisions, approve another root or make the
+existing wrapping/signing roots attestation keys. Keep Unknown/RecoveryRequired
+when the declared evidence cannot be established; no cloud or rollback guarantee
+follows.
 
 Preserve [architecture §15.4](../windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) and [hardening §6.4](../windows-time-development-hardening.md#64-per-process-mitigation-qualification). Qualify create/open/wrap/sign/unprotect/teardown with the actual SCM path, final account, no-login boot and required controls. Keep ACG no-opt-out/no-remote-downgrade, ordinary versus Strict CFG, effective CET/HSP versus image marking, CIG signer classes, Win32k/extension points, child restrictions and image-load policy distinct. Do not introduce a permissive launcher, extra privilege, interactive Hello dependency, or machine-policy reset. Respect the documented NCrypt service-start caveat. Full-enclave imports/ABI/signing/debug/strict-memory support is a separate gate if that path is selected; neither blanket Rust incompatibility nor compatibility has been established. [P1, P7–P12, P15–P16]
 
@@ -191,6 +228,14 @@ or establish a new required policy/support floor.
 DNS forget/pause/exclusion/persistence-off uses its durable privacy generation and completion barrier. Before acknowledging completion, invalidate active/prepared/retired snapshots, inaccessible VBS blobs, readers, queued writes and delayed results. Asynchronous deletion must obey that completion contract and report residuals. VBS return cannot resurrect forgotten names. Missing/conflicting generation state requires empty current-policy reacquisition. No forensic archive is proposed; failed cleanup remains bounded and visible. DNS-C11/13/14/15 retain these obligations.
 
 NoPersistentCache excludes application-created restart snapshots, not Windows pagefile, dumps, hibernation, provider caches or backups. No plaintext staging or secret-bearing logs/DTOs is permitted. Checked VirtualLock and wiping may reduce exposure of specific allocations, not all copies or whole-process memory. BitLocker, paging/dump policy and other machine settings are environmental controls, not silent repairs. [P13]
+
+Apply the [collector-specific follow-up](windows11-integration-follow-up.md#4-diagnostics-replacement-and-protected-storage)
+to ST-T14: process WER NOHEAP/exclusions and administrator-controlled LocalDumps
+are distinct paths. A recovery callback follows dump collection and cannot erase
+that exposure. Qualify each selected collector with synthetic secrets and useful
+diagnostics under the final account; do not infer universal exclusion or change
+global collection policy. Side-channel mitigation fields remain a separate
+conditional process-profile question, not a stronger storage or memory claim.
 
 ## 6. Production status and notification
 
@@ -274,6 +319,7 @@ or a native experiment.
 | ST-T15 / ST-T18 | Inaccessible-history privacy barrier and explicit DEK/nonce/RNG lifecycle | Design obligations retained; execution open. |
 | 3 November second source review | Exact operation outcomes, directory/native-adapter contracts, durability monitor and mitigation cases; [agent task](../../tasks/windows-protected-storage.md) owns follow-up | Source lessons recorded; future implementation/native evidence remains open. |
 | 3 November Windows integration review | Full-enclave runtime build/VBS/HVCI requirements distinguished from developer tooling, special signing and CNG-root eligibility; deferred native notification routes | Conditional only; no construction freeze, provider admission, experiment or UI-M0 change. |
+| 3 November Microsoft Learn follow-up | Service-installation state lifetime, exact file-replacement failure cases, named dump collectors and conditional VBS claim evidence; [existing task routing](../../tasks/windows-protected-storage.md#65-microsoft-learn-follow-up-routing--3-november-2026) | Source refinements only; current Windows/fuzz/storage holds, ST-T owners and mandatory-state continuity remain. |
 | Conditional reserves | RedirectionGuard disposition; attestation/origin, hardware epochs and bounded anchor/disk recovery; chunking/database only if justified | No selected mechanism or dependency. Same-epoch replay, offline anchor replacement and full VM/vTPM rollback limits remain; no new mandatory-broker construction. |
 
 The independent audit closed A1–A5; the independent hardening reconciliation resolved HR-10 and found no remaining blocking contradiction within its bounded final review. These findings apply to the identified predecessor, not an unexecuted future implementation. This maintained condensation preserves their obligations; its documentation integration receives its own scoped consistency review.
