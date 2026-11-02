@@ -1,6 +1,6 @@
 # NevroTick roadmap
 
-**Updated:** 1 November 2026
+**Updated:** 2 November 2026
 
 **First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
 
@@ -27,7 +27,7 @@ applying time to its own clock.
 | Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
-| DNS-over-QUIC | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning): DoQ-only resolution with leaf and intermediate certificate pinning; platform/integration scope remains to be qualified. |
+| System-wide Windows DNS | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning) and [detailed DNS/cache design](docs/plans/system-dns-cache-design.md): DNS answers for the whole computer and its applications, DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC with hardware acceleration and multiple CPU cores, and an evaluated adaptive cache. Native integration, actual coverage and performance remain to be qualified. |
 
 The [architecture](docs/windows-time-architecture.md),
 [owner decisions](docs/nevrotick-owner-decisions.md) and
@@ -415,20 +415,46 @@ client-only contract is changed only by the explicit later scope decision.
 **Status:** requested future feature; no DoQ implementation or pinning support
 is established by this roadmap.
 
+**Owner clarification, 2 November 2026:** the Windows feature is a DNS answering
+service for the whole computer and its applications, including programs unrelated
+to NevroTick. The [OD-08 record](docs/nevrotick-owner-decisions.md#12-od-08--system-wide-windows-dns-and-dnssec)
+also records the requirement for DNSSEC using hardware acceleration and multiple
+CPU cores. This settles the intended Windows product scope; it does not establish
+that every application's independent DNS path is already routed through the service.
+
+The [detailed system-wide DNS and adaptive-cache design](docs/plans/system-dns-cache-design.md)
+owns the proposed local listener, Windows enrollment/restoration, trust and time
+dependencies, demand aggregates, hot/warm/cold/frozen classes, optional seasonal
+heatmap, bounded proactive refresh, encrypted statistics, privacy controls,
+resource accounting, comparison experiment and DNS-C01–DNS-C18 acceptance cases.
+Its engineering parameters are proposals pending qualification. This future
+workstream does not reorder the current Windows plan or the KHR-0 follow-up.
+
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are
-out of scope**, including DoH carried over HTTP/3. In the selected DoQ mode,
-connection or authentication failure must not silently switch to those protocols
-or plaintext DNS.
+out of scope**, including DoH carried over HTTP/3. Upstream connection or
+authentication failure must not silently switch to those protocols or plaintext
+DNS. Proposed loopback UDP/TCP DNS ingress for local applications is a separate
+hop, not an upstream plaintext fallback.
 
 Use the dedicated DoQ mapping in RFC 9250, with ALPN `doq` and normally UDP port
 853. QUIC's TLS handshake remains part of DoQ; excluding DoT does not exclude
 TLS authentication. [A12]
 
-- [ ] Define the first target platform and which lookups the feature owns.
-  An in-app resolver does not establish system-wide Android DNS coverage.
-  Any wider integration needs its own feasibility proof under the no-root,
-  no-continuously-active-VPN constraints.
+- [ ] Qualify Windows-wide DNS integration: local endpoint ownership, IPv4/IPv6,
+  supported application paths, interfaces/VPN/NRPT, administrative activation and
+  exact owned-state recovery/restoration. Identify independent application DNS
+  paths explicitly; changing OS settings alone does not prove universal routing.
+  Android system-wide DNS remains a separate feasibility question under its
+  no-root/no-continuously-active-VPN constraints.
+- [ ] Qualify DNSSEC validation, trust-anchor/time lifecycle, exact-feature
+  hardware dispatch and bounded multicore work under OD-07/OD-08. Select the
+  provider and limits from current evidence; a CPU label, DO/AD flag or worker
+  count does not establish local validation or a measured speedup.
+- [ ] Evaluate the bounded demand model and proactive-refresh proposal against
+  ordinary caching and demand-triggered prefetch. Require useful lifetime
+  extension, actual client benefit, protected statistics and finite resource
+  costs; retain or defer the mode according to the recorded results.
 - [ ] Define resolver identity, bootstrap addresses, query/cache/resource limits
   and network-change behavior. Resolve bootstrap DNS and certificate-time
   dependencies explicitly; do not hide a system-resolver fallback or disable
@@ -461,8 +487,11 @@ TLS authentication. [A12]
 **Exit DOQ-C01:** a reviewed resolver/pinning contract, an admitted implementation
 and independent interoperability/negative-test evidence for the claimed platform
 and lookup scope. Pin formats, combined-match semantics, resolver presets and
-platform rollout remain implementation decisions; this feature does not reorder
-the current Windows execution plan or make Android feasibility depend on DoQ.
+Windows integration details remain implementation decisions; the whole-computer
+Windows product scope is accepted. DOQ-C01 does not by itself qualify system
+enrollment, DNSSEC or the adaptive model: use the [DNS stage and acceptance map](docs/plans/system-dns-cache-design.md#12-staged-delivery-and-next-action)
+for those dependencies. This feature does not reorder the current Windows
+execution plan or make Android feasibility depend on DoQ.
 
 ## 6. Command reference for the feasibility stage
 
@@ -542,8 +571,11 @@ Resolve these choices when the dependent stage is ready, using the existing
 - Whether to add the separately exposed Windows NTS server in AND-6.
 - Any Khronos/Ananke adoption, including pool/sampling parameters, NTS/plain-NTP
   roles and authority on contradiction or unavailable evidence.
-- DoQ platform/lookup scope, resolver bootstrap, pin representation, combined
-  leaf/intermediate matching and pin-update/rotation policy.
+- Windows DNS integration/coverage and lifecycle details, resolver bootstrap,
+  pin representation, combined leaf/intermediate matching and rotation policy.
+- DNSSEC provider/trust/time policy, qualified acceleration and multicore bounds;
+  adaptive-cache parameters, statistics privacy/identity and measured adoption.
+- Any later Android-wide DNS integration and its separately qualified scope.
 
 Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
@@ -553,6 +585,9 @@ KHR-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replaceme
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.
+
+DNS-C01–DNS-C18 are local future-feature acceptance IDs in the linked DNS plan;
+their planned cases establish no executed DNS, native Windows or release result.
 
 At implementation start, create/reuse one stage task in `tasks/` and link it
 from this roadmap. Record candidate commit/APK hash, exact environment, inputs,

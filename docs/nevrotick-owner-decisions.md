@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.1<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.2<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -26,6 +26,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-05 | Accept the Foundation publisher display; David Osipov is the human approver; use OpenPGP signatures initially if free Authenticode is unavailable | **Accepted release policy** | Provider eligibility or a qualified OpenPGP release process; exact artifacts, key identity, installed-file trust and Windows compatibility evidence |
 | OD-06 | Leave remaining research questions documented for another AI to investigate | **Deferred research** | The companion brief names questions, owners, evidence and stop conditions; deferral grants no implementation waiver |
 | OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
+| OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -267,3 +268,39 @@ and the [execution workstream](plans/development-plan.md#81-x64-baseline-and-run
 Independent pure work, including the current S1.3 fixture, can continue. Revisit
 only for incompatible supported-machine evidence or a material measured tradeoff;
 do not silently replace this decision with a wider CPU requirement.
+
+## 12. OD-08 — system-wide Windows DNS and DNSSEC
+
+**Owner/date:** David Osipov, 2 November 2026, Asia/Tbilisi. David explicitly
+clarified that the planned DNS feature is a DNS answering service for the whole
+computer and its programs, rather than a resolver used only by NevroTick's own
+components. In the preceding feature discussion he required DNSSEC with hardware
+acceleration and multiple CPU cores. He requested a detailed English record of
+the adaptive-cache design in the repository with a roadmap link.
+
+**Accepted direction:** deliver future Windows-wide DNS service with the existing
+DoQ-only upstream and leaf/intermediate certificate-pinning direction. Qualify
+hardware-accelerated validation and bounded parallel work on the actual supported
+CPU/OS/provider graph. This does not select a backend, worker count, numerical
+speedup or a broader CPU minimum than OD-07.
+
+**Scope and evidence:** all applications are intended consumers. Actual routing
+through Windows, VPN/enterprise namespaces and independent application DNS paths
+requires qualification; the owner clarification is not proof of universal
+interception. Local UDP/TCP loopback ingress is a proposed integration hop and
+does not authorize plaintext upstream fallback. Android-wide DNS integration
+remains separate from the accepted Windows scope and needs its own evidence.
+
+**Detailed proposal:** [System-wide Windows DNS and adaptive cache](plans/system-dns-cache-design.md)
+owns the proposed demand aggregates, decay, hot/warm/cold/frozen classes,
+optional seasonal heatmap, useful-refresh accounting, encrypted statistics,
+privacy controls, resource limits and staged acceptance. The request to record
+these ideas does not approve unmeasured thresholds, retention periods, storage
+identity, cryptographic provider or default-on autonomous refresh. Use OD-04 for
+material dependent choices when evidence makes them concrete.
+
+**Delivery:** the [roadmap DNS workstream](../ROADMAP.md#5-planned-dns-over-quic-and-certificate-pinning)
+links this plan. The current Windows time-client execution plan, UI-M0 limits,
+existing privilege boundaries and first KHR-0 follow-up retain their order and
+authority. No DNS implementation, host configuration change, benchmark, native
+Windows result or new release qualification is established by this amendment.
