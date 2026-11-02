@@ -433,10 +433,14 @@ workstream does not reorder the current Windows plan or the KHR-0 follow-up.
 The [source-attributed DNS upstream lessons](docs/plans/dns-upstream-lessons.md)
 record mechanisms from Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and
 dnscrypt-proxy, including exact source revisions, NevroTick adaptations and
-future checks. They refine work accounting, request/connection ownership,
-endpoint recovery, cache/routing semantics and protected telemetry. Optional
-proof reuse and signed catalogs remain proposals; source review establishes no
-implementation, dependency admission or measured performance.
+future checks. Their [DNSSEC/cache follow-up](docs/plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope)
+adds exact-content validation reuse, eligible chain/delegation evidence, cycle-safe
+shared prerequisites, active-material custody, individual client responses,
+cause-specific failure caching and time/trust transitions. These refine the
+existing work, ownership, cache/routing and telemetry contracts. SIEVE/sharding,
+additional proof reuse and signed catalogs remain conditional experiments;
+source review establishes no implementation, dependency admission or measured
+performance. Existing DNS-C01–DNS-C18 acceptance owners remain authoritative.
 
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are

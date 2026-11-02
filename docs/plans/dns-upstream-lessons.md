@@ -1,16 +1,17 @@
 # DNS upstream lessons and adaptation plan
 
-**Document:** NV-DNS-REUSE-001, revision 1.0<br>
+**Document:** NV-DNS-REUSE-001, revision 1.1<br>
 **Date:** 2 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Owner-requested source-attributed research and future implementation guidance. The mechanisms below are recommendations or conditional experiments, not implemented capabilities, admitted dependencies or completed acceptance.<br>
-**NevroTick baseline:** [f8d47a7ea943de451abf7f7706975c38e827380a](https://github.com/DavidOsipov/NevroTick/tree/f8d47a7ea943de451abf7f7706975c38e827380a).
+**Original NevroTick baseline:** [f8d47a7ea943de451abf7f7706975c38e827380a](https://github.com/DavidOsipov/NevroTick/tree/f8d47a7ea943de451abf7f7706975c38e827380a).<br>
+**DNSSEC/cache follow-up baseline:** [1eaeccfa4c57ae4c9f1695ce27939bf5844d6ed3](https://github.com/DavidOsipov/NevroTick/tree/1eaeccfa4c57ae4c9f1695ce27939bf5844d6ed3), inspected 2 November 2026; the owner requested recording the deeper source findings after the initial supplement.
 
 ## 1. Purpose and authority
 
 The owner asked which successful mechanisms from Unbound, AdGuard Home, Pi-hole and dnscrypt-proxy could improve NevroTick, then requested that the findings and their origins be recorded. This document preserves that provenance and explains what would change when adapting each mechanism to NevroTick.
 
-Read the [system-wide Windows DNS and adaptive-cache design](system-dns-cache-design.md) first. It owns the future DNS proposal, DNS-C01–DNS-C18 acceptance cases and DNS-0–DNS-6 stages. The [roadmap](../../ROADMAP.md#5-planned-dns-over-quic-and-certificate-pinning), [owner decisions](../nevrotick-owner-decisions.md), [architecture](../windows-time-architecture.md) and [development execution plan](development-plan.md) retain their authority. DNS-R01–DNS-R10 below identify research lessons only; they do not replace canonical CHECK requirements or create another execution campaign.
+Read the [system-wide Windows DNS and adaptive-cache design](system-dns-cache-design.md) first. It owns the future DNS proposal, DNS-C01–DNS-C18 acceptance cases and DNS-0–DNS-6 stages. The [roadmap](../../ROADMAP.md#5-planned-dns-over-quic-and-certificate-pinning), [owner decisions](../nevrotick-owner-decisions.md), [architecture](../windows-time-architecture.md) and [development execution plan](development-plan.md) retain their authority. DNS-R01–DNS-R18 below identify research lessons only; they do not replace canonical CHECK requirements or create another execution campaign.
 
 ### Reconciliation with the existing plan
 
@@ -19,12 +20,14 @@ Read the [system-wide Windows DNS and adaptive-cache design](system-dns-cache-de
 | Whole-computer Windows DNS; DoQ-only upstream with leaf/intermediate pinning | Preserved. Local DNS ingress and remote transport remain different hops. No alternative-protocol fallback or universal application-interception claim. |
 | DNSSEC using qualified hardware acceleration and multiple CPU cores | Preserved. Cumulative work accounting and fair scheduling refine its resource contract; no provider, worker count or speedup is selected. |
 | Full query/context keys, coalescing, cancellation and generation barriers | Preserved. Add concrete cross-packet, shared-job and old-connection completion scenarios. |
-| TTL/signature/dependency validity independent of popularity | Preserved. Reject upward TTL clamping as a borrowed default; consider validated denial reuse only within its proof bounds. |
+| TTL/signature validity independent of popularity | Preserved and clarified. Separate chain-material reuse from an already validated answer's lifetime; separate active-operation custody from fresh-cache eligibility. Reject upward TTL clamping as a borrowed default. |
 | Protected demand aggregates, privacy generations and bounded persistence | Preserved. Extend explicit handling to queued diagnostic/statistical events and export consumers. |
 | Current Windows P0–P7 work, UI-M0 deferrals and first KHR-0 follow-up | Preserved. These DNS recommendations do not add blockers to current fixtures or reorder delivery. |
 | Source review versus execution evidence | Preserved. No product repair, installation, DNS enrollment, crypto execution, benchmark or Windows qualification is established here. |
 
 The main additions are precise failure mechanisms and candidate implementation contracts. The existing plan already contains general resource limits, cache correctness, coalescing and privacy requirements; those are not newly discovered omissions. Proposed numerical settings and algorithms still require evidence. Use the existing owner-decision procedure for a material unresolved choice before its dependent implementation, without repeating approval for accepted product scope.
+
+Revision 1.1 adds DNS-R11–DNS-R18: exact-content validation reuse, chain and delegation evidence, cycle-safe dependency sharing, active-material custody, individual response construction, cause-specific failure caching, an optional SIEVE comparison and time/trust transitions. It qualifies the earlier dependency-expiry and key-prefetch wording. Existing acceptance IDs, hardware/multicore direction and current delivery order are retained; recording these findings does not select a crypto provider, eviction implementation or stale-serving policy.
 
 ## 2. Inspected sources and limits of attribution
 
@@ -42,7 +45,11 @@ Each lesson separates an observed upstream mechanism, a proposed NevroTick adapt
 
 BIND was outside the requested comparison. The earlier plan's Technitium comparison remains relevant to adaptive-refresh costs but is not repeated as a fifth implementation review here.
 
+DNSSEC responsibilities differ across these projects. Unbound has a local validator. Pi-hole enables its embedded dnsmasq validator through [dns.dnssec configuration](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/config/dnsmasq_config.c); this is conditional behavior, not a claim about every installation. AdGuard's [enable_dnssec setting](https://adguard-dns.io/kb/adguard-home/configuration/) and dnsproxy's [addDO/Resolve path](https://github.com/AdguardTeam/dnsproxy/blob/acf2b30e05202e171bbbaf4a3176ea07edb964b3/proxy/proxy.go) request DNSSEC records and handle upstream AD state, without establishing local signature/chain verification. dnscrypt-proxy's [configureSourceRestrictions](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/dnscrypt-proxy/config_loader.go) maps require_dnssec to an advertised server property. Requesting DNSSEC records, receiving AD and completing local validation remain distinct facts.
+
 ## 3. Mechanisms worth adapting
+
+DNS-R01–DNS-R10 retain the initial cross-project lessons. The [focused DNSSEC/cache follow-up starts at DNS-R11](#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope); the [qualification map](#4-qualification-map-and-implementation-order) locates all eighteen lessons in the existing acceptance inventory.
 
 ### DNS-R01: Cumulative work and fair scheduling
 
@@ -110,21 +117,25 @@ For a small configured set, simple eligibility/backoff/recovery may suffice. Com
 
 **Origin and observed behavior.** Unbound separates reusable data through [services/cache/dns.c](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/services/cache/dns.c), [validator/val_kcache.c](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/val_kcache.c), [validator/val_neg.c](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/val_neg.c) and [services/cache/infra.c](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/services/cache/infra.c). Response assembly, RRsets, validation keys, denial material and endpoint observations have different uses and lifetime rules.
 
-**Proposed adaptation.** Start with logical ownership and independent limits; do not assume a desktop resolver needs five elaborate concurrent cache implementations.
+**Proposed adaptation.** Start with logical ownership and independent limits; do not assume a desktop resolver needs elaborate concurrent cache implementations.
 
 | State | Permitted reuse | Governing limits |
 | --- | --- | --- |
-| Ready responses and reusable RRsets | Answer or assemble compatible questions | TTL, dependencies, validation result, question semantics and context |
-| DNSKEY/DS and validation state | Avoid repeating eligible acquisition/checks | Chain/trust provenance, expiry, relevant policy generation and revalidation rules |
+| Ready responses and reusable RRsets | Answer or assemble compatible questions | Applicable RRset/signature limits, required answer components, question-specific proof applicability and context |
+| DNSKEY/DS acquisition and chain state | Avoid repeating eligible chain work | Chain/trust provenance, material's own reuse lifetime, policy generation and revalidation rules |
+| Completed validation results | Skip eligible repeated checks | Exact content identity, validation scope, applicable trust/time context and publication guards; see DNS-R11 |
 | Validated denial material | Synthesize only questions actually covered | Proof coverage, wildcard/delegation rules, TTL/signature validity and trust boundaries |
+| Resolution-failure state | Suppress repeated unsuccessful work | Cause, compatible context, short local lifetime, controlled recovery and bounded capacity; see DNS-R16 |
 | Endpoint observations | Select/recover permitted upstreams | Observation age and resolver/network/route/trust context |
 | Demand aggregates | Rank bounded refresh candidates | Real-demand provenance, decay, evidence sufficiency, retention and privacy policy |
 
 Popular names cannot prolong security validity. Random-name answer churn should not consume all capacity reserved for useful validation material. Conversely, retaining a key does not authorize reuse after its trust context expires. Persistent demand statistics remain distinct from persistent DNS answers.
 
-**Future checks.** Response eviction preserves only independently eligible shared material; an expired or wrong-context key/proof cannot authorize an answer; random-name floods stay within each admitted resource class; demonstrate any claimed benefit from sharding or specialized stores before adopting them.
+Cached key/proof material cannot be newly reused outside its declared eligibility. Expiry of chain-building material alone does not revoke an independently eligible previously validated RRset. TTL=0 material may complete the transaction for which it was obtained but is not reusable fresh cache data; pinning preserves ownership, not TTL or signature validity. DNS-R14 defines the current-transaction boundary.
 
-**Placement:** DNS-1/DNS-2/DNS-4; refines DNS-C04/C05/C11/C12. This concretizes cache ownership already present in the main plan.
+**Future checks.** Response eviction preserves only independently eligible shared material; expired/wrong-context material cannot be reused for a new validation; eligible prior validated answers survive unrelated chain-cache expiry. Random-name floods stay within each admitted resource class; demonstrate any claimed benefit from sharding or specialized stores before adopting them.
+
+**Placement:** DNS-1/DNS-2/DNS-4; refines DNS-C04/C05/C10/C11/C12. This concretizes cache ownership already present in the main plan.
 
 ### DNS-R06: Reuse validated proofs of nonexistence
 
@@ -200,6 +211,122 @@ A valid catalog signature establishes provenance under the configured signing ke
 
 **Placement:** optional later proposal, not a DNS-0–DNS-5 prerequisite. Link its future task to applicable DNS-C03/C11/C12/C13/C17 cases and add specific requirements only if the feature is selected.
 
+### DNS-R11: Reuse verification results bound to exact content and proof scope
+
+**Origin and observed behavior.** Unbound's [val_verify_rrset](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/val_utils.c) can skip cryptographic verification when an RRset is already secure or the cache supplies that status. Its [rrset_check_sec_status](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/services/cache/rrset.c) requires a nonexpired matching RRset; rrsetdata_equal binds reuse to the data. The same file's rrset_update_sec_status compares content again before publishing a completed check, preventing a result for replaced data from approving the replacement.
+
+The validator deliberately excludes a secure expanded wildcard from ordinary RRset-status promotion because surrounding proof context can change. The [worker's answer_from_cache](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/daemon/worker.c) checks referenced RRsets and answer-chain consistency before serving assembled cached data as secure. These mechanisms do not imply that every upstream configuration or caller has identical validity rules.
+
+**Proposed adaptation.** Distinguish a signature-verification result, an authenticated RRset and an authenticated answer to a particular question. Reuse a result only for its exact admitted content and applicable trust/policy/time context. Define content identity over the relevant records/signatures, not an entire client-specific wire packet or only the name/type/class. An immutable content/version identity and a current publication guard must prevent late completion from blessing replacement data.
+
+Keep required CNAME/DNAME components and question-specific denial/wildcard evidence explicit when assembling an answer. A cached cryptographic success is not by itself proof that a wildcard is applicable to a new question. Retain validation provenance across unchanged data; invalidated context or changed content requires the corresponding reconsideration, not an unconditional global cache flush.
+
+Define admission/replacement rules alongside reuse. Unbound's [need_to_update_rrset](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/services/cache/rrset.c) considers expiry, security and trust rather than simple last-arrival order. NevroTick needs a small forwarding-specific transition table: distinguish unchecked, locally validated, proven insecure and failed results, legitimate replacements and expired arrivals. Do not copy the recursive resolver's entire glue/delegation hierarchy or retain secure data indefinitely.
+
+**Future checks.** Identical eligible RRset reuse avoids a crypto-counter increment; changed records/signatures or context do not inherit it. Start checking A, replace the cache entry with B, then complete A: B remains unapproved by A. Change a CNAME component or wildcard proof context and verify whole-answer eligibility independently. Include a legitimate new secure replacement and a response rewrite that cannot inherit the original authentication claim.
+
+**Placement:** DNS-1 data ownership and DNS-2 validation; refines DNS-C04/C05/C10/C11. Count avoided cryptographic operations separately from accelerated executions; no speedup is established by this source review.
+
+### DNS-R12: Resume from eligible chain state and preserve typed delegation evidence
+
+**Origin and observed behavior.** Unbound's [key_cache_obtain](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/val_kcache.c) searches the requested name and successive ancestors for a nonexpired entry. [processInit](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/validator.c) reconciles that entry with the applicable trust anchor and distinguishes good keys, established insecurity and bad-chain state; a more-specific trust anchor must not be bypassed by an ancestor shortcut.
+
+Pi-hole's embedded dnsmasq [dnssec_validate_ds, cache_neg_ds and zone_status](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/dnssec.c) preserve whether authenticated absence of DS occurs at an actual zone cut. No DS at a label that is not a delegation does not establish that the subtree is unsigned. The file also contains domain-specific routing compatibility assumptions; those are not authenticated denial proofs.
+
+**Proposed adaptation.** Resume new validation from the closest eligible established chain state, with trust-anchor and namespace boundaries intact. Different hostnames in the same zone may reuse applicable chain work; sharing a suffix or registrable domain alone does not establish common DNSSEC authority.
+
+Use distinct evidence variants for authenticated DS, authenticated unsigned delegation, authenticated absence of a delegation at this label, and an unresolved/failed operation. Handle unsupported algorithms or digests under the adopted current DNSSEC rules; do not silently collapse them into an arbitrary error or unsigned result. Each evidence variant carries its provenance, scope and reuse lifetime. Missing parent routing, a timeout or absent proof must not manufacture authenticated insecurity. Any local policy exception needs a separate explicit identity.
+
+Expiry of a cached DNSKEY/DS limits using that material for later validation; it does not by itself revoke an earlier authenticated RRset whose own TTL/signature and current trust-policy conditions remain eligible. Required components of a complete answer and chain-building material are different dependencies; [RFC 4035 section 5.3.3](https://www.rfc-editor.org/rfc/rfc4035.html#section-5.3.3) owns authenticated RRset TTL limits.
+
+**Future checks.** Several names in one controlled zone reuse established chain work; an expired chain entry forces the appropriate new acquisition. Distinguish absence of DS at a delegation from absence of the delegation itself. A DNSKEY/DS timeout cannot become proven insecurity. A more-specific trust anchor is honored, and chain-cache eviction alone does not invalidate an independently eligible prior answer.
+
+**Placement:** DNS-2; refines DNS-C04/C05/C11/C12. DNS-5 may later evaluate demand-derived dependency warming, using genuine client demand without counting internal key fetches as additional interest.
+
+### DNS-R13: Share validation dependencies without creating wait cycles
+
+**Origin and observed behavior.** In dnsmasq's [dnssec_validate](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/forward.c), an answer missing DNSKEY/DS material is stashed while the prerequisite is obtained. lookup_frec can find existing prerequisite work and attach a dependent. Before attaching, the code walks blocking_query to reject a cyclic dependency. New subqueries consume the original request's work allowance; the original operation is protected while allocating its dependency. Bogus prerequisite handling also prevents blindly repeating an uncached failed prerequisite.
+
+**Proposed adaptation.** Model shared DNSSEC prerequisite work independently of the original client-question key. Compatible questions can share a DNSKEY/DS acquisition or verification node; context compatibility includes applicable routing, trust and policy. Check actual dependency ancestry before introducing an edge. Several consumers waiting for one node is ordinary sharing, not a cycle.
+
+Give nodes terminal outcomes, bounded subscriber lists and explicit custody. Cancelling one waiter must not cancel work still required by another; a late completion cannot publish into a different context. Bound graph size, depth, subscribers, created jobs and actual cumulative work. A shared job needs declared charging ownership so additional waiters neither replenish budgets nor double-refund permits. Propagate terminal prerequisite failure without a refetch loop.
+
+**Future checks.** Different names in one zone share a compatible key acquisition. Cancel one consumer while another remains. Inject a dependency cycle and observe bounded termination, alongside a valid acyclic graph with repeated shared nodes. A failed child terminates the affected parents without repeated acquisition; context change and completion races preserve current authority and exact resource accounting.
+
+**Placement:** DNS-2, using DNS-1's ownership and admission primitives; refines DNS-C04/C10/C11/C12. This specifies cases for existing model/concurrency tools rather than selecting another scheduler or test engine.
+
+### DNS-R14: Retain active validation material without inflating cache freshness
+
+**Origin and observed behavior.** dnsmasq's [cache_insert](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/cache.c) raises short DNSKEY/DS TTLs to a minimum because its validation continuation retrieves prerequisites from the cache. Its comment identifies reference-counted retention until the requesting validation completes as an alternative. This exposes an ownership problem worth solving explicitly; the upstream TTL extension is not a NevroTick default.
+
+**Proposed adaptation.** Let a bounded validation context retain the material it is currently using, independently of ordinary cache eviction. Separate physical ownership, eligibility for new cache reuse, and DNSSEC signature/trust validity. Retaining bytes proves none of the latter conditions. Specify what remains admissible when material expires while an operation is in progress and before its result is published.
+
+[RFC 1035 section 3.2.1](https://www.rfc-editor.org/rfc/rfc1035.html#section-3.2.1) permits TTL=0 records for the current transaction without ordinary cache reuse. Preserve that usable current-transaction path instead of repeatedly losing and refetching a zero-TTL prerequisite. Define which already participating consumers belong to a legitimately shared transaction; keeping an object allocated must not create an indefinitely renewable group that admits new requests. Conversely, legitimate existing waiters need not each trigger another network acquisition solely because they share one result.
+
+Use ownership appropriate to the chosen Rust/library graph; no particular smart pointer or native adapter is selected. Active custody ends with actual completion/cleanup, not merely cancellation of an awaiting future. A retained key cannot relax its signature-time or trust-policy checks.
+
+**Future checks.** TTL=0 and short-TTL material completes the permitted current operation without becoming reusable fresh data for later requests. Exercise expiry near completion, eviction pressure, multiple waiters, partial cancellation and final release. Distinguish physical retention from permissible publication, and demonstrate that an operation cannot remain alive indefinitely by accumulating new consumers.
+
+**Placement:** DNS-2; refines DNS-C04/C05/C10/C12. This sharpens DNS-R05's lifetime rules and preserves the rejection of upward TTL clamping.
+
+### DNS-R15: Share complete data while constructing each client response independently
+
+**Origin and observed behavior.** dnsproxy's [Resolve](https://github.com/AdguardTeam/dnsproxy/blob/acf2b30e05202e171bbbaf4a3176ea07edb964b3/proxy/proxy.go) saves original request flags/size, may add upstream DO, caches a complete response before client filtering, then filters and scrubs it. [filterMsg and filterRRSlice](https://github.com/AdguardTeam/dnsproxy/blob/acf2b30e05202e171bbbaf4a3176ea07edb964b3/proxy/cache.go) retain explicitly requested DNSSEC RR types even with DO=0, remove stored OPT and adapt AD/record inclusion. [DNSContext.scrub](https://github.com/AdguardTeam/dnsproxy/blob/acf2b30e05202e171bbbaf4a3176ea07edb964b3/proxy/dnscontext.go) prepares the current client's representation and size. These are proxy mechanisms, not local-validation evidence.
+
+Unchecked-data handling differs: dnsproxy's cacheWorks bypasses requests with CD and Resolve restricts insertion; dnscrypt-proxy's [computeCacheKey](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/dnscrypt-proxy/plugin_cache.go) partitions by DO-related state and CD as well as question identity. dnsmasq's [answer_request](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/rfc1035.c) also distinguishes a locally validated ordinary cached answer from sufficient DNSSEC material for a DO client.
+
+**Proposed adaptation.** Store immutable reusable records, validation results and available proof material independently of any one client packet. Here an internal canonical result means a client-neutral representation; it is not a claim that cached wire bytes are universally suitable or a substitute for DNSSEC canonicalization. Decide separately whether that result is trusted and whether it contains enough material to satisfy the requested downstream answer.
+
+Cache hits, misses, background refreshes and coalesced waiters must all reach current-client response construction. Compute ID/question handling, remaining TTL, AD/CD/DO behavior, DNSSEC-record inclusion, OPT/EDNS options, size and truncation for each waiter. Sharing upstream work must not share a leader's already filtered or truncated packet. Preserve answer-changing namespace/ECS/trust context separation, and never mutate the reusable store through client projection.
+
+Define unchecked-result admission explicitly: bypass the validated-result store or maintain separate qualified trust classes. An unchecked result from a CD exchange must not acquire locally authenticated status through cache reuse; only qualifying local validation can confer that status. If a DO request needs proof material that was not retained, follow the declared acquisition/miss behavior rather than treating a security boolean as those records. Source helper inspection does not qualify all upstream coalescing branches; NevroTick must establish its own end-to-end invariant.
+
+**Future checks.** Sequential and concurrent DO=0/DO=1, different AD/CD settings, small UDP versus larger EDNS/TCP, and different OPT options. An explicit DNSKEY/DS question with DO=0 retains its requested answer. Client projection leaves shared content intact. A CD=1 invalid result followed by CD=0 cannot inherit local authentication. Include both cached and newly coalesced results and a complete valid large-response control.
+
+**Placement:** DNS-1 response ownership and DNS-2 validation/proof completeness; refines DNS-C02/C04/C05/C10/C11. This extends DNS-R02 beyond metadata isolation to the complete shared-result-to-client path.
+
+### DNS-R16: Cache failure causes with bounded local lifetimes and recovery
+
+**Origin and observed behavior.** Unbound's [validator completion](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/validator.c) assigns a local bogus_ttl after its bounded restart handling, preventing endless revalidation of the same failed data. The [worker cache path](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/daemon/worker.c) can return SERVFAIL for cached bogus data when validation is required. dnsproxy's [cacheTTL](https://github.com/AdguardTeam/dnsproxy/blob/acf2b30e05202e171bbbaf4a3176ea07edb964b3/proxy/cache.go) separately classifies positive, negative and SERVFAIL responses; its particular constants and shape checks do not establish a complete local DNSSEC validator.
+
+[RFC 9520 sections 3.2 and 3.4](https://www.rfc-editor.org/rfc/rfc9520.html#section-3.2) require resolution-failure caching, including DNSSEC validation failures. Resolution failures must be cached for at least one second and no longer than five minutes; the RFC recommends bounded backoff and resource-exhaustion controls. These are standards bounds, not a selected NevroTick default. Invalid received TTLs cannot be trusted to choose a validation-failure lifetime.
+
+**Proposed adaptation.** Keep cause-specific resolution-failure state distinct from authenticated NXDOMAIN/NODATA, proven insecurity and endpoint-health observations. A failure entry suppresses repeated unsuccessful work for a compatible question/context; it does not assert that a name does not exist. Match failure scope to its actual cause and define client CD behavior. An ineligible unchecked result cannot contaminate the validated store.
+
+Choose short local lifetimes and bounded capacity under the adopted standard; limit both stored entries and repeated recovery work. Do not renew a failure indefinitely just because clients keep asking. Expiry allows a controlled retry; relevant changes to time confidence, trust or routing can invalidate a cause before that expiry. Do not apply the resolution-failure TTL range indiscriminately to every endpoint-health cooldown. Explain how an independently eligible still-valid answer and a failed refresh interact without extending the answer's life or silently replacing it with false nonexistence.
+
+**Future checks.** Repeated queries for one broken signed result cause bounded crypto/network work. Neighboring valid results remain usable. Bogus never becomes authenticated nonexistence or insecurity. After failure expiry or applicable context repair, a valid corrected answer recovers. Random unique failures respect capacity and work bounds; cached failures and coalesced waiters cannot create an unbounded retry loop.
+
+**Placement:** DNS-1 general failure semantics and DNS-2 DNSSEC causes; refines DNS-C04/C05/C10/C11/C12. Use the main plan's same outcome/resource accounting when DNS-5 adds refresh.
+
+### DNS-R17: Evaluate SIEVE and sharding as residency policies
+
+**Origin and observed behavior.** dnscrypt-proxy's [cache plugin](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/dnscrypt-proxy/plugin_cache.go) uses the vendored sharded SIEVE cache. [SieveCache.Get and Evict](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/vendor/github.com/jedisct1/go-sieve-cache/pkg/sievecache/sievecache.go) use visited bits and deferred eviction work instead of moving an entry through an LRU order on every hit. [NewShardedWithShards](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/vendor/github.com/jedisct1/go-sieve-cache/pkg/sievecache/sharded.go) partitions the configured capacity without increasing its total. The actual [SyncSieveCache.Get](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/vendor/github.com/jedisct1/go-sieve-cache/pkg/sievecache/sync.go) takes an exclusive lock; this implementation is not established as lock-free.
+
+The [original NSDI 2024 SIEVE research](https://www.usenix.org/conference/nsdi24/presentation/zhang-yazhuo) reports web-cache workload results. Those results and its prototype's concurrency properties are not measured DNS or NevroTick outcomes.
+
+**Conditional adaptation.** Compare a simple qualified baseline with SIEVE/sharding only for a measured residency or contention problem. Keep the implementation behind the same validity/admission contracts. Eviction decides which objects remain resident; it does not authenticate data, extend TTL or choose autonomous refresh. Preserve separate budgets for bytes, entries and active validation material. A fixed entry count alone does not select a suitable memory budget for variable-size DNSSEC responses.
+
+Measure useful misses, cache-hit CPU cost, lock contention, skewed per-shard pressure and total memory under equal workloads and limits. Do not import the upstream shard count, promise multicore scaling or add an elaborate cache because it exists elsewhere. Internal lookups and prefetch still cannot self-heat the demand model. Keep failure, proof and active-operation ownership semantics when eviction occurs.
+
+**Future checks.** Replacement preserves valid behavior and capacity under hot-key skew, changing demand, large/small responses and random-name churn. Eviction cannot release material still owned by a live validation or make expired material eligible. A controlled comparison includes CPU/memory and lost useful hits, not only throughput or hit percentage.
+
+**Placement:** optional DNS-6 refinement after the baseline; DNS-C12 and DNS-C18 when included in the selected comparison. No SIEVE library, dependency, implementation or performance target is adopted here.
+
+### DNS-R18: Reconsider cached evidence when time or trust assumptions change
+
+**Origin and observed behavior.** dnsmasq's [is_check_date](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/dnssec.c) can transition from its timestamp-file bootstrap mode to checking signature times and queue a cache purge. This illustrates invalidation when validation assumptions change; it does not qualify that timestamp heuristic or disabled-time-check mode for NevroTick.
+
+Stale paths need separate analysis. dnsproxy's [optimistic retrieval and response filtering](https://github.com/AdguardTeam/dnsproxy/blob/acf2b30e05202e171bbbaf4a3176ea07edb964b3/proxy/cache.go) can reuse stored upstream AD without checking RRSIG absolute expiry in those helpers. dnsmasq [excludes DNSKEY/DS from ordinary stale reuse](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/cache.c), but that alone does not establish current signature eligibility for every [cached ordinary answer](https://github.com/pi-hole/FTL/blob/29c8b13f4bba0c4f4f47598e45a65cbf1cedac88/src/dnsmasq/rfc1035.c). These are scope limits of source evidence, not reproduced upstream vulnerability findings.
+
+**Proposed adaptation.** Apply the main plan's separate elapsed-time freshness, trusted-UTC signature checks and policy/context generations to validation reuse and failure causes. Reconsider affected evidence when assumptions change; ordinary refresh with unchanged trust does not automatically require a global flush. A backward clock correction cannot resurrect an expired TTL, while either direction can alter signature-time eligibility. Preserve the explicit bootstrap authority contract rather than deriving trustworthy time from a file timestamp.
+
+The first adaptive pilot still uses fresh answers. If stale serving is later selected, separately specify permission to serve stale data, AD eligibility, current signature-time treatment, required proof/component availability, DO/CD presentation, TTL/EDE behavior and recovery. Physical retention, active-operation pinning and a historic secure label do not establish all those conditions. [RFC 8767](https://www.rfc-editor.org/rfc/rfc8767.html) supplies stale-serving guidance; it does not replace the project's selected authentication policy.
+
+**Future checks.** Correct time forward/backward, cross signature inception/expiry, suspend/resume, and change relevant trust/policy while a cache hit or validation completion is pending. Stale candidates, if selected, distinguish elapsed data TTL with still-valid signatures from expired signatures. Reconsider a clock-caused failure after repaired time without reviving expired ordinary data. Include unchanged-context controls that retain eligible cached work.
+
+**Placement:** DNS-0 time/trust contracts, DNS-2 validator lifecycle and relevant DNS-3 native observations; refines DNS-C04/C05/C11. This supplies concrete scenarios for an existing requirement, not a new authority to skip checks or alter the clock.
+
 ## 4. Qualification map and implementation order
 
 The following maps new scenario details into the existing acceptance inventory. These are future checks, not passing results. Apply a scenario when its owner first appears; do not postpone basic connection/request isolation until autonomous refresh exists.
@@ -210,20 +337,28 @@ The following maps new scenario details into the existing acceptance inventory. 
 | DNS-R02 | EDNS/reply/context state cannot cross requests through early returns, malformed input, ID reuse or concurrency. | DNS-C02/C04/C10/C11 |
 | DNS-R03 | Late failure of retired connection A cannot change replacement B; retries and cleanup stay bounded. | DNS-C03/C10/C11/C12; applicable DOQ-C01 |
 | DNS-R04 | Failed endpoints do not trigger a retry storm or permanent exclusion; ranking never overrides eligibility. | DNS-C03/C10/C11/C12/C18 |
-| DNS-R05 | Each data class obeys its own expiry, trust/context and capacity rules; popularity adds no authority. | DNS-C04/C05/C11/C12 |
+| DNS-R05 | Each data class obeys its own expiry, trust/context, custody and capacity rules; popularity adds no authority. | DNS-C04/C05/C10/C11/C12 |
 | DNS-R06 | Only an applicable validated proof avoids an upstream exchange; uncovered/expired/wrong-context evidence cannot synthesize an accepted answer. | DNS-C04/C05/C11/C12/C18, only for the selected pilot |
 | DNS-R07 | Query and validation routes preserve namespace policy during VPN/configuration changes and failure. | DNS-C01/C03/C04/C10/C11/C12 |
 | DNS-R08 | Overload creates bounded work, honest outcomes and recovery without assuming localhost identifies an application. | DNS-C02/C10/C12/C16 |
 | DNS-R09 | Slow telemetry cannot monopolize DNS resources; current privacy governs every queued/persisted/exported consumer. | DNS-C12/C13/C14/C15/C18 |
 | DNS-R10 | Only catalog changes allowed by the selected authenticity/freshness/authorization contract affect configuration. | Future catalog task; applicable DNS-C03/C11/C12/C13/C17 |
+| DNS-R11 | Exact-content validation reuse skips eligible repeated crypto; old results cannot approve replacements, and whole-answer proof context remains enforced. | DNS-C04/C05/C10/C11 |
+| DNS-R12 | Eligible chain state is reused within trust boundaries; distinct no-DS/delegation evidence drives distinct outcomes; prior answers are not automatically revoked by chain-cache expiry. | DNS-C04/C05/C11/C12 |
+| DNS-R13 | Compatible prerequisites are shared without wait cycles, cancellation interference, repeat-fetch loops or lost resource custody. | DNS-C04/C10/C11/C12 |
+| DNS-R14 | Active material survives required ownership without gaining fresh-cache authority; TTL=0 current-transaction use and later requests remain distinct. | DNS-C04/C05/C10/C12 |
+| DNS-R15 | Every client gets its own flags, proof inclusion, EDNS, size and TTL from unchanged reusable data; unchecked data cannot inherit local validation. | DNS-C02/C04/C05/C10/C11 |
+| DNS-R16 | Failure causes suppress bounded repeated work, preserve DNS outcome distinctions and permit controlled recovery after expiry or relevant context repair. | DNS-C04/C05/C10/C11/C12 |
+| DNS-R17 | A selected residency policy respects validity, active ownership and memory caps and demonstrates workload-specific benefit. | DNS-C12; DNS-C18 when part of the selected comparison |
+| DNS-R18 | Changed time/trust assumptions reconsider affected evidence without TTL resurrection or automatic destruction of unchanged eligible work. | DNS-C04/C05/C11; stale-specific cases only if selected |
 
 Recommended order within the future DNS workstream:
 
 1. **DNS-0 contracts:** choose accounting/ownership boundaries, permitted routing and overload semantics. Inventory exact libraries and enforceable seams when implementation begins.
-2. **DNS-1 baseline and DNS-2 validation:** implement cumulative limits, request/connection ownership, minimal endpoint recovery and logical cache separation alongside the ordinary protocol/validator path.
+2. **DNS-1 baseline and DNS-2 validation:** implement cumulative limits, request/connection ownership, minimal endpoint recovery and logical cache separation alongside the ordinary protocol/validator path. Define client-specific response construction, content-bound verdict publication, typed chain/delegation evidence, shared prerequisite custody and cause-specific failure recovery at the component's first appearance. Preserve the required hardware/multicore qualification and measure avoided work separately.
 3. **DNS-3 integration and DNS-4 learning:** qualify network/VPN/lifecycle behavior, bounded event delivery, native storage/privacy and useful cache diagnostics. Preserve the main plan's native identity and restoration requirements.
 4. **DNS-5 adaptive comparison:** reuse those controls when adding autonomous refresh; compare with ordinary caching and demand-triggered prefetch under the same admitted transport/trust/resource assumptions.
-5. **Later selected experiments:** measure NSEC proof reuse, more elaborate selection or cache structures. An authenticated catalog needs its own concrete maintenance need and trust design.
+5. **Later selected experiments:** measure NSEC proof reuse, more elaborate selection or cache structures such as SIEVE/sharding after a baseline exists. Demand-derived DNSKEY/DS warming in a forwarder needs its own comparison; Unbound's recursive prefetch-key paths do not establish that benefit. An authenticated catalog needs its own concrete maintenance need and trust design.
 
 Use existing admitted model, property, concurrency, fuzz and mutation tools for named gaps. Maintain independent expected results, valid neighboring controls and actual enforcing consumers. Pin a future integration's full dependency/features/target tuple; translate source examples only after reviewing assumptions. No new tool installation or whole-product test campaign follows from this document.
 
@@ -232,7 +367,10 @@ Use existing admitted model, property, concurrency, fuzz and mutation tools for 
 | Upstream behavior or tempting shortcut | Treatment for NevroTick |
 | --- | --- |
 | Raising short TTLs to a configured minimum | Do not transfer. The inspected dnscrypt-proxy [example configuration](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/dnscrypt-proxy/example-dnscrypt-proxy.toml) sets cache_min_ttl to 2400 seconds; [getMinTTL](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/dnscrypt-proxy/dnsutils.go) clamps upward, and [PluginCacheResponse.Eval](https://github.com/DNSCrypt/dnscrypt-proxy/blob/c33302bc279e4d298fa19b99be8b35778db9a901/dnscrypt-proxy/plugin_cache.go) uses it for expiry/returned TTLs. That conflicts with the existing freshness model. This is an example-setting observation, not a claim about every installation. |
-| Enabling optimistic/stale answers because another product does | Keep the main plan's separate future stale-serving policy and RFC 8767 qualification. Cache retention, stale service and fresh-answer benefit remain distinct. |
+| Enabling optimistic/stale answers because another product does | Keep the main plan's separate future stale-serving policy and RFC 8767 qualification. Cache retention, stale service and fresh-answer benefit remain distinct. A retained security label does not qualify current signature or AD semantics; see DNS-R18. |
+| Treating Unbound's prefetch-key as a directly demonstrated forwarding optimization | Its inspected ordinary forwarding branch bypasses the recursive initialization prefetch path; [iterator.c](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/iterator/iterator.c) also invokes key prefetch during referral processing. Evaluate demand-derived dependency warming for the actual DoQ forwarder separately. |
+| Attributing one strict expiry formula to every upstream configuration | Follow the adopted DNSSEC rules and explicit NevroTick time policy. Unbound's [adjust_ttl/check_dates](https://github.com/NLnetLabs/unbound/blob/f0cd7067d950921427c91ade4ecf060e944f88eb/validator/val_sigcrypt.c) include configurable minimum-TTL, skew and date-override behavior; their presence is not an adopted NevroTick exception. |
+| Copying DNSKEY/DS minimum-TTL extension or a startup no-time-check heuristic | Use explicit active-material custody and the existing time/trust contract; see DNS-R14/R18. Neither allocation lifetime nor a persisted timestamp creates new freshness or time authority. |
 | Per-IP rate-limit constants from a LAN resolver | Do not treat a shared localhost address as an application identity. Select measured work limits and honest overload behavior. |
 | Full Unbound recursion, authoritative-server algorithms or zone-transfer service | Outside the selected forwarding architecture unless separately requested. Borrow relevant mechanisms with their context limits. |
 | Copying dnsproxy early-data behavior, old ALPN compatibility or narrow recursion heuristics wholesale | Qualify the actual NevroTick transport and lifecycle contract. A similar function name does not establish equivalent semantics. |
