@@ -826,12 +826,16 @@ in architecture and plan, then inspect upstream implementations. The
 [canonical contract](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
 owns state/protection/authority; the [focused plan](windows-protected-storage.md)
 owns staged evidence, ST-T01–ST-T18 and retained A/HR review dispositions.
+The completed [upstream source inventory](windows-protected-storage-upstream-lessons.md)
+records MPSS, Tailscale, Chromium, VbsEnclaveTooling, Smallstep and
+go-attestation mechanisms, exact source revisions, adaptation limits and planned
+checks. The construction/provider/build/account/profile freeze remains open.
 This is a planning amendment. Storage experiments remain paused; current S1.3,
 P0–P7 order, held TLS/provider gates and UI-M0 scope remain unchanged.
 
 | Existing stage / owner | Bounded follow-up | Exit / retained boundary |
 | --- | --- | --- |
-| Source/design; security/platform | Inspect pinned CNG VBS/TPM/enclave implementations; freeze construction, provider/build, per-key evidence, policy, ownership and errors | Attributed lessons and concrete gates; no sample-to-production or source-to-native-pass promotion |
+| Source/design; security/platform | Use the completed [attributed source inventory](windows-protected-storage-upstream-lessons.md); resolve construction, provider/build, per-key evidence, policy, ownership and errors for one bounded row | Initial research recorded; design freeze open; no sample-to-production or source-to-native-pass promotion |
 | S2.3/P3; protocol/storage | Specify root/data/snapshot identities, witness/catalogue commit, authenticated exact envelope and deliberate no-root NoPersistentCache | NTS trust/ages and mandatory broker authority remain independent; no native execution until pause is lifted |
 | P3/P6; platform/lifecycle | Qualify final service/key/file owners, complete root creation/reopen, interruptions/retirement and process profile | Applicable CHECK-1/9/11/12/15/16/17/18/20/23/25/27; healthy operations beside denials |
 | Future P5/D2; UI | Consume actual mode/readiness/freshness; notify on first connection after unattended transition | CHECK-14/17/22; acknowledgement changes no policy; no UI-M0 implementation |

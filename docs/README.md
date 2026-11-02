@@ -26,6 +26,7 @@ to own requirements, and task records own executed evidence.
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
 | Where are the origins and qualification scenarios for borrowed DNS mechanisms? | [DNS upstream lessons and adaptation plan](plans/dns-upstream-lessons.md): pinned Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy sources; eighteen lessons, including the [DNSSEC/cache follow-up](plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope), with observed mechanisms, proposed adaptations and existing DNS-C owners; the [Security-kit follow-up](plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) adds TS cache contracts and source-derived regression cases under the same owners. |
 | Where are protected key storage, VBS fallback and their evidence gates owned? | [Architecture §12.1.2](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [protected-storage plan](plans/windows-protected-storage.md), [development workstream](plans/development-plan.md#84-protected-optional-storage-design-and-qualification) and [provider qualification](windows-time-development-hardening.md#641-protected-storage-provider-qualification). |
+| Where are source examples and adaptation limits for protected Windows storage? | [Protected-storage upstream lessons](plans/windows-protected-storage-upstream-lessons.md): pinned MPSS, Tailscale, Chromium, VbsEnclaveTooling, Smallstep and go-attestation source, with useful mechanisms, unsuitable policies and planned checks under existing owners. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
@@ -57,7 +58,11 @@ signed exact snapshots, class-specific recovery, per-role mitigation and future
 D2 notification gates. It supersedes the earlier DPAPI-first optional NTS/DNS
 candidate, not Windows DPAPI itself. Exact algorithms/defaults/native results
 remain open; storage experiments are paused. Current fixtures, UI-M0 and phase
-priority remain unchanged.
+priority remain unchanged. The subsequent [upstream implementation review](plans/windows-protected-storage-upstream-lessons.md)
+records actual-key lookup/isolation candidates, ACL-preserving file replacement,
+secret serialization barriers, cancellation/completion tests and conditional
+enclave patterns. Source inventory is complete; exact design freeze and native
+qualification remain open.
 
 **System-wide DNS direction, 2 November 2026:** [OD-08](nevrotick-owner-decisions.md#12-od-08--system-wide-windows-dns-and-dnssec)
 records the owner's intended Windows DNS service for the whole computer and its

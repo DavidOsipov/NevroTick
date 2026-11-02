@@ -1,10 +1,10 @@
 # Windows protected optional storage: execution and qualification plan
 
-**Document:** NV-STORAGE-PLAN-001, revision 1.0<br>
+**Document:** NV-STORAGE-PLAN-001, revision 1.1<br>
 **Date:** 2 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Maintained design and future qualification plan. Recording this direction is authorized; implementation, native experiments, exact cryptographic choices and the product default are not approved by this document.<br>
-**Source baseline:** [`de3777230d2adc30fa9eea9895e7dcbb370dec1e`](https://github.com/DavidOsipov/NevroTick/tree/de3777230d2adc30fa9eea9895e7dcbb370dec1e), read through an API-derived partial source snapshot, not a local checkout.
+**Initial design baseline:** [`de3777230d2adc30fa9eea9895e7dcbb370dec1e`](https://github.com/DavidOsipov/NevroTick/tree/de3777230d2adc30fa9eea9895e7dcbb370dec1e). Revision 1.1 records the subsequent upstream research against [`1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea`](https://github.com/DavidOsipov/NevroTick/tree/1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea). Both were read through API-derived partial snapshots, not a local checkout.
 
 ## 1. Authority, purpose and decision status
 
@@ -25,7 +25,7 @@ The preferred candidate protects optional saved NTS associations and, separately
 
 A CNG VBS-protected key is distinct from a custom application VBS enclave. Working DEKs, TLS exporters, NTS keys and plaintext may remain in ordinary engine RAM. Protecting storage roots does not satisfy complete-memory encryption or all-cryptographic-operations-isolated requirements. Host compromise, authorized malicious key use, selective offline replacement of ACL-only trust anchors and full-environment rollback remain explicit limitations; recording them is not owner acceptance of residual risk. [P4–P6, P11–P14]
 
-The current task records architecture and planning before further upstream research. It starts no implementation, dependency acquisition, key creation, service operation, experiment or process-policy change. Existing held TLS/CNG dependency and fixture decisions remain held.
+The architecture and original plan were recorded before upstream research. The owner then requested that the completed findings also be recorded: [upstream implementation lessons](windows-protected-storage-upstream-lessons.md) now preserves pinned source observations, proposed adaptations, unsuitable sample policies and future checks. This completes the initial source inventory, not the construction/provider/build/account/profile freeze. It starts no implementation, dependency acquisition, key creation, service operation, experiment or process-policy change. Existing held TLS/CNG dependency and fixture decisions remain held.
 
 ## 2. Owners, data classes and restoration
 
@@ -165,7 +165,7 @@ Follow the repository [planning guide](../../.agents/skills/planning/README.md) 
 
 | Stage and owner | Work and observable exit | Readiness |
 | --- | --- | --- |
-| **Source-qualified design freeze** — storage/security/platform | After this documentation is recorded, inspect relevant primary sources and pinned GitHub implementations. Record file/function/revision/license, actual mechanism, adaptation limits and independent expectations. Freeze one construction/provider/algorithm/build/account/profile row, or retain a precise blocker. Include exact signed bytes/digest, no-root state, key reopen evidence, descriptor/finalization order, lifecycle and durability design. Prepare concrete unresolved owner choices. | Smallest next stage; research does not approve a dependency or native execution. No upstream research is claimed by this document. |
+| **Source-qualified design freeze** — storage/security/platform | The initial [pinned implementation inventory](windows-protected-storage-upstream-lessons.md) records file/function/revision/license, actual mechanisms, adaptation limits and independent expectations. Remaining work: freeze one construction/provider/algorithm/build/account/profile row, or retain a precise blocker. Include exact signed bytes/digest, no-root state, key reopen evidence, descriptor/finalization order, lifecycle and durability design. Prepare concrete unresolved owner choices. | Source inventory completed; design freeze remains open. Research approves no dependency, default or native execution. |
 | **Bounded native root qualification** — platform/security | Only after the experiment pause is lifted and the frozen row is ready, use owned disposable Windows fixtures and dummy namespaces. Demonstrate intended create/use/reopen/retire, unauthorized second-service denial, actual mode evidence, no-login SCM operation and intact required profile. Record supported and unsupported rows. | Held; no experiment currently authorized. |
 | **S2.3/S2.4 association restoration** — NTS/security | Integrate admitted storage with complete association/lifetime/current-trust rules and strict/bootstrap recovery. Demonstrate useful compatible restart beside inaccessible, stale and well-formed unauthorized records; preserve bounded native work. | Depends on provider/construction and existing NTS/OPEN-8 gates; CHECK-6/8/9/17/25/26/27 as applicable. |
 | **S3.3 persistence and lifecycle** — platform/service/security | Qualify witness consumption, catalogue/exact-envelope commit, migration/retirement, every interruption and actual handler authorization. Simulated clock backend suffices for storage work; broker authority remains separate. | CHECK-1/2/3/14/15/17/25/27; real clock effects remain P4. |
@@ -198,7 +198,7 @@ Before dependent adoption, use NV-DEC-001 for the product default/strict-policy 
 
 ## 10. Primary-source bibliography
 
-Sources below were inspected in the completed 2 November 2026 review and are retained for traceability. They state platform contracts; the next source-qualified freeze must establish applicability to its selected row. This documentation task performs no new upstream investigation.
+Sources below were inspected in the completed 2 November 2026 design review and are retained for traceability. They state platform contracts; the source-qualified freeze must establish applicability to its selected row. The later [upstream implementation review](windows-protected-storage-upstream-lessons.md) records the separate completed GitHub source inventory, including exact revisions and adaptation limits. Neither source inventory supplies native execution evidence.
 
 | Ref | Primary source and relevant boundary |
 | --- | --- |
