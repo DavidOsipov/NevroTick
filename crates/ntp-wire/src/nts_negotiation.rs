@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Pure NTPv4-client negotiation over complete, already framed NTS-KE messages.
+//! Pure NTPv4-client request encoding and negotiation over framed NTS-KE messages.
 //!
 //! The checked offer is derived from the actual request buffer. This current
 //! client profile offers only protocol zero; repeated zero identifiers remain
@@ -22,7 +22,7 @@
 //! mutable state, I/O, clock, authentication, diagnostics or external effect is
 //! present, and rejection exposes no partial negotiation or payload bytes.
 
-use crate::{NtsKeRecords, RawNtsKeMessage, RawNtsKeRecord};
+use crate::{NtsKeFrameError, NtsKeFrameLimits, NtsKeRecords, RawNtsKeMessage, RawNtsKeRecord};
 
 /// Closed negotiation rejection with at most one bounded peer error code.
 ///
@@ -81,9 +81,26 @@ pub enum NtsKeNegotiationError {
     MissingCookie,
 }
 
+/// Closed request-encoding rejection without retained input or partial output.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NtsKeRequestEncodeError {
+    /// An `NTPv4` request must offer at least one AEAD identifier.
+    EmptyAeadOffer,
+    /// Twice the identifier count cannot fit the record's `u16` body length.
+    AeadOfferTooLong,
+    /// The computed request exceeds an existing byte or record ceiling.
+    FrameLimit(
+        /// The existing framing owner's byte or record-budget rejection.
+        NtsKeFrameError,
+    ),
+    /// The caller's destination cannot hold the complete encoded request.
+    OutputTooSmall,
+}
+
 /// Immutable proof of the actual request's supported `NTPv4` negotiation shape.
 ///
-/// Only [`read_nts_ke_ntpv4_offer`] constructs this value. It preserves the
+/// Only [`read_nts_ke_ntpv4_offer`] and [`encode_nts_ke_ntpv4_request`] construct
+/// this value. It preserves the
 /// original nonempty even algorithm list, including caller preference order;
 /// provider support and transmission of these request bytes remain unproved.
 /// The original buffer must remain immutable and alive while any view is used.
@@ -133,6 +150,73 @@ impl<'a> NtsKeNtpv4Offer<'a> {
             .0
             .iter()
             .any(|word| u16::from_be_bytes(*word) == candidate)
+    }
+}
+
+/// Closed RFC 8915 section 5.1 exporter-context direction, not a raw byte input.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NtsKeExporterDirection {
+    /// The client-to-server context uses direction byte zero.
+    ClientToServer,
+    /// The server-to-client context uses direction byte one.
+    ServerToClient,
+}
+
+/// Owned exporter label/context metadata from an actual pending negotiation.
+///
+/// Only [`NtsKeNtpv4Negotiation::exporter_context`] constructs this value. Its
+/// five bytes contain protocol zero, the actual selected AEAD identifier in
+/// network byte order and the closed direction byte. It retains no request,
+/// response, cookie, key, TLS connection or borrowed negotiation storage.
+///
+/// This metadata supplies no exporter output length, key material, provider
+/// support, TLS identity/closure, authentication or usable-association authority.
+/// It binds neither a TLS connection/session nor generation, freshness or current
+/// authority and cannot authorize export or association publication. A future TLS
+/// job must separately bind the actual pending negotiation to its current admitted
+/// connection and guards. No allocation, mutable state or external effect is present.
+///
+/// Raw construction, mutation and default fallback cannot bypass negotiation:
+/// ```compile_fail,E0451
+/// use ntp_wire::NtsKeExporterContext;
+/// let _ = NtsKeExporterContext { bytes: [0; 5] };
+/// ```
+/// ```compile_fail,E0616
+/// use ntp_wire::NtsKeExporterContext;
+/// fn change(mut value: NtsKeExporterContext) { value.bytes[4] = 1; }
+/// ```
+/// ```compile_fail,E0277
+/// use ntp_wire::NtsKeExporterContext;
+/// let _: NtsKeExporterContext = Default::default();
+/// ```
+/// This checked value has no payload debug formatter:
+/// ```compile_fail,E0277
+/// use ntp_wire::NtsKeExporterContext;
+/// fn needs_debug<T: core::fmt::Debug>() {}
+/// needs_debug::<NtsKeExporterContext>();
+/// ```
+pub struct NtsKeExporterContext {
+    /// Copied protocol/selected-AEAD/direction bytes; no raw mutable route exists.
+    bytes: [u8; 5],
+}
+
+impl NtsKeExporterContext {
+    /// Return the exact RFC exporter label, without NUL or length decoration.
+    #[must_use]
+    pub const fn label(&self) -> &'static str {
+        "EXPORTER-network-time-security"
+    }
+
+    /// Borrow the exact five owned network-order context octets without effects.
+    ///
+    /// The returned view cannot mutate the checked metadata:
+    /// ```compile_fail,E0594
+    /// use ntp_wire::NtsKeExporterContext;
+    /// fn change(context: &NtsKeExporterContext) { context.context_bytes()[4] = 1; }
+    /// ```
+    #[must_use]
+    pub const fn context_bytes(&self) -> &[u8; 5] {
+        &self.bytes
     }
 }
 
@@ -209,6 +293,46 @@ impl<'a> NtsKeNtpv4Negotiation<'a> {
     #[must_use]
     pub const fn server_hint(&self) -> Option<&'a str> {
         self.server_hint
+    }
+
+    /// Copy RFC 8915 section 5.1 context metadata for this selected algorithm.
+    ///
+    /// This private checked negotiation proves the current `NTPv4` protocol zero
+    /// and actual offered/selected AEAD identifier. Direction accepts only the
+    /// closed enum. All `u16` AEAD identifiers remain metadata; this operation
+    /// selects no provider or exporter output length and produces no key material.
+    /// It is infallible, bounded and has no external effect or retained borrow.
+    ///
+    /// The copied metadata can outlive all negotiation input storage:
+    /// ```
+    /// use ntp_wire::{NtsKeExporterDirection, NtsKeFrameLimits, frame_nts_ke_message,
+    ///     read_nts_ke_ntpv4_offer, negotiate_nts_ke_ntpv4};
+    /// let context = {
+    ///     let request = [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0];
+    ///     let response = [0x80, 1, 0, 2, 0, 0, 0, 4, 0, 2, 0, 15, 0, 5, 0, 0, 0x80, 0, 0, 0];
+    ///     let limits = NtsKeFrameLimits::new(20, 4).unwrap();
+    ///     let framed = frame_nts_ke_message(&request, limits).unwrap();
+    ///     let offer = read_nts_ke_ntpv4_offer(&framed).unwrap();
+    ///     let framed = frame_nts_ke_message(&response, limits).unwrap();
+    ///     let pending = negotiate_nts_ke_ntpv4(&offer, framed).unwrap();
+    ///     pending.exporter_context(NtsKeExporterDirection::ClientToServer)
+    /// };
+    /// assert_eq!(context.label(), "EXPORTER-network-time-security");
+    /// assert_eq!(context.context_bytes(), &[0, 0, 0, 15, 0]);
+    /// ```
+    #[must_use]
+    pub const fn exporter_context(
+        &self,
+        direction: NtsKeExporterDirection,
+    ) -> NtsKeExporterContext {
+        let aead = self.aead_id.to_be_bytes();
+        let direction = match direction {
+            NtsKeExporterDirection::ClientToServer => 0,
+            NtsKeExporterDirection::ServerToClient => 1,
+        };
+        NtsKeExporterContext {
+            bytes: [0, 0, aead[0], aead[1], direction],
+        }
     }
 
     /// Return the exact pending port, preserving zero and absence distinctly.
@@ -443,6 +567,113 @@ fn scan_message<'a>(
         }
     }
     Ok(fields)
+}
+
+/// Encode an inert `NTPv4` request from explicitly supplied ordered AEAD IDs.
+///
+/// RFC 8915 sections 4.1.1/2/5 define the three emitted records: critical
+/// protocol negotiation containing only zero, one AEAD list, and critical empty
+/// EOM. This encoder chooses the permitted critical form of the AEAD record.
+/// Every `u16` identifier is representable; duplicates and preference order remain
+/// unchanged. Encoding proves no provider support, algorithm adoption, TLS,
+/// authentication, actual transmission, endpoint or usable association.
+///
+/// The offer borrows only the written destination prefix and its AEAD body,
+/// not the identifier input. Remaining destination bytes are unchanged. Work is
+/// linear in at most 32,767 identifiers, with no allocation or external effects.
+/// All fallible checks precede the first write; construction after writing is
+/// infallible because the fixed record shapes and checked dimensions establish
+/// the existing offer invariants. No fallible post-write readback is performed.
+///
+/// # Errors
+/// Reject, in order, an empty offer, an unrepresentable body/message length,
+/// byte/count budget excess and insufficient output capacity. Every error leaves
+/// the entire destination unchanged and returns no usable offer.
+///
+/// Identifier storage may expire while the caller-owned request remains valid:
+/// ```
+/// use ntp_wire::{NtsKeFrameLimits, encode_nts_ke_ntpv4_request};
+/// let limits = NtsKeFrameLimits::new(16, 3).unwrap();
+/// let mut output = [0_u8; 16];
+/// let offer = {
+///     let identifiers = [15_u16];
+///     encode_nts_ke_ntpv4_request(&identifiers, &mut output, limits).unwrap()
+/// };
+/// assert_eq!(offer.offered_aead_bytes(), [0, 15]);
+/// ```
+/// The actual output remains borrowed while the offer is used:
+/// ```compile_fail,E0506
+/// use ntp_wire::{NtsKeFrameLimits, encode_nts_ke_ntpv4_request};
+/// let limits = NtsKeFrameLimits::new(16, 3).unwrap();
+/// let mut output = [0_u8; 16];
+/// let offer = encode_nts_ke_ntpv4_request(&[15], &mut output, limits).unwrap();
+/// output[0] = 0;
+/// assert_eq!(offer.request_bytes()[0], 0x80);
+/// ```
+/// An offer cannot escape its request storage:
+/// ```compile_fail,E0515
+/// use ntp_wire::{NtsKeFrameLimits, NtsKeNtpv4Offer, encode_nts_ke_ntpv4_request};
+/// fn dangling() -> NtsKeNtpv4Offer<'static> {
+///     let limits = NtsKeFrameLimits::new(16, 3).unwrap();
+///     let mut output = [0_u8; 16];
+///     encode_nts_ke_ntpv4_request(&[15], &mut output, limits).unwrap()
+/// }
+/// ```
+pub fn encode_nts_ke_ntpv4_request<'a>(
+    aead_ids: &[u16],
+    output: &'a mut [u8],
+    limits: NtsKeFrameLimits,
+) -> Result<NtsKeNtpv4Offer<'a>, NtsKeRequestEncodeError> {
+    if aead_ids.is_empty() {
+        return Err(NtsKeRequestEncodeError::EmptyAeadOffer);
+    }
+    let body_bytes = aead_ids
+        .len()
+        .checked_mul(2)
+        .ok_or(NtsKeRequestEncodeError::AeadOfferTooLong)?;
+    let encoded_length =
+        u16::try_from(body_bytes).map_err(|_| NtsKeRequestEncodeError::AeadOfferTooLong)?;
+    let payload_end = body_bytes
+        .checked_add(10)
+        .ok_or(NtsKeRequestEncodeError::AeadOfferTooLong)?;
+    let request_size = payload_end
+        .checked_add(4)
+        .ok_or(NtsKeRequestEncodeError::AeadOfferTooLong)?;
+    limits
+        .check_message_budget(request_size, 3)
+        .map_err(NtsKeRequestEncodeError::FrameLimit)?;
+    if output.len() < request_size {
+        return Err(NtsKeRequestEncodeError::OutputTooSmall);
+    }
+
+    let message = &mut output[..request_size];
+    let length_octets = encoded_length.to_be_bytes();
+    message[..10].copy_from_slice(&[
+        0x80,
+        1,
+        0,
+        2,
+        0,
+        0,
+        0x80,
+        4,
+        length_octets[0],
+        length_octets[1],
+    ]);
+    for (word, identifier) in message[10..payload_end]
+        .as_chunks_mut::<2>()
+        .0
+        .iter_mut()
+        .zip(aead_ids)
+    {
+        *word = identifier.to_be_bytes();
+    }
+    message[payload_end..].copy_from_slice(&[0x80, 0, 0, 0]);
+    let request: &[u8] = message;
+    Ok(NtsKeNtpv4Offer {
+        request,
+        aeads: &request[10..payload_end],
+    })
 }
 
 /// Check an actual framed request and borrow its immutable NTPv4-only offer.

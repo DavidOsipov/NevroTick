@@ -43,6 +43,9 @@ use std::{fmt, num::NonZeroU64};
 
 use garde::Validate;
 
+/// Staged adaptive fixture history separates fitted rows from decision history.
+mod adaptive_history;
+
 /// Bounded fixture history owns exclusive staging and complete state publication.
 mod history;
 
@@ -58,6 +61,10 @@ mod residuals;
 /// Checked bounded fixture residual-runs and suffix selection.
 mod runs;
 
+pub use adaptive_history::{
+    AdaptiveHistoryError, FixtureAdaptiveHistory, FixtureAdaptiveHistoryReport,
+};
+
 pub use history::{FixtureHistory, FixtureHistoryReport, HistoryError};
 
 pub use normalization::{
@@ -68,7 +75,8 @@ pub use normalization::{
 
 pub use projection::{
     FixtureAnchorProjection, FixtureProjectionError, FixtureProjectionField,
-    FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms, project_fixture_anchor,
+    FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms,
+    project_fixture_adaptive_anchor, project_fixture_anchor,
 };
 
 pub use residuals::{
@@ -78,6 +86,7 @@ pub use residuals::{
 
 pub use runs::{
     FixtureRunsError, FixtureRunsSelection, FixtureRunsStage, FixtureRunsStop, select_fixture_runs,
+    select_fixture_runs_with_retained,
 };
 
 /// Maximum admitted points and sole fixed point-array capacity.

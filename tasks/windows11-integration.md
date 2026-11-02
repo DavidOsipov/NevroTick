@@ -395,3 +395,72 @@ reconciles only this factual receipt/status delta with the completed review, the
 checks expected-head concurrency and exact published paths/blob identities.
 Substantive changes reopen the affected review conclusion. W11-W01's source card
 and all implementation/native assignments above remain unexecuted.
+
+### 4.2 Local checkout adoption — 3 November 2026
+
+David requested the same pull and task-adoption procedure as the preceding
+storage update. Local `main` fast-forwarded from `a6c2401` to `f163c19`.
+All 120 staged paths were preserved. Three overlapping routing documents
+(`AGENTS.md`, the documentation guide and development plan) were merged
+additively; current Windows/fuzz stops, the storage queue, Core checkpoints,
+detailed phase gates and historical review receipts remain. The source/API
+review in section 4.1 applies to its original candidate, not this merged checkout.
+
+At its next checkpoint, the primary development coordinator reads
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and [§8.5](../docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification),
+records each applicable W11 assignment's owner, disposition and next action here,
+and carries its contracts into the owning task before dependent implementation.
+The existing ST-W01–ST-W07 queue stays separate. This is a discoverable handoff;
+acknowledgement by a separately running agent is pending its next checkpoint.
+
+Initial dispositions: W11-W01 is ready for one source-only timestamp-provenance
+card when assigned to the acquisition owner, alongside the existing product
+priority. W11-W02–W11-W08 remain planned at their named phases and prerequisites,
+with Windows observations held; W11-W07 also requires an evidenced eligible
+workload. W11-W09 remains deferred until its existing live-UI/accessibility
+triggers. W11-W10 remains a conditional reserve. Optional candidates are not
+silently selected by adopting an assignment; existing required properties and
+CHECK/DNS-C/ST-T ownership remain binding.
+
+Current Core work continues from the S150 task addendum, which records the
+fitted-anchor bridge's development pass and remaining projection qualification;
+do not repeat its preceding source-only assignment. No Core source or evidence
+was changed by this documentation handoff. The broad Windows execution stop,
+separate fuzz no-retry hold, storage-experiment pause, DoQ-only policy, complete
+MSI, process/mandatory-state boundaries and UI-M0 deferrals remain in force.
+No tool/dependency/provider, hardware timestamp path, new analyzer profile or
+distribution channel is admitted. New handoff edits remain unstaged.
+
+Local documentation checks and the new combined-candidate review follow below;
+neither this handoff nor its review establishes implemented/native behavior.
+
+### 4.3 Combined local-candidate review and validation
+
+**3 November 2026:** `windows11_adoption_final_review`, delegated read-only with
+`fork_turns: "none"`, completed the combined routing review. Verdict: **ready for
+this source-only adoption stage**, with no material findings. Its comprehension
+is retained verbatim:
+
+> The change makes the imported Windows 11 research discoverable through startup instructions → development §7/§8.5 → the existing W11 task. W11-W01 is a bounded source-only assignment for the acquisition owner; W11-W02–08 retain their phase prerequisites and Windows hold, W11-W09 remains deferred, and W11-W10 remains conditional. Publishing this routing does not claim acknowledgement by the separately running AI.
+
+> Current execution remains governed by the existing Core task and holds. The §7 S150 pointer matches the actual task: the fitted-anchor bridge has a portable development pass, with projection qualification still outstanding. The ST-W queue, Windows stop, separate fuzz hold, storage pause, DoQ-only policy, complete MSI and UI-M0 boundaries remain intact. Optional APIs, providers and dependency graphs remain unselected.
+
+The four-file pre-receipt manifest SHA-256 is
+`910226768a20117df4f996e677941f4b3ba3faf9db62f1df217da80caab722d5`.
+It binds `AGENTS.md`, `docs/README.md`, `docs/plans/development-plan.md` and this
+task before adding this subsection. All four file hashes matched during review;
+this factual receipt is a subsequent addition, not a reviewed implementation.
+
+Local checks resolved 796 link/anchor occurrences across the ten imported/current
+documents, found no conflict markers and passed routing whitespace checks.
+All 117 nonoverlapping staged entries retain their original blob/mode/stage;
+three overlapping documents were merged additively. The staged path set remains
+120 and the preserved post-pull index is unchanged. Concurrent Core work remains
+owned by its existing agent. No product build, analyzer campaign or Windows
+operation was run for this pull/adoption task. No root documentation checksum
+manifest is present. New routing edits remain unstaged.
+
+Continuation remains the coordinator acknowledgement and owner/disposition/next
+action record in section 4.2, alongside the active S150 qualification. No W11
+implementation or native result is credited by this documentation review.

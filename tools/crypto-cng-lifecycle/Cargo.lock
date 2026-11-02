@@ -162,8 +162,6 @@ dependencies = [
 [[package]]
 name = "rustls-cng-crypto"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce24a0492dd515a9def8c39fc6b4ea6797336ca12b2fb1c1f3d05063a9cb9973"
 dependencies = [
  "once_cell",
  "pkcs1",

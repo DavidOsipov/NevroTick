@@ -16,11 +16,197 @@ use std::{
 use garde::Validate;
 
 use super::{
-    FixtureCombinationLifecycleError, FixtureCombinationParameters, FixtureCombinationSourceState,
-    FixtureCombinationSourceStatus, FixtureCombinationState, Inner, OutcomeInput, RawOutcome,
-    RawSourceFields, SourceOutcome, checked_next, estimate_relation_valid, outcome_valid,
-    source_fields_valid,
+    EventInput, FixtureCombinationLifecycleError, FixtureCombinationParameters,
+    FixtureCombinationSourceState, FixtureCombinationSourceStatus, FixtureCombinationState,
+    FixtureReachabilityUpdate, Inner, OutcomeInput, RawEventAdmission, RawOrdinal, RawOutcome,
+    RawParameters, RawSourceFields, SourceOutcome, checked_next, estimate_relation_valid,
+    outcome_valid, source_fields_valid,
 };
+
+/// Count only direct raw-payload validations, separately from constructor work.
+struct RawValidationAttempts {
+    /// Fixed test identity; no product input is formatted into the observer.
+    case: &'static str,
+    /// Precharged direct calls to the generated validation implementation.
+    validations: u64,
+}
+
+impl Drop for RawValidationAttempts {
+    /// Retain the reached validation prefix without introducing a teardown panic.
+    fn drop(&mut self) {
+        let _emission = writeln!(
+            io::stderr().lock(),
+            "CORE_LIFECYCLE_RAW_VALIDATION_PROFILE case={} validations={}",
+            self.case,
+            self.validations
+        );
+    }
+}
+
+/// Check each scalar annotation independently of the constructor's typed checks.
+///
+/// Thirteen literal scalar cases in each of two fields make 26 direct Garde
+/// calls and at most 52 field callbacks. The unchanged field always has a valid
+/// literal neighbor. No checked parameters, state, histories or fits are built.
+/// # Errors
+/// Preserve direct-call accounting failure before a validation attempt.
+/// # Panics
+/// Each actual raw-field annotation must match the independently stated fact.
+#[test]
+fn lifecycle_raw_parameter_validation() -> TestResult {
+    let mut attempted = RawValidationAttempts {
+        case: "lifecycle_raw_parameter_validation",
+        validations: 0,
+    };
+    for (value, combine_ok, maximum_error_ok) in [
+        (0.0, false, true),
+        (-0.0, false, true),
+        (f64::MIN_POSITIVE, true, true),
+        (1.0, true, true),
+        (f64::MAX, true, true),
+        (-f64::MIN_POSITIVE, false, false),
+        (-1.0, false, false),
+        (f64::from_bits(1), false, false),
+        (f64::from_bits(0x8000_0000_0000_0001), false, false),
+        (f64::from_bits(0x000f_ffff_ffff_ffff), false, false),
+        (f64::NAN, false, false),
+        (f64::INFINITY, false, false),
+        (f64::NEG_INFINITY, false, false),
+    ] {
+        guard_charge(&mut attempted.validations, 26)?;
+        assert_eq!(
+            RawParameters {
+                combine_limit: value,
+                max_clock_error_seconds_per_second: 0.031_25,
+            }
+            .validate()
+            .is_ok(),
+            combine_ok
+        );
+        guard_charge(&mut attempted.validations, 26)?;
+        assert_eq!(
+            RawParameters {
+                combine_limit: 2.0,
+                max_clock_error_seconds_per_second: value,
+            }
+            .validate()
+            .is_ok(),
+            maximum_error_ok
+        );
+    }
+    assert_eq!(attempted.validations, 26);
+    Ok(())
+}
+
+/// Check the exact raw ordinal boundary without the constructor's zero branch.
+///
+/// Three direct Garde calls cover zero, its valid neighbor and the inclusive
+/// maximum. They construct no checked update or lifecycle state.
+/// # Errors
+/// Preserve direct-call accounting failure before a validation attempt.
+/// # Panics
+/// The generated rule must reject zero while admitting one and `u64::MAX`.
+#[test]
+fn lifecycle_raw_ordinal_validation() -> TestResult {
+    let mut attempted = RawValidationAttempts {
+        case: "lifecycle_raw_ordinal_validation",
+        validations: 0,
+    };
+    for (ordinal, expected) in [(0, false), (1, true), (u64::MAX, true)] {
+        guard_charge(&mut attempted.validations, 3)?;
+        assert_eq!(RawOrdinal { ordinal }.validate().is_ok(), expected);
+    }
+    assert_eq!(attempted.validations, 3);
+    Ok(())
+}
+
+/// Validate one genuine checked event against borrowed genuine lifecycle state.
+/// # Errors
+/// Preserve actual event construction and pre-call accounting failures.
+/// # Panics
+/// The raw relationship must match the literal result and leave all state equal.
+fn raw_event_guard(
+    state: &FixtureCombinationState,
+    snapshot: &Inner,
+    case: (NonZeroU64, u64, bool, bool),
+    attempted: &mut RawValidationAttempts,
+) -> TestResult {
+    let (source_id, ordinal, reachable, expected) = case;
+    let update = FixtureReachabilityUpdate::new(source_id, ordinal, reachable)?;
+    guard_charge(&mut attempted.validations, 8)?;
+    assert_eq!(
+        RawEventAdmission {
+            value: EventInput {
+                inner: &state.inner,
+                update,
+            },
+        }
+        .validate()
+        .is_ok(),
+        expected
+    );
+    assert!(state.inner == *snapshot);
+    Ok(())
+}
+
+/// Challenge current membership and exact-next order at the actual raw derive.
+///
+/// One real seed uses a one-source roster, an empty checked projected batch and
+/// no strata. It performs zero history appends, fits, projections or advances.
+/// Eight direct validations construct eight checked updates and compare complete
+/// state with two genuine snapshots. One additional checked update is committed
+/// through the public receiver between the four-case matrices. The prefix counts
+/// only the eight direct validations, not validation inside seed/constructors.
+/// # Errors
+/// Preserve genuine tag, batch, parameter, seed, update and receiver failures.
+/// # Panics
+/// Both reachable flags admit the next event; skipped, replayed and unknown
+/// events reject without changing the owner during direct raw validation.
+#[test]
+fn lifecycle_raw_event_validation() -> TestResult {
+    let mut attempted = RawValidationAttempts {
+        case: "lifecycle_raw_event_validation",
+        validations: 0,
+    };
+    let registered = guard_tag(101)?;
+    let unknown = guard_tag(999)?;
+    let batch =
+        FixtureProjectedBatch::new(guard_tag(11)?, guard_tag(12)?, MonotonicNs::new(0), &[])?;
+    let mut state = FixtureCombinationState::seed(
+        &[registered],
+        FixturePrincipalParameters::new(0.25, 0.0)?,
+        FixtureCombinationParameters::new(2.0, 0.031_25)?,
+        FixtureMinimum::new(1)?,
+        &batch,
+        &[],
+    )?;
+    let initial = state.inner.clone();
+    for case in [
+        (registered, 1, true, true),
+        (registered, 1, false, true),
+        (registered, 2, true, false),
+        (unknown, 1, true, false),
+    ] {
+        raw_event_guard(&state, &initial, case, &mut attempted)?;
+    }
+    state.record_reachability(FixtureReachabilityUpdate::new(registered, 1, true)?)?;
+    let source = state
+        .source_state(registered)
+        .ok_or_else(|| io::Error::other("missing seeded raw-event source"))?;
+    assert_eq!(source.last_reachability_ordinal(), 1);
+    assert_eq!(source.reachability_updates(), 1);
+    let updated = state.inner.clone();
+    for case in [
+        (registered, 1, true, false),
+        (registered, 2, false, true),
+        (registered, 3, true, false),
+        (unknown, 1, true, false),
+    ] {
+        raw_event_guard(&state, &updated, case, &mut attempted)?;
+    }
+    assert_eq!(attempted.validations, 8);
+    Ok(())
+}
 
 /// Retain distinct precharged attempts when an independent assertion unwinds.
 /// Constructor-internal validation is source work owned by `source_constructions`,

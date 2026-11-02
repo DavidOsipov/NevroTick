@@ -76,6 +76,303 @@ impl NtsKeFrameLimits {
             max_records,
         })
     }
+
+    /// Check computed encoder dimensions against these immutable ceilings.
+    ///
+    /// This checks only budgets, not framing or semantic message validity.
+    /// It reads no message bytes and changes no state.
+    ///
+    /// # Errors
+    /// Reject a byte excess before a record-count excess, as in framing.
+    pub(crate) fn check_message_budget(
+        self,
+        byte_count: usize,
+        record_count: usize,
+    ) -> Result<(), NtsKeFrameError> {
+        if byte_count > self.max_message_bytes {
+            return Err(NtsKeFrameError::ByteLimit);
+        }
+        if record_count > self.max_records {
+            return Err(NtsKeFrameError::TooManyRecords);
+        }
+        Ok(())
+    }
+}
+
+/// Closed accumulator admission failure; no payload or partial message escapes.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NtsKeAccumulatorError {
+    /// Caller storage cannot hold the entire declared byte ceiling.
+    StorageTooSmall,
+    /// The existing framing owner's bounded rejection, including truncation.
+    Frame(
+        /// Payload-free cause; a push failure remains latched through finish.
+        NtsKeFrameError,
+    ),
+}
+
+/// Framing progress only; neither state observes EOF or authenticates a peer.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NtsKeProgress {
+    /// More bytes are required; an empty push is not a transport EOF.
+    NeedMore,
+    /// A complete critical empty EOM ends the accepted prefix, not TLS closure.
+    EndOfMessage,
+}
+
+/// Copyable staged cursor over already admitted bytes, without payload storage.
+#[derive(Clone, Copy)]
+struct AccumulatorCursor {
+    /// One prefix, retained unchanged until its declared body is complete.
+    header: [u8; 4],
+    /// Zero through three prefix bytes, or four while consuming its body.
+    header_used: usize,
+    /// Remaining declared body bytes; bounded by the two-byte wire length.
+    body_left: usize,
+    /// Started records, including an incomplete current prefix/body and EOM.
+    records: usize,
+    /// A complete valid EOM was consumed; subsequent nonempty input must reject.
+    ended: bool,
+}
+
+impl AccumulatorCursor {
+    /// Construct the empty cursor without reading or changing caller storage.
+    fn new() -> Self {
+        Self {
+            header: [0; 4],
+            header_used: 0,
+            body_left: 0,
+            records: 0,
+            ended: false,
+        }
+    }
+
+    /// Return current progress without treating an empty chunk as EOF.
+    fn progress(&self) -> NtsKeProgress {
+        if self.ended {
+            NtsKeProgress::EndOfMessage
+        } else {
+            NtsKeProgress::NeedMore
+        }
+    }
+
+    /// Complete one fully present prefix/body, then permit the next prefix.
+    ///
+    /// The staged caller has proved four header bytes and zero remaining body.
+    /// # Errors
+    /// Reject type zero unless critical with an empty declared body. Waiting for
+    /// the whole body preserves the existing complete framer's split precedence.
+    fn complete_record(&mut self) -> Result<(), NtsKeFrameError> {
+        let kind = u16::from_be_bytes([self.header[0] & 0x7f, self.header[1]]);
+        if kind == 0 {
+            if self.header[0] & 0x80 == 0 || self.header[2] != 0 || self.header[3] != 0 {
+                return Err(NtsKeFrameError::InvalidEndOfMessage);
+            }
+            self.ended = true;
+        }
+        self.header_used = 0;
+        Ok(())
+    }
+
+    /// Advance a private cursor copy once through a byte-admitted chunk.
+    ///
+    /// Each byte is consumed once; each prefix length is decoded once. A record
+    /// starts only below the validated record ceiling. Errors affect this copy
+    /// only; the owner discards it and latches the cause before copying bytes.
+    /// # Errors
+    /// Preserve record-budget, EOM-shape and trailing-data framing failures.
+    fn consume(
+        &mut self,
+        chunk: &[u8],
+        max_records: usize,
+    ) -> Result<NtsKeProgress, NtsKeFrameError> {
+        for &byte in chunk {
+            if self.ended {
+                return Err(NtsKeFrameError::TrailingData);
+            }
+            if self.body_left != 0 {
+                self.body_left -= 1;
+                if self.body_left == 0 {
+                    self.complete_record()?;
+                }
+                continue;
+            }
+            if self.header_used == 0 {
+                if self.records == max_records {
+                    return Err(NtsKeFrameError::TooManyRecords);
+                }
+                self.records += 1;
+            }
+            self.header[self.header_used] = byte;
+            self.header_used += 1;
+            if self.header_used == 4 {
+                self.body_left = usize::from(u16::from_be_bytes([self.header[2], self.header[3]]));
+                if self.body_left == 0 {
+                    self.complete_record()?;
+                }
+            }
+        }
+        Ok(self.progress())
+    }
+}
+
+/// Incremental, inert framing in exclusively borrowed caller-owned storage.
+///
+/// Only `new` constructs this owner; it has no reset, default, payload debug or
+/// mutable-storage route. Accepted chunks append exactly their original bytes.
+/// A rejected chunk changes no storage byte or accepted cursor, then latches the
+/// first error; later pushes and finish return that error. Previously accepted
+/// bytes remain in storage, but no partial public message is returned.
+///
+/// Fixed cursor storage and work are O(bytes + records + calls), with no heap,
+/// ambient I/O/clock, TLS-record assumption, EOF observation or external effect.
+/// `EndOfMessage` proves neither transport closure, semantic negotiation, provider
+/// support, peer identity, authentication nor a usable association.
+///
+/// Checked construction cannot be bypassed with a default or raw-state mutation:
+/// ```compile_fail,E0277
+/// use ntp_wire::NtsKeAccumulator;
+/// let _: NtsKeAccumulator<'static> = Default::default();
+/// ```
+/// ```compile_fail,E0616
+/// use ntp_wire::NtsKeAccumulator;
+/// fn bypass(mut value: NtsKeAccumulator<'_>) { value.used = 0; }
+/// ```
+/// Payload-bearing state has no debug formatter:
+/// ```compile_fail,E0277
+/// use ntp_wire::NtsKeAccumulator;
+/// fn needs_debug<T: core::fmt::Debug>() {}
+/// needs_debug::<NtsKeAccumulator<'static>>();
+/// ```
+pub struct NtsKeAccumulator<'buf> {
+    /// Exclusively borrowed storage, at least the declared byte ceiling long.
+    storage: &'buf mut [u8],
+    /// Existing checked byte and record ceilings, never widened by a chunk.
+    limits: NtsKeFrameLimits,
+    /// Accepted prefix length, always at or below the declared byte ceiling.
+    used: usize,
+    /// State describing exactly the accepted original prefix.
+    cursor: AccumulatorCursor,
+    /// First push rejection; no retry or later chunk may clear it.
+    failure: Option<NtsKeFrameError>,
+}
+
+impl<'buf> NtsKeAccumulator<'buf> {
+    /// Borrow storage for one message under explicit existing framing limits.
+    ///
+    /// No storage is read or written at construction. Chunks may split any prefix
+    /// or body and may coalesce records; transport/TLS boundaries are irrelevant.
+    /// # Errors
+    /// Reject storage shorter than the declared byte cap, without changing it.
+    ///
+    /// ```
+    /// use ntp_wire::{NtsKeAccumulator, NtsKeFrameLimits, NtsKeProgress};
+    /// let mut storage = [0xa5; 8];
+    /// let limits = NtsKeFrameLimits::new(8, 2).unwrap();
+    /// let mut accumulator = NtsKeAccumulator::new(&mut storage, limits).unwrap();
+    /// assert_eq!(accumulator.push(&[]).unwrap(), NtsKeProgress::NeedMore);
+    /// assert_eq!(accumulator.push(&[0x80, 0]).unwrap(), NtsKeProgress::NeedMore);
+    /// assert_eq!(accumulator.push(&[0, 0]).unwrap(), NtsKeProgress::EndOfMessage);
+    /// let message = accumulator.finish().unwrap();
+    /// assert_eq!(message.bytes(), [0x80, 0, 0, 0]);
+    /// assert_eq!(message.record_count(), 1);
+    /// ```
+    /// Caller mutation cannot bypass the owner's exclusive storage borrow:
+    /// ```compile_fail,E0506
+    /// use ntp_wire::{NtsKeAccumulator, NtsKeFrameLimits};
+    /// let mut storage = [0; 4];
+    /// let limits = NtsKeFrameLimits::new(4, 1).unwrap();
+    /// let mut accumulator = NtsKeAccumulator::new(&mut storage, limits).unwrap();
+    /// storage[0] = 0xff;
+    /// let _ = accumulator.push(&[0x80, 0, 0, 0]);
+    /// ```
+    pub fn new(
+        storage: &'buf mut [u8],
+        limits: NtsKeFrameLimits,
+    ) -> Result<Self, NtsKeAccumulatorError> {
+        if storage.len() < limits.max_message_bytes {
+            return Err(NtsKeAccumulatorError::StorageTooSmall);
+        }
+        Ok(Self {
+            storage,
+            limits,
+            used: 0,
+            cursor: AccumulatorCursor::new(),
+            failure: None,
+        })
+    }
+
+    /// Append one entire admitted chunk, or change no storage and latch failure.
+    ///
+    /// A copied cursor validates the whole chunk before the first write. Empty
+    /// chunks report current progress and never imply EOF. Nonempty bytes after
+    /// EOM reject even in later calls. No accepted prefix is reparsed here.
+    /// # Errors
+    /// Return an already latched error first. Otherwise whole-chunk byte excess
+    /// precedes parsing, then the first observable framing error is latched.
+    /// Error priority can depend on chunk boundaries: a later oversized chunk
+    /// cannot replace a failure already observed in an earlier call.
+    pub fn push(&mut self, chunk: &[u8]) -> Result<NtsKeProgress, NtsKeAccumulatorError> {
+        if let Some(error) = self.failure {
+            return Err(NtsKeAccumulatorError::Frame(error));
+        }
+        if chunk.len() > self.limits.max_message_bytes - self.used {
+            return Err(self.latch(NtsKeFrameError::ByteLimit));
+        }
+        let mut staged = self.cursor;
+        let progress = match staged.consume(chunk, self.limits.max_records) {
+            Ok(progress) => progress,
+            Err(error) => return Err(self.latch(error)),
+        };
+        let end = self.used + chunk.len();
+        self.storage[self.used..end].copy_from_slice(chunk);
+        self.used = end;
+        self.cursor = staged;
+        Ok(progress)
+    }
+
+    /// Consume this owner and frame the original accepted prefix exactly once.
+    ///
+    /// Only this boundary calls the existing complete framer, at most once. Its
+    /// returned message borrows the original storage; finish observes no EOF or
+    /// TLS closure. A saved push error prevents any partial result or reparse.
+    /// # Errors
+    /// Preserve the first push error, or the existing complete framer's truncation,
+    /// missing-EOM and other framing causes for the accumulated original prefix.
+    ///
+    /// A finished message cannot escape its caller-owned storage:
+    /// ```compile_fail,E0515
+    /// use ntp_wire::{NtsKeAccumulator, NtsKeAccumulatorError, NtsKeFrameLimits, RawNtsKeMessage};
+    /// fn escape() -> Result<RawNtsKeMessage<'static>, NtsKeAccumulatorError> {
+    ///     let mut storage = [0; 4];
+    ///     let limits = NtsKeFrameLimits::new(4, 1).unwrap();
+    ///     let mut accumulator = NtsKeAccumulator::new(&mut storage, limits)?;
+    ///     accumulator.push(&[0x80, 0, 0, 0])?;
+    ///     accumulator.finish()
+    /// }
+    /// ```
+    /// Finalization consumes the owner; another push requires a new owner:
+    /// ```compile_fail,E0382
+    /// use ntp_wire::{NtsKeAccumulator, NtsKeFrameLimits};
+    /// let mut storage = [0; 4];
+    /// let limits = NtsKeFrameLimits::new(4, 1).unwrap();
+    /// let mut accumulator = NtsKeAccumulator::new(&mut storage, limits).unwrap();
+    /// accumulator.push(&[0x80, 0, 0, 0]).unwrap();
+    /// let _message = accumulator.finish().unwrap();
+    /// let _ = accumulator.push(&[]);
+    /// ```
+    pub fn finish(self) -> Result<RawNtsKeMessage<'buf>, NtsKeAccumulatorError> {
+        if let Some(error) = self.failure {
+            return Err(NtsKeAccumulatorError::Frame(error));
+        }
+        frame_nts_ke_message(&self.storage[..self.used], self.limits)
+            .map_err(NtsKeAccumulatorError::Frame)
+    }
+
+    /// Preserve the first closed framing cause without changing storage/cursor.
+    fn latch(&mut self, error: NtsKeFrameError) -> NtsKeAccumulatorError {
+        NtsKeAccumulatorError::Frame(*self.failure.get_or_insert(error))
+    }
 }
 
 /// A completely framed immutable buffer, not a semantically valid KE response.

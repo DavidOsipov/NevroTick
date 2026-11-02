@@ -925,7 +925,8 @@ class Session:
             if result["failure"] or result["exit_code"] == 0 or negative not in result["output"]:
                 raise Incomplete("Seeded control did not reach its intended actual failure.")
             return result["output"]
-        if label.startswith("mutation-enumeration:") or label == "external-legal-execution":
+        if (label.startswith("mutation-enumeration:")
+                or label in ("external-legal-execution", "external-adaptive-legal-execution")):
             # Strict counter/receipt records need the child's actual delimiters.
             # Admission still requires a successful native result before exposure.
             PRODUCT.ENV.require_ok(result)

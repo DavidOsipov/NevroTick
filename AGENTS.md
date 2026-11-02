@@ -28,6 +28,12 @@ plugin; load another skill only for concrete gap.
    candidate addenda. For other work, inspect `tasks/` and any `.agents/plans/`
    records; follow [the planning guide](.agents/skills/planning/README.md) when
    creating or revising a plan. Keep one plan/evidence chain.
+   After a pull or documentation update, reconcile the active task with the
+   development plan's [next task](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+   and [imported hardening work queue](docs/plans/development-plan.md#imported-hardening-work-queue).
+   Carry applicable assignments and their ready/held/deferred status into the
+   existing task before its next dependent implementation; a new document alone
+   does not establish task completion or lift an execution hold.
 4. Select the smallest relevant [skill set](.agents/skills/README.md) and read
    its `SKILL.md`. Before selecting checks, read
    [the testing contract](.agents/skills/testing/CONTRACT.md). State the applicable
@@ -93,6 +99,15 @@ mandatory-state owner. Source examples authorize no dependency or weaker fallbac
 RedirectionGuard and hardware rollback epochs retain their candidate gates. The
 storage experiment pause and current product-work priority remain in force.
 
+The coordinator adopts ST-W01–ST-W07 through the imported queue above at the next
+checkpoint. ST-W01 is the ready source-only storage assignment. ST-W02 needs its
+relevant frozen contracts and authorized slice; native work remains held. Apply
+the mapped ST-W03–ST-W07 contracts before related Windows filesystem, CNG,
+mitigation, IPC-completion or sensitive-memory/diagnostic implementation, even
+when that adapter work precedes optional-cache integration. Record disposition
+and next action in [the existing storage task](tasks/windows-protected-storage.md),
+without repeating the upstream survey or creating another plan.
+
 Windows 11 integration research: use [the source review](docs/plans/windows11-integration.md),
 [the agent task](tasks/windows11-integration.md) and the
 [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
@@ -102,6 +117,14 @@ to current CHECK/DNS-C/ST-T owners. Record configured versus effective Windows
 state and distinguish source evidence from native qualification. Conditional
 APIs, analyzer profiles, dependencies and release channels remain unselected;
 the current product priority, experiment pause and UI-M0 deferrals remain.
+
+At its next checkpoint the coordinator also adopts W11-W01–W11-W10 through
+section 8.5, recording owner, ready/held/deferred disposition and next action in
+the existing Windows 11 task. W11-W01's timestamp-provenance card is ready for
+source-only work when the acquisition owner reaches it; other items enter at
+their named phase or conditional trigger. Before related Windows integration,
+apply the mapped contracts and controls while retaining the distinction between
+required product behavior and optional API candidates. This handoff lifts no hold.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 

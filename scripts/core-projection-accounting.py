@@ -163,6 +163,54 @@ def source_work_uppers(calls):
             "projection_arithmetic_primitive_calls_upper": 5 * projections}
 
 
+def projection_adapter_work(fixed_requests, adaptive_requests):
+    """Bound the new shared adapter work without repeating existing family work.
+
+    Existing producer accounting already reserves twelve internal getter calls
+    per request. Adaptive requests need one additional getter. Each request may
+    enter its owner-specific capsule constructor and the shared kernel. Counts
+    are source-only upper bounds and must be charged once across disjoint callers.
+    """
+    if any(type(value) is not int or not 0 <= value <= U64_MAX
+           for value in (fixed_requests, adaptive_requests)):
+        raise Incomplete("Projection adapter requests require nonnegative u64 counts.")
+    total = fixed_requests + adaptive_requests
+    if total > U64_MAX // 2:
+        raise Incomplete("Projection adapter source work exceeds u64 bounds.")
+    return {"projection_capsule_and_kernel_entries_upper": 2 * total,
+            "projection_adaptive_extra_internal_getters_upper": adaptive_requests}
+
+
+def s150_adaptive_projection_recipe():
+    """Return the separate, finite source reservation for the new integration test.
+
+    These are source ceilings, not observed attempts or test outcomes. The
+    projected-batch constructor delegates one batch to selection accounting;
+    the batch must be charged there exactly once. Snapshot getters are bounded
+    as direct test calls; nested owner work remains in its existing family.
+    """
+    return {
+        "test_name": "adaptive_anchor::adaptive_fitted_anchor_projects_through_enclosure_and_batch",
+        "adaptive_calls": {
+            "retained_points": 0, "retained_inputs": 0, "retained_selections": 0,
+            "adaptive_observations": 13, "adaptive_appends": 13, "adaptive_histories": 3,
+            "raw_parameter_validations": 0, "raw_ordinal_validations": 0,
+            "raw_event_validations": 0, "external_normalizations": 0,
+        },
+        "projection_calls": {
+            "histories": 0, "appends": 0, "observations": 0, "contexts": 0,
+            "monotonic": 0, "coordinates": 0, "exchanges": 0, "getters": 0,
+            "terms": 1, "projections": 11,
+        },
+        "fixture_calls": {
+            "contexts": 4, "monotonic": 23, "coordinates": 14,
+            "exchanges": 13, "direct_getters_upper": 5764,
+            "enclosures": 1, "projected_batches": 1, "minima": 1,
+            "selections": 1, "selection_delegated_batches": 1,
+        },
+    }
+
+
 def full_package_reservation():
     """Reserve every actual source case before any complete package invocation."""
     recipes = _recipes()

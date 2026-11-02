@@ -976,7 +976,8 @@ The pure wire owners' additional evidence uses
 [verify-wire-analysis.py](scripts/verify-wire-analysis.py) and
 [its scoped policy](policy/ntp-wire-analysis.json), after the ordinary graph and
 portable rows. Select `--lane contracts`, `coverage`, `mutation`, `fuzz` or `all`,
-and `--subject header`, `datagram`, `nts_ke`, `nts_negotiation` or `all` (default)
+and `--subject header`, `datagram`, `nts_ke`, `nts_negotiation`, `nts_packet`,
+`nts_plaintext` or `all` (default)
 for coverage/mutation scope,
 with `--output-dir /new/private/Linux/output` and, when selecting another copy,
 `--vendor-dir /admitted/vendor`. The output path must be new. These are owned
@@ -989,10 +990,10 @@ from one actual package run. Mutation reconciles separate complete nonempty
 per-file enumerations and treats build failures as unviable; the selected campaign
 shares the fixed total mutant/time budgets. External consumer checks require a
 compiling legal caller and exact privacy/borrow error causes. Contracts cover all
-four registered owners; `--subject` does not narrow that lane. Registration of
-the pending NTPv4 negotiation owner does not establish an executed gate.
-The test-only fuzz target covers all four pure owners, including request-bound
-pending negotiation. Contracts and fuzz exercise their complete scope;
+six registered owners; `--subject` does not narrow that lane. Candidate-specific
+results belong to the [protocol task](tasks/s0.1-protocol-comparison.md#inert-nts-plaintext-framing).
+The test-only fuzz target covers all six pure owners, including request-bound
+negotiation, outer authenticator framing and inner plaintext framing. Contracts and fuzz exercise their complete scope;
 `--subject` narrows coverage/mutation only. An independently written byte-state
 model supplies request acceptance and fixed-offer response acceptance/projection
 expectations. Rejection classes/precedence and refusal contexts without algorithm

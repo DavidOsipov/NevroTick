@@ -1,13 +1,16 @@
-//! Test-only independent raw framing and pending NTPv4 negotiation oracles.
+//! Test-only independent framing, pending negotiation and packet-span oracles.
 //! This file is not a product workspace member. The models use word/byte states
 //! and record facts independently of production framing/negotiation helpers.
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
 use ntp_wire::{
-    FrameLimits, HeaderError, NtsKeFrameLimits, RawHeader, decode_fixed_header,
-    frame_no_legacy_mac_datagram, frame_nts_ke_message, negotiate_nts_ke_ntpv4,
-    read_nts_ke_ntpv4_offer,
+    FrameError, FrameLimits, HeaderError, NtsAuthenticatorError, NtsKeAccumulator,
+    NtsKeAccumulatorError, NtsKeExporterDirection, NtsKeFrameError, NtsKeFrameLimits,
+    NtsKeProgress, NtsKeRequestEncodeError, NtsPlaintextError, NtsPlaintextLimits, RawHeader,
+    decode_fixed_header, encode_nts_ke_ntpv4_request, frame_no_legacy_mac_datagram,
+    frame_nts_ke_message, frame_nts_plaintext, negotiate_nts_ke_ntpv4,
+    read_nts_authenticator_parts, read_nts_ke_ntpv4_offer,
 };
 
 /// Interpret four known available bytes using independent wider arithmetic.
@@ -513,6 +516,30 @@ fn check_negotiation_pair(request: &[u8], data: &[u8], paired: bool) {
             observed, expected.cookies,
             "independent NTS-KE negotiation cookie-count oracle"
         );
+        // These owned metadata values come only from actual accepted negotiation.
+        // Expected bytes remain the independent raw response's selected AEAD span.
+        for (direction, octet) in [
+            (NtsKeExporterDirection::ClientToServer, 0_u8),
+            (NtsKeExporterDirection::ServerToClient, 1_u8),
+        ] {
+            let context = pending.exporter_context(direction);
+            assert_eq!(
+                context.label(),
+                "EXPORTER-network-time-security",
+                "independent NTS-KE exporter-label oracle"
+            );
+            assert_eq!(
+                context.context_bytes(),
+                &[
+                    0,
+                    0,
+                    data[expected.aead_start],
+                    data[expected.aead_start + 1],
+                    octet
+                ],
+                "independent NTS-KE exporter-context oracle"
+            );
+        }
     }
 }
 
@@ -552,17 +579,494 @@ fn check_negotiation(data: &[u8]) {
     }
 }
 
+/// Check the bounded typed-ID/capacity adapter against original input byte pairs.
+/// The first byte selects capacity independently of the following ID payload.
+/// At most sixteen IDs fit within fixed 48-byte/three-record framing ceilings;
+/// larger body/count limits remain the direct boundary tests' separate scope.
+fn check_request_encoder(data: &[u8]) {
+    const SENTINEL: u8 = 0xa5;
+    let (capacity_selector, payload) = match data.split_first() {
+        Some((selector, payload)) => (*selector, payload),
+        None => (0, &[][..]),
+    };
+    let count = payload.len().min(32) / 2;
+    let original = &payload[..count * 2];
+    let mut identifiers = [0_u16; 16];
+    for (slot, pair) in identifiers
+        .iter_mut()
+        .zip(original.as_chunks::<2>().0.iter())
+    {
+        *slot = u16::from(pair[0]) * 256 + u16::from(pair[1]);
+    }
+    let capacity = usize::from(capacity_selector) % 49;
+    let needed = 14 + original.len();
+    let expected_error = if count == 0 {
+        Some(NtsKeRequestEncodeError::EmptyAeadOffer)
+    } else if capacity < needed {
+        Some(NtsKeRequestEncodeError::OutputTooSmall)
+    } else {
+        None
+    };
+    let mut output = [SENTINEL; 48];
+    let output_start = output.as_ptr();
+    let limits = NtsKeFrameLimits::new(48, 3).expect("fixed request-encoder fuzz budgets");
+    match encode_nts_ke_ntpv4_request(&identifiers[..count], &mut output[..capacity], limits) {
+        Err(error) => {
+            assert_eq!(
+                Some(error),
+                expected_error,
+                "independent request-encoder rejection oracle"
+            );
+            assert_eq!(
+                output, [SENTINEL; 48],
+                "request-encoder error preserves all storage"
+            );
+        }
+        Ok(offer) => {
+            assert!(
+                expected_error.is_none(),
+                "request-encoder accepted invalid capacity or empty offer"
+            );
+            let request = offer.request_bytes();
+            assert_eq!(
+                request.len(),
+                needed,
+                "independent request-encoder total size"
+            );
+            assert_eq!(
+                request.as_ptr(),
+                output_start,
+                "request-encoder borrows destination prefix"
+            );
+            assert_eq!(
+                &request[..8],
+                &[0x80, 1, 0, 2, 0, 0, 0x80, 4],
+                "literal request headers"
+            );
+            assert_eq!(request[8], 0, "bounded request AEAD length high byte");
+            assert_eq!(
+                usize::from(request[9]),
+                original.len(),
+                "independent AEAD body length"
+            );
+            assert_eq!(
+                &request[10..needed - 4],
+                original,
+                "encoder preserves original byte pairs/order"
+            );
+            assert_eq!(
+                &request[needed - 4..],
+                &[0x80, 0, 0, 0],
+                "literal final critical empty EOM"
+            );
+            assert_eq!(
+                offer.offered_aead_bytes(),
+                original,
+                "offer retains original ID representations"
+            );
+            assert_eq!(
+                offer.offered_aead_bytes().as_ptr(),
+                request[10..].as_ptr(),
+                "offer borrows written AEAD span"
+            );
+            let framed =
+                frame_nts_ke_message(request, limits).expect("literal complete encoded request");
+            let reread =
+                read_nts_ke_ntpv4_offer(&framed).expect("encoded request reaches existing reader");
+            assert_eq!(reread.request_bytes(), request);
+            assert_eq!(reread.offered_aead_bytes(), original);
+            assert!(
+                output[needed..].iter().all(|byte| *byte == SENTINEL),
+                "request-encoder preserves entire unwritten tail"
+            );
+        }
+    }
+}
+
+/// Independent record extents: exact EOM boundary and first observable failure.
+/// No production cursor or framer supplies expected state or error positions.
+struct StreamReference {
+    eom_end: Option<usize>,
+    rejection: Option<(usize, NtsKeFrameError)>,
+}
+
+/// Inspect at most64 raw bytes once, skipping opaque bodies by their extents.
+/// A malformed EOM becomes observable only after its entire body is present.
+fn stream_reference(data: &[u8]) -> StreamReference {
+    let mut result = StreamReference {
+        eom_end: None,
+        rejection: None,
+    };
+    if data.len() > 64 {
+        return result;
+    }
+    let mut cursor = 0;
+    let mut records = 0;
+    while cursor < data.len() {
+        if records == 8 {
+            result.rejection = Some((cursor + 1, NtsKeFrameError::TooManyRecords));
+            break;
+        }
+        if data.len() - cursor < 4 {
+            break;
+        }
+        let body = usize::from(data[cursor + 2]) * 256 + usize::from(data[cursor + 3]);
+        let end = cursor + 4 + body;
+        if end > data.len() {
+            break;
+        }
+        records += 1;
+        let kind = usize::from(data[cursor] % 128) * 256 + usize::from(data[cursor + 1]);
+        if kind == 0 {
+            if data[cursor] < 128 || body != 0 {
+                result.rejection = Some((end, NtsKeFrameError::InvalidEndOfMessage));
+            } else {
+                result.eom_end = Some(end);
+                if end < data.len() {
+                    result.rejection = Some((end + 1, NtsKeFrameError::TrailingData));
+                }
+            }
+            break;
+        }
+        cursor = end;
+    }
+    result
+}
+
+/// Compare one finite partition with independent prefix state and final grammar.
+/// Expected accepted bytes, errors and storage never derive from production results.
+fn check_stream_chunks<'a>(
+    data: &'a [u8],
+    chunks: impl Iterator<Item = &'a [u8]>,
+    reference: &StreamReference,
+) {
+    const SENTINEL: u8 = 0xa5;
+    let mut storage = [SENTINEL; 64];
+    let storage_start = storage.as_ptr();
+    let limits = NtsKeFrameLimits::new(64, 8).expect("fixed accumulator fuzz limits");
+    let mut accumulator =
+        NtsKeAccumulator::new(&mut storage, limits).expect("fixed storage covers cap");
+    assert_eq!(
+        accumulator.push(&[]),
+        Ok(NtsKeProgress::NeedMore),
+        "empty stream is not EOF"
+    );
+    let mut accepted = 0;
+    let mut first_error = None;
+    for chunk in chunks {
+        let end = accepted + chunk.len();
+        // Byte admission precedes this call's parse, but never an earlier error.
+        let expected = if end > 64 {
+            Err(NtsKeAccumulatorError::Frame(NtsKeFrameError::ByteLimit))
+        } else if let Some((_, error)) = reference.rejection.filter(|(at, _)| *at <= end) {
+            Err(NtsKeAccumulatorError::Frame(error))
+        } else {
+            Ok(if reference.eom_end == Some(end) {
+                NtsKeProgress::EndOfMessage
+            } else {
+                NtsKeProgress::NeedMore
+            })
+        };
+        assert_eq!(
+            accumulator.push(chunk),
+            expected,
+            "independent accumulator push/progress oracle"
+        );
+        if let Err(error) = expected {
+            first_error = Some(error);
+            assert_eq!(
+                accumulator.push(&[]),
+                Err(error),
+                "accumulator first error stays latched on empty input"
+            );
+            assert_eq!(
+                accumulator.push(&[0x80, 0, 0, 0]),
+                Err(error),
+                "accumulator first error stays latched on healthy input"
+            );
+            break;
+        }
+        accepted = end;
+        assert_eq!(
+            accumulator.push(&[]),
+            expected,
+            "empty chunk preserves current stream progress"
+        );
+    }
+    let expected_count = ke_reference(data, 64, 8);
+    match accumulator.finish() {
+        Err(error) => {
+            if let Some(first) = first_error {
+                assert_eq!(error, first, "accumulator finish preserves first error");
+            } else {
+                assert!(
+                    expected_count.is_none(),
+                    "independent accumulator finish acceptance oracle"
+                );
+            }
+        }
+        Ok(message) => {
+            assert!(
+                first_error.is_none(),
+                "poisoned accumulator cannot publish a message"
+            );
+            let count = expected_count.expect("independent complete raw grammar accepts");
+            assert_eq!(
+                accepted,
+                data.len(),
+                "partition preserves all original stream bytes"
+            );
+            assert_eq!(
+                message.bytes(),
+                data,
+                "accumulator preserves exact original bytes"
+            );
+            assert_eq!(
+                message.bytes().as_ptr(),
+                storage_start,
+                "accumulator message borrows caller storage"
+            );
+            assert_eq!(
+                message.record_count(),
+                count,
+                "independent accumulator record count"
+            );
+            for _ in 0..2 {
+                let mut records = message.records();
+                assert!(visit_model_records(data, |kind, critical, start, end| {
+                    let record = records
+                        .next()
+                        .expect("independent complete stream partition");
+                    assert_eq!(usize::from(record.record_type()), kind);
+                    assert_eq!(record.critical(), critical);
+                    assert_eq!(record.bytes(), &data[start - 4..end]);
+                    assert_eq!(record.body(), &data[start..end]);
+                    assert_eq!(
+                        record.bytes().as_ptr(),
+                        message.bytes()[start - 4..end].as_ptr()
+                    );
+                    assert_eq!(record.body().as_ptr(), message.bytes()[start..end].as_ptr());
+                }));
+                assert!(records.next().is_none());
+                assert!(records.next().is_none());
+            }
+        }
+    }
+    let mut expected_storage = [SENTINEL; 64];
+    expected_storage[..accepted].copy_from_slice(&data[..accepted]);
+    assert_eq!(
+        storage, expected_storage,
+        "independent accumulator accepted-prefix/rejected-storage/tail oracle"
+    );
+}
+
+/// Keep the original raw bytes in whole, selected-cut and bytewise schedules.
+/// The cut only changes partitioning, never capacities or payload interpretation.
+/// Oversized actual inputs take one whole-chunk ByteLimit path without scanning.
+fn check_ke_accumulator(data: &[u8]) {
+    let reference = stream_reference(data);
+    check_stream_chunks(data, core::iter::once(data), &reference);
+    if data.len() <= 64 {
+        let cut = usize::from(data.first().copied().unwrap_or(0)) % (data.len() + 1);
+        check_stream_chunks(data, [&data[..cut], &data[cut..]].into_iter(), &reference);
+        check_stream_chunks(data, data.chunks(1), &reference);
+    }
+}
+
+/// Independent original-input component extents, without product result values.
+struct PacketReference {
+    associated_end: usize,
+    nonce: [usize; 2],
+    ciphertext: [usize; 2],
+}
+
+/// Consume available complete words until the declared component octets expire.
+/// The input range is an independently framed body or its aligned remainder;
+/// exhaustion is observed through the input iterator, not production rounding.
+fn packet_word_end(data: &[u8], start: usize, end: usize, mut octets: usize) -> Option<usize> {
+    let mut words = data[start..end].chunks_exact(4);
+    let mut cursor = start;
+    while octets != 0 {
+        words.next()?;
+        cursor += 4;
+        octets = if octets > 4 { octets - 4 } else { 0 };
+    }
+    Some(cursor)
+}
+
+/// Select the first raw authenticator in complete independent outer partitions.
+/// Only its two declared lengths affect candidate spans. Every later field is
+/// semantically discarded, even if its type or contents resemble an envelope.
+fn packet_reference(
+    data: &[u8],
+    partitions: &Partitions,
+) -> Result<PacketReference, NtsAuthenticatorError> {
+    let selected = (0..partitions.count)
+        .find(|index| data[partitions.starts[*index]..partitions.starts[*index] + 2] == [4, 4])
+        .ok_or(NtsAuthenticatorError::MissingAuthenticator)?;
+    let start = partitions.starts[selected];
+    let end = partitions.ends[selected];
+    let nonce_octets = usize::from(data[start + 4]) * 256 + usize::from(data[start + 5]);
+    let ciphertext_octets = usize::from(data[start + 6]) * 256 + usize::from(data[start + 7]);
+    let nonce_start = start + 8;
+    let ciphertext_start = packet_word_end(data, nonce_start, end, nonce_octets)
+        .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+    packet_word_end(data, ciphertext_start, end, ciphertext_octets)
+        .ok_or(NtsAuthenticatorError::InvalidAuthenticatorLength)?;
+    Ok(PacketReference {
+        associated_end: start,
+        nonce: [nonce_start, nonce_start + nonce_octets],
+        ciphertext: [ciphertext_start, ciphertext_start + ciphertext_octets],
+    })
+}
+
+/// Challenge mandatory full framing and exact first-authenticator component spans.
+/// Complete acceptance comes from the independent outer word-state model. Exact
+/// outer errors are compared where byte/header priority establishes their cause;
+/// all remaining outer-model rejections must still return a framing error.
+fn check_packet(data: &[u8], max_bytes: usize, max_fields: usize) {
+    let limits = FrameLimits::new(max_bytes, max_fields).expect("reviewed packet model limits");
+    let actual = read_nts_authenticator_parts(data, limits);
+    let Some(partitions) = reference(data, max_bytes, max_fields) else {
+        let error = actual
+            .err()
+            .expect("invalid whole frame cannot publish packet spans");
+        assert!(
+            matches!(error, NtsAuthenticatorError::Frame(_)),
+            "packet reader must fully frame before partitioning"
+        );
+        if data.len() > max_bytes {
+            assert_eq!(error, NtsAuthenticatorError::Frame(FrameError::ByteLimit));
+        } else if data.len() < 48 {
+            assert_eq!(
+                error,
+                NtsAuthenticatorError::Frame(FrameError::HeaderTooShort)
+            );
+        }
+        return;
+    };
+    let expected = packet_reference(data, &partitions);
+    assert_eq!(
+        actual.is_ok(),
+        expected.is_ok(),
+        "independent NTS packet structural admission oracle"
+    );
+    match actual {
+        Err(error) => assert_eq!(
+            Some(error),
+            expected.err(),
+            "independent NTS packet component rejection oracle"
+        ),
+        Ok(parts) => {
+            let expected = expected.expect("independent packet acceptance was checked");
+            // A separate control build perturbs only a successful observation.
+            // It changes neither product code nor the independent input ranges.
+            let observed_aad_len =
+                parts.associated_data().len() + usize::from(cfg!(feature = "seeded-packet-defect"));
+            assert_eq!(
+                observed_aad_len, expected.associated_end,
+                "independent NTS packet span observation oracle"
+            );
+            assert_eq!(parts.associated_data(), &data[..expected.associated_end]);
+            assert_eq!(parts.associated_data().as_ptr(), data.as_ptr());
+            let nonce = &data[expected.nonce[0]..expected.nonce[1]];
+            assert_eq!(parts.nonce(), nonce);
+            assert_eq!(parts.nonce().as_ptr(), nonce.as_ptr());
+            let ciphertext = &data[expected.ciphertext[0]..expected.ciphertext[1]];
+            assert_eq!(parts.ciphertext(), ciphertext);
+            assert_eq!(parts.ciphertext().as_ptr(), ciphertext.as_ptr());
+        }
+    }
+}
+
+/// Independent word-by-word plaintext partition model with bounded work.
+fn plaintext_reference(
+    input: &[u8],
+    max_bytes: usize,
+    max_fields: usize,
+) -> Result<Vec<(usize, usize)>, NtsPlaintextError> {
+    if input.len() > max_bytes {
+        return Err(NtsPlaintextError::ByteLimit);
+    }
+    let mut fields = Vec::new();
+    let mut cursor = 0;
+    while cursor < input.len() {
+        if fields.len() == max_fields {
+            return Err(NtsPlaintextError::TooManyFields);
+        }
+        let rest = &input[cursor..];
+        let mut words = rest.chunks_exact(4);
+        let prefix = words.next().ok_or(NtsPlaintextError::InvalidFieldLength)?;
+        let declared = usize::from(prefix[2]) * 256 + usize::from(prefix[3]);
+        if declared < 4 || declared % 4 != 0 {
+            return Err(NtsPlaintextError::InvalidFieldLength);
+        }
+        let extra_words = declared / 4 - 1;
+        for _ in 0..extra_words {
+            words.next().ok_or(NtsPlaintextError::TruncatedField)?;
+        }
+        let end = cursor + declared;
+        fields.push((cursor, end));
+        cursor = end;
+    }
+    Ok(fields)
+}
+
+/// Compare complete acceptance, rejection priority and original borrowed spans.
+fn check_plaintext(input: &[u8], max_bytes: usize, max_fields: usize) {
+    let expected = plaintext_reference(input, max_bytes, max_fields);
+    let limits = NtsPlaintextLimits::new(max_bytes, max_fields).expect("fixed plaintext limits");
+    let actual = frame_nts_plaintext(input, limits);
+    match (expected, actual) {
+        (Err(expected), Err(actual)) => {
+            assert_eq!(actual, expected, "independent plaintext rejection oracle")
+        }
+        (Ok(expected), Ok(actual)) => {
+            let observed = actual.field_count()
+                + usize::from(!expected.is_empty() && cfg!(feature = "seeded-plaintext-defect"));
+            assert_eq!(
+                observed,
+                expected.len(),
+                "independent NTS plaintext field-count observation oracle"
+            );
+            let mut fields = actual.fields();
+            for (start, end) in expected {
+                let field = fields.next().expect("missing admitted plaintext field");
+                let whole = &input[start..end];
+                let body = &input[start + 4..end];
+                assert_eq!(
+                    usize::from(field.field_type()),
+                    usize::from(whole[0]) * 256 + usize::from(whole[1])
+                );
+                assert_eq!(field.bytes(), whole);
+                assert_eq!(field.bytes().as_ptr(), whole.as_ptr());
+                assert_eq!(field.body(), body);
+                assert_eq!(field.body().as_ptr(), body.as_ptr());
+            }
+            assert!(fields.next().is_none());
+        }
+        _ => panic!("independent plaintext complete-framing admission oracle"),
+    }
+}
+
 fuzz_target!(|data: &[u8]| {
+    for (bytes, fields) in [(0, 0), (4, 1), (12, 2), (4096, 1024)] {
+        check_plaintext(data, bytes, fields);
+    }
     check_header(data);
     for (bytes, records) in [(4, 1), (65_536, 2), (131_072, 32_768)] {
         check_ke(data, bytes, records);
     }
     for (bytes, fields) in [(48, 0), (75, 1), (76, 1), (92, 2), (4096, 64)] {
         check_datagram(data, bytes, fields);
+        check_packet(data, bytes, fields);
     }
     // A further bounded independent context varies the budgets with raw input.
     let bytes = 48 + usize::from(data.first().copied().unwrap_or(0)) * 15;
     let fields = usize::from(data.get(1).copied().unwrap_or(0)) % 65;
     check_datagram(data, bytes, fields);
+    check_packet(data, bytes, fields);
     check_negotiation(data);
+    check_request_encoder(data);
+    check_ke_accumulator(data);
 });

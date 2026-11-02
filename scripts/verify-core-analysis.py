@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded six-owner combination checkpoint; execution needs current source binding.
+"""Bounded one-owner projection checkpoint; execution needs current source binding.
 
 GPL-2.0-only, David Osipov with AI assistance, 29 October 2026.
 Adapts existing C/D wrappers; portable-analysis owns execution/custody. Admission
@@ -8,6 +8,7 @@ bindings are coordinator-filled only after source freeze, never invented here.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import math
@@ -37,6 +38,10 @@ PROJECTED_BATCH = COMMON.load_module("core_projected_batch_accounting", ROOT / "
 PROJECTED_BATCH_INPUTS = ("scripts/core-projected-batch-accounting.py",)
 COMBINATION = COMMON.load_module("core_combination_accounting", ROOT / "scripts/core-combination-accounting.py")
 COMBINATION_INPUTS = ("scripts/core-combination-accounting.py",)
+ADAPTIVE = COMMON.load_module("core_adaptive_accounting", ROOT / "scripts/core-adaptive-accounting.py")
+ADAPTIVE_CONTRACTS = COMMON.load_module("core_adaptive_contracts", ROOT / "scripts/core-adaptive-contracts.py")
+ADAPTIVE_INPUTS = tuple(name for name in (*ADAPTIVE.INPUTS, *ADAPTIVE_CONTRACTS.INPUTS)
+                        if name.endswith('.py'))
 COMBINATION_CONTRACT_MARKER = 'CORE_COMBINATION_CONTRACT_PROFILE'
 LIFECYCLE_CONTRACT_MARKER = 'CORE_CONTRACT_LIFECYCLE_PROFILE'
 PRODUCT, ANALYSIS, PREPARE = COMMON.PRODUCT, COMMON.ANALYSIS, COMMON.PREPARE
@@ -52,12 +57,17 @@ HISTORICAL_SUBJECTS = {"regression": "crates/time-core/src/regression.rs",
             "projection": "crates/time-core/src/regression/projection.rs",
             "enclosure": "crates/time-core/src/projection_enclosure.rs",
             "projected_batch": "crates/time-core/src/projected_batch.rs"}
-SUBJECTS = {"combination": "crates/time-core/src/combination.rs",
+HISTORICAL_LIFECYCLE_SUBJECTS = {"combination": "crates/time-core/src/combination.rs",
             "combination_admission": "crates/time-core/src/combination/admission.rs",
             "combination_lifecycle": "crates/time-core/src/combination/lifecycle.rs",
             "principal": "crates/time-core/src/principal.rs",
             "regression": HISTORICAL_SUBJECTS['regression'],
             "projection": HISTORICAL_SUBJECTS['projection']}
+COMPLETE_CRITICAL_SUBJECTS = {**HISTORICAL_SUBJECTS, **HISTORICAL_LIFECYCLE_SUBJECTS,
+                            'adaptive_history': 'crates/time-core/src/regression/adaptive_history.rs'}
+HISTORICAL_S149_SUBJECTS = {"runs": HISTORICAL_SUBJECTS["runs"],
+            "adaptive_history": "crates/time-core/src/regression/adaptive_history.rs"}
+SUBJECTS = {"projection": HISTORICAL_SUBJECTS["projection"]}
 POLICY = "policy/time-core-analysis.json"
 SCOPE = COMMON.Scope("time-core", tuple(SUBJECTS.items()), POLICY)
 BOUND_INPUTS = (
@@ -181,17 +191,30 @@ BOUND_INPUTS = (
     'scripts/check-strict.py',
     'scripts/verify.py',
 )
-SOURCE_FILE_COUNT = 119
+BOUND_INPUTS += (
+    'crates/ntp-wire/src/nts_packet.rs',
+    'crates/ntp-wire/src/nts_plaintext.rs',
+    'crates/ntp-wire/tests/nts_export.rs',
+    'crates/ntp-wire/tests/nts_packet.rs',
+    'crates/ntp-wire/tests/nts_plaintext.rs',
+    'crates/ntp-wire/tests/nts_request.rs',
+    'crates/ntp-wire/tests/nts_stream.rs',
+    'crates/time-core/src/regression/adaptive_history.rs',
+    'crates/time-core/tests/adaptive_history.rs',
+    'crates/time-core/tests/private/adaptive_history_guards.rs',
+    'crates/time-core/tests/retained_runs.rs',
+)
+SOURCE_FILE_COUNT = 130
 # Discovery remains separately admitted and never grants a campaign.
-INVENTORY_ADMISSION = "tasks/s1.3-combination-lifecycle-inventory-admission.json"
+INVENTORY_ADMISSION = "tasks/s1.2-adaptive-projection-inventory-admission.json"
 INVENTORY_SUBJECTS = dict(SUBJECTS)
 INVENTORY_BOUND_INPUTS = BOUND_INPUTS
 INVENTORY_SOURCE_FILE_COUNT = SOURCE_FILE_COUNT
 INVENTORY_FIXED = {
-    "schema_version": 4, "admission_status": "admitted-six-owner-inventory-only",
+    "schema_version": 6, "admission_status": "admitted-one-owner-inventory-only",
     "package": "time-core", "source_file_count": INVENTORY_SOURCE_FILE_COUNT,
     "subjects": INVENTORY_SUBJECTS, "maximum_mutants": 512,
-    "listing_maximum_per_file": 512, "listing_maximum_total": 3072,
+    "listing_maximum_per_file": 512, "listing_maximum_total": 512,
     "inventory_wall_seconds": 600, "mutation_jobs": 10,
     "mutation_process_limit": 512, "listing_process_limit": 128,
     "mutation_message_format": "json", "mutation_equivalences": [],
@@ -205,6 +228,7 @@ INVENTORY_REQUIRED_TOOLS = frozenset({
     *ENCLOSURE_INPUTS,
     *PROJECTED_BATCH_INPUTS,
     *COMBINATION_INPUTS,
+    *ADAPTIVE_INPUTS,
     "scripts/check-analysis.py", "scripts/analysis-controls.py",
     "scripts/prepare-product.py", "scripts/verify.py",
     "scripts/check-environment.py", "scripts/check-strict.py",
@@ -270,7 +294,7 @@ HISTORICAL_PRINCIPAL_MUTATION_INVENTORIES = {
     'principal': {'count': 217, 'sha256': '433c59b4b164904c8160163df5902992faa39e558c04a96545e55bdba65a8d0d'},
     'regression': {'count': 110, 'sha256': '7573a1e8b84a1609ad19a3d70de89d85169affbc58c786b08d4dd949da4d6a5b'},
 }
-MUTATION_INVENTORIES = {
+HISTORICAL_LIFECYCLE_MUTATION_INVENTORIES = {
     'combination': {'count': 108, 'sha256': 'f70fb3609356fcdc2b8009de04f4d98df83dd511ccd501393888e79c50b1799f'},
     'combination_admission': {'count': 33, 'sha256': 'ee1cd844ff05a898eae0a24548d1a2d5c88ec4e8dcc951f78d279e06cf5ddf52'},
     'combination_lifecycle': {'count': 212, 'sha256': 'd5c2e7ab0d2fe49fd9471e728c192ea086ff6e6eeb55c58d060e5a26a255ba75'},
@@ -278,6 +302,22 @@ MUTATION_INVENTORIES = {
     'regression': {'count': 117, 'sha256': '8ab242b7d63916556e33a8dcad5be450c977db90ce0b346262adbf183d86ba00'},
     'projection': {'count': 59, 'sha256': '36e490c59e6cbeff9a4a064deea314263898c1a87431193064d53c0f4eb1af9f'},
 }
+# Actual S148 inventory-only receipt 7395f6bd70b4853bc8600d330e94746dd98a2a9a898dc66e0e69463abf69e2dd.
+# These descriptor identities grant no executed mutation result or quality score.
+HISTORICAL_S148_MUTATION_INVENTORIES = {
+    'runs': {'count': 120, 'sha256': '57bd3969562234b8a7147a862a8d85adc3474b6ee1ba8241ac85d2a9d90a7d86'},
+    'adaptive_history': {'count': 122, 'sha256': 'f3b145116ea1d08912651c231aa838beca990d22bcd1aab290b073b0e1bf2657'},
+}
+# S149 changes the test recipe and source locations. Actual fresh discovery is
+# required; the S148 runs pass and adaptive31 misses remain historical outcomes.
+# Actual S149 listing receipt d3dd580f955fd2f1c7a9ebff997748f8f34c96c4526048dd5a8307ef167637e8.
+# Fresh descriptors only; no S148 native outcome or score is transferred.
+HISTORICAL_S149_MUTATION_INVENTORIES = {
+    'runs': {'count': 120, 'sha256': '57bd3969562234b8a7147a862a8d85adc3474b6ee1ba8241ac85d2a9d90a7d86'},
+    'adaptive_history': {'count': 122, 'sha256': '69067a98e3208c241f17e5f580301f5af5be128a54525acf36cc8dba88993ef8'},
+}
+# S150 changes the projection owner and caller recipe; no inherited result credit.
+MUTATION_INVENTORIES = {'projection': {'count': 65, 'sha256': '290bdb1b911b6634d8caeaad4da9d7dd55020b7b22cf26062174cd6151ab1cdf'}}
 GRAPH_STATUS = 'admitted-final-source-inventory-and-cohort-binding'
 # Historical root-owned discovery; never evidence for the changed candidate.
 HISTORICAL_PROJECTION_TEST_COUNTS = {
@@ -285,12 +325,56 @@ HISTORICAL_PROJECTION_TEST_COUNTS = {
   "doctests": 5,
   "baseline": 112
 }
-FINAL_PACKAGE_TEST_COUNTS = {'ordinary': 177, 'doctests': 5, 'baseline': 182}
-COORDINATOR_COHORTS = {"status": 'admitted-exact-source-and-cohorts', "schema_version": 4,
-                      "maximum_variants_per_cohort": 512, "listing_maximum_total": 3072,
-                      "partition": "six-disjoint-changed-or-coupled-owner-cohorts",
+HISTORICAL_S148_TEST_COUNTS = {'ordinary': 192, 'doctests': 7, 'baseline': 199}
+HISTORICAL_S149_TEST_COUNTS = {'ordinary': 200, 'doctests': 7, 'baseline': 207}
+FINAL_PACKAGE_TEST_COUNTS = {'ordinary': 201, 'doctests': 7, 'baseline': 208}
+HISTORICAL_S148_COORDINATOR_COHORTS = {"status": 'admitted-exact-source-and-cohorts', "schema_version": 5,
+                      "maximum_variants_per_cohort": 512, "listing_maximum_total": 1024,
+                      "partition": "two-disjoint-adaptive-owner-cohorts",
                       "plan_required_before_mutation": True,
-                      "duplicate_receipts_or_retries_admitted": False}
+                      "duplicate_mutation_receipts_or_retries_admitted": False,
+                      "checkpoint_check_totals": {"coverage": 1, "contracts": 2},
+                      "remaining_contract_attempts": 1,
+                      "contract_attempt_limits": {"legal_executions": 4, "negative_compilations": 64},
+                      "contract_retry_output": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s148-contracts-v2",
+                      "spent_contract_attempt": {
+                          "receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s148-contracts-v1/verification.json",
+                          "sha256": "6d5f52ea37b165e7cce63f5f310459d3605551968dd20ef27eb6968e63205674",
+                          "bytes": 343390, "status": "incomplete",
+                          "reservation": "one-full-contracts-vector", "success_credit": False}}
+HISTORICAL_S149_COORDINATOR_COHORTS = {
+    "status": "admitted-exact-source-and-cohorts", "schema_version": 6,
+    "checkpoint": "S149", "maximum_variants_per_cohort": 512, "listing_maximum_total": 1024,
+    "partition": "two-disjoint-adaptive-owner-cohorts", "plan_required_before_mutation": True,
+    "duplicate_receipts_or_retries_admitted": False,
+    "checkpoint_check_totals": {"coverage": 1, "contracts": 1},
+    "contract_attempt_limits": {"legal_executions": 2, "negative_compilations": 32},
+    "nonmutation_outputs": {
+        "coverage": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s149-coverage-v1",
+        "contracts": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s149-contracts-v1",
+    },
+    "mutation_outputs": {
+        "runs": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s149-mutation-runs-v1",
+        "adaptive_history": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s149-mutation-adaptive_history-v1",
+    },
+    "reservation_scope": "S149 only; all spent S148 work and outcomes remain in the cumulative task ledger without success transfer.",
+}
+COORDINATOR_COHORTS = {
+    "status": "admitted-exact-source-and-cohorts", "schema_version": 7,
+    "checkpoint": "S150", "maximum_variants_per_cohort": 512, "listing_maximum_total": 512,
+    "partition": "one-projection-owner-cohort", "plan_required_before_mutation": True,
+    "duplicate_receipts_or_retries_admitted": False,
+    "checkpoint_check_totals": {"coverage": 1, "contracts": 1},
+    "contract_attempt_limits": {"legal_executions": 2, "negative_compilations": 32},
+    "nonmutation_outputs": {
+        "coverage": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s150-coverage-v1",
+        "contracts": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s150-contracts-v1",
+    },
+    "mutation_outputs": {
+        "projection": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s150-mutation-projection-v1",
+    },
+    "reservation_scope": "S150 only; all spent S148/S149 work and outcomes remain in the cumulative task ledger without success transfer.",
+}
 PROJECTION_GLOBAL_LIMITS = {'projection.call.appends': 67611,
  'projection.call.contexts': 7997,
  'projection.call.coordinates': 270444,
@@ -543,7 +627,8 @@ LITERAL_DOCTEST_LIMITS = {
     'projection_term_garde_rule_callbacks_upper': 3,
     'projection_term_predicate_calls_upper': 6,
 }
-EXTERNAL_CONSUMER_LIMITS = {"legal_executions": 1, "negative_compilations": 24}
+HISTORICAL_EXTERNAL_CONSUMER_LIMITS = {"legal_executions": 1, "negative_compilations": 24}
+EXTERNAL_CONSUMER_LIMITS = {"legal_executions": 2, "negative_compilations": 32}
 GLOBAL_LIMITS = {'charged_fit_work_upper': 4515836, 'point_admissions_upper': 190523037}
 SELECTION_PACKAGE_RESERVATION = {"intervals": 492, "minima": 72, "batches": 81,
                                  "selections": 66, "garde_validator_invocations_upper": 1056}
@@ -751,24 +836,48 @@ LIFECYCLE_TELEMETRY = {
 }
 
 
+ADAPTIVE_TELEMETRY = {
+    'status': 'pending-reviewed-source-and-cohorts',
+    'fields': list(ADAPTIVE.FIELDS),
+    'case_recipes': ADAPTIVE.case_recipes(),
+    'case_ceilings': ADAPTIVE.case_ceilings(),
+    'package_reservation': ADAPTIVE.full_package_reservation(),
+    'literal_doctest_reservation': ADAPTIVE.literal_doctest_reservation(),
+    'literal_doctests_added': 2,
+    'source_tests': list(ADAPTIVE.SOURCE_TESTS),
+    'source_only_tests': list(ADAPTIVE.SOURCE_ONLY_TESTS),
+    'global_limits': None,
+}
+
+
+PROJECTION_ADAPTER_TELEMETRY = {
+    'status': 'pending-source-and-inventory-binding',
+    'source_only_recipe': PROJECTION.s150_adaptive_projection_recipe(),
+    'observation': 'Exact named passing libtest outcome outside Cargo JSON; no new attempt marker.',
+    'global_limits': None,
+}
+
+
 def checkpoint_scope_claim(subjects):
-    """A complete selected checkpoint never claims the thirteen-file manifest."""
+    """A complete selected checkpoint never claims the fourteen-file manifest."""
     if (type(subjects) is not dict or not subjects
             or any(name not in SUBJECTS or SUBJECTS[name] != path for name, path in subjects.items())):
         raise Incomplete('Unknown checkpoint scope.')
     return {'checkpoint_complete_selection': set(subjects) == set(SUBJECTS),
             'critical_manifest_complete_selection': False,
-            'qualification_scope': 'Selected six changed or coupled critical owners; bounded checkpoint evidence only.'}
+            'qualification_scope': 'Selected projection owner; bounded checkpoint evidence only.'}
 
 
-FIXED = {"schema_version": 12, "source_file_count": SOURCE_FILE_COUNT,
+FIXED = {"schema_version": 14, "source_file_count": SOURCE_FILE_COUNT,
          "graph_status": GRAPH_STATUS, "final_package_test_counts": FINAL_PACKAGE_TEST_COUNTS,
          "projection_telemetry": PROJECTION_TELEMETRY, "coordinator_cohorts": COORDINATOR_COHORTS,
+         "projection_adapter_telemetry": PROJECTION_ADAPTER_TELEMETRY,
          "enclosure_telemetry": ENCLOSURE_TELEMETRY,
          "projected_batch_telemetry": PROJECTED_BATCH_TELEMETRY,
          "principal_telemetry": PRINCIPAL_TELEMETRY,
          "combination_telemetry": COMBINATION_TELEMETRY,
          "lifecycle_telemetry": LIFECYCLE_TELEMETRY,
+         "adaptive_telemetry": ADAPTIVE_TELEMETRY,
          "historical_projection_test_counts": HISTORICAL_PROJECTION_TEST_COUNTS,
          "historical_projection_mutation_inventories": HISTORICAL_PROJECTION_MUTATION_INVENTORIES,
          "mutation_inventories": MUTATION_INVENTORIES,
@@ -875,6 +984,49 @@ def native_receipt_document(path):
     return _core_json_document(path, role="native-receipt")
 
 
+def admit_spent_contract_attempt():
+    """Bind the one immutable failed attempt without granting any success credit.
+
+    The entire first contracts vector is reserved despite its partial compiler
+    coverage. Bounded receipt decoding and digest bookends admit only the retained
+    delimiter failure; this is neither a resume API nor a new successful receipt.
+    """
+    prior = HISTORICAL_S148_COORDINATOR_COHORTS['spent_contract_attempt']
+    path = Path(prior['receipt'])
+    try:
+        if (path.resolve(strict=True) != path or not path.is_file()
+                or path.stat().st_size != prior['bytes']
+                or PRODUCT.sha256(path) != prior['sha256']):
+            raise Incomplete('The spent contract attempt receipt identity differs.')
+        receipt = native_receipt_document(path)
+        if path.stat().st_size != prior['bytes'] or PRODUCT.sha256(path) != prior['sha256']:
+            raise Incomplete('The spent contract attempt receipt changed during admission.')
+    except OSError as error:
+        raise Incomplete('The spent contract attempt receipt is unavailable.') from error
+    if (type(receipt) is not dict or receipt.get('status') != 'incomplete'
+            or receipt.get('selected_lane') != 'contracts'
+            or receipt.get('error') != 'Adaptive legal output is incomplete or has extra records.'
+            or type(receipt.get('analysis_admission_after')) is not dict
+            or receipt['analysis_admission_after'].get('unchanged') is not True):
+        raise Incomplete('The spent contract attempt is not the retained incomplete harness result.')
+    lanes = receipt.get('lanes')
+    if type(lanes) is not list or len(lanes) != 29 or any(type(row) is not dict for row in lanes):
+        raise Incomplete('The spent contract attempt command inventory differs.')
+    legal = [row for row in lanes if row.get('lane') in
+             ('external-legal-execution', 'external-adaptive-legal-execution')]
+    negative = [row for row in lanes if type(row.get('lane')) is str
+                and row['lane'].startswith('external-consumer-')
+                and type(row.get('exit_code')) is int and row['exit_code'] != 0
+                and row.get('failure') is None]
+    if (len(legal) != 2 or {row['lane'] for row in legal} !=
+            {'external-legal-execution', 'external-adaptive-legal-execution'}
+            or any(type(row.get('exit_code')) is not int or row['exit_code'] != 0
+                   or row.get('failure') is not None for row in legal)
+            or len(negative) != 24):
+        raise Incomplete('The spent contract attempt legal/negative execution counts differ.')
+    return dict(prior)
+
+
 def read_inventory_admission(root, path):
     """Bind one strict discovery document and every product/tool input byte.
 
@@ -930,7 +1082,7 @@ def historical_admit_core_equivalence_scope(entries):
                 or entry.get('source_sha256') != '876b647b1d8f1df7156b7383c42fcc0a0a3497e0561ebb331079c120888da658'
                 or not isinstance(entry.get('mutant'), dict)
                 or entry['mutant'].get('name') != 'crates/time-core/src/principal.rs:945:17: replace < with <= in updated_score'
-                or entry['mutant'].get('file') != SUBJECTS['principal']
+                or entry['mutant'].get('file') != HISTORICAL_LIFECYCLE_SUBJECTS['principal']
                 or entry['mutant'].get('replacement') != '<='
                 or not isinstance(entry.get('proof'), dict)
                 or entry['proof'].get('path') != 'tasks/s1.3-principal-equivalences.md'):
@@ -991,7 +1143,68 @@ COMBINATION_EQUIVALENCE_IDENTITIES = {
 }
 
 
-def admit_core_equivalence_scope(entries):
+# Closed fresh-list identities reviewed in tasks/s1.2-adaptive-equivalences.md.
+# Full descriptors include the function span; these are no line/range skips.
+S149_ADAPTIVE_EQUIVALENCE_MUTANTS = {
+    'S149-AH-E01': '1e24cc9e54b62bcbaae463a98eca4b438744a5974b4ee4de53b6d502e7db1db8',
+    'S149-AH-E02': '6fc1d079f9678b4f309a639a86b6cdd5b7d48a905caa002374244e80ad6d0bed',
+    'S149-AH-E03': 'dec117c1a924f47bd1ccaeb9ddb76a0cf9cc93c9c90b32d38ede07dbe98ea3cb',
+    'S149-AH-E04': 'a7d30be7dc95806a74a576cf3e4d06df75dc407252391a3e27c611378004c48c',
+    'S149-AH-E05': '8aa69712862baae36eaadfc5ff06b6fe2c2ecd97e5d427ea0c6253f9a23ea949',
+    'S149-AH-E06': 'ca73c9d0532bc46b8a5793208d2845a378d587f2a274dce41547bcf230f08f22',
+    'S149-AH-E07': '7150b0d334b8ac1b997bd0c4704a16f4397478c919b539756ffa83fcbf9744c9',
+    'S149-AH-E08': '56a4d6772b4a3063f7aa4415cbf06253e71dc617481abc59ba059b85e7888af7',
+    'S149-AH-E09': 'cb09fb71dec158284872590845f7c49f4fc7dc97f4a80e59398fddc84c1dbf36',
+    'S149-AH-E10': '17a3abf7784879273e1e990b36bff8f641b38ffcfb63cf0fa94953cf14423984',
+    'S149-AH-E11': 'ebc57064c9fe1730081f4e5302bf0988e11a76cf3c8ed523f1280124c3f104af',
+    'S149-AH-E12': '8a1673a933be583c1e964e7362929df8d997432d810fa528de19f754c8a28d59',
+    'S149-AH-E13': '0beddf360ba33645440e666bcbf05e4917e9bdf5c5c41ac05ce1b0739bc4da1e',
+    'S149-AH-E14': '38024e49e9a632545ffea3f8dcb8f6c8cef6b50efe5643bd0043e314429bde1b',
+    'S149-AH-E15': 'd5cc18fa544aed5e1b6a7d460a6eabe2808ed144001746f1854fd613f40e0ac5',
+    'S149-AH-E16': '048653a780ad8d6ff72554cac8c39f798ce78b29b66bf2fd36a8082196177607',
+    'S149-AH-E17': '499f894c39cbdea048239cb5b25dd89a5e896f2f252f4fa8a5c0b5c54bf24bab',
+}
+
+
+def admit_historical_s149_equivalence_scope(entries):
+    """Admit exactly the independently reviewed historical S149 descriptor/proof set.
+
+    This validates the closed receiving scope, not the proof's mathematics.
+    The shared reader checks actual candidate/source/proof bytes, and the native
+    receiver must observe each excluded descriptor as missed in this campaign.
+    """
+    if type(entries) is list and not entries and not MUTATION_INVENTORIES:
+        return
+    required = {'id', 'candidate_sha256', 'source_sha256', 'mutant', 'requirement', 'rationale', 'proof'}
+    if type(entries) is not list or len(entries) != len(S149_ADAPTIVE_EQUIVALENCE_MUTANTS):
+        raise Incomplete('S149 requires its complete seventeen reviewed equivalences.')
+    seen = set()
+    for entry in entries:
+        if type(entry) is not dict or set(entry) != required:
+            raise Incomplete('S149 equivalence record has missing or unknown fields.')
+        identifier = entry['id']
+        if (type(identifier) is not str or identifier not in S149_ADAPTIVE_EQUIVALENCE_MUTANTS
+                or identifier in seen or type(entry['mutant']) is not dict
+                or COMMON.canonical_sha256(entry['mutant']) != S149_ADAPTIVE_EQUIVALENCE_MUTANTS[identifier]
+                or entry['candidate_sha256'] != 'ba623100d89bf6c034677e4ff9b04148be60c351fa1c0ce27962c9a15d275303'
+                or entry['source_sha256'] != 'dfe76dd00208d6cfded982b5cb98a77ec1c21cc02b7c2cdf4c26a0f837f225f5'
+                or entry['requirement'] != 'REQ-8/REQ-14; CHECK-19/CHECK-25'
+                or type(entry['rationale']) is not str or not 0 < len(entry['rationale'].strip()) <= 4096):
+            raise Incomplete('S149 equivalence identity, full descriptor or source candidate differs from review.')
+        expected_proof = {
+            'path': 'tasks/s1.2-adaptive-equivalences.md',
+            'sha256': 'dd8ad1636e86f431455725affdaa85293c40a65901c9a8c7cbad8044bfb9d0ca',
+            'section': identifier, 'reviewer': 'root; adaptive_contract_review; vfbasics_data_review',
+            'verdict': 'independently-justified-equivalent',
+        }
+        if not exact(entry['proof'], expected_proof):
+            raise Incomplete('S149 equivalence proof, section or independent review differs from admission.')
+        seen.add(identifier)
+    if seen != set(S149_ADAPTIVE_EQUIVALENCE_MUTANTS):
+        raise Incomplete('S149 equivalence set is incomplete or duplicated.')
+
+
+def admit_historical_lifecycle_equivalence_scope(entries):
     """Restrict E scope to the empty set or seven exact reviewed candidate faults.
 
     This does not approve proof substance or confer E on an actual outcome.
@@ -1022,10 +1235,16 @@ def admit_core_equivalence_scope(entries):
         identifiers.add(identifier)
 
 
+def admit_core_equivalence_scope(entries):
+    """Admit no inherited equivalences for the changed projection-only owner."""
+    if type(entries) is not list or entries:
+        raise Incomplete('S150 projection equivalences require new actual misses and independent proof; none are admitted.')
+
+
 def read_policy(root, lane="all"):
     """Admit fixed scope/budgets and current bindings before any code executes."""
     if lane not in {'contracts', 'coverage', 'mutation', 'cohort-union'}:
-        raise Incomplete('This checkpoint admits coverage/contracts and six named mutation cohorts only.')
+        raise Incomplete('This checkpoint admits coverage/contracts and one named projection mutation cohort only.')
     policy = json.loads((root / POLICY).read_text())
     permitted = {*FIXED, "admission_status", "scope", "inputs_sha256", "mutation_equivalences", "coverage_guided_fuzzing",
                  "historical_projection_inputs_sha256", "historical_projection_scope"}
@@ -1045,7 +1264,7 @@ def read_policy(root, lane="all"):
                    or type(row['count']) is not int or not 1 <= row['count'] <= 512
                    or type(row['sha256']) is not str or re.fullmatch(r'[0-9a-f]{64}', row['sha256']) is None
                    for row in MUTATION_INVENTORIES.values())):
-        raise Incomplete('Six actual current mutation inventories remain pending; no campaign or checkpoint lane is admitted.')
+        raise Incomplete('The actual current projection mutation inventory remains pending; no campaign or checkpoint lane is admitted.')
     if (policy["projection_telemetry"]["status"] != "admitted-source-owned-observer"
             or policy["coordinator_cohorts"]["status"] != "admitted-exact-source-and-cohorts"
             or any(type(value) is not int or value <= 0 for value in FINAL_PACKAGE_TEST_COUNTS.values())
@@ -1089,6 +1308,18 @@ def read_policy(root, lane="all"):
             or policy['lifecycle_telemetry']['literal_doctests_added'] != 0):
         raise Incomplete('Lifecycle complete profiles and private producer/source binding remain pending.')
     admit_lifecycle_allowances(policy['lifecycle_telemetry']['global_limits'])
+    if (policy['adaptive_telemetry']['status'] != 'admitted-source-owned-profiles'
+            or not exact(policy['adaptive_telemetry']['fields'], list(ADAPTIVE.FIELDS))
+            or not exact(policy['adaptive_telemetry']['case_recipes'], ADAPTIVE.case_recipes())
+            or not exact(policy['adaptive_telemetry']['case_ceilings'], ADAPTIVE.case_ceilings())
+            or not exact(policy['adaptive_telemetry']['package_reservation'], ADAPTIVE.full_package_reservation())
+            or not exact(policy['adaptive_telemetry']['literal_doctest_reservation'], ADAPTIVE.literal_doctest_reservation())
+            or policy['adaptive_telemetry']['literal_doctests_added'] != 2):
+        raise Incomplete('Adaptive profiles, private source bounds and doctest delta await review.')
+    admit_adaptive_allowances(policy['adaptive_telemetry']['global_limits'])
+    if policy['projection_adapter_telemetry']['status'] != 'admitted-source-only-recipe':
+        raise Incomplete('Projection adapter source-only recipe remains pending.')
+    admit_projection_adapter_allowances(policy['projection_adapter_telemetry']['global_limits'])
     admit_projected_batch_allowances(policy['projected_batch_telemetry']['global_limits'])
     if (not exact(SELECTION.full_package_reservation(), SELECTION_PACKAGE_RESERVATION)
             or not exact(SELECTION.full_package_helper_reservation(), SELECTION_HELPER_RESERVATION)
@@ -1115,7 +1346,7 @@ def read_policy(root, lane="all"):
         raise Incomplete(f"Core analysis requires the exact complete{SOURCE_FILE_COUNT}-file product inventory.")
     if actual_product != policy["inputs_sha256"]:
         raise Incomplete("Complete product source differs from the final frozen policy.")
-    for filename in {**HISTORICAL_SUBJECTS, **SUBJECTS}.values():
+    for filename in COMPLETE_CRITICAL_SUBJECTS.values():
         if (inventory.get("critical_files", []).count(filename) != 1
                 or sum(m.get("package") == "time-core" and filename in m.get("files", [])
                        for m in inventory.get("security_modules", [])) != 1):
@@ -1341,6 +1572,8 @@ def selection_reservation(*, package=False, external=None):
         helpers = {key: 0 for key in SELECTION_HELPER_RESERVATION}
         helper_work = {key: 0 for key in SELECTION_HELPER_CANONICAL_WORK_LIMITS}
     return {**(PROJECTION.full_package_reservation() if package else {}),
+            **({'adaptive_reserved_budget': adaptive_budget_vector(),
+                'projection_adapter_reserved_budget': projection_adapter_budget_vector()} if package else {}),
             **(ENCLOSURE.full_package_reservation() if package else {}),
             **(projected_batch_reservation() if package else {}),
             **(principal_reservation() if package else {}),
@@ -1640,7 +1873,224 @@ def principal_counts(output, *, require_complete=False):
             'principal_observed_calls': subtotal if not pending else None}
 
 
-def profile_counts(output, *, require_fit=True, require_runs=False, validate_runs_receipt=True,
+def adaptive_budget_vector(*, include_doctests=False):
+    """Return the disjoint complete new-family reservation, never observations."""
+    if type(include_doctests) is not bool:
+        raise Incomplete('Adaptive doctest reservation scope must be Boolean.')
+    vector = ADAPTIVE.full_package_reservation()
+    vector.update({'adaptive.delegated_principal.' + key: value
+                   for key, value in adaptive_raw_event_producer_work().items()})
+    vector.update({'adaptive.doctest.' + key: value if include_doctests else 0
+                   for key, value in ADAPTIVE.literal_doctest_reservation().items()})
+    vector.update({'adaptive.legal_aux.' + key: 0
+                   for key in ADAPTIVE_CONTRACTS.legal_auxiliary_expected()})
+    return vector
+
+
+def adaptive_raw_event_producer_work():
+    """Bound the sole empty-batch raw-event setup without claiming observations.
+
+    Inner's real clone/equality derive traverses its principal state twice/eight
+    times. No fixture history, fit, projection or enclosure is constructed.
+    """
+    calls = dict.fromkeys(PRINCIPAL_FIELDS, 0)
+    calls.update(monotonic=1, batches=1, minima=1, parameters=1, seeds=1,
+                 state_clones=2, value_equalities=8)
+    return principal_source_work(calls, private_decision_case=False)
+
+
+def adaptive_external_budget_vector():
+    """Reserve only the exact legal external consumer, without package fixtures."""
+    source = ADAPTIVE_CONTRACTS.legal_contract_source()
+    if (type(source) is not str or hashlib.sha256(source.encode('utf-8')).hexdigest()
+            != ADAPTIVE.EXTERNAL_LEGAL_SOURCE_SHA256):
+        raise Incomplete('Adaptive legal source differs from the independent accounting binding.')
+    try:
+        external = ADAPTIVE.external_legal_reservation()
+    except ADAPTIVE.Incomplete as error:
+        raise Incomplete(str(error)) from error
+    package = adaptive_budget_vector()
+    if (set(external) != set(ADAPTIVE.full_package_reservation())
+            or any(type(amount) is not int or amount < 0 for amount in external.values())):
+        raise Incomplete('Adaptive legal consumer omits complete bounded source units.')
+    return {**dict.fromkeys(package, 0), **external,
+            **{'adaptive.legal_aux.' + key: value
+               for key, value in ADAPTIVE_CONTRACTS.legal_auxiliary_expected().items()}}
+
+
+def admit_adaptive_allowances(limits):
+    """Require exact current units and finite complete-checkpoint upper bounds."""
+    required = adaptive_budget_vector(include_doctests=True)
+    if (type(limits) is not dict or set(limits) != set(required)
+            or any(type(value) is not int or not 0 <= value <= (1 << 63) - 1
+                   for value in limits.values())
+            or any(value > limits[key] for key, value in required.items())):
+        raise Incomplete('Adaptive cumulative allowances await actual inventory and complete source review.')
+    return dict(limits)
+
+
+def projection_adapter_budget_vector(*, external=False):
+    """Reserve the disjoint S150 test and shared adapter entries exactly once.
+
+    All fields are source ceilings, not observed calls. Earlier families retain
+    their existing profiles and twelve internal getter requests per projection;
+    this extension accounts only for the two helper entries and adaptive delta.
+    """
+    if type(external) is not bool:
+        raise Incomplete('Projection adapter reservation scope must be Boolean.')
+    if external:
+        vector = dict.fromkeys(projection_adapter_budget_vector(), 0)
+        work = (principal_source_work(principal_legal_calls()),
+                combination_source_work(combination_legal_calls()))
+        fixed = sum(row['projection_duration_operations_upper'] // 2 for row in work)
+        lifecycle = lifecycle_legal_source_work()
+        fixed += lifecycle['delegated_principal_projection_duration_operations_upper'] // 2
+        vector['projection_adapter.fixed_requests_upper'] = fixed
+        vector.update({'projection_adapter.adapter_work.' + key: value
+                       for key, value in PROJECTION.projection_adapter_work(fixed, 0).items()})
+        return vector
+    recipe = PROJECTION.s150_adaptive_projection_recipe()
+    adaptive = ADAPTIVE.source_work(recipe['adaptive_calls'])
+    projection = PROJECTION.source_work_uppers(recipe['projection_calls'])
+    calls = dict.fromkeys(PROJECTED_BATCH.FIELDS, 0)
+    fixture = recipe['fixture_calls']
+    calls.update(enclosures=fixture['enclosures'], batches=fixture['projected_batches'],
+                 minima=fixture['minima'], selections=fixture['selections'])
+    downstream = projected_batch_source_work(calls)
+    if downstream['delegated_batch_attempts_upper'] != fixture['selection_delegated_batches']:
+        raise Incomplete('S150 delegated selection batch must be charged exactly once.')
+    fixed = sum(reservation[name]['projections'] for reservation, name in (
+        (PROJECTION.full_package_reservation(), 'projection_reserved_calls'),
+        (ENCLOSURE.full_package_reservation(), 'enclosure_reserved_calls'),
+        (projected_batch_reservation(), 'projected_batch_reserved_calls'),
+        (principal_reservation(), 'principal_reserved_calls'),
+        (combination_reservation(), 'combination_reserved_calls')))
+    lifecycle = lifecycle_reservation()['lifecycle_reserved_source_work_uppers']
+    duration = lifecycle['delegated_principal_projection_duration_operations_upper']
+    if duration % 2 or lifecycle['delegated_principal_projection_internal_product_getter_requests_upper'] != 6 * duration:
+        raise Incomplete('Lifecycle projection producer count differs from its canonical recurrence.')
+    fixed += duration // 2
+    vector = {'projection_adapter.fixed_requests_upper': fixed}
+    groups = (('adaptive_call.', recipe['adaptive_calls']),
+              ('projection_call.', recipe['projection_calls']), ('fixture_call.', fixture),
+              ('adaptive_work.', adaptive), ('projection_work.', projection),
+              ('downstream_work.', downstream),
+              ('adapter_work.', PROJECTION.projection_adapter_work(fixed, recipe['projection_calls']['projections'])))
+    for prefix, group in groups:
+        for key, value in group.items():
+            if type(value) is not int or not 0 <= value <= (1 << 63) - 1:
+                raise Incomplete('Projection adapter source reservation exceeds its exact integer bound.')
+            vector['projection_adapter.' + prefix + key] = value
+    return vector
+
+
+def admit_projection_adapter_allowances(limits):
+    """Require all source-only units and a finite full-checkpoint reservation."""
+    required = projection_adapter_budget_vector()
+    if (type(limits) is not dict or set(limits) != set(required)
+            or any(type(value) is not int or not 0 <= value <= (1 << 63) - 1 for value in limits.values())
+            or any(value > limits[key] for key, value in required.items())):
+        raise Incomplete('Projection adapter cumulative source allowances await current inventory binding.')
+    return dict(limits)
+
+
+def projection_adapter_test_observation(output, *, require_complete=False):
+    """Observe one exact libtest outcome outside JSON, without inventing counters.
+
+    A complete invocation must contain the named passing test once. Failed or
+    absent caught prefixes retain pending source-only work; their full reservation
+    is never reduced. JSON compiler messages and replay prose provide no outcome.
+    """
+    if type(output) is not str or type(require_complete) is not bool:
+        raise Incomplete('Projection adapter test observation has invalid input types.')
+    name = PROJECTION.s150_adaptive_projection_recipe()['test_name']
+    pattern = re.compile(r'test (?:projection::)?' + re.escape(name) + r' \.\.\. (ok|FAILED|ignored)\r?\n')
+    outcomes = []
+    reached = False
+    for line in output.splitlines(keepends=True):
+        if line.lstrip().startswith('{'):
+            continue
+        if line.startswith('test ') and name in line:
+            reached = True
+            match = pattern.fullmatch(line)
+            if match:
+                outcomes.append(match.group(1))
+    if len(outcomes) > 1:
+        raise Incomplete('Projection adapter test outcome is duplicated or replayed.')
+    status = outcomes[0] if outcomes else ('reached-pending' if reached else 'missing')
+    passed = status == 'ok'
+    if require_complete and not passed:
+        raise Incomplete('Complete package lacks the actual passing adaptive fitted-anchor projection test.')
+    budget = projection_adapter_budget_vector()
+    work = {key: budget['projection_adapter.adaptive_work.' + key] for key in GLOBAL_LIMITS}
+    return {'projection_adapter_test_name': name, 'projection_adapter_test_status': status,
+            'projection_adapter_source_only_pending': not passed,
+            'projection_adapter_recorded_source_work_upper': work if passed else None}
+
+
+def profile_counts(output, *, require_adaptive=False, require_adaptive_projection=False,
+                   bridge_zero_prefix=None, **options):
+    """Validate new families before dispatching unchanged historical observers.
+
+    Only fully parsed raw-validation lines leave the older closed lifecycle
+    namespace. A Caught token remains bound to the original text before the
+    unchanged legacy parser receives a token for its exact filtered text.
+    Every older profile limit is checked before new source work is added.
+    """
+    try:
+        adaptive = ADAPTIVE.package_counts(output, require_complete=require_adaptive)
+    except ADAPTIVE.Incomplete as error:
+        raise Incomplete(str(error)) from error
+    if "--- STDERR:" in output or "Summary [" in output:
+        raise Incomplete("Nextest summary/replay output is not an admitted core counter stream.")
+    if any(marker in output for marker in ('CORE_HISTORY_FUZZ_COUNTS', 'CORE_NORMALIZATION_FUZZ_COUNTS',
+                                           'CORE_STATS_FUZZ_COUNTS', 'CORE_FUZZ_COUNTS')):
+        raise Incomplete('Fuzz-owner counters are not a package profile stream.')
+    legacy_text = ''.join(line for line in output.splitlines(keepends=True)
+                          if 'CORE_LIFECYCLE_RAW_VALIDATION_PROFILE' not in line)
+    if bridge_zero_prefix is not None:
+        if COMBINATION.caught_bridge_zero_prefix(output) != bridge_zero_prefix:
+            raise Incomplete('Caught bridge prefix does not bind the original complete Test text.')
+        bridge_zero_prefix = COMBINATION.caught_bridge_zero_prefix(legacy_text)
+        if bridge_zero_prefix is None:
+            raise Incomplete('Validated adaptive dispatch lost the actual bridge failure context.')
+    legacy_markers = ('CORE_PROFILE_COUNTS', 'CORE_STATS_PROFILE_COUNTS',
+                      'CORE_NORMALIZATION_PROFILE_COUNTS', 'CORE_HISTORY_PROFILE_COUNTS',
+                      'CORE_RUNS_', 'S13_SELECTION_PROFILE', 'S13_BATCH_GUARD_PROFILE',
+                      'SELECTION_HELPER_PROFILE', 'CORE_SELECTION_EXTERNAL_PROFILE',
+                      'CORE_PROJECTION_PROFILE', 'CORE_ENCLOSURE_PROFILE',
+                      PROJECTED_BATCH.MARKER, PROJECTED_BATCH.GUARD_MARKER,
+                      'CORE_PRINCIPAL_', 'CORE_COMBINATION_', 'CORE_LIFECYCLE_')
+    partial_new_only = (adaptive['adaptive_profiles'] and not options.get('require_fit', True)
+                        and not any(value for key, value in options.items() if key.startswith('require_'))
+                        and not any(marker in legacy_text for marker in legacy_markers))
+    if partial_new_only:
+        # These are absent-owner source uppers, not fabricated direct-call rows.
+        result = {'charged_fit_work_upper': 0, 'point_admissions_upper': 0,
+                  'legacy_charged_fit_work_upper': 0, 'legacy_point_admissions_upper': 0,
+                  'internal_fit_upper_bound': 0, 'counter_records': 0,
+                  'legacy_profile_observation_present': False}
+    else:
+        result = legacy_profile_counts(legacy_text, bridge_zero_prefix=bridge_zero_prefix, **options)
+        result['legacy_profile_observation_present'] = True
+    work = adaptive['adaptive_recorded_source_work_upper']
+    if work is not None:
+        for key in GLOBAL_LIMITS:
+            result[key] += work[key]
+        result['internal_fit_upper_bound'] += work['charged_fit_work_upper']
+    result['counter_records'] += len(adaptive['adaptive_profiles'])
+    result.update(adaptive)
+    adapter = projection_adapter_test_observation(output, require_complete=require_adaptive_projection)
+    supplemental = adapter['projection_adapter_recorded_source_work_upper']
+    if supplemental is not None:
+        for key in GLOBAL_LIMITS:
+            result[key] += supplemental[key]
+        result['internal_fit_upper_bound'] += supplemental['charged_fit_work_upper']
+    result.update(adapter)
+    return result
+
+
+def legacy_profile_counts(output, *, require_fit=True, require_runs=False, validate_runs_receipt=True,
                    require_selection=False, require_projection=False, require_enclosure=False,
                    require_projected_batch=False, require_principal=False, require_combination=False,
                    require_lifecycle=False, bridge_zero_prefix=None):
@@ -1846,6 +2296,21 @@ def profile_counts(output, *, require_fit=True, require_runs=False, validate_run
 
 
 def account_literal_doctests(counts):
+    """Keep legacy doctest checks intact and charge the separate adaptive delta."""
+    legacy = dict(counts)
+    adaptive = counts.get('adaptive_recorded_source_work_upper') or {}
+    supplemental = counts.get('projection_adapter_recorded_source_work_upper') or {}
+    for key in GLOBAL_LIMITS:
+        legacy[key] -= adaptive.get(key, 0) + supplemental.get(key, 0)
+    value = account_legacy_literal_doctests(legacy)
+    docs = ADAPTIVE.literal_doctest_reservation()
+    for key in GLOBAL_LIMITS:
+        value[key] += adaptive.get(key, 0) + supplemental.get(key, 0) + docs[key]
+    value['adaptive_literal_doctest_source_upper'] = docs
+    return value
+
+
+def account_legacy_literal_doctests(counts):
     """Charge five source-audited literal doctests as separate source uppers.
 
     One legal snippet constructs3 direct points and calls no fit/statistics,
@@ -2088,6 +2553,9 @@ def record_counts(report, label, counts):
     if any(type(counts.get(key)) is not int or counts[key] < 0 for key in GLOBAL_LIMITS):
         raise Incomplete("Core count record omits an exact nonnegative charged bound.")
     selection_kind = counts.get('selection_expected')
+    if ('projection_adapter_reserved_budget' in counts and selection_kind != 'package'
+            and 'principal_external_reserved_calls' not in counts):
+        raise Incomplete('Projection adapter reservation has no admitted package or legal-consumer scope.')
     projection_keys = ('projection_reserved_calls', 'projection_reserved_source_work_uppers',
                        'projection_reserved_private_source_work')
     enclosure_keys = ('enclosure_reserved_calls', 'enclosure_reserved_source_work_uppers',
@@ -2101,6 +2569,10 @@ def record_counts(report, label, counts):
                       'lifecycle_reserved_counter_calls', 'lifecycle_reserved_module_work_uppers',
                       'lifecycle_reserved_source_work_uppers')
     if selection_kind == 'package':
+        if not exact(counts.get('projection_adapter_reserved_budget'), projection_adapter_budget_vector()):
+            raise Incomplete('Projection adapter full-package source reservation is missing or changed.')
+        if not exact(counts.get('adaptive_reserved_budget'), adaptive_budget_vector()):
+            raise Incomplete('Adaptive full-package reservation is missing or differs from source bounds.')
         projection = PROJECTION.full_package_reservation()
         if any(not exact(counts.get(key), projection[key]) for key in projection_keys):
             raise Incomplete('Projection full-package reservation is missing or differs from source recipes.')
@@ -2124,10 +2596,19 @@ def record_counts(report, label, counts):
             raise Incomplete('Package doctest reservation flag must be Boolean.')
         if any(counts[key] != amount for key, amount in package_charged_upper(include_doctests=docs).items()):
             raise Incomplete('Complete package reservation omits old or projection charged source work.')
-    elif any(key in counts for key in (*projection_keys, *enclosure_keys, *projected_batch_keys,
+    elif any(key in counts for key in ('adaptive_reserved_budget', *projection_keys, *enclosure_keys, *projected_batch_keys,
                                      *principal_keys, *combination_keys, *lifecycle_keys)):
         raise Incomplete('Projection/enclosure/projected-batch reservation has no complete package scope.')
+    if 'adaptive_external_reserved_budget' in counts:
+        expected_adaptive = adaptive_external_budget_vector()
+        if (selection_kind is not None
+                or not exact(counts['adaptive_external_reserved_budget'], expected_adaptive)
+                or any(counts[key] != expected_adaptive['adaptive.work.' + key]
+                       for key in GLOBAL_LIMITS)):
+            raise Incomplete('Adaptive external consumer reservation differs from its exact independent recipe.')
     if 'principal_external_reserved_calls' in counts or 'principal_external_reserved_source_work_uppers' in counts:
+        if not exact(counts.get('projection_adapter_reserved_budget'), projection_adapter_budget_vector(external=True)):
+            raise Incomplete('Projection adapter external source reservation is missing or changed.')
         legal = principal_legal_calls()
         if (not exact(counts.get('principal_external_reserved_calls'), legal)
                 or not exact(counts.get('principal_external_reserved_source_work_uppers'), principal_source_work(legal))
@@ -2463,6 +2944,68 @@ def refresh_accounting(report):
             or any(type(lifecycle_limits[key]) is not int or amount > lifecycle_limits[key]
                    for key, amount in lifecycle_reserved.items())):
         raise Incomplete('Lifecycle selected subset exceeds its complete checkpoint source-work allowance.')
+    adapter_keys = projection_adapter_budget_vector()
+    adapter_rows = [row for row in invocations if 'projection_adapter_reserved_budget' in row]
+    adapter_totals = dict.fromkeys(adapter_keys, 0)
+    for row in adapter_rows:
+        budget = row['projection_adapter_reserved_budget']
+        if type(budget) is not dict or set(budget) != set(adapter_keys):
+            raise Incomplete('Projection adapter invocation has missing or unknown source units.')
+        for key, value in budget.items():
+            if type(value) is not int or value < 0:
+                raise Incomplete('Projection adapter reservation requires exact nonnegative units.')
+            adapter_totals[key] += value
+    report['core_projection_adapter_reserved_totals'] = adapter_totals
+    report['core_projection_adapter_source_test_pending_invocations'] = [
+        row['invocation'] for row in adapter_rows if row.get('selection_expected') == 'package'
+        and row.get('observed_counts', row).get('projection_adapter_source_only_pending', True)
+        and row.get('observation_status') != 'unviable-compile-only']
+    report['core_projection_adapter_observation_scope'] = (
+        'Source-only recipe/adapter upper bounds are reserved in full. Only the exact named libtest '
+        'outcome is observed; no supplemental calls or private arithmetic are reported as measured.')
+    adapter_limits = PROJECTION_ADAPTER_TELEMETRY['global_limits']
+    report['core_projection_adapter_cumulative_allowances_pending'] = adapter_limits is None
+    if adapter_limits is not None and (
+            type(adapter_limits) is not dict or set(adapter_limits) != set(adapter_totals)
+            or any(type(adapter_limits[key]) is not int or value > adapter_limits[key]
+                   for key, value in adapter_totals.items())):
+        raise Incomplete('Projection adapter subset exceeds its complete checkpoint source allowance.')
+
+    adaptive_rows = [row for row in invocations if 'adaptive_reserved_budget' in row
+                     or 'adaptive_external_reserved_budget' in row]
+    adaptive_keys = adaptive_budget_vector(include_doctests=True)
+    adaptive_reserved = dict.fromkeys(adaptive_keys, 0)
+    for row in adaptive_rows:
+        budget = row.get('adaptive_reserved_budget', row.get('adaptive_external_reserved_budget'))
+        if type(budget) is not dict or set(budget) != set(adaptive_reserved):
+            raise Incomplete('Adaptive invocation reservation has unknown or missing source units.')
+        for key, amount in budget.items():
+            if type(amount) is not int or amount < 0:
+                raise Incomplete('Adaptive reservation requires exact nonnegative source units.')
+            adaptive_reserved[key] += amount
+        if row.get('literal_doctests_reserved', False):
+            for key, amount in ADAPTIVE.literal_doctest_reservation().items():
+                adaptive_reserved['adaptive.doctest.' + key] += amount
+    adaptive_observations = [row.get('observed_counts', row) for row in adaptive_rows]
+    for name in ('adaptive_recorded_calls', 'adaptive_observed_calls'):
+        values = [row[name] for row in adaptive_observations if row.get(name) is not None]
+        report['core_' + name] = reported_sum(values, ADAPTIVE.FIELDS)
+    report['core_adaptive_reserved_totals'] = adaptive_reserved
+    report['core_adaptive_pending_observation_invocations'] = [
+        row['invocation'] for row in adaptive_rows
+        if not row.get('observed_counts', row).get('adaptive_observation_complete', False)
+        and row.get('observation_status') != 'unviable-compile-only']
+    report['core_adaptive_observation_scope'] = (
+        'Named attempt rows only; private guards and delegated empty-batch setup are '
+        'source-owned upper bounds, not measured inner work. Missing/partial rows '
+        'never reduce the complete pre-effect reservation.')
+    adaptive_limits = ADAPTIVE_TELEMETRY['global_limits']
+    report['core_adaptive_cumulative_allowances_pending'] = adaptive_limits is None
+    if adaptive_limits is not None and (
+            type(adaptive_limits) is not dict or set(adaptive_limits) != set(adaptive_reserved)
+            or any(type(adaptive_limits[key]) is not int or amount > adaptive_limits[key]
+                   for key, amount in adaptive_reserved.items())):
+        raise Incomplete('Adaptive selected subset exceeds its complete checkpoint source-work allowance.')
     report["global_campaign_custody"] = "Coordinator must reconcile all invocations, literal doctest upper calls, inherited E events and retries; wrapper records its selected subset only."
     if any(totals[key] > maximum for key, maximum in GLOBAL_LIMITS.items()):
         raise Incomplete("Core selected subset already exceeds the global charged allowance.")
@@ -2885,7 +3428,8 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
                    'S13_SELECTION_PROFILE', 'S13_BATCH_GUARD_PROFILE', 'SELECTION_HELPER_PROFILE',
                    'CORE_PROJECTION_PROFILE', 'CORE_ENCLOSURE_PROFILE',
                    PROJECTED_BATCH.MARKER, PROJECTED_BATCH.GUARD_MARKER, 'CORE_PRINCIPAL_',
-                   'CORE_COMBINATION_', 'CORE_LIFECYCLE_')
+                   'CORE_COMBINATION_', 'CORE_LIFECYCLE_',
+                   'CORE_RETAINED_RUNS_PROFILE', 'CORE_ADAPTIVE_HISTORY_PROFILE')
         if any(marker in prefix for marker in markers):
             reserved['observation_status'] = 'timeout-prefix-invalid'
             reserved['counter_prefix_counts'] = profile_counts(
@@ -2931,6 +3475,7 @@ def observe_mutation_outcome(report, path, label, outcome, reserved):
                               require_projection=not caught, require_enclosure=not caught,
                               require_projected_batch=not caught, require_principal=not caught,
                               require_combination=not caught, require_lifecycle=not caught,
+                              require_adaptive=not caught, require_adaptive_projection=not caught,
                               bridge_zero_prefix=bridge_zero_prefix)
     reserved['observed_counts'] = account_literal_doctests(observed)
     reserved['observation_pending'] = False
@@ -3303,6 +3848,15 @@ def combination_contract_examples():
 
 
 def contract_examples():
+    """Join the reviewed historical consumer and disjoint adaptive witnesses."""
+    historical = historical_contract_examples()
+    adaptive = ADAPTIVE_CONTRACTS.contract_examples()
+    if set(historical) & set(adaptive):
+        raise Incomplete('Adaptive contract names overlap an existing owner.')
+    return {**historical, **adaptive}
+
+
+def historical_contract_examples():
     """One genuine checked consumer and twenty-four precise bypass probes.
 
     This registry establishes neither every privacy/trait property nor native
@@ -4138,6 +4692,39 @@ def contracts(session, policy, report):
         run("external-consumer-" + name, command, COMMON.remaining_timeout(deadline, 60),
             sealed=[consumers, dependency_copy], specimen=specimen if specimen["code"] else None)
         if specimen["code"] is None:
+            if 'adaptive_calls' in specimen:
+                expected = ADAPTIVE_CONTRACTS.legal_expected()
+                if (not exact(specimen['adaptive_calls'], expected)
+                        or specimen['source'] != ADAPTIVE_CONTRACTS.legal_contract_source()
+                        or not exact(specimen.get('adaptive_auxiliary_calls'),
+                                     ADAPTIVE_CONTRACTS.legal_auxiliary_expected())):
+                    raise Incomplete('Adaptive legal consumer differs from its exact call recipe.')
+                budget = adaptive_external_budget_vector()
+                work = {key.removeprefix('adaptive.work.'): amount
+                        for key, amount in budget.items() if key.startswith('adaptive.work.')}
+                record_counts(report, name, {
+                    **{key: work[key] for key in GLOBAL_LIMITS},
+                    'adaptive_external_reserved_budget': budget,
+                    'observation_pending': True,
+                    'execution': 'One genuine adaptive consumer reserved before execution.'})
+                reserved = report['core_invocations'][-1]
+                output = run('external-adaptive-legal-execution', ['/work/contracts/' + name],
+                             COMMON.remaining_timeout(deadline, 30), sealed=[consumers, dependency_copy])
+                try:
+                    observed = ADAPTIVE_CONTRACTS.contract_counts(output)
+                except ADAPTIVE_CONTRACTS.Incomplete as error:
+                    raise Incomplete(str(error)) from error
+                if 'legal-core-contract' not in output or not exact(observed, expected):
+                    raise Incomplete('Adaptive legal consumer omitted its actual complete attempt recipe.')
+                reserved['observed_counts'] = {
+                    **{key: work[key] for key in GLOBAL_LIMITS},
+                    'adaptive_recorded_calls': observed,
+                    'adaptive_observed_calls': dict(observed),
+                    'adaptive_recorded_source_work_upper': work,
+                    'adaptive_observation_complete': True}
+                reserved['observation_pending'] = False
+                refresh_accounting(report)
+                continue
             if 'principal_calls' in specimen:
                 expected = specimen['principal_calls']
                 work = principal_source_work(expected)
@@ -4153,6 +4740,7 @@ def contracts(session, policy, report):
                            for key in GLOBAL_LIMITS}
                 record_counts(report, name, {
                     **charged,
+                    'projection_adapter_reserved_budget': projection_adapter_budget_vector(external=True),
                     'principal_external_reserved_calls': expected,
                     'principal_external_reserved_source_work_uppers': work,
                     'combination_external_reserved_calls': combination_expected,
@@ -4265,6 +4853,7 @@ def contracts(session, policy, report):
                            "literal_principal_legal_calls": principal_legal_calls(),
                            "literal_combination_legal_calls": combination_legal_calls(),
                            "literal_lifecycle_legal_calls": lifecycle_legal_calls(),
+                           "literal_adaptive_legal_calls": ADAPTIVE_CONTRACTS.legal_expected(),
                            "domain_library_artifact": domain_artifact,
                            "immutable_dependencies_sha256": PRODUCT.inventory(dependency_copy),
                            "literal_legal_calls": {
@@ -4438,9 +5027,9 @@ def fuzz(session, selected, report):
 
 
 def execute_inventory(args, report):
-    """Collect six listings under one deadline; admit no native product call."""
+    """Collect two listings under one deadline; admit no native product call."""
     if args.subject != "all" or getattr(args, "inventory_admission", None) is None:
-        raise Incomplete("Inventory discovery requires all six checkpoint owners and its explicit admission.")
+        raise Incomplete("Inventory discovery requires both checkpoint owners and its explicit admission.")
     deadline = time.monotonic() + INVENTORY_FIXED["inventory_wall_seconds"]
     policy = read_inventory_admission(ROOT, args.inventory_admission)
     admission_sha256 = PRODUCT.sha256(ROOT / INVENTORY_ADMISSION)
@@ -4452,7 +5041,7 @@ def execute_inventory(args, report):
     session = COMMON.Session(ROOT, session_args, report, scope, policy,
                              tuple(policy["tool_inputs_sha256"]))
     report.update(subjects=dict(INVENTORY_SUBJECTS),
-                   qualification_scope="six-owner inventory discovery only; no campaign or quality score",
+                   qualification_scope="one-owner inventory discovery only; no campaign or quality score",
                   campaigns_admitted=False, native_test_invocations=0,
                   listing_process_limit=128, inventory_admission_sha256=admission_sha256)
 
@@ -4490,7 +5079,7 @@ def execute_inventory(args, report):
             "inventories": summaries, "total": result.total,
             "exceeds_current_campaign_cap": result.campaign_budget_exceeded,
             "campaign_cap": policy["maximum_mutants"], "campaign_admission": "not granted",
-            "reservation_next_action": "bind exact inventories and reserve the complete six-owner checkpoint before execution",
+            "reservation_next_action": "bind exact inventories and reserve the complete one-owner checkpoint before execution",
         }
     finally:
         primary = sys.exception()
@@ -4518,11 +5107,19 @@ def package_charged_upper(*, include_doctests=False):
     principal = principal_reservation()['principal_reserved_source_work_uppers']
     combination = combination_reservation()['combination_reserved_source_work_uppers']
     lifecycle = lifecycle_reservation()['lifecycle_reserved_source_work_uppers']
+    adaptive = ADAPTIVE.full_package_reservation()
+    adaptive_docs = ADAPTIVE.literal_doctest_reservation()
+    adapter = projection_adapter_budget_vector()
     if type(include_doctests) is not bool:
         raise Incomplete('The package doctest scope must be Boolean.')
-    return {'charged_fit_work_upper': 5233 + projection['charged_fit_work_upper'] + enclosure['charged_fit_work_upper'] + projected_batch['charged_fit_work_upper'] + principal['charged_fit_work_upper'] + combination['charged_fit_work_upper'] + lifecycle['charged_fit_work_upper'],
+    return {'charged_fit_work_upper': 5233 + projection['charged_fit_work_upper'] + enclosure['charged_fit_work_upper'] + projected_batch['charged_fit_work_upper'] + principal['charged_fit_work_upper'] + combination['charged_fit_work_upper'] + lifecycle['charged_fit_work_upper']
+                                     + adaptive['adaptive.work.charged_fit_work_upper']
+                                     + adapter['projection_adapter.adaptive_work.charged_fit_work_upper']
+                                     + (adaptive_docs['charged_fit_work_upper'] if include_doctests else 0),
             'point_admissions_upper': 220797 + projection['point_admissions_upper'] + enclosure['point_admissions_upper'] + projected_batch['point_admissions_upper'] + principal['point_admissions_upper'] + combination['point_admissions_upper'] + lifecycle['point_admissions_upper']
-                                      + (LITERAL_DOCTEST_LIMITS['point_admissions_upper'] if include_doctests else 0)}
+                                     + adaptive['adaptive.work.point_admissions_upper']
+                                     + adapter['projection_adapter.adaptive_work.point_admissions_upper']
+                                     + (LITERAL_DOCTEST_LIMITS['point_admissions_upper'] + adaptive_docs['point_admissions_upper'] if include_doctests else 0)}
 
 
 def cohort_budget_vectors(*, require_limits=True):
@@ -4600,6 +5197,14 @@ def cohort_budget_vectors(*, require_limits=True):
         package.update({prefix + key: value for key, value in lifecycle[name].items()})
     limits.update(admit_lifecycle_allowances(LIFECYCLE_TELEMETRY['global_limits']) if require_limits
                   else lifecycle_budget_vector())
+    adaptive = adaptive_budget_vector(include_doctests=True)
+    package.update(adaptive)
+    limits.update(admit_adaptive_allowances(ADAPTIVE_TELEMETRY['global_limits']) if require_limits
+                  else adaptive)
+    adapter = projection_adapter_budget_vector()
+    package.update(adapter)
+    limits.update(admit_projection_adapter_allowances(PROJECTION_ADAPTER_TELEMETRY['global_limits'])
+                  if require_limits else adapter)
     zero = {key: 0 for key in package}
     legal_calls = principal_legal_calls()
     legal_work = principal_source_work(legal_calls)
@@ -4613,27 +5218,36 @@ def cohort_budget_vectors(*, require_limits=True):
     contracts.update({'combination.call.' + key: value for key, value in combination_calls.items()})
     contracts.update({'combination.work.' + key: value for key, value in combination_work.items()})
     contracts.update(lifecycle_legal_budget_vector())
+    adaptive_external = adaptive_external_budget_vector()
+    contracts.update(adaptive_external)
+    contracts.update(projection_adapter_budget_vector(external=True))
+    for key in GLOBAL_LIMITS:
+        contracts[key] += adaptive_external['adaptive.work.' + key]
     coverage = dict(package)
     coverage['point_admissions_upper'] -= LITERAL_DOCTEST_LIMITS['point_admissions_upper']
     for key in projection_docs:
         coverage['projection.doctest.' + key] = 0
+    for key in ADAPTIVE.literal_doctest_reservation():
+        coverage['adaptive.doctest.' + key] = 0
     return package, {'coverage': coverage, 'contracts': contracts}, limits
 
 
 def checkpoint_source_reservation():
     """Derive a fresh source reservation only after all actual listings exist."""
     if set(MUTATION_INVENTORIES) != set(SUBJECTS):
-        raise Incomplete('Six actual current mutation inventories remain pending; no cohort reservation is admitted.')
+        raise Incomplete('The actual current projection mutation inventory remains pending; no cohort reservation is admitted.')
     package, checks, _ = cohort_budget_vectors(require_limits=False)
     plan = {'inventories': MUTATION_INVENTORIES,
-            'remaining_checks': {name: 1 for name in COHORTS.CHECKS}}
+            # S150 is a new candidate/recipe; prior checkpoint costs stay in the
+            # historical ledger and receive no current result or budget credit.
+            'remaining_checks': dict(COORDINATOR_COHORTS['checkpoint_check_totals'])}
     return COHORTS.plan_reservation(plan, package, checks)
 
 
 def bind_checkpoint_source_allowances():
     """Replace historical initializer values with the exact current source sum.
 
-    This is deterministic finite arithmetic from the literal actual6 inventories
+    This is deterministic finite arithmetic from the actual current projection inventory
     and independently bounded package/contract recipes, not executed work. Final
     policy/source hashes and the real cohort plan are still admitted separately.
     """
@@ -4660,13 +5274,19 @@ def bind_checkpoint_source_allowances():
     LIFECYCLE_TELEMETRY['global_limits'] = {key: value for key, value in vector.items()
                                           if key.startswith('lifecycle.')}
     LIFECYCLE_TELEMETRY['status'] = 'admitted-source-owned-profiles'
+    ADAPTIVE_TELEMETRY['global_limits'] = {key: value for key, value in vector.items()
+                                         if key.startswith('adaptive.')}
+    ADAPTIVE_TELEMETRY['status'] = 'admitted-source-owned-profiles'
+    PROJECTION_ADAPTER_TELEMETRY['global_limits'] = {key: value for key, value in vector.items()
+                                                    if key.startswith('projection_adapter.')}
+    PROJECTION_ADAPTER_TELEMETRY['status'] = 'admitted-source-only-recipe'
     return reservation
 
 
 def read_cohort_plan(root, path, policy):
     """Read a strict source-bound coordinator plan before any native effect."""
     root = Path(root).resolve(strict=True)
-    # Only the declared checkpoint coverage/contracts remain in this plan.
+    # Current S150 totals require fresh coverage and contracts exactly once.
     if not exact(read_policy(root, 'contracts'), policy):
         raise Incomplete('Coordinator plan differs from the complete remaining-lane source admission.')
     path = Path(path)
@@ -4680,6 +5300,7 @@ def read_cohort_plan(root, path, policy):
                    for name in sorted(inventory_tool_inputs(root) | {POLICY} | proof_inputs)}
     package, checks, limits = cohort_budget_vectors()
     recipe = COMMON.canonical_sha256({'package': package, 'remaining_checks': checks,
+                                     'checkpoint_attempt_scope': COORDINATOR_COHORTS,
                                      'test_counts': FINAL_PACKAGE_TEST_COUNTS,
                                      'projection_recipes': PROJECTION_TELEMETRY['case_recipes'],
                                      'projection_private_work': PROJECTION.SOURCE_PRIVATE_WORK,
@@ -4700,6 +5321,13 @@ def read_cohort_plan(root, path, policy):
                                      'combination_uncertainty_work': COMBINATION.SOURCE_WORK_PER_UNCERTAINTY,
                                      'combination_kernel_work': COMBINATION.SOURCE_WORK_PER_COMBINATION,
                                      'combination_legal_calls': combination_legal_calls(),
+                                     'adaptive_recipes': ADAPTIVE.case_recipes(),
+                                     'adaptive_case_ceilings': ADAPTIVE.case_ceilings(),
+                                     'adaptive_package': adaptive_budget_vector(include_doctests=True),
+                                     'adaptive_external': adaptive_external_budget_vector(),
+                                     'projection_adapter_recipe': PROJECTION.s150_adaptive_projection_recipe(),
+                                     'projection_adapter_package': projection_adapter_budget_vector(),
+                                     'projection_adapter_external': projection_adapter_budget_vector(external=True),
                                      'contract_cases': contract_examples(),
                                      'global_limits': limits})
     try:
@@ -4756,9 +5384,11 @@ def prospective_scope_reservation(lane, subjects):
     legal_work = principal_source_work(principal_legal_calls())
     combination_legal_work = combination_source_work(combination_legal_calls())
     lifecycle_legal_work = lifecycle_legal_source_work()
+    adaptive_external = adaptive_external_budget_vector()
     per_package = package_charged_upper(include_doctests=lane == 'mutation')
     charged = {key: packages * value + legal * (
-                   legal_work[key] + combination_legal_work[key] + lifecycle_legal_work[key])
+                   legal_work[key] + combination_legal_work[key] + lifecycle_legal_work[key]
+                   + adaptive_external['adaptive.work.' + key])
                for key, value in per_package.items()}
     selection = {key: maximum*packages for key, maximum in SELECTION_PACKAGE_RESERVATION.items()}
     helpers = {key: maximum*packages for key, maximum in SELECTION_HELPER_RESERVATION.items()}
@@ -4769,6 +5399,11 @@ def prospective_scope_reservation(lane, subjects):
     principal = {key: amount * packages for key, amount in principal_budget_vector().items()}
     combination = {key: amount * packages for key, amount in combination_budget_vector().items()}
     lifecycle = {key: packages * amount for key, amount in lifecycle_budget_vector().items()}
+    adaptive = {key: packages * amount + legal * adaptive_external[key]
+                for key, amount in adaptive_budget_vector(include_doctests=lane == 'mutation').items()}
+    adapter_external = projection_adapter_budget_vector(external=True)
+    adapter = {key: packages * amount + legal * adapter_external[key]
+               for key, amount in projection_adapter_budget_vector().items()}
     for key, amount in lifecycle_legal_budget_vector().items():
         lifecycle[key] += legal * amount
     for prefix, values in (('principal.call.', principal_legal_calls()), ('principal.work.', legal_work)):
@@ -4788,6 +5423,12 @@ def prospective_scope_reservation(lane, subjects):
     lifecycle_limits = admit_lifecycle_allowances(LIFECYCLE_TELEMETRY['global_limits'])
     if any(amount > lifecycle_limits[key] for key, amount in lifecycle.items()):
         raise Incomplete('Prospective lifecycle work exceeds its exact checkpoint allowance.')
+    adaptive_limits = admit_adaptive_allowances(ADAPTIVE_TELEMETRY['global_limits'])
+    if any(amount > adaptive_limits[key] for key, amount in adaptive.items()):
+        raise Incomplete('Prospective adaptive work exceeds its exact checkpoint allowance.')
+    adapter_limits = admit_projection_adapter_allowances(PROJECTION_ADAPTER_TELEMETRY['global_limits'])
+    if any(amount > adapter_limits[key] for key, amount in adapter.items()):
+        raise Incomplete('Prospective projection adapter work exceeds its exact checkpoint allowance.')
     if (any(charged[key] > maximum for key, maximum in GLOBAL_LIMITS.items())
             or any(selection[key] > maximum for key, maximum in SELECTION_GLOBAL_LIMITS.items())
             or any(helpers[key] > maximum for key, maximum in SELECTION_HELPER_GLOBAL_LIMITS.items())
@@ -4807,6 +5448,8 @@ def prospective_scope_reservation(lane, subjects):
             'selection_raw_helper_canonical_source_work_upper': helper_work,
             'source_raw_private_direct_work_upper': raw_private,
             'projected_batch_source_work_upper': projected_batch,
+            'adaptive_source_work_upper': adaptive,
+            'projection_adapter_source_work_upper': adapter,
             'principal_source_work_upper': principal,
             'combination_source_work_upper': combination,
             'lifecycle_source_work_upper': lifecycle,
@@ -4826,6 +5469,11 @@ def execute(args, report):
     if args.lane == 'cohort-union':
         return execute_cohort_union(args, report)
     policy = read_policy(ROOT, args.lane)
+    if args.lane in ('coverage', 'contracts'):
+        output = Path(COORDINATOR_COHORTS['nonmutation_outputs'][args.lane])
+        if args.output_dir != output or output.exists() or output.is_symlink():
+            raise Incomplete('S150 requires its exact fresh admitted nonmutation output directory.')
+    report['core_checkpoint_reservation_scope'] = COORDINATOR_COHORTS['reservation_scope']
     subjects = SCOPE.select(args.subject)
     plan = None
     plan_path = None
@@ -4842,12 +5490,15 @@ def execute(args, report):
                 plan, args.cohort_id, subject=args.subject, output_dir=str(args.output_dir))
         except COHORTS.Incomplete as error:
             raise Incomplete(str(error)) from error
+        output = Path(COORDINATOR_COHORTS['mutation_outputs'][args.subject])
+        if args.output_dir != output or output.exists() or output.is_symlink():
+            raise Incomplete('S150 requires its exact fresh admitted mutation output directory.')
         report['core_coordinator_plan_reservation'] = admitted
     else:
         report['core_prospective_scope_reservation'] = prospective_scope_reservation(args.lane, subjects)
     extra = ("scripts/verify-core-analysis.py", "scripts/verify-time-domain-analysis.py",
              "scripts/analysis-controls.py", *SELECTION_INPUTS, *PROJECTION_INPUTS, *ENCLOSURE_INPUTS,
-             *PROJECTED_BATCH_INPUTS, *COMBINATION_INPUTS, *BOUND_INPUTS,
+             *PROJECTED_BATCH_INPUTS, *COMBINATION_INPUTS, *ADAPTIVE_INPUTS, *BOUND_INPUTS,
              *(tuple(plan['tool_inputs_sha256']) + (plan_path.relative_to(ROOT).as_posix(),) if plan is not None else ()),
              *(FUZZ_INPUTS if args.lane in {"fuzz", "all"} else ()))
     session = COMMON.Session(ROOT, args, report, SCOPE, policy, extra)
@@ -4868,7 +5519,8 @@ def execute(args, report):
             reserved['observed_counts'] = profile_counts(result, require_runs=True, require_selection=True,
                                                         require_projection=True, require_enclosure=True,
                                                         require_projected_batch=True, require_principal=True,
-                                                        require_combination=True, require_lifecycle=True)
+                                                        require_combination=True, require_lifecycle=True,
+                                                        require_adaptive=True, require_adaptive_projection=True)
             reserved['observation_pending'] = False
             refresh_accounting(report)
             return result
@@ -4955,7 +5607,7 @@ def main(argv=None):
         parser.error("--inventory-admission is accepted only by --lane inventory")
     if args.lane == 'cohort-union':
         if args.cohort_plan is None or args.cohort_id is not None or len(args.cohort_receipt) != len(SUBJECTS) or args.subject != 'all':
-            parser.error('--lane cohort-union requires --subject all, --cohort-plan and exactly six --cohort-receipt paths')
+            parser.error('--lane cohort-union requires --subject all, --cohort-plan and exactly one --cohort-receipt path')
     elif args.cohort_receipt:
         parser.error('--cohort-receipt is accepted only by --lane cohort-union')
     if args.lane == 'mutation':
@@ -4967,7 +5619,7 @@ def main(argv=None):
     elif args.lane != 'cohort-union' and (args.cohort_plan is not None or args.cohort_id is not None):
         parser.error('--cohort-plan/--cohort-id are accepted only by mutation or cohort-union')
     report = {"status": "incomplete", "selected_lane": args.lane,
-              "scope": "Six changed/coupled critical owners (combination/admission/lifecycle/principal/regression/projection), bounded time-core checkpoint " + args.lane, "native_qualification": "not performed"}
+              "scope": "One critical owner (projection), bounded time-core checkpoint " + args.lane, "native_qualification": "not performed"}
     try:
         if args.vendor_dir is None and args.lane != 'cohort-union':
             args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])

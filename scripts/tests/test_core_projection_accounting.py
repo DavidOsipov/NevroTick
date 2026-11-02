@@ -124,6 +124,53 @@ class CurrentProjectionRecipeTests(unittest.TestCase):
         self.assertEqual(parsed["projection_profiles"]["linear_identity"]["appends"], 4)
         self.assertTrue(parsed["projection_observation_pending"])
 
+    def test_adaptive_projection_is_a_separate_literal_source_reservation(self):
+        recipe = MODULE.s150_adaptive_projection_recipe()
+        self.assertEqual(recipe["test_name"],
+                         "adaptive_anchor::adaptive_fitted_anchor_projects_through_enclosure_and_batch")
+        self.assertEqual(recipe["adaptive_calls"], {
+            "retained_points": 0, "retained_inputs": 0, "retained_selections": 0,
+            "adaptive_observations": 13, "adaptive_appends": 13, "adaptive_histories": 3,
+            "raw_parameter_validations": 0, "raw_ordinal_validations": 0,
+            "raw_event_validations": 0, "external_normalizations": 0})
+        self.assertEqual(recipe["projection_calls"], {
+            "histories": 0, "appends": 0, "observations": 0, "contexts": 0,
+            "monotonic": 0, "coordinates": 0, "exchanges": 0, "getters": 0,
+            "terms": 1, "projections": 11})
+        self.assertEqual(recipe["fixture_calls"], {
+            "contexts": 4, "monotonic": 23, "coordinates": 14,
+            "exchanges": 13, "direct_getters_upper": 5764, "enclosures": 1,
+            "projected_batches": 1, "minima": 1, "selections": 1,
+            "selection_delegated_batches": 1})
+        work = MODULE.source_work_uppers(recipe["projection_calls"])
+        self.assertEqual(work["charged_fit_work_upper"], 0)
+        self.assertEqual(work["projection_internal_product_getter_requests_upper"], 132)
+        self.assertEqual(work["projection_arithmetic_primitive_calls_upper"], 55)
+        adaptive_spec = importlib.util.spec_from_file_location(
+            "core_adaptive_accounting", Path(__file__).resolve().parents[1] / "core-adaptive-accounting.py")
+        adaptive = importlib.util.module_from_spec(adaptive_spec)
+        adaptive_spec.loader.exec_module(adaptive)
+        adaptive_work = adaptive.source_work(recipe["adaptive_calls"], include_raw_minimum=False)
+        self.assertEqual(adaptive_work["charged_fit_work_upper"], 806)
+        self.assertEqual(adaptive_work["point_admissions_upper"], 27833)
+        self.assertEqual(adaptive_work["selector_entries_upper"], 13)
+        recipe["adaptive_calls"]["adaptive_appends"] = 0
+        self.assertEqual(MODULE.s150_adaptive_projection_recipe()["adaptive_calls"]["adaptive_appends"], 13)
+
+    def test_adapter_adds_two_entries_for_each_family_and_one_extra_adaptive_getter(self):
+        self.assertEqual(MODULE.projection_adapter_work(49, 11), {
+            "projection_capsule_and_kernel_entries_upper": 120,
+            "projection_adaptive_extra_internal_getters_upper": 11})
+        self.assertEqual(MODULE.projection_adapter_work(0, 0), {
+            "projection_capsule_and_kernel_entries_upper": 0,
+            "projection_adaptive_extra_internal_getters_upper": 0})
+        self.assertEqual(MODULE.projection_adapter_work(0, ((1 << 64) - 1) // 2)
+                         ["projection_capsule_and_kernel_entries_upper"], (1 << 64) - 2)
+        for fixed, adaptive in ((True, 0), (0, False), (-1, 0), (0, 1 << 64),
+                                (((1 << 64) - 1) // 2, 1)):
+            with self.subTest(fixed=fixed, adaptive=adaptive), self.assertRaises(MODULE.Incomplete):
+                MODULE.projection_adapter_work(fixed, adaptive)
+
 
 if __name__ == "__main__":
     unittest.main()

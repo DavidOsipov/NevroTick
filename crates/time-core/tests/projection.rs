@@ -1285,3 +1285,433 @@ fn separately_checked_growth_and_sums_reject_hidden_subnormal_and_overflow() -> 
     );
     Ok(())
 }
+
+/// Source-bounded adaptive consumer controls, separate from legacy profile rows.
+///
+/// The sole fixture reserves three adaptive histories, thirteen observations and
+/// appends, four asserted contexts, fourteen UTC coordinates, thirteen exchanges,
+/// one terms constructor, eleven projections, one enclosure, one projected batch,
+/// one explicit fixture minimum and one selection. Six snapshots each inspect at
+/// most 64 combined rows. These are source ceilings, not observed private work,
+/// allocation, physical confidence, freshness or production eligibility claims.
+#[cfg(test)]
+mod adaptive_anchor {
+    use std::{error::Error, io, num::NonZeroU64};
+    use time_core::{
+        FixtureAdaptiveHistory, FixtureContext, FixtureMinimum, FixtureObservation,
+        FixtureProjectedBatch, FixtureProjectionError, FixtureProjectionTerms, FixtureRunsStop,
+        enclose_fixture_projection, project_fixture_adaptive_anchor,
+    };
+    use time_domain::{MonotonicNs, UtcCoordinateQ32, exchange_arithmetic};
+
+    /// Preserve actual fixture failures separately from assertions.
+    type TestResult<T = ()> = Result<T, Box<dyn Error>>;
+    /// Exact immutable context, monotonic time, Q33 phase and divisor bits.
+    type Row = (FixtureContext, u64, i128, u64);
+    /// Integer nanoseconds in one fixture second.
+    const SECOND: u64 = 1_000_000_000;
+    /// Independent raw phase numerators over 512 for the first-prune trace.
+    const PHASES: [i32; 9] = [512, -21, 27, 27, 27, -27, -27, -27, -27];
+    /// Absolute tolerance 2^-40 for the fixed small numeric fixture.
+    const TOLERANCE: f64 = 1.0 / 1_099_511_627_776.0;
+
+    /// Copy the complete bounded public fixture view without changing its owner.
+    #[derive(Debug, PartialEq)]
+    struct Snapshot {
+        /// Unchanged complete asserted context.
+        context: FixtureContext,
+        /// Explicit configured pruning minimum.
+        minimum: usize,
+        /// Number of fitted rows.
+        count: usize,
+        /// Number of auxiliary decision rows.
+        auxiliary: usize,
+        /// Exact latest held monotonic reading, if any.
+        reference: Option<u64>,
+        /// Complete fitted row view.
+        fitted: Vec<Row>,
+        /// Complete decision row view.
+        decision: Vec<Row>,
+        /// Complete published report view, if present.
+        report: Option<ReportSnapshot>,
+    }
+    /// Preserve the exact exposed report and its associated selected statistics.
+    #[derive(Debug, PartialEq)]
+    struct ReportSnapshot {
+        /// Report's complete caller-asserted context.
+        context: FixtureContext,
+        /// Exact newest monotonic reference.
+        reference: u64,
+        /// Report's configured minimum.
+        configured: usize,
+        /// Report's actual effective minimum.
+        effective: usize,
+        /// Selected original pre-prune start index.
+        start: usize,
+        /// Fitted suffix count.
+        count: usize,
+        /// Selected asserted frame.
+        frame: NonZeroU64,
+        /// Closed selector termination reason.
+        stop: FixtureRunsStop,
+        /// Decision window's original start index.
+        decision_start: usize,
+        /// Decision window's row count.
+        decision_count: usize,
+        /// Actual decision window run count.
+        decision_runs: usize,
+        /// Actual fitted suffix run count.
+        fit_runs: usize,
+        /// Same-selection statistics row count.
+        stats_count: usize,
+        /// Same-selection statistics degrees of freedom.
+        degrees: usize,
+        /// Statistics' asserted frame.
+        stats_frame: NonZeroU64,
+        /// Line's asserted frame.
+        line_frame: NonZeroU64,
+        /// Phase, rate, SSE, residual scale and variance bit patterns.
+        scalars: [u64; 5],
+    }
+
+    /// Preserve every exposed detached projection scalar and timestamp bit.
+    #[derive(Debug, PartialEq)]
+    struct ProjectionSnapshot {
+        /// Exact asserted fixture context.
+        context: FixtureContext,
+        /// Selected anchor instant in nanoseconds.
+        anchor: u64,
+        /// Newest held instant in nanoseconds.
+        latest: u64,
+        /// Fitted reference instant in nanoseconds.
+        reference: u64,
+        /// Requested projection instant in nanoseconds.
+        at: u64,
+        /// Exact anchor elapsed nanoseconds.
+        anchor_age: u64,
+        /// Exact latest-observation elapsed nanoseconds.
+        latest_age: u64,
+        /// Elapsed seconds, center, rate, growth, distance and term bits.
+        scalars: [u64; 8],
+    }
+
+    /// Copy immutable projection output without recomputation or state changes.
+    fn projection_snapshot(value: &time_core::FixtureAnchorProjection) -> ProjectionSnapshot {
+        let terms = value.terms();
+        ProjectionSnapshot {
+            context: value.context(),
+            anchor: value.anchor_observed_at().nanoseconds(),
+            latest: value.latest_observed_at().nanoseconds(),
+            reference: value.fit_reference().nanoseconds(),
+            at: value.projected_at().nanoseconds(),
+            anchor_age: value.anchor_elapsed().nanoseconds(),
+            latest_age: value.latest_elapsed().nanoseconds(),
+            scalars: [
+                value.anchor_elapsed_seconds().to_bits(),
+                value.center_seconds().to_bits(),
+                value.phase_rate_seconds_per_second().to_bits(),
+                value.growth_seconds().to_bits(),
+                value.distance_seconds().to_bits(),
+                terms.half_delay_seconds().to_bits(),
+                terms.dispersion_seconds().to_bits(),
+                terms.skew_seconds_per_second().to_bits(),
+            ],
+        }
+    }
+
+    /// Observe a genuine row's exact values without normalization or mutation.
+    fn row(value: &FixtureObservation) -> Row {
+        (
+            value.context(),
+            value.observed_at().nanoseconds(),
+            value.phase().numerator(),
+            value.variance_divisor().to_bits(),
+        )
+    }
+
+    /// Copy the complete immutable public view with a fixed 64-row bound.
+    /// # Errors
+    /// Reject impossible counts or absent declared rows before returning a view.
+    /// # Panics
+    /// Reject a visible row at or beyond either declared range.
+    fn snapshot(history: &FixtureAdaptiveHistory) -> TestResult<Snapshot> {
+        let count = history.sample_count();
+        let auxiliary = history.auxiliary_count();
+        let total = count
+            .checked_add(auxiliary)
+            .ok_or_else(|| io::Error::other("count overflow"))?;
+        if count > 64 || auxiliary > count || total > 64 {
+            return Err(io::Error::other("adaptive snapshot bound").into());
+        }
+        let fitted = (0..count)
+            .map(|index| {
+                history
+                    .observation(index)
+                    .map(row)
+                    .ok_or_else(|| io::Error::other("missing fitted row"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let decision = (0..total)
+            .map(|index| {
+                history
+                    .decision_observation(index)
+                    .map(row)
+                    .ok_or_else(|| io::Error::other("missing decision row"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        assert!(history.observation(count).is_none());
+        assert!(history.observation(usize::MAX).is_none());
+        assert!(history.decision_observation(total).is_none());
+        assert!(history.decision_observation(usize::MAX).is_none());
+        let report = history.report().map(|report| {
+            let selection = report.selection();
+            let stats = selection.statistics();
+            let line = stats.line();
+            ReportSnapshot {
+                context: report.context(),
+                reference: report.reference().nanoseconds(),
+                configured: report.configured_minimum(),
+                effective: report.effective_minimum(),
+                start: selection.start(),
+                count: selection.sample_count(),
+                frame: selection.frame(),
+                stop: selection.stop(),
+                decision_start: selection.decision_start(),
+                decision_count: selection.decision_count(),
+                decision_runs: selection.decision_runs(),
+                fit_runs: selection.fit_runs(),
+                stats_count: stats.sample_count(),
+                degrees: stats.degrees_of_freedom(),
+                stats_frame: stats.frame(),
+                line_frame: line.frame(),
+                scalars: [
+                    line.phase_seconds().to_bits(),
+                    line.phase_rate_seconds_per_second().to_bits(),
+                    stats.weighted_sse_seconds_squared().to_bits(),
+                    stats.residual_scale_seconds_squared().to_bits(),
+                    stats.normalized_data_variance_seconds_squared().to_bits(),
+                ],
+            }
+        });
+        Ok(Snapshot {
+            context: history.context(),
+            minimum: history.configured_minimum(),
+            count,
+            auxiliary,
+            reference: history.reference().map(MonotonicNs::nanoseconds),
+            fitted,
+            decision,
+            report,
+        })
+    }
+
+    /// Construct a real unit-weight observation from an exact numerator over 512.
+    /// # Errors
+    /// Preserve the actual checked UTC, exchange and observation admission errors.
+    fn observation(
+        context: FixtureContext,
+        index: u64,
+        numerator: i32,
+        zero: UtcCoordinateQ32,
+    ) -> TestResult<FixtureObservation> {
+        let shifted = UtcCoordinateQ32::new(i128::from(numerator) * (1_i128 << 23))?;
+        let phase = exchange_arithmetic(zero, shifted, shifted, zero)?.offset();
+        let nanos = index
+            .checked_mul(SECOND)
+            .ok_or_else(|| io::Error::other("fixture time overflow"))?;
+        Ok(FixtureObservation::new(
+            context,
+            MonotonicNs::new(nanos),
+            phase,
+            1.0,
+        )?)
+    }
+
+    /// Check a finite small fixture coefficient against an exact rational oracle.
+    /// # Panics
+    /// A nonfinite value or error above the declared 2^-40 tolerance is rejected.
+    fn near(actual: f64, expected: f64) {
+        assert!(actual.is_finite());
+        assert!((actual - expected).abs() <= TOLERANCE);
+    }
+
+    /// Carry one checked projection through its real interval and batch consumers.
+    /// # Errors
+    /// Preserve enclosure, batch, minimum and selection errors.
+    /// # Panics
+    /// Reject changed exact lattice endpoints, identity, borrow or fixture witness.
+    fn check_consumers(
+        projected: &time_core::FixtureAnchorProjection,
+        context: FixtureContext,
+        at: MonotonicNs,
+    ) -> TestResult {
+        let enclosed = enclose_fixture_projection(projected)?;
+        assert_eq!(enclosed.interval().label(), context.source_id());
+        assert_eq!(
+            (enclosed.interval().lower(), enclosed.interval().upper()),
+            (-2_873_697_427, 481_745_774)
+        );
+        assert_eq!(
+            enclosed.projection().center_seconds().to_bits(),
+            projected.center_seconds().to_bits()
+        );
+        let entries = [enclosed];
+        let batch =
+            FixtureProjectedBatch::new(context.frame(), context.generation(), at, &entries)?;
+        assert_eq!(
+            (
+                batch.len(),
+                batch.frame(),
+                batch.mapping_generation(),
+                batch.projected_at()
+            ),
+            (1, context.frame(), context.generation(), at)
+        );
+        assert!(std::ptr::eq(batch.entries().as_ptr(), entries.as_ptr()));
+        let selected = batch.select(FixtureMinimum::new(1)?)?;
+        assert_eq!(
+            (
+                selected.population(),
+                selected.minimum(),
+                selected.maximum_depth(),
+                selected.strict_majority(),
+                selected.minimum_met()
+            ),
+            (1, 1, 1, true, true)
+        );
+        let witness = selected
+            .witnessed()
+            .ok_or_else(|| io::Error::other("missing fixture witness"))?;
+        assert_eq!(
+            (witness.component_lower(), witness.component_upper()),
+            (-2_873_697_427, 481_745_774)
+        );
+        Ok(())
+    }
+
+    /// Exercise nine ordered projection rejections using unchanged real histories.
+    /// # Panics
+    /// Reject a missing or incorrectly ordered exact typed failure.
+    fn check_rejections(
+        full: &FixtureAdaptiveHistory,
+        empty: &FixtureAdaptiveHistory,
+        warmup: &FixtureAdaptiveHistory,
+        context: FixtureContext,
+        wrong: [FixtureContext; 3],
+        terms: FixtureProjectionTerms,
+    ) {
+        let t0 = MonotonicNs::new(0);
+        let t1 = MonotonicNs::new(SECOND);
+        let t7 = MonotonicNs::new(7 * SECOND);
+        let t8 = MonotonicNs::new(8 * SECOND);
+        let t9 = MonotonicNs::new(9 * SECOND);
+        for index in [8, usize::MAX] {
+            assert_eq!(
+                project_fixture_adaptive_anchor(full, context, index, t8, t9, terms).err(),
+                Some(FixtureProjectionError::MissingAnchor)
+            );
+        }
+        assert_eq!(
+            project_fixture_adaptive_anchor(full, context, 0, t0, t9, terms).err(),
+            Some(FixtureProjectionError::AnchorMismatch)
+        );
+        for wrong_context in wrong {
+            assert_eq!(
+                project_fixture_adaptive_anchor(warmup, wrong_context, usize::MAX, t0, t0, terms)
+                    .err(),
+                Some(FixtureProjectionError::ContextMismatch)
+            );
+        }
+        for history in [empty, warmup] {
+            assert_eq!(
+                project_fixture_adaptive_anchor(history, context, usize::MAX, t0, t0, terms).err(),
+                Some(FixtureProjectionError::MissingReport)
+            );
+        }
+        assert_eq!(
+            project_fixture_adaptive_anchor(full, context, 0, t1, t7, terms).err(),
+            Some(FixtureProjectionError::BackwardProjection)
+        );
+    }
+
+    /// # Errors
+    /// Preserve genuine constructors, append, projection and consumer failures.
+    /// # Panics
+    /// The exact anchor identity, output, consumer mapping or rollback must match.
+    #[test]
+    fn adaptive_fitted_anchor_projects_through_enclosure_and_batch() -> TestResult {
+        let tag =
+            |value| NonZeroU64::new(value).ok_or_else(|| io::Error::other("zero fixture tag"));
+        let context = FixtureContext::new(tag(41)?, tag(43)?, tag(47)?);
+        let wrong = [
+            FixtureContext::new(tag(42)?, tag(43)?, tag(47)?),
+            FixtureContext::new(tag(41)?, tag(44)?, tag(47)?),
+            FixtureContext::new(tag(41)?, tag(43)?, tag(48)?),
+        ];
+        let zero = UtcCoordinateQ32::new(0)?;
+        let mut full = FixtureAdaptiveHistory::new(context, 3)?;
+        let empty = FixtureAdaptiveHistory::new(context, 3)?;
+        let mut warmup = FixtureAdaptiveHistory::new(context, 64)?;
+        for (index, numerator) in PHASES.iter().copied().enumerate() {
+            full.try_append(observation(
+                context,
+                u64::try_from(index)?,
+                numerator,
+                zero,
+            )?)?;
+        }
+        for index in 0..2_u64 {
+            warmup.try_append(observation(context, index, 0, zero)?)?;
+        }
+        assert_eq!((full.auxiliary_count(), full.sample_count()), (1, 8));
+        assert!(full.decision_observation(8).is_some());
+        let before_full = snapshot(&full)?;
+        let before_empty = snapshot(&empty)?;
+        let before_warmup = snapshot(&warmup)?;
+        let t0 = MonotonicNs::new(0);
+        let t1 = MonotonicNs::new(SECOND);
+        let t8 = MonotonicNs::new(8 * SECOND);
+        let t9 = MonotonicNs::new(9 * SECOND);
+        let terms = FixtureProjectionTerms::new(1.0 / 8.0, 1.0 / 16.0, 1.0 / 1024.0)?;
+        let projected = project_fixture_adaptive_anchor(&full, context, 0, t1, t9, terms)?;
+        assert_eq!(projected.context(), context);
+        assert_eq!(projected.anchor_observed_at(), t1);
+        assert_eq!(projected.latest_observed_at(), t8);
+        assert_eq!(projected.fit_reference(), t8);
+        assert_eq!(projected.projected_at(), t9);
+        assert_eq!(projected.anchor_elapsed().nanoseconds(), 8 * SECOND);
+        assert_eq!(projected.latest_elapsed().nanoseconds(), SECOND);
+        near(projected.anchor_elapsed_seconds(), 8.0);
+        near(projected.center_seconds(), -499.0 / 3584.0);
+        near(projected.phase_rate_seconds_per_second(), -11.0 / 896.0);
+        near(projected.growth_seconds(), 1.0 / 128.0);
+        near(projected.distance_seconds(), 25.0 / 128.0);
+
+        check_consumers(&projected, context, t9)?;
+        check_rejections(&full, &empty, &warmup, context, wrong, terms);
+        assert_eq!(snapshot(&full)?, before_full);
+        assert_eq!(snapshot(&empty)?, before_empty);
+        assert_eq!(snapshot(&warmup)?, before_warmup);
+
+        // A pruning floor of 64 is not an eligibility threshold for a real fit.
+        warmup.try_append(observation(context, 2, 0, zero)?)?;
+        let report = warmup
+            .report()
+            .ok_or_else(|| io::Error::other("missing three-row report"))?;
+        assert_eq!(
+            (report.configured_minimum(), report.effective_minimum()),
+            (64, 3)
+        );
+        let t2 = MonotonicNs::new(2 * SECOND);
+        let neighbor = project_fixture_adaptive_anchor(&warmup, context, 0, t0, t2, terms)?;
+        near(neighbor.center_seconds(), 0.0);
+        near(neighbor.phase_rate_seconds_per_second(), 0.0);
+        near(neighbor.distance_seconds(), 97.0 / 512.0);
+
+        // The earlier owned output cannot be retargeted by a later append.
+        let prior_projection = projection_snapshot(&projected);
+        full.try_append(observation(context, 9, 16, zero)?)?;
+        assert_eq!(projection_snapshot(&projected), prior_projection);
+        Ok(())
+    }
+}

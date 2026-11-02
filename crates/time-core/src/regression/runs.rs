@@ -23,11 +23,13 @@
 */
 //! Bounded fixture residual runs and suffix selection.
 //!
-//! Modified by David Osipov with AI assistance, 30 October 2026. This adapts
-//! Chrony 4.9 `regress.c` table and selected runs/start-index statements at
+//! Modified by David Osipov with AI assistance, 30 October and 2 November 2026.
+//! This adapts Chrony 4.9 `regress.c` table and selected runs/start-index statements at
 //! revision 8df4f1263e206585e6c4e61352d042c2dd12916a. The m=0 fixture window
-//! may include original points dropped from the fit. No production sample,
-//! history pruning, physical uncertainty or clock authority is supplied.
+//! may include original points dropped from the fit. An explicit retained prefix
+//! can also supply decision residuals without entering the fitted suffix; the
+//! combined input remains bounded to 64 rows. No production sample, history
+//! pruning, physical uncertainty or clock authority is supplied.
 
 use std::{fmt, num::NonZeroU64};
 
@@ -74,7 +76,7 @@ pub enum FixtureRunsStop {
 pub enum FixtureRunsStage {
     /// The explicit fixture minimum was outside the input's supported range.
     Minimum,
-    /// Checked suffix construction or geometry failed.
+    /// Retained-prefix admission, checked suffix construction or geometry failed.
     Suffix,
     /// The candidate suffix's fit failed.
     Fit,
@@ -107,12 +109,12 @@ pub struct FixtureRunsError {
 }
 
 impl FixtureRunsError {
-    /// Construct a context-free stage; only minimum and invariant are accepted.
+    /// Construct a context-free minimum, suffix-admission or invariant failure.
     ///
     /// Any other stage becomes invariant, without inventing a source or index.
     fn plain(stage: FixtureRunsStage) -> Self {
         let stage = match stage {
-            FixtureRunsStage::Minimum => FixtureRunsStage::Minimum,
+            FixtureRunsStage::Minimum | FixtureRunsStage::Suffix => stage,
             _ => FixtureRunsStage::Invariant,
         };
         Self {
@@ -452,6 +454,7 @@ fn critical_runs(count: usize) -> Option<usize> {
 /// is a fixture value, not source-quality or history policy. Every candidate owns
 /// one fit and a bounded ratio-two original-input residual window. Terminal
 /// statistics use that same fit and cache; no history or external effect occurs.
+/// The shared selector begins at index zero, with no retained prefix.
 /// # Errors
 /// Rejects an invalid minimum first, then the first suffix, fit, residual,
 /// statistics or internal-context failure, without publishing a partial result.
@@ -463,6 +466,41 @@ pub fn select_fixture_runs(
     let mut observer = None;
     select_fixture_runs_inner(
         input,
+        0,
+        min_samples,
+        #[cfg(test)]
+        &mut observer,
+    )
+}
+
+/// Select a current fixture suffix while retaining older decision-only rows.
+///
+/// The checked input contains at most 64 rows with its original newest-relative
+/// zero. Its retained prefix must leave at least three current rows and cannot
+/// exceed that current count. The explicit minimum is within `3..=current_count`;
+/// no caller or production minimum is silently clamped.
+///
+/// The shared selector begins fitting at the retained prefix. Each candidate's
+/// residual decision window can include those older rows, while its fit and
+/// terminal statistics use only the candidate suffix. Every returned position
+/// remains an absolute index in the unchanged combined input. At most
+/// `current_count-min_samples+1` candidates, bounded by 62, each perform one fit
+/// with the existing fixed 64-cell residual scratch. No history, input mutation,
+/// observation refresh, clock authority or external effect is introduced.
+/// # Errors
+/// Rejects an invalid retained prefix as a context-free suffix error before
+/// checking the minimum. Then preserves the first minimum, suffix, fit, residual,
+/// statistics or internal-context failure, without publishing a partial result.
+pub fn select_fixture_runs_with_retained(
+    input: &FitInput,
+    retained_prefix: usize,
+    min_samples: usize,
+) -> Result<FixtureRunsSelection, FixtureRunsError> {
+    #[cfg(test)]
+    let mut observer = None;
+    select_fixture_runs_inner(
+        input,
+        retained_prefix,
         min_samples,
         #[cfg(test)]
         &mut observer,
@@ -471,7 +509,8 @@ pub fn select_fixture_runs(
 
 /// Invoke the same selector body with a private test-owned observer.
 ///
-/// The observer receives only immutable cache slots after successful storage.
+/// The zero-prefix observer receives only immutable cache slots after successful
+/// storage, preserving the original selector's candidate and row indices.
 /// # Errors
 /// Preserves the same selector failures and ordering as the ordinary wrapper.
 #[cfg(test)]
@@ -481,24 +520,36 @@ fn select_fixture_runs_observed(
     observer: &mut impl RunsObserver,
 ) -> Result<FixtureRunsSelection, FixtureRunsError> {
     let mut observer: Option<&mut dyn RunsObserver> = Some(observer);
-    select_fixture_runs_inner(input, min_samples, &mut observer)
+    select_fixture_runs_inner(input, 0, min_samples, &mut observer)
 }
 
 /// Perform the common bounded selector, with test observation compiled out otherwise.
 ///
-/// The input is immutable and only a completed same-fit result is returned.
+/// Admit the initial fitted start and current-row minimum before candidate work.
+/// The initial prefix is no longer than the current suffix, which contains at
+/// least three rows. The existing candidate owns all suffix, fit, decision-window
+/// and statistics work; no alternate numerical implementation is introduced.
+/// At most `current_count-min_samples+1` candidates are attempted. Input stays
+/// immutable, positions stay absolute and only a completed same-fit result is
+/// returned, without history or external effects.
 /// # Errors
-/// Preserves the first minimum, candidate, residual or result failure.
+/// Rejects the initial prefix before the minimum, then preserves the first
+/// candidate, residual or result failure with its original combined-input bounds.
 fn select_fixture_runs_inner(
     input: &FitInput,
+    initial_start: usize,
     min_samples: usize,
     #[cfg(test)] observer: &mut Option<&mut dyn RunsObserver>,
 ) -> Result<FixtureRunsSelection, FixtureRunsError> {
     let n = input.sample_count();
-    if !(3..=n).contains(&min_samples) {
+    let current_count = n
+        .checked_sub(initial_start)
+        .filter(|&count| count >= 3 && initial_start <= count)
+        .ok_or_else(|| FixtureRunsError::plain(FixtureRunsStage::Suffix))?;
+    if !(3..=current_count).contains(&min_samples) {
         return Err(FixtureRunsError::plain(FixtureRunsStage::Minimum));
     }
-    let mut start = 0usize;
+    let mut start = initial_start;
     loop {
         let candidate = TerminalCandidate::prepare(
             input,

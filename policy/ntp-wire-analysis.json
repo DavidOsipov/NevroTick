@@ -12,7 +12,7 @@
   "test_threads": 12,
   "coverage_guided_fuzzing": {
     "status": "admitted-test-only-source",
-    "scope": "fixed GNU-host header, datagram, inert complete-buffer NTS-KE framing and pending NTPv4 negotiation, including paired request/response acceptance and projection checks with independent request-offer membership; seeded forwarding/observation controls are harness sensitivity, not product mutation or ASan detector qualification; no TLS, keys, authenticated association, destination authorization or production graph admission",
+    "scope": "fixed GNU-host header, datagram, inert complete-buffer NTS-KE framing, pending NTPv4 negotiation, checked exporter label/context metadata, caller-buffer request encoding, inert NTS packet envelope projection and inert decrypted-plaintext framing, including paired request/response acceptance with independent request-offer membership; incremental accumulation uses a separate 64-byte/eight-record independent extent model with whole/split/bytewise schedules, progress, storage atomicity and first-error latching; larger input takes a bounded byte-limit path, while large bodies/full record ceilings and exact truncation causes retain direct-test evidence; seeded forwarding/observation controls are harness sensitivity, not product mutation or ASan detector qualification; no TLS, keys, authenticated association, destination authorization or production graph admission",
     "metadata_discrepancy": "libfuzzer-sys metadata NCSA differs from all55 bundled SPDXheaders; select wrapperMIT and exact pinned native Apache-2.0 WITH LLVM-exception, not NCSA metadata",
     "upstream_revision": "a47b42eb9f9b302167b4fc413e6c92798d65dd0b",
     "upstream_url": "https://github.com/llvm/llvm-project/tree/a47b42eb9f9b302167b4fc413e6c92798d65dd0b/compiler-rt/lib/fuzzer",
@@ -23,7 +23,7 @@
     "llvm_notice_sha256": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
     "control_lock_sha256": "945748a17cd2ccd01376b3326f9c7b37612a0bc19c725bacffeff6fdb36a333b",
     "target_source": "policy/ntp-wire-fuzz-target.rs",
-    "target_source_sha256": "60c59be09b554e7c3d6a90e1aaf58890545efb2ea635f11f0899f723c2be957e",
+    "target_source_sha256": "7c6e3c8153acf0675d34524a54a0d5f8fd7951681d5cdd2255c2fd1870bd721f",
     "native_files": {
       "FuzzerBuiltins.h": {
         "sha256": "766b0c57707d1ec953034a852b152b3f0daa35ee705bed8952b501705f0799cf",
@@ -404,7 +404,9 @@
     "crates/ntp-wire/src/header.rs",
     "crates/ntp-wire/src/datagram.rs",
     "crates/ntp-wire/src/nts_ke.rs",
-    "crates/ntp-wire/src/nts_negotiation.rs"
+    "crates/ntp-wire/src/nts_negotiation.rs",
+    "crates/ntp-wire/src/nts_packet.rs",
+    "crates/ntp-wire/src/nts_plaintext.rs"
   ],
   "mutation_jobs": 10,
   "mutation_process_limit": 512

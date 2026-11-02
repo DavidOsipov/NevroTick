@@ -694,3 +694,47 @@ qualified by this authorship record. Mandatory raw uncertainty admission and
 original-entry/context guards remain separate from physical confidence or
 production eligibility. The full compatibility/penalty/re-entry/replay lifecycle
 and external reference effects remain required later work as recorded above.
+
+## S1.2 retained-prefix runs extension, 2 November 2026
+
+David Osipov with AI assistance is extending the existing `regression/runs.rs`
+owner to admit an explicit decision-only prefix. The frozen contract is
+`tasks/s1.2-regression-readiness.md`, section "S146 retained-prefix selector
+contract". The independently derived two-round facts are retained in external
+`s145-auxiliary-history-facts-v1.json`, SHA-256
+`cf76352c6c57f4a0ffa2864277e2f93c28f11c9a34833040712aca1fe9b3bea6`.
+
+The unchanged Chrony 4.9 revision above supplies `RGR_FindBestRegression`,
+`regress.c` lines 201–207 and 271–288: distinguish the fitted population from
+earlier decision rows and begin candidate fitting after that retained prefix.
+The existing checked fit, residual window and terminal-statistics implementation
+is reused. `sourcestats.c` lines 270–283 explain the later caller's need to retain
+pruned rows; that caller is not activated by this selector extension.
+
+The combined input remains at most 64 rows, including auxiliary rows. This
+deliberately retains less decision history than upstream's possible 128-row
+combined arrays, preserving the canonical product cap. The existing zero-prefix
+API, positive-behind phase/rate convention, checked numerical envelope, complete
+regress.c notices, GPL-2.0-only grant and COPYING remain unchanged. Source
+activation, feature RED and subsequent checks establish distinct evidence;
+this notice establishes no caller, production or release qualification.
+
+## S1.2 staged adaptive-history caller, 2 November 2026
+
+The subsequent explicit authoring scope is `regression/adaptive_history.rs`,
+owned by David Osipov with AI assistance. It adapts retained-versus-fitted row
+ownership and success-dependent pruning from the same pinned `sourcestats.c`,
+lines 270–329 and 556–598, through the checked normalizer and retained-prefix
+selector. Original source copyright is Richard P. Curnow 1997–2003 and Miroslav
+Lichvar 2011–2014, 2016–2018, 2021; retain the complete GPLv2 grant/disclaimer and
+existing COPYING. The source SHA-256 remains
+`9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6`.
+
+The S147 contract in the existing S1.2 task freezes combined-64 retention,
+transactional rejection, explicit configured/effective minima, pre-/post-prune
+indices and current-prefix/report association. Mandatory fixture admission replaces
+the upstream destructive invalid-time reset. Divisor derivation, asymmetry,
+confidence/skew clamps, production source quality, correction feedback, restoration
+and Windows effects remain outside this activation. The independent rational
+oracle remains separate from any executed Rust observations; source authoring
+does not establish those remaining obligations.

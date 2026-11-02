@@ -425,11 +425,11 @@ fn write_report(report: &Report) -> io::Result<()> {
         Ok(()) => ("ok", "complete", "none"),
         Err(error) => ("error", error.stage(), error.cause()),
     };
-    let case = report.case.map_or("invalid", Case::as_str);
+    let scenario = report.case.map_or("invalid", Case::as_str);
     let mut output = io::stdout().lock();
     writeln!(
         output,
-        "event=result case={case} status={status} stage={stage} cause={cause} start_attempts={} started={} complete_attempts={} completed={} rejected={}",
+        "event=result case={scenario} status={status} stage={stage} cause={cause} start_attempts={} started={} complete_attempts={} completed={} rejected={}",
         report.counts.start_attempts,
         report.counts.started,
         report.counts.complete_attempts,

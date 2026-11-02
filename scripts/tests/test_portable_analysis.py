@@ -531,6 +531,66 @@ class EvidenceTests(unittest.TestCase):
                 with self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
                     session.run("external-legal-execution", ["fixture"], 1)
 
+    def test_adaptive_legal_consumer_preserves_retained_output_and_failure_guard(self):
+        """Replay actual S148 child text through Session.run without a native child."""
+        # Exact 337-byte output from s148-contracts-v1/verification.json, receipt
+        # SHA256 6d5f52ea37b165e7cce63f5f310459d3605551968dd20ef27eb6968e63205674.
+        raw = (
+            "legal-core-contract\n"
+            "CORE_ADAPTIVE_CONTRACT_PROFILE retained_points=0 retained_inputs=0 "
+            "retained_selections=2 adaptive_observations=3 adaptive_appends=3 "
+            "adaptive_histories=1 raw_parameter_validations=0 raw_ordinal_validations=0 "
+            "raw_event_validations=0 external_normalizations=1 contexts=1 monotonic=3 "
+            "coordinates=1 exchanges=1 getters=29\n"
+        )
+        expected = {
+            "retained_points": 0, "retained_inputs": 0, "retained_selections": 2,
+            "adaptive_observations": 3, "adaptive_appends": 3, "adaptive_histories": 1,
+            "raw_parameter_validations": 0, "raw_ordinal_validations": 0,
+            "raw_event_validations": 0, "external_normalizations": 1,
+        }
+        contracts = MODULE.load_module("adaptive_transport_contracts", ROOT / "scripts/core-adaptive-contracts.py")
+        self.assertEqual(len(raw.encode("utf-8")), 337)
+        self.assertEqual(contracts.contract_counts(raw), expected)
+        with self.assertRaises(contracts.Incomplete):
+            contracts.contract_counts(raw.strip())
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            session = MODULE.Session.__new__(MODULE.Session)
+            session.check = unittest.mock.Mock()
+            session.root = root
+            session.work = root / "work"
+            session.output = root
+            session.base = root / "base"
+            session.stable = root / "stable"
+            session.admission_profile = "stable-core"
+            session.payload_readonly = (session.base, session.stable)
+            session.vendor = root / "vendor"
+            session.tools = root / "tools"
+            session.source = root / "source"
+            session.config = root / "config"
+            session.protected_islands = {}
+            session.admitted = {"policy": {"common_nightly": "night"}}
+            session.policy = {}
+            session.report = {"lanes": []}
+            success = {"exit_code": 0, "failure": None, "output": raw, "command": ["fixture"]}
+            with patch.object(MODULE.RUNTIME, "run", return_value=success):
+                actual = session.run("external-adaptive-legal-execution", ["fixture"], 1)
+                self.assertEqual(actual, raw)
+                self.assertEqual(contracts.contract_counts(actual), expected)
+                self.assertEqual(session.check.call_count, 2)
+                self.assertEqual(session.report["lanes"][-1]["output"], raw)
+                self.assertEqual(json.loads((root / "progress.json").read_text())["lanes"][-1]["output"], raw)
+                for label in ("ordinary-control", "external-adaptive-legal-execution-extra"):
+                    with self.subTest(label=label):
+                        self.assertEqual(session.run(label, ["fixture"], 1), raw.strip())
+            for exit_code, failure in ((1, None), (0, "deadline")):
+                rejected = {**success, "exit_code": exit_code, "failure": failure}
+                with self.subTest(exit_code=exit_code, failure=failure), \
+                        patch.object(MODULE.RUNTIME, "run", return_value=rejected):
+                    with self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
+                        session.run("external-adaptive-legal-execution", ["fixture"], 1)
+
     def test_mutation_listing_admits_only_exact_warning_and_complete_strict_json(self):
         warning = (" WARN --jobs=12 is probably too high and may overload your machine: each job runs a separate "
                    "`cargo` process, and cargo may internally start many threads and subprocesses; values <= 8 "

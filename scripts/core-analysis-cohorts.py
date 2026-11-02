@@ -47,7 +47,7 @@ class Cohort(TypedDict):
 
 
 class CohortPlan(ReservationInputs):
-    schema_version: Literal[1]
+    schema_version: Literal[7]
     status: Literal["admitted-exact-source-and-cohorts"]
     candidate_sha256: str
     product_inputs_sha256: dict[str, str]
@@ -113,13 +113,14 @@ class Incomplete(ValueError):
 
 
 MAX_COHORT_VARIANTS = 512
-MAX_LISTING_VARIANTS = 3072
-MAX_OWNERS = 6
+MAX_LISTING_VARIANTS = 512
+MAX_OWNERS = 1
 MAX_INPUTS = 256
-# Preserve the predecessor's 366 units and add exactly 128 lifecycle units:
-# 22 public, four bridge and eight counter call fields; 38 module-work fields;
-# and 56 delegated-principal fields. Unknown/extra fields still fail.
-MAX_BUDGET_FIELDS = 494
+# Preserve 638 earlier fields and add the 167 disjoint S150 source-only recipe
+# and adapter-work fields. Full vectors retain zero units explicitly; they are
+# source reservations, never additional observed counters or a discovery ceiling.
+MAX_BUDGET_FIELDS = 805
+
 PLAN_KEYS = frozenset({
     "schema_version", "status", "candidate_sha256", "product_inputs_sha256",
     "tool_inputs_sha256", "tool_payloads_sha256", "recipe_sha256", "inventories",
@@ -204,11 +205,25 @@ def _inventories(value: object) -> dict[str, Inventory]:
     return result
 
 
+def historical_s148_remaining_checks(value: object) -> RemainingChecks:
+    """Retain checkpoint totals: one coverage and two contract attempts.
+
+    The historical field name includes one spent, incomplete contract attempt
+    and exactly one fresh retry; it never authorizes two future attempts.
+    """
+    row = _object(value)
+    expected = {"coverage": 1, "contracts": 2}
+    if set(row) != set(CHECKS) or any(type(count) is not int or count != expected[name]
+                                    for name, count in row.items()):
+        raise Incomplete("Checkpoint must reserve one coverage and two total contract attempts.")
+    return {"coverage": _integer(row["coverage"]), "contracts": _integer(row["contracts"])}
+
+
 def _remaining_checks(value: object) -> RemainingChecks:
-    """Retain exactly one coverage and one contracts invocation."""
+    """Reserve one fresh S150 coverage and contracts lane, with no retry credit."""
     row = _object(value)
     if set(row) != set(CHECKS) or any(type(count) is not int or count != 1 for count in row.values()):
-        raise Incomplete("Checkpoint must reserve one coverage and contracts invocation.")
+        raise Incomplete("S150 must reserve exactly one coverage and one contracts invocation.")
     return {"coverage": _integer(row["coverage"]), "contracts": _integer(row["contracts"])}
 
 
@@ -238,10 +253,11 @@ def _reservation_inputs(plan: object) -> ReservationInputs:
 
 
 def plan_reservation(plan: object, package_budget: object, check_budgets: object) -> SourceReservation:
-    """Sum every variant, one baseline per file and the remaining checks.
+    """Sum every variant, one baseline per file and total checkpoint checks.
 
     This is a source-derived upper reservation before effects. It is never
     reduced for an eventual unviable variant, failed assertion or partial log.
+    This S150 reservation includes no S148/S149 result transfer or retry allowance.
     Native time/process limits remain the wrapper's separate obligations.
     """
     admitted = _reservation_inputs(plan)
@@ -266,7 +282,7 @@ def plan_reservation(plan: object, package_budget: object, check_budgets: object
 def _cohorts(value: object) -> list[Cohort]:
     """Project exact named subject/path rows; partition ownership is checked later."""
     if not is_exact_list(value) or len(value) != MAX_OWNERS:
-        raise Incomplete("Checkpoint partition must contain each of six owners once.")
+        raise Incomplete("Checkpoint partition must contain the one projection owner once.")
     result: list[Cohort] = []
     for raw in value:
         row = _object(raw)
@@ -284,10 +300,10 @@ def _plan(value: object) -> CohortPlan:
     row = _object(value)
     if set(row) != PLAN_KEYS:
         raise Incomplete("Coordinator cohort plan has unknown or missing fields.")
-    if (type(row["schema_version"]) is not int or row["schema_version"] != 1
+    if (type(row["schema_version"]) is not int or row["schema_version"] != 7
             or row["status"] != "admitted-exact-source-and-cohorts"):
         raise Incomplete("Coordinator cohort plan awaits final-source/inventory binding.")
-    return {"schema_version": 1, "status": "admitted-exact-source-and-cohorts",
+    return {"schema_version": 7, "status": "admitted-exact-source-and-cohorts",
             "candidate_sha256": _digest(row["candidate_sha256"]),
             "product_inputs_sha256": _identity(row["product_inputs_sha256"]),
             "tool_inputs_sha256": _identity(row["tool_inputs_sha256"]),
@@ -300,7 +316,7 @@ def _plan(value: object) -> CohortPlan:
 
 
 def _subjects(value: object) -> dict[str, str]:
-    """Require the six distinct source owners used by this checkpoint."""
+    """Require the one source owner used by this fresh checkpoint."""
     raw = _object(value)
     result: dict[str, str] = {}
     for name, path in raw.items():
@@ -308,7 +324,7 @@ def _subjects(value: object) -> dict[str, str]:
             raise Incomplete("Checkpoint source owner paths must be strings.")
         result[name] = path
     if len(result) != MAX_OWNERS or len(set(result.values())) != MAX_OWNERS:
-        raise Incomplete("Checkpoint scope must contain exactly six distinct changed critical owners.")
+        raise Incomplete("Checkpoint scope must contain exactly one changed critical owner.")
     return result
 
 
@@ -319,7 +335,7 @@ def admit_plan(plan: object, *, subjects: object, product_inputs: object, tool_i
 
     Each cohort selects one existing named owner through the wrapper's ordinary
     --subject switch. A file exceeding 512 cannot be descriptor-partitioned by
-    this schema. Listing discovery has its separate 3072 aggregate ceiling.
+    this schema. Listing discovery has its separate 1024 aggregate ceiling.
     """
     admitted = _plan(plan)
     owners_by_name = _subjects(subjects)
@@ -446,4 +462,4 @@ def reconcile_receipts(plan: object, receipts: object, *, subjects: object) -> R
             "generated_variants": sum(row["count"] for row in admitted["inventories"].values()),
             "baselines": len(receipts), "reservation": admitted["cumulative_reservation"],
             "critical_manifest_complete_selection": False,
-            "scope": "Six changed/coupled critical owners' mutation receipt union; coverage/contracts and native Windows remain separate."}
+            "scope": "One critical owner (projection) mutation receipt; coverage/contracts and native Windows remain separate."}

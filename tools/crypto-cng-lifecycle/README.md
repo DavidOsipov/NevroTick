@@ -1,21 +1,23 @@
-# Held CNG lifecycle fixture
+# CNG lifecycle feasibility fixture
 
 This GPL-2.0-only standalone test tool is outside the product Cargo workspace.
-It prepares the first CRYPTO-01/02 public-API observations in
+It supplies the first CRYPTO-01/02 public-API observations in
 [`tasks/s0.1-crypto-feasibility.md`](../../tasks/s0.1-crypto-feasibility.md).
-The source has passed the pinned formatter and independent source/API review; it
-has not been compiled, tested or executed. Licence/bans,
-the exact derivative dependency graph, build and native execution admission
-remain held. The earlier S46 advisory/source pass is not this fixture's admission.
+The task's S48–S58 checkpoints record dependency policy, Windows builds, an actual
+native cleanup RED and its owning-guard correction. All six corrected native
+cases pass: three initialization/error controls and three public X25519 cases.
+The earlier S52 outer-launch accounting gap remains historical. Native memory,
+cached-error/shutdown, concurrency and broader provider qualification remain open.
+Use the task's exact candidates and evidence limits when reusing observations.
 
 The only direct Windows dependencies are exact Rustls 0.23.46 with defaults off
 and `std`, and CNG 0.1.2 with defaults off. No verifier or AEAD root is present.
-Root must freeze this new graph from the retained lock and verified cache without
-new versions. It is not the former 54-external-package proposal; package counts
-and any duplicate allowance must come from the fixture's actual selected graph.
 The fixture lockfile is now frozen from the verified cache with no new registry
 versions/checksums or feature additions (53 lock records, 41 metadata records).
-This is resolution evidence; licence/bans and dependency execution remain held.
+The selected Windows normal/build graph has 34 unique identities, 33 external;
+the actual S51 compiler records match it, with no ring/AWS-LC compiler artifact.
+This minimal graph requires no duplicate-version allowance. It is separate from
+the former 54-external-package proposal and admits no product dependency graph.
 Do not run the upstream CNG test manifests or
 dev graph: those explicitly request AWS-LC and are outside this experiment.
 
@@ -72,3 +74,81 @@ The owned deny policy allows only the exact hash-bound presence of three upstrea
 `untrusted 0.9.0` CI helper files. They are absent from selected Cargo build,
 proc-macro and runtime invocation paths. Their install/network/shell effects
 are not admitted; all global interpreter/archive checks remain enabled.
+
+## Private-initialization diagnostic and scoped correction
+
+The owned MIT derivative at `vendor/rustls-cng-crypto` preserves the recovered
+0.1.2 production source and original licence. Its `NOTICE` binds upstream revision
+`955b52e27ac76041e04459122ab4652875ab39a8`, archive SHA256
+`ce24a0492dd515a9def8c39fc6b4ea6797336ca12b2fb1c1f3d05063a9cb9973`
+and individual upstream input hashes. Original normalized/original manifests are
+retained. The derivative removes upstream test/dev execution edges, keeps all
+normal dependencies and existing features/defaults, and adds only the default-off
+`fixture-init-probe` diagnostic feature. No upstream dev lock, separate test
+directory, CI or AWS-LC dev graph is copied; internal cfg(test) text remains
+outside the selected build. The registry copy is unchanged. The derivative is its own
+workspace, preventing implicit addition to this fixture's workspace.
+
+The root's existing two exact dependency declarations are unchanged. A local
+`[patch.crates-io]` selects the owned derivative. Root feature `init-probe` forwards
+the diagnostic feature, and binary `nevrotick-cng-init-probe` requires it. The old
+public-API `src/main.rs` is unchanged. No product workspace is modified. The frozen
+fixture lock replaces only the old CNG registry node with its owned path node;
+the coordinator publishes the actually generated lock through the task's explicit
+bridge. No registry version/checksum is added. Earlier licence/build/native
+receipts retain their earlier source identities.
+
+The fixed new CLI cases are `--case healthy-load`, `--case open-invalid-once` and
+`--case property-invalid-once`, one safe diagnostic call per fresh process. A
+process-wide atomic admission rejects a second call before native work. The safe
+entry calls the derivative's actual private `load_algorithm`; it is not a copied
+proxy helper. Only feature-gated wrappers change the first native input to a
+static terminated UTF-16 invalid name and record the actual returned NTSTATUS.
+They return that same status to the initializer. A private algorithm owner now
+guards each successful open until transfer or one close attempt. Property failure
+closes through that owner and preserves the primary and any close failure;
+ownership is disarmed before close, preventing a retry after uncertain cleanup.
+Unwind fallback attempts cleanup but cannot return its status to the caller.
+Failure means signed NTSTATUS < 0;
+positive informational statuses are not misclassified as errors.
+
+Each fault case disarms the override, saves the initial snapshot, attempts fixture
+recovery, then calls the same actual initializer once with normal ECDH/25519 inputs
+as a healthy neighbor. The healthy-only control calls it once. Fixed storage
+admits at most two successful-open handles and eight native
+events; the selected sequences need at most two opens, two property calls and two
+close attempts. No key exchange, key/secret material or raw handle value is used.
+
+Successfully returned handles belong to the fixture caller and are closed with
+role `fixture-close-returned`. Provider error cleanup has the separate role
+`provider-close-error`, before the initializer returns. After that initial result
+and any normal caller close, a bounded snapshot saves pending unreturned handles.
+Only afterward does `fixture-close-recovery` try once to close those orphans. Its
+actual status is retained and never credited as provider cleanup. A failed close,
+unexpected native output, missing intended native failure or failed healthy
+neighbor yields an incomplete observation. A failed open's unexpected nonnull
+output is not assumed owned and is not blindly closed.
+
+The corrected property case emits `status=property-failure-cleaned` and exits zero
+only after actual property failure, successful provider cleanup, a zero-orphan
+snapshot without fixture recovery and a healthy neighbor. The original native
+failure remains archived. The diagnostic still emits `status=baseline-red` and
+exits three when the actual
+open succeeded, the actual property status failed, the initializer returned an
+error without ownership transfer, the healthy neighbor succeeded, and the saved
+single orphan was successfully closed by subsequent fixture recovery. This is a
+causal error-path cleanup witness, not provider qualification or general native
+leak proof. Healthy and correctly propagated open-failure controls exit zero;
+incomplete/native/output failures exit nonzero. All records have fixed labels,
+opaque ordinals and actual signed/hex statuses; no pointers or provider strings.
+The snapshot is saved before recovery, but its output is emitted after the safe
+probe returns, so it is not a live-process acknowledgement checkpoint. The later
+healthy-neighbor result appears only in the final result row, not the snapshot.
+
+These cases construct no `ShutdownHandle`, call no cached initializer and catch
+no panic as success. The original cached unwrap and shutdown-init panic behavior
+remain a separate gap. The first-party binary retains `#![forbid(unsafe_code)]`;
+only the owned provider's narrow native module contains diagnostic FFI. S56
+qualifies the declared builds with the diagnostic feature both enabled and
+disabled; S57/S58 record six actual native cases. These observations establish
+neither general leak freedom nor full provider/TLS/product qualification.

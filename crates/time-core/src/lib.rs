@@ -78,7 +78,8 @@ pub use projection_enclosure::{
 };
 
 pub use regression::{
-    ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FitInput, FitPoint,
+    AdaptiveHistoryError, ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError,
+    FitInput, FitPoint, FixtureAdaptiveHistory, FixtureAdaptiveHistoryReport,
     FixtureAnchorProjection, FixtureContext, FixtureHistory, FixtureHistoryReport, FixtureLine,
     FixtureNormalization, FixtureObservation, FixtureProjectionError, FixtureProjectionField,
     FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms,
@@ -86,7 +87,8 @@ pub use regression::{
     FixtureRunsStop, HistoryError, InsufficientFixture, NormalizationComponent, NormalizationError,
     NormalizationStep, ObservationError, PointField, PointIssue, PreparedFixtureInput,
     ResidualError, ResidualField, ResidualIssue, ResidualStep, fit, prepare_fixture_input,
-    project_fixture_anchor, residual_statistics, select_fixture_runs,
+    project_fixture_adaptive_anchor, project_fixture_anchor, residual_statistics,
+    select_fixture_runs, select_fixture_runs_with_retained,
 };
 
 pub use selection::{

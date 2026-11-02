@@ -165,12 +165,14 @@ class AccountingTests(unittest.TestCase):
         self.exercise_wire_runner(exercise)
 
     def test_subject_selection_is_fixed_and_complete(self):
-        """The default scope names all four real owners; unknown selectors fail closed."""
+        """The default scope names all six real owners; unknown selectors fail closed."""
         self.assertEqual(MODULE.select_subjects("all"),
                          {"header": "crates/ntp-wire/src/header.rs",
                           "datagram": "crates/ntp-wire/src/datagram.rs",
                           "nts_ke": "crates/ntp-wire/src/nts_ke.rs",
-                          "nts_negotiation": "crates/ntp-wire/src/nts_negotiation.rs"})
+                          "nts_negotiation": "crates/ntp-wire/src/nts_negotiation.rs",
+                          "nts_packet": "crates/ntp-wire/src/nts_packet.rs",
+                          "nts_plaintext": "crates/ntp-wire/src/nts_plaintext.rs"})
         self.assertEqual(MODULE.select_subjects("datagram"),
                          {"datagram": "crates/ntp-wire/src/datagram.rs"})
         with self.assertRaises(MODULE.Incomplete):
@@ -202,16 +204,49 @@ class AccountingTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):
             MODULE.coverage_counts(report, MODULE.NTS_KE)
 
-    def test_all_four_wire_harness_subjects_have_explicit_admission(self):
+    def test_all_six_wire_harness_subjects_have_explicit_admission(self):
         self.assertEqual(MODULE.FUZZ_SUBJECTS,
                          {"header": MODULE.HEADER, "datagram": MODULE.DATAGRAM, "nts_ke": MODULE.NTS_KE,
-                          "nts_negotiation": MODULE.NTS_NEGOTIATION})
+                          "nts_negotiation": MODULE.NTS_NEGOTIATION, "nts_packet": MODULE.NTS_PACKET,
+                          "nts_plaintext": MODULE.NTS_PLAINTEXT})
         for lane in ("contracts", "coverage", "mutation", "fuzz", "all"):
-            for subject in ("header", "datagram", "nts_ke", "nts_negotiation", "all"):
+            for subject in ("header", "datagram", "nts_ke", "nts_negotiation", "nts_packet", "nts_plaintext", "all"):
                 MODULE.admit_fuzz_subject(lane, subject)
         for lane, subject in (("unknown", "nts_ke"), ("fuzz", "other"), ("release", "all")):
             with self.subTest(lane=lane, subject=subject), self.assertRaises(MODULE.Incomplete):
                 MODULE.admit_fuzz_subject(lane, subject)
+
+    def test_all_fuzz_subjects_fail_closed_for_missing_or_misbound_owner(self):
+        for owner in ("nts_packet", "nts_plaintext"):
+            incomplete = {name: path for name, path in MODULE.FUZZ_SUBJECTS.items() if name != owner}
+            for lane in ("fuzz", "all"):
+                with self.subTest(lane=lane, missing=owner), patch.object(MODULE, "FUZZ_SUBJECTS", incomplete):
+                    for subject in ("all", owner, "header"):
+                        with self.assertRaises(MODULE.Incomplete):
+                            MODULE.admit_fuzz_subject(lane, subject)
+                with self.subTest(lane=lane, misbound=owner), patch.object(
+                        MODULE, "FUZZ_SUBJECTS", {**MODULE.FUZZ_SUBJECTS, owner: MODULE.DATAGRAM}):
+                    for subject in ("all", owner, "header"):
+                        with self.assertRaises(MODULE.Incomplete):
+                            MODULE.admit_fuzz_subject(lane, subject)
+
+    def test_plaintext_coverage_cannot_borrow_datagram_evidence(self):
+        self.assertEqual(MODULE.select_subjects("nts_plaintext"), {"nts_plaintext": MODULE.NTS_PLAINTEXT})
+        filename = "/work/source/" + MODULE.NTS_PLAINTEXT
+        report = {"data": [{"files": [{"filename": filename, "summary": {
+            "lines": {"count": 10, "covered": 9}}}]}]}
+        self.assertEqual(MODULE.coverage_counts(report, filename)["file"], MODULE.NTS_PLAINTEXT)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.coverage_counts(report, MODULE.DATAGRAM)
+
+    def test_packet_coverage_cannot_borrow_datagram_evidence(self):
+        self.assertEqual(MODULE.select_subjects("nts_packet"), {"nts_packet": MODULE.NTS_PACKET})
+        filename = "/work/source/" + MODULE.NTS_PACKET
+        report = {"data": [{"files": [{"filename": filename, "summary": {
+            "lines": {"count": 10, "covered": 9}}}]}]}
+        self.assertEqual(MODULE.coverage_counts(report, filename)["file"], MODULE.NTS_PACKET)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.coverage_counts(report, MODULE.DATAGRAM)
 
     def test_changed_semantic_target_stops_before_fuzz_dependency_admission(self):
         """An extended scope requires the actual admitted target bytes, not its name."""
@@ -234,7 +269,7 @@ class AccountingTests(unittest.TestCase):
                 with self.assertRaisesRegex(MODULE.Incomplete, "target changed without source admission"):
                     MODULE.admit_fuzz_sources(base, {"coverage_guided_fuzzing": selected})
 
-    def test_six_fuzz_cases_keep_distinct_features_and_intended_faults(self):
+    def test_eight_fuzz_cases_keep_distinct_features_and_intended_faults(self):
         """Relational harness faults supplement all existing raw/count controls."""
         expected = {
             "healthy": ([], None),
@@ -246,6 +281,10 @@ class AccountingTests(unittest.TestCase):
                                "independent NTS-KE request-context forwarding oracle"),
             "membership-defect": (["--features", "seeded-membership-defect"],
                                   "independent NTS-KE full-list membership observation oracle"),
+            "packet-defect": (["--features", "seeded-packet-defect"],
+                              "independent NTS packet span observation oracle"),
+            "plaintext-defect": (["--features", "seeded-plaintext-defect"],
+                                 "independent NTS plaintext field-count observation oracle"),
         }
         self.assertEqual(MODULE.FUZZ_CASES, tuple(expected))
         for case, options in expected.items():
@@ -261,7 +300,9 @@ class AccountingTests(unittest.TestCase):
                  "-malloc_limit_mb=256", "-max_total_time=30"]
         for case in MODULE.FUZZ_CASES:
             witness = ("/work/fuzz-corpus/ke-pair-literal-nonfirst"
-                       if case in {"context-defect", "membership-defect"} else "/work/fuzz-corpus")
+                       if case in {"context-defect", "membership-defect"} else
+                       "/work/fuzz-corpus/packet-literal-nonzero" if case == "packet-defect" else
+                       "/work/fuzz-corpus/plaintext-literal" if case == "plaintext-defect" else "/work/fuzz-corpus")
             self.assertEqual(MODULE.fuzz_execution_argv("/work/fuzz-binaries/" + case, case),
                              ["/work/fuzz-binaries/" + case, witness,
                               "-artifact_prefix=/work/fuzz-artifacts/", *flags])
@@ -289,6 +330,20 @@ class AccountingTests(unittest.TestCase):
                         MODULE.fuzz_control_witness(corpus, case, identity)
             for case in ("healthy", "defect", "ke-defect", "negotiation-defect"):
                 self.assertIsNone(MODULE.fuzz_control_witness(corpus, case, identity))
+
+    def test_packet_control_witness_preserves_the_literal_and_rejects_drift(self):
+        literal = bytes([0xa5]) * 48 + bytes.fromhex(
+            "01040010808182838485868788898a8b0404001c0001000311aabbcc212223dd9192939495969798999a9b9c")
+        self.assertEqual(MODULE.fuzz_seeds()["packet-literal-nonzero"], literal)
+        with tempfile.TemporaryDirectory() as temporary:
+            corpus = Path(temporary); witness = corpus / "packet-literal-nonzero"
+            witness.write_bytes(literal); identity = {witness.name: MODULE.PRODUCT.sha256(witness)}
+            self.assertEqual(MODULE.fuzz_control_witness(corpus, "packet-defect", identity), witness)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.fuzz_control_witness(corpus, "packet-defect", {})
+            witness.write_bytes(literal[:-1] + b"\x00")
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.fuzz_control_witness(corpus, "packet-defect", identity)
 
     def test_nts_ke_external_contracts_cover_each_private_borrowed_owner(self):
         examples = MODULE.contract_examples()
@@ -346,7 +401,8 @@ class AccountingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); (root / "policy").mkdir()
             policy = json.loads((ROOT / MODULE.POLICY).read_text())
-            owners = [MODULE.HEADER, MODULE.DATAGRAM, MODULE.NTS_KE, MODULE.NTS_NEGOTIATION]
+            owners = [MODULE.HEADER, MODULE.DATAGRAM, MODULE.NTS_KE, MODULE.NTS_NEGOTIATION, MODULE.NTS_PACKET,
+                      MODULE.NTS_PLAINTEXT]
             policy["critical_files"] = owners
             path = root / MODULE.POLICY
             manifest_path = root / "policy/verification-manifest.toml"
@@ -401,7 +457,9 @@ class AccountingTests(unittest.TestCase):
             missed = json.loads(json.dumps(report)); missed["outcomes"][1]["summary"] = "MissedMutant"
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.mutation_counts(missed, inventory, filename)
-        self.assertEqual(MODULE.combined_mutant_count(inventories, 4), 4)
+        self.assertEqual(MODULE.combined_mutant_count(inventories, 6), 6)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.combined_mutant_count(inventories, 5)
         for bad, cap in (({}, 512), (inventories, 1)):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.combined_mutant_count(bad, cap)
@@ -410,7 +468,7 @@ class AccountingTests(unittest.TestCase):
                                       512, MODULE.HEADER)
 
     def test_mutation_commands_share_one_wall_budget(self):
-        """Selecting both files must not silently double the overall time allowance."""
+        """Selecting multiple files must not silently multiply the overall time allowance."""
         with patch.object(MODULE.time, "monotonic", return_value=10.0):
             self.assertEqual(MODULE.remaining_timeout(100.0, 120), 90)
             self.assertEqual(MODULE.remaining_timeout(100.0, 60), 60)
@@ -419,9 +477,9 @@ class AccountingTests(unittest.TestCase):
                     MODULE.remaining_timeout(deadline, 120)
 
     def test_external_contract_inventory_preserves_header_and_borrow_controls(self):
-        """All four owners have useful legal consumers and named intended diagnostics."""
+        """All six owners have useful legal consumers and named intended diagnostics."""
         examples = MODULE.contract_examples()
-        self.assertEqual(len(examples), 50)
+        self.assertEqual(len(examples), 89)
         self.assertIsNone(examples["legal"][1])
         for name in ("raw_header_construction", "timestamp_construction", "frame_limits_construction",
                      "raw_datagram_construction", "raw_extension_construction", "extension_fields_construction"):
@@ -434,6 +492,77 @@ class AccountingTests(unittest.TestCase):
         for name in ("FrameLimits::new", "frame_no_legacy_mac_datagram", "field_type()", "body()",
                      "extension_count()", "header()"):
             self.assertIn(name, examples["legal"][0])
+
+    def test_accumulator_contracts_preserve_storage_and_consumed_ownership(self):
+        """Keep legal accumulation beside intended construction/lifetime failures."""
+        examples = MODULE.contract_examples()
+        self.assertIsNone(examples["nts_accumulator_legal"][1])
+        expected = {
+            "construction": "E0451", "mutation": "E0616", "default": "E0277",
+            "debug": "E0277", "live_storage_mutation": "E0506",
+            "borrow_escape": "E0597", "output_escape": "E0515",
+            "reuse_after_finish": "E0382",
+        }
+        for suffix, diagnostic in expected.items():
+            with self.subTest(specimen=suffix):
+                self.assertEqual(examples["nts_accumulator_" + suffix][1], diagnostic)
+        for operation in ("NtsKeAccumulator::new", "owner.push", "owner.finish", "record.body()"):
+            self.assertIn(operation, examples["nts_accumulator_legal"][0])
+
+    def test_exporter_contracts_keep_owned_metadata_and_readonly_getter_distinct(self):
+        """Owned context may escape input buffers; a local getter view may not."""
+        examples = MODULE.contract_examples()
+        self.assertIsNone(examples["nts_exporter_legal"][1])
+        expected = {
+            "construction": "E0451", "mutation": "E0616", "readonly_getter": "E0594",
+            "default": "E0277", "debug": "E0277", "getter_escape": "E0515",
+        }
+        for suffix, diagnostic in expected.items():
+            with self.subTest(specimen=suffix):
+                self.assertEqual(examples["nts_exporter_" + suffix][1], diagnostic)
+        for required in ("pending.exporter_context", "ClientToServer", "ServerToClient", "context_bytes()"):
+            self.assertIn(required, examples["nts_exporter_legal"][0])
+
+    def test_plaintext_external_contracts_and_named_witness(self):
+        examples = MODULE.contract_examples()
+        self.assertIsNone(examples["nts_plaintext_legal"][1])
+        expected = {
+            "limits_construction": "E0451", "limits_mutation": "E0616", "limits_default": "E0277",
+            "frame_construction": "E0451", "frame_mutation": "E0616", "frame_default": "E0277",
+            "frame_debug": "E0277", "field_construction": "E0451", "field_debug": "E0277",
+            "iterator_construction": "E0451", "iterator_debug": "E0277", "readonly_body": "E0594",
+            "live_input_mutation": "E0506", "borrow_escape": "E0515",
+        }
+        for suffix, diagnostic in expected.items():
+            with self.subTest(suffix=suffix):
+                self.assertEqual(examples["nts_plaintext_" + suffix][1], diagnostic)
+        for operation in ("field_count()", "fields()", "field_type()", "body()", "bytes()"):
+            self.assertIn(operation, examples["nts_plaintext_legal"][0])
+        literal = bytes.fromhex("12 34 00 04 02 04 00 08 de ad be ef")
+        self.assertEqual(MODULE.fuzz_seeds()["plaintext-literal"], literal)
+        self.assertEqual(MODULE.fuzz_seeds()["plaintext-high-length"][:4], bytes.fromhex("12 34 01 00"))
+        with tempfile.TemporaryDirectory() as temporary:
+            corpus = Path(temporary); witness = corpus / "plaintext-literal"
+            witness.write_bytes(literal)
+            identity = {witness.name: MODULE.PRODUCT.sha256(witness)}
+            self.assertEqual(MODULE.fuzz_control_witness(corpus, "plaintext-defect", identity), witness)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.fuzz_control_witness(corpus, "plaintext-defect", {})
+            witness.write_bytes(literal + b"x")
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.fuzz_control_witness(corpus, "plaintext-defect", identity)
+
+    def test_packet_external_contracts_cover_private_input_tied_projection(self):
+        examples = MODULE.contract_examples()
+        self.assertIsNone(examples["nts_packet_legal"][1])
+        expected = {"construction": "E0451", "mutation": "E0616", "readonly_getter": "E0594",
+                    "default": "E0277", "debug": "E0277", "live_input_mutation": "E0506",
+                    "borrow_escape": "E0515"}
+        for suffix, diagnostic in expected.items():
+            with self.subTest(specimen=suffix):
+                self.assertEqual(examples["nts_packet_" + suffix][1], diagnostic)
+        for operation in ("read_nts_authenticator_parts", "associated_data()", "nonce()", "ciphertext()"):
+            self.assertIn(operation, examples["nts_packet_legal"][0])
 
     def test_external_traits_cannot_supply_defaults_or_payload_debug(self):
         """Explicit no-default/no-payload-Debug contracts need intended trait errors."""
@@ -459,6 +588,20 @@ class AccountingTests(unittest.TestCase):
             self.assertEqual(int.from_bytes(seeds["byte-edge-" + str(size)][50:52], "big"), size - 48)
         self.assertTrue(all(len(data) <= 4096 for name, data in seeds.items() if not name.startswith("ke-")))
         self.assertTrue(all(len(data) <= 131_073 for data in seeds.values()))
+
+    def test_packet_fuzz_seeds_keep_independent_boundary_witnesses(self):
+        seeds = MODULE.fuzz_seeds()
+        self.assertEqual(len(seeds["packet-literal-nonzero"]), 92)
+        self.assertEqual(seeds["packet-literal-nonzero"][72:73], b"\x11")
+        self.assertEqual(seeds["packet-literal-nonzero"][76:79], bytes.fromhex("212223"))
+        for name, words in (("packet-exact-fit", "00040010"), ("packet-one-over", "00040011"),
+                            ("packet-u16-extreme", "ffff0001")):
+            self.assertEqual(len(seeds[name]), 76)
+            self.assertEqual(seeds[name][52:56], bytes.fromhex(words))
+        self.assertEqual(seeds["packet-second-auth"], seeds["packet-literal-nonzero"]
+                         + seeds["packet-literal-nonzero"][64:])
+        self.assertEqual(seeds["packet-malformed-suffix"], seeds["packet-literal-nonzero"] + b"\x00")
+        self.assertEqual(seeds["packet-missing"], bytes(48))
 
     def test_ke_fuzz_seeds_preserve_literal_lengths_headers_and_offsets(self):
         seeds = MODULE.fuzz_seeds()
@@ -674,7 +817,8 @@ class AccountingTests(unittest.TestCase):
         manifest = tomllib.loads((ROOT / "policy/verification-manifest.toml").read_text())
         expected = {"crates/nevrotick-ui/src/model.rs", "crates/nevrotick-ui/src/native.rs",
                     "crates/nevrotick-ui/src/native/controls.rs", "crates/nevrotick-ui/src/native/view.rs",
-                    MODULE.HEADER, MODULE.DATAGRAM, MODULE.NTS_KE, MODULE.NTS_NEGOTIATION}
+                    MODULE.HEADER, MODULE.DATAGRAM, MODULE.NTS_KE, MODULE.NTS_NEGOTIATION, MODULE.NTS_PACKET,
+                    MODULE.NTS_PLAINTEXT}
         self.assertTrue(expected.issubset(manifest["critical_files"]))
 
     def test_coverage_uses_exact_parser_and_nonempty_denominator(self):

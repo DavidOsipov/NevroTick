@@ -15,20 +15,20 @@ class CohortPlanTests(unittest.TestCase):
     """Synthetic identities test admission mechanics, never a product candidate."""
 
     def fixture(self):
-        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(6)}
+        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(1)}
         product = {"Cargo.toml": "a" * 64}
         tools = {"scripts/wrapper.py": "b" * 64}
         inventories = {name: {"count": 300 + index, "sha256": str(index) * 64}
                        for index, name in enumerate(subjects)}
         package = {"fits": 2, "points": 7}
         checks = {"coverage": dict(package), "contracts": {"fits": 3, "points": 4}}
-        plan = {"schema_version": 1, "status": "admitted-exact-source-and-cohorts",
+        plan = {"schema_version": 7, "status": "admitted-exact-source-and-cohorts",
                 "candidate_sha256": MODULE.canonical_sha256(product),
                 "product_inputs_sha256": product, "tool_inputs_sha256": tools,
                 "tool_payloads_sha256": {"cargo-mutants": "e" * 64},
                 "recipe_sha256": "c" * 64, "inventories": inventories,
                 "cohorts": [{"id": name, "subject": name, "output_dir": "/tmp/" + name}
-                            for name in subjects], "remaining_checks": {name: 1 for name in MODULE.CHECKS},
+                            for name in subjects], "remaining_checks": {"coverage": 1, "contracts": 1},
                 "baseline_tests": 13, "cumulative_reservation": None}
         plan["cumulative_reservation"] = MODULE.plan_reservation(plan, package, checks)
         arguments = {"subjects": subjects, "product_inputs": product, "tool_inputs": tools,
@@ -56,32 +56,33 @@ class CohortPlanTests(unittest.TestCase):
                            "mutation_generated_variants_selected_total": plan["inventories"][subject]["count"]})
         return result
 
-    def test_disjoint_six_owner_union_can_exceed_one_cohort_cap(self):
+    def test_single_owner_checkpoint_has_one_baseline_and_no_manifest_claim(self):
         plan, args = self.fixture()
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted["reservation"]["mutation_variants"], 1815)
-        self.assertEqual(admitted["reservation"]["mutation_baselines"], 6)
-        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 3647, "points": 12758})
+        self.assertEqual(admitted["reservation"]["mutation_variants"], 300)
+        self.assertEqual(admitted["reservation"]["mutation_baselines"], 1)
+        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 607, "points": 2118})
         union = MODULE.reconcile_receipts(plan, self.receipts(plan, args["subjects"]), subjects=args["subjects"])
-        self.assertEqual(union["focused_receipts"], 6)
-        self.assertEqual(union["generated_variants"], 1815)
+        self.assertEqual(union["focused_receipts"], 1)
+        self.assertEqual(union["generated_variants"], 300)
         self.assertFalse(union["critical_manifest_complete_selection"])
+        self.assertEqual(union['scope'],
+                         'One critical owner (projection) mutation receipt; '
+                         'coverage/contracts and native Windows remain separate.')
 
-    def test_scope_requires_exactly_six_distinct_owners(self):
-        for change in ("one", "five", "seven", "duplicate_file"):
+    def test_scope_requires_exactly_one_owner(self):
+        for change in ("two", "empty", "duplicate_file"):
             plan, args = self.fixture()
-            if change == "one":
-                args['subjects'] = {'owner0': args['subjects']['owner0']}
-            elif change == "five":
-                args['subjects'].pop('owner5')
-            elif change == "seven":
-                args['subjects']['owner6'] = 'src/owner6.rs'
+            if change == "two":
+                args['subjects']['owner1'] = 'src/owner1.rs'
+            elif change == "empty":
+                args['subjects'] = {}
             else:
                 args['subjects']['owner1'] = args['subjects']['owner0']
-            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+            with self.subTest(change=change), self.assertRaisesRegex(MODULE.Incomplete, "exactly one changed critical owner"):
                 MODULE.admit_plan(plan, **args)
 
-    def test_six_full_cohorts_reach_the_independent_listing_limit(self):
+    def test_one_full_cohort_reaches_the_independent_listing_limit(self):
         plan, args = self.fixture()
         for row in plan['inventories'].values():
             row['count'] = 512
@@ -89,19 +90,37 @@ class CohortPlanTests(unittest.TestCase):
             plan, args['package_budget'], args['check_budgets'])
         args['global_limits'] = dict(plan['cumulative_reservation']['source_work'])
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted['reservation']['mutation_variants'], 3072)
-        self.assertEqual(admitted['reservation']['mutation_baselines'], 6)
-        self.assertEqual(admitted['reservation']['mutation_package_invocations'], 3078)
-        self.assertEqual(admitted['reservation']['source_work'], {'fits': 6161, 'points': 21557})
-        with patch.object(MODULE, 'MAX_LISTING_VARIANTS', 3071), \
+        self.assertEqual(admitted['reservation']['mutation_variants'], 512)
+        self.assertEqual(admitted['reservation']['mutation_baselines'], 1)
+        self.assertEqual(admitted['reservation']['mutation_package_invocations'], 513)
+        self.assertEqual(admitted['reservation']['source_work'], {'fits': 1031, 'points': 3602})
+        with patch.object(MODULE, 'MAX_LISTING_VARIANTS', 511), \
                 self.assertRaisesRegex(MODULE.Incomplete, 'listing ceiling'):
             MODULE.admit_plan(plan, **args)
 
-    def test_reviewed_494_field_width_accepts_exact_limit_and_rejects_next(self):
-        exact = {f"metric{index}": 1 for index in range(494)}
+    def test_reviewed_805_field_width_accepts_exact_limit_and_rejects_next(self):
+        exact = {f"metric{index}": 1 for index in range(805)}
         self.assertEqual(MODULE._budget(exact), exact)
         with self.assertRaises(MODULE.Incomplete):
-            MODULE._budget({**exact, 'metric494': 1})
+            MODULE._budget({**exact, 'metric805': 1})
+
+    def test_checkpoint_totals_include_exactly_one_spent_contract_and_one_retry(self):
+        expected = {"coverage": 1, "contracts": 2}
+        self.assertEqual(MODULE.historical_s148_remaining_checks(expected), expected)
+        for value in ({"coverage": 1, "contracts": 1}, {"coverage": 1, "contracts": 3},
+                      {"coverage": 2, "contracts": 2}, {"coverage": True, "contracts": 2},
+                      {"coverage": 1, "contracts": 2.0}, {**expected, "mutation": 1}):
+            with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.historical_s148_remaining_checks(value)
+
+    def test_s150_requires_one_fresh_coverage_and_contracts_without_retry(self):
+        expected = {"coverage": 1, "contracts": 1}
+        self.assertEqual(MODULE._remaining_checks(expected), expected)
+        for value in ({"coverage": 1, "contracts": 2}, {"coverage": 1, "contracts": 0},
+                      {"coverage": 2, "contracts": 1}, {"coverage": True, "contracts": 1},
+                      {"coverage": 1, "contracts": 1.0}, {**expected, "mutation": 1}):
+            with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE._remaining_checks(value)
 
     def test_typed_budget_projection_rejects_boolean_and_unbounded_counts(self):
         self.assertEqual(MODULE._budget({"fits": 0, "points": (1 << 63) - 1}),
@@ -137,18 +156,24 @@ class CohortPlanTests(unittest.TestCase):
                 MODULE.reconcile_receipts(plan, receipts, subjects=args["subjects"])
 
     def test_unknown_missing_and_pending_plan_fields_reject(self):
-        for change in ("unknown", "missing", "pending", "schema_bool"):
+        for change in ("unknown", "missing", "pending", "schema_bool", "historical_plan", "historical_admission", "historical_s148", "historical_s149"):
             plan, args = self.fixture()
             if change == "unknown": plan["extra"] = 0
             if change == "missing": del plan["inventories"]
             if change == "pending": plan["status"] = "PENDING"
             if change == "schema_bool": plan["schema_version"] = True
+            if change == "historical_plan": plan["schema_version"] = 1
+            if change == "historical_admission": plan["schema_version"] = 4
+            if change == "historical_s148": plan["schema_version"] = 5
+            if change == "historical_s149": plan["schema_version"] = 6
             with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                 MODULE.admit_plan(plan, **args)
 
     def test_partition_rejects_unknown_duplicate_missing_overlap_and_output_reuse(self):
         for change in ("unknown", "duplicate_id", "missing", "overlap", "same_output", "relative", "traversal"):
             plan, args = self.fixture()
+            if change in ("duplicate_id", "overlap", "same_output"):
+                plan["cohorts"].append(copy.deepcopy(plan["cohorts"][0]))
             if change == "unknown": plan["cohorts"][0]["subject"] = "unknown"
             if change == "duplicate_id": plan["cohorts"][1]["id"] = plan["cohorts"][0]["id"]
             if change == "missing": plan["cohorts"].pop()
@@ -198,7 +223,7 @@ class CohortPlanTests(unittest.TestCase):
             plan, args = self.fixture(); receipts = copy.deepcopy(self.receipts(plan, args["subjects"]))
             row = receipts[0]
             if change == "missing": receipts.pop()
-            if change == "duplicate": receipts[1] = copy.deepcopy(row)
+            if change == "duplicate": receipts.append(copy.deepcopy(row))
             if change == "unknown": row["core_cohort_binding"]["cohort_id"] = "unknown"
             if change == "candidate": row["core_cohort_binding"]["candidate_sha256"] = "d" * 64
             if change == "source": row["source_sha256"]["Cargo.toml"] = "d" * 64

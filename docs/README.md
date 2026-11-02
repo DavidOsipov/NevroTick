@@ -52,6 +52,16 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
+**Windows execution stopped, 2 November 2026:** the owner reported a Defender
+detection during attempted CNG fixture staging and is keeping it blocked. All
+Windows execution and retries are suspended under the
+[incident record](../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped).
+The [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+routes independent work to the current portable Core slice. The standalone
+AES-SIV checkpoint remains evidence for its recorded candidate; the separately
+held fuzz runner must not be retried through another invocation or agent.
+Neither a confirmed false positive nor host compromise is established.
+
 **Microsoft Windows 11 integration research, 3 November 2026:** the
 [source review](plans/windows11-integration.md) records primary Microsoft evidence,
 project-specific adaptations, compatibility limits and distinguishing checks.
@@ -67,6 +77,12 @@ an ordinary utility-service route. Current work, DoQ-only upstream, the complete
 MSI, storage pause and UI-M0/D1–D3 deferrals remain unchanged. Documentation
 integration establishes no implemented feature, measured speedup or Windows pass.
 
+The coordinator adopts W11-W01–W11-W10 through
+[development §8.5](plans/development-plan.md#85-windows-11-integration-research-and-qualification)
+and records their current dispositions in the existing Windows 11 task. This
+shares the checkpoint procedure used for the imported storage queue; it does not
+change the current Core priority or activate held Windows/fuzz execution.
+
 **Protected-storage second upstream review, 3 November 2026:** the
 [new source supplement](plans/windows-protected-storage-upstream-lessons-2.md)
 retains the completed second search and critical review. The
@@ -79,6 +95,10 @@ RedirectionGuard remains a candidate; attestation, hardware revocation epochs,
 chunked snapshots and database adoption remain conditional. The original ST-T,
 CHECK and DNS-C owners, construction freeze, rollback residuals, experiment pause
 and UI-M0/D2 boundaries remain. No implementation or native pass is claimed.
+
+On continuation, use the [imported hardening work queue](plans/development-plan.md#imported-hardening-work-queue)
+to adopt ST-W01–ST-W07 into the existing task chain. It distinguishes the ready
+source-only assignment from later implementation and held native observations.
 
 **Protected optional storage, 2 November 2026:** the [architecture amendment](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
 records the reviewed CNG VBS/TPM/fresh-state/no-cache direction requested by the
@@ -126,9 +146,28 @@ rows, real controlled-loopback CLI execution and Windows cross-linking. The
 adds eight actual ordinary-user Windows CLI cases while retaining an earlier
 observer timing failure. Four additional
 [public-API cases](../tasks/engine-transport-pilot.md#native-live-process-port-release-checkpoint)
-observe port reuse while their Windows children remain alive. Remaining native
-completion/heap/resource gates and final engine coverage/mutation stay open;
-this does not complete P1/P2 or introduce production acquisition/clock effects.
+observe port reuse while their Windows children remain alive. The
+[S42 coverage](../tasks/engine-transport-pilot.md#s42-current-critical-file-coverage)
+and [S43 mutation checkpoint](../tasks/engine-transport-pilot.md#s43-complete-current-engine-mutation-checkpoint)
+pass for the recorded S40 candidate; those receipts do not qualify later
+candidates. Native completion/heap/resource and production acquisition gates
+remain open. This does not complete P1/P2 or introduce clock effects.
+
+**Pure NTS-KE preparation, 2 November 2026:** bounded request encoding and
+caller-buffer incremental framing now have
+[recorded qualification checkpoints](../tasks/s0.1-protocol-comparison.md#incremental-framing-final-qualification):
+host checks and tests, direct contracts, per-file line/mutation gates, bounded
+instrumented fuzzing and Windows-target compilation. The
+[inert NTS authenticator envelope checkpoint](../tasks/s0.1-protocol-comparison.md#inert-nts-authenticator-envelope--2-november-2026)
+adds complete outer framing before original-input AAD/nonce/ciphertext views,
+with per-file host gates and seven independent source-fault controls. These
+inert owners provide no live TLS, authentication, endpoint authority or complete
+NTS operation. The
+development plan retains the native crypto/trust and complete-execution gates.
+The [inner plaintext framing checkpoint](../tasks/s0.1-protocol-comparison.md#inert-nts-plaintext-framing)
+adds complete bounded framing and immutable original-input views, with focused,
+contract, line-coverage, mutation, fuzz and Windows-target compiler evidence.
+It performs no decryption or authentication.
 
 **Verus assessment, 1 November 2026:** the
 [research report](supporting-reviews/verus-assessment.md) recommends deferring

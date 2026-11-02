@@ -359,3 +359,66 @@ or performance measurement was run for this documentation integration. No
 library/provider was installed, and no key, service or mitigation was changed.
 The next storage-development action remains ST-W01; current product-work
 priority and the native-experiment pause remain in force.
+
+### 6.3 Local checkout adoption — 3 November 2026
+
+David requested the remote changes be pulled and adopted by the primary
+development agent. Commit `a6c2401` is now the local `main` baseline. The pull
+preserved 113 staged paths and the existing unstaged Core-task update. Two
+overlapping guide/plan files were reconciled additively: the local Windows stop,
+Core checkpoints and detailed storage gates remain beside the imported research
+and ST-W assignments. Earlier API-snapshot review receipts above retain their
+original candidates; they do not qualify this combined checkout.
+
+The [startup guide](../AGENTS.md#start-each-task) now requires reconciliation after
+a pull/documentation update, and the
+[imported hardening work queue](../docs/plans/development-plan.md#imported-hardening-work-queue)
+routes ST-W01–ST-W07 to their phase owners and prerequisites. At its next
+checkpoint, the primary coordinator records applicable scope, assigned owner,
+ready/held/deferred disposition and next action here. This is a discoverable
+handoff; no acknowledgement from a separately running agent is claimed.
+
+ST-W01 is ready for source-only preparation and remains unexecuted. ST-W02 waits
+for the relevant frozen contracts and authorized implementation slice.
+ST-W03–ST-W07 must inform their related Windows adapter work before effects are
+implemented, including shared filesystem, CNG, mitigation, IPC-completion and
+sensitive-memory/output paths. Current P1 work continues from its latest task
+checkpoint; native Windows execution, storage experiments and the separately
+flagged fuzz runner retain their existing holds. No default, provider, dependency,
+hardware counter, attestation or extra privilege is adopted by this handoff.
+
+New routing edits are kept unstaged; the pull's preserved staging is separate.
+Documentation checks and the scoped combined-candidate review are recorded below.
+
+### 6.4 Combined local-candidate review and checks
+
+**3 November 2026:** `hardening_adoption_final_review`, delegated with
+`fork_turns: "none"`, completed independent read-only review of the four routing
+documents after the pull and merge. It inspected the incoming canonical storage/
+hardening amendments, task prerequisites and current Core continuation. Its
+verdict is **ready for this documentation-adoption stage**, with no material
+findings. Reviewer comprehension, retained verbatim:
+
+> The change makes the imported storage research discoverable through startup guidance, development-plan §7, the ST-W01–ST-W07 queue and storage-task §6.3. Each assignment has an owner and trigger; the text explicitly distinguishes routing from another agent’s acknowledgement or completed execution.
+
+> The current system retains portable Core work, with S149 qualifying only its recorded two-owner Linux fixture candidate. The new projection pointer matches the actual next-work task. Windows execution, the flagged fuzz runner and storage experiments remain held. Construction/provider/default decisions, dependency admission, mandatory-state separation, UI-M0/D2 boundaries and conditional mechanisms remain intact.
+
+The frozen four-file pre-receipt manifest SHA-256 is
+`78c2fc46ec8414be62e0c122d22a3b658197736f58181d1c35cfb81e32fc97ab`.
+It binds `AGENTS.md`, `docs/README.md`, `docs/plans/development-plan.md` and this
+task before adding this subsection. All four file hashes matched the live
+candidate during review; this receipt is a later factual addition.
+
+Coordinator disposition: ST-W01 is ready and unexecuted; ST-W02 is planned after
+its frozen contracts and authorized slice; ST-W03–ST-W07 are planned at their
+mapped adapter boundaries, with actual Windows observations held. The primary
+agent's acknowledgement remains pending its next checkpoint. No source-only
+research or imported task is counted as implemented behavior.
+
+Local checks resolve 724 link/anchor occurrences across the nine imported/current
+documents, find no conflict markers, and pass whitespace checks for the new
+routing edits. All 111 nonoverlapping staged entries retain their original
+blob/mode/stage; the two overlapping guide/plan files preserve local intent in
+the additive merge. The staged path set remains 113. Concurrent Core work was
+preserved and may continue; no new product, analyzer or Windows test was run by
+this pull/adoption task. The documentation checksum manifest remains absent.

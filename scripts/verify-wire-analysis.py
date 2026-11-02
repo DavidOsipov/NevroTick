@@ -27,14 +27,16 @@ HEADER = "crates/ntp-wire/src/header.rs"
 DATAGRAM = "crates/ntp-wire/src/datagram.rs"
 NTS_KE = "crates/ntp-wire/src/nts_ke.rs"
 NTS_NEGOTIATION = "crates/ntp-wire/src/nts_negotiation.rs"
+NTS_PACKET = "crates/ntp-wire/src/nts_packet.rs"
+NTS_PLAINTEXT = "crates/ntp-wire/src/nts_plaintext.rs"
 SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
-            "nts_negotiation": NTS_NEGOTIATION}
-# The extended source-admitted target compares all four pure owners with
+            "nts_negotiation": NTS_NEGOTIATION, "nts_packet": NTS_PACKET, "nts_plaintext": NTS_PLAINTEXT}
+# The extended source-admitted target compares all six pure owners with
 # independent framing and request/response negotiation expectations.
 FUZZ_SUBJECTS = {"header": HEADER, "datagram": DATAGRAM, "nts_ke": NTS_KE,
-                 "nts_negotiation": NTS_NEGOTIATION}
+                 "nts_negotiation": NTS_NEGOTIATION, "nts_packet": NTS_PACKET, "nts_plaintext": NTS_PLAINTEXT}
 FUZZ_CASES = ("healthy", "defect", "ke-defect", "negotiation-defect",
-              "context-defect", "membership-defect")
+              "context-defect", "membership-defect", "packet-defect", "plaintext-defect")
 POLICY = "policy/ntp-wire-analysis.json"
 FUZZ_CARGO_CONFIG = ('[source.crates-io]\nreplace-with="fuzz-reviewed"\n'
                      '[source.fuzz-reviewed]\ndirectory="/work/fuzz-vendor"\n')
@@ -79,7 +81,7 @@ def read_policy(root: Path) -> dict:
 
 
 def select_subjects(subject: str) -> dict[str, str]:
-    """Return only the fixed reviewed file mapping; all includes all four owners."""
+    """Return only the fixed reviewed file mapping; all includes all six owners."""
     if subject == "all":
         return dict(SUBJECTS)
     if subject not in SUBJECTS:
@@ -90,13 +92,13 @@ def select_subjects(subject: str) -> dict[str, str]:
 def admit_fuzz_subject(lane: str, subject: str) -> None:
     """Admit only fixed source-reviewed fuzz owners and known lane selections.
 
-    The extended target covers all four owners; subject selection narrows only
+    The extended target covers all six owners; subject selection narrows only
     coverage/mutation, while contracts and fuzz retain their complete scope.
     Actual fuzz execution still requires the extended target's exact source hash.
     """
     if lane not in {"contracts", "coverage", "mutation", "fuzz", "all"} or subject not in {*SUBJECTS, "all"}:
         raise Incomplete("Unknown wire analysis lane or subject.")
-    if lane in {"fuzz", "all"} and subject not in {*FUZZ_SUBJECTS, "all"}:
+    if lane in {"fuzz", "all"} and SUBJECTS != FUZZ_SUBJECTS:
         raise Incomplete("A selected wire owner lacks admitted fuzz target coverage.")
 
 
@@ -167,7 +169,7 @@ def privacy_error(result: dict, expected: str) -> None:
 
 
 def contract_examples() -> dict[str, tuple[str, str | None]]:
-    """Keep independent legal, privacy and borrow specimens for all four wire owners."""
+    """Keep independent legal, privacy and borrow specimens for all six wire owners."""
     setup = ('let Ok(limits) = ntp_wire::FrameLimits::new(76, 1) else { return; }; '
              'let mut input = vec![0u8; 76]; input[51] = 28; ')
     frame = ('let Ok(frame) = ntp_wire::frame_no_legacy_mac_datagram(&input, limits) '
@@ -223,6 +225,10 @@ def contract_examples() -> dict[str, tuple[str, str | None]]:
     }
     examples.update(nts_ke_contract_examples())
     examples.update(nts_negotiation_contract_examples())
+    examples.update(nts_ke_accumulator_contract_examples())
+    examples.update(nts_exporter_contract_examples())
+    examples.update(nts_packet_contract_examples())
+    examples.update(nts_plaintext_contract_examples())
     # Direct rustc consumers get no rustdoc main wrapper. This is structural
     # preflight only; the actual compiler still owns syntax/type diagnostics.
     if any(re.search(r"\bfn\s+main\s*\(", text) is None for text, _ in examples.values()):
@@ -349,6 +355,202 @@ def nts_negotiation_contract_examples() -> dict[str, tuple[str, str | None]]:
     return examples
 
 
+def nts_ke_accumulator_contract_examples() -> dict[str, tuple[str, str | None]]:
+    """Exercise the actual owner API without naming its private cursor type."""
+    imports = (
+        "use ntp_wire::{NtsKeAccumulator, NtsKeAccumulatorError, NtsKeFrameLimits, "
+        "NtsKeProgress, RawNtsKeMessage};\n"
+    )
+    limits = "let limits = NtsKeFrameLimits::new(4, 1).unwrap();\n"
+    storage = "let mut storage = [0_u8; 4];\n"
+    owner = "let mut owner = NtsKeAccumulator::new(&mut storage, limits).unwrap();\n"
+    complete = "owner.push(&[0x80, 0, 0, 0]).unwrap();\n"
+
+    def main(body: str) -> str:
+        """Supply an explicit direct-rustc entry point, not a rustdoc wrapper."""
+        return imports + "fn main() {\n" + body + "}\n"
+
+    return {
+        "nts_accumulator_legal": (main(
+            "let mut storage = [0xa5; 8];\n"
+            + "let limits = NtsKeFrameLimits::new(8, 2).unwrap();\n"
+            + owner
+            + "assert_eq!(owner.push(&[]).unwrap(), NtsKeProgress::NeedMore);\n"
+            + "assert_eq!(owner.push(&[0x80, 0]).unwrap(), NtsKeProgress::NeedMore);\n"
+            + "assert_eq!(owner.push(&[0, 0]).unwrap(), NtsKeProgress::EndOfMessage);\n"
+            + "let mut records = { let message = owner.finish().unwrap();\n"
+            + "assert_eq!(message.bytes(), &[0x80, 0, 0, 0]);\n"
+            + "assert_eq!(message.record_count(), 1); message.records() };\n"
+            + "let record = records.next().unwrap();\n"
+            + "assert_eq!(record.record_type(), 0); assert!(record.critical());\n"
+            + "assert!(record.body().is_empty());\n"
+            + "assert!(records.next().is_none()); assert!(records.next().is_none());\n"
+        ), None),
+        "nts_accumulator_construction": (main(
+            limits + storage + owner
+            + "let _ = NtsKeAccumulator { used: usize::MAX, ..owner };\n"
+        ), "E0451"),
+        "nts_accumulator_mutation": (main(
+            limits + storage + owner + "owner.used = usize::MAX;\n"
+        ), "E0616"),
+        "nts_accumulator_default": (main(
+            "let _: NtsKeAccumulator<'static> = Default::default();\n"
+        ), "E0277"),
+        "nts_accumulator_debug": (main(
+            "fn requires_debug<T: core::fmt::Debug>() {}\n"
+            + "requires_debug::<NtsKeAccumulator<'static>>();\n"
+        ), "E0277"),
+        "nts_accumulator_live_storage_mutation": (main(
+            limits + storage + owner
+            + "storage[0] = 0xff;\nlet _ = owner.push(&[]);\n"
+        ), "E0506"),
+        "nts_accumulator_borrow_escape": (main(
+            limits + "let mut owner;\n{\n" + storage
+            + "owner = NtsKeAccumulator::new(&mut storage, limits).unwrap();\n}\n"
+            + "let _ = owner.push(&[]);\n"
+        ), "E0597"),
+        "nts_accumulator_output_escape": (
+            imports
+            + "fn escape() -> Result<RawNtsKeMessage<'static>, NtsKeAccumulatorError> {\n"
+            + storage
+            + "let limits = NtsKeFrameLimits::new(4, 1).map_err(NtsKeAccumulatorError::Frame)?;\n"
+            + "let mut owner = NtsKeAccumulator::new(&mut storage, limits)?;\n"
+            + "owner.push(&[0x80, 0, 0, 0])?;\nowner.finish()\n}\nfn main() {}\n",
+            "E0515",
+        ),
+        "nts_accumulator_reuse_after_finish": (main(
+            limits + storage + owner + complete
+            + "let _message = owner.finish().unwrap();\nlet _ = owner.push(&[]);\n"
+        ), "E0382"),
+    }
+
+
+def nts_exporter_contract_examples() -> dict[str, tuple[str, str | None]]:
+    """Bind owned metadata and its borrowed getter to real negotiated literals."""
+    setup = (
+        "use ntp_wire::{NtsKeExporterContext, NtsKeExporterDirection, NtsKeFrameLimits, "
+        "frame_nts_ke_message, read_nts_ke_ntpv4_offer, negotiate_nts_ke_ntpv4};\n"
+        "fn make_context(direction: NtsKeExporterDirection) -> NtsKeExporterContext {\n"
+        "let limits = NtsKeFrameLimits::new(64, 8).unwrap();\n"
+        "let request = [0x80, 1, 0, 2, 0, 0, 0x80, 4, 0, 2, 0, 15, 0x80, 0, 0, 0];\n"
+        "let response = [0x80, 1, 0, 2, 0, 0, 0, 4, 0, 2, 0, 15, 0, 5, 0, 0, 0x80, 0, 0, 0];\n"
+        "let raw = frame_nts_ke_message(&request, limits).unwrap();\n"
+        "let offer = read_nts_ke_ntpv4_offer(&raw).unwrap();\n"
+        "let response = frame_nts_ke_message(&response, limits).unwrap();\n"
+        "let pending = negotiate_nts_ke_ntpv4(&offer, response).unwrap();\n"
+        "pending.exporter_context(direction)\n}\n"
+    )
+
+    def main(body: str) -> str:
+        """Use an explicit direct consumer after the literal buffers have expired."""
+        return setup + "fn main() {\n" + body + "}\n"
+
+    return {
+        "nts_exporter_legal": (main(
+            "let c2s = make_context(NtsKeExporterDirection::ClientToServer);\n"
+            + "let s2c = make_context(NtsKeExporterDirection::ServerToClient);\n"
+            + "assert_eq!(c2s.label(), \"EXPORTER-network-time-security\");\n"
+            + "assert_eq!(s2c.label(), \"EXPORTER-network-time-security\");\n"
+            + "assert_eq!(c2s.context_bytes(), &[0, 0, 0, 15, 0]);\n"
+            + "assert_eq!(s2c.context_bytes(), &[0, 0, 0, 15, 1]);\n"
+        ), None),
+        "nts_exporter_construction": (main(
+            "let _ = NtsKeExporterContext { bytes: [0; 5] };\n"
+        ), "E0451"),
+        "nts_exporter_mutation": (main(
+            "let mut context = make_context(NtsKeExporterDirection::ClientToServer);\n"
+            + "context.bytes[4] = 1;\n"
+        ), "E0616"),
+        "nts_exporter_readonly_getter": (main(
+            "let context = make_context(NtsKeExporterDirection::ClientToServer);\n"
+            + "context.context_bytes()[4] = 1;\n"
+        ), "E0594"),
+        "nts_exporter_default": (main(
+            "let _: NtsKeExporterContext = Default::default();\n"
+        ), "E0277"),
+        "nts_exporter_debug": (main(
+            "fn requires_debug<T: core::fmt::Debug>() {}\n"
+            + "requires_debug::<NtsKeExporterContext>();\n"
+        ), "E0277"),
+        "nts_exporter_getter_escape": (
+            setup + "fn escape() -> &'static [u8; 5] {\n"
+            + "let context = make_context(NtsKeExporterDirection::ClientToServer);\n"
+            + "context.context_bytes()\n}\nfn main() {}\n",
+            "E0515",
+        ),
+    }
+
+
+def nts_packet_contract_examples() -> dict[str, tuple[str, str | None]]:
+    """Exercise the public reader and private input-tied packet projection."""
+    setup = (
+        "use ntp_wire::{FrameLimits, NtsAuthenticatorParts, read_nts_authenticator_parts};\n"
+        "fn input() -> [u8; 76] {\n"
+        "let mut bytes = [0u8; 76];\n"
+        "bytes[48..56].copy_from_slice(&[4, 4, 0, 28, 0, 1, 0, 3]);\n"
+        "bytes[56] = 0x11; bytes[60..63].copy_from_slice(&[0x21, 0x22, 0x23]); bytes\n}\n"
+    )
+    def main(body: str) -> str:
+        return setup + "fn main() {\n" + body + "}\n"
+    admitted = ("let bytes = input(); let limits = FrameLimits::new(76, 1).unwrap();\n"
+                "let view = read_nts_authenticator_parts(&bytes, limits).unwrap();\n")
+    return {
+        "nts_packet_legal": (main(admitted
+            + "assert_eq!(view.associated_data(), &bytes[..48]);\n"
+            + "assert_eq!(view.nonce(), &[0x11]); assert_eq!(view.ciphertext(), &[0x21, 0x22, 0x23]);\n"), None),
+        "nts_packet_construction": (main(
+            "let _ = NtsAuthenticatorParts { associated_data: &[], nonce: &[], ciphertext: &[] };\n"), "E0451"),
+        "nts_packet_mutation": (main(admitted.replace("let view", "let mut view")
+            + "view.nonce = &[];\n"), "E0616"),
+        "nts_packet_readonly_getter": (main(admitted + "view.nonce()[0] = 0;\n"), "E0594"),
+        "nts_packet_default": (main("let _: NtsAuthenticatorParts<'static> = Default::default();\n"), "E0277"),
+        "nts_packet_debug": (main("fn debug<T: core::fmt::Debug>() {} debug::<NtsAuthenticatorParts<'static>>();\n"), "E0277"),
+        "nts_packet_live_input_mutation": (main(
+            "let mut bytes = input(); let limits = FrameLimits::new(76, 1).unwrap();\n"
+            + "let view = read_nts_authenticator_parts(&bytes, limits).unwrap();\n"
+            + "bytes[56] = 0; let _ = view.nonce();\n"), "E0506"),
+        "nts_packet_borrow_escape": (setup
+            + "fn escape() -> NtsAuthenticatorParts<'static> {\n"
+            + "let bytes = input(); let limits = FrameLimits::new(76, 1).unwrap();\n"
+            + "read_nts_authenticator_parts(&bytes, limits).unwrap()\n}\nfn main() {}\n", "E0515"),
+    }
+
+
+def nts_plaintext_contract_examples() -> dict[str, tuple[str, str | None]]:
+    """External legal, privacy, immutable-input and borrow witnesses."""
+    setup = ("use ntp_wire::{NtsPlaintextLimits, RawNtsPlaintext, RawNtsPlaintextField, "
+             "NtsPlaintextFields, frame_nts_plaintext};\n")
+    def main(body: str) -> str:
+        return setup + "fn main() {\n" + body + "}\n"
+    admitted = ("let bytes = [0x12, 0x34, 0, 4, 2, 4, 0, 8, 0xde, 0xad, 0xbe, 0xef];\n"
+                "let frame = frame_nts_plaintext(&bytes, NtsPlaintextLimits::new(12, 2).unwrap()).unwrap();\n")
+    return {
+        "nts_plaintext_legal": (main(admitted + "assert_eq!(frame.field_count(), 2);\n"
+            "let mut fields = frame.fields(); let first = fields.next().unwrap();\n"
+            "assert_eq!(first.field_type(), 0x1234); assert!(first.body().is_empty());\n"
+            "let second = fields.next().unwrap(); assert_eq!(second.bytes(), &bytes[4..]);\n"
+            "assert_eq!(second.body(), &[0xde, 0xad, 0xbe, 0xef]); assert!(fields.next().is_none());\n"), None),
+        "nts_plaintext_limits_construction": (main("let _ = NtsPlaintextLimits { max_bytes: 1, max_fields: 1 };\n"), "E0451"),
+        "nts_plaintext_limits_mutation": (main("let mut limits = NtsPlaintextLimits::new(4, 1).unwrap(); limits.max_fields = 3;\n"), "E0616"),
+        "nts_plaintext_limits_default": (main("let _: NtsPlaintextLimits = Default::default();\n"), "E0277"),
+        "nts_plaintext_frame_construction": (main("let _ = RawNtsPlaintext { bytes: &[], count: 0 };\n"), "E0451"),
+        "nts_plaintext_frame_mutation": (main(admitted.replace("let frame", "let mut frame") + "frame.count = 4;\n"), "E0616"),
+        "nts_plaintext_frame_default": (main("let _: RawNtsPlaintext<'static> = Default::default();\n"), "E0277"),
+        "nts_plaintext_frame_debug": (main("fn debug<T: core::fmt::Debug>() {} debug::<RawNtsPlaintext<'static>>();\n"), "E0277"),
+        "nts_plaintext_field_construction": (main("let _ = RawNtsPlaintextField { bytes: &[0; 4] };\n"), "E0451"),
+        "nts_plaintext_field_debug": (main("fn debug<T: core::fmt::Debug>() {} debug::<RawNtsPlaintextField<'static>>();\n"), "E0277"),
+        "nts_plaintext_iterator_construction": (main("let _ = NtsPlaintextFields { remaining: &[] };\n"), "E0451"),
+        "nts_plaintext_iterator_debug": (main("fn debug<T: core::fmt::Debug>() {} debug::<NtsPlaintextFields<'static>>();\n"), "E0277"),
+        "nts_plaintext_readonly_body": (main(admitted + "let field = frame.fields().next().unwrap(); field.body()[0] = 1;\n"), "E0594"),
+        "nts_plaintext_live_input_mutation": (main("let mut bytes = [0x12, 0x34, 0, 4];\n"
+            "let frame = frame_nts_plaintext(&bytes, NtsPlaintextLimits::new(4, 1).unwrap()).unwrap();\n"
+            "bytes[0] = 0; let _ = frame.fields().next();\n"), "E0506"),
+        "nts_plaintext_borrow_escape": (setup + "fn escape() -> RawNtsPlaintext<'static> {\n"
+            "let bytes = [0x12, 0x34, 0, 4];\n"
+            "frame_nts_plaintext(&bytes, NtsPlaintextLimits::new(4, 1).unwrap()).unwrap()\n}\nfn main() {}\n", "E0515"),
+    }
+
+
 def fuzz_seeds() -> dict[str, bytes]:
     """Declare bounded literal word-framing neighbors independently of the parser."""
     def extension(field_type: int, length: int) -> bytes:
@@ -366,9 +568,35 @@ def fuzz_seeds() -> dict[str, bytes]:
     seeds["malformed-good-prefix-tail"] = header + extension(0xabcd, 28) + b"\x00"
     for length in (4092, 4096):
         seeds["byte-edge-" + str(length)] = header + extension(0xabcd, length - 48)
+    seeds["plaintext-literal"] = bytes.fromhex("12 34 00 04 02 04 00 08 de ad be ef")
+    seeds["plaintext-late-short"] = bytes.fromhex("12 34 00 04 01 02 03")
+    seeds["plaintext-unaligned"] = bytes.fromhex("12 34 00 05 00")
+    seeds["plaintext-overrun"] = bytes.fromhex("12 34 00 08 aa bb")
+    seeds["plaintext-high-length"] = bytes.fromhex("12 34 01 00") + bytes([0x5a]) * 252
+    seeds["plaintext-maximum-fields"] = bytes.fromhex("12 34 00 04") * 1024
+    # Independent literal packet envelopes and malformed neighbors.
+    prefix = bytes([0xa5]) * 48 + bytes.fromhex("01040010808182838485868788898a8b")
+    auth = bytes.fromhex("0404001c0001000311aabbcc212223dd9192939495969798999a9b9c")
+    seeds["packet-literal-nonzero"] = prefix + auth
+    seeds["packet-missing"] = bytes(48)
+    seeds["packet-exact-fit"] = bytes(48) + bytes.fromhex("0404001c00040010") + bytes(range(20))
+    seeds["packet-one-over"] = bytes(48) + bytes.fromhex("0404001c00040011") + bytes(range(20))
+    seeds["packet-u16-extreme"] = bytes(48) + bytes.fromhex("0404001cffff0001") + bytes(20)
+    seeds["packet-second-auth"] = prefix + auth + auth
+    seeds["packet-malformed-suffix"] = prefix + auth + b"\x00"
     seeds.update(ke_fuzz_seeds())
     seeds.update(negotiation_fuzz_seeds())
     seeds.update(negotiation_pair_fuzz_seeds())
+    # A separate capacity octet permits successful low-valued AEAD identifiers.
+    # Keep exact-fit and one-byte-short witnesses in the actual fuzz corpus.
+    seeds.update({"ke-encode-aead15": bytes.fromhex("10 00 0f"),
+                  "ke-encode-aead16": bytes.fromhex("10 00 10"),
+                  "ke-encode-aead15-16": bytes.fromhex("12 00 0f 00 10"),
+                  "ke-encode-short": bytes.fromhex("0f 00 0f"),
+                  "ke-encode-empty": bytes.fromhex("30")})
+    # Eight records fit well below 64 bytes, separating the two stream budgets.
+    seeds["ke-stream-record-limit"] = bytes.fromhex("00 2a 00 00") * 7 + bytes.fromhex("80 00 00 00")
+    seeds["ke-stream-record-excess"] = bytes.fromhex("00 2a 00 00") * 8 + bytes.fromhex("80 00 00 00")
     return seeds
 
 
@@ -557,6 +785,10 @@ def fuzz_case_options(case: str) -> tuple[list[str], str | None]:
                            "independent NTS-KE request-context forwarding oracle"),
         "membership-defect": (["--features", "seeded-membership-defect"],
                               "independent NTS-KE full-list membership observation oracle"),
+        "packet-defect": (["--features", "seeded-packet-defect"],
+                          "independent NTS packet span observation oracle"),
+        "plaintext-defect": (["--features", "seeded-plaintext-defect"],
+                             "independent NTS plaintext field-count observation oracle"),
     }
     if type(case) is not str or case not in cases:
         raise Incomplete("Unknown bounded wire fuzz control.")
@@ -564,26 +796,29 @@ def fuzz_case_options(case: str) -> tuple[list[str], str | None]:
 
 
 def fuzz_execution_argv(binary: str, case: str) -> list[str]:
-    """Route the two relational harness faults through their exact literal witness.
+    """Route relational and packet harness faults through their exact literal witnesses.
 
     Healthy coverage-guided execution retains the full corpus and 256-run profile.
     All seeded faults are harness checks, not product mutants or ASan mechanism faults.
     """
     fuzz_case_options(case)
     stimulus = ("/work/fuzz-corpus/ke-pair-literal-nonfirst"
-                if case in {"context-defect", "membership-defect"} else "/work/fuzz-corpus")
+                if case in {"context-defect", "membership-defect"} else
+                "/work/fuzz-corpus/packet-literal-nonzero" if case == "packet-defect" else
+                "/work/fuzz-corpus/plaintext-literal" if case == "plaintext-defect" else "/work/fuzz-corpus")
     return [binary, stimulus, "-artifact_prefix=/work/fuzz-artifacts/", *RUNTIME.WIRE_KE_SANITIZER_FLAGS]
 
 
 def fuzz_control_witness(corpus: Path, case: str, identity: dict[str, str]) -> Path | None:
-    """Recheck the named relational stimulus after earlier corpus-writing runs."""
+    """Recheck the named stimulus after earlier corpus-writing runs."""
     fuzz_case_options(case)
-    if case not in {"context-defect", "membership-defect"}:
+    if case not in {"context-defect", "membership-defect", "packet-defect", "plaintext-defect"}:
         return None
-    name = "ke-pair-literal-nonfirst"
+    name = ("plaintext-literal" if case == "plaintext-defect" else
+            "packet-literal-nonzero" if case == "packet-defect" else "ke-pair-literal-nonfirst")
     witness = corpus / name
     if PRODUCT.sha256(witness) != identity.get(name):
-        raise Incomplete("The literal request/response fuzz witness changed before its control.")
+        raise Incomplete("The literal fuzz witness changed before its control.")
     return witness
 
 
@@ -852,7 +1087,9 @@ def execute(args, report: dict) -> None:
                                "construction_or_mutation_bypasses_rejected": sum(
                                    diagnostic in {"E0451", "E0616"} for _, diagnostic in examples.values()),
                                "borrow_bypasses_rejected": sum(
-                                   diagnostic in {"E0502", "E0515", "E0506", "E0597"} for _, diagnostic in examples.values()),
+                                   diagnostic in {"E0502", "E0515", "E0506", "E0594", "E0597"} for _, diagnostic in examples.values()),
+                               "consumed_owner_bypasses_rejected": sum(
+                                   diagnostic == "E0382" for _, diagnostic in examples.values()),
                                "default_or_payload_debug_bypasses_rejected": sum(
                                    diagnostic == "E0277" for _, diagnostic in examples.values()),
                                "required_diagnostics": {name: diagnostic for name, (_, diagnostic) in examples.items()
@@ -865,7 +1102,7 @@ def execute(args, report: dict) -> None:
         fuzz.mkdir()
         (fuzz / "Cargo.toml").write_text(
             '[package]\nname="ntp-wire-fuzz"\nversion="0.0.0"\nedition="2024"\npublish=false\n'
-            '[workspace]\n[package.metadata]\ncargo-fuzz=true\n[features]\nseeded-defect=[]\nseeded-ke-defect=[]\nseeded-negotiation-defect=[]\nseeded-context-defect=[]\nseeded-membership-defect=[]\n'
+            '[workspace]\n[package.metadata]\ncargo-fuzz=true\n[features]\nseeded-defect=[]\nseeded-ke-defect=[]\nseeded-negotiation-defect=[]\nseeded-context-defect=[]\nseeded-membership-defect=[]\nseeded-packet-defect=[]\nseeded-plaintext-defect=[]\n'
             '[dependencies]\nlibfuzzer-sys="=0.4.13"\nntp-wire={path="../source/crates/ntp-wire"}\n'
             '[[bin]]\nname="wire"\npath="target.rs"\ntest=false\ndoc=false\nbench=false\n')
         (fuzz / "Cargo.lock").write_text(fuzz_lock((base / "common/controls-source/fuzz/Cargo.lock").read_text()))
@@ -968,12 +1205,18 @@ def execute(args, report: dict) -> None:
                 report["fuzz"]["nts_negotiation_seeded_fault"] = "observed intended NTS-KE negotiation cookie-count failure"
             elif case == "context-defect":
                 report["fuzz"]["nts_request_context_harness_fault"] = "observed intended wrong-request forwarding failure on the literal pair"
-            else:
+            elif case == "membership-defect":
                 report["fuzz"]["nts_membership_harness_fault"] = "observed intended first-only membership observation failure after genuine non-first acceptance"
+            elif case == "packet-defect":
+                report["fuzz"]["nts_packet_harness_fault"] = "observed intended packet span observation failure on the fixed literal"
+            elif case == "plaintext-defect":
+                report["fuzz"]["nts_plaintext_harness_fault"] = "observed intended plaintext field-count observation failure on the fixed literal"
+            else:
+                raise Incomplete("Unknown fuzz result case.")
             if any(PRODUCT.sha256(path) != digest for path, digest in retained_binaries.items()):
                 raise Incomplete("A retained ASan executable changed during a build or execution.")
             if witness is not None and PRODUCT.sha256(witness) != seed_identity[witness.name]:
-                raise Incomplete("The literal request/response fuzz witness changed during its control.")
+                raise Incomplete("The literal fuzz witness changed during its control.")
             if (fuzz_input_snapshot(work, sealed) != sealed_before
                     or PRODUCT.inventory(fuzz_tools) != fuzz_tool_hashes):
                 raise Incomplete("Fuzz source, dependency or fixed Cargo launcher bytes changed.")
@@ -1000,7 +1243,7 @@ def main(argv=None) -> int:
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
-    report = {"status": "incomplete", "scope": "ntp-wire header/datagram/raw NTS-KE and pending NTPv4 negotiation contracts/coverage/mutation; fuzz compares all four pure owners without TLS, keys or endpoint authority",
+    report = {"status": "incomplete", "scope": "ntp-wire header/datagram/inert NTS packet/raw NTS-KE and pending NTPv4 negotiation contracts/coverage/mutation; fuzz compares all six pure owners without TLS, keys or endpoint authority",
               "native_qualification": "not performed"}
     try:
         if args.vendor_dir is None:

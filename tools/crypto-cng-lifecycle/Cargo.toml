@@ -11,6 +11,18 @@ description = "Held native Windows CNG lifecycle fixture with public API control
 # Experimental test infrastructure, outside the product workspace.
 [workspace]
 resolver = "3"
+exclude = ["vendor/rustls-cng-crypto"]
+
+[features]
+init-probe = ["rustls-cng-crypto/fixture-init-probe"]
+
+[[bin]]
+name = "nevrotick-cng-init-probe"
+path = "src/bin/init-probe.rs"
+required-features = ["init-probe"]
+
+[patch.crates-io]
+rustls-cng-crypto = { path = "vendor/rustls-cng-crypto" }
 
 [target.'cfg(windows)'.dependencies]
 rustls = { version = "=0.23.46", default-features = false, features = ["std"] }

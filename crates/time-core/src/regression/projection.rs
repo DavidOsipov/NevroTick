@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Pure fixture-anchor projection from one borrowed committed history.
 //!
+//! Modified by David Osipov with AI assistance, 3 November 2026: the adaptive
+//! fitted-anchor adapter shares the original checked projection arithmetic.
+//!
 //! The history alone owns the held observation, latest instant and fitted rate.
 //! Asserted context and exact anchor time are checked before any arithmetic. Age
 //! remains an exact monotonic duration; only its checked difference is converted
@@ -21,8 +24,9 @@ use garde::Validate;
 use time_domain::{DomainError, MonotonicDurationNs, MonotonicNs};
 
 use super::{
-    ArithmeticOperation, ArithmeticStage, FitError, FixtureContext, FixtureHistory,
-    NormalizationComponent, NormalizationError, NormalizationStep, arithmetic,
+    ArithmeticOperation, ArithmeticStage, FitError, FixtureAdaptiveHistory, FixtureContext,
+    FixtureHistory, FixtureLine, FixtureObservation, NormalizationComponent, NormalizationError,
+    NormalizationStep, arithmetic,
     normalization::{integer_to_f64, normalization_arithmetic, phase_seconds},
 };
 
@@ -476,6 +480,175 @@ fn projection_arithmetic(
         .map_err(|source| FixtureProjectionError::Arithmetic { step, source })
 }
 
+/// One borrowed, checked anchor/report association from a single history owner.
+///
+/// Only the two whole-history constructors below assemble this capsule. Their
+/// current-context and exact-anchor guards precede publication; each borrows its
+/// anchor and line from the same immutable owner. The line's private checked fit
+/// construction owns its finite normal-or-zero rate. A shared lifetime alone is
+/// not an association proof. No independent report/line/raw-parts factory exists.
+struct ProjectionSource<'a> {
+    /// Checked complete context copied from the requested same-owner identity.
+    context: FixtureContext,
+    /// Actual fitted anchor; adaptive auxiliary and padding rows are excluded.
+    anchor: &'a FixtureObservation,
+    /// Actual anchor time read and checked by the same-owner constructor.
+    anchor_observed_at: MonotonicNs,
+    /// Actual latest accepted row time, retained without refreshing evidence.
+    latest_observed_at: MonotonicNs,
+    /// Exact reference from this same owner's committed report.
+    fit_reference: MonotonicNs,
+    /// This same report's checked terminal line; never an independently supplied fit.
+    line: &'a FixtureLine,
+}
+
+impl<'a> ProjectionSource<'a> {
+    /// Borrow an exact fixed-history anchor and its own checked report in constant work.
+    ///
+    /// No arithmetic, fitting, mutation, allocation or ambient effects occur.
+    /// The committed history invariant owns the report/prefix association.
+    /// # Errors
+    /// Rejects context, absent report, absent anchor, then mismatched anchor time;
+    /// an absent same-owner reference retains the existing `MissingAnchor` code.
+    fn fixed(
+        history: &'a FixtureHistory,
+        expected_context: FixtureContext,
+        anchor_index: usize,
+        expected_anchor_at: MonotonicNs,
+    ) -> Result<Self, FixtureProjectionError> {
+        if history.context() != expected_context {
+            return Err(FixtureProjectionError::ContextMismatch);
+        }
+        let report = history
+            .report()
+            .ok_or(FixtureProjectionError::MissingReport)?;
+        let anchor = history
+            .observation(anchor_index)
+            .ok_or(FixtureProjectionError::MissingAnchor)?;
+        let anchor_observed_at = anchor.observed_at();
+        if anchor_observed_at != expected_anchor_at {
+            return Err(FixtureProjectionError::AnchorMismatch);
+        }
+        // A committed report guarantees a nonempty same-prefix history/reference.
+        let latest_observed_at = history
+            .reference()
+            .ok_or(FixtureProjectionError::MissingAnchor)?;
+        Ok(Self {
+            context: expected_context,
+            anchor,
+            anchor_observed_at,
+            latest_observed_at,
+            fit_reference: report.reference(),
+            line: report.statistics().line(),
+        })
+    }
+
+    /// Borrow only a current fitted adaptive row and that owner's terminal line.
+    ///
+    /// `observation` translates a current fitted index inside the checked owner;
+    /// selection indices refer to an older combined input and are never reused.
+    /// Auxiliary rows and the configured pruning minimum grant no eligibility.
+    /// No scan, refit, mutation, copying of history or external effect occurs.
+    /// # Errors
+    /// Preserves the fixed constructor's context/report/anchor/time/reference
+    /// error order, including warmup without a report and out-of-range indices.
+    fn adaptive(
+        history: &'a FixtureAdaptiveHistory,
+        expected_context: FixtureContext,
+        anchor_index: usize,
+        expected_anchor_at: MonotonicNs,
+    ) -> Result<Self, FixtureProjectionError> {
+        if history.context() != expected_context {
+            return Err(FixtureProjectionError::ContextMismatch);
+        }
+        let report = history
+            .report()
+            .ok_or(FixtureProjectionError::MissingReport)?;
+        let anchor = history
+            .observation(anchor_index)
+            .ok_or(FixtureProjectionError::MissingAnchor)?;
+        let anchor_observed_at = anchor.observed_at();
+        if anchor_observed_at != expected_anchor_at {
+            return Err(FixtureProjectionError::AnchorMismatch);
+        }
+        // A committed report guarantees a nonempty same-operation fitted suffix/reference.
+        let latest_observed_at = history
+            .reference()
+            .ok_or(FixtureProjectionError::MissingAnchor)?;
+        Ok(Self {
+            context: expected_context,
+            anchor,
+            anchor_observed_at,
+            latest_observed_at,
+            fit_reference: report.reference(),
+            line: report.selection().statistics().line(),
+        })
+    }
+
+    /// Project this checked association using immutable already-admitted terms.
+    ///
+    /// Performs two exact duration operations, one elapsed and one phase conversion,
+    /// then the original five separate arithmetic primitives in their original order.
+    /// Scalar scratch and work are constant. The returned owned result retains the
+    /// real anchor/latest/fit instants; no observation or policy is refreshed.
+    /// # Errors
+    /// Rejects projection before latest time first, then preserves exact duration,
+    /// conversion and primitive-specific causes before publishing any result.
+    fn project(
+        self,
+        at: MonotonicNs,
+        terms: FixtureProjectionTerms,
+    ) -> Result<FixtureAnchorProjection, FixtureProjectionError> {
+        let anchor_observed_at = self.anchor_observed_at;
+        if at < self.latest_observed_at {
+            return Err(FixtureProjectionError::BackwardProjection);
+        }
+        let anchor_elapsed = at
+            .duration_since(anchor_observed_at)
+            .map_err(|source| FixtureProjectionError::Domain { source })?;
+        let latest_elapsed = at
+            .duration_since(self.latest_observed_at)
+            .map_err(|source| FixtureProjectionError::Domain { source })?;
+        let anchor_elapsed_seconds = elapsed_seconds(anchor_elapsed)?;
+        let phase = phase_seconds(self.anchor)
+            .map_err(|source| FixtureProjectionError::Conversion { source })?;
+        let rate = self.line.phase_rate_seconds_per_second();
+        let shift = projection_arithmetic(
+            rate,
+            anchor_elapsed_seconds,
+            FixtureProjectionStep::RateShift,
+        )?;
+        let center_seconds = projection_arithmetic(phase, shift, FixtureProjectionStep::Center)?;
+        let base = projection_arithmetic(
+            terms.half_delay_seconds,
+            terms.dispersion_seconds,
+            FixtureProjectionStep::BaseDistance,
+        )?;
+        let growth_seconds = projection_arithmetic(
+            anchor_elapsed_seconds,
+            terms.skew_seconds_per_second,
+            FixtureProjectionStep::Growth,
+        )?;
+        let distance_seconds =
+            projection_arithmetic(base, growth_seconds, FixtureProjectionStep::Distance)?;
+        Ok(FixtureAnchorProjection {
+            context: self.context,
+            anchor_observed_at,
+            latest_observed_at: self.latest_observed_at,
+            fit_reference: self.fit_reference,
+            projected_at: at,
+            anchor_elapsed,
+            latest_elapsed,
+            anchor_elapsed_seconds,
+            center_seconds,
+            phase_rate_seconds_per_second: rate,
+            terms,
+            growth_seconds,
+            distance_seconds,
+        })
+    }
+}
+
 /// Project one explicitly identified held fixture anchor using its current fit.
 ///
 /// One shared history borrow freezes its actual context, report, anchor and
@@ -502,69 +675,37 @@ pub fn project_fixture_anchor(
     at: MonotonicNs,
     terms: FixtureProjectionTerms,
 ) -> Result<FixtureAnchorProjection, FixtureProjectionError> {
-    if history.context() != expected_context {
-        return Err(FixtureProjectionError::ContextMismatch);
-    }
-    let report = history
-        .report()
-        .ok_or(FixtureProjectionError::MissingReport)?;
-    let anchor = history
-        .observation(anchor_index)
-        .ok_or(FixtureProjectionError::MissingAnchor)?;
-    let anchor_observed_at = anchor.observed_at();
-    if anchor_observed_at != expected_anchor_at {
-        return Err(FixtureProjectionError::AnchorMismatch);
-    }
-    // A committed report guarantees a nonempty same-prefix history/reference.
-    let latest_observed_at = history
-        .reference()
-        .ok_or(FixtureProjectionError::MissingAnchor)?;
-    if at < latest_observed_at {
-        return Err(FixtureProjectionError::BackwardProjection);
-    }
-    let anchor_elapsed = at
-        .duration_since(anchor_observed_at)
-        .map_err(|source| FixtureProjectionError::Domain { source })?;
-    let latest_elapsed = at
-        .duration_since(latest_observed_at)
-        .map_err(|source| FixtureProjectionError::Domain { source })?;
-    let anchor_elapsed_seconds = elapsed_seconds(anchor_elapsed)?;
-    let phase =
-        phase_seconds(anchor).map_err(|source| FixtureProjectionError::Conversion { source })?;
-    let rate = report.statistics().line().phase_rate_seconds_per_second();
-    let shift = projection_arithmetic(
-        rate,
-        anchor_elapsed_seconds,
-        FixtureProjectionStep::RateShift,
-    )?;
-    let center_seconds = projection_arithmetic(phase, shift, FixtureProjectionStep::Center)?;
-    let base = projection_arithmetic(
-        terms.half_delay_seconds,
-        terms.dispersion_seconds,
-        FixtureProjectionStep::BaseDistance,
-    )?;
-    let growth_seconds = projection_arithmetic(
-        anchor_elapsed_seconds,
-        terms.skew_seconds_per_second,
-        FixtureProjectionStep::Growth,
-    )?;
-    let distance_seconds =
-        projection_arithmetic(base, growth_seconds, FixtureProjectionStep::Distance)?;
-    Ok(FixtureAnchorProjection {
-        context: expected_context,
-        anchor_observed_at,
-        latest_observed_at,
-        fit_reference: report.reference(),
-        projected_at: at,
-        anchor_elapsed,
-        latest_elapsed,
-        anchor_elapsed_seconds,
-        center_seconds,
-        phase_rate_seconds_per_second: rate,
-        terms,
-        growth_seconds,
-        distance_seconds,
-    })
+    ProjectionSource::fixed(history, expected_context, anchor_index, expected_anchor_at)?
+        .project(at, terms)
+}
+
+/// Project one explicitly identified current fitted adaptive-history anchor.
+///
+/// Borrows the adaptive owner's own committed report and current fitted row.
+/// `anchor_index` is relative to `history.observation`, not the combined decision
+/// window or the selector's pre-prune input. Auxiliary rows are never anchors.
+/// The configured minimum is a pruning floor, not an added eligibility condition:
+/// every actual committed report may supply its same-owner checked fitted rate.
+///
+/// Reuses the fixed-history projection's exact duration/phase conversions and five
+/// separately checked arithmetic primitives. It does not fit, scan history, copy
+/// owned rows, mutate state or refresh evidence; all instants keep their original
+/// meaning. Supplied terms and the result grant no trust, freshness or correction
+/// authority. Work and scalar scratch are constant and no allocation is required.
+/// # Errors
+/// Context mismatch precedes missing report, missing fitted anchor, exact anchor
+/// time mismatch, projection before latest time, then exact duration/conversion
+/// and separately checked arithmetic. No partial result is published on failure.
+pub fn project_fixture_adaptive_anchor(
+    history: &FixtureAdaptiveHistory,
+    expected_context: FixtureContext,
+    anchor_index: usize,
+    expected_anchor_at: MonotonicNs,
+    at: MonotonicNs,
+    terms: FixtureProjectionTerms,
+) -> Result<FixtureAnchorProjection, FixtureProjectionError> {
+    ProjectionSource::adaptive(history, expected_context, anchor_index, expected_anchor_at)?
+        .project(at, terms)
 }
 
 /// Raw source-derived guards construct no checked history, terms or projection.

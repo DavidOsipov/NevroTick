@@ -803,6 +803,142 @@
         "verdict": "No pretranslation blocker; execution, compatibility lifecycle and product qualification remain separate."
       },
       "release_or_product_claim": false
+    },
+    {
+      "slice": "S1.2 retained-prefix runs extension",
+      "review_date": "2026-11-02",
+      "status": "implemented; compiling feature RED retained; integrated portable development row passed; critical-file analysis pending",
+      "destination": "crates/time-core/src/regression/runs.rs",
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c",
+      "source_sha256": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7",
+      "selected_ranges": [
+        {
+          "function": "RGR_FindBestRegression",
+          "lines": "201-207,271-288",
+          "adaptation": "Explicit retained decision-only prefix, initial fitted start and same shared residual decision window; existing fit/statistics reused."
+        }
+      ],
+      "context_only": [
+        {
+          "file": "sourcestats.c",
+          "lines": "270-283",
+          "purpose": "Caller retains pruned rows for later runs decisions; caller not activated by selector extension."
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "notice_obligation": "Retain original regress.c Curnow/Lichvar GPLv2 notices, dated local authorship, existing COPYING and corresponding-source/build obligations.",
+      "deliberate_adaptations": [
+        "Combined current-plus-auxiliary input at most64, not upstream possible128.",
+        "Explicit checked prefix and minimum; pure immutable fixture with no sample eligibility or production defaults.",
+        "Old zero-prefix API and numerical operation ordering preserved; returned indices refer to combined original input."
+      ],
+      "contract_file": "tasks/s1.2-regression-readiness.md",
+      "contract_section": "S146 retained-prefix selector contract \u2014 2 November 2026",
+      "contract_section_sha256": "b5df3d0528533daa5e20515d0f4823ea0cc39a2ed3c13eafc8f7c0cb981bc9b9",
+      "facts_sha256": "cf76352c6c57f4a0ffa2864277e2f93c28f11c9a34833040712aca1fe9b3bea6",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "independent_review": [
+        "/root/pure_core_next_owner",
+        "/root/vfbasics_data_review"
+      ],
+      "historical_source_review_preserved": true,
+      "release_or_product_claim": false,
+      "portable_receipt": "s147-adaptive-history-portable-green-v3.json",
+      "portable_receipt_sha256": "ec62df37ad4c5f1cd445863143ddd1079dbdacf96eb60f4cf11f1bc429417e45",
+      "implemented_source_sha256": "275e850035bf0c381e2a0476e6eb6e942ba97fcc18b60cdf0e01c047f15e165a"
+    },
+    {
+      "slice": "S1.2 staged adaptive-history caller",
+      "review_date": "2026-11-02",
+      "status": "implemented; compiling feature RED retained; integrated portable development row passed; critical-file analysis pending",
+      "destination": "crates/time-core/src/regression/adaptive_history.rs",
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sourcestats.c",
+      "source_sha256": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6",
+      "selected_ranges": [
+        {
+          "function": "prune_register",
+          "lines": "270-283",
+          "adaptation": "Retain a bounded auxiliary decision prefix when fitted rows are pruned."
+        },
+        {
+          "function": "SST_AccumulateSample",
+          "lines": "289-329",
+          "adaptation": "Bounded chronological append ownership; reject duplicate/older input atomically instead of resetting."
+        },
+        {
+          "function": "SST_DoNewRegression",
+          "lines": "556-598",
+          "adaptation": "Successful suffix choice/pruning connected through actual existing checked numerical owners; terminal fit reused."
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow 1997-2003",
+        "Copyright (C) Miroslav Lichvar 2011-2014, 2016-2018, 2021"
+      ],
+      "notice_obligation": "Retain complete sourcestats.c GPLv2 grant/disclaimer, dated David Osipov AI-assisted adaptation, existing COPYING and corresponding-source/build obligations.",
+      "deliberate_adaptations": [
+        "One combined64-cell retained store, not upstream possible128; separate adaptive type preserves old history/projection contracts.",
+        "Checked fixture observations and supplied divisors; no source-quality derivation/asymmetry/confidence/skew clamps or physical eligibility.",
+        "One staged append/normalize/select/trim commit; every failure preserves previous state instead of destructive reset.",
+        "Explicit immutable configured_minimum3..64 and observable effective_minimum; current and auxiliary row views remain distinct."
+      ],
+      "contract_file": "tasks/s1.2-regression-readiness.md",
+      "contract_section": "S147 staged adaptive-history caller contract \u2014 2 November 2026",
+      "contract_section_sha256": "4d8d0f6e528748e49391af99951e0d510ab884ba502419b336dfac9afc009b56",
+      "facts_sha256": "cf76352c6c57f4a0ffa2864277e2f93c28f11c9a34833040712aca1fe9b3bea6",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "independent_review": [
+        "/root/pure_core_next_owner",
+        "/root/vfbasics_data_review",
+        "/root/adaptive_contract_review"
+      ],
+      "historical_source_review_preserved": true,
+      "release_or_product_claim": false,
+      "portable_receipt": "s147-adaptive-history-portable-green-v3.json",
+      "portable_receipt_sha256": "ec62df37ad4c5f1cd445863143ddd1079dbdacf96eb60f4cf11f1bc429417e45",
+      "implemented_source_sha256": "01f3563c3b0f0c16e470f66cd7a596c9a0f90718be441afefd048321b8dc493b"
+    }
+  ],
+  "review_followups": [
+    {
+      "task": "S0.1 -> S2.1/S2.2 KoD receive-to-scheduler review",
+      "date": "2026-11-02",
+      "status": "source-only comparison; no control policy or scheduler implementation admitted",
+      "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
+      "selected_symbols": [
+        { "file": "ntp_core.c", "symbol": "process_response", "lines": "2029-2087, 2363-2450", "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0" },
+        { "file": "ntp_core.c", "symbol": "adjust_poll; get_transmit_poll; get_transmit_delay; set_connectivity", "lines": "861-883, 928-980, 2904-2920", "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0" },
+        { "file": "ntp_sources.c", "symbol": "NSR_ProcessRx; NSR_SetConnectivity", "lines": "1288-1323, 1378-1408", "sha256": "c272f644d8734b6087d8f8d008cb6a9c481a480946dde229d82e2c451fdb2e1f" },
+        { "file": "nts_ntp_client.c", "symbol": "NNC_CheckResponseAuth", "lines": "471-550", "sha256": "f4e51bf8f1115ff745a661dbd22e4665071764cbf6149481c859481e07fccae0" }
+      ],
+      "independent_comparator": {
+        "project": "ntpd-rs",
+        "revision": "46ec9bb4d5b6cb24f814f5543d85b9138afb4cba",
+        "selected_files": ["ntp-proto/src/source.rs", "ntp-proto/src/packet/mod.rs", "ntpd/src/daemon/ntp_source.rs"],
+        "evidence": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s133-kod-ntpdrs-review.md",
+        "evidence_sha256": "0e4ab5cffbb00cc2ba3a1c64f5083cde78d7e15ddf751c2908c786f6ddafa50b",
+        "license_context": "MIT OR Apache-2.0; source review only, no source or Cargo graph imported"
+      },
+      "observations": [
+        "Chrony RATE detection is separate from valid_packet, but timer/backoff changes occur inside valid_packet, whose test3 requires nonzero peer receive/transmit timestamps",
+        "Chrony RATE adds four local-poll intervals and stops a burst; configured poll bounds exist, while the separately named MAX_KOD_RATE_POLL has no use in the retained source",
+        "No DENY/RSTR code dispatch is found in the inspected receive/source/auth paths; generic online/reset operations do not establish a KoD latch or re-enable policy",
+        "NTSN is a distinct UID-correlated recovery indication and not an ordinary authenticated time result",
+        "ntpd-rs RATE changes its remote minimum without returning a replacement timer and leaves the outstanding identifier; plain DENY/RSTR demobilization is delayed"
+      ],
+      "required_adaptations_before_implementation": [
+        "Do not require valid KoD peer receive/transmit timestamps or infer time from them",
+        "Decide recognized versus ignored controls before any pending-request consumption when the selected contract requires preservation",
+        "Guard the actual next send against current source/generation, revised earliest operation and per-source/aggregate limits; observing a changed interval field is insufficient",
+        "Freeze local bounds, at-cap behavior and trusted re-enable/reset; server poll is untrusted and no upstream default becomes a product constant",
+        "Keep NTSN prior-authentication/exact-UID/forbidden-field and delayed bounded replacement rules separate from ordinary KoD"
+      ],
+      "license": "GPL-2.0-only Chrony source context; preserve existing file notices and corresponding-source obligations for any later adaptation",
+      "task_record": "tasks/s0.1-protocol-comparison.md#kod-source-to-scheduler-review",
+      "upstream_execution": false,
+      "code_imported": false,
+      "release_or_product_claim": false
     }
   ]
 }

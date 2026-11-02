@@ -1,0 +1,50 @@
+Owned diagnostic derivative of rustls-cng-crypto 0.1.2 (MIT).
+Upstream revision: 955b52e27ac76041e04459122ab4652875ab39a8
+Upstream registry archive SHA256: ce24a0492dd515a9def8c39fc6b4ea6797336ca12b2fb1c1f3d05063a9cb9973
+The original LICENSE is retained byte-identically.
+
+Source: checksum-verified S44 recovered registry, not a new acquisition.
+Cargo.toml.upstream preserves the published normalized manifest; Cargo.toml.orig
+preserves its original manifest. Derivative manifest changes only: add default-off
+fixture-init-probe feature; remove explicit tests and all dev-dependencies; add an
+independent resolver-3 workspace. Original normal dependencies/features/defaults,
+build=false and disabled auto-discovery flags are unchanged. No upstream Cargo.lock,
+tests, CI jobs or dev/tool-install graph is copied or admitted.
+This excludes separate test directories and execution edges. Internal cfg(test)
+source remains, subject to the stated formatting, and is not part of the probe build.
+
+Code delta: src/alg.rs installs a private owning guard immediately after successful
+native open on both feature paths. Transfer disarms it once; error or unwinding
+attempts one matching native close. Explicit property-error cleanup preserves the
+primary failure and any close failure without retry. Gated wrappers observe the
+same native open/property/provider-close calls; ledger ambiguity never vetoes the
+provider close. src/lib.rs reexports the safe probe module; src/alg/probe.rs retains
+the saved snapshot, distinct fixture recovery and cleanup-gap regression outcome.
+No cached-initializer, ShutdownHandle, concurrency or provider-adoption fix is made.
+The redundant parentheses around dyn ActiveKeyExchange in src/kx.rs are removed
+for a warning-clean local-path build; the trait object and operation are unchanged.
+Its imports also follow the caller's pinned formatter configuration.
+
+Immutable upstream input file hashes (before the stated derivative edits):
+de0cbf0accb514e63ad6ae049dc82887fb1a0efc8b59da83fce421306f8873a5  .cargo_vcs_info.json
+d3f483fa1c97701f12ead96172e3579c03d5bc3ef50013df2c243193e202f899  Cargo.toml
+5d3bed81aba799934fd31c8f02f62658331b9d1da5c9fb851c7a2fb2745e4398  Cargo.toml.orig
+ad0ccf0668024f6ce1b6b285448a0b5dd67f018cef4182993e35397bee610a03  LICENSE
+25383cebf620f37e88a1f5f1659d95750678f5cf83ae4c81ecf8e5efc85d9026  README.md
+c74e7eb82fc604526fb25e3747e124c817c2b82e0c950a006705039aa9b0126e  src/aead.rs
+e36c40facd2a25c008b44fc1f29a6fda0e5ec7db15f9834f0942b619bbd5df85  src/alg.rs
+74c2e44d7b46d9f84b97e2fb8865f872e454ea57cbbbb00b291d8b1bf85e9a17  src/fips.rs
+99e589898d0d280c0adf27ef8abb5c3eb6965265dc2b34261569916aff0a0c8d  src/hash.rs
+5e20f5d87e4a0c34d197190255f4d9804979fae35a1dcc9a412e53a4864edc06  src/hkdf.rs
+81512570f46a10e4448445884d8b75fbc2f36ae781a84d0c3cc8374b2a392c47  src/hmac.rs
+e085ed717687843e75f29dbba4967db04a68e5020e41d7c8e28a4331c87a957a  src/keys.rs
+97974cf935c4eb883187780f4853a044586d82191fa2931bf176c1c566fb3c4c  src/kx.rs
+1ffa0c94154b90d1c5548aa937671fd648d9b636ae20a8eb0d8fbb91eb0444c7  src/lib.rs
+006891f2539df62e0aa91a68bd9c3becbe28bbef51f2019d741e328d90ab4be0  src/prf.rs
+7154cf565ab4ee1a3897a5a7c123a0727d5ed9fb33a45dde956211c6e662bfa1  src/quic.rs
+3781782ed30853e0f57660dd9b226f5968e57032ab7a0a29ac17918f2ad35f12  src/signer/ec.rs
+0dc41654b9d1d4251e1778c3e89111eef7719f40505522c7dea1c9ddd4c1f551  src/signer/mod.rs
+cebdfdc1c4473d0a949ae95aa8f6a063241462eb7c07a7256bf052c58414a924  src/signer/rsa.rs
+f78d93c93e61e920a39e8d7ce07eed167b9e878a17358d7d96246d9662f2f715  src/tls12.rs
+2aab9c1dcfbf5f9c01ff56e84aa0ba591a0793e91bc8f1d5691d95cf2803e3ba  src/tls13.rs
+de694356fb13f8e3953e22c4a6ab5bb0a4ae364508708cd8435f111890b238c3  src/verify.rs

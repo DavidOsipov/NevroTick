@@ -1,0 +1,34 @@
+[package]
+name = "nevrotick-staged-aes-fuzz"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.99"
+license = "GPL-2.0-only"
+publish = false
+build = false
+
+[workspace]
+resolver = "3"
+
+[package.metadata]
+cargo-fuzz = true
+
+[features]
+seeded-staged-reject-all = []
+seeded-staged-alter-forwarding = []
+seeded-staged-empty-forwarding = []
+seeded-staged-no-oracle = []
+seeded-staged-wrong-budget = []
+
+[dependencies]
+aes-siv = { version = "=0.8.0", default-features = false, features = ["zeroize"] }
+libfuzzer-sys = "=0.4.13"
+nevrotick-s115-aes-siv-fixture = { version = "=0.0.0", path = ".." }
+ntp-wire = { version = "=0.0.0", path = "../../../crates/ntp-wire" }
+
+[[bin]]
+name = "staged_decrypt"
+path = "fuzz_targets/staged_decrypt.rs"
+test = false
+doc = false
+bench = false

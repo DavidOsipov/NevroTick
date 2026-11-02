@@ -1,0 +1,56 @@
+[package]
+name = "rustls-cng-crypto"
+authors = ["Tom Fay <tom@teamfay.co.uk>"]
+version = "0.1.2"
+edition = "2021"
+license = "MIT"
+description = "Rustls crypto provider for CNG"
+homepage = "https://github.com/tofay/rustls-cng-crypto"
+repository = "https://github.com/tofay/rustls-cng-crypto"
+readme = "README.md"
+
+[dependencies]
+once_cell = "1.8.0"
+pkcs1 = { version = "0.7.5", features = ["std"] }
+pkcs8 = "0.10.2"
+rustls = { version = "0.23.20", default-features = false, features = ["std"] }
+sec1 = "0.7.3"
+windows = { version = "0.61.3", features = [
+    "Win32_Security_Cryptography",
+    "Win32_System_WinRT",
+] }
+zeroize = "1.8.1"
+
+[features]
+default = ["tls12"]
+fips = []
+tls12 = ["rustls/tls12"]
+
+[dev-dependencies]
+aws-lc-rs = { version = "1.11.1", features = ["prebuilt-nasm"] }
+hex = "0.4.3"
+rcgen = { version = "0.14.1", default-features = false, features = [
+    "crypto",
+    "aws_lc_rs",
+    "pem",
+] }
+rstest = "0.26.1"
+# Use aws_lc_rs to test our provider
+rustls = { version = "0.23.0", features = [
+    "aws-lc-rs",
+], default-features = false }
+rustls-pemfile = "2"
+rustls-webpki = { version = "0.103.0", default-features = false }
+webpki-roots = "1.0"
+wycheproof = { version = "0.6.0", default-features = false, features = [
+    "aead",
+    "ecdsa",
+    "ecdh",
+    "hkdf",
+    "mac",
+    "rsa_sig",
+    "xdh",
+] }
+
+[package.metadata.docs.rs]
+default-target = "x86_64-pc-windows-msvc"
