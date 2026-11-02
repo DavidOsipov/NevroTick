@@ -442,6 +442,14 @@ additional proof reuse and signed catalogs remain conditional experiments;
 source review establishes no implementation, dependency admission or measured
 performance. Existing DNS-C01–DNS-C18 acceptance owners remain authoritative.
 
+The additional [Security-kit cache follow-up](docs/plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases)
+records the owner's TS implementation as a source for demand/inspection capabilities,
+immutable publication, retained-memory budgets, private events and concrete
+capacity/async regression cases. Its source-derived counterexamples were not run;
+the associated DNS-C checks remain future evidence. Baseline ownership/resource
+contracts apply at the first DNS-1/2 owner; richer residency-policy experiments
+remain conditional later work.
+
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are
 out of scope**, including DoH carried over HTTP/3. Upstream connection or

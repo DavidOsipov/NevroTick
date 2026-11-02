@@ -1,6 +1,6 @@
 # System-wide Windows DNS service and adaptive cache
 
-**Document:** NV-DNS-PLAN-001, revision 1.2<br>
+**Document:** NV-DNS-PLAN-001, revision 1.3<br>
 **Date:** 2 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Future-feature design and evaluation plan. The Windows-wide product scope and DNSSEC optimization requirement are owner instructions; algorithms, integration details and numerical settings below are engineering proposals unless explicitly identified otherwise.<br>
@@ -109,6 +109,8 @@ An authenticated RRset's reusable lifetime is bounded by its applicable received
 
 Distinguish a cached signature-verification result, an authenticated RRset and an authenticated complete answer. Reuse requires matching content and applicable context; a result for earlier data cannot approve replacement data. Wildcard and denial applicability remain question-specific even when signature work can be reused. The [DNSSEC/cache follow-up](dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope) specifies content publication, eligible ancestor-chain reuse, typed delegation evidence, cycle-safe shared dependencies and active-material custody in DNS-R11–DNS-R14. Physical retention does not extend cache freshness; TTL=0 material retains its permitted current-transaction use. [R04]
 
+The [Security-kit follow-up](dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) provides a concrete API refinement: restrict construction/publication of validated values to the appropriate owner, retain exact immutable content through consumers and recheck changed context at use. A read-only interface or a cache name containing Verified grants no authentication authority.
+
 Store reusable data and proof results independently of client packet construction. Cache hits, misses and coalesced waiters each require their own ID, flags, EDNS, size/truncation and remaining-TTL handling. Keep local validation, proof availability and ability to render a DO response distinct; unchecked CD results cannot become locally authenticated through cache reuse. [DNS-R15](dns-upstream-lessons.md#dns-r15-share-complete-data-while-constructing-each-client-response-independently) records the source behavior and discriminating cases.
 
 Learning may choose when to ask again; it cannot extend DNS TTLs, relax signature checks, promote unsigned data to authenticated data or authorize a clock change. Persisted demand statistics are optimization hints, never cached proof of DNS authenticity.
@@ -163,6 +165,8 @@ Prioritize cumulative work accounting across retries/shared jobs, request-owned 
 
 DNS-R11–DNS-R18 add concrete validation/cache contracts: exact-content verdict reuse and delayed-publication guards, eligible ancestor-chain and typed no-DS evidence, shared acyclic prerequisites, ownership independent of reusable freshness, complete data with individual client replies, cause-specific failure caching, a conditional SIEVE/sharding comparison and time/trust transitions. SIEVE is optional residency work after a baseline, not a selected replacement for the demand model or a new DNS-2 gate.
 
+Revision 1.2 of that supplement records the owner's [Security-kit cache assessment](dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) against NevroTick baseline d0edc6570833dd9b65e86b8ad7be6b25f881d115. It adds demand/inspection API separation, immutable data/publication capabilities, retained-memory and maintenance-work accounting, private event handling and stronger async/capacity regression scenarios. Source-derived counterexamples are explicitly unexecuted; the general-purpose TS library supplies no DNSSEC or predictive-refresh implementation.
+
 The [qualification map](dns-upstream-lessons.md#4-qualification-map-and-implementation-order) refines the existing DNS-C01–DNS-C18 cases; apply relevant ownership/concurrency/resource scenarios when each component first appears, including the protocol baseline. It does not create a parallel acceptance catalog, change DoQ-only/pinning/TTL authority or reorder current time-client work.
 
 ## 5. Demand observation and bounded model state
@@ -184,6 +188,8 @@ Observe genuine client requests at the ingress seam before choosing hit versus m
 - `maintenance`.
 
 Only `client_demand` increases demand scores. Other events update cost, outcome and dependency information. A client packet cannot choose its internal provenance or bypass resource admission. Retries and refresh completion do not create evidence of user interest.
+
+Enforce this through distinct client-demand recording, background inspection and result-publication capabilities. Scheduler, dependency and diagnostic inspection cannot create client-demand events or mark a record recently demanded. Keep one ingress counting owner across hits and misses; a generic read-only facade that still exposes demand-updating reads is insufficient. Any internal residency bookkeeping remains distinct from the heat model. The [Security-kit comparison](dns-upstream-lessons.md#separate-demand-observation-and-publication-capabilities) gives a source example and its limits.
 
 ### 5.2 Proposed aggregate record
 
@@ -398,6 +404,10 @@ Autonomous refresh also creates network activity: it may keep sending names to t
 
 Freeze finite limits before each experiment for model/cache bytes, candidate count, queued jobs, simultaneous upstream work, CPU/native work, requests per unit time, retry attempts and inactivity duration. A percentage-of-demand budget alone is insufficient: synthetic client traffic could inflate it. Pair adaptive budgets with absolute caps.
 
+Account for resident data, candidate allocations, buffers retained by active readers, retired cleanup buffers, keys/metadata and queues. Transfer charges with ownership, without double-counting shared allocations or freeing credit on index removal alone. Replacement growth and transient publication/copy peaks must obey admission. Define finite deferred-cleanup admission and drain/retention behavior; preserving a reader's buffer does not extend answer freshness. Qualify allocator/process-memory effects separately from logical byte accounting.
+
+Bound examined records, processed bytes and cumulative expensive work as well as successful evictions. A batch capped by the number of deleted entries can still scan all fresh entries. Preserve traversal progress and a declared exhaustion outcome; yielding between batches does not prove total-work bounds or fairness. Observe per-operation work and foreground progress using the [source-derived maintenance cases](dns-upstream-lessons.md#account-for-retained-memory-and-actual-maintenance-work).
+
 Use a small deadline queue or another bounded scheduling structure, not a scan or wakeup for every record on a tight interval. Do not wake a sleeping computer solely to maintain the heatmap. On battery, a metered connection, CPU pressure or an unavailable upstream, a policy may reduce or pause speculative work while preserving foreground service.
 
 Bound adversarial cryptographic and negative-proof work as well as ordinary packet sizes. Multicore execution must not turn one hostile request into unbounded parallel verification. New-name floods, repeated failures and repeated context changes must remain within aggregate budgets.
@@ -441,19 +451,21 @@ The following **DNS-Cxx** identifiers are local to this plan. They specify futur
 | DNS-C03 | Bootstrap does not recursively require its own unavailable DNS path; wrong names, invalid chains/pins, stale resumption and blocked DoQ never cause silent fallback. | Controlled DoQ peer, actual selected verifier, bootstrap/recovery cases. |
 | DNS-C04 | DNSSEC valid, unsigned, bogus, negative-proof, unsupported/unavailable and wrong-time cases receive the specified distinct treatment. | Independent protocol vectors and admitted validator; trust/update lifecycle cases. |
 | DNS-C05 | RRset/signature and required answer-component lifetimes are respected through sleep, clock correction, restart and changed trust; chain-material cache expiry is distinguished from validity of an already validated answer; active custody cannot inflate fresh reuse; no popular entry gains additional authority. | Injected time/context model plus native clock/suspend integration. |
-| DNS-C06 | Genuine cache hits and misses affect demand; refreshes, maintenance, validation fetches and retries do not self-heat the model. | Deterministic event sequences through the real observation seam. |
+| DNS-C06 | Genuine cache hits and misses affect demand; refreshes, maintenance, validation fetches, diagnostic inspection and retries do not self-heat the model. | Deterministic event sequences through the real ingress/inspection capabilities, including repeated background reads and genuine hit/miss controls. |
 | DNS-C07 | A burst cools down, repeated demand differs from one burst, no-demand periods end refresh, and insufficient evidence is explicit. | Independent trace expectations and valid neighboring workloads. |
 | DNS-C08 | Temperature transitions use declared thresholds/hysteresis; exposure-normalized seasonal buckets handle missing observation and calendar changes. | Pure model properties and replay; seasonal part only when selected. |
 | DNS-C09 | A returning remaining-TTL response that adds no lifetime earns no extension credit and cannot start a tight refresh loop. | Controlled recursive-upstream fixture and queue/request observations. |
-| DNS-C10 | Compatible client and refresh work coalesce; shared validation prerequisites remain acyclic and preserve individual cancellation, custody and response semantics; one consumer cannot incorrectly cancel another, leak custody or multiply work. | Deterministic concurrency schedules plus actual runtime behavior. |
+| DNS-C10 | Compatible client and refresh work coalesce; shared validation prerequisites remain acyclic and preserve individual cancellation, custody and response semantics; one consumer cannot incorrectly cancel another, leak custody or multiply work. | Deterministic concurrency schedules with observed suspension points, same-key competition and retained-reader cases, plus actual runtime behavior. |
 | DNS-C11 | Old network/VPN/configuration generations cannot publish results or send private names under a new incompatible route. | Action-sequence model, controlled network changes and native integration. |
-| DNS-C12 | Random-name floods, hostile validation work, failures and repeated invalidations stay within model, queue, worker and traffic caps. | Bounded stress/resource observations at the real entry points. |
+| DNS-C12 | Random-name floods, hostile validation work, replacement growth, failures and repeated invalidations stay within model, queue, worker and traffic caps; pending/retained/retired allocations remain charged and maintenance bounds count examined work. | Bounded stress/resource observations at real entry points, exact accounting transitions, scan/work counters and declared rejection/cleanup outcomes. |
 | DNS-C13 | Faulty, oversized, old-version or inaccessible snapshots cause safe learning reset while ordinary DNS continues; power loss preserves declared recovery behavior. | Parser/persistence tests and native filesystem/identity cases. |
 | DNS-C14 | Snapshot/temp/backup/log behavior matches privacy claims; cross-user access and management IPC obey the selected actual identity policy. | Native Windows accounts, effective ACL/DPAPI checks and artifact inspection. |
 | DNS-C15 | Pause, exclusion and forget operations affect model, queued candidates, retained snapshots and later behavior; old in-flight learning or snapshot publication cannot recreate removed history across the privacy-generation barrier. | End-to-end management-to-scheduler/persistence tests with delayed completions/writes, not UI-only checks. |
 | DNS-C16 | Accelerated/fallback validation agree on accepted and rejected inputs; optional CPU features are admitted correctly and multicore work remains bounded. | Actual supported CPU/OS/VM rows, independent vectors and resource measurements. |
 | DNS-C17 | Enable, failure, restart, update, disable and uninstall preserve owned configuration and later administrator/VPN changes. | Disposable Windows lifecycle and interruption/restoration experiments. |
 | DNS-C18 | Adaptive mode meets predeclared latency/usefulness/cost criteria against both baselines without degrading reserved time-service work. | Comparable repeated controlled measurements with complete outcomes. |
+
+The [Security-kit regression matrix](dns-upstream-lessons.md#transfer-scenarios-with-stronger-oracles) supplies concrete cases under these same IDs: replacement growth, forced-suspension same-key races, stale publication, reader retention, non-heating inspection, bounded maintenance and exact time boundaries. Verify that a race reaches its intended scheduling point and assert its declared outcome; a test name, several completed promises or an assertion allowing either outcome does not establish the missing contract. Selected policy-specific cursor/slot tests remain conditional.
 
 Apply existing repository property/model/fuzz/concurrency/mutation tools only where they answer a named gap in this table and are admitted for the selected code. A plan does not establish a new tool requirement. Documentation checks do not count as a DNS-C pass, DOQ-C01, a native security result or release qualification.
 

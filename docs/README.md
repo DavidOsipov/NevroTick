@@ -24,7 +24,7 @@ to own requirements, and task records own executed evidence.
 | --- | --- |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
-| Where are the origins and qualification scenarios for borrowed DNS mechanisms? | [DNS upstream lessons and adaptation plan](plans/dns-upstream-lessons.md): pinned Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy sources; eighteen lessons, including the [DNSSEC/cache follow-up](plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope), with observed mechanisms, proposed adaptations and existing DNS-C owners. |
+| Where are the origins and qualification scenarios for borrowed DNS mechanisms? | [DNS upstream lessons and adaptation plan](plans/dns-upstream-lessons.md): pinned Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy sources; eighteen lessons, including the [DNSSEC/cache follow-up](plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope), with observed mechanisms, proposed adaptations and existing DNS-C owners; the [Security-kit follow-up](plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) adds TS cache contracts and source-derived regression cases under the same owners. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
@@ -57,14 +57,19 @@ statistics, temperature classes, a bounded refresh scheduler and measurable
 adoption criteria. Its DNS-C01–DNS-C18 cases are future evidence requirements;
 no service, application coverage, benchmark or native qualification is claimed.
 Current Windows work and the roadmap's KHR-0 ordering remain unchanged.
-The [source-attributed supplement](plans/dns-upstream-lessons.md), revision 1.1,
+The [source-attributed supplement](plans/dns-upstream-lessons.md), revision 1.2,
 records eighteen reuse lessons. Its DNSSEC/cache follow-up adds exact-content
 validation reuse, chain/delegation evidence, shared prerequisites, active-material
 custody, individual response construction, failure caching, optional SIEVE/sharding
-and time/trust transitions. The main DNS plan, revision 1.2, distinguishes
+and time/trust transitions. The main DNS plan, revision 1.3, distinguishes
 chain-material expiry from already validated answers and qualifies recursive
 key-prefetch applicability. This is future guidance with concrete ownership,
 resource, routing and privacy scenarios, not imported code or executed acceptance.
+The additional [Security-kit assessment](plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases)
+refines demand/inspection APIs, immutable publication, retained-memory/work budgets
+and private events. It retains two source-derived capacity/async counterexamples
+and concrete stronger test scenarios; no reproduction, benchmark or DNS-C pass
+is claimed.
 
 **Engine workspace integration, 1 November 2026:** the bounded loopback engine is
 now the sixth main workspace member. Its
