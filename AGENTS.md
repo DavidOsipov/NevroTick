@@ -83,6 +83,16 @@ Engine runtime/concurrency work: read [architecture section 18.6.1](docs/windows
 
 IPC implementation/security work: read [architecture section 5.4](docs/windows-time-architecture.md#54-native-ipc-implementation-and-qualification) and [hardening section 9.9](docs/windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification) alongside `security-local-ipc`. Qualify actual wrapper rights, thread-bound caller capture, fatal reversion, continuous endpoint ownership and partial/native I/O completion; examples and mocks do not prove Windows enforcement.
 
+Protected optional-storage work: start at [the agent task](tasks/windows-protected-storage.md),
+[architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
+and [the storage plan](docs/plans/windows-protected-storage.md). The task maps the
+[second upstream review](docs/plans/windows-protected-storage-upstream-lessons-2.md)
+to bounded work and existing ST-T/CHECK/DNS-C owners. Preserve indeterminate
+operation outcomes, actual native completion, privacy barriers and the separate
+mandatory-state owner. Source examples authorize no dependency or weaker fallback;
+RedirectionGuard and hardware rollback epochs retain their candidate gates. The
+storage experiment pause and current product-work priority remain in force.
+
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
 The current [Cargo workspace](Cargo.toml) contains

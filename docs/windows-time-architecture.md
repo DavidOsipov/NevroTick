@@ -21,6 +21,13 @@ Sections 4, 7–12, 18–20 and the OPEN register refine ownership, correction d
 adjustment modes, trust lifetime and qualification. These amendments establish no
 new implementation, Windows test result or accepted risk exception.
 
+**3 November protected-storage amendment:** [the second upstream review](plans/windows-protected-storage-upstream-lessons-2.md)
+refines operation outcomes, filesystem/native-adapter contracts and future
+qualification in sections 12.1.2 and 15.4. The [storage task](../tasks/windows-protected-storage.md)
+owns the bounded follow-up. This is a scoped documentary amendment to revision
+1.4; construction/default decisions remain open and the native-experiment pause
+remains in effect.
+
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
 The selected v1 design is **one complete per-machine MSI** under the Authenticode or initial OpenPGP release profile in section 19.5 containing a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker, and the administration helper. The user installs, updates, repairs and removes one product. The installer owns service installation and reversible Windows Time Service handover. A future MSIX, if qualified, must contain the same complete product with an equivalent lifecycle; separate UI and service distributions are excluded.
@@ -1071,6 +1078,12 @@ work, scoped threats, review dispositions and evidence gates. This direction
 does not select exact algorithms, prove Windows compatibility, change a shipped
 default or authorize a native experiment.
 
+The [3 November source follow-up](plans/windows-protected-storage-upstream-lessons-2.md)
+and [agent task](../tasks/windows-protected-storage.md) make the contracts below
+more precise. They refine existing ST-T/CHECK owners; RedirectionGuard,
+hardware revocation epochs, attestation and alternative storage formats remain
+conditional investigations rather than newly required mechanisms.
+
 This covers optional NTS association persistence and separately future DNS
 learning. Broker policy, correction/ownership journals and saved trusted floors
 retain sections 8.1/10.2.1/12.1's independent owners and failure rules. Optional
@@ -1177,6 +1190,15 @@ authenticate the envelope before unwrap; verify AEAD; construct strict bounded
 typed state; then enforce section 7.4/12.1.1's current semantic/age/policy checks
 before one current-generation publication. Never restore outstanding exchanges.
 
+The file owner must admit store-directory authority and a bounded relative
+namespace before save/restore operations. Validate the actual opened object's
+identity, type and applicable owner/link/reparse policy before truncation or
+other destructive effects. Retained directory handles and no-follow relative
+opens are implementation candidates, not proof that every rename/replace path
+is safe. Qualify initial root admission, replacement and release for legitimate
+installer lifecycle together. [Directory-adapter source lessons](plans/windows-protected-storage-upstream-lessons-2.md#3-borrow-directory-authority-and-delayed-destruction-from-cap-std)
+select no filesystem dependency.
+
 Specify fresh data-key handling for independent snapshot attempts and the
 nonce/RNG failure contract. Crash/retry/concurrency/restored counters cannot cause
 forbidden reuse; entropy failure blocks persistence. Do not derive storage keys
@@ -1212,6 +1234,22 @@ conflicting authoritative metadata blocks restoration and follows explicit
 recovery. Late native results retain permits/handles/buffer custody until actual
 completion but cannot publish after root/policy/privacy invalidation.
 
+Private mutation/commit results distinguish **definitely not applied**, **committed
+with an attributable receipt**, and **outcome requiring reconciliation**. Keep
+this separate from the affected transaction/owner's usability: ready, partially
+modified or poisoned, recovery-required, and closed. These names describe
+semantics, not a frozen public enum. An error after possible durable publication
+does not prove rollback or authorize another root set, generation reuse, a
+destructive retry or refunded authority. Reconcile the same operation identity
+against admitted catalogue/epoch/exact-content evidence. A rejected poisoned
+transaction and an uncertain commit have different recovery contracts; do not
+poison the entire store merely because one validly rejected operation failed.
+Only a demonstrated valid rollback or successful reconciliation may restore the
+affected owner's permitted operations. Native permits, handles and sensitive
+buffers remain owned through this recovery until actual completion. The
+[transaction and durability lessons](plans/windows-protected-storage-upstream-lessons-2.md#4-an-error-is-not-always-evidence-that-nothing-happened)
+refine ST-T06/07/10/16/17 without changing mandatory-state ownership.
+
 | Condition | Permitted outcome |
 | --- | --- |
 | Authorized fresh optional epoch; qualified VBS capability unavailable/off/unsupported | Evaluate only policy-allowed TPM or NoPersistentCache under an admitted required process profile. |
@@ -1235,6 +1273,16 @@ report Unknown/RecoveryRequired. Use a finite API-and-phase map: unavailable
 creation, name collision, missing expected key, invalid flags, silent-context
 failure and unknown errors have different outcomes. Unknown errors authorize
 no flag stripping, weaker provider, service prompt or broader rights. [S123]
+
+That map covers each actual native call's documented flags, key policy, account
+and session. Silent opening alone does not qualify later private use; an
+interactive refusal cannot trigger a retry that permits UI. Cap native-property
+allocations, validate advertised and returned lengths plus version/flags,
+decode fields safely and preserve absent/unsupported/denied/unknown outcomes.
+For the frozen suite, check exact returned lengths and independent known-answer
+or interoperability fixtures as well as roundtrips. Shared defaults on both
+sides can hide a wrong parameter. [CNG source lessons](plans/windows-protected-storage-upstream-lessons-2.md#6-cng-admission-per-call-silence-real-lengths-and-explicit-parameters)
+do not select ECIES, a KDF, new provider or dependency.
 
 ##### Process compatibility, UI and residuals
 
@@ -1962,6 +2010,17 @@ AppContainer remains the separate experiment in section 19.4. It is not required
 - **Strict handles:** when setting the policy, the invalid-handle and permanent-enable fields must match. Record actual query results and debugger/verifier presence: Application Verifier can produce the documented non-permanent exception state, which is not evidence of the product's permanent setting. [S99]
 - **Compatibility trials:** use audit mode only where the specific mitigation supports it. Ordinary CFG, extension-point disabling and strict-handle validation have no audit mode; use isolated enforced tests. Retain the existing signer-class limitation for signature-only image policy under both release profiles. [S33, S102]
 
+**RedirectionGuard research candidate, 3 November 2026:** evaluate
+`ProcessRedirectionTrustPolicy` separately for the file-owning service and
+lifecycle helper. Its documented scope concerns selected filesystem junctions
+marked as created/modified by a non-administrator; administrator-created and
+legacy unmarked junctions can remain traversable. It does not replace admitted
+directory/handle checks or establish a general path/symlink/registry boundary.
+The [source review](plans/windows-protected-storage-upstream-lessons-2.md#2-redirectionguard-one-additional-windows-defense-worth-investigating)
+leaves supported builds, activation/query behavior and required/optional
+disposition unqualified. Until that decision is recorded, it creates no new
+required startup gate. Preserve the independent installer-host rule above.
+
 **SCM child-process proof gap:** preserve the engine/broker no-child design, but establish the supported installation mechanism, effective state and denied creation under their actual SCM launch path. A policy enum, header declaration or custom-parent test is insufficient. Parent-side process-creation attributes do not establish control over SCM's launch attributes. App-specific Exploit Protection is a research candidate, not an adopted installer change. Do not introduce a launcher or change service topology merely to claim this control. [S29, S101, S104]
 
 If later evidence selects persistent per-image settings, qualify no-login boot, restart and MSI upgrade/repair/removal, collisions with administrator/enterprise policy, and ownership-preserving restoration. Such settings identify an image by name/path rather than product version; requalify changed binaries. No machine-wide reset, administrator-policy overwrite or manual user setup step is introduced here. [S102]
@@ -1975,6 +2034,15 @@ The executable's trusted startup path selects its role profile; untrusted argume
 3. Compare the observed state with the profile before declaring normal readiness. A missing, unreadable or mismatched required protection blocks the affected normal operation; an explicitly optional hardware enhancement may remain unavailable with an accurate diagnostic. Do not retry with a weaker profile or clear stronger host policy.
 4. Preserve ownership-aware cleanup and bounded recovery already required by sections 8 and 11. Failure grants no new clock authority and must not skip necessary owned cleanup, reset budgets or produce an unbounded SCM restart loop. Installation/takeover preflight must detect an unusable required profile before transferring clock ownership; upgrade failure follows the existing rollback contract.
 5. Emit a bounded structured status through the existing diagnostics path, with role, policy, expected/observed state and safe error information. Keep startup/readback work bounded and out of the per-packet path. Diagnostic reports are not IPC credentials, remote attestation or proof that a process remains uncompromised.
+
+Own startup transitions in a private state model enforced in release builds;
+debug-only order assertions and a generic enabled log are insufficient. Keep
+requested policy, successful readback, observed denial and legitimate-operation
+success distinct. Repeated tightening cannot reopen an earlier weaker admission
+phase. An observer must preserve unsupported/error/terminating results as
+uncertainty rather than collapsing them into a successful zero-valued query.
+The [Chromium and observer references](plans/windows-protected-storage-upstream-lessons-2.md#7-mitigations-need-ordered-startup-and-behavioral-evidence)
+inform qualification; they supply no NevroTick native pass.
 
 #### Mitigation manifest and evidence
 

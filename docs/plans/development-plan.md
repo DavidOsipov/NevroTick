@@ -14,6 +14,7 @@ Agent navigation: [implementation contracts](#3-mandatory-explicit-contracts-dur
 [phase skill map](#5-required-skill-reading-and-use-by-phase),
 [phase acceptance](#6-phase-implementation-and-acceptance-gates),
 [next task](#7-next-executable-task-for-a-development-agent),
+[protected-storage task](../../tasks/windows-protected-storage.md),
 [evidence and stop rules](#9-verification-commands-phase-records-and-stop-rules).
 
 ## 1. Purpose, authority and current state
@@ -829,15 +830,27 @@ owns staged evidence, ST-T01–ST-T18 and retained A/HR review dispositions.
 The completed [upstream source inventory](windows-protected-storage-upstream-lessons.md)
 records MPSS, Tailscale, Chromium, VbsEnclaveTooling, Smallstep and
 go-attestation mechanisms, exact source revisions, adaptation limits and planned
-checks. The construction/provider/build/account/profile freeze remains open.
-This is a planning amendment. Storage experiments remain paused; current S1.3,
-P0–P7 order, held TLS/provider gates and UI-M0 scope remain unchanged.
+checks. **Owner follow-up, 3 November 2026:** incorporate the deeper research in
+documentation, this plan and executable agent assignments. The
+[second source inventory](windows-protected-storage-upstream-lessons-2.md)
+adds directory authority, indeterminate commit/recovery semantics, durability
+models and event monitoring, per-call CNG contracts, behavioral mitigation
+checks, completion ownership and memory/output privacy. It retains
+RedirectionGuard as a candidate and attestation/hardware rollback as conditional
+investigations. The [protected-storage task](../../tasks/windows-protected-storage.md)
+owns ST-W01–ST-W07 assignments, prerequisites and future candidate evidence;
+these work-item labels introduce no acceptance catalogue.
+
+The construction/provider/build/account/profile freeze remains open. This is a
+documentation and task-planning amendment. Storage experiments remain paused;
+current S1.3, P0–P7 order, held TLS/provider gates and UI-M0 scope remain unchanged.
 
 | Existing stage / owner | Bounded follow-up | Exit / retained boundary |
 | --- | --- | --- |
-| Source/design; security/platform | Use the completed [attributed source inventory](windows-protected-storage-upstream-lessons.md); resolve construction, provider/build, per-key evidence, policy, ownership and errors for one bounded row | Initial research recorded; design freeze open; no sample-to-production or source-to-native-pass promotion |
+| Source/design; security/platform | Use both attributed inventories and [ST-W01](../../tasks/windows-protected-storage.md#st-w01-prepare-one-construction-and-failure-contract); prepare one construction row, operation-outcome table and ownership/reconciliation map | Source research recorded; first source-only assignment ready; exact design freeze open; no sample-to-production or source-to-native-pass promotion |
+| Portable contracts/model; storage/QA | After the relevant contract is ready and the slice is authorized, implement [ST-W02](../../tasks/windows-protected-storage.md#st-w02-enforce-operation-outcomes-and-model-durability): separate live/durable/acknowledged state, requested/successful/failed barriers, indeterminate outcomes and poisoned owners; challenge recovery and late publication | ST-T05/06/07/10/15/16/18 with their existing CHECK/DNS-C mapping; no execution claimed by this plan and no model-to-native promotion |
 | S2.3/P3; protocol/storage | Specify root/data/snapshot identities, witness/catalogue commit, authenticated exact envelope and deliberate no-root NoPersistentCache | NTS trust/ages and mandatory broker authority remain independent; no native execution until pause is lifted |
-| P3/P6; platform/lifecycle | Qualify final service/key/file owners, complete root creation/reopen, interruptions/retirement and process profile | Applicable CHECK-1/9/11/12/15/16/17/18/20/23/25/27; healthy operations beside denials |
+| P3/P6; platform/lifecycle | Apply [ST-W03–ST-W07](../../tasks/windows-protected-storage.md#3-later-implementation-and-qualification-work) to directory handles, CNG calls, mitigation startup/behavior, pipe completion, sensitive memory and actual diagnostic artifacts; qualify final service/key/file owners, complete root creation/reopen and interruptions/retirement | Applicable CHECK-1/9/11/12/15/16/17/18/20/23/25/27; healthy operations beside denials; RedirectionGuard support/disposition unresolved; native work held |
 | Future P5/D2; UI | Consume actual mode/readiness/freshness; notify on first connection after unattended transition | CHECK-14/17/22; acknowledgement changes no policy; no UI-M0 implementation |
 | Future DNS-4; DNS/privacy | Separate keys, bounded snapshots and privacy barriers across retired/inaccessible data | DNS-C12–DNS-C15; ordinary DNS independent of learning persistence |
 
@@ -845,6 +858,12 @@ Recommended PreferVbsAllowTpm + ContinueWithoutRestore remains a proposed
 product default. No automatic DPAPI/software/plaintext persistence is selected.
 Recording the design accepts no residual risk and completes no memory-encryption,
 ASVS, performance or native qualification.
+
+Use the task's [conditional reserves](../../tasks/windows-protected-storage.md#4-conditional-reserves-and-re-entry-triggers)
+only when their named question becomes relevant. A hardware revocation epoch
+does not prove exact latest-snapshot freshness or close same-epoch/offline/VM
+rollback. No NV-counter integration, remote attestation, stream format, database,
+dependency, extra privileged service or mitigation exception is selected here.
 
 
 ## 9. Verification commands, phase records and stop rules
@@ -930,6 +949,7 @@ reading/testing mandatory. No architecture policy is superseded.
 | Product implementation/tests | Not executed by this planning task. P0–P7 remain open; UI-M0 retains its separate existing record and gaps. |
 | Subsequent S0.1/R-01 investigation, 29 October 2026 | [Source readiness and S1.1 card](../../tasks/s0.1-source-readiness.md), with the Chrony ledger, independent protocol/crypto comparisons and literal vectors. Source/contract investigation; no product implementation, graph admission, native qualification or phase exit. |
 | Active whole-plan implementation goal, 29 October 2026 | David authorized implementation of the full plan. [S1.1a](../../tasks/s1.1-header.md), [S1.1b](../../tasks/s1.1-framing.md) and [S1.1c](../../tasks/s1.1-time-domain.md) are qualified within their declared pure/header/framing/numerical scopes. The [fresh-reviewed S1.1d card](../../tasks/s1.1-exchange-association.md) now owns fixture association and its separate graph/runner admission. Existing owner-decision, dependency/native qualification and public-release approval gates remain. |
+| Protected-storage research and assignments, 3 November 2026 | The [second source inventory](windows-protected-storage-upstream-lessons-2.md) and [task record](../../tasks/windows-protected-storage.md) connect reviewed mechanisms to ST-T01–ST-T18 and the existing phase owners. This records research and future work; construction/default/provider decisions, implementation and native evidence remain open. The task owns the integration review and later candidate-specific receipts. |
 
 Append phase readiness and task/evidence links here as development proceeds;
 preserve this plan as the roadmap and each existing task as its candidate record.

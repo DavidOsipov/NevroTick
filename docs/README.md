@@ -26,7 +26,8 @@ to own requirements, and task records own executed evidence.
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
 | Where are the origins and qualification scenarios for borrowed DNS mechanisms? | [DNS upstream lessons and adaptation plan](plans/dns-upstream-lessons.md): pinned Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy sources; eighteen lessons, including the [DNSSEC/cache follow-up](plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope), with observed mechanisms, proposed adaptations and existing DNS-C owners; the [Security-kit follow-up](plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) adds TS cache contracts and source-derived regression cases under the same owners. |
 | Where are protected key storage, VBS fallback and their evidence gates owned? | [Architecture §12.1.2](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [protected-storage plan](plans/windows-protected-storage.md), [development workstream](plans/development-plan.md#84-protected-optional-storage-design-and-qualification) and [provider qualification](windows-time-development-hardening.md#641-protected-storage-provider-qualification). |
-| Where are source examples and adaptation limits for protected Windows storage? | [Protected-storage upstream lessons](plans/windows-protected-storage-upstream-lessons.md): pinned MPSS, Tailscale, Chromium, VbsEnclaveTooling, Smallstep and go-attestation source, with useful mechanisms, unsuitable policies and planned checks under existing owners. |
+| Where are source examples and adaptation limits for protected Windows storage? | [First upstream review](plans/windows-protected-storage-upstream-lessons.md) and [second upstream review](plans/windows-protected-storage-upstream-lessons-2.md): pinned implementation/test sources, adaptation limits and future checks. The second adds directory authority, indeterminate commits, crash/protocol models, per-call CNG contracts, behavioral mitigation checks, RedirectionGuard and conditional rollback research. |
+| What should an agent do with the protected-storage research? | [Protected-storage agent task](../tasks/windows-protected-storage.md): bounded work items, prerequisites, owners, independent expectations, healthy/defect controls and candidate-specific evidence, mapped to the existing storage plan. The native experiment pause and current development priority remain unchanged. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
@@ -49,6 +50,19 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Protected-storage second upstream review, 3 November 2026:** the
+[new source supplement](plans/windows-protected-storage-upstream-lessons-2.md)
+retains the completed second search and critical review. The
+[agent task](../tasks/windows-protected-storage.md) turns the findings into bounded
+source/contract preparation, future portable implementation and separately held
+Windows qualification. Canonical clarifications distinguish operation outcome
+from owner usability, validate opened objects before destructive effects, retain
+native custody through recovery, and qualify individual CNG/mitigation operations.
+RedirectionGuard remains a candidate; attestation, hardware revocation epochs,
+chunked snapshots and database adoption remain conditional. The original ST-T,
+CHECK and DNS-C owners, construction freeze, rollback residuals, experiment pause
+and UI-M0/D2 boundaries remain. No implementation or native pass is claimed.
 
 **Protected optional storage, 2 November 2026:** the [architecture amendment](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
 records the reviewed CNG VBS/TPM/fresh-state/no-cache direction requested by the

@@ -1,10 +1,10 @@
 # Windows protected optional storage: execution and qualification plan
 
-**Document:** NV-STORAGE-PLAN-001, revision 1.1<br>
-**Date:** 2 November 2026<br>
+**Document:** NV-STORAGE-PLAN-001, revision 1.2<br>
+**Date:** 3 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Maintained design and future qualification plan. Recording this direction is authorized; implementation, native experiments, exact cryptographic choices and the product default are not approved by this document.<br>
-**Initial design baseline:** [`de3777230d2adc30fa9eea9895e7dcbb370dec1e`](https://github.com/DavidOsipov/NevroTick/tree/de3777230d2adc30fa9eea9895e7dcbb370dec1e). Revision 1.1 records the subsequent upstream research against [`1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea`](https://github.com/DavidOsipov/NevroTick/tree/1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea). Both were read through API-derived partial snapshots, not a local checkout.
+**Initial design baseline:** [`de3777230d2adc30fa9eea9895e7dcbb370dec1e`](https://github.com/DavidOsipov/NevroTick/tree/de3777230d2adc30fa9eea9895e7dcbb370dec1e). Revision 1.1 records the first upstream research against [`1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea`](https://github.com/DavidOsipov/NevroTick/tree/1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea). Revision 1.2 incorporates the second source review and agent-task routing against [`6b28711f5510e3550039d5fcf8bbcf3ccba791a5`](https://github.com/DavidOsipov/NevroTick/tree/6b28711f5510e3550039d5fcf8bbcf3ccba791a5). These were API-derived partial snapshots, not local checkouts.
 
 ## 1. Authority, purpose and decision status
 
@@ -26,6 +26,14 @@ The preferred candidate protects optional saved NTS associations and, separately
 A CNG VBS-protected key is distinct from a custom application VBS enclave. Working DEKs, TLS exporters, NTS keys and plaintext may remain in ordinary engine RAM. Protecting storage roots does not satisfy complete-memory encryption or all-cryptographic-operations-isolated requirements. Host compromise, authorized malicious key use, selective offline replacement of ACL-only trust anchors and full-environment rollback remain explicit limitations; recording them is not owner acceptance of residual risk. [P4–P6, P11–P14]
 
 The architecture and original plan were recorded before upstream research. The owner then requested that the completed findings also be recorded: [upstream implementation lessons](windows-protected-storage-upstream-lessons.md) now preserves pinned source observations, proposed adaptations, unsuitable sample policies and future checks. This completes the initial source inventory, not the construction/provider/build/account/profile freeze. It starts no implementation, dependency acquisition, key creation, service operation, experiment or process-policy change. Existing held TLS/CNG dependency and fixture decisions remain held.
+
+**3 November follow-up:** the owner requested the [second upstream review](windows-protected-storage-upstream-lessons-2.md)
+be integrated into documentation, this plan and [the agent task](../../tasks/windows-protected-storage.md).
+Its concrete refinements concern operation outcomes, admitted directory access,
+durability modelling, per-call CNG behavior and mitigation evidence. RedirectionGuard
+is a candidate; attestation, hardware revocation epochs, chunking and a database
+remain conditional reserves. This documentation authorization does not lift the
+experiment pause, choose a product default or advance a native acceptance gate.
 
 ## 2. Owners, data classes and restoration
 
@@ -78,6 +86,11 @@ The signed representation binds domain separation, format/version, installation/
 
 Freeze suite, sizes, padding, signature/prehash encoding, digest, canonical bytes, RNG, nonce issuance/use limits, sequence arithmetic and input budgets before implementation. Signature verification and committed-content hashing must cover the same unambiguous representation. Failed publication, retries, concurrency and restored state must not reuse a forbidden key/nonce pair; RNG/nonce failure blocks persistence, without weak seeds or alternate primitives. Complete-environment RNG/state rollback remains a separate limitation.
 
+For that selected suite, require exact returned-length checks and independent
+known-answer or interoperability fixtures beside roundtrips. A shared wrong
+hash/KDF/context/encoding must fail the declared contract. The [CNG examples](windows-protected-storage-upstream-lessons-2.md#6-cng-admission-per-call-silence-real-lengths-and-explicit-parameters)
+do not select ECIES or introduce a KDF absent from the chosen construction.
+
 Admission order is bounded outer framing, fixed allowlist/current key-reference admission, independent envelope authentication, protected DEK opening, AEAD verification, bounded typed semantic validation and current-generation publication. The envelope selects no arbitrary provider, loader, path or algorithm. Apply the repository's strict decoder, mandatory private construction and current-effect guards; authenticated malformed or unauthorized input still fails.
 
 ### 4.2 Epochs, durable publication and bounded inventory
@@ -103,6 +116,28 @@ Ordinary saves use the same prepared-content/durable-reference/current-generatio
 
 Windows does not gain a claimed atomic multi-object transaction from this logical protocol. Exact flush/replace/provider durability, crash reconciliation and witness acknowledgement remain gates. Encryption/signatures do not defeat authenticated rollback, authorized signer compromise, selective offline catalogue/witness replacement or whole-machine snapshots. An independent rollback-resistant anchor would require a separate design. Mandatory broker state never joins this transaction.
 
+### 4.3 Operation outcomes and owner usability
+
+Apply the architecture's separate operation and owner contracts: definitely not
+applied, confirmed committed receipt, or outcome requiring reconciliation;
+independently, the affected transaction/owner may be usable, poisoned,
+recovery-required or closed. A possibly durable error must reconcile the same
+operation identity and exact committed-content evidence before a dependent
+retry. It grants no root recreation, destructive migration, generation reuse or
+refunded authority. A rejected poisoned transaction is not automatically a
+poisoned whole store. Hold real native resources through reconciliation until
+completion. [redb's source pattern](windows-protected-storage-upstream-lessons-2.md#4-an-error-is-not-always-evidence-that-nothing-happened)
+informs ST-T06/07/10/16/17; database readability cannot grant NTS eligibility.
+
+Use an independent bounded model of issued writes, live bytes, durable bytes
+and acknowledged effects, plus a monitor of the publication/retirement protocol.
+Distinguish requested, successful and failed barriers. Exercise a failure during
+recovery and a second failure; stop at each simulated crash cut so later
+artificial-success returns create no false durability obligation. Preserve
+mandatory continuity and privacy acknowledgements under their existing owners.
+[redb/SQLite examples](windows-protected-storage-upstream-lessons-2.md#5-model-durability-separately-then-monitor-the-operation-protocol)
+define useful cases, not native Windows durability results.
+
 ## 5. Platform admission, failure classification and privacy
 
 Qualify finite API/phase/build/provider/algorithm/profile rows. Required-VBS creation uses `NCRYPT_REQUIRE_VBS_FLAG`; `PREFER_VBS` may fall back to software. Provider-wide properties, names and unrelated probe keys do not prove protection of the actual key. Microsoft's example uses Microsoft Software KSP for required-VBS keys; the provider name alone proves neither outcome. `NCryptOpenKey` documents no REQUIRE_VBS reopen flag. Controlled origin, bound public identity and supported cross-boot reopen evidence must establish both actual roots; otherwise report Unknown/RecoveryRequired. [P1–P5]
@@ -118,9 +153,24 @@ Qualify finite API/phase/build/provider/algorithm/profile rows. Required-VBS cre
 
 Examples remain contextual: `NTE_VBS_UNAVAILABLE` at required creation does not prove deliberate disabling; `NTE_EXISTS` requires reconciliation; opening an expected key with `NTE_BAD_KEYSET` is recovery. Unknown errors/bad flags must not strip required options, try arbitrary providers or prompt interactively from a service. Avoid oscillation and per-packet capability probing. [P1, P3]
 
+Freeze documented flags, actual key policy, account/session and refusal behavior
+per native call; silent opening does not qualify later private use. Bound the
+property-query allocation and both advertised/actual returned lengths; validate
+version/flags and safely decode fields, retaining absence/unsupported/denied/error
+distinctions. The future [hardening matrix](../windows-time-development-hardening.md#641-protected-storage-provider-qualification)
+includes these controls and exact-parameter fixtures.
+
 Preserve [architecture §15.4](../windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) and [hardening §6.4](../windows-time-development-hardening.md#64-per-process-mitigation-qualification). Qualify create/open/wrap/sign/unprotect/teardown with the actual SCM path, final account, no-login boot and required controls. Keep ACG no-opt-out/no-remote-downgrade, ordinary versus Strict CFG, effective CET/HSP versus image marking, CIG signer classes, Win32k/extension points, child restrictions and image-load policy distinct. Do not introduce a permissive launcher, extra privilege, interactive Hello dependency, or machine-policy reset. Respect the documented NCrypt service-start caveat. Full-enclave imports/ABI/signing/debug/strict-memory support is a separate gate if that path is selected; neither blanket Rust incompatibility nor compatibility has been established. [P1, P7–P12, P15–P16]
 
 Independently qualify file, directory, catalogue and provider-key owners/DACLs, inheritance, handle rights and replacement. Challenge another LocalService service, including owner-mediated ACL changes; service SID and machine key scope alone prove no isolation. Use the already allowed distinct restricted engine account if the required shared-account isolation cannot be established. [P15]
+
+Give save/restore only admitted directory authority and bounded relative object
+names. Validate actual opened objects before destructive effects; qualify
+replacement and installer lifecycle with retained handles. [cap-std's example](windows-protected-storage-upstream-lessons-2.md#3-borrow-directory-authority-and-delayed-destruction-from-cap-std)
+is not a claim that every library operation is handle-relative. Separately
+investigate [RedirectionGuard](windows-protected-storage-upstream-lessons-2.md#2-redirectionguard-one-additional-windows-defense-worth-investigating)
+under architecture §15.4; its narrow junction scope does not replace these checks
+or establish a new required policy/support floor.
 
 DNS forget/pause/exclusion/persistence-off uses its durable privacy generation and completion barrier. Before acknowledging completion, invalidate active/prepared/retired snapshots, inaccessible VBS blobs, readers, queued writes and delayed results. Asynchronous deletion must obey that completion contract and report residuals. VBS return cannot resurrect forgotten names. Missing/conflicting generation state requires empty current-policy reacquisition. No forensic archive is proposed; failed cleanup remains bounded and visible. DNS-C11/13/14/15 retain these obligations.
 
@@ -161,11 +211,12 @@ These are future distinguishing controls, not executed results. Each rejection c
 
 ## 8. Staged execution and evidence gates
 
-Follow the repository [planning guide](../../.agents/skills/planning/README.md) and [testing contract](../../.agents/skills/testing/CONTRACT.md). Keep one subsequent bounded task/evidence chain, with exact source/dirty candidate, scope, owners, controls, environment, resource/time budgets, observed outcomes and cleanup. No new product crate is needed to validate this documentation.
+Follow the repository [planning guide](../../.agents/skills/planning/README.md) and [testing contract](../../.agents/skills/testing/CONTRACT.md). The [storage task](../../tasks/windows-protected-storage.md) is the single bounded execution/evidence chain, with exact source/dirty candidate, scope, owners, controls, environment, resource/time budgets, observed outcomes and cleanup. No new product crate is needed to validate this documentation.
 
 | Stage and owner | Work and observable exit | Readiness |
 | --- | --- | --- |
-| **Source-qualified design freeze** — storage/security/platform | The initial [pinned implementation inventory](windows-protected-storage-upstream-lessons.md) records file/function/revision/license, actual mechanisms, adaptation limits and independent expectations. Remaining work: freeze one construction/provider/algorithm/build/account/profile row, or retain a precise blocker. Include exact signed bytes/digest, no-root state, key reopen evidence, descriptor/finalization order, lifecycle and durability design. Prepare concrete unresolved owner choices. | Source inventory completed; design freeze remains open. Research approves no dependency, default or native execution. |
+| **Source-qualified design freeze** — storage/security/platform | Use the [first](windows-protected-storage-upstream-lessons.md) and [second](windows-protected-storage-upstream-lessons-2.md) pinned source inventories. Freeze one construction/provider/algorithm/build/account/profile row, or retain a precise blocker. Include exact signed bytes/digest, no-root state, key reopen evidence, directory authority, descriptor/finalization order, operation outcomes and recovery/durability design. Prepare concrete unresolved owner choices. | Both bounded source inventories recorded; design freeze remains open. Research approves no dependency, default or native execution. |
+| **Portable owner/adapter model** — storage/testing | After relevant contracts and implementation scope are admitted, exercise private construction, independent error/outcome and live/durable models, protocol monitor and compiled healthy/defect controls. Include crash-during-recovery, exact crypto fixtures and late-result privacy rejection. | Planned; implementation needs its own authorization and admitted inputs. Portable evidence neither lifts the native pause nor qualifies actual provider/filesystem behavior. |
 | **Bounded native root qualification** — platform/security | Only after the experiment pause is lifted and the frozen row is ready, use owned disposable Windows fixtures and dummy namespaces. Demonstrate intended create/use/reopen/retire, unauthorized second-service denial, actual mode evidence, no-login SCM operation and intact required profile. Record supported and unsupported rows. | Held; no experiment currently authorized. |
 | **S2.3/S2.4 association restoration** — NTS/security | Integrate admitted storage with complete association/lifetime/current-trust rules and strict/bootstrap recovery. Demonstrate useful compatible restart beside inaccessible, stale and well-formed unauthorized records; preserve bounded native work. | Depends on provider/construction and existing NTS/OPEN-8 gates; CHECK-6/8/9/17/25/26/27 as applicable. |
 | **S3.3 persistence and lifecycle** — platform/service/security | Qualify witness consumption, catalogue/exact-envelope commit, migration/retirement, every interruption and actual handler authorization. Simulated clock backend suffices for storage work; broker authority remains separate. | CHECK-1/2/3/14/15/17/25/27; real clock effects remain P4. |
@@ -179,6 +230,15 @@ The native matrix must cover VBS-off/re-enable, TPM/account/key loss, wrong-date
 
 Pure state-machine/decoder/model evidence, cross-builds, native provider results, installed-service results and final-package results stay separate. Use relevant configured tooling and existing coverage/mutation obligations when implementation exists; a source review cannot pass those gates. Requalify affected evidence when provider, algorithms, key origin, account, serialization, Windows build, mitigation profile or package changes.
 
+Use the task's ordered work items to refine existing cases: transaction/durability
+work under ST-T05/06/07/10/15/16/18; directory authority under ST-T03/05/10/17;
+CNG properties, silence and independent crypto expectations under ST-T01/02/05/12/13/16/18;
+mitigation startup/behavioral evidence under ST-T12; completion and output privacy
+under ST-T10/14/15/16. The mapping retains section 7's CHECK/DNS-C authority and
+creates no new acceptance catalogue. The next documentation action is one
+source-qualified construction/error/ownership decision record, not tool acquisition
+or a native experiment.
+
 ## 9. Review reconciliation and remaining choices
 
 | Review identity | Maintained correction | Status carried forward |
@@ -191,6 +251,8 @@ Pure state-machine/decoder/model evidence, cross-builds, native provider results
 | HR-01 | Independent whole-envelope authentication and anchored verification identity | Construction candidate retained; exact suite/provider proof open. |
 | HR-03/05/06/08 | Independent mitigations, actual-key evidence, host-memory boundary and rollback/offline-anchor limits | Retained invariants; no native or ASVS closure. |
 | ST-T15 / ST-T18 | Inaccessible-history privacy barrier and explicit DEK/nonce/RNG lifecycle | Design obligations retained; execution open. |
+| 3 November second source review | Exact operation outcomes, directory/native-adapter contracts, durability monitor and mitigation cases; [agent task](../../tasks/windows-protected-storage.md) owns follow-up | Source lessons recorded; future implementation/native evidence remains open. |
+| Conditional reserves | RedirectionGuard disposition; attestation/origin, hardware epochs and bounded anchor/disk recovery; chunking/database only if justified | No selected mechanism or dependency. Same-epoch replay, offline anchor replacement and full VM/vTPM rollback limits remain; no new mandatory-broker construction. |
 
 The independent audit closed A1–A5; the independent hardening reconciliation resolved HR-10 and found no remaining blocking contradiction within its bounded final review. These findings apply to the identified predecessor, not an unexecuted future implementation. This maintained condensation preserves their obligations; its documentation integration receives its own scoped consistency review.
 
@@ -198,7 +260,7 @@ Before dependent adoption, use NV-DEC-001 for the product default/strict-policy 
 
 ## 10. Primary-source bibliography
 
-Sources below were inspected in the completed 2 November 2026 design review and are retained for traceability. They state platform contracts; the source-qualified freeze must establish applicability to its selected row. The later [upstream implementation review](windows-protected-storage-upstream-lessons.md) records the separate completed GitHub source inventory, including exact revisions and adaptation limits. Neither source inventory supplies native execution evidence.
+Sources below were inspected in the completed 2 November 2026 design review and are retained for traceability. They state platform contracts; the source-qualified freeze must establish applicability to its selected row. The [first upstream implementation review](windows-protected-storage-upstream-lessons.md) and [second source review](windows-protected-storage-upstream-lessons-2.md) preserve their separate completed inventories, exact revisions and adaptation limits. Source inventories supply no native execution evidence.
 
 | Ref | Primary source and relevant boundary |
 | --- | --- |

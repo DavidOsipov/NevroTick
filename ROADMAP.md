@@ -1,6 +1,6 @@
 # NevroTick roadmap
 
-**Updated:** 2 November 2026
+**Updated:** 3 November 2026
 
 **First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
 
@@ -24,7 +24,7 @@ applying time to its own clock.
 | Workstream | Planning owner and status |
 | --- | --- |
 | Windows client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. This roadmap neither duplicates nor reorders that plan. |
-| Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md) and completed [upstream source inventory](docs/plans/windows-protected-storage-upstream-lessons.md): VBS/TPM/fresh-state fallback, truthful UI, attributed implementation lessons and independent review. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
+| Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
 | Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
@@ -457,6 +457,13 @@ qualified VBS/TPM modes, explicit no-cache continuation or owner suspension,
 current-mode notification, and forget barriers over inaccessible retired data.
 It does not make ordinary DNS dependent on statistics persistence or change
 DoQ/DNSSEC trust. Exact provider/native evidence remains open.
+
+The [second protected-storage review](docs/plans/windows-protected-storage-upstream-lessons-2.md)
+adds source-backed directory authority, uncertain-commit handling, durable-image
+and operation-order checks, CNG/mitigation qualification and privacy-output cases.
+The [agent task](tasks/windows-protected-storage.md) owns their future execution.
+RedirectionGuard is a candidate; hardware rollback epochs, remote attestation,
+chunking and a database remain conditional choices, not new DNS prerequisites.
 
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are

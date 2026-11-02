@@ -9,6 +9,12 @@
 
 **Documentation amendments:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; owner-directed garde adoption and mandatory function/module contract discipline; adopted native memory diagnostics and agent workflow; selected Windows x64 optimization settings with performance and native qualification still pending. Application gates remain pending implementation and qualification.
 
+**Scoped amendment, 3 November 2026:** the [second protected-storage source review](plans/windows-protected-storage-upstream-lessons-2.md)
+adds concrete adapter, durability and mitigation cases to section 6.4. The
+[storage task](../tasks/windows-protected-storage.md) records follow-up and actual
+evidence. Source definitions remain separate from execution; storage experiments
+are paused and no new tool, dependency or required mitigation is admitted.
+
 ## 1. Purpose and recommended baseline
 
 The development environment should make unsafe changes difficult to introduce, policy bypasses visible, and missing evidence impossible to report as a pass. The strongest useful setup combines a pinned compiler, strict coherent lint rules, dependency admission, isolated execution, independent behavioral tests, protected CI and verification of the actual Windows artifacts.
@@ -332,17 +338,18 @@ Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mit
 
 For every delivered executable and applicable DLL, inspect the exact final PE and load configuration with `dumpbin /headers /loadconfig` or an admitted equivalent tool. Record the CFG `Guard`, `CF Instrumented` and `FID table present` indicators where applicable, DEP/ASLR properties, relocations and any selected CET marker. These checks must agree with actual build inputs and the native/prebuilt/static/standard-library inventory; a CFG-positive executable or one successful negative fixture does not prove complete linked-code coverage. `nochecks` remains prohibited. This requirement does not mandate installing Visual Studio just to obtain `dumpbin`. [C10, C11, C15]
 
-Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations.
+Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Preserve query status when an observer's convenience API maps selected unsupported/error/terminating statuses to zero. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations. The [Chromium/NtCoreLib examples](plans/windows-protected-storage-upstream-lessons-2.md#7-mitigations-need-ordered-startup-and-behavioral-evidence) supply concrete cases, not an admitted observer or final-artifact evidence.
 
 | Case | Required observation | Legitimate control and scope |
 | --- | --- | --- |
-| Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable | Expected enforced state admits work. An explicitly optional unavailable hardware enhancement is diagnosed without masquerading as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
-| ACG | A harmless executable-memory allocation/protection transition is denied under the qualified no-opt-out/no-downgrade profile; record effective bits | Ordinary heap use and the exact engine/broker/native-provider workflows succeed. Do not execute injected payloads or infer compatibility from absence of an intentional JIT. |
+| Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable. Challenge invalid order and attempted return to a weaker phase in release builds | Expected enforced state admits work. An explicitly optional unavailable hardware enhancement is diagnosed without masquerading as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
+| ACG | Separately exercise harmless executable/writable allocation, protection change on existing executable memory, anonymous executable/writable mapping and file-backed mapping under the no-opt-out/no-downgrade profile; record native denial and effective bits | Ordinary heap use and exact engine/broker/provider workflows succeed, including cold startup and first lazy use. Do not execute injected payloads. Excluded/ignored instrumentation configurations remain unexecuted, not green. |
 | Image loading | Separate controlled remote-image and low-mandatory-label canaries fail to load; CWD/PATH canaries exercise section 15.2 separately | The intended protected dependency loads from its expected path. Mark of the Web is not the low-label fixture; System32 preference is not a directory allowlist. |
 | Strict CFG and handles | Optional Strict CFG denies an incompatible code-bearing DLL; strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
 | Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile | Final service APIs, boot-before-login, stop/restart and recovery work. A custom-parent child-policy fixture does not close the SCM gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
 | CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; optional unsupported hardware remains explicitly unsupported. |
 | Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid single-MSI install/update/repair/remove completes under each declared release profile. Existing CHECK-12/13/18/23 remain authoritative. |
+| RedirectionGuard candidate | If separately admitted, distinguish audit from enforcement for an in-scope unprivileged junction; record unsupported/query failure and administrator-created/legacy controls | Ordinary file/provider/lifecycle operations succeed; application path checks still reject out-of-scope forbidden paths. Required/optional disposition and OS/build floor remain open; this candidate is not an added release or UI-M0 gate. |
 
 Run native denial/termination tests only in the owned disposable Windows environment of architecture section 14.9, with independent observation, resource/time bounds and cleanup. No test changes the user's clock or global Exploit Protection policy. Audit-first trials apply only to controls with a documented audit mode; an audit event never passes an enforcement case. Preserve UI-M0 deferrals: full production accessibility/IME integration tests run at the existing reentry gates.
 
@@ -365,6 +372,12 @@ launch path or process-policy relaxation is admitted.
 | Mitigations; CHECK-16/18/20/23 | Provider work never relaxes required ACG/CFG/StrictCFG/CET/CIG/image/Win32k/child fields; unknown/audit-only results cannot pass | Final provider graph works under installed SCM token/profile; full-enclave graph is a separate conditional row |
 | Recovery; CHECK-9/11/12/15 | VBS loss/return, TPM clear and account change cannot restore retired state, weaken trust or reset broker authority | Fresh admissible KE and declared wrong-date/offline key paths work; owned cleanup remains available |
 | UI/privacy; CHECK-14/17/22, DNS-C14/15 | Missed boot events, stale status, forgotten inaccessible snapshots and late saves cannot create false protection or resurrect history | First authenticated UI connection shows current mode/reason; authorized demand and redacted status work |
+| Operation outcome/owner; ST-T06/07/10/16/17 | Distinguish a rejected poisoned transaction from a possibly durable commit error; unsafe retry, generation reuse, new-root inference and premature resource release fail | Attributable confirmed commit or valid rollback/reconciliation permits only the resulting owner operations; mandatory authority stays separate |
+| Directory authority; ST-T03/05/10/17 | Parent/leaf substitution, prohibited link/reparse/type/owner and absolute/device/UNC/ADS/traversal inputs fail before destructive change | Intended relative regular-file save and authorized lifecycle rename succeed with correct handle release; no filesystem library is presumed universally handle-relative |
+| CNG calls/properties; ST-T01/02/05/12/13/16 | Each private operation preserves documented no-UI behavior; short/changed/oversized property results, wrong version/flags and expected-None plus denial cannot pass admission | Bounded actual property and operation results qualify under the final account/session; unsupported flags are never indiscriminately added or stripped |
+| Exact crypto expectations; ST-T05/18 | A wrong hash/KDF/context/encoding or output length fails an independent suite-specific fixture, even if both roundtrip sides share the error | Correct expected bytes and normal authenticated save/restore succeed; the source example selects no ECIES/KDF construction |
+| Durable model and protocol monitor; ST-T05/06/07/10/15/16/18 | Independently track issued/live/durable/acknowledged state and requested/succeeded/failed barriers; reject early acknowledgement, wrong digest/epoch, premature retirement and late privacy-invalidated publication, including failure during recovery | Healthy commit/restart/cleanup preserves declared mandatory reservations and privacy barriers; stop the trace at a simulated crash cut rather than counting later artificial-success returns |
+| Memory/output privacy; ST-T14/16, DNS-C14 | Failed locking is distinct from successful allocation; native custody delays wiping/release; synthetic key/cookie/domain sentinels remain absent from actual permitted output artifacts | Bounded valid allocation/use/cleanup and useful redacted diagnostics succeed; guard-page portability skips and collector-specific exclusions prove no whole-memory protection |
 
 Freeze API/phase outcomes, provider/build/algorithm/identity rows, limits,
 owned dummy paths and cleanup before a future native run. Dummy evidence proves
@@ -372,6 +385,16 @@ that probe's path, not another key's origin. Preserve anchored authentication an
 offline-anchor/rollback limits. A healthy-clock sample, setter, binding or
 CET image marker is insufficient. Existing held TLS/CNG fixture receipts retain
 their narrower scope.
+
+The [second source supplement](plans/windows-protected-storage-upstream-lessons-2.md)
+owns attribution and adaptation limits for these refinements. Portable models
+and event monitors qualify their declared protocol/assumptions only; real Windows
+filesystem/provider durability remains separate. IPC close tests must distinguish
+request-to-close, publication revocation and actual drained completion, retaining
+resources through recovery. Record actual selected/executed/skipped controls;
+upstream test names and a healthy roundtrip establish no independent expected
+bytes or complete native coverage. Keep hardware counters/attestation/chunked
+snapshots/database selection in the task's conditional reserve.
 
 
 ### 6.5 Windows x64 optimization policy and evidence limits
