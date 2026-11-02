@@ -24,6 +24,7 @@ applying time to its own clock.
 | Workstream | Planning owner and status |
 | --- | --- |
 | Windows client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. This roadmap neither duplicates nor reorders that plan. |
+| Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback) and [storage plan](docs/plans/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI and independent review. S2.3/P3/P5/P6 work; native experiments paused, no change to current priority or Khronos ordering. |
 | Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
@@ -450,6 +451,13 @@ the associated DNS-C checks remain future evidence. Baseline ownership/resource
 contracts apply at the first DNS-1/2 owner; richer residency-policy experiments
 remain conditional later work.
 
+The [protected-storage plan](docs/plans/windows-protected-storage.md) supplies
+the shared optional-state lifecycle for future DNS learning with distinct keys:
+qualified VBS/TPM modes, explicit no-cache continuation or owner suspension,
+current-mode notification, and forget barriers over inaccessible retired data.
+It does not make ordinary DNS dependent on statistics persistence or change
+DoQ/DNSSEC trust. Exact provider/native evidence remains open.
+
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are
 out of scope**, including DoH carried over HTTP/3. Upstream connection or
@@ -637,3 +645,4 @@ support for the user's particular handset.
 - **A12 — DNS-over-QUIC transport:** [RFC 9250](https://www.rfc-editor.org/rfc/rfc9250.html), especially connection establishment, port selection and authentication profiles.
 - **A13 — TLS service identity:** [RFC 9525](https://www.rfc-editor.org/rfc/rfc9525.html), especially certification-path validation and matching the intended service identity.
 - **A14 — pinning semantics and rotation example:** [Android certificate pinning](https://developer.android.com/privacy-and-security/security-config#CertificatePinning). Its any-match SPKI pinset and pin-expiration behavior are reference behavior, not the selected DoQ policy or proof of enforcement by a native stack.
+

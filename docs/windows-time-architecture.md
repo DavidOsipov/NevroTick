@@ -1036,7 +1036,7 @@ full-authentication and policy ages; the saved floor retains section 8.1's evide
 and supersession history. An authentic record can be semantically wrong; neither
 integrity protection nor atomic replacement proves the underlying time evidence.
 
-DPAPI under the engine identity is a candidate for protecting cached association secrets, combined with narrow file ACLs. It is not a substitute for authorization, hardware-backed key custody or full-memory encryption. Machine-wide DPAPI alone does not establish per-service secrecy. Test service-account profile availability, reboot, upgrade and recovery; if using shared LocalService identity, never assume encryption alone isolates every process with that identity. [S28]
+The preferred optional-secret storage candidate is the VBS/TPM/no-persistent-cache design in section 12.1.2. This 2 November 2026 planning amendment supersedes DPAPI as the first candidate for new NTS/DNS optional persistence; it adopts no automatic DPAPI/software/plaintext fallback. DPAPI remains a comparison mechanism, not a deprecated Windows API. Its account/machine scope still does not establish per-service secrecy or full-memory encryption. Actual identity, key ownership, reboot/profile/upgrade and recovery require qualification. [S28, S123]
 
 A protected file MAC/encryption detects corruption or tampering within its threat model; it does not make an old valid state impossible to restore. VM snapshots, offline disk rollback and a malicious administrator can roll back the authenticated floor. Record that residual risk. Hardware-backed monotonic/rollback protection is a separate scope decision, not a claim supplied by ACLs.
 
@@ -1058,6 +1058,221 @@ nor cached secrets establish current synchronization or clock-write authority.
 
 Record the successful compatible-restart control as well as rejection cases.
 Restoration never resets durable correction authority from section 10.2.1.
+
+#### 12.1.2 Protected optional storage and explicit fallback
+
+**Planning amendment, 2 November 2026:** David requested the independently
+reviewed design be recorded in architecture and plan before experiments.
+The preferred candidate is CNG VBS protection of a storage root-key set, then a
+separately qualified TPM root set for fresh optional state, then no
+application-managed persistent secret cache where policy permits continuation.
+The [protected-storage plan](plans/windows-protected-storage.md) owns staged
+work, scoped threats, review dispositions and evidence gates. This direction
+does not select exact algorithms, prove Windows compatibility, change a shipped
+default or authorize a native experiment.
+
+This covers optional NTS association persistence and separately future DNS
+learning. Broker policy, correction/ownership journals and saved trusted floors
+retain sections 8.1/10.2.1/12.1's independent owners and failure rules. Optional
+loss never refunds correction authority, clears a floor, relaxes TLS/NTS/DNSSEC
+or silently emits plain NTP.
+
+**Protection boundary:** CNG VBS key custody and a custom application VBS enclave
+are different choices. The root may remain isolated while returned DEKs, TLS
+exporter values and working NTS state occupy ordinary engine memory. TPM key
+custody does not put the complete snapshot in TPM memory. Their preference order
+is product policy, not a universal strength ranking. This design does not satisfy
+full-memory encryption or isolation of every cryptographic operation. A full
+enclave must separately cover secret creation, ingress, use and outputs, including
+the TLS/NTS path. [S123, S124]
+
+##### Policy, readiness and mechanism claims
+
+Keep platform capability, authorized policy, actual root evidence, persistence
+readiness, NTS/learning readiness and required process protection independent.
+Mechanisms are `VbsKeyProtected`, `TpmKeyProtected` and `NoPersistentCache`;
+Unknown/Unavailable/RecoveryRequired/Blocked describe evidence or readiness,
+not another crypto backend. Report per store and committed root epoch.
+
+The policy product separates allowed persistence from behavior when unavailable.
+Names below specify semantics, not a frozen public API:
+
+| Persistent policy | Unavailable-persistence policy | Required behavior |
+| --- | --- | --- |
+| PreferVbsAllowTpm | ContinueWithoutRestore | Use fresh qualified TPM state when capability fallback is admitted; otherwise permit fresh nonpersistent operation under unchanged NTS/privacy rules. Live NTS state continues only while ordinary lifetime/current-generation checks admit it. |
+| PreferVbsAllowTpm | SuspendSensitiveOwner | Use qualified TPM if permitted and ready; while neither allowed persistent root is ready, suspend affected NTS acquisition/use/publication or optional DNS learning. Resume only with current root/data generation and ordinary admission. |
+| VbsOnly | ContinueWithoutRestore | No TPM persistence. Fresh NTS acquisition and still-admissible live associations may operate without an application-managed persistent secret cache. |
+| VbsOnly | SuspendSensitiveOwner | Suspend affected NTS acquisition/use/publication or optional learning until qualified VBS persistence is ready; invalidate affected publication generations and source readiness. |
+| PersistenceDisabled | ContinueWithoutRestore | Deliberately create no persistent secret snapshot; apply current nonpersistent learning/forget policy. |
+| PersistenceDisabled | SuspendSensitiveOwner | Reject this contradictory configuration. |
+
+The recommended optional-cache default is PreferVbsAllowTpm +
+ContinueWithoutRestore; product-default adoption remains a policy decision.
+The table governs initial admission, restart and live failure. Ordinary DNS
+answering/validation and ownership-aware cleanup do not depend on learning
+persistence. Failed required process protection independently blocks normal
+affected role work, even when a storage backend works.
+
+`NoPersistentCache` explicitly encodes **no expected provider root and no secret
+snapshot**, retaining necessary protected nonsecret lifecycle, retirement and
+privacy metadata. Deliberate absence is not missing-key recovery. It promises no
+NevroTick-created secret restart cache, not absence of pagefile, dump, hibernation,
+provider-cache or backup exposure. Checked VirtualLock/wiping covers only
+qualified owned allocations/copies. Pagefile-backed memory is not a durable
+vault. Hello may support a separately authorized interactive operation, but is
+not an unattended-service dependency or substitute for admin authority.
+
+##### Ownership and generations
+
+Preserve the topology and narrow `windows-platform` adapters. Add no generic
+sign/decrypt service, permissive launcher, raw-key IPC or secrets in the broker.
+
+| Owner | Bounded responsibility |
+| --- | --- |
+| Installer / elevated lifecycle owner | Protected installation and actual service identity, fixed namespaces/owners, allowed policy and specific Provisioning or Recovery transaction. |
+| Sensitive-state owner: engine; separately selected future DNS owner | Provider operations under its final token, service-isolated root catalogue, bounded transition intent, DEKs and snapshots. |
+| Broker | Existing policy/correction/lifecycle authority; only a fixed public provisioning acknowledgement if required by that transaction, never arbitrary key operations. |
+| UI | Redacted current status and notice acknowledgement; no provider/provisioning/policy authority. |
+
+The installation witness distinguishes Provisioning(transaction), Initialized
+and authorized Recovery(transaction). After matching initial catalogue commit,
+the lifecycle owner durably consumes initial authorization. An interrupted
+acknowledgement reconciles that same transaction. Missing expected catalogue/key
+in an initialized installation is recovery, not a new installation. Missing
+optional association snapshot can be normal.
+
+The catalogue binds installation/store/purpose, exact provider/key identities,
+generated/imported origin, admitted public fingerprints, use/export policy,
+cross-boot lifetime, root epoch, policy/privacy revision and active/prepared/
+retired disposition. Untrusted headers, arbitrary enumeration or successful open
+by name are not origin evidence. The catalogue is within its owner's trust
+boundary; moving an engine report into broker storage does not attest it.
+
+Separate **root epochs**, **association/data epochs** and **snapshot sequences**.
+Routine KE refresh/save uses the current admitted root and specified fresh-DEK/
+nonce handling, without another root rotation or elevation. Prior authorized
+policy can permit bounded fallback/return without prompting an administrator
+on every restart.
+
+##### Record protection and exact committed save
+
+The construction to qualify uses separate provider-held nonexportable wrapping
+and record-signing private keys per root set, plus admitted AEAD and random DEKs.
+Both roots qualify before publication; partial/mixed-mode sets cannot receive a
+single stronger label. Freeze algorithms, sizes, padding, digest/signature
+encoding, RNG/nonce limits, exact bytes and bounds before implementation. No
+provider or dependency graph is admitted here.
+
+Sign the complete unambiguous envelope: domain/version, installation/store/
+purpose, root/data/privacy/policy identities, snapshot sequence, algorithms,
+wrapped DEK, nonce, ciphertext and tag. The verification key comes from the
+admitted root identity outside that envelope. Public wrapping plus AEAD does not
+authenticate the writer: an attacker can choose a DEK and construct a valid
+substitute. More attacker-supplied AAD does not fix it. A smaller independent
+authentication construction may be evaluated against the same anchored-writer
+property; it cannot be silently substituted.
+
+Bound framing/allocation before expensive work; admit fixed references;
+authenticate the envelope before unwrap; verify AEAD; construct strict bounded
+typed state; then enforce section 7.4/12.1.1's current semantic/age/policy checks
+before one current-generation publication. Never restore outstanding exchanges.
+
+Specify fresh data-key handling for independent snapshot attempts and the
+nonce/RNG failure contract. Crash/retry/concurrency/restored counters cannot cause
+forbidden reuse; entropy failure blocks persistence. Do not derive storage keys
+from traffic keys or reuse protocol nonces.
+
+Catalogue commit binds authenticated snapshot identity and sequence to a
+cryptographic digest of the **exact committed envelope**, or explicit empty
+store. Routine saves use the same binding. Another valid signed snapshot under
+the same root/data epoch is not interchangeable with that save. This protects
+selective record replacement only while the catalogue is trustworthy; it is
+not a hardware rollback counter.
+
+##### Commit, fallback and recovery
+
+One owner serializes transitions and retains real native-job custody. The
+proposed finite inventory is one active root set, one prepared set and at most
+one attributable retired set awaiting cleanup, with bounded snapshot slots.
+Exhausted retirement capacity stops new persistence transitions instead of
+accumulating roots. Exact resource budgets remain qualification inputs.
+
+Prepare authorized intent and fresh keys without overwrite; apply and verify
+the supported creation/finalization/descriptor sequence; prepare a private
+bounded snapshot or explicit empty store; durably publish the catalogue
+reference; then retire old objects and acknowledge completion. Empty initialized
+state can make persistence ready before initial KE, avoiding a strict-mode
+cold-start cycle. UI mode follows committed state, not key creation. Provider
+keys, snapshots and catalogue are separate OS objects: exact flush/replace/
+reconciliation semantics remain unproven.
+
+Prepared uncommitted keys/snapshots never become current through enumeration.
+After commit old generations stay retired even if they decrypt. Missing/corrupt/
+conflicting authoritative metadata blocks restoration and follows explicit
+recovery. Late native results retain permits/handles/buffer custody until actual
+completion but cannot publish after root/policy/privacy invalidation.
+
+| Condition | Permitted outcome |
+| --- | --- |
+| Authorized fresh optional epoch; qualified VBS capability unavailable/off/unsupported | Evaluate only policy-allowed TPM or NoPersistentCache under an admitted required process profile. |
+| Existing VBS state unavailable | Do not decrypt/relabel it as TPM. If permitted, commit distinct fresh optional state: fresh admissible NTS-KE or empty DNS learning. |
+| Access denied; missing expected key; wrong provider/identity; invalid signature/tag/schema/generation | RecoveryRequired, not capability downgrade. Policy may permit fresh volatile acquisition or explicit same-protection optional reset; never silently alter policy or overwrite the expected key. |
+| Slow native operation, resource or I/O failure | Stop new affected publication, retain actual custody and bounded same-generation recovery; no backend hopping per operation. |
+| VBS returns | Controlled new root/data epoch; prefer fresh NTS secrets and rebuilt DNS learning. No retired-state resurrection or claim that rewrapping erases earlier exposure. |
+| Mandatory journal/policy/floor continuity unavailable | Existing class-specific refusal/recovery; no new correction allowance. |
+
+Keep no weaker second wrap of the same secret as automatic fallback. Retention
+defaults to bounded transition need, not a forensic archive. DNS forget/exclusion/
+persistence-off barriers invalidate active/prepared/retired/inaccessible snapshots,
+readers and late results before the declared acknowledgement. Returning VBS
+cannot restore forgotten history; deletion failures/remnants are reported honestly.
+
+Creation claiming VBS uses REQUIRE, not PREFER. Provider-wide implementation
+flags, OS configuration and the provider name are not per-key evidence;
+Microsoft's VBS example uses its Software KSP. OpenKey has no documented
+REQUIRE_VBS reopen flag. Qualify actual key origin/identity/reopen evidence or
+report Unknown/RecoveryRequired. Use a finite API-and-phase map: unavailable
+creation, name collision, missing expected key, invalid flags, silent-context
+failure and unknown errors have different outcomes. Unknown errors authorize
+no flag stripping, weaker provider, service prompt or broader rights. [S123]
+
+##### Process compatibility, UI and residuals
+
+Section 15.4 remains independently binding. No ACG opt-out/remote downgrade,
+disable-load-reenable, relaxed signer policy, extra privilege or machine-wide
+policy change is a compatibility fix. Qualify actual create/open/wrap/sign/
+unprotect/retire paths under final SCM identity, package/import graph, effective
+ACG/CFG/StrictCFG/CET/CIG/image/Win32k/child profile, and no-login, wrong-date/
+offline startup. Timeouts are not cancellation; heed NCrypt's service-start
+deadlock caveat. No per-packet TPM operation or protection probe is required.
+
+A full enclave has separate supported-build, ABI/runtime/import, production
+signing, debug and strict-memory gates. Microsoft requires CFG for enclave DLLs;
+neither blanket conflict nor complete host-profile compatibility follows.
+Ordinary release signing does not prove enclave admission. [S123, S124]
+
+Future D2 status carries bounded store/instance/sequence/policy/root/data
+identity, actual mechanism/evidence, readiness, reason and freshness.
+Distinguish historical successful storage, current availability, NTS
+authentication, source agreement and clock readiness. Stale/disconnected/
+incoherent status is Unknown. Exclude key/container names and raw secrets.
+
+Show persistent fallback/recovery status and a meaningful notification on the
+**first subsequent authenticated UI connection**, including after unattended
+boot. Deduplicate by state/epoch/reason; acknowledging never changes policy or
+hides current status. Say keys use VBS/TPM while working data remains in service
+memory, or NevroTick creates no secret restart cache. Do not infer deliberate
+user disabling from unavailability. UI-M0/D1–D3 boundaries remain unchanged.
+
+A nonexportable root does not stop its compromised authorized consumer.
+ACL-only catalogues/witnesses do not defeat **selective offline anchor replacement**,
+even without full VM rollback. Signatures, sealing and sequences inside
+rollbackable files do not establish independent freshness, correct UTC or
+whole-environment rollback resistance. Live host plaintext, platform compromise
+and remnants remain limits, not accepted risk or completed ASVS controls.
+The plan maps these obligations to existing BND/THR/CHECK and DNS-C owners;
+source review establishes no native pass.
+
 
 ### 12.2 Configuration semantics
 
@@ -1144,7 +1359,7 @@ The revised planning classifications are **109 directly applicable, 28 native ad
 | V11.5.1 | All values intended to be non-guessable require a CSPRNG and at least 128 bits of entropy | The NTS UID follows its stronger 32-octet requirement. Protocol-constrained plain-NTP origin/correlation fields and ports require a scoped exception and risk decision under OPEN-9; non-bearer semantics do not establish compliance |
 | V4.2.1–V4.2.3, V4.2.5, V12.2.1 and V15.3.2 | Conditional native/delegated certificate retrieval may introduce client HTTP framing, length, transport and redirect duties | Resolve exact component/OS scope, HTTP versions, evidence and any exceptions under OPEN-8; no HTTP server is inferred and no unconditional absence is assumed |
 | V11.7.1 | Requires full memory encryption for sensitive in-use data | Ordinary Rust process isolation and zeroization do not satisfy it; hardware/platform dependency remains unresolved |
-| V13.3.1 and V13.3.3 | L3 secret custody and all cryptographic operations expect hardware-backed/isolated protection | DPAPI plus in-process rustls/AEAD is not equivalent to an HSM; do not mark these satisfied |
+| V13.3.1 and V13.3.3 | L3 secret custody and all cryptographic operations expect hardware-backed/isolated protection | Protecting optional storage roots does not isolate live DEKs, TLS/NTS secrets or every crypto operation; section 12.1.2 and in-process rustls/AEAD do not establish satisfaction |
 | V12.1.4 and V12.1.5 | Revocation and Encrypted Client Hello require real client/provider support | Test the selected TLS verifier and NTS endpoints; rustls defaults are not proof of either capability |
 | V12.3.1 | Calls for encrypted connections without insecure fallback | Ordinary NTP and parts of NTS packets are not fully encrypted; explicit protocol/profile exception is necessary for the requested functionality |
 | V12.3.2 | Requires certificate validation before communicating with a TLS peer | Ordinary mode performs full validation; hinted verification time needs documented policy, tests and residual risk, not accept-all verification |
@@ -1706,7 +1921,7 @@ Windows integration means using the host's identities, protection and management
 | --- | --- | --- |
 | SCM, service identities and privileges | Installer configures own-process services, service SIDs and required-privilege allowlists; platform adapter inspects actual tokens | CHECK-1/27 proves engine clock/debug/injection rights are absent and broker rights are narrow. A service SID is not an AppContainer, and service configuration rights remain administrative |
 | Object ACLs and private IPC | Installer protects code/state/service objects; broker owns authenticated local endpoints, non-inherited handles and current rights | CHECK-2/3/15 tests real caller/server identity, remote rejection, creation races and protected effects. A library's convenient pipe defaults are not the contract |
-| DPAPI and optional DPAPI-NG | Engine secret adapter encrypts persisted NTS state under the chosen service identity, with explicit file ACLs and no UI prompts | CHECK-15/17 tests reboot/profile/upgrade/recovery under that identity. Machine-scope DPAPI is not per-service confidentiality: other local users may decrypt an obtainable machine-scope blob. DPAPI-NG is optional only after descriptor/offline/account proof; no plaintext fallback |
+| Protected optional-secret storage | Section 12.1.2's qualified CNG VBS root-set candidate, separately qualified fresh-state TPM route, or explicit NoPersistentCache under current policy; final service identity, no UI prompts | CHECK-1/9/15/16/17/25/27 qualify key origin/reopen, separate object/file ownership, authenticated exact snapshots, fallback/recovery and final process profile. DPAPI/DPAPI-NG are comparison alternatives, not automatic persistence fallback; no plaintext escape |
 | Windows crypto and entropy | Engine provider uses qualified CNG/OS facilities and checked error handling | No new crypto privileges or product-level FIPS claim. Explicit provider/algorithm policy and secret lifetimes remain necessary |
 | Modern Windows Event Log | Installer owns provider resources and a protected product Operational/Admin channel, or an explicitly chosen Application channel; diagnostics writes fixed structured events | Stable IDs for lifecycle, denied privileged operations, policy changes, trust failures and correction decisions; bound retention, ACLs and rate. Do not request `SeAuditPrivilege` or imply arbitrary writes to Windows's Security log. Failed logging cannot block safe clock cleanup |
 | ETW | Optional measured performance/diagnostic provider; disabled events must be inexpensive | Not a substitute for persisted operational events. Test enabling/filtering/unregistration, permissions and redaction; no packet/key/cookie dumps |
@@ -2699,6 +2914,9 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 
 - **S122 - NTPsec mechanism comparison, checked 30 October 2026.** Revision `097ea276d9e1b860aac548830a8bc03f1ceb6889`: [packet/filter/polling paths](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/ntpd/ntp_proto.c), [loop-filter transitions](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/ntpd/ntp_loopfilter.c), [NTS client](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/ntpd/nts_client.c), [extension tests](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/tests/ntpd/nts_extens.c) and [file-specific licensing](https://github.com/ntpsec/ntpsec/blob/097ea276d9e1b860aac548830a8bc03f1ceb6889/docs/copyright.adoc). The [assessment](../tasks/s0.1-protocol-comparison.md#chrony-and-ntpsec-mechanism-assessment) distinguishes reusable invariants from buffer/state/tuning choices; no source, dependency graph or execution is admitted by inspection.
 
+- **S123 - Protected CNG/TPM key and memory boundaries, checked 2 November 2026.** Microsoft [NCryptCreatePersistedKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreatepersistedkey), [NCryptOpenKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenkey), [key storage properties](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers), [NCryptDecrypt](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptdecrypt), [NCryptSignHash](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptsignhash), [VBS example](https://techcommunity.microsoft.com/blog/windows-itpro-blog/advancing-key-protection-in-windows-using-vbs/4050988), [TPM provider boundary](https://learn.microsoft.com/en-us/windows/security/hardware-security/tpm/how-windows-uses-the-tpm) and [VirtualLock](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtuallock). REQUIRE/PREFER, provider versus key evidence and caller-memory boundaries do not establish application qualification; the VBS-flag documentation retains a prerelease notice.
+- **S124 - Application VBS enclaves, separate from CNG root protection, checked 2 November 2026.** Microsoft [overview](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves), [development guide](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves-dev-guide) and [pinned tooling README](https://github.com/microsoft/VbsEnclaveTooling/blob/ec3ea90ddac245da7c96112dea0e27ee1a78f986/README.md). The selected path owns its OS/SDK/ABI/import/signing/debug/strict-memory requirements; the general enclave floor is not the CNG VBS-key feature floor. CFG is required for enclave DLLs; exact hardened-host compatibility remains unqualified.
+
 ## Appendix B. Worksheet attribution and use
 
 The companion applicability worksheet is adapted from **OWASP Application Security Verification Standard 5.0.0**, by the OWASP ASVS project and contributors, at the pinned source in S03. Its requirement summaries are shortened and its applicability, native mapping, ownership and planned-evidence columns are new analysis; they are not OWASP endorsement or official interpretations.
@@ -2730,6 +2948,7 @@ The worksheet's `CTRL-*` labels are local planning shorthand, not implemented co
 | CTRL-DECISION and every CTRL-DECISION-* label | Explicit unresolved interpretation/deviation, sections 13 and 22; worksheet open-question field | CHECK-4, 24 and the row-specific planned verification; no pass until resolved and evidenced |
 
 The full worksheet has twenty-seven Needs-decision rows and twelve additional conditional open questions, for thirty-nine rows with open questions. In particular, preserve the literal PKI wording of V12.3.5, the external-effect/unknown-acknowledgement distinction of V2.3.3, and finite-resource audit limitations. Do not treat native authorization, NTS AEAD, packet confidentiality, certificate validity and source agreement as interchangeable security properties.
+
 
 
 

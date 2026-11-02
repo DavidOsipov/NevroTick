@@ -379,7 +379,9 @@ source/port evidence before implementation; reuse upstream algorithms with
 independent expected results. S1.1's opaque control completion is a seam, not a
 polling/recovery implementation. S2.1 owns plain-NTP KoD integration; S2.2 adds
 NTS control semantics and the [AES-preferred TLS policy](../windows-time-architecture.md#1871-license-gate-and-finite-provider-choice).
-S2.3/S2.4 exercise cache recovery, retry and resource failure paths. Keep graph,
+S2.3/S2.4 exercise cache recovery, retry and resource failure paths. The
+[protected-storage workstream](#84-protected-optional-storage-design-and-qualification)
+adds the reviewed optional-state contract and its paused native-evidence gates. Keep graph,
 Windows trust and interoperability gates distinct from this documentation review.
 The same task's [replay and delayed-response matrix](../../tasks/s0.1-protocol-comparison.md#replay-and-delayed-response-qualification)
 binds S2.2–S2.4 to restoration, consume-once publication, monotonic processing-time
@@ -416,6 +418,7 @@ coherent status. Start proposal integration with a simulated clock backend.
 | Mutual IPC identity | Real standard/filtered/elevated/delegated/revoked/remote/old-session/fake-server clients prove bidirectional identity and per-operation rights. Include endpoint squatting/restart/PID reuse, minimum pipe rights, thread-bound caller capture and fatal failed reversion. | CHECK-2/3 |
 | Framing and native completion | Partial frames, slow readers/senders, trickle input, cancellation and storms cannot exceed byte/client/job bounds or duplicate effects. Native buffers/handles/OVERLAPPED/permits outlive actual I/O; cancellation request is not completion. Valid neighboring traffic remains usable. | CHECK-3/25/27 |
 | State and persistence | Strict schema/garde construction precedes current guards. Invalid, stale or unauthorized requests have no protected effect. Corrupt critical policy blocks safely; bounded atomic replacement survives disk-full/interruption. Reparse/hardlink/path-swap cannot redirect privileged writes. | CHECK-15/25, AC-07 |
+| Protected optional state | Apply [section 12.1.2](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback): admitted root origin, exact committed snapshot, explicit no-root fallback, bounded crash/recovery, separate mandatory authority and first-connection protection notice. | CHECK-1/9/14/15/16/17/25/27; [focused plan](windows-protected-storage.md) |
 | Truthful status/diagnostics | Real snapshots distinguish availability, authentication, agreement, freshness, uncertainty and acknowledged correction. Redacted required events survive optional filters; authorized DEBUG expires locally and sink failure/flood remains bounded. Logs are not authoritative state or the clock journal. | CHECK-14/17, AC-05/16 |
 
 P3 exit requires CHECK-1/2/3/14/15/17, service CHECK-27 and real-handler CHECK-25.
@@ -816,6 +819,30 @@ This review ran no product tests and requalified no historical receipt. Plan
 validation checked all 86 local links/anchors and whitespace; existing engine
 work and the index were preserved.
 
+### 8.4 Protected optional-storage design and qualification
+
+**Owner request, 2 November 2026:** record the reviewed VBS/TPM/fallback design
+in architecture and plan, then inspect upstream implementations. The
+[canonical contract](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
+owns state/protection/authority; the [focused plan](windows-protected-storage.md)
+owns staged evidence, ST-T01–ST-T18 and retained A/HR review dispositions.
+This is a planning amendment. Storage experiments remain paused; current S1.3,
+P0–P7 order, held TLS/provider gates and UI-M0 scope remain unchanged.
+
+| Existing stage / owner | Bounded follow-up | Exit / retained boundary |
+| --- | --- | --- |
+| Source/design; security/platform | Inspect pinned CNG VBS/TPM/enclave implementations; freeze construction, provider/build, per-key evidence, policy, ownership and errors | Attributed lessons and concrete gates; no sample-to-production or source-to-native-pass promotion |
+| S2.3/P3; protocol/storage | Specify root/data/snapshot identities, witness/catalogue commit, authenticated exact envelope and deliberate no-root NoPersistentCache | NTS trust/ages and mandatory broker authority remain independent; no native execution until pause is lifted |
+| P3/P6; platform/lifecycle | Qualify final service/key/file owners, complete root creation/reopen, interruptions/retirement and process profile | Applicable CHECK-1/9/11/12/15/16/17/18/20/23/25/27; healthy operations beside denials |
+| Future P5/D2; UI | Consume actual mode/readiness/freshness; notify on first connection after unattended transition | CHECK-14/17/22; acknowledgement changes no policy; no UI-M0 implementation |
+| Future DNS-4; DNS/privacy | Separate keys, bounded snapshots and privacy barriers across retired/inaccessible data | DNS-C12–DNS-C15; ordinary DNS independent of learning persistence |
+
+Recommended PreferVbsAllowTpm + ContinueWithoutRestore remains a proposed
+product default. No automatic DPAPI/software/plaintext persistence is selected.
+Recording the design accepts no residual risk and completes no memory-encryption,
+ASVS, performance or native qualification.
+
+
 ## 9. Verification commands, phase records and stop rules
 
 Use [TOOLING.md](../../TOOLING.md#starting-implementation) and
@@ -989,3 +1016,4 @@ affected review conclusions if their source, contract, skill or phase scope chan
 [security-protocol-inputs]: ../../.agents/skills/security/security-protocol-inputs/SKILL.md
 [security-windows-privileges]: ../../.agents/skills/security/security-windows-privileges/SKILL.md
 [winapp-ui-automation]: ../../.agents/skills/upstream/winapp-ui-automation/SKILL.md
+

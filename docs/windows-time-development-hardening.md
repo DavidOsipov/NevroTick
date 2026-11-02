@@ -348,6 +348,32 @@ Run native denial/termination tests only in the owned disposable Windows environ
 
 Tie records to the complete payload/SBOM and exact package; repeat affected cases when a toolchain, native provider, linked module, startup/hosting path, Windows support matrix or installer policy changes. Use the existing diagnostics and artifact records rather than a new background scanner. Do not copy `+crt-static`, admit held cryptographic providers or add a launcher solely to make a mitigation checklist appear complete.
 
+#### 6.4.1 Protected-storage provider qualification
+
+The [optional-storage contract](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
+and [staged plan](plans/windows-protected-storage.md) add actual provider work to
+the existing matrix. These cases are **planned / not executed**; the owner's
+storage-experiment pause remains in effect. No new service, dependency graph,
+launch path or process-policy relaxation is admitted.
+
+| Boundary / check | Required discriminating observation | Healthy neighbor |
+| --- | --- | --- |
+| Origin/reopen; CHECK-15/17 | Ordinary unprotected software keys, wrong-provider, unproven-origin and partial/mixed-protection sets cannot receive a stronger VBS/TPM label; imported keys cannot claim never-host-exposed history; missing expected key is recovery | Complete admitted wrapping/signing set reopens with supported evidence under final identity and no-login startup |
+| Ownership; CHECK-1/15 | Another LocalService service and ordinary user cannot use/replace keys or exploit owner-mediated changes; protect catalogue/files/directories separately | Intended engine can provision/use/retire without broader rights or prompts |
+| Envelope/save; CHECK-15/25 | Validly formed unauthorized public-wrap/AEAD envelope and old signed snapshot fail against intact current anchors/content binding | Exact committed snapshot restores with original trust/age metadata |
+| Native lifecycle; CHECK-15/17/27 | Prepare/commit/ack/retire interruptions, saturation and late invalidated results have bounded truthful recovery | Save/restart/rotation completes and releases actual resources; NoPersistentCache requires no root |
+| Mitigations; CHECK-16/18/20/23 | Provider work never relaxes required ACG/CFG/StrictCFG/CET/CIG/image/Win32k/child fields; unknown/audit-only results cannot pass | Final provider graph works under installed SCM token/profile; full-enclave graph is a separate conditional row |
+| Recovery; CHECK-9/11/12/15 | VBS loss/return, TPM clear and account change cannot restore retired state, weaken trust or reset broker authority | Fresh admissible KE and declared wrong-date/offline key paths work; owned cleanup remains available |
+| UI/privacy; CHECK-14/17/22, DNS-C14/15 | Missed boot events, stale status, forgotten inaccessible snapshots and late saves cannot create false protection or resurrect history | First authenticated UI connection shows current mode/reason; authorized demand and redacted status work |
+
+Freeze API/phase outcomes, provider/build/algorithm/identity rows, limits,
+owned dummy paths and cleanup before a future native run. Dummy evidence proves
+that probe's path, not another key's origin. Preserve anchored authentication and
+offline-anchor/rollback limits. A healthy-clock sample, setter, binding or
+CET image marker is insufficient. Existing held TLS/CNG fixture receipts retain
+their narrower scope.
+
+
 ### 6.5 Windows x64 optimization policy and evidence limits
 
 The selected workspace release candidate is `opt-level=3`, `lto="thin"`, `codegen-units=1` and `incremental=false`; `verify-release` inherits those settings and enables debug assertions. Overflow checks, unwind policy, retained symbols and Windows mitigations remain. Ordinary development retains its incremental workflow. Thin LTO enables cross-crate optimization with less link work than fat LTO; one codegen unit reduces parallel code generation and can increase build time. Neither setting guarantees faster code, and level 3 can be slower than level 2. Compare useful runtime work, startup, tail latency, memory, binary size and build cost on the declared workload before claiming a benefit. No new profile, PGO pipeline or performance result is established here. [C08]
@@ -924,3 +950,4 @@ The sources below are upstream/vendor documentation and source repositories retr
 - **V24:** [Rust 1.99.1 compiler options source](https://github.com/rust-lang/rust/blob/1.99.1/compiler/rustc_session/src/options.rs).
 
 Related documents: [architecture revision 1.4](windows-time-architecture.md), [MSI signing guide](windows-time-signing-guide.md), [ASVS applicability worksheet](asvs-5.0.0-applicability.md), [independent architecture review](windows-time-review.md) and [unadopted update-system assessment](windows-time-update-assessment.md).
+

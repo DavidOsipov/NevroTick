@@ -1,6 +1,6 @@
 # System-wide Windows DNS service and adaptive cache
 
-**Document:** NV-DNS-PLAN-001, revision 1.3<br>
+**Document:** NV-DNS-PLAN-001, revision 1.4<br>
 **Date:** 2 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Future-feature design and evaluation plan. The Windows-wide product scope and DNSSEC optimization requirement are owner instructions; algorithms, integration details and numerical settings below are engineering proposals unless explicitly identified otherwise.<br>
@@ -23,6 +23,7 @@ The adaptive-cache proposal comes from the owner's observation that a computer o
 | DNSSEC, hardware acceleration and multiple CPU cores | Accepted future capability/performance requirement. Exact provider, operations, dispatch, worker limits and measured benefit require qualification. |
 | Demand learning and hot/warm/cold/frozen categories | Requested design/evaluation subject. This document proposes a bounded implementation and measurable adoption criteria. |
 | Decay periods, category thresholds, persistence backend, retention and prefetch budgets | Unselected engineering parameters. Examples are not shipped defaults or newly approved numerical limits. |
+| Protected optional persistence | 2 November 2026 recorded planning direction: [architecture §12.1.2](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback) and the [storage plan](windows-protected-storage.md) replace DPAPI-first with a qualified VBS/TPM/no-persistent-cache candidate. Exact defaults, algorithms and native behavior remain open. |
 | Current Windows P0–P7 plan, UI-M0 restrictions and Khronos/Ananke ordering | Preserved. This future work does not become a prerequisite for the current fixtures or reorder the existing execution plan. |
 | Android integration | Separate future feasibility question. Windows-wide DNS intent does not establish Android system coverage under no-root/no-continuous-VPN constraints. |
 
@@ -344,15 +345,17 @@ Proposed write path:
 5. replace the previous snapshot with a qualified atomic/recovery procedure;
 6. retain only the intended current/recovery files and bounded diagnostic outcome.
 
-Read errors, corruption, unsupported schema or unavailable keys disable restoration of learning and start a fresh bounded model. They do not disable ordinary DNS, relax validation or load permissive defaults. Old snapshots cannot override current routing/privacy policy. Bound parsing and allocation even for a successfully decrypted snapshot.
+Read errors, corruption, unsupported schema or unavailable keys disable restoration. Current policy may permit a fresh bounded nonpersistent model or require the optional learning owner to suspend; ordinary DNS still operates with unchanged validation. These errors do not authorize weaker persistent encryption. Old snapshots cannot override current routing/privacy policy. Bound parsing/allocation even after successful decryption, and apply the active-root catalogue's authenticated identity/sequence/exact-envelope binding before publication.
 
 ### 8.2 Windows protection choices
 
 Use **access controls and encryption together**. Directory placement alone is not an access policy. Windows DACLs determine access to protected objects. [R12]
 
-For a small snapshot, first evaluate DPAPI protection of the complete blob. If future size, key rotation or sharing requirements justify another design, use an admitted authenticated-encryption implementation with an appropriately protected random key; do not invent a cryptographic construction.
+**2 November 2026 storage amendment:** use the [canonical optional-storage contract](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback) and [qualification plan](windows-protected-storage.md). The preferred candidate is a complete VBS-protected CNG root set, a separately qualified TPM root set for fresh optional learning when permitted, and explicit NoPersistentCache when policy permits continuation. This supersedes the earlier DPAPI-first snapshot recommendation; it selects no automatic DPAPI/software/plaintext fallback and proves no native compatibility.
 
-DPAPI's ordinary scope is tied to the account, usually also the computer. `CRYPTPROTECT_LOCAL_MACHINE` permits decryption by other users of the same machine if they obtain the blob and any required optional entropy; it is not application-only isolation. User scope also identifies an account rather than one executable. DPAPI provides integrity checking, but the runtime identity and key availability still need native qualification. [R13]
+Use a distinct DNS root set and current privacy generation. The proposed separate wrapping/signing keys protect confidentiality and independently authenticate the complete snapshot; the admitted catalogue binds the exact committed save. Missing expected key/identity/corrupt state is recovery, not initial provisioning or capability downgrade. NoPersistentCache deliberately expects no provider root/secret snapshot while retaining necessary nonsecret privacy/lifecycle metadata. VBS loss cannot decrypt old data through TPM, and returning VBS cannot revive retired or forgotten snapshots. Qualified algorithm/encoding/nonce/digest and durable publication remain gates; no custom primitive is adopted.
+
+For comparison, DPAPI's ordinary scope is tied to the account, usually also the computer. `CRYPTPROTECT_LOCAL_MACHINE` permits decryption by other users of the same machine if they obtain the blob and any required optional entropy; it is not application-only isolation. User scope also identifies an account rather than one executable. DPAPI provides integrity checking, but the runtime identity and key availability still need native qualification. [R13]
 
 For a machine service, qualify its actual account, profile/key lifetime, restart/upgrade behavior and ACLs. A service SID can restrict resource access without granting LocalSystem, but a service SID and a shared account such as LocalService are different identities for these purposes. Do not assume two services sharing an account receive independent cryptographic isolation. [R17]
 
@@ -458,9 +461,9 @@ The following **DNS-Cxx** identifiers are local to this plan. They specify futur
 | DNS-C10 | Compatible client and refresh work coalesce; shared validation prerequisites remain acyclic and preserve individual cancellation, custody and response semantics; one consumer cannot incorrectly cancel another, leak custody or multiply work. | Deterministic concurrency schedules with observed suspension points, same-key competition and retained-reader cases, plus actual runtime behavior. |
 | DNS-C11 | Old network/VPN/configuration generations cannot publish results or send private names under a new incompatible route. | Action-sequence model, controlled network changes and native integration. |
 | DNS-C12 | Random-name floods, hostile validation work, replacement growth, failures and repeated invalidations stay within model, queue, worker and traffic caps; pending/retained/retired allocations remain charged and maintenance bounds count examined work. | Bounded stress/resource observations at real entry points, exact accounting transitions, scan/work counters and declared rejection/cleanup outcomes. |
-| DNS-C13 | Faulty, oversized, old-version or inaccessible snapshots cause safe learning reset while ordinary DNS continues; power loss preserves declared recovery behavior. | Parser/persistence tests and native filesystem/identity cases. |
-| DNS-C14 | Snapshot/temp/backup/log behavior matches privacy claims; cross-user access and management IPC obey the selected actual identity policy. | Native Windows accounts, effective ACL/DPAPI checks and artifact inspection. |
-| DNS-C15 | Pause, exclusion and forget operations affect model, queued candidates, retained snapshots and later behavior; old in-flight learning or snapshot publication cannot recreate removed history across the privacy-generation barrier. | End-to-end management-to-scheduler/persistence tests with delayed completions/writes, not UI-only checks. |
+| DNS-C13 | Faulty, oversized, old-version or inaccessible snapshots disable restore; current policy permits fresh optional learning or suspends that owner while ordinary DNS continues. No error-driven weaker backend, fake first initialization or old-snapshot substitution; power loss preserves declared recovery. | Parser/persistence, exact committed binding, provider/error and native filesystem/identity cases. |
+| DNS-C14 | Snapshot/temp/backup/log behavior matches privacy claims; cross-user access and management IPC obey the selected actual identity policy. | Native Windows accounts, actual provider-key/file/catalogue owner and ACL checks, qualified VBS/TPM/no-cache modes and artifact inspection. |
+| DNS-C15 | Pause, exclusion and forget operations affect model, queued candidates, retained snapshots and later behavior; old in-flight learning or snapshot publication cannot recreate removed history across the privacy-generation barrier, including retired/inaccessible VBS snapshots becoming readable later. | End-to-end management-to-scheduler/persistence tests with delayed completions/writes, not UI-only checks. |
 | DNS-C16 | Accelerated/fallback validation agree on accepted and rejected inputs; optional CPU features are admitted correctly and multicore work remains bounded. | Actual supported CPU/OS/VM rows, independent vectors and resource measurements. |
 | DNS-C17 | Enable, failure, restart, update, disable and uninstall preserve owned configuration and later administrator/VPN changes. | Disposable Windows lifecycle and interruption/restoration experiments. |
 | DNS-C18 | Adaptive mode meets predeclared latency/usefulness/cost criteria against both baselines without degrading reserved time-service work. | Comparable repeated controlled measurements with complete outcomes. |
@@ -528,3 +531,4 @@ Reviewed for the design on 2 November 2026, including the preceding cache/source
 - **R18 — keyed hashing:** [RFC 2104](https://www.rfc-editor.org/rfc/rfc2104.html). Its historical algorithm examples are not present-day algorithm selections for NevroTick.
 - **R19 — SQLite auxiliary files:** [SQLite temporary files](https://sqlite.org/tempfiles.html) and [write-ahead logging](https://sqlite.org/wal.html).
 - **R20 — resolution-failure caching:** [RFC 9520](https://www.rfc-editor.org/rfc/rfc9520.html), especially sections 3.2 and 3.4; updates the earlier optional DNSSEC validation-failure caching requirement. DNS-R16 in the linked supplement distinguishes standards bounds from an unselected project default.
+
