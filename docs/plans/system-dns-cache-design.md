@@ -1,7 +1,7 @@
 # System-wide Windows DNS service and adaptive cache
 
-**Document:** NV-DNS-PLAN-001, revision 1.4<br>
-**Date:** 2 November 2026<br>
+**Document:** NV-DNS-PLAN-001, revision 1.5<br>
+**Date:** 3 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Future-feature design and evaluation plan. The Windows-wide product scope and DNSSEC optimization requirement are owner instructions; algorithms, integration details and numerical settings below are engineering proposals unless explicitly identified otherwise.<br>
 **Original design baseline:** [`f0579a1ff13d5d4176175566c4e3d75f56eca6c5`](https://github.com/DavidOsipov/NevroTick/tree/f0579a1ff13d5d4176175566c4e3d75f56eca6c5). Source/documentation review establishes no working DNS service, Windows configuration change, benchmark or native qualification.
@@ -30,6 +30,15 @@ The adaptive-cache proposal comes from the owner's observation that a computer o
 The [documentation guide](../README.md), [current architecture](../windows-time-architecture.md) and [development plan](development-plan.md) retain their authority. This document owns the detailed future DNS proposal and its local acceptance IDs. It does not replace existing REQ/BND/DEC/THR/CHECK contracts. When implementation starts, reconcile applicable canonical contracts and record evidence in one stage task under `tasks/`, linked from the roadmap and this plan.
 
 The present task is documentation. Dependency acquisition, host DNS enrollment, service installation, native experiments and product implementation are later actions with their own stage scope.
+
+**Windows 11 integration amendment, 3 November 2026:** the
+[Microsoft-source research](windows11-integration.md) and
+[agent task](../../tasks/windows11-integration.md) refine the existing DNS-C
+owners with native configuration, endpoint, notification, policy, resource and
+crypto candidates below. The research does not select a provider or demonstrate
+Windows routing, origin restoration, performance or effective confinement.
+Current time-client priority, UI-M0 deferrals and the native-experiment pause
+remain in force.
 
 ## 2. Product boundary and application coverage
 
@@ -65,7 +74,9 @@ All applications are intended consumers. Qualification must distinguish:
 2. applications sending conventional DNS to configured resolvers directly;
 3. applications with their own DoH/DoT/DoQ implementation, hard-coded resolver or independent proxy path;
 4. VPN/enterprise namespaces and interface-specific resolution;
-5. application/OS cache hits that never reach NevroTick.
+5. application/OS cache hits that never reach NevroTick;
+6. declared WSL2 tunneling/NAT/mirrored-mode and Docker Desktop paths, observed
+   separately rather than inferred from native Windows resolver behavior.
 
 Changing OS DNS settings alone is not evidence that every application uses NevroTick. Inventory and qualify supported application-routing/configuration paths; show coverage gaps honestly. Transparent packet interception, mandatory blocking of alternative resolvers and modification of browser policies are distinct enforcement choices, not implicit permission granted by the answering-service scope. Do not silently substitute an internal-only resolver for the accepted whole-computer goal.
 
@@ -89,6 +100,37 @@ Before enrolling Windows into the local endpoint, the Windows integration stage 
 Microsoft documents that interface DNS server settings can override DHCP settings and that NRPT determines resolution behavior for selected namespaces. These controls must be inspected in the actual supported Windows/VPN configuration. [R14, R15]
 
 The names and address contents returned to applications are not automatically subject to the time engine's NTP destination restrictions. The permitted destination of an upstream DoQ connection and the semantics of a DNS answer are separate policies. Preserve legitimate local/private DNS results where the approved namespace policy requires them.
+
+#### 2.3.1 Native adapter candidates and unresolved proof
+
+The [Windows DNS investigation](windows11-integration.md#2-integrate-the-dns-service-without-losing-windows-policy)
+supplies the API/source basis for these refinements; W11-W03 owns their bounded
+task expansion. Use typed lifecycle-owned adapters rather than importing example
+shell commands or widening the answering service's authority.
+
+| Existing owner | Candidate and required distinguishing observation |
+| --- | --- |
+| Interface configuration / DNS-C01/17 | Evaluate versioned `GetInterfaceDnsSettings`/`SetInterfaceDnsSettings`, exact supported field masks and IPv4/IPv6 scope. Record stable interface identity, original presence/origin/values, product-written values and active generation; own returned allocations and preserve unrelated fields. An SDK V4 symbol or successful call is not proof of support, complete origin capture or cross-interface atomicity. |
+| Endpoint ownership / DNS-C02/17 | Set `SO_EXCLUSIVEADDRUSE` before deliberately scoped loopback UDP/TCP binds. Observe conflicts before enrollment, competing binds while active, restart gaps and negative LAN probes. An acquired socket does not authenticate its callers or protect an interval with no listener. |
+| Network and policy generations / DNS-C11/17 | Use interface/address/route notifications to enqueue bounded reconciliation outside callbacks. Treat initial registration separately, refresh actual state and preserve callback storage through cancellation. Add an independently qualified DNS/NRPT-policy refresh path: address/route events do not document every DNS-only edit. |
+| Namespace and environment coverage / DNS-C01/03/11/17 | Include exact/suffix/short-name rules, VPN timeout/disconnect, host encrypted-DNS/discovery policy, WSL tunneling and Docker's distinct path. Inventory managed ZTDNS conflicts; preserve the nonrecursive bootstrap graph. `DnsQueryRaw`, settings V4 and DNR support remain evidence-qualified candidates, not assumed production APIs. |
+| Service network isolation / DNS-C14/17 and existing CHECK owners | Evaluate [Windows Service Hardening](windows11-integration.md#3-constrain-service-networking-with-a-windows-owned-mechanism) before custom WFP. Preserve actual SID/token policy, distinguish its separate rules collection from ordinary firewall precedence, and observe allowed/denied IPv4/IPv6 work, activation delay, delegated certificate/DNS work and lifecycle recovery. |
+
+**DHCP origin remains an unresolved native proof.** A captured effective server
+list cannot establish how to restore DHCP inheritance. The published Get/Set
+contracts do not provide a complete origin snapshot or multi-interface
+transaction. DNS-0 must name the observation/restoration owner and explicit
+unsupported/ambiguous result; DNS-3 must demonstrate one DHCP and one static
+interface, both families, partial failure and an intervening administrator/VPN
+edit. Restore only changes still owned by NevroTick; never recreate dynamic
+configuration as a guessed static list.
+
+Observe synthetic private-name failures without forwarding those names to public
+DoQ. Supported WSL/container coverage must not be obtained by silently widening
+loopback listeners. Native DoH/DoT or ZTDNS is not the selected pinned DoQ path:
+detect conflicts and report coverage honestly, without disabling managed policy,
+adding a protocol fallback or enabling ZTDNS. These are DNS-0/3 refinements, not
+permission for present machine enrollment or new acceptance IDs.
 
 ## 3. Trust, DNSSEC and time dependencies
 
@@ -130,6 +172,17 @@ Treat both as required workstreams for the future DNSSEC feature, with qualified
 - compare accelerated and fallback acceptance/rejection results, sustained resource use and latency on actual supported CPU/OS/VM rows.
 
 No provider, number of workers, instruction-level speedup or claim that DNSSEC is normally the dominant latency source is selected here. Measure network, cache, parsing and validation costs separately. Eliminating duplicate work is not evidence of an instruction-level acceleration gain and does not replace the owner's hardware/multicore requirement. The existing time engine's runtime pilot does not automatically qualify the DNS service's runtime or multicore design.
+
+The [CNG candidate](windows11-integration.md#6-use-native-cryptographic-acceleration-for-a-measured-workload)
+and W11-W07 make one conditional comparison concrete: `BCryptCreateMultiHash`
+can batch eligible independent SHA-256/384/512 work with SIMD. It does not supply
+multicore scheduling, all DNSSEC signature operations or general TLS/NTS/AEAD
+acceleration. Profile an actual ready queue first; compare independent results,
+small/adversarial loads, tail latency, throughput, CPU and energy. Do not delay a
+single foreground request to fill a batch. Cached provider handles or eligible
+pseudo-handles retain the admitted algorithm/provider and real-lifetime rules;
+they do not settle the outstanding backend choice or authorize a fallback.
+DNS-C04/12/16 remain the acceptance owners.
 
 ### 3.4 Correct clocks and bootstrap
 
@@ -239,6 +292,13 @@ Define each clock's meaning before implementation:
 Windows distinguishes interrupt-time variants; `QueryUnbiasedInterruptTime` excludes sleep/hibernation. It is not a universal clock for all four purposes. [R16]
 
 On restart, age restored aggregates conservatively using available trustworthy information. If their age/context cannot be established, require new real demand before autonomous refresh. Wall-clock rollback, correction or a changed timezone must not increase popularity, resurrect an expired answer or enqueue every missed timer. After resume, revalidate context and schedule only a bounded current candidate set.
+
+The [native timer research](windows11-integration.md#sleep-timers-and-leap-presentation)
+requires wakeups to recheck the actual deadline and current generation: relative
+Windows timers can exclude low-power time while DNS expiry includes it, and
+absolute timers react to wall-clock changes. Coalescing may reduce optional
+maintenance wakeups, but timer delivery supplies no freshness authority or
+guarantee that a suspended service executed on time. DNS-C05/11 own these cases.
 
 ## 6. Temperature classes and optional heatmap
 
@@ -413,6 +473,23 @@ Bound examined records, processed bytes and cumulative expensive work as well as
 
 Use a small deadline queue or another bounded scheduling structure, not a scan or wakeup for every record on a tight interval. Do not wake a sleeping computer solely to maintain the heatmap. On battery, a metered connection, CPU pressure or an unavailable upstream, a policy may reduce or pause speculative work while preserving foreground service.
 
+The [native resource inputs](windows11-integration.md#5-make-adaptive-caching-cooperate-with-the-operating-system)
+give W11-W06 a concrete DNS-4/5 candidate: effective-power-mode notifications,
+destination-aware `INetworkCostManager::GetCost` and system memory-resource
+notifications feed a small explicit resource state. Unknown/pending cost is not
+free. Combine those inputs with real demand, heat, TTL, validation and current
+context; the APIs supply hints, not the model or policy decision.
+
+Low-memory notifications describe system-wide available memory and can remain
+signaled. Coalesce them with hysteresis; neither spin on the signal nor assume
+it will arrive before allocation failure. Trim cold eligible optional state and
+pause speculation while preserving retained-reader charges, hard caps and
+mandatory state. Per-thread EcoQoS is conditional on actual suitable worker
+placement and measured benefit, particularly with a single-thread runtime;
+do not apply it process-wide to time-critical work. Recheck foreground/tail
+latency, CPU, wakeups and energy together. Native observations complement the
+DNS-C12/18 model/resource evidence and do not replace it.
+
 Bound adversarial cryptographic and negative-proof work as well as ordinary packet sizes. Multicore execution must not turn one hostile request into unbounded parallel verification. New-name floods, repeated failures and repeated context changes must remain within aggregate budgets.
 
 ### 10.2 Baselines and experiment design
@@ -470,6 +547,14 @@ The following **DNS-Cxx** identifiers are local to this plan. They specify futur
 
 The [Security-kit regression matrix](dns-upstream-lessons.md#transfer-scenarios-with-stronger-oracles) supplies concrete cases under these same IDs: replacement growth, forced-suspension same-key races, stale publication, reader retention, non-heating inspection, bounded maintenance and exact time boundaries. Verify that a race reaches its intended scheduling point and assert its declared outcome; a test name, several completed promises or an assertion allowing either outcome does not establish the missing contract. Selected policy-specific cursor/slot tests remain conditional.
 
+The [Windows 11 task](../../tasks/windows11-integration.md#3-bounded-work-assignments)
+adds source-defined native controls under these same owners: DHCP/static partial
+restoration, exclusive endpoint conflicts, DNS-only changes, private-namespace
+timeouts, managed/WSL/container coverage, level-signaled resource pressure and
+conditional hash-batch comparisons. Required routing/restoration/bounds remain;
+optional mechanisms do not each become a new DNS-stage blocker. Native and
+installed-service/MSI observations remain separate from portable models.
+
 Apply existing repository property/model/fuzz/concurrency/mutation tools only where they answer a named gap in this table and are admitted for the selected code. A plan does not establish a new tool requirement. Documentation checks do not count as a DNS-C pass, DOQ-C01, a native security result or release qualification.
 
 ## 12. Staged delivery and next action
@@ -478,12 +563,12 @@ The current product sequence remains owned by the [development plan](development
 
 | Stage | Bounded outcome | Exit and next action |
 | --- | --- | --- |
-| DNS-0: integration and evidence design | Resolve the proposed listener, Windows coverage matrix, ownership/restoration model, bootstrap/time dependencies, runtime identities and finite experiment budgets. Inventory the current source/tooling when this stage starts. | Reviewed contracts, named enforcement owners and a safe controlled-fixture plan. Material dependent choices use OD-04; no repeated request for the already accepted whole-computer scope. |
+| DNS-0: integration and evidence design | Resolve the proposed listener, Windows coverage matrix, ownership/restoration model, bootstrap/time dependencies, runtime identities and finite experiment budgets. Include §2.3.1 native-field and DHCP-origin proof gaps; inventory the current source/tooling when this stage starts. | Reviewed contracts, named enforcement owners and a safe controlled-fixture plan. Material dependent choices use OD-04; no repeated request for the already accepted whole-computer scope. |
 | DNS-1: protocol/cache baseline | Build and qualify a minimal local DNS/DoQ path and ordinary cache against controlled peers, with explicit response, key/context and failure contracts. | Applicable DNS-C02/C03/C05/C09/C10/C11/C12 cases; no deployment or full DNSSEC claim from a partial fixture. |
-| DNS-2: DNSSEC and optimized validation | Admit the validator/crypto graph, content-bound reuse, chain/delegation evidence, shared prerequisite custody, failure/time lifecycle, CPU dispatch and bounded parallel execution. | Applicable DNS-C04/C05/C10/C11/C12/C16 and DOQ-C01 evidence; unresolved backend/native results remain explicit. |
-| DNS-3: Windows service integration | Qualify supported machine/application routing, identity, lifecycle, recovery and resource separation in disposable Windows fixtures. | DNS-C01/C02/C03/C11/C14/C17 for the declared matrix. Local query access and management authority remain separate. |
-| DNS-4: demand model in shadow mode | Add bounded aggregates, decay, category transitions and persistence/privacy behavior; observe candidates without issuing autonomous requests. | DNS-C06/C07/C08/C13/C15 plus applicable DNS-C12 model-budget checks and DNS-C14 actual snapshot/temp/backup/identity/privacy checks; ordinary-cache baseline and stable accounting. Earlier service-identity evidence does not qualify the newly added storage. Seasonal buckets may remain deferred. |
-| DNS-5: bounded autonomous refresh | Add timer admission, coalescing, useful-interval accounting, cooldown and resource caps. | DNS-C09/C10/C11/C12/C18; adopt, revise or defer based on the predeclared comparison. |
+| DNS-2: DNSSEC and optimized validation | Admit the validator/crypto graph, content-bound reuse, chain/delegation evidence, shared prerequisite custody, failure/time lifecycle, CPU dispatch and bounded parallel execution. Evaluate W11-W07 CNG batching only for a measured eligible workload. | Applicable DNS-C04/C05/C10/C11/C12/C16 and DOQ-C01 evidence; unresolved backend/native results remain explicit. |
+| DNS-3: Windows service integration | Qualify supported machine/application routing, identity, lifecycle, recovery and resource separation in disposable Windows fixtures. Apply W11-W03/04/05 to actual native settings, effective restrictions and maintenance/restart paths. | DNS-C01/C02/C03/C11/C14/C17 for the declared matrix. Local query access and management authority remain separate; configuration readback alone proves no effective state. |
+| DNS-4: demand model in shadow mode | Add bounded aggregates, decay, category transitions and persistence/privacy behavior; observe candidates and selected W11-W06 resource inputs without issuing autonomous requests. | DNS-C06/C07/C08/C13/C15 plus applicable DNS-C12 model-budget checks and DNS-C14 actual snapshot/temp/backup/identity/privacy checks; ordinary-cache baseline and stable accounting. Earlier service-identity evidence does not qualify the newly added storage. Seasonal buckets may remain deferred. |
+| DNS-5: bounded autonomous refresh | Add timer admission, coalescing, useful-interval accounting, cooldown and resource caps. Qualify selected W11-W06 power/cost/memory policies and actual worker placement without consuming reserved time/foreground capacity. | DNS-C09/C10/C11/C12/C18; adopt, revise or defer based on the predeclared comparison. |
 | DNS-6: optional refinement | Evaluate seasonal prediction, approximate frequency structures or richer UI only for a measured remaining need. | Added complexity demonstrates incremental benefit and preserves prior acceptance; no mandatory ML service, GPU or remote history collection. |
 
 These stages may reuse already qualified components and allow independent pure work where dependencies permit. Full machine DNS activation requires the relevant integrated protocol, trust, identity and recovery prerequisites; completion of a shadow model alone does not authorize enrollment.
@@ -496,6 +581,7 @@ The first implementation-stage task should record candidate identity, source cha
 | --- | --- |
 | Service/process ownership, actual account and management/read authorization | Persistent/shared statistics or Windows enrollment. |
 | Supported interface, enterprise/VPN and independent-application routing policy | Claiming whole-machine coverage for a supported configuration. |
+| Native field support, DHCP/static origin restoration and owned-change reconciliation | DNS-3 enrollment; an effective list cannot substitute for origin proof. |
 | Local protocol compatibility, EDNS flags, query/context keys and coalescing rules | Freezing the resolver/cache contract. |
 | Resolver/bootstrap preset, pin representation, combined matching and rotation | Admitting production DoQ connections. |
 | DNSSEC implementation, trust-anchor maintenance, time-unavailable behavior and algorithm policy | Claiming local validation. |

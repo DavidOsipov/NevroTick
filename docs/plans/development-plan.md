@@ -15,6 +15,7 @@ Agent navigation: [implementation contracts](#3-mandatory-explicit-contracts-dur
 [phase acceptance](#6-phase-implementation-and-acceptance-gates),
 [next task](#7-next-executable-task-for-a-development-agent),
 [protected-storage task](../../tasks/windows-protected-storage.md),
+[Windows 11 integration task](../../tasks/windows11-integration.md),
 [evidence and stop rules](#9-verification-commands-phase-records-and-stop-rules).
 
 ## 1. Purpose, authority and current state
@@ -42,6 +43,7 @@ exact-candidate approval gate.
 | UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
 | Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and a two-peer loopback engine exist. Production sample admission, acquisition, broker, SCM services, production IPC and MSI remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
 | Dependencies | The six-owner workspace retains the reviewed UI-M0/garde cohort and adds the admitted minimal Tokio/getrandom engine graph. Exchange and core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | The [engine dependency checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) owns its selected graph rows. Integrated checks apply to their recorded source/features. |
+| Windows 11 integration research | [Completed Microsoft-source investigation](windows11-integration.md) and [bounded agent assignments](../../tasks/windows11-integration.md) refine existing platform, DNS, lifecycle and resource owners. | Source-only follow-up is ready when its slice is assigned; documentation establishes no implemented mechanism, native support or installed-MSI result. Current task ordering and the native-experiment pause remain. |
 
 Keep one evidence chain: this plan records phase readiness and links to concrete
 task evidence; existing UI work stays in `tasks/ui-m0.md`. New development tasks
@@ -864,6 +866,52 @@ only when their named question becomes relevant. A hardware revocation epoch
 does not prove exact latest-snapshot freshness or close same-epoch/offline/VM
 rollback. No NV-counter integration, remote attestation, stream format, database,
 dependency, extra privileged service or mitigation exception is selected here.
+
+### 8.5 Windows 11 integration research and qualification
+
+**Owner request, 3 November 2026:** integrate the completed Microsoft Windows 11
+investigation into maintained documentation, architecture, this plan and agent
+tasks. The [detailed research](windows11-integration.md) retains primary sources,
+API/build/capability limits, proposed controls and the completed source/fit review
+against `a6c2401b9a8166515293653f14f637e5543c689e`, tree
+`7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. The
+[agent task](../../tasks/windows11-integration.md) owns W11-W01–W11-W10, their
+prerequisites and subsequent candidate-specific evidence. These are local work
+labels, not new CHECK, DNS-C, ST-T or release gates.
+
+**Status:** research recorded; integrated documentation review/validation is
+tracked in the [task receipt](../../tasks/windows11-integration.md#41-integration-review-and-documentation-validation-receipt).
+Implementation, native Windows and installed-MSI qualification are unexecuted by
+this amendment. The next source-only action can prepare
+[W11-W01's timestamp-provenance card](../../tasks/windows11-integration.md#2-next-source-only-assignment)
+when the acquisition owner reaches it. It does not displace section 7's current
+S1.3/engine work or require a broad API survey before that work continues.
+
+| Existing stage / owner | Bounded assignment and observable exit | Existing acceptance ownership |
+| --- | --- | --- |
+| Source contract → S2.1/P2; engine/platform | W11-W01: distinguish application/QPC/NIC timing; bind actual packet/interface/socket/exchange identity and conversion uncertainty. Healthy timing and unsupported/stale/saturated cases have explicit outcomes; software comparison precedes optional hardware work. | CHECK-6/11/21/27; CHECK-7/25 only for affected downstream numerical/construction invariants at their existing scopes; no source-to-native promotion |
+| S0.4/P4; platform/clock | W11-W02: qualify timer/deadline semantics, Modern Standby quiescence, actual delivered correction and residual cleanup. A system clock excluding sleep does not prove broker execution. Process leap presentation remains separate from leap ownership. | CHECK-10/11/12/21/25/27; DNS-C05/11 for affected consumers |
+| DNS-0/1/3; DNS/platform/lifecycle | W11-W03: freeze native field/ownership contracts, exclusive loopback readiness, bounded reconciliation and namespace/application coverage. DHCP-origin restoration remains unproven by an effective server list; private-name failure cannot become public DoQ. | DNS-C01/02/03/11/17; applicable CHECK-13/25/27 |
+| P0/P3/P6; platform/security/lifecycle | W11-W04/05: evaluate WSH before custom WFP, observe actual service-setting activation, compose child policy with process-handle restrictions and extend maintenance admission to Restart Manager. Healthy installed workflows accompany forbidden-network/rights/startup cases. | CHECK-1/9/12/13/15/16/23/27, with CHECK-9 limited to delegated certificate retrieval; applicable ST-T03/10/12/17 and DNS-C14/17 |
+| DNS-4 shadow → DNS-5 refresh; DNS/resources | W11-W06: bounded power/cost/memory observations influence only eligible optional work. Persistent pressure signals cannot spin; required foreground/time work, retained-reader charges and fixed caps remain. EcoQoS needs actual suitable thread placement and measured benefit. | DNS-C05/08/11/12/18; applicable CHECK-21/27 |
+| DNS-2; DNSSEC/crypto/performance | W11-W07: evaluate CNG SIMD hash batches only for an evidenced workload, with independent result parity and latency/cost comparisons. Provider handles and multicore scheduling retain separate ownership; no implicit graph selection or storage-root qualification. | DNS-C04/12/16; applicable CHECK-20/21/25/26/27 |
+| Affected native phase; diagnostics/QA | W11-W08: correlate bounded redacted WPR/WPA events and record ETW loss; admit one exact low-resource profile with healthy/fault controls before use. PerfLib V2 remains optional coarse monitoring. | CHECK-17/21/27; applicable ST-T14/16 and DNS-C12/14 |
+| P5 after existing D2/D3 triggers; UI/accessibility | W11-W09: current-state UIA/local notifications, actual Narrator behavior and current-generation action checks. Assess deployment costs before selecting Windows App SDK; ordinary ticking status cannot create announcement spam. | CHECK-14/17/22; applicable ST-T01/14; UI-M0 D1/D2/D3 remain Deferred |
+| Conditional existing owner; no current prerequisite | W11-W10: re-enter Job Objects/triggers, LPAC/app isolation, stricter CET/EHCONT, full enclaves, identity/WinGet or W32Time-provider alternatives only for a named need and separately bounded comparison. PPL remains excluded as an ordinary utility-service option. | Selected reserve reuses its existing architecture/storage/package owners; no blanket gate or default adoption |
+
+Preserve DoQ-only upstream and leaf/intermediate pinning, the selected service
+topology, one complete MSI and the independent mandatory-state owner. Native DNS
+policies are coexistence inputs, not permission to add DoH/DoT/DNSCrypt/plaintext
+fallback or enable ZTDNS. Hardware timing, CNG batching, PerfLib, EcoQoS and
+notification packages remain optional mechanisms; a required product property
+still needs evidence even when its suggested mechanism is not selected.
+
+The existing pause on native experiments remains. No dependency/tool install,
+service/key/clock/policy mutation or release qualification follows from this
+integration. Later execution uses the applicable existing authorization and
+gates, with source/model, real Windows and final installed-path evidence kept
+distinct. Preserve UI-M0's fixture-only scope and existing D1/D2/D3 restoration
+triggers; source research does not activate deferred work.
 
 
 ## 9. Verification commands, phase records and stop rules

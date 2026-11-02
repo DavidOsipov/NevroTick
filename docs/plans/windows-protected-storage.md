@@ -35,6 +35,11 @@ is a candidate; attestation, hardware revocation epochs, chunking and a database
 remain conditional reserves. This documentation authorization does not lift the
 experiment pause, choose a product default or advance a native acceptance gate.
 
+The [Windows integration supplement](windows11-integration.md#9-conditional-mechanisms-worth-understanding)
+clarifies the separate full-enclave runtime, development and signing rows in
+section 5, plus future notification delivery. It leaves the construction freeze,
+ST-T owners, mandatory-state separation and native-experiment pause unchanged.
+
 ## 2. Owners, data classes and restoration
 
 | Owner | State and permitted effect | Required separation |
@@ -162,6 +167,17 @@ includes these controls and exact-parameter fixtures.
 
 Preserve [architecture §15.4](../windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) and [hardening §6.4](../windows-time-development-hardening.md#64-per-process-mitigation-qualification). Qualify create/open/wrap/sign/unprotect/teardown with the actual SCM path, final account, no-login boot and required controls. Keep ACG no-opt-out/no-remote-downgrade, ordinary versus Strict CFG, effective CET/HSP versus image marking, CIG signer classes, Win32k/extension points, child restrictions and image-load policy distinct. Do not introduce a permissive launcher, extra privilege, interactive Hello dependency, or machine-policy reset. Respect the documented NCrypt service-start caveat. Full-enclave imports/ABI/signing/debug/strict-memory support is a separate gate if that path is selected; neither blanket Rust incompatibility nor compatibility has been established. [P1, P7–P12, P15–P16]
 
+For the conditional **full application enclave** path, the current reviewed
+runtime requirement is Windows 11 build **26100.2314+ and enabled VBS/HVCI**.
+Development separately requires the supported compiler/SDK/tooling and enclave
+ABI/import environment; production publication separately requires the enclave
+signing profile and nondebug image. Neither ordinary Authenticode/OpenPGP signing
+nor a compilable sample proves that admission. These facts do not establish the
+CNG VBS-key feature floor, actual root protection or provider support, and do not
+require end users to install development tools. Record exact selected rows before
+dependent work; [the integration review](windows11-integration.md#9-conditional-mechanisms-worth-understanding)
+supplies source context, not a native pass. [P11–P12]
+
 Independently qualify file, directory, catalogue and provider-key owners/DACLs, inheritance, handle rights and replacement. Challenge another LocalService service, including owner-mediated ACL changes; service SID and machine key scope alone prove no isolation. Use the already allowed distinct restricted engine account if the required shared-account isolation cannot be established. [P15]
 
 Give save/restore only admitted directory authority and bounded relative object
@@ -183,6 +199,11 @@ At D2 re-entry, use bounded authenticated status carrying store class, service/b
 The VBS message must explain that storage keys are protected while working data is processed in service memory. TPM fallback must identify fresh-state protection and lost restoration; no-cache mode must name NevroTick's restart cache. Unknown/stale/disconnected status cannot look protected or current. Explain what continues or is suspended without inferring that a user deliberately disabled VBS.
 
 Show persistent status and a meaningful transition notice. On the **first subsequent authenticated UI connection**, present the current fallback/recovery/blocked condition even if it arose during headless boot. Deduplicate by store/state generation/reason; acknowledgement suppresses repeated announcements, never the persistent indicator or policy. Preserve [UI-M0](../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): no live status, persistence or production controls are introduced now.
+
+Native UIA/local app notifications are [future D2/D3 delivery candidates](windows11-integration.md#8-present-live-state-through-native-ui-facilities)
+owned by the unelevated UI. Their actions revalidate current state and authority;
+notification delivery neither changes storage policy nor selects a UI dependency
+or package-identity route.
 
 ## 7. Focused threat scenarios and acceptance mapping
 
@@ -224,7 +245,7 @@ Follow the repository [planning guide](../../.agents/skills/planning/README.md) 
 | **P5/D2 status** — UI/service/security | Integrate coherent current status, first-connection notice, reconnect, strict-policy suspension and acknowledgement behavior; retain accessible bounded announcements. | D2 remains deferred until its existing re-entry trigger; CHECK-14/17/22/25. |
 | **Package/release qualification** — build/release/platform | Reconcile final payload, providers/imports, actual mitigation manifest and account/upgrade/repair/removal behavior for declared release profiles. | CHECK-13/16/18/20/21/23/26; no release evidence supplied here. |
 
-Before native execution, explicitly freeze the provider's **wrapping and signing** support, Windows/SDK/CPU/VM builds, generated versus imported origin, cross-boot/silent operation and evidence for each reopened key. API base-version minima, full-enclave minima and CNG VBS support are different facts. Earlier source review found different generic-enclave/tooling support statements and a prerelease notice on NCrypt VBS flags; requalify the selected path rather than inherit a universal minimum. [P1, P11–P12]
+Before native execution, explicitly freeze the provider's **wrapping and signing** support, Windows/SDK/CPU/VM builds, generated versus imported origin, cross-boot/silent operation and evidence for each reopened key. API base-version minima, section 5's separate full-enclave runtime/tooling requirements and CNG VBS support are different facts. NCrypt VBS flags retain a prerelease documentation notice; requalify the selected path rather than inherit a universal minimum. [P1, P11–P12]
 
 The native matrix must cover VBS-off/re-enable, TPM/account/key loss, wrong-date/offline startup, disk-full, creation collisions, prepared/retired inventory exhaustion, supported restart/upgrade neighbors and every durable boundary. Test exact committed snapshot acceptance beside an older valid signature under the same root/data epoch. Preserve genuine native completion, inspect artifacts/resources before teardown, and restore all owned resources. No public time service or global clock mutation is needed for this storage qualification.
 
@@ -252,6 +273,7 @@ or a native experiment.
 | HR-03/05/06/08 | Independent mitigations, actual-key evidence, host-memory boundary and rollback/offline-anchor limits | Retained invariants; no native or ASVS closure. |
 | ST-T15 / ST-T18 | Inaccessible-history privacy barrier and explicit DEK/nonce/RNG lifecycle | Design obligations retained; execution open. |
 | 3 November second source review | Exact operation outcomes, directory/native-adapter contracts, durability monitor and mitigation cases; [agent task](../../tasks/windows-protected-storage.md) owns follow-up | Source lessons recorded; future implementation/native evidence remains open. |
+| 3 November Windows integration review | Full-enclave runtime build/VBS/HVCI requirements distinguished from developer tooling, special signing and CNG-root eligibility; deferred native notification routes | Conditional only; no construction freeze, provider admission, experiment or UI-M0 change. |
 | Conditional reserves | RedirectionGuard disposition; attestation/origin, hardware epochs and bounded anchor/disk recovery; chunking/database only if justified | No selected mechanism or dependency. Same-epoch replay, offline anchor replacement and full VM/vTPM rollback limits remain; no new mandatory-broker construction. |
 
 The independent audit closed A1–A5; the independent hardening reconciliation resolved HR-10 and found no remaining blocking contradiction within its bounded final review. These findings apply to the identified predecessor, not an unexecuted future implementation. This maintained condensation preserves their obligations; its documentation integration receives its own scoped consistency review.

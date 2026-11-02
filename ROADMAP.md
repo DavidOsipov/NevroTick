@@ -24,6 +24,7 @@ applying time to its own clock.
 | Workstream | Planning owner and status |
 | --- | --- |
 | Windows client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. This roadmap neither duplicates nor reorders that plan. |
+| Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, adaptive resource use, diagnostics and deferred UI integration. Source research is complete; implementation/native evidence and conditional choices remain open. This is work within the relevant existing phases, not a new predecessor to current work or KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
 | Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
@@ -464,6 +465,18 @@ and operation-order checks, CNG/mitigation qualification and privacy-output case
 The [agent task](tasks/windows-protected-storage.md) owns their future execution.
 RedirectionGuard is a candidate; hardware rollback epochs, remote attestation,
 chunking and a database remain conditional choices, not new DNS prerequisites.
+
+The [Microsoft Windows 11 review](docs/plans/windows11-integration.md)
+adds native DNS configuration/listener/event candidates and private-namespace,
+encrypted-DNS-policy, WSL/container and ZTDNS coexistence questions. Its
+[agent task](tasks/windows11-integration.md) also prepares service-scoped WSH
+restrictions, power/cost/memory-aware optional refresh, measured CNG hashing and
+coarse native diagnostics. Preserve DHCP inheritance and later configuration
+owners during restoration; OS DNS enrollment alone proves no universal capture.
+CNG SIMD batching and bounded multicore verification remain separate concerns.
+These refinements retain the existing DNS-C owners, DoQ-only direction and
+current development ordering; no API, provider, new analyzer profile or
+machine-wide policy is enabled by this research.
 
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are

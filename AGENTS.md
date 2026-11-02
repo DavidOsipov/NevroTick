@@ -93,6 +93,16 @@ mandatory-state owner. Source examples authorize no dependency or weaker fallbac
 RedirectionGuard and hardware rollback epochs retain their candidate gates. The
 storage experiment pause and current product-work priority remain in force.
 
+Windows 11 integration research: use [the source review](docs/plans/windows11-integration.md),
+[the agent task](tasks/windows11-integration.md) and the
+[existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
+They map packet timestamp provenance, power/timer semantics, service/network
+confinement, MSI maintenance, DNS ownership and background-resource candidates
+to current CHECK/DNS-C/ST-T owners. Record configured versus effective Windows
+state and distinguish source evidence from native qualification. Conditional
+APIs, analyzer profiles, dependencies and release channels remain unselected;
+the current product priority, experiment pause and UI-M0 deferrals remain.
+
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
 The current [Cargo workspace](Cargo.toml) contains

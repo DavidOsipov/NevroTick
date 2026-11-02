@@ -15,6 +15,11 @@ adds concrete adapter, durability and mitigation cases to section 6.4. The
 evidence. Source definitions remain separate from execution; storage experiments
 are paused and no new tool, dependency or required mitigation is admitted.
 
+The [Windows integration review](plans/windows11-integration.md) adds the bounded
+qualification refinements in section 9.11. They retain existing CHECK owners and
+separate configured state, effective enforcement and measured behavior; optional
+API/tool candidates are not admitted by this documentation.
+
 ## 1. Purpose and recommended baseline
 
 The development environment should make unsafe changes difficult to introduce, policy bypasses visible, and missing evidence impossible to report as a pass. The strongest useful setup combines a pinned compiler, strict coherent lint rules, dependency admission, isolated execution, independent behavioral tests, protected CI and verification of the actual Windows artifacts.
@@ -346,8 +351,8 @@ Pair effective process-policy queries with independently observed behavior. The 
 | ACG | Separately exercise harmless executable/writable allocation, protection change on existing executable memory, anonymous executable/writable mapping and file-backed mapping under the no-opt-out/no-downgrade profile; record native denial and effective bits | Ordinary heap use and exact engine/broker/provider workflows succeed, including cold startup and first lazy use. Do not execute injected payloads. Excluded/ignored instrumentation configurations remain unexecuted, not green. |
 | Image loading | Separate controlled remote-image and low-mandatory-label canaries fail to load; CWD/PATH canaries exercise section 15.2 separately | The intended protected dependency loads from its expected path. Mark of the Web is not the low-label fixture; System32 preference is not a directory allowlist. |
 | Strict CFG and handles | Optional Strict CFG denies an incompatible code-bearing DLL; strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
-| Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile | Final service APIs, boot-before-login, stop/restart and recovery work. A custom-parent child-policy fixture does not close the SCM gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
-| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; optional unsupported hardware remains explicitly unsupported. |
+| Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile; harmless requests for `PROCESS_CREATE_PROCESS`/`PROCESS_VM_WRITE` on dummy peers and inherited/duplicated-handle review must also establish the required isolation | Final service APIs, permitted read-only queries, boot-before-login, stop/restart and recovery work. A custom-parent fixture or queried child-policy bit does not close the SCM/composition gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
+| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status; if stricter CET/EHCONT is selected later, inspect actual metadata and module admission for the complete closure | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; optional unsupported hardware remains explicitly unsupported. No additional flag/profile is adopted by the research. |
 | Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid single-MSI install/update/repair/remove completes under each declared release profile. Existing CHECK-12/13/18/23 remain authoritative. |
 | RedirectionGuard candidate | If separately admitted, distinguish audit from enforcement for an in-scope unprivileged junction; record unsupported/query failure and administrator-created/legacy controls | Ordinary file/provider/lifecycle operations succeed; application path checks still reject out-of-scope forbidden paths. Required/optional disposition and OS/build floor remain open; this candidate is not an added release or UI-M0 gate. |
 
@@ -385,6 +390,11 @@ that probe's path, not another key's origin. Preserve anchored authentication an
 offline-anchor/rollback limits. A healthy-clock sample, setter, binding or
 CET image marker is insufficient. Existing held TLS/CNG fixture receipts retain
 their narrower scope.
+
+If a full-enclave row is later selected, keep the runtime build/VBS/HVCI evidence
+separate from developer tooling and special production-signing admission in the
+[storage plan](plans/windows-protected-storage.md#5-platform-admission-failure-classification-and-privacy).
+None establishes support for the distinct CNG VBS-root path, or lifts its pause.
 
 The [second source supplement](plans/windows-protected-storage-upstream-lessons-2.md)
 owns attribution and adaptation limits for these refinements. Portable models
@@ -655,6 +665,14 @@ Select this lane when changing unsafe Windows adapters, native buffer/string/cal
 
 PageHeap observes the heap paths it instruments and changes allocation cost and timing. Its settings persist until explicitly removed. Application Verifier's Leak layer reports tracked resources at DLL unload; outstanding resources alone are not proof of a leak. Use the dedicated lifecycle measurements below for retention, and retain the independent ASan/Miri admission limits above. [Microsoft PageHeap documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/gflags-and-pageheap), [Application Verifier layers](https://learn.microsoft.com/en-us/windows-hardware/drivers/devtest/application-verifier-tests-within-application-verifier).
 
+**Low-resource simulation remains an unadmitted candidate.** The current policy
+admits Basics/full PageHeap, not arbitrary fault layers; Microsoft's `/faults`
+shortcut does not cover every native resource failure. A later named allocation,
+handle or registration failure question needs an exact qualified profile,
+healthy/fault controls, truthful service/effect observations and verified cleanup
+through this existing workflow. The [research proposal](plans/windows11-integration.md#7-diagnose-actual-windows-behavior-and-inject-native-failures)
+changes no tool policy and claims no executed low-resource coverage.
+
 #### 9.5.2 Retention and resource ownership
 
 For changes to long-lived state, queues/caches, native resources or task cancellation, identify each allocation, handle, thread/task and permit owner, its bound and its release condition. Rust ownership and garde validation do not establish bounded retention: reference cycles, intentionally forgotten allocations, unbounded collections and abandoned work need explicit lifecycle contracts and observations. Native work retains custody and capacity permits until actual completion or qualified recovery, even if its waiting future is dropped.
@@ -706,6 +724,7 @@ Implement the canonical [shared Windows adapter contract](windows-time-architect
 | Clock independence | A verbosity-only change leaves the active source policy, estimator, valid correction and cumulative allowance unchanged. Log failure cannot authorize a request or block required cleanup. |
 | Resource exhaustion and lifecycle | Concurrent component writers respect aggregate file allocations and bounded record/memory/queue/rate limits. Full/missing/denied sinks, floods, rotation/flush failures and stop/crash paths yield bounded loss/status without recursion, critical-path I/O waits or leaked native work. Include a healthy-event control. |
 | Windows and feature boundaries | Verify actual provider/channel resource identity, access and retention under section 15.3; required/success and denied/failure paths on Windows. Inspect per-binary features/imports and correct resource-specific cleanup: sharing an adapter must not add GUI/TLS/clock-write composition to unrelated roles. |
+| Optional trace/counter evidence | ETW timing/lifecycle traces retain monotonic correlation and loss counts; absent events in a lossy trace cannot prove absence of effects. If PerfLib V2 is selected, qualified aggregate counters preserve trust/freshness semantics, privacy and bounded overhead; coarse counter collection is not profiling. |
 
 Tie results to the exact candidate, enabled features, process roles and declared finite limits. Pure tests exercise records, mappings, bounded state transitions and fake sinks; native Windows tests establish pipe/token/SCM, callback lifetime and Event Log behavior. CHECK-21 measures INFO and bounded DEBUG cost under supported host security, including flood pressure and disabled-callsite overhead. Reuse CHECK-1/2/3/14/15/17/21/26/27 instead of creating parallel gate identities. Inspect cleanup before the harness hides leaks, and preserve unavailable/native cases as gaps. This work does not enable production diagnostics in UI-M0.
 
@@ -750,6 +769,28 @@ Pure fixtures can qualify transition logic and fault-seam expectations. Filesyst
 durability, actual token/owner access, SCM, clock mode/trajectory and signing
 retrieval require supported Windows observations in owned disposable fixtures.
 No production TTL, quorum or recovery allowance is supplied by this matrix.
+
+### 9.11 Windows integration qualification refinements
+
+The [3 November Microsoft-source review](plans/windows11-integration.md) and
+[agent task](../tasks/windows11-integration.md) route these future cases to
+existing owners. Each selected candidate needs a healthy control alongside its
+failure case. These are planned refinements, not native results, new release
+gates or permission to execute paused experiments.
+
+| Existing owner / checks | Independent observation at the relevant stage |
+| --- | --- |
+| Time/network adapter; CHECK-6/11/21/27 | For optional packet timestamps, distinguish actual software/NIC source and RX/TX interface attribution on two adapters. Route/socket/counter changes, stale or missing TX records and buffer saturation cannot publish a falsely precise current sample; the qualified application-boundary fallback remains usable. |
+| Platform/clock; CHECK-10/11/12/27 | Observe selected suspend/Modern Standby and delayed-timer paths without assuming every service suspends. Sleep-excluding clock progress is not proof the broker executed cleanup; generations, residual rate and uncertain cleanup remain honest. Healthy wake/reacquisition works without replenishing authority. |
+| Installer/security; CHECK-1/9/16/23/27 | If WSH is selected, preserve the admitted service SID profile and prove permitted/denied networking under actual identities, both address families, rule delay, delegated work and managed conflicts. CHECK-9 applies to delegated certificate retrieval, not to a new general firewall gate. Configuration success or a single process firewall rule is insufficient. Custom WFP needs a demonstrated remaining gap. |
+| Service/installer; CHECK-1/11/12/13/23/27 | Distinguish configured settings, documented service-start/system-start activation and observed effective state, including first install. Boot/manual/SCM/Restart Manager starts cannot bypass durable maintenance admission; commit/rollback work with RM enabled or unavailable. An optional preshutdown budget expires truthfully without waiting for optional cache writes. |
+| Resource/crypto owners; CHECK-21/26/27 and existing DNS-C owners | Select power/cost/memory hints, scoped EcoQoS or CNG SIMD batching only for a measured workload. Pressure, unknown cost, small loads and adversarial work preserve hard caps, foreground latency, crypto truth and completion custody; batch SIMD is distinct from bounded multicore scheduling. |
+| UI/service; CHECK-14/17/22 at D2/D3 re-entry | Build-supported UIA/local notifications reflect current state obtained through authenticated service communication, distinguish time-authentication/readiness states, deduplicate meaningful changes and revalidate actions. Actual Narrator/deployment behavior remains to be qualified; no UI-M0 integration or package identity follows from this candidate. |
+
+Sections 6.4/6.4.1 retain the child-handle, stricter-CET and conditional-enclave
+owners; section 9.5.1 retains low-resource profile admission; section 9.8 retains
+trace/counter evidence. Preserve one complete MSI, DoQ-only DNS, optional-storage
+versus mandatory-continuity separation, UI-M0 deferrals and current S1.3 priority.
 
 ## 10. Native Windows qualification and safe experiment ownership
 

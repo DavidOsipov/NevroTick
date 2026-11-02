@@ -28,6 +28,7 @@ to own requirements, and task records own executed evidence.
 | Where are protected key storage, VBS fallback and their evidence gates owned? | [Architecture §12.1.2](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [protected-storage plan](plans/windows-protected-storage.md), [development workstream](plans/development-plan.md#84-protected-optional-storage-design-and-qualification) and [provider qualification](windows-time-development-hardening.md#641-protected-storage-provider-qualification). |
 | Where are source examples and adaptation limits for protected Windows storage? | [First upstream review](plans/windows-protected-storage-upstream-lessons.md) and [second upstream review](plans/windows-protected-storage-upstream-lessons-2.md): pinned implementation/test sources, adaptation limits and future checks. The second adds directory authority, indeterminate commits, crash/protocol models, per-call CNG contracts, behavioral mitigation checks, RedirectionGuard and conditional rollback research. |
 | What should an agent do with the protected-storage research? | [Protected-storage agent task](../tasks/windows-protected-storage.md): bounded work items, prerequisites, owners, independent expectations, healthy/defect controls and candidate-specific evidence, mapped to the existing storage plan. The native experiment pause and current development priority remain unchanged. |
+| Which Microsoft Windows 11 mechanisms should be evaluated, and where does their work belong? | [Windows 11 integration research](plans/windows11-integration.md), [phase workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent task](../tasks/windows11-integration.md): packet timestamps, sleep/timer behavior, DNS/WSH integration, effective service state, MSI restart paths, resource signals, CNG, diagnostics and future UI; conditional reserves retain separate triggers. Existing CHECK/DNS-C/ST-T owners apply; no native pass or automatic API/dependency adoption. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
@@ -50,6 +51,21 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Microsoft Windows 11 integration research, 3 November 2026:** the
+[source review](plans/windows11-integration.md) records primary Microsoft evidence,
+project-specific adaptations, compatibility limits and distinguishing checks.
+The [agent assignments](../tasks/windows11-integration.md) and
+[development workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification)
+place them within existing phases. Canonical refinements cover actual packet/
+interface provenance, Modern Standby execution limits, configured versus effective
+service protection, Restart Manager admission, DNS ownership and native resource
+signals. WSH, packet timestamp adapters, CNG batching, PerfLib and new fault
+profiles remain candidates pending their stated evidence. LPAC, full enclaves,
+package identity and new distribution channels remain conditional; PPL is not
+an ordinary utility-service route. Current work, DoQ-only upstream, the complete
+MSI, storage pause and UI-M0/D1–D3 deferrals remain unchanged. Documentation
+integration establishes no implemented feature, measured speedup or Windows pass.
 
 **Protected-storage second upstream review, 3 November 2026:** the
 [new source supplement](plans/windows-protected-storage-upstream-lessons-2.md)

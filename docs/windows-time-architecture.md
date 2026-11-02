@@ -28,6 +28,13 @@ owns the bounded follow-up. This is a scoped documentary amendment to revision
 1.4; construction/default decisions remain open and the native-experiment pause
 remains in effect.
 
+**3 November Windows integration amendment:** the [Microsoft-source review](plans/windows11-integration.md)
+refines packet provenance, power/service lifecycle, network confinement and native
+qualification at their existing owners below. Optional mechanisms remain
+candidates; [the agent task](../tasks/windows11-integration.md) routes them to
+existing phases and CHECK/DNS-C/ST-T owners. This records research without
+changing current development priority, UI-M0, storage holds or release policy.
+
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
 The selected v1 design is **one complete per-machine MSI** under the Authenticode or initial OpenPGP release profile in section 19.5 containing a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker, and the administration helper. The user installs, updates, repairs and removes one product. The installer owns service installation and reversible Windows Time Service handover. A future MSIX, if qualified, must contain the same complete product with an equivalent lifecycle; separate UI and service distributions are excluded.
@@ -272,6 +279,14 @@ The initial MSI prototype uses a broker under its own virtual service account, s
 LocalService is not sufficient isolation by itself. Windows policy can grant it change-system-time privilege, and its ordinary token includes other powerful rights. SCM's required-privileges setting removes unneeded privileges at process startup; services sharing a process receive the union, which is another reason to avoid shared-process hosting. `SetSystemTime` can enable a present clock privilege, so merely leaving it disabled is not a defense. [S04, S05, S06, S07]
 
 The engine's effective token must lack `SeSystemtimePrivilege`, `SeDebugPrivilege`, `SeImpersonatePrivilege` and unnecessary process/token-management rights. The broker retains only `SeSystemtimePrivilege` and rights demonstrably needed for its implementation; `SeChangeNotifyPrivilege` is an OS-retained exception. Identity-level pipe authorization must be proven without retaining broad impersonation authority. Inspect actual tokens at startup and in qualification tests. Unexpected dangerous rights are a configuration error, not an informational warning.
+
+Track configured value, documented activation point, observed token/policy and
+pending restart/reboot separately. Required-privilege changes apply at the next
+service start; Microsoft documents service-SID and non-crash failure-actions-flag
+changes at the next system start. Qualify first installation separately rather
+than infer a universal reboot rule. Configuration readback alone cannot admit
+clock takeover. Service-SID write restriction also does not replace explicit
+read-confidentiality ACLs. See [service-state research](plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
 
 Use service SID restrictions, explicit process/token object security and non-inheritable handles. The engine must not open the broker for injection, token duplication or writable memory. ACLs must not grant broad LocalService access merely for convenience. The broker's virtual account can present machine credentials on a network, so installer-owned service network restrictions must deny its external networking. [S08, S09]
 
@@ -891,6 +906,19 @@ Where a competing controller may have replaced the rate during an outage, matchi
 
 Use precise UTC reads paired with high-resolution monotonic readings, accounting for read uncertainty. The broker exposes capabilities, observed adjustment state, applied corrections and generation. It never assumes a requested rate is precisely representable. Conversion, sign, quantization, API success and actual clock trajectory are separate checks. [S22, S23]
 
+**Optional packet-timestamp adapter:** compare Winsock software RX/TX timestamps
+with the qualified application-boundary path before considering NIC timestamps.
+Software timestamps use QPC; a hardware value needs supported/enabled capability
+and a current NIC-to-QPC correlation. Bind each record to the exchange, socket
+generation and **actual packet interface**, using qualified RX metadata and TX
+interface selection; a default-route observation or per-NIC model alone is
+insufficient. Reject ambiguous/stale attribution and bound missing, delayed or
+dropped TX metadata. Retain an honest source/uncertainty-labelled fallback.
+Later TX observations are separate local measurements, not rewrites of already
+transmitted/authenticated bytes. Neither timestamp precision nor NIC capability
+proves remote UTC accuracy. The [research and two-interface cases](plans/windows11-integration.md#1-measure-packets-closer-to-the-network-stack)
+remain candidates under CHECK-6/11/21/27, not a new accuracy claim.
+
 Keep stable oscillator compensation separate from transient phase correction. A phase plan has a finite budget, deadline and maximum rate. On new source evidence, cancellation or generation change, account for the actual correction delivered before replacing it. Prevent multiple controllers from integrating the same phase error twice.
 
 The intended backend uses `GetSystemTimePreciseAsFileTime`, `QueryPerformanceCounter`, `GetSystemTimeAdjustmentPrecise`, `SetSystemTimeAdjustmentPrecise` and policy-authorized `SetSystemTime`. The exact semantics and achievable rate resolution must be qualified on supported Windows builds and hardware. Do not reuse Linux `adjtimex` constants or assume chrony's Linux slew limits transfer. [S07, S22, S23]
@@ -958,6 +986,20 @@ Test duplicate replay and a healthy operation beside every rejected/unknown case
 
 QPC includes standby/hibernation time, while `QueryUnbiasedInterruptTimePrecise` excludes sleep. Consequently, elapsed QPC alone is not proof that a temporary frequency correction was actively delivered throughout an interval. Use explicit power events, an active-time domain and measured backend behavior; qualify Modern Standby as well as ordinary sleep. [S22, S24]
 
+Modern Standby throttles session-0 work; from Windows 11 24H2 additional services
+**may** be suspended. This is conditional, not a guarantee for every device or
+service. A system clock excluding sleep does not measure the broker's execution
+time or prove it ran its cancellation callback. Notifications, timers and SCM
+recovery create no finite lease on a programmed rate; retain section 10.4's
+cleanup uncertainty and measured residual-rate envelope.
+
+Treat timer delivery as a request to recheck the actual deadline and generation.
+Windows 8+ relative waitable timers exclude low-power time; absolute timers
+respond to wall-clock changes. Coalescing is a candidate for optional background
+work, with broker deadlines separately qualified; high resolution needs measured
+benefit. The [power/timer source review](plans/windows11-integration.md#1-measure-packets-closer-to-the-network-stack)
+supplies cases, not evidence that cleanup executes before suspension.
+
 On suspend notification, promptly cancel transient slew; do not perform slow network or storage operations inside the short notification deadline. On resume, increment clock generation, discard exchanges crossing sleep, rebuild the UTC/monotonic mapping, retain only a bounded drift prior and collect fresh samples. Windows time-change events and sampled discontinuity detection cover manual adjustments, VM restoration and external controllers. Self-induced changes are correlated with broker operations so they are not misclassified as attacks. [S25]
 
 Define the persisted budget/boot epoch across cold boot, explicit restart, sleep,
@@ -1012,11 +1054,21 @@ Automatic fallback to W32Time on NTS outage is excluded. That would change authe
 Quiescence includes previously queued SCM recovery. A pending restart cannot be
 cancelled merely by stopping a service. Qualify transactional disabling of the
 product-owned services and a protected durable maintenance-startup inhibition;
-every startup checks maintenance and current ownership before protected work.
+every boot, manual, SCM-recovery or Restart Manager startup checks maintenance
+and current ownership before protected work.
 Restore the exact permitted configuration with administrator/GPO/successor guards.
 Exercise delayed restart during update, rollback, repair and removal, including
 interruption and re-enable. The existing service adapter guide already requires
 queued-restart handling; this makes its startup interlock explicit. [S120]
+
+Windows Installer's Restart Manager integration is another start source, not a
+separate lifecycle owner. `MSIDISABLERMRESTART` affects restart only when RM is in
+use; public MSI input cannot clear the protected maintenance guard. Qualify
+commit/rollback with RM enabled and unavailable, retaining honest reboot results.
+If preshutdown is used, select/query a justified finite per-service cleanup budget
+rather than copy an old default. Broker cancellation and mandatory journal work
+remain independent of optional cache saves; this orderly path supplies no cleanup
+guarantee after abrupt death. See [lifecycle research](plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
 
 ---
 
@@ -1297,7 +1349,13 @@ deadlock caveat. No per-packet TPM operation or protection probe is required.
 A full enclave has separate supported-build, ABI/runtime/import, production
 signing, debug and strict-memory gates. Microsoft requires CFG for enclave DLLs;
 neither blanket conflict nor complete host-profile compatibility follows.
-Ordinary release signing does not prove enclave admission. [S123, S124]
+The reviewed runtime floor is Windows 11 build **26100.2314+ with VBS/HVCI**;
+development-tool/SDK requirements and production enclave-signing eligibility are
+separate. These are full-enclave requirements, not CNG VBS-root eligibility or a
+requirement to install development tools on users' machines. Ordinary release
+signing does not prove enclave admission. [S123, S124]
+The [current integration review](plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
+refines this conditional row without lifting the storage experiment pause.
 
 Future D2 status carries bounded store/instance/sequence/policy/root/data
 identity, actual mechanism/evidence, readiness, reason and freshness.
@@ -1379,6 +1437,14 @@ The proposed **10 MiB rotating local diagnostic budget is aggregate per installa
 Keep expensive formatting and sink I/O off the time-control critical path with bounded admission and writer work. Guard optional expensive work before evaluation; bound encoded bytes after escaping, rate-limit keys/cardinality and counter arithmetic. Prioritize required records within a finite allocation, coalesce floods and retain first relevant cause/counters. Expose queue loss, unavailable sinks and incomplete export through bounded diagnostic health/status; never recursively log a sink failure into itself. A failed logger must not turn rejection into success, corrupt mandatory state or block necessary clock cleanup. Shutdown flush is finite; loss after the deadline or abrupt termination is reported as a limitation, not a durability guarantee.
 
 Required security/operational events use the installed Windows event channel contract in section 15.3; optional ETW needs its own admission and does not replace that durable channel. Keep provider/channel rights, registration resources, retention and unavailable-sink behavior explicit. Crash dumps, raw EVTX and externally collected OS traces have separate access/content risks; they are not automatically redacted support exports.
+
+When WPR/WPA or another ETW trace supports a timing/lifecycle claim, retain
+monotonic correlation and session loss counts; an absent event in an incomplete
+trace is not proof that the operation never occurred. PerfLib V2 is an optional
+aggregate operator-counter candidate, intended for coarse monitoring, not
+profiling or collection faster than once per second. Define trust/freshness and
+queue/resource semantics without raw names or secrets. The [diagnostics review](plans/windows11-integration.md#7-diagnose-actual-windows-behavior-and-inject-native-failures)
+adds no resident telemetry service or replacement for mandatory journals.
 
 The UI obtains bounded redacted support data, previews it and writes the user-selected export. Redact private endpoints, usernames and private paths by default; caller filenames never become arbitrary privileged writes. No telemetry or remote crash upload is enabled by default. A local file alone does not satisfy ASVS's logically separate analysis/alerting requirement. Assess the actual Windows/managed-forwarding boundary and retain any desktop-profile gap without silently enabling telemetry.
 
@@ -1977,6 +2043,17 @@ Windows integration means using the host's identities, protection and management
 | Authenticode, SmartScreen, Smart App Control and App Control for Business | For the Authenticode profile, sign the required executable components and complete MSI. The initial OpenPGP profile follows section 19.5 and supplies no Windows publisher-trust claim; both operate under applicable host policy | Signature establishes integrity/publisher evidence, not guaranteed reputation or acceptance. Qualify install/run/update/repair/removal and temporary custom-action paths. Do not install broad enterprise allow policies to bypass an existing deny decision |
 | Defender, Memory Integrity and other host protections | Test the actual release with the declared supported protections enabled | No antivirus exclusions or disabling host security as a product requirement or performance shortcut. Managed-policy incompatibility produces a useful diagnosed failure |
 
+**Service-network candidate:** qualify `INetFwServiceRestriction::RestrictService`
+and its distinct Windows Service Hardening rule collection within the existing
+broker-denial/engine-restriction policy before custom WFP management. Preserve
+each service's selected SID/token profile; copying a sample's
+`serviceSidRestricted = FALSE` would not qualify the restricted engine. Observe
+actual rule activation, IPv4/IPv6 effects, delegated retrieval and managed-policy
+conflicts; ordinary block/allow precedence remains as stated above. Custom WFP
+needs a demonstrated gap and its own object/lifetime design, including whether
+denial survives its owner's exit. The [network-confinement research](plans/windows11-integration.md#3-constrain-service-networking-with-a-windows-owned-mechanism)
+adopts no policy mutation, driver or machine-wide rule.
+
 Current Smart App Control guidance supports trusted RSA and ECC signatures; older RSA-only advice is not the basis for the signing plan. The free SignPath route remains conditional on acceptance and exact release signing, and has no special exemption from Windows reputation or enterprise policy. [S91]
 
 Use event metadata that remains meaningful while the clock is wrong: UTC plus time-quality/generation, monotonic sequence and operation correlation where appropriate. Persisted log timestamps do not prove correct UTC. Event-channel readers, writer permissions, clear/export authority, retention and failure behavior are part of the diagnostics inventory; no extra always-running logging service is required.
@@ -1999,12 +2076,19 @@ All product executables retain section 15.1's build protections and section 15.2
 | Standalone `admin-helper` | Common protections plus a profile for its exact elevated lifecycle operations | Qualify SCM/MSI/UAC interactions. Do not inherit a service's no-child or no-Win32k profile solely because the helper is privileged. |
 | MSI custom-action DLL, if selected | Inspect the DLL's build/load properties and actual installer host separately | A library initializer must not apply process-wide service policy to a Windows Installer host. The standalone-helper result does not qualify an in-process custom action. This ownership rule follows the calling-process scope of the mitigation API. [S29, S103] |
 
-AppContainer remains the separate experiment in section 19.4. It is not required by this refinement and is not supplied by an MSI/MSIX extension or an ordinary service SID. Mitigations reduce exploit opportunities; they establish neither correct UTC nor authority to bypass broker validation.
+AppContainer/LPAC remains the separate experiment in section 19.4, requiring a
+named worker benefit and explicit capability, IPC, launch and lifecycle evidence.
+Neither package identity nor a service SID supplies that isolation. The separate
+Win32 app-isolation route is documented as preview, not an admitted SCM topology.
+Protected Process Light is excluded as a general utility-service option: Windows
+levels are reserved and the third-party antimalware route has special eligibility
+and signing requirements. See [conditional mechanisms](plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding).
+Mitigations establish neither correct UTC nor authority to bypass broker validation.
 
 #### Exact policy semantics
 
 - **Dynamic-code prohibition:** an enforced profile requires `ProhibitDynamicCode=1`, with `AllowThreadOptOut=0` and `AllowRemoteDowngrade=0`. Audit-only observation is not enforcement. A compatibility failure must not silently activate these weakening options; resolve the dependency or document a concrete policy decision. [S95]
-- **CFG and CET activation:** `SetProcessMitigationPolicy` cannot change `EnableControlFlowGuard` or enable initially disabled hardware shadow-stack protection. Record image/creation/host policy separately from runtime setters. `/CETCOMPAT` is still an x64 compatibility marker, not proof of active HSP. [S32, S96, S97]
+- **CFG and CET activation:** `SetProcessMitigationPolicy` cannot change `EnableControlFlowGuard` or enable initially disabled hardware shadow-stack protection. Record image/creation/host policy separately from runtime setters. `/CETCOMPAT` is still an x64 compatibility marker, not proof of active HSP. Stricter CET/EHCONT metadata and module-admission settings remain separate candidates for the exact Rust/native closure, not newly selected flags or required hardware. [S32, S96, S97]
 - **Strict CFG:** separately qualify its code-bearing DLL admission rule, including the resource-only DLL exception. Once enabled it cannot be disabled through the setter. It does not prove that every statically linked native object or Rust standard-library path contains checks. [S96, S102]
 - **Image restrictions:** record `NoRemoteImages`, `NoLowMandatoryLabelImages` and `PreferSystem32Images` individually. Low mandatory integrity is not Mark of the Web; System32 preference changes search order and is not a System32-only allowlist. These controls restrict executable images, not ordinary NTP network traffic or arbitrary data-file access. They supplement section 15.2. [S98]
 - **Strict handles:** when setting the policy, the invalid-handle and permanent-enable fields must match. Record actual query results and debugger/verifier presence: Application Verifier can produce the documented non-permanent exception state, which is not evidence of the product's permanent setting. [S99]
@@ -2022,6 +2106,12 @@ disposition unqualified. Until that decision is recorded, it creates no new
 required startup gate. Preserve the independent installer-host rule above.
 
 **SCM child-process proof gap:** preserve the engine/broker no-child design, but establish the supported installation mechanism, effective state and denied creation under their actual SCM launch path. A policy enum, header declaration or custom-parent test is insufficient. Parent-side process-creation attributes do not establish control over SCM's launch attributes. App-specific Exploit Protection is a research candidate, not an adopted installer change. Do not introduce a launcher or change service topology merely to claim this control. [S29, S101, S104]
+
+Child restriction also depends on inaccessible powerful handles to other
+processes. Extend the access matrix to `PROCESS_CREATE_PROCESS`,
+`PROCESS_VM_WRITE` and relevant inherited/duplicated handles; use harmless rights
+requests to dummy peers alongside permitted read-only queries. A queried bit and
+one denied child launch cannot establish this composition. [S101]
 
 If later evidence selects persistent per-image settings, qualify no-login boot, restart and MSI upgrade/repair/removal, collisions with administrator/enterprise policy, and ownership-preserving restoration. Such settings identify an image by name/path rather than product version; requalify changed binaries. No machine-wide reset, administrator-policy overwrite or manual user setup step is introduced here. [S102]
 
@@ -2087,6 +2177,14 @@ The settings page groups source/trust policy, clock correction policy and UI pre
 ### 16.3 Accessibility acceptance
 
 Expose correct UI Automation names, roles, values, states, relationships and control patterns. Provide complete keyboard operation, visible focus, meaningful access keys, predictable tab order, Escape/cancel behavior and focus restoration after dialogs/UAC. Test Narrator's actual spoken output separately from programmatic UIA assertions. [S40]
+
+At D2/D3 re-entry, evaluate native UIA state notifications and local app
+notifications through the unelevated UI. Qualify processing modes by supported
+build, Narrator behavior, deduplication and fresh-state/action authorization.
+Unpackaged local notifications do not themselves require package identity;
+Windows App SDK deployment/Singleton costs need their own graph review.
+These [UI candidates](plans/windows11-integration.md#8-present-live-state-through-native-ui-facilities)
+introduce no live UI-M0 status, dependency or accessibility gate.
 
 Support Windows contrast themes, system text scaling, at least 200% display scaling without lost content, multi-monitor DPI changes and reduced motion. Use text/icon/shape distinctions in addition to color. Error messages identify the failing action and remedy; they must be associated with the relevant control and reachable without a mouse.
 
@@ -2157,6 +2255,23 @@ The following are **unmeasured proposed budgets**, not inherited website mandate
 | Long-run resource stability | No unexplained growth in handles, threads or private allocations over 72 hours | Normalize for bounded caches and log rotation; test fault/reconnect cycles before teardown |
 
 Use one bounded engine event loop and a small explicit blocking-work budget. A current-thread async runtime is a candidate, not a requirement to spawn one worker thread per CPU. DNS, certificate work and diagnostics must not create unbounded background tasks. Network retry and UI refresh are event-driven; visible values update at most once per second unless an interaction needs immediate feedback.
+
+Native power-mode, connection-cost and memory-pressure notifications are optional
+inputs for later cache/statistics/prefetch policy, not security authority or
+replacement resource caps. Unknown connection cost is not free; system-wide
+level-signaled memory pressure needs coalescing/hysteresis, not a spin loop, and
+does not guarantee warning before allocation failure. Apply EcoQoS only to
+qualified background execution threads; do not lower the entire current-thread
+time engine's QoS because it also owns optional work. Measure foreground latency,
+wakeups and energy with the [resource-hint candidates](plans/windows11-integration.md#5-make-adaptive-caching-cooperate-with-the-operating-system).
+
+CNG MultiHash is a separate conditional optimization for measured eligible
+SHA-256/384/512 batches. SIMD throughput within a worker does not supply bounded
+multicore scheduling or automatically accelerate TLS/NTS/AEAD. Preserve fairness,
+foreground tail latency, actual native-job custody and independent crypto
+expectations; provider-handle reuse changes no admitted algorithm/provider policy.
+The [crypto candidate](plans/windows11-integration.md#6-use-native-cryptographic-acceleration-for-a-measured-workload)
+closes no held backend choice or performance gate.
 
 Poll intervals begin with chrony's common 64-1024-second range and adapt within policy. Startup/reacquisition bursts are bounded and respect provider rules. Never increase global Windows timer resolution merely to make a status display smoother. Package size optimization must preserve safety checks, useful failure diagnostics and accessible controls. [S17, S54]
 
@@ -2496,6 +2611,15 @@ If these conditions are unproven, MSIX is not shipped. The complete MSI remains 
 MSIX full trust is not AppContainer. Full-trust packaged desktop applications retain ordinary desktop permissions. AppContainer is a separate isolation choice requiring explicit capabilities and IPC/accessibility proof; the broker's time authority is not sandboxed merely by using an `.msix` extension. [S42]
 
 An AppContainer UI/worker remains a separate experiment if it improves the measured threat boundary. It must not cause a second installer, broad all-AppContainers pipe access or a new user-visible setup chore. Do not conflate that experiment with packaging qualification.
+
+A package identity with external location is a distinct conditional candidate:
+the complete MSI can remain file/lifecycle owner for a named identity-dependent
+feature. Identity alone supplies no sandbox or automatic integrity for external
+files. Qualify trusted package signing, publisher continuity, per-user
+registration, repair/update and complete removal before adoption; OpenPGP sidecars
+do not satisfy that package-signature requirement. Local notifications alone do
+not justify the branch. The [packaging research](plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
+changes no full-MSIX gate or one-product contract.
 
 ### 19.5 Free signing plan
 
