@@ -430,6 +430,14 @@ resource accounting, comparison experiment and DNS-C01–DNS-C18 acceptance case
 Its engineering parameters are proposals pending qualification. This future
 workstream does not reorder the current Windows plan or the KHR-0 follow-up.
 
+The [source-attributed DNS upstream lessons](docs/plans/dns-upstream-lessons.md)
+record mechanisms from Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and
+dnscrypt-proxy, including exact source revisions, NevroTick adaptations and
+future checks. They refine work accounting, request/connection ownership,
+endpoint recovery, cache/routing semantics and protected telemetry. Optional
+proof reuse and signed catalogs remain proposals; source review establishes no
+implementation, dependency admission or measured performance.
+
 Add **DNS-over-QUIC (DoQ)** with configurable pinning of both **leaf/server
 certificates** and **intermediate CA certificates**. **DoH, DoT and DNSCrypt are
 out of scope**, including DoH carried over HTTP/3. Upstream connection or

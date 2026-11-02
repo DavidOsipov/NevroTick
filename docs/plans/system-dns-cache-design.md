@@ -1,10 +1,10 @@
 # System-wide Windows DNS service and adaptive cache
 
-**Document:** NV-DNS-PLAN-001, revision 1.0<br>
+**Document:** NV-DNS-PLAN-001, revision 1.1<br>
 **Date:** 2 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Future-feature design and evaluation plan. The Windows-wide product scope and DNSSEC optimization requirement are owner instructions; algorithms, integration details and numerical settings below are engineering proposals unless explicitly identified otherwise.<br>
-**Inspected repository baseline:** [`f0579a1ff13d5d4176175566c4e3d75f56eca6c5`](https://github.com/DavidOsipov/NevroTick/tree/f0579a1ff13d5d4176175566c4e3d75f56eca6c5). Source/documentation review establishes no working DNS service, Windows configuration change, benchmark or native qualification.
+**Original design baseline:** [`f0579a1ff13d5d4176175566c4e3d75f56eca6c5`](https://github.com/DavidOsipov/NevroTick/tree/f0579a1ff13d5d4176175566c4e3d75f56eca6c5). Source/documentation review establishes no working DNS service, Windows configuration change, benchmark or native qualification.
 
 ## 1. Purpose, authority and accepted direction
 
@@ -145,6 +145,14 @@ Primary source locations are listed in [R07–R10]. Stale serving, cache evictio
 Technitium's removal is the maintainers' assessment of their implementation, not proof that every bounded adaptive design fails. Conversely, an old feature description is not evidence that the feature remains present. Recheck mutable upstream evidence at the future implementation stage.
 
 Borrow concepts and controls selectively. Copying source code would require the repository's separate provenance, license-compatibility, dependency and verification process; this document grants no such compatibility conclusion.
+
+### 4.1 Source-attributed implementation refinements
+
+The [DNS upstream lessons and adaptation plan](dns-upstream-lessons.md) records the owner's follow-up request to retain useful mechanisms from Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy, with immutable source revisions, observed behavior, proposed adaptations and future checks. Its NevroTick baseline is `f8d47a7ea943de451abf7f7706975c38e827380a`.
+
+Prioritize cumulative work accounting across retries/shared jobs, request-owned metadata, DoQ replacement-connection safety and small endpoint-health/recovery state. The supplement also covers logical cache separation, namespace/DS routing, localhost-aware admission, bounded telemetry and privacy consumers. Validated NSEC proof reuse, more elaborate upstream selection and signed resolver catalogs remain conditional later experiments. No imported implementation, dependency, numerical default or performance result is adopted by recording these lessons.
+
+The [qualification map](dns-upstream-lessons.md#4-qualification-map-and-implementation-order) refines the existing DNS-C01–DNS-C18 cases; apply relevant ownership/concurrency/resource scenarios when each component first appears, including the protocol baseline. It does not create a parallel acceptance catalog, change DoQ-only/pinning/TTL authority or reorder current time-client work.
 
 ## 5. Demand observation and bounded model state
 
@@ -440,8 +448,8 @@ The current product sequence remains owned by the [development plan](development
 | Stage | Bounded outcome | Exit and next action |
 | --- | --- | --- |
 | DNS-0: integration and evidence design | Resolve the proposed listener, Windows coverage matrix, ownership/restoration model, bootstrap/time dependencies, runtime identities and finite experiment budgets. Inventory the current source/tooling when this stage starts. | Reviewed contracts, named enforcement owners and a safe controlled-fixture plan. Material dependent choices use OD-04; no repeated request for the already accepted whole-computer scope. |
-| DNS-1: protocol/cache baseline | Build and qualify a minimal local DNS/DoQ path and ordinary cache against controlled peers, with explicit response, key/context and failure contracts. | Applicable DNS-C02/C03/C05/C09/C12 cases; no deployment or full DNSSEC claim from a partial fixture. |
-| DNS-2: DNSSEC and optimized validation | Admit the validator/crypto graph, trust/time lifecycle, CPU dispatch and bounded parallel execution. | Applicable DNS-C04/C05/C12/C16 and DOQ-C01 evidence; unresolved backend/native results remain explicit. |
+| DNS-1: protocol/cache baseline | Build and qualify a minimal local DNS/DoQ path and ordinary cache against controlled peers, with explicit response, key/context and failure contracts. | Applicable DNS-C02/C03/C05/C09/C10/C11/C12 cases; no deployment or full DNSSEC claim from a partial fixture. |
+| DNS-2: DNSSEC and optimized validation | Admit the validator/crypto graph, trust/time lifecycle, CPU dispatch and bounded parallel execution. | Applicable DNS-C04/C05/C10/C11/C12/C16 and DOQ-C01 evidence; unresolved backend/native results remain explicit. |
 | DNS-3: Windows service integration | Qualify supported machine/application routing, identity, lifecycle, recovery and resource separation in disposable Windows fixtures. | DNS-C01/C02/C03/C11/C14/C17 for the declared matrix. Local query access and management authority remain separate. |
 | DNS-4: demand model in shadow mode | Add bounded aggregates, decay, category transitions and persistence/privacy behavior; observe candidates without issuing autonomous requests. | DNS-C06/C07/C08/C13/C15 plus applicable DNS-C12 model-budget checks and DNS-C14 actual snapshot/temp/backup/identity/privacy checks; ordinary-cache baseline and stable accounting. Earlier service-identity evidence does not qualify the newly added storage. Seasonal buckets may remain deferred. |
 | DNS-5: bounded autonomous refresh | Add timer admission, coalescing, useful-interval accounting, cooldown and resource caps. | DNS-C09/C10/C11/C12/C18; adopt, revise or defer based on the predeclared comparison. |
