@@ -884,17 +884,35 @@ DNS failure, packet loss, NTS server outage, a wrong-name certificate, an unknow
 The owner-selected future RGT-0 direction and requested Khronos/Ananke
 coordination are recorded in [OD-02](nevrotick-owner-decisions.md#4-od-02--distinguish-authenticated-recovery-from-ordinary-correction),
 [NV-TA-001](plans/time-assurance-integration.md) and the
-[shared task](../tasks/time-assurance-integration.md). The proposed roles are
-Roughtime initial/coarse interval evidence, primary NTS acquisition, a separately
-evaluated Khronos watchdog and Ananke-inspired pool admission. These are future
-extensions; the existing recovery profile remains until the applicable extension
-and its Windows trust/revocation path are qualified.
+[shared task](../tasks/time-assurance-integration.md). The later 3 November owner
+refinement selects Roughtime as the preferred cold-bootstrap date basis and
+Khronos/Ananke-inspired NTP sampling as a conditional reserve when that basis is
+unavailable or unusable for NTS. The reserve supplies a bounded provisional TLS
+date through sections 8.1–8.4, followed by full NTS verification, protected fresh
+observations, configured agreement and revalidation before the broker. Healthy
+retained NTS needs no extra Roughtime dependency or periodic Khronos run.
+
+The selected future reserve is automatic within its qualified envelope. This is
+a scoped future supersession of the opt-in helper default in section 8.1/DEC-7,
+not a claim that its implementation or exact source/default policy is ready.
+OPEN-6/OD-03 still own concrete defaults, vendor deployment and source admission;
+the existing baseline remains until the extension and OPEN-8 path are qualified.
+Continuous monitoring remains a separately deferred alternative. No preliminary
+global clock step follows from the bootstrap-source priority.
+
+Classify no/insufficient compatible Roughtime operators, invalid replies, signed
+conflict and date-specific NTS incompatibility separately from name, trust,
+revocation, network and source-agreement failures. A date change cannot bypass
+those other gates. Keep signed contradictions across reserve selection/timeouts;
+an arbitrary certificate-valid date or manipulated Pool consensus cannot resolve
+them. Distinct bootstrap hypotheses need isolated verification/session state and
+fresh applicable certificate evidence, not stale resumption assurance.
 
 Keep evidence ancestry, authentication, source independence, uncertainty and
 comparison epochs distinct. A Roughtime-conditioned NTS association or a second
 calculation over dependent observations creates no extra independent vote.
-Future status must distinguish that Roughtime basis from current plain-bootstrap
-wording without erasing bootstrap history. Auxiliary mechanisms have no separate
+Future status must distinguish signed Roughtime from unauthenticated reserve
+ancestry without erasing bootstrap history after successful NTS. Auxiliary mechanisms have no separate
 clock writer, ordinary NTS vote or implicit veto authority. The existing engine
 policy and broker retain their respective admission and effect responsibilities.
 OPEN-8 and the current source/clock/resource contracts still apply.

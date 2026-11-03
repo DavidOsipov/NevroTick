@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.5<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added 3 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.6<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -85,10 +85,30 @@ work; it does not adopt Khronos, a provider/key list, new quorum, direct Roughti
 clock correction or watchdog inhibition policy. Those decisions remain subject
 to their concrete evidence and existing owner-decision process.
 
+**Later bootstrap-priority refinement — 3 November 2026 (direct owner instruction):**
+David selected Roughtime as the preferred initial date source before NTS, with
+Khronos/Ananke using an NTP population only when Roughtime is unavailable or
+cannot provide a usable date for NTS. [NV-TA-001 revision 1.1](plans/time-assurance-integration.md)
+records the source census and the bounded provisional-date reserve interpretation.
+This future automatic-reserve role supersedes the earlier periodic-watchdog
+proposal; continuous monitoring is a deferred alternative. It does not establish
+that every NTS failure is a date error or that a large offset from a broken local
+clock makes signed evidence wrong.
+
+Both proposed routes complete the applicable NTS identity/trust/revocation,
+fresh-observation, configured agreement, candidate-time revalidation and broker
+gates. This instruction does not select a preliminary global clock step, weaker
+NTS quorum, exact reserve limits or a production source list. Retain existing
+cached/strict NTS when its trusted basis is adequate; the priority concerns cold
+date bootstrap. Until this scoped extension is specified and qualified, the
+current strict-default/explicit-helper baseline remains. OD-03 still owns Pool
+vendor deployment and default-source admission. The earlier request and review
+remain historical evidence for their original scope.
+
 ### 4.2 Roles of the sources
 
 - **NTS sources:** supply authenticated observations eligible for agreement and selection under the configured policy.
-- **Plain NTP helper:** optionally supplies a bounded provisional date to resolve certificate-time circularity. It has no vote in the NTS source population and no direct clock-setting authority.
+- **Plain NTP helper:** supplies a bounded provisional date to resolve certificate-time circularity, under the current explicit-enable baseline or the separately qualified future automatic-reserve profile above. It has no vote in the NTS source population and no direct clock-setting authority.
 - **Broker:** makes the current authorization/effect decision after all recovery checks pass. A successful handshake or an engine proposal alone grants no correction authority.
 
 Thus “several NTS servers plus one NTP server” is supported as different roles in one recovery flow. The NTP helper does not turn into an authenticated supporting source. If ordinary NTS acquisition or cached associations work, avoid unnecessary helper queries. If authenticated agreement fails, the helper cannot become a fallback clock controller.

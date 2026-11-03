@@ -1229,7 +1229,7 @@ follow-up is [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-che
 Record its KHR-C01 evidence and `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition
 before AND-0; this requires evaluation and disposition, not adoption of Khronos.
 An adopted mechanism needs its bounded implementation qualified before Android
-work begins. Neither the watchdog nor its source diversity grants clock authority.
+work begins. Neither the reserve calculation nor its source diversity grants clock authority.
 
 Android's local SNTP bridge and device/ADB/lifecycle qualification remain in that
 roadmap. The [future DNS workstream](system-dns-cache-design.md#12-staged-delivery-and-next-action)
@@ -1241,11 +1241,16 @@ no current P0–P7 blocker or permission for Windows/device execution.
 
 The [Roughtime/NTS/Khronos/Ananke coordination plan](time-assurance-integration.md)
 and [shared future task](../../tasks/time-assurance-integration.md) now own the
-requested research, evidence dependencies, comparison epochs, combined cases and
-source/Windows qualification. Reuse that task for KHR-C01 and RGT-C01 while
+requested research, dated server census, preferred Roughtime / conditional
+Khronos-Ananke provisional-date reserve, failure classification, evidence
+dependencies, comparison epochs and source/Windows qualification. Continuous
+watchdog operation is a separately deferred alternative under the later owner
+refinement. Reuse that task for KHR-C01 and RGT-C01 while
 retaining their distinct exits. Roughtime can later initialize a recovery frame
 without becoming a prerequisite to the earlier KHR evaluation or Android; its
-later RGT-0 → CHR-0 sequence is unchanged. At the relevant handoff, record the
+later RGT-0 → CHR-0 sequence is unchanged. A claimed combined automatic-reserve
+profile requires the applicable KHR implementation and TA-C17–TA-C22 evidence;
+Roughtime-only qualification must disclose an absent reserve. At the relevant handoff, record the
 selected TA-W assignments and their ready/held/deferred status in that task.
 This routing does not replace section 7's current Core continuation or lift its
 execution gates, including the separately admitted Sandbox scope.

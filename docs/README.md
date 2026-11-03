@@ -24,7 +24,7 @@ to own requirements, and task records own executed evidence.
 | --- | --- |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
-| How should Roughtime work with NTS and Khronos/Ananke? | [Time-assurance coordination design](plans/time-assurance-integration.md) and [shared future task](../tasks/time-assurance-integration.md): initial rough interval, primary NTS, candidate watchdog and curated pool roles; provenance/dependency accounting, comparison epochs, conflict/resource rules and Windows gates. KHR-C01 and RGT-C01 remain separate future exits, with no new current Core prerequisite. |
+| How should Roughtime work with NTS and Khronos/Ananke? | [Time-assurance coordination design](plans/time-assurance-integration.md) and [shared future task](../tasks/time-assurance-integration.md): preferred Roughtime cold bootstrap, conditional Khronos/Ananke provisional-date reserve, then full NTS; dated server census, provenance, failure classification, epochs, conflict/resource rules and Windows gates. KHR-C01 and RGT-C01 remain separate future exits, with no new current Core prerequisite. |
 | Where are the origins and qualification scenarios for borrowed DNS mechanisms? | [DNS upstream lessons and adaptation plan](plans/dns-upstream-lessons.md): pinned Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy sources; eighteen lessons, including the [DNSSEC/cache follow-up](plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope), with observed mechanisms, proposed adaptations and existing DNS-C owners; the [Security-kit follow-up](plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) adds TS cache contracts and source-derived regression cases under the same owners. |
 | Where are protected key storage, VBS fallback and their evidence gates owned? | [Architecture §12.1.2](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [protected-storage plan](plans/windows-protected-storage.md), [development workstream](plans/development-plan.md#84-protected-optional-storage-design-and-qualification) and [provider qualification](windows-time-development-hardening.md#641-protected-storage-provider-qualification). |
 | Where are source examples and adaptation limits for protected Windows storage? | [First upstream review](plans/windows-protected-storage-upstream-lessons.md) and [second upstream review](plans/windows-protected-storage-upstream-lessons-2.md): pinned implementation/test sources, adaptation limits and future checks. The second adds directory authority, indeterminate commits, crash/protocol models, per-call CNG contracts, behavioral mitigation checks, RedirectionGuard and conditional rollback research. |
@@ -64,6 +64,18 @@ bounded conflict behavior and OPEN-8. The roadmap's current Windows/Khronos/Andr
 order and later RGT-0 → CHR-0 sequence remain. The research selects no production
 providers, library, extra quorum, preliminary clock write or watchdog veto;
 implementation and native evidence remain future work.
+
+**Later bootstrap-priority refinement, 3 November 2026:** the owner selected
+Roughtime first for the initial date, then NTS, with Khronos/Ananke only as a
+conditional reserve. NV-TA-001 revision 1.1 supersedes the earlier continuous
+watchdog proposal for this profile and specifies a provisional-date reserve
+followed by the same full NTS/broker gates. It distinguishes date-specific
+failures from other TLS/network failures and retains signed conflicts. Its
+source census found 14 candidate hostnames/about 10 nominal operator groups,
+but only two explicit RFC-v1 operator advertisements plus a third documented
+candidate; no live availability was measured. Current implementation/defaults
+remain until the scoped extension is qualified; source minima, Windows gates
+and current work/execution boundaries remain.
 
 **Windows execution stopped, 2 November 2026:** the owner reported a Defender
 detection during attempted CNG fixture staging and is keeping it blocked. All

@@ -29,7 +29,7 @@ applying time to its own clock.
 | Complete hardened MSIX and Microsoft Store | [Owner-selected plan](docs/plans/windows-msix-store.md), [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate) and [current W11-W10 assignment](tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): prepare one complete MSIX with explicit integrity enforcement, protected executable content, Store-compatible CIG and verified per-process protections. David will try Store submission with services and reconsider delivery if refused. Preparation needs no speculative preapproval; supported least-privilege provisioning, W32Time/recovery lifetime and actual Store-artifact qualification still gate release. Retain MSI as an alternative for a later decision. Current Core/KHR-0 ordering and execution holds remain. |
 | Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, resource use, diagnostics and deferred UI integration. The follow-up adds concrete callback, COM, MSI permission, ETW and partial-replacement cases. Research is recorded; implementation/native evidence and conditional choices remain open at their existing phases. Current priorities and execution holds remain; this is no new predecessor to KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
-| Khronos/Ananke cross-check | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate additional protection against coordinated false agreement before Android work. |
+| Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks before Android work. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
 | System-wide Windows DNS | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning) and [detailed DNS/cache design](docs/plans/system-dns-cache-design.md): DNS answers for the whole computer and its applications, DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC with hardware acceleration and multiple CPU cores, and an evaluated adaptive cache. Native integration, actual coverage and performance remain to be qualified. |
@@ -52,7 +52,9 @@ apply to Android ABIs or impose x86 compiler flags on shared portable code.
 
 ### KHR-0 — evaluate independent time cross-checking
 
-**Status:** planned research and bounded experiment; no mechanism is adopted.
+**Status:** planned research and bounded experiment; later on 3 November 2026
+the owner selected a conditional bootstrap-reserve role. No implementation,
+source roster or recovery envelope is qualified.
 
 **Order:** after the current Windows P0–P7 plan, before AND-0.
 
@@ -64,14 +66,17 @@ interaction, dependency accounting, common comparison frame and combined cases.
 Ananke informs pool admission; it is not another protocol vote. Roughtime is a
 separate later bootstrap/coarse-evidence path, not a new KHR-C01 prerequisite.
 
-Evaluate a separate, periodically resampled check of the primary time estimate,
-using Khronos's client-side watchdog idea from
+Evaluate a bounded initial-date reserve, adapting Khronos's sampling/filtering
+idea from
 [Informational RFC 9523](https://www.rfc-editor.org/rfc/rfc9523.html) and
 [Ananke's cautious pool-formation proposal](https://www.ndss-symposium.org/wp-content/uploads/ndss2021_1A-2_24302_paper.pdf).
-Ask whether additional observations detect coordinated errors that the primary
-source set misses. Keep the existing estimator and correction policy as the
-baseline; a second calculation over the same dependent observations supplies no
-independent confirmation.
+The future preferred route is Roughtime → NTS. Invoke this reserve only when the
+preferred branch cannot supply usable date evidence, then complete full NTS
+recovery before any broker clock change. Healthy NTS does not periodically run
+Khronos under this selected profile; continuous watchdog use remains a deferred
+alternative. Evaluate cold-start/era assumptions and forced fallback explicitly;
+published steady-state watchdog bounds do not prove this adapted use. Keep the
+existing estimator/correction policy and evidence-dependency accounting.
 
 - [ ] Define the threat model, pool provenance, sampling distribution, round
   rules, disagreement threshold and finite experiment budgets before execution.
@@ -90,13 +95,17 @@ independent confirmation.
   admitted and independently supported sets distinct. Timeouts or repeated
   resampling must not silently reduce agreement requirements or search until a
   convenient majority appears.
-- [ ] Compare a qualified NTS-only pool, diagnostic plain-NTP cross-checks and
-  cross-checking within an explicitly selected plain-NTP profile. Preserve
+- [ ] Qualify the reserve's population, provisional-date contract and automatic
+  activation envelope, including failed preferred acquisition and date-specific
+  NTS failures. Generic Pool answers are not an audited Ananke population.
+  Preserve
   [architecture §7.5](docs/windows-time-architecture.md#75-operating-profiles):
   unauthenticated observations never enter an NTS quorum or trigger a silent
   downgrade. A plain-NTP diagnostic must not gain an unlimited veto over valid
   NTS corrections. Any changed trust, inhibition or recovery authority needs its
-  own reviewed decision; the watchdog has no independent clock-write authority.
+  own reviewed decision; the reserve has no independent clock-write authority.
+  Distinguish the selected future reserve from the current opt-in helper default;
+  apply OD-03's vendor-zone requirement before redistributing Pool defaults.
 - [ ] Separate a bounded candidate catalog from ordinary active associations.
   Preserve the existing **16-source limit** and aggregate CPU, memory, socket,
   timer and request budgets. Measure both ordinary and expanded checks; exhausted
@@ -107,8 +116,9 @@ independent confirmation.
   unchanged baseline with the proposed check on coordinated false agreement,
   gradual drift, honest delay/asymmetry, selective loss, pool changes, replay,
   aging and correction/suspend between replies. Include conflicting small versus
-  expanded rounds and sustained failures. Predeclare useful additional
-  detections, false-alarm limits, detection latency and resource/load criteria.
+  expanded rounds, cold roster availability, Roughtime suppression, wrong-date
+  versus other certificate failures and the common-path/expired-key case.
+  Predeclare recovery/error/false-acceptance, latency and resource/load criteria.
 - [ ] Before reuse, review exact revisions and licences of
   [netars/chronos](https://github.com/netars/chronos) and
   [nwtime/khronos](https://github.com/nwtime/khronos). Their shared lineage is no
@@ -144,9 +154,10 @@ records the research, proposed joint state/evidence rules and open choices;
 [TA-W01–TA-W09](tasks/time-assurance-integration.md#3-work-assignments-and-finite-exits)
 own the bounded work and evidence. RGT-C01 remains separate from KHR-C01.
 
-**Outcome:** use Roughtime servers to obtain an authenticated approximate-time
-interval when a badly wrong Windows date prevents ordinary NTS certificate
-validation. Feed the qualified interval into isolated TLS verification and
+**Outcome:** prefer Roughtime servers for an authenticated approximate-time
+interval during cold date bootstrap. If that branch cannot supply usable evidence,
+the selected future profile uses a bounded Khronos/Ananke-inspired provisional
+date reserve. Feed the applicable candidate into isolated TLS verification and
 date/era interpretation, then complete authenticated NTS acquisition before any
 broker-authorized system-clock correction. Preserve the interval's uncertainty
 and trust provenance; a signed server assertion is not proof of accurate UTC.
@@ -176,10 +187,13 @@ validation. This is a protocol basis to qualify, not a qualified service list.
   trust/revocation gate OPEN-8; supplying a better date does not itself close it.
 - [ ] Keep valid cached/strict NTS acquisition ahead of unnecessary bootstrap.
   Roughtime must not directly set Windows time, vote as an NTS source, disable
-  certificate checks or authorize a silent plain-NTP fallback. Preserve protected
+  certificate checks or authorize ordinary plain-NTP discipline. The qualified
+  reserve supplies only a labelled provisional TLS date; distinguish no/insufficient
+  Roughtime evidence, signed conflict, date-specific NTS incompatibility and other
+  NTS failures. Preserve protected
   NTS observations, candidate-time revalidation, source agreement and the broker's
-  current correction authority. Until this extension is qualified, the existing
-  strict-default and explicit administrator-enabled recovery policy remains.
+  current correction authority. Until this scoped automatic-reserve extension is
+  qualified, the existing strict-default/explicit-enable recovery policy remains.
 - [ ] Retain deterministic cases for local-date errors in both directions around
   100 years, supported/unsupported true dates and era boundaries. Challenge
   malformed responses, bad signatures, request mismatch/replay, contradictory
@@ -191,9 +205,10 @@ validation. This is a protocol basis to qualify, not a qualified service list.
 - [ ] Qualify bootstrap provenance and the comparison-epoch handoff to any adopted
   watchdog. Do not count dependent mechanisms as independent votes or filter a
   watchdog pool until it agrees with the bootstrap estimate. Also test the
-  disabled/deferred/rejected-watchdog configuration; Roughtime completion does
-  not require adopting Khronos. Later optional checks start with the proposed
-  observation mode; a new correction inhibitor needs a separate qualified policy.
+  disabled/deferred/rejected-reserve configuration; Roughtime-only qualification
+  does not require adopting Khronos. Claiming the combined automatic-reserve
+  profile requires its relevant KHR implementation/integration evidence.
+  Continuous checks or a new correction inhibitor need a separate qualified policy.
 
 **Exit RGT-C01:** retain a pinned implementation and trust configuration, reviewed
 interval/admission and key-maintenance policy, controlled protocol evidence,
@@ -781,7 +796,7 @@ Resolve these choices when the dependent stage is ready, using the existing
 - Roughtime's protocol/provider/key policy, admitted uncertainty and recovery
   envelope, Windows verifier qualification and scheduling against other later
   work; CHR-0 remains its immediate successor.
-- Joint-monitor admission, dependency/epoch accounting and any correction-inhibition
+- Preferred/reserve admission, cold-start sampling, dependency/epoch accounting and any later correction-inhibition
   policy under [NV-TA-001](docs/plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives);
   no generic majority vote across mechanisms or automatic new clock authority.
 - The post-CHR-0 public distribution licence and concrete Microsoft permission,
