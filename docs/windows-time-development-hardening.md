@@ -200,6 +200,9 @@ unsafe_code = "deny"
 unsafe_op_in_unsafe_fn = "deny"
 unused_unsafe = "deny"
 unused_must_use = "deny"
+let_underscore_drop = "deny"
+unused_macro_rules = "deny"
+unused_lifetimes = "deny"
 unfulfilled_lint_expectations = "deny"
 unknown_lints = "deny"
 renamed_and_removed_lints = "deny"
@@ -223,6 +226,7 @@ unimplemented = "deny"
 unreachable = "deny"
 dbg_macro = "deny"
 let_underscore_must_use = "deny"
+string_slice = "deny"
 as_conversions = "deny"
 mem_forget = "deny"
 exit = "deny"
@@ -244,6 +248,21 @@ The repository checker must reject missing inheritance and prove that the intend
 Clippy explicitly discourages blanket enabling `restriction` and `nursery`; choose the relevant restrictions individually. The supplied extra rules address unchecked conversions, ignored results, panic placeholders, unsafe documentation and hidden process/resource escapes. Their exact diagnostics and exceptions still need qualification against the pinned toolchain. [C02, C07]
 
 The repository's [adoptable policy fragment](../policy/rust-workspace.toml) additionally rejects permanent local `allow` attributes, multiple unsafe operations in one block and discarded `Result::ok()` values. Its isolated pinned-tool controls accept fulfilled reasoned expectations and consumed optional results, and reject each corresponding violation. These are bootstrap enforcement observations; application target/feature and native qualification remain pending. See [the current tooling record](../TOOLING.md).
+
+The owner-selected four-rule cohort adds `let_underscore_drop`,
+`unused_macro_rules`, `unused_lifetimes` and Clippy `string_slice` individually.
+The three compiler lints detect a discarded destructor-bearing temporary,
+unused arms of an otherwise used macro and unused lifetime parameters; the
+Clippy restriction detects potentially panicking string slicing. They are
+allow-by-default and require explicit selection, beyond warnings and
+`all`/`pedantic`. [Rust compiler reference](https://doc.rust-lang.org/stable/rustc/lints/listing/allowed-by-default.html),
+[Clippy reference](https://clippy.rust-lang.org/stable/index.html#string_slice).
+Use named ownership or deliberate `drop` according to the intended lifetime,
+exercise/remove unused macro arms, preserve necessary borrow relationships and
+use checked string access. The current tooling record owns actual healthy and
+rejection results. `panic_in_result_fn` remains deferred until intentional
+assertions in Result-returning tests have an appropriate scope; this cohort
+selects no blanket restriction group or panic-free guarantee.
 
 ### 5.2 Unsafe, conversions and error behavior
 

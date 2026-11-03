@@ -24,8 +24,7 @@ use super::{
 #[test]
 fn raw_chart_batch_header_checks_inclusive_domain() -> Result<(), Box<dyn Error>> {
     let two = NonZeroU64::new(2).ok_or(FixtureChartBatchError::Invariant)?;
-    let frames =
-        FixtureChartFrames::new(NonZeroU64::MIN, NonZeroU64::MIN, two, two)?;
+    let frames = FixtureChartFrames::new(NonZeroU64::MIN, NonZeroU64::MIN, two, two)?;
     let domain = FixtureChartDomain::new(
         MonotonicNs::new(5),
         MonotonicNs::new(6),

@@ -105,6 +105,47 @@ struct ChartBatchCandidate<'entries, 'chart> {
     values: &'entries [FixtureChartInterval<'chart>],
 }
 
+/// Compare one actual descriptor with immutable expected fields in contract order.
+///
+/// Checked field types retain their own invariants; scalar bits preserve signed
+/// zero. This pure predicate compares assertions without granting map authority.
+fn descriptor_mismatch(
+    frames: FixtureChartFrames,
+    domain: FixtureChartDomain,
+    phase_bits: u64,
+    rate_bits: u64,
+    actual: &FixtureAffineChart,
+) -> Option<FixtureChartMismatchKind> {
+    if actual.frames() != frames {
+        Some(FixtureChartMismatchKind::Frames)
+    } else if actual.domain() != domain {
+        Some(FixtureChartMismatchKind::Domain)
+    } else if actual.phase_at_reference_seconds().to_bits() != phase_bits {
+        Some(FixtureChartMismatchKind::Displacement)
+    } else if actual.rate_seconds_per_second().to_bits() != rate_bits {
+        Some(FixtureChartMismatchKind::Rate)
+    } else {
+        None
+    }
+}
+
+/// Reuse complete value/bit descriptor comparison at another checked receiver.
+///
+/// Equal values at different addresses agree. No observation, generation or
+/// achieved clock effect follows from matching mathematical descriptors.
+pub(crate) fn chart_descriptor_mismatch(
+    expected: &FixtureAffineChart,
+    actual: &FixtureAffineChart,
+) -> Option<FixtureChartMismatchKind> {
+    descriptor_mismatch(
+        expected.frames(),
+        expected.domain(),
+        expected.phase_at_reference_seconds().to_bits(),
+        expected.rate_seconds_per_second().to_bits(),
+        actual,
+    )
+}
+
 /// Return the first bounded admission failure, without modifying any input.
 ///
 /// Capacity precedes header-domain admission, then indices ascend with frames,
@@ -122,20 +163,17 @@ fn first_issue(
     }
     for (index, value) in values.iter().enumerate() {
         let projection = value.projection();
-        let actual = projection.chart();
-        let kind = if actual.frames() != expected.frames {
-            Some(FixtureChartMismatchKind::Frames)
-        } else if actual.domain() != expected.domain {
-            Some(FixtureChartMismatchKind::Domain)
-        } else if actual.phase_at_reference_seconds().to_bits() != expected.phase_bits {
-            Some(FixtureChartMismatchKind::Displacement)
-        } else if actual.rate_seconds_per_second().to_bits() != expected.rate_bits {
-            Some(FixtureChartMismatchKind::Rate)
-        } else if projection.source_projection().projected_at() != expected.at {
-            Some(FixtureChartMismatchKind::EvaluationTime)
-        } else {
-            None
-        };
+        let kind = descriptor_mismatch(
+            expected.frames,
+            expected.domain,
+            expected.phase_bits,
+            expected.rate_bits,
+            projection.chart(),
+        )
+        .or_else(|| {
+            (projection.source_projection().projected_at() != expected.at)
+                .then_some(FixtureChartMismatchKind::EvaluationTime)
+        });
         if let Some(kind) = kind {
             return Some(FixtureChartBatchError::Mismatch { index, kind });
         }

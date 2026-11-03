@@ -466,7 +466,7 @@
     }
   },
   "manifests_sha256": {
-    "Cargo.toml": "008eea7d34f859482cbca1688b54a25e879ce0f655bb8f87a18b8e4f90c03d71",
+    "Cargo.toml": "2410193ccead664712fe69ee36c3ba0f88fe5b0d61aedcba65ad668a1844083b",
     "crates/nevrotick-ui/Cargo.toml": "cf4d4ac8953f22c2060e3d99550bea9db6a394dd94c924123a40f68b2276475a",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",

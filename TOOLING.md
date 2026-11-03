@@ -145,6 +145,19 @@ stable rules. Broad Clippy `restriction`/`nursery` groups are deliberately exclu
 because their rules can conflict or remain experimental; selected restrictions
 follow the development-hardening guide.
 
+**Four-rule cohort, 3 November 2026:** the workspace and canonical fragment now
+deny `let_underscore_drop`, `unused_macro_rules`, `unused_lifetimes` and Clippy
+`string_slice`, inherited by all six members. Pinned-tool enforcement passed42
+strict and6 pure-API fixture lanes, including a combined healthy control and four
+intended rejections. Policy/admission Python controls passed37/38 tests. The
+new139-input candidate passed22 portable rows:476 ordinary tests,127 doctests
+and368 optimized tests. Packages, features, grants, lockfile, profiles, toolchain
+and target flags remain unchanged; only the required root-manifest identity was
+refreshed in dependency admission. `panic_in_result_fn` stays deferred. See the
+[exact Core checkpoint](tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete)
+for before/after controls, identities and retained failures. These are static and
+portable observations; Windows execution remains held.
+
 | File | Enforced intent and current scope |
 | --- | --- |
 | [policy/rust-workspace.toml](policy/rust-workspace.toml) | Compiler warnings, unsafe boundaries, discarded results, unknown/stale lints/cfgs and missing public documentation fail. Clippy `all`/`pedantic` plus selected panic, conversion, unsafe, leak and exception rules fail. `missing_docs_in_private_items` also requires private-item documentation. Permanent local `allow` attributes, multiple unsafe operations per block and discarded `Result::ok()` values fail. Stable rustdoc rules fail. Optimized arithmetic remains checked; `verify-release` adds debug assertions. |

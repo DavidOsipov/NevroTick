@@ -180,12 +180,13 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
         raise ENV.Incomplete("Rust workspace policy must contain only lints and profiles.")
     required = {
         "rust": {"warnings", "unsafe_code", "unsafe_op_in_unsafe_fn", "unused_unsafe",
-                 "unused_must_use", "unfulfilled_lint_expectations", "unknown_lints",
+                 "unused_must_use", "let_underscore_drop", "unused_macro_rules", "unused_lifetimes",
+                 "unfulfilled_lint_expectations", "unknown_lints",
                  "renamed_and_removed_lints", "improper_ctypes", "improper_ctypes_definitions",
                  "unexpected_cfgs", "missing_docs", "unreachable_pub", "unused_qualifications"},
         "clippy": {"all", "pedantic", "missing_docs_in_private_items",
                    "undocumented_unsafe_blocks", "allow_attributes_without_reason",
-                   "allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok",
+                   "allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok", "string_slice",
                    "unwrap_used", "expect_used", "panic", "todo", "unimplemented", "unreachable",
                    "dbg_macro", "let_underscore_must_use", "as_conversions", "mem_forget", "exit"},
         "rustdoc": {"all", "broken_intra_doc_links", "private_intra_doc_links"},
@@ -608,6 +609,65 @@ def qualify_fixtures(root: Path, metadata: dict, extensions: dict, evidence: dic
         execute("format-positive", ["cargo", "fmt", "--all", "--", "--check"])
         execute("compiler-positive", cargo)
         execute("clippy-positive", clippy)
+        # One genuine neighbor exercises all four selected lint alternatives.
+        # Each negative below changes only its own construct in this same source.
+        # In particular, use an owned String rather than a mutex: the existing
+        # let_underscore_lock rule must not masquerade as let_underscore_drop.
+        four_lint_control = '''
+/// Hold the owned value until the end of this scope.
+pub fn retain_guard() {
+    let _guard = String::from("guard");
+}
+
+/// Select a fixed byte through either of two deliberately exercised rules.
+macro_rules! lint_choice {
+    (first) => { 1_u8 };
+    (second) => { 2_u8 };
+}
+
+/// Exercise the first macro rule.
+pub const LINT_FIRST: u8 = lint_choice!(first);
+/// Exercise the second macro rule.
+pub const LINT_SECOND: u8 = lint_choice!(second);
+
+/// Return the first borrow; the second input makes the named lifetime necessary.
+#[must_use]
+pub fn borrow_first<'a>(first: &'a str, _second: &str) -> &'a str {
+    first
+}
+
+/// Return the byte-one tail only when the input has that UTF-8 boundary.
+#[must_use]
+pub fn checked_tail(value: &str) -> Option<&str> {
+    value.get(1..)
+}
+'''
+        source.write_text(with_control(four_lint_control))
+        execute("four-lint-cohort-positive", clippy)
+        for label, before, after, command, diagnostic in (
+            ("let-underscore-drop-negative", 'let _guard = String::from("guard");',
+             'let _ = String::from("guard");', cargo,
+             "non-binding let on a type that has a destructor"),
+            ("unused-macro-rules-negative", "lint_choice!(second)", "2_u8", cargo,
+             "of macro `lint_choice` is never used"),
+            ("unused-lifetimes-negative", "borrow_first<'a>", "borrow_first<'a, 'unused>", cargo,
+             "lifetime parameter `'unused` never used"),
+            ("clippy-string-slice-negative",
+             "/// Return the byte-one tail only when the input has that UTF-8 boundary.\n"
+             "#[must_use]\npub fn checked_tail(value: &str) -> Option<&str> {\n"
+             "    value.get(1..)\n}",
+             "/// Deliberately slice the synthetic input at byte one.\n"
+             "/// # Panics\n"
+             "/// Panics when byte one is outside the input or inside a UTF-8 character.\n"
+             "#[must_use]\npub fn checked_tail(value: &str) -> Option<&str> {\n"
+             "    Some(&value[1..])\n}", clippy,
+             "indexing into a string may panic"),
+        ):
+            if four_lint_control.count(before) != 1:
+                raise ENV.Incomplete(f"{label}: intended source control is absent or ambiguous.")
+            source.write_text(with_control(four_lint_control.replace(before, after, 1)))
+            execute(label, command, diagnostic)
+        source.write_text(SOURCE)
         # This proves documentation presence on a private helper. Its prose and
         # semantic pre/postconditions still need independent contract review.
         private_control = '''

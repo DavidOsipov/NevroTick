@@ -47,7 +47,7 @@ class Cohort(TypedDict):
 
 
 class CohortPlan(ReservationInputs):
-    schema_version: Literal[10]
+    schema_version: Literal[11]
     status: Literal["admitted-exact-source-and-cohorts"]
     candidate_sha256: str
     product_inputs_sha256: dict[str, str]
@@ -113,13 +113,13 @@ class Incomplete(ValueError):
 
 
 MAX_COHORT_VARIANTS = 512
-MAX_LISTING_VARIANTS = 2048
-MAX_OWNERS = 4
+MAX_LISTING_VARIANTS = 512
+MAX_OWNERS = 1
 MAX_INPUTS = 256
-# Preserve all 1212 earlier fields and add 296 disjoint S154 chart fields.
-# This reviewed width binds the 19-case chart recipe and separate legal consumer;
+# Preserve all 1508 earlier fields and add 315 disjoint S155 chart-batch fields.
+# This reviewed width binds the batch recipe and separate legal-consumer delta;
 # reservations are not observed operation counters or arbitrary-mutant quotas.
-MAX_BUDGET_FIELDS = 1508
+MAX_BUDGET_FIELDS = 1823
 
 PLAN_KEYS = frozenset({
     "schema_version", "status", "candidate_sha256", "product_inputs_sha256",
@@ -257,7 +257,7 @@ def plan_reservation(plan: object, package_budget: object, check_budgets: object
 
     This is a source-derived upper reservation before effects. It is never
     reduced for an eventual unviable variant, failed assertion or partial log.
-    This S154 reservation includes no predecessor result transfer or retry allowance.
+    This S155 reservation includes no predecessor result transfer or retry allowance.
     Native time/process limits remain the wrapper's separate obligations.
     """
     admitted = _reservation_inputs(plan)
@@ -282,7 +282,7 @@ def plan_reservation(plan: object, package_budget: object, check_budgets: object
 def _cohorts(value: object) -> list[Cohort]:
     """Project exact named subject/path rows; partition ownership is checked later."""
     if not is_exact_list(value) or len(value) != MAX_OWNERS:
-        raise Incomplete("Checkpoint partition must contain the four chart owners once.")
+        raise Incomplete("Checkpoint partition must contain the single chart-batch owner once.")
     result: list[Cohort] = []
     for raw in value:
         row = _object(raw)
@@ -300,10 +300,10 @@ def _plan(value: object) -> CohortPlan:
     row = _object(value)
     if set(row) != PLAN_KEYS:
         raise Incomplete("Coordinator cohort plan has unknown or missing fields.")
-    if (type(row["schema_version"]) is not int or row["schema_version"] != 10
+    if (type(row["schema_version"]) is not int or row["schema_version"] != 11
             or row["status"] != "admitted-exact-source-and-cohorts"):
         raise Incomplete("Coordinator cohort plan awaits final-source/inventory binding.")
-    return {"schema_version": 10, "status": "admitted-exact-source-and-cohorts",
+    return {"schema_version": 11, "status": "admitted-exact-source-and-cohorts",
             "candidate_sha256": _digest(row["candidate_sha256"]),
             "product_inputs_sha256": _identity(row["product_inputs_sha256"]),
             "tool_inputs_sha256": _identity(row["tool_inputs_sha256"]),
@@ -316,7 +316,7 @@ def _plan(value: object) -> CohortPlan:
 
 
 def _subjects(value: object) -> dict[str, str]:
-    """Require the four source owners used by this fresh checkpoint."""
+    """Require the single source owner used by this fresh checkpoint."""
     raw = _object(value)
     result: dict[str, str] = {}
     for name, path in raw.items():
@@ -324,7 +324,7 @@ def _subjects(value: object) -> dict[str, str]:
             raise Incomplete("Checkpoint source owner paths must be strings.")
         result[name] = path
     if len(result) != MAX_OWNERS or len(set(result.values())) != MAX_OWNERS:
-        raise Incomplete("Checkpoint scope must contain exactly four changed critical owners.")
+        raise Incomplete("Checkpoint scope must contain exactly one changed critical owner.")
     return result
 
 
@@ -335,7 +335,7 @@ def admit_plan(plan: object, *, subjects: object, product_inputs: object, tool_i
 
     Each cohort selects one existing named owner through the wrapper's ordinary
     --subject switch. A file exceeding 512 cannot be descriptor-partitioned by
-    this schema. Listing discovery has its separate 2048 aggregate ceiling.
+    this schema. Listing discovery has the same separate 512 aggregate ceiling.
     """
     admitted = _plan(plan)
     owners_by_name = _subjects(subjects)
@@ -462,4 +462,4 @@ def reconcile_receipts(plan: object, receipts: object, *, subjects: object) -> R
             "generated_variants": sum(row["count"] for row in admitted["inventories"].values()),
             "baselines": len(receipts), "reservation": admitted["cumulative_reservation"],
             "critical_manifest_complete_selection": False,
-            "scope": "Four changed chart critical owners mutation receipts; coverage/contracts and native Windows remain separate."}
+            "scope": "Single chart-batch critical owner mutation receipt; coverage/contracts and native Windows remain separate."}

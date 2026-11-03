@@ -252,9 +252,9 @@ def contract_examples() -> dict[str, dict[str, object]]:
         " batch.select(minimum).unwrap()", "E0515", ["batch", "cannot return value referencing"],
         batch_neighbor, neighbor_file=batch_file)
     cases["chart_batch_descriptor_lifetime"] = _negative(
-        batch_imports + "fn bypass<'entries,'chart>(original:&'chart FixtureAffineChart,at:MonotonicNs,"
+        batch_imports + "fn bypass<'entries,'chart>(original:FixtureAffineChart,at:MonotonicNs,"
         "values:&'entries [FixtureChartInterval<'chart>])->FixtureChartBatch<'entries,'chart>{\n"
-        " let chart=*original;\n",
+        " let chart=original;\n",
         " FixtureChartBatch::new(&chart,at,values).unwrap()", "E0515", ["chart", "cannot return value referencing"],
         batch_neighbor, neighbor_file=batch_file)
     cases["chart_batch_entries_lifetime"] = _negative(

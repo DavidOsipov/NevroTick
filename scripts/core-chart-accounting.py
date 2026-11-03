@@ -73,15 +73,15 @@ HISTORICAL_LEGAL_EXPECTED = (5, 2, 4, 1, 1, 3, 1, 3, 1, 1, 1, 4, 1, 1, 1, 22)
 HISTORICAL_LEGAL_SOURCE_SHA256 = "1ec1bb10009df768bc670384db93e23cbf0e7da83f6feb9d8b2499d9c2a3ef5d"
 # Current legal metadata is bound only after the independent consumer freezes.
 LEGAL_FIELDS = (*HISTORICAL_LEGAL_FIELDS, "batches", "minima", "selections", "batch_getters")
-LEGAL_EXPECTED = (*HISTORICAL_LEGAL_EXPECTED, 1, 1, 1, 0)
-LEGAL_SOURCE_SHA256 = ""
+LEGAL_EXPECTED = (*HISTORICAL_LEGAL_EXPECTED, 1, 1, 1, 22)
+LEGAL_SOURCE_SHA256 = "6f1d16eeaa436ef04e6d513ecb1de1f95e69d75ed66151228d8ddc24196d1bce"
 SOURCE_SHA256 = {
     "crates/time-core/tests/private/chart_guards.rs": "6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf",
     "crates/time-core/src/regression/chart.rs": "77fccbecf2b0e020c92b636b2db1478f8bc434526a1cbe85eaa2d9e229798bf8",
     "crates/time-core/src/regression/chart/roundoff.rs": "c79fc05485c0b1f32f3ff80992f45ef8a13c632dc1971c3b60aa96b4f721426f",
     "crates/time-core/src/chart_enclosure.rs": "6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2",
     "crates/time-core/src/projection_enclosure.rs": "6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023",
-    "crates/time-core/tests/chart.rs": "ca0a5dcebfa1faace944a6f9c46a8dd65e9816d0a41f33e99b3ba6d4919bffb3",
+    "crates/time-core/tests/chart.rs": "aebcdb16afd6c67184ca8b07e0f59c9feb819713d40f0b0c3cb6a57ab5aa171c",
     "crates/time-core/tests/private/chart_roundoff.rs": "cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e",
     "scripts/core-adaptive-accounting.py": "87f135190282b252ebb0059cb67cdc4affa0016b10ab72c3821744bf36fb3c49",
     "scripts/core-projection-accounting.py": "8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300",
@@ -680,7 +680,7 @@ def chart_test_observation(output: str, *, require_complete: bool = False) -> di
 # S155 is additive: none of the preceding 296 chart fields or the earlier
 # 1212 fields changes meaning. The coordinator retains old raw receipts and
 # independently binds the new complete product/tool candidate before execution.
-BATCH_STATUS = "prepared-source-recipe-final-source-binding-pending"
+BATCH_STATUS = "prepared-source-recipe-cohort-not-admitted"
 BATCH_BUDGET_FIELDS = 315
 BATCH_SOURCE_INPUTS = (
     *SOURCE_SHA256,
@@ -689,7 +689,22 @@ BATCH_SOURCE_INPUTS = (
     "crates/time-core/tests/private/chart_batch_guards.rs",
     "scripts/core-selection-accounting.py",
 )
-BATCH_SOURCE_SHA256: dict[str, str] = {}
+BATCH_SOURCE_SHA256: dict[str, str] = {
+    "crates/time-core/tests/private/chart_guards.rs": "6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf",
+    "crates/time-core/src/regression/chart.rs": "77fccbecf2b0e020c92b636b2db1478f8bc434526a1cbe85eaa2d9e229798bf8",
+    "crates/time-core/src/regression/chart/roundoff.rs": "c79fc05485c0b1f32f3ff80992f45ef8a13c632dc1971c3b60aa96b4f721426f",
+    "crates/time-core/src/chart_enclosure.rs": "6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2",
+    "crates/time-core/src/projection_enclosure.rs": "6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023",
+    "crates/time-core/tests/chart.rs": "aebcdb16afd6c67184ca8b07e0f59c9feb819713d40f0b0c3cb6a57ab5aa171c",
+    "crates/time-core/tests/private/chart_roundoff.rs": "cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e",
+    "scripts/core-adaptive-accounting.py": "87f135190282b252ebb0059cb67cdc4affa0016b10ab72c3821744bf36fb3c49",
+    "scripts/core-projection-accounting.py": "8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300",
+    "scripts/core-enclosure-accounting.py": "6727ce5b193bb6d2e951221a73cfe393f26a921519841586d461175dc60491ad",
+    "crates/time-core/src/chart_batch.rs": "ee6d9d5d63c87573cb1f8b55169f59dd92ac67438a26a3b565580e7c22160873",
+    "crates/time-core/tests/private/chart_batch_cases.rs": "6d7638728ee09df57522771ec76465603a9a2bb46f44d754ba35f6f0d4c905d1",
+    "crates/time-core/tests/private/chart_batch_guards.rs": "8c16f05d4155a2653100f6cc9392ff78bc0f931fe2eb12d6710cbd9ff4e1591f",
+    "scripts/core-selection-accounting.py": "d9cba324bcc60102e93ade48fdba0a2810e5f3bfd8cda034159a3debe7b2fa83"
+}
 BATCH_PUBLIC_TESTS = tuple("chart_batch_cases::" + name for name in (
     "chart_batch_selects_genuine_majority_at_common_time",
     "chart_batch_source_loss_does_not_lower_minimum",
@@ -880,13 +895,28 @@ def chart_batch_budget_vector(adaptive: AdaptiveOwner, projection: ProjectionOwn
                              LEGAL_SOURCE_SHA256)
     fixture = {key: 0 if external_legal else value for key, value in BATCH_FIXTURE_CALLS.items()}
     if external_legal:
-        fixture["other_getters_upper"] = LEGAL_EXPECTED[-1]
+        # The marker's22 requests contain20 product getters and two iterator
+        # next calls; the latter are funded only by the observer group.
+        fixture["other_getters_upper"] = LEGAL_EXPECTED[-1] - 2
     adaptive_calls = dict.fromkeys(ADAPTIVE_FIELDS, 0)
     adaptive_calls.update(adaptive_histories=fixture["histories"],
                           adaptive_observations=fixture["observations"],
                           adaptive_appends=fixture["appends"])
-    adaptive_work = _work(adaptive.source_work(adaptive_calls, include_raw_minimum=False),
-                          ADAPTIVE_WORK_FIELDS)
+    # Keep the helper's original13-history per-call ceiling. Four disjoint
+    # (8 histories,24 observations,24 appends) blocks exactly partition this
+    # fixed fixture. All source_work terms are additive for these fields with
+    # raw/private/event scopes false; no per-fixture event or raw charge repeats.
+    blocks = 1 if external_legal else 4
+    if any(value % blocks for value in adaptive_calls.values()):
+        raise Incomplete("Chart-batch source partition is not an exact disjoint sum.")
+    partition = {key: value // blocks for key, value in adaptive_calls.items()}
+    adaptive_work = dict.fromkeys(ADAPTIVE_WORK_FIELDS, 0)
+    for _ in range(blocks):
+        part = _work(adaptive.source_work(partition, include_raw_minimum=False,
+                                         event_fixture_reached=False), ADAPTIVE_WORK_FIELDS)
+        for key, value in part.items():
+            adaptive_work[key] += value
+    adaptive_work = _work(adaptive_work, ADAPTIVE_WORK_FIELDS)
     expected = {key: 0 if external_legal else value
                 for key, value in BATCH_EXPECTED_NUMERIC_WORK.items()}
     if {key: adaptive_work[key] for key in expected} != expected:
@@ -930,12 +960,12 @@ def chart_batch_budget_vector(adaptive: AdaptiveOwner, projection: ProjectionOwn
             if name in result:
                 raise Incomplete("Chart-batch source namespaces overlap.")
             result[name] = value
-    return _checked(result, BATCH_BUDGET_FIELDS)
+    return _checked_batch_vector(result)
 
 
 def chart_batch_numeric_work(vector: dict[str, int]) -> dict[str, int]:
     """Extract only the supplemental adaptive contribution to global scalars."""
-    checked = _checked(vector, BATCH_BUDGET_FIELDS)
+    checked = _checked_batch_vector(vector)
     names = {key: "chart_batch.adaptive_work." + key for key in BATCH_EXPECTED_NUMERIC_WORK}
     if any(name not in checked for name in names.values()):
         raise Incomplete("Chart-batch numeric source keys are missing.")
@@ -945,7 +975,7 @@ def chart_batch_numeric_work(vector: dict[str, int]) -> dict[str, int]:
 def preserve_chart_batch_extension(old: dict[str, int], batch: dict[str, int]) -> dict[str, int]:
     """Preserve1508 fields and add fit/point and existing Geometry totals once."""
     _checked(old, 1508)
-    _checked(batch, BATCH_BUDGET_FIELDS)
+    _checked_batch_vector(batch)
     aggregate = (*BATCH_EXPECTED_NUMERIC_WORK, "standard_errors.geometry.report_copies_upper",
                  "standard_errors.geometry.logical_bytes_upper")
     if (set(old) & set(batch) or any(not key.startswith("chart_batch.") for key in batch)
@@ -988,3 +1018,35 @@ def chart_batch_test_observation(output: str, *, require_complete: bool = False)
     return {"chart_batch_test_statuses": statuses, "chart_batch_source_only_pending": not complete,
             "chart_batch_recorded_source_work_upper": dict(BATCH_EXPECTED_NUMERIC_WORK) if complete else None,
             "chart_batch_observed_operation_counts": None}
+
+
+# Closed namespace schema derives only key names from local pure functions and
+# already literal interface tuples. No injected owner or native work runs here.
+BATCH_GROUP_FIELDS: dict[str, tuple[str, ...]] = {
+    "fixture.": tuple(BATCH_FIXTURE_CALLS),
+    "adaptive_call.": ADAPTIVE_FIELDS, "adaptive_work.": ADAPTIVE_WORK_FIELDS,
+    "projection_call.": PROJECTION_FIELDS, "projection_work.": PROJECTION_WORK_FIELDS,
+    "adapter_work.": ("projection_capsule_and_kernel_entries_upper",
+                      "projection_adaptive_extra_internal_getters_upper"),
+    "enclosure_call.": ENCLOSURE_FIELDS, "enclosure_work.": ENCLOSURE_WORK_FIELDS,
+    "owner_work.": tuple(_owner_work(BATCH_FIXTURE_CALLS)),
+    "tracking_work.": tuple(_tracking_work(0)),
+    "roundoff_work.": tuple(_roundoff_work(BATCH_FIXTURE_CALLS)),
+    "batch_work.": tuple(_batch_work(0, 0, 0, raw_header=False)),
+    "selection_work.": BATCH_SELECTION_WORK_FIELDS,
+    "raw_header.": tuple(_batch_raw_header_work(False)),
+    "observer.": tuple(_batch_observer_work(False)),
+    "doctest.": ("compilation_cases", "compile_fail_cases", "uncalled_legal_helpers", "executed_producers"),
+}
+BATCH_BUDGET_KEYS = tuple("chart_batch." + prefix + field
+                          for prefix, fields in BATCH_GROUP_FIELDS.items() for field in fields)
+
+
+def _checked_batch_vector(values: object) -> dict[str, int]:
+    """Reject replacement keys as well as wrong types, widths and overflow."""
+    checked = _checked(values, BATCH_BUDGET_FIELDS)
+    if (len(BATCH_BUDGET_KEYS) != BATCH_BUDGET_FIELDS
+            or len(set(BATCH_BUDGET_KEYS)) != BATCH_BUDGET_FIELDS
+            or set(checked) != set(BATCH_BUDGET_KEYS)):
+        raise Incomplete("Chart-batch vector differs from its complete closed namespace.")
+    return checked

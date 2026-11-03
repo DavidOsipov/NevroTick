@@ -58,7 +58,10 @@ them. A task receipt records execution; a catalog specifies expectations.
 detection during attempted CNG fixture staging and is keeping it blocked. All
 Windows execution and retries are suspended under the
 [incident record](../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped).
-The [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+The later [owner-ready Sandbox disposition and readiness result](../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
+permit scoped owned-Sandbox management and separately admitted guest work. The
+blocked S134 stager/artifact remains blocked; this supersedes the blanket stop
+only within that recorded Sandbox scope. The [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 routes independent work to the current portable Core slice. The standalone
 AES-SIV checkpoint remains evidence for its recorded candidate; the separately
 held fuzz runner must not be retried through another invocation or agent.

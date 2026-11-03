@@ -43,6 +43,7 @@ CHART_ERROR_SUBJECTS = (
     ("chart_enclosure", "crates/time-core/src/chart_enclosure.rs"),
     ("enclosure", "crates/time-core/src/projection_enclosure.rs"),
 )
+CHART_BATCH_SUBJECTS = (("chart_batch", "crates/time-core/src/chart_batch.rs"),)
 
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
@@ -440,14 +441,26 @@ def mutation_message_format(policy: dict) -> str:
 def per_subject_mutation_error_args(scope: Scope, filename: str, policy: dict) -> list[str]:
     """Permit one literal error replacement for its exact current chart owner.
 
-    An absent field preserves the legacy invocation. A present field admits no
+    An absent field preserves legacy scopes; S155 requires an explicit empty map.
+    A present field admits no
     arbitrary Rust expression, another package/file, or renamed policy role.
     """
     if not isinstance(policy, dict):
         raise Incomplete("Mutation error policy is not a mapping.")
     if "mutation_error_values" not in policy:
+        if (type(scope) is Scope and scope.package == "time-core"
+                and scope.subjects == CHART_BATCH_SUBJECTS):
+            raise Incomplete("S155 requires an explicit empty mutation error map.")
         return []
     values = policy["mutation_error_values"]
+    if (type(scope) is Scope and scope.package == "time-core"
+            and type(scope.subjects) is tuple and scope.subjects == CHART_BATCH_SUBJECTS
+            and type(scope.policy) is str and scope.policy in {
+                "policy/time-core-analysis.json", "tasks/s1.2-chart-batch-inventory-admission.json"}
+            and type(policy.get("package")) is str and policy["package"] == "time-core"
+            and type(filename) is str and filename == dict(CHART_BATCH_SUBJECTS)["chart_batch"]
+            and type(values) is dict and not values):
+        return []
     if (type(scope) is not Scope or type(scope.package) is not str or scope.package != "time-core"
             or type(policy.get("package")) is not str or policy["package"] != "time-core"
             or type(scope.subjects) is not tuple or scope.subjects != CHART_ERROR_SUBJECTS
@@ -811,6 +824,24 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == "tasks/s1.2-chart-batch-inventory-admission.json"
+            or policy.get("admission_status") == "admitted-single-owner-chart-batch-inventory-only"):
+        facts = {
+            "schema_version": 11,
+            "admission_status": "admitted-single-owner-chart-batch-inventory-only",
+            "package": "time-core", "source_file_count": 139,
+            "subjects": dict(CHART_BATCH_SUBJECTS), "mutation_equivalences": [],
+            "mutation_error_values": {}, "native_test_invocations": 0,
+            "campaigns_admitted": False,
+        }
+        if (profile != "stable-core" or type(scope) is not Scope or scope.package != "time-core"
+                or scope.policy != "tasks/s1.2-chart-batch-inventory-admission.json"
+                or args.lane != "mutation" or scope.subjects != CHART_BATCH_SUBJECTS
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("S155 inventory requires its exact stable-core single-owner listing card.")
+        per_subject_mutation_error_args(scope, dict(CHART_BATCH_SUBJECTS)["chart_batch"], policy)
+        return profile
     if (scope.policy == "tasks/s1.2-chart-inventory-admission-v2.json"
             or policy.get("admission_status") == "admitted-four-owner-chart-error-inventory-only"):
         facts = {"schema_version": 10, "admission_status": "admitted-four-owner-chart-error-inventory-only",

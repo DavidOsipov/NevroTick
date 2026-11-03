@@ -187,6 +187,56 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.replace("policy/rust-workspace.toml", 'missing_docs_in_private_items = "deny"\n', "")
         self.assert_refused("Required strict lint missing")
 
+    def four_lint_candidate(self):
+        """Build the same complete candidate before and after policy adoption."""
+        path = self.root / "policy/rust-workspace.toml"
+        source = path.read_text(encoding="utf-8")
+        for tool, names in (
+            ("rust", ("let_underscore_drop", "unused_macro_rules", "unused_lifetimes")),
+            ("clippy", ("string_slice",)),
+        ):
+            for name in names:
+                if name not in tomllib.loads(source)["workspace"]["lints"][tool]:
+                    header = f"[workspace.lints.{tool}]\n"
+                    self.assertEqual(source.count(header), 1)
+                    source = source.replace(header, header + f'{name} = "deny"\n', 1)
+        path.write_text(source, encoding="utf-8")
+        return source
+
+    def assert_four_lint_is_required(self, name):
+        """Challenge removal and downgrade beside an accepted complete candidate."""
+        path = self.root / "policy/rust-workspace.toml"
+        original = self.four_lint_candidate()
+        STRICT.read_configuration(self.root)
+        for change, replacement, diagnostic in (
+            ("removed", "", "Required strict lint missing"),
+            ("lowered", f'{name} = "warn"\n', "Unexpected non-deny workspace rule"),
+        ):
+            with self.subTest(lint=name, change=change):
+                path.write_text(original, encoding="utf-8")
+                self.replace("policy/rust-workspace.toml", f'{name} = "deny"\n', replacement)
+                self.assert_refused(diagnostic)
+
+    def test_four_lint_candidate_is_a_healthy_control(self):
+        self.four_lint_candidate()
+        parsed = STRICT.read_configuration(self.root)
+        rules = parsed["policy/rust-workspace.toml"]["workspace"]["lints"]
+        for name in ("let_underscore_drop", "unused_macro_rules", "unused_lifetimes"):
+            self.assertEqual(rules["rust"][name], "deny")
+        self.assertEqual(rules["clippy"]["string_slice"], "deny")
+
+    def test_let_underscore_drop_cannot_be_removed_or_lowered(self):
+        self.assert_four_lint_is_required("let_underscore_drop")
+
+    def test_unused_macro_rules_cannot_be_removed_or_lowered(self):
+        self.assert_four_lint_is_required("unused_macro_rules")
+
+    def test_unused_lifetimes_cannot_be_removed_or_lowered(self):
+        self.assert_four_lint_is_required("unused_lifetimes")
+
+    def test_string_slice_cannot_be_removed_or_lowered(self):
+        self.assert_four_lint_is_required("string_slice")
+
     def test_security_restrictions_cannot_be_removed(self):
         original = (self.root / "policy/rust-workspace.toml").read_bytes()
         for name in ("allow_attributes", "multiple_unsafe_ops_per_block", "unused_result_ok"):

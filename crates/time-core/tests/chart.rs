@@ -123,6 +123,10 @@ impl Source {
 #[path = "private/chart_batch_cases.rs"]
 mod chart_batch_cases;
 
+/// Existing raw-source principal continuity through original chart batches.
+#[path = "private/chart_principal_cases.rs"]
+mod chart_principal_cases;
+
 /// Capture every real retained row and the owner report, without creating evidence.
 /// # Errors
 /// Reject impossible public counts or a missing required row.

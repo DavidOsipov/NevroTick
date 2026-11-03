@@ -43,6 +43,10 @@ def fund_synthetic_source_recipes(test):
     Individual threshold controls override their targeted map inside each test.
     """
     for mapping, values in (
+        (MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary': 250, 'doctests': 20, 'baseline': 270}),
+        (MODULE.CHART_BATCH_TELEMETRY,
+         {'global_limits': {key: value * 1000 + MODULE.chart_batch_budget_vector(external_legal=True)[key]
+                            for key, value in MODULE.chart_batch_budget_vector(include_doctests=True).items()}}),
         (MODULE.CHART_TELEMETRY,
          {'global_limits': {key: value * 1000 + MODULE.chart_budget_vector(external_legal=True)[key]
                             for key, value in MODULE.chart_budget_vector(include_doctests=True).items()}}),
@@ -73,7 +77,7 @@ def fund_synthetic_source_recipes(test):
 
 
 class ChartCheckpointTests(unittest.TestCase):
-    """S154 current source admission, disjoint reservations and named outcomes."""
+    """Preserved S154 recipes within the additive S155 source reservation."""
 
     PASSED = ''.join('test ' + name + ' ... ok\n' for name in MODULE.CHART.CURRENT_ORDINARY_TESTS)
     DOCS = ''.join('test ' + name + ' ... ok\n' for name in MODULE.CHART_ORIGINAL_DOCTESTS)
@@ -82,15 +86,17 @@ class ChartCheckpointTests(unittest.TestCase):
         fund_synthetic_source_recipes(self)
 
     def test_current_scope_is_explicit_and_historical_e_cannot_transfer(self):
-        self.assertEqual(tuple(MODULE.SUBJECTS), ('chart', 'chart_roundoff', 'chart_enclosure', 'enclosure'))
-        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(set(MODULE.BOUND_INPUTS))), (136, 136))
-        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 17)
-        self.assertEqual(MODULE.FIXED['schema_version'], 18)
-        self.assertEqual(MODULE.COORDINATOR_COHORTS['schema_version'], 10)
-        self.assertEqual(MODULE.COORDINATOR_COHORTS['checkpoint'], 'S154c')
-        self.assertEqual(MODULE.INVENTORY_FIXED['schema_version'], 10)
-        self.assertEqual(MODULE.INVENTORY_ADMISSION, 'tasks/s1.2-chart-inventory-admission-v2.json')
-        self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary': 242, 'doctests': 15, 'baseline': 257})
+        self.assertEqual(tuple(MODULE.SUBJECTS), ('chart_batch',))
+        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(set(MODULE.BOUND_INPUTS))), (139, 139))
+        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 18)
+        self.assertEqual(MODULE.FIXED['schema_version'], 19)
+        self.assertEqual(MODULE.COORDINATOR_COHORTS['schema_version'], 11)
+        self.assertEqual(MODULE.COORDINATOR_COHORTS['checkpoint'], 'S155')
+        self.assertEqual(MODULE.INVENTORY_FIXED['schema_version'], 11)
+        self.assertEqual(MODULE.INVENTORY_ADMISSION, 'tasks/s1.2-chart-batch-inventory-admission.json')
+        self.assertIn(MODULE.FINAL_PACKAGE_TEST_COUNTS,
+                      ({'ordinary': 0, 'doctests': 0, 'baseline': 0},
+                       {'ordinary': 250, 'doctests': 20, 'baseline': 270}))
         self.assertEqual(MODULE.HISTORICAL_S152B_TEST_COUNTS, {'ordinary': 223, 'doctests': 9, 'baseline': 232})
         MODULE.admit_core_equivalence_scope([])
         for inventories in ({}, {'chart': {'count': 1, 'sha256': '1' * 64}}):
@@ -101,7 +107,7 @@ class ChartCheckpointTests(unittest.TestCase):
                         MODULE.admit_core_equivalence_scope(bad)
 
     def test_full_vectors_extend_exactly_once_and_keep_old_namespaces(self):
-        package, checks, _ = MODULE.cohort_budget_vectors(require_limits=False)
+        package, checks, _ = MODULE.historical_cohort_budget_vectors(require_limits=False)
         self.assertEqual(len(package), 1508)
         chart = {key: value for key, value in package.items() if key.startswith('chart.')}
         self.assertEqual(len(chart), 296)
@@ -176,6 +182,7 @@ class ChartCheckpointTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete): MODULE.record_counts({}, 'missing', bad)
         legal = {**MODULE.chart_numeric_work(external_legal=True),
                  'chart_external_reserved_budget': MODULE.chart_budget_vector(external_legal=True),
+                 'chart_batch_external_reserved_budget': MODULE.chart_batch_budget_vector(external_legal=True),
                  'observation_pending': True}
         report = {}; MODULE.record_counts(report, 'chart-legal', legal)
         row = report['core_invocations'][0]
@@ -228,7 +235,7 @@ class ChartCheckpointTests(unittest.TestCase):
     def test_registry_joins_legal_neighbors_and_retains_exact_legal_transport(self):
         cases = MODULE.contract_examples()
         legal = [case for case in cases.values() if case['code'] is None]
-        self.assertEqual((len(legal), len(cases) - len(legal)), (3, 50))
+        self.assertEqual((len(legal), len(cases) - len(legal)), (3, 57))
         self.assertEqual(MODULE.HISTORICAL_S152B_EXTERNAL_CONSUMER_LIMITS,
                          {'legal_executions': 2, 'negative_compilations': 37})
         expected = MODULE.CHART_CONTRACTS.legal_expected()
@@ -238,6 +245,124 @@ class ChartCheckpointTests(unittest.TestCase):
         for bad in (raw.rstrip('\n'), raw + raw, raw.replace('labels=5', 'labels=4')):
             with self.subTest(raw=bad[:40]), self.assertRaises(MODULE.CHART.Incomplete):
                 MODULE.CHART.chart_legal_observation(bad, MODULE.CHART_CONTRACTS)
+
+
+class ChartBatchCheckpointTests(unittest.TestCase):
+    """Independent S155 receiver controls; every outcome here is synthetic."""
+
+    NAMES = (
+        'chart_batch_cases::chart_batch_selects_genuine_majority_at_common_time',
+        'chart_batch_cases::chart_batch_source_loss_does_not_lower_minimum',
+        'chart_batch_cases::chart_batch_empty_and_capacity_boundaries_use_real_owners',
+        'chart_batch_cases::chart_batch_compares_every_chart_frame_field',
+        'chart_batch_cases::chart_batch_orders_domain_scalar_time_and_entry_mismatches',
+        'chart_batch_cases::chart_batch_preserves_real_duplicate_cause_and_redaction',
+        'chart_batch_cases::chart_batch_equal_descriptor_values_preserve_pointers_and_zero_bits',
+        'chart_batch::tests::raw_chart_batch_header_checks_inclusive_domain',
+    )
+    PASSED = ''.join('test ' + name + ' ... ok\n' for name in NAMES)
+
+    def setUp(self):
+        fund_synthetic_source_recipes(self)
+
+    def test_selected_owner_and_complete_manifest_keep_distinct_scope(self):
+        self.assertEqual(MODULE.SUBJECTS, {'chart_batch': 'crates/time-core/src/chart_batch.rs'})
+        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 18)
+        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(set(MODULE.BOUND_INPUTS))), (139, 139))
+        self.assertEqual(MODULE.INVENTORY_FIXED['listing_maximum_total'], 512)
+        self.assertEqual(MODULE.INVENTORY_FIXED['mutation_error_values'], {})
+        self.assertEqual(MODULE.COORDINATOR_COHORTS['schema_version'], 11)
+        self.assertEqual(MODULE.COORDINATOR_COHORTS['contract_attempt_limits'],
+                         {'legal_executions': 3, 'negative_compilations': 57})
+        MODULE.admit_core_equivalence_scope([])
+        for old in (S154CEquivalenceControls().records(), S152BEquivalenceControls().records(),
+                    None, {}, (), [None]):
+            with self.subTest(old=type(old).__name__), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_core_equivalence_scope(old)
+
+    def test_supplement_extends_old1508_exactly_once_with_frozen_numeric_facts(self):
+        old, old_checks, _ = MODULE.historical_cohort_budget_vectors(require_limits=False)
+        package, checks, limits = MODULE.cohort_budget_vectors(require_limits=False)
+        self.assertEqual(len(old), 1508)
+        self.assertEqual((len(package), len(checks['coverage']), len(limits)), (1823, 1823, 1823))
+        aggregate = {'charged_fit_work_upper', 'point_admissions_upper',
+                     'standard_errors.geometry.report_copies_upper',
+                     'standard_errors.geometry.logical_bytes_upper'}
+        self.assertEqual({key: package[key] for key in old if key not in aggregate},
+                         {key: value for key, value in old.items() if key not in aggregate})
+        self.assertEqual(MODULE.chart_batch_numeric_work(),
+                         {'charged_fit_work_upper': 5952, 'point_admissions_upper': 205536})
+        self.assertEqual(MODULE.chart_batch_numeric_work(external_legal=True),
+                         {'charged_fit_work_upper': 0, 'point_admissions_upper': 0})
+        self.assertEqual((package['charged_fit_work_upper'], package['point_admissions_upper']),
+                         (41243, 1497590))
+        self.assertEqual(checks['coverage']['point_admissions_upper'], 1497587)
+        self.assertEqual(checks['contracts']['charged_fit_work_upper'], 499)
+        self.assertEqual(checks['contracts']['point_admissions_upper'], 17256)
+        self.assertEqual(package['standard_errors.geometry.report_copies_upper'], 41243)
+        self.assertEqual(package['standard_errors.geometry.logical_bytes_upper'], 1319776)
+        self.assertEqual(old_checks['contracts']['charged_fit_work_upper'], 499)
+
+    def test_eight_named_outcomes_are_complete_or_explicitly_pending(self):
+        self.assertEqual(tuple(MODULE.CHART.BATCH_ORDINARY_TESTS), self.NAMES)
+        result = MODULE.chart_batch_test_observation(self.PASSED, require_complete=True)
+        self.assertFalse(result['chart_batch_source_only_pending'])
+        self.assertEqual(result['chart_batch_recorded_source_work_upper'],
+                         {'charged_fit_work_upper': 5952, 'point_admissions_upper': 205536})
+        self.assertIsNone(result['chart_batch_observed_operation_counts'])
+        for bad in (self.PASSED.replace(' ... ok', ' ... FAILED', 1),
+                    self.PASSED.replace(' ... ok', ' ... ignored', 1),
+                    self.PASSED.split('\n', 1)[1], self.PASSED.rstrip('\n'),
+                    self.PASSED + self.PASSED.splitlines(keepends=True)[0],
+                    json.dumps({'rendered': self.PASSED}) + '\n'):
+            with self.subTest(bad=bad[:40]), self.assertRaises(MODULE.Incomplete):
+                MODULE.chart_batch_test_observation(bad, require_complete=True)
+        partial = MODULE.profile_counts(self.PASSED.splitlines(keepends=True)[0], require_fit=False)
+        self.assertTrue(partial['chart_batch_source_only_pending'])
+        self.assertIsNone(partial['chart_batch_recorded_source_work_upper'])
+
+    def test_new_named_work_stays_outside_old_counter_caps_and_is_not_doubled(self):
+        counts = MODULE.profile_counts('CORE_PROFILE_COUNTS fits=1 points=3\n' + self.PASSED)
+        self.assertEqual((counts['charged_fit_work_upper'], counts['point_admissions_upper']),
+                         (5953, 205539))
+        accounted = MODULE.account_literal_doctests(counts)
+        self.assertEqual((accounted['charged_fit_work_upper'], accounted['point_admissions_upper']),
+                         (5953, 205542))
+        self.assertEqual(accounted['direct_fit_calls'], 1)
+        self.assertIsNone(accounted['chart_batch_observed_operation_counts'])
+
+    def test_package_supplement_is_mandatory_and_preserves_pending_observation(self):
+        counts = {**MODULE.package_charged_upper(), **MODULE.selection_reservation(package=True),
+                  'observation_pending': True}
+        report = {}; MODULE.record_counts(report, 'synthetic-batch-package', counts)
+        self.assertEqual(report['core_chart_batch_reserved_totals'], MODULE.chart_batch_budget_vector())
+        self.assertEqual(report['core_chart_batch_source_test_pending_invocations'],
+                         ['synthetic-batch-package'])
+        self.assertIsNone(report['core_chart_batch_observed_operation_counts'])
+        key = next(iter(counts['chart_batch_reserved_budget']))
+        for change in ('missing', 'changed', 'boolean'):
+            bad = copy.deepcopy(counts)
+            if change == 'missing': del bad['chart_batch_reserved_budget']
+            if change == 'changed': bad['chart_batch_reserved_budget'][key] += 1
+            if change == 'boolean': bad['chart_batch_reserved_budget'][key] = True
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.record_counts({}, 'bad', bad)
+
+    def test_supplemental_allowance_is_exact_bounded_and_cumulative(self):
+        package = MODULE.chart_batch_budget_vector(include_doctests=True)
+        legal = MODULE.chart_batch_budget_vector(external_legal=True)
+        limits = {key: max(value, legal[key]) for key, value in package.items()}
+        self.assertEqual(MODULE.admit_chart_batch_allowances(limits), limits)
+        key = next(key for key, value in package.items() if value)
+        for bad in (None, {}, {**limits, key: True}, {**limits, key: limits[key] - 1},
+                    {**limits, key: 1 << 63}, {**limits, 'chart_batch.extra': 0}):
+            with self.subTest(bad=type(bad).__name__), self.assertRaises(MODULE.Incomplete):
+                MODULE.admit_chart_batch_allowances(bad)
+        with patch.dict(MODULE.CHART_BATCH_TELEMETRY, {'global_limits': limits}):
+            counts = {**MODULE.package_charged_upper(), **MODULE.selection_reservation(package=True)}
+            report = {}; MODULE.record_counts(report, 'first', counts)
+            with self.assertRaisesRegex(MODULE.Incomplete, 'Chart-batch subset'):
+                MODULE.record_counts(report, 'second', counts)
 
 
 class S154CEquivalenceControls(unittest.TestCase):
@@ -310,9 +435,9 @@ class S154CEquivalenceControls(unittest.TestCase):
                          for section in sections)
         self.assertEqual(retained, self.DESCRIPTORS)
         good = self.records()
-        MODULE.admit_core_equivalence_scope([])
-        MODULE.admit_core_equivalence_scope(good)
-        MODULE.admit_core_equivalence_scope(list(reversed(good)))
+        MODULE.historical_s154c_admit_core_equivalence_scope([])
+        MODULE.historical_s154c_admit_core_equivalence_scope(good)
+        MODULE.historical_s154c_admit_core_equivalence_scope(list(reversed(good)))
         MODULE.historical_s154b_admit_core_equivalence_scope([])
         with self.assertRaises(MODULE.Incomplete):
             MODULE.historical_s154b_admit_core_equivalence_scope(good)
@@ -322,14 +447,14 @@ class S154CEquivalenceControls(unittest.TestCase):
         for bad in (None, {}, tuple(good), good[:-1], good + good[:1],
                     [good[0], good[0], *good[2:]], [None, *good[1:]]):
             with self.subTest(value=type(bad).__name__), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_s154c_admit_core_equivalence_scope(bad)
         for key in good[0]:
             bad = copy.deepcopy(good); del bad[0][key]
             with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_s154c_admit_core_equivalence_scope(bad)
         bad = copy.deepcopy(good); bad[0]['unknown'] = 1
         with self.assertRaises(MODULE.Incomplete):
-            MODULE.admit_core_equivalence_scope(bad)
+            MODULE.historical_s154c_admit_core_equivalence_scope(bad)
 
     def test_candidate_source_and_complete_native_descriptor_identity_reject_changes(self):
         changes = [(('id',), 'S154C-ENC-E99'), (('candidate_sha256',), '0' * 64),
@@ -349,10 +474,10 @@ class S154CEquivalenceControls(unittest.TestCase):
             for key in path[:-1]: target = target[key]
             target[path[-1]] = value
             with self.subTest(field=path), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_s154c_admit_core_equivalence_scope(bad)
         bad = self.records(); bad[0]['mutant']['unknown'] = 1
         with self.assertRaises(MODULE.Incomplete):
-            MODULE.admit_core_equivalence_scope(bad)
+            MODULE.historical_s154c_admit_core_equivalence_scope(bad)
 
     def test_proof_binding_review_and_rationale_bounds_reject_malformed_values(self):
         for key, value in [('path', 'tasks/s1.3-enclosure-equivalences.md'),
@@ -360,15 +485,15 @@ class S154CEquivalenceControls(unittest.TestCase):
                            ('reviewer', 'author only'), ('verdict', 'untested')]:
             bad = self.records(); bad[0]['proof'][key] = value
             with self.subTest(proof=key), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_s154c_admit_core_equivalence_scope(bad)
         for proof in (None, [], {}, {**self.records()[0]['proof'], 'unknown': True}):
             bad = self.records(); bad[0]['proof'] = proof
             with self.subTest(proof=type(proof).__name__), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_s154c_admit_core_equivalence_scope(bad)
         for rationale in ('', ' \n ', 'x' * 4097, None, True, []):
             bad = self.records(); bad[0]['rationale'] = rationale
             with self.subTest(rationale=type(rationale).__name__), self.assertRaises(MODULE.Incomplete):
-                MODULE.admit_core_equivalence_scope(bad)
+                MODULE.historical_s154c_admit_core_equivalence_scope(bad)
 
 
 class TrackingCheckpointTests(unittest.TestCase):
@@ -631,11 +756,11 @@ class StandardErrorCheckpointTests(unittest.TestCase):
         self.assertEqual(vector['standard_errors.adaptive_work.point_admissions_upper'], 19269)
         self.assertEqual(vector['standard_errors.fixture_call.statistics'], 5)
         self.assertEqual(vector['standard_errors.fixture_call.points'], 15)
-        self.assertEqual(vector['standard_errors.geometry.report_copies_upper'], 35291)
-        self.assertEqual(vector['standard_errors.geometry.logical_bytes_upper'], 1129312)
+        self.assertEqual(vector['standard_errors.geometry.report_copies_upper'], 41243)
+        self.assertEqual(vector['standard_errors.geometry.logical_bytes_upper'], 1319776)
         self.assertEqual(vector['standard_errors.work.binary_primitives_upper'], 64)
         self.assertEqual(vector['standard_errors.work.square_roots_upper'], 20)
-        package, checks, _ = MODULE.cohort_budget_vectors(require_limits=False)
+        package, checks, _ = MODULE.historical_cohort_budget_vectors(require_limits=False)
         self.assertEqual(len(package), 1508)
         self.assertEqual(package['charged_fit_work_upper'], 35291)
         self.assertEqual(checks['coverage']['point_admissions_upper'], 1292051)
@@ -768,9 +893,9 @@ class AdaptiveCheckpointTests(unittest.TestCase):
 
     def test_package_and_doctest_reservation_has_literal_independent_totals(self):
         self.assertEqual(MODULE.package_charged_upper(), {
-            'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051})
+            'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587})
         self.assertEqual(MODULE.package_charged_upper(include_doctests=True), {
-            'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292054})
+            'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497590})
         package = MODULE.adaptive_budget_vector(include_doctests=True)
         self.assertEqual(len(package), 144)
         self.assertEqual(package['adaptive.call.adaptive_appends'], 200)
@@ -827,7 +952,7 @@ class ProjectionAdapterCheckpointTests(unittest.TestCase):
         self.assertEqual(budget['projection_adapter.adapter_work.projection_adaptive_extra_internal_getters_upper'], 11)
         self.assertEqual(budget['projection_adapter.downstream_work.delegated_batch_attempts_upper'], 1)
         self.assertEqual(MODULE.package_charged_upper(include_doctests=True),
-                         {'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292054})
+                         {'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497590})
         external = MODULE.projection_adapter_budget_vector(external=True)
         self.assertEqual(set(external), set(budget))
         self.assertEqual({key: value for key, value in external.items() if value}, {
@@ -1194,7 +1319,7 @@ class LifecycleCheckpointTests(unittest.TestCase):
     def test_successful_baseline_requires_public_bridge_and_counter_families(self):
         helper = CoreAnalysisTests()
         complete = helper.completed_mutation_log(helper.complete_runs_rows()).replace(
-            '96 passed', '257 passed')
+            '96 passed', '270 passed')
         outcome = {'scenario': 'Baseline', 'summary': 'Success', 'log_path': 'baseline.log',
                    'phase_results': helper.phase_results('Success')}
         families = ('CORE_COMBINATION_LIFECYCLE_PROFILE ',
@@ -1251,7 +1376,7 @@ class LifecycleCheckpointTests(unittest.TestCase):
                 work = observed['lifecycle_source_owned_work_uppers']
                 self.assertEqual((work['charged_fit_work_upper'], work['point_admissions_upper']), (6, 384))
                 self.assertEqual(report['core_charged_subset_totals'], {
-                    'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292054})
+                    'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497590})
                 self.assertEqual(report['mutation_counter_prefix_observations'], ['bridge:caught'])
 
     def test_caught_zero_event_receiving_preserves_zero_and_reached_fixture(self):
@@ -1283,7 +1408,7 @@ class LifecycleCheckpointTests(unittest.TestCase):
                 self.assertEqual(work['raw_event_fixture_entries_upper'], 1)
                 self.assertEqual(work['raw_event_update_constructions_upper'], 9)
                 self.assertEqual(report['core_charged_subset_totals'], {
-                    'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292054})
+                    'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497590})
                 self.assertEqual(report['mutation_counter_prefix_observations'], ['event:caught'])
                 if bridge:
                     self.assertEqual(observed['lifecycle_observation_status'], 'partial-source-recipe')
@@ -1291,7 +1416,7 @@ class LifecycleCheckpointTests(unittest.TestCase):
 
     def test_zero_event_cannot_activate_successful_or_compile_only_receiving(self):
         helper = CoreAnalysisTests()
-        healthy = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '257 passed')
+        healthy = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '270 passed')
         zero = ('CORE_LIFECYCLE_RAW_VALIDATION_PROFILE '
                 'case=lifecycle_raw_event_validation validations=0\n')
         with tempfile.TemporaryDirectory() as temporary:
@@ -1317,7 +1442,7 @@ class LifecycleCheckpointTests(unittest.TestCase):
 
     def test_zero_bridge_cannot_activate_successful_or_compile_only_receiving(self):
         helper = CoreAnalysisTests()
-        healthy = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '257 passed')
+        healthy = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '270 passed')
         zero = ('CORE_LIFECYCLE_BRIDGE_PROFILE case=' + LIFECYCLE_FIXTURES.BRIDGE_CASE
                 + ' appends=0 admissions=0 masks=0 garde=0\n')
         with tempfile.TemporaryDirectory() as temporary:
@@ -1538,12 +1663,12 @@ class CombinationCheckpointTests(unittest.TestCase):
                 MODULE.admit_combination_allowances(malformed)
 
     def test_current_checkpoint_counts_inventory_and_equivalences_stay_explicit(self):
-        self.assertEqual(set(MODULE.SUBJECTS), {'chart', 'chart_roundoff', 'chart_enclosure', 'enclosure'})
-        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 17)
-        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(MODULE.BOUND_INPUTS)), (136,136))
-        self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary':242,'doctests':15,'baseline':257})
+        self.assertEqual(set(MODULE.SUBJECTS), {'chart_batch'})
+        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 18)
+        self.assertEqual((MODULE.SOURCE_FILE_COUNT, len(MODULE.BOUND_INPUTS)), (139,139))
+        self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS, {'ordinary':250,'doctests':20,'baseline':270})
         self.assertEqual(MODULE.HISTORICAL_S151_TEST_COUNTS, {'ordinary':208,'doctests':9,'baseline':217})
-        self.assertEqual(MODULE.INVENTORY_FIXED['schema_version'], 10)
+        self.assertEqual(MODULE.INVENTORY_FIXED['schema_version'], 11)
         self.assertFalse(MODULE.INVENTORY_FIXED['campaigns_admitted'])
         self.assertEqual(MODULE.SOURCE_RAW_PRIVATE_WORK_LIMITS['square_root_calls_upper'], 33)
         self.assertEqual(MODULE.SOURCE_RAW_PRIVATE_WORK_LIMITS['binary_arithmetic_calls_upper'], 22)
@@ -1698,7 +1823,7 @@ class CombinationCheckpointTests(unittest.TestCase):
                                       monotonic=0, coordinates=0, exchanges=0, getters=0) + '\n'
                     + 'CORE_HISTORY_PROFILE_COUNTS ' + ' '.join(field + '=0' for field in history_fields) + '\n'
                     + helper.complete_runs_rows()
-                    + 'test result: ok. 257 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n')
+                    + 'test result: ok. 270 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n')
         complete = helper.completed_mutation_log(ordinary)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); path = root / 'outcomes.json'; log = root / 'baseline.log'
@@ -1706,7 +1831,7 @@ class CombinationCheckpointTests(unittest.TestCase):
                        'phase_results':helper.phase_results('Success')}
             for text, failure in ((complete, None),
                                   (complete.replace(self.complete_rows(), ''), 'Combination complete package'),
-                                  (complete.replace('257 passed', '0 passed'), 'no observed passing tests|did not execute all')):
+                                  (complete.replace('270 passed', '0 passed'), 'no observed passing tests|did not execute all')):
                 log.write_text(text)
                 report = {}
                 MODULE.record_counts(report, 'baseline', {
@@ -1794,7 +1919,7 @@ class CombinationContractTests(unittest.TestCase):
         }
         self.assertEqual(set(cases), {'legal_principal_checked_producer', *expected, *lifecycle_expected})
         self.assertEqual(MODULE.HISTORICAL_EXTERNAL_CONSUMER_LIMITS, {'legal_executions':1,'negative_compilations':24})
-        self.assertEqual(MODULE.EXTERNAL_CONSUMER_LIMITS, {'legal_executions':3,'negative_compilations':50})
+        self.assertEqual(MODULE.EXTERNAL_CONSUMER_LIMITS, {'legal_executions':3,'negative_compilations':57})
         self.assertIsNone(cases['legal_principal_checked_producer']['code'])
         for name, (code, field, line) in expected.items():
             case = cases[name]
@@ -1884,7 +2009,7 @@ class CombinationContractTests(unittest.TestCase):
         with patch.dict(MODULE.COMBINATION_TELEMETRY, {'global_limits':limits}):
             reserved = MODULE.prospective_scope_reservation('contracts',dict(MODULE.SUBJECTS))
             _, checks, _ = MODULE.cohort_budget_vectors(require_limits=False)
-        self.assertEqual(reserved['negative_consumer_compilations_upper'],50)
+        self.assertEqual(reserved['negative_consumer_compilations_upper'],57)
         self.assertEqual(reserved['legal_consumer_executions_upper'],3)
         self.assertEqual(reserved['charged_upper'], {'charged_fit_work_upper':499,'point_admissions_upper':17256})
         expected = {**{'combination.call.'+key:value for key,value in MODULE.combination_legal_calls().items()},
@@ -1922,7 +2047,8 @@ class CombinationContractTests(unittest.TestCase):
                                 raise AssertionError('Chart runtime preceded its own source reservation')
                             return ('CORE_CHART_CONTRACT_PROFILE labels=5 contexts=2 monotonic=4 coordinates=1 '
                                     'exchanges=1 observations=3 histories=1 appends=3 frames=1 domains=1 charts=1 '
-                                    'prepares=4 terms=1 tracked_projections=1 enclosures=1 getters=22\n'
+                                    'prepares=4 terms=1 tracked_projections=1 enclosures=1 getters=22 '
+                                    'batches=1 minima=1 selections=1 batch_getters=22\n'
                                     'legal-chart-contract\n')
                         if label == 'external-adaptive-legal-execution':
                             adaptive = report['core_invocations'][-1]
@@ -1952,7 +2078,7 @@ class CombinationContractTests(unittest.TestCase):
                 if succeeds:
                     rejected = [kwargs['specimen'] for label,kwargs in commands
                                 if label.startswith('external-consumer-') and 'specimen' in kwargs and kwargs['specimen']]
-                    self.assertEqual(len(rejected),50)
+                    self.assertEqual(len(rejected),57)
                     self.assertEqual(sum(label=='external-adaptive-legal-execution' for label,_ in commands),1)
                     self.assertEqual(report['contracts']['literal_combination_legal_calls'],MODULE.combination_legal_calls())
                     self.assertEqual(report['core_combination_recorded_call_subtotals'],MODULE.combination_legal_calls())
@@ -2056,11 +2182,11 @@ class PrincipalCheckpointTests(unittest.TestCase):
                 'case=principal_seed_and_genuine_update_hysteresis', 'case=unadmitted_case'))
 
     def test_all_means_the_one_owner_checkpoint_without_a_full_manifest_claim(self):
-        self.assertEqual(set(MODULE.SCOPE.select('all')), {'chart', 'chart_roundoff', 'chart_enclosure', 'enclosure'})
+        self.assertEqual(set(MODULE.SCOPE.select('all')), {'chart_batch'})
         claim = MODULE.checkpoint_scope_claim(MODULE.SCOPE.select('all'))
         self.assertTrue(claim['checkpoint_complete_selection'])
         self.assertFalse(claim['critical_manifest_complete_selection'])
-        self.assertIn('four-owner checkpoint', claim['qualification_scope'])
+        self.assertIn('eighteen-owner', claim['qualification_scope'])
 
     def test_full_actual_rows_and_partial_prefixes_stay_distinct(self):
         complete = MODULE.principal_counts(self.complete_rows(), require_complete=True)
@@ -2082,7 +2208,7 @@ class PrincipalCheckpointTests(unittest.TestCase):
 
     def test_successful_baseline_cannot_omit_the_principal_family(self):
         helper = CoreAnalysisTests()
-        output = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '257 passed')
+        output = helper.completed_mutation_log(helper.complete_runs_rows()).replace('96 passed', '270 passed')
         outcome = {'scenario': 'Baseline', 'summary': 'Success', 'log_path': 'baseline.log',
                    'phase_results': helper.phase_results('Success')}
         with tempfile.TemporaryDirectory() as temporary:
@@ -2111,7 +2237,7 @@ class PrincipalCheckpointTests(unittest.TestCase):
                 path.write_text(helper.mutation_phase_header('Test') + prefix)
                 report = {}
                 MODULE.record_counts(report, 'principal:mutation-1', {
-                    'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+                    'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 row = report['core_invocations'][0]
                 if valid:
@@ -2227,6 +2353,8 @@ class CoreAnalysisTests(unittest.TestCase):
         fund_synthetic_source_recipes(self)
         chart_identity = patch.object(MODULE.CHART, 'admit_source_identity', return_value=None)
         chart_identity.start(); self.addCleanup(chart_identity.stop)
+        batch_identity = patch.object(MODULE.CHART, 'admit_chart_batch_source_identity', return_value=None)
+        batch_identity.start(); self.addCleanup(batch_identity.stop)
         prior = patch.object(MODULE, 'admit_spent_contract_attempt', return_value={'synthetic': True})
         prior.start(); self.addCleanup(prior.stop)
         inventories = patch.dict(MODULE.MUTATION_INVENTORIES, {
@@ -2254,6 +2382,7 @@ class CoreAnalysisTests(unittest.TestCase):
             (MODULE.STANDARD_ERROR_TELEMETRY, {'status': 'admitted-source-only-recipe'}),
             (MODULE.TRACKING_TELEMETRY, {'status': 'admitted-source-only-recipe'}),
             (MODULE.CHART_TELEMETRY, {'status': 'admitted-source-only-recipe'}),
+            (MODULE.CHART_BATCH_TELEMETRY, {'status': 'admitted-source-only-recipe'}),
             (MODULE.PROJECTION_TELEMETRY, {'status': 'admitted-source-owned-observer'}),
             (MODULE.COORDINATOR_COHORTS, {'status': 'admitted-exact-source-and-cohorts'}),
             (MODULE.ENCLOSURE_TELEMETRY, {'status': 'admitted-source-owned-observer',
@@ -2292,7 +2421,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.object(MODULE, 'admit_spent_contract_attempt',
                               side_effect=MODULE.Incomplete('historical spent receipt unavailable')) as prior:
                 policy = MODULE.read_policy(root, 'contracts')
-            self.assertEqual(policy['coordinator_cohorts']['checkpoint'], 'S154c')
+            self.assertEqual(policy['coordinator_cohorts']['checkpoint'], 'S155')
             prior.assert_not_called()
 
     @staticmethod
@@ -2400,6 +2529,7 @@ class CoreAnalysisTests(unittest.TestCase):
             test_output += StandardErrorCheckpointTests.PASSED + StandardErrorCheckpointTests.DOCS
             test_output += TrackingCheckpointTests.PASSED
             test_output += ChartCheckpointTests.PASSED + ChartCheckpointTests.DOCS
+            test_output += ''.join('test ' + name + ' ... ok\n' for name in MODULE.CHART.BATCH_ORDINARY_TESTS)
         if 'test result:' not in test_output:
             test_output += 'test result: ok. 96 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;\n'
         return (self.mutation_phase_header('Build') + finished
@@ -2465,7 +2595,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.object(MODULE, 'RUNS_TELEMETRY_STATUS', 'pending-reviewed-runs-telemetry-and-campaign-budget'):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.read_policy(root, 'contracts')
-            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 136)
+            self.assertEqual(MODULE.read_policy(root, 'contracts')['source_file_count'], 139)
 
     def test_final_projected_batch_admission_requires_every_finite_nominal_allowance(self):
         required = MODULE.projected_batch_budget_vector()
@@ -2620,8 +2750,8 @@ class CoreAnalysisTests(unittest.TestCase):
         proof = MODULE.prospective_scope_reservation('coverage', dict(MODULE.SUBJECTS))
         self.assertEqual(proof['mutation_package_invocations_upper'], 0)
         self.assertEqual(proof['coverage_package_invocations_upper'], 1)
-        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 35291,
-                                                 'point_admissions_upper': 1292051})
+        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 41243,
+                                                 'point_admissions_upper': 1497587})
         self.assertEqual(proof['package_test_count_upper_each'], 96)
         for lane, subjects in [('host', dict(MODULE.SUBJECTS)), ('all', {}),
                                ('all', {'selection': 'crates/time-core/src/regression.rs'})]:
@@ -2632,17 +2762,17 @@ class CoreAnalysisTests(unittest.TestCase):
                 MODULE.prospective_scope_reservation('coverage', dict(MODULE.SUBJECTS))
 
     def test_focused_mutation_reserves_actual_inventory_and_its_own_baseline(self):
-        proof = MODULE.prospective_scope_reservation('mutation', {'chart': MODULE.SUBJECTS['chart']})
+        proof = MODULE.prospective_scope_reservation('mutation', {'chart_batch': MODULE.SUBJECTS['chart_batch']})
         # setUp declares one inert variant, not the historical217-variant listing.
         self.assertEqual(proof['mutation_package_invocations_upper'], 2)
         self.assertEqual(proof['coverage_package_invocations_upper'], 0)
         self.assertEqual(proof['package_invocations_upper'], 2)
         self.assertEqual(proof['legal_consumer_executions_upper'], 0)
-        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 70582,
-                                                  'point_admissions_upper': 2584108})
+        self.assertEqual(proof['charged_upper'], {'charged_fit_work_upper': 82486,
+                                                  'point_admissions_upper': 2995180})
         with patch.dict(MODULE.GLOBAL_LIMITS, {'point_admissions_upper': 1466475}):
             with self.assertRaises(MODULE.Incomplete):
-                MODULE.prospective_scope_reservation('mutation', {'chart': MODULE.SUBJECTS['chart']})
+                MODULE.prospective_scope_reservation('mutation', {'chart_batch': MODULE.SUBJECTS['chart_batch']})
 
     def test_selection_complete_package_and_missing_private_recipe_remain_distinct(self):
         full = self.complete_runs_rows() + self.complete_selection_rows()
@@ -2694,7 +2824,7 @@ class CoreAnalysisTests(unittest.TestCase):
     def test_selection_reservation_retains_missing_observations_without_zeroing(self):
         report = {}
         MODULE.record_counts(report, 'package', {
-            'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+            'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
             **MODULE.selection_reservation(package=True), 'observation_pending': True})
         self.assertEqual(report['core_selection_reserved_totals']['intervals'], 492)
         self.assertIsNone(report['core_selection_package_observed_calls'])
@@ -2729,7 +2859,7 @@ class CoreAnalysisTests(unittest.TestCase):
         package = MODULE.selection_reservation(package=True)
         external = MODULE.selection_reservation(external={'intervals': 6, 'minima': 3, 'batches': 4, 'selections': 2})
         for label, reservation, literal, fits, points, forged in (
-                ('package', package, expected, 35291, 1292051, 0),
+                ('package', package, expected, 41243, 1497587, 0),
                 ('external', external, dict.fromkeys(expected, 0), 0, 0, 1)):
             with self.subTest(scope=label):
                 self.assertEqual(reservation['selection_reserved_helper_canonical_source_work_uppers'], literal)
@@ -2772,7 +2902,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 (output/'baseline.log').write_text(text)
                 report = {}
                 MODULE.record_counts(report, 'selection:mutation-baseline', {
-                    'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+                    'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 with self.subTest(message=message), self.assertRaisesRegex(MODULE.Incomplete, message):
                     MODULE.observe_mutation_outcome(report, output/'outcomes.json',
@@ -2799,7 +2929,7 @@ class CoreAnalysisTests(unittest.TestCase):
                     (output/'timeout.log').write_text(self.mutation_phase_header('Test')+text)
                     report = {}
                     MODULE.record_counts(report, 'selection:mutation-1', {
-                        'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+                        'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
                         **MODULE.selection_reservation(package=True), 'observation_pending': True})
                     row = report['core_invocations'][0]
                     with self.subTest(prefix=prefix, valid=valid):
@@ -2812,7 +2942,7 @@ class CoreAnalysisTests(unittest.TestCase):
                                 MODULE.observe_mutation_outcome(report, output/'outcomes.json',
                                                                 'selection:mutation-1', outcome, row)
                         self.assertTrue(row['observation_pending'])
-                        self.assertEqual(row['charged_fit_work_upper'], 35291)
+                        self.assertEqual(row['charged_fit_work_upper'], 41243)
                         self.assertEqual(row['selection_reserved_calls']['intervals'], 492)
                         self.assertNotIn('observed_counts', row)
 
@@ -2822,7 +2952,7 @@ class CoreAnalysisTests(unittest.TestCase):
 
     def fixture(self, root):
         """Create the full106-file synthetic shape and retained thirteen-owner manifest."""
-        for name in set(MODULE.BOUND_INPUTS) | set(MODULE.CHART.SOURCE_SHA256):
+        for name in set(MODULE.BOUND_INPUTS) | set(MODULE.CHART.SOURCE_SHA256) | set(MODULE.CHART.BATCH_SOURCE_INPUTS):
             path = root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('// isolated synthetic input; never compiled\n')
@@ -2880,10 +3010,10 @@ class CoreAnalysisTests(unittest.TestCase):
             root = Path(temp); policy = self.fixture(root)
             admitted = MODULE.read_policy(root, 'contracts')
             self.assertEqual(admitted['critical_files'], list(MODULE.SUBJECTS.values()))
-            self.assertEqual(MODULE.SCOPE.select('chart'), {'chart': MODULE.SUBJECTS['chart']})
+            self.assertEqual(MODULE.SCOPE.select('chart_batch'), {'chart_batch': MODULE.SUBJECTS['chart_batch']})
             with self.assertRaises(MODULE.Incomplete): MODULE.SCOPE.select('adaptive_history')
             self.assertEqual(MODULE.SCOPE.select('all'), MODULE.SUBJECTS)
-            self.assertEqual(len(admitted['inputs_sha256']), 136)
+            self.assertEqual(len(admitted['inputs_sha256']), 139)
             policy['admission_status'] = 'pending-final-source-and-inventory-binding'
             self.write_policy(root, policy)
             with self.assertRaises(MODULE.Incomplete):
@@ -3112,7 +3242,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 session = Mock()
                 report = {}
                 with self.admitted_mutation_execution_fixture(session, report) as args, \
-                     patch.dict(MODULE.COORDINATOR_COHORTS, {'mutation_outputs': {'chart': str(expected)}}), \
+                     patch.dict(MODULE.COORDINATOR_COHORTS, {'mutation_outputs': {'chart_batch': str(expected)}}), \
                      patch.object(MODULE.COMMON, 'Session', side_effect=MODULE.Incomplete('healthy session boundary')) as start:
                     args.output_dir = actual
                     expected_error = ('healthy session boundary' if case == 'healthy' else
@@ -3160,7 +3290,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 row = report['mutation_full_accounting'][subject]
                 self.assertEqual(row['counts'], {'K': 1, 'M': 1, 'U': 1, 'T': 0, 'X': 0, 'E': 0})
                 self.assertEqual(row['accounted'], 3)
-            self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 211746, 'point_admissions_upper': 7752324})
+            self.assertEqual(report['core_charged_subset_totals'], {'charged_fit_work_upper': 247458, 'point_admissions_upper': 8985540})
             self.assertEqual(report['core_direct_and_stats_observations'], {'direct_fit_calls': 6, 'stats_calls': 6, 'point_admissions': 36})
             self.assertEqual(report['core_runs_external_observations']['runs_selections'], 120)
             self.assertTrue(report['core_recorded_observations_parsed'])
@@ -3175,7 +3305,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(incomplete['mutation_full_accounting']['adaptive_history']['accounted'], 3)
             principal_baseline = next(row for row in incomplete['core_invocations']
                                       if row['invocation'] == 'adaptive_history:mutation-baseline')
-            self.assertEqual(principal_baseline['charged_fit_work_upper'],35291)
+            self.assertEqual(principal_baseline['charged_fit_work_upper'],41243)
             self.assertNotIn('observed_counts',principal_baseline)
             self.assertFalse(incomplete['core_recorded_observations_parsed'])
             baseline.write_text(original)
@@ -3202,13 +3332,13 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 105873, 'point_admissions_upper': 3876162})
+                             {'charged_fit_work_upper': 123729, 'point_admissions_upper': 4492770})
             self.assertEqual(report['mutation_full_accounting']['runs']['counts']['T'], 2)
             self.assertEqual(report['mutation_full_accounting']['runs']['counts']['K'], 0)
             self.assertFalse(report['mutation_counter_observation_complete'])
             self.assertEqual(report['core_observation_pending_invocations'], ['runs:mutation-1', 'runs:mutation-2'])
             for row in report['core_invocations'][1:]:
-                self.assertEqual((row['charged_fit_work_upper'], row['point_admissions_upper']), (35291, 1292054))
+                self.assertEqual((row['charged_fit_work_upper'], row['point_admissions_upper']), (41243, 1497590))
                 self.assertTrue(row['observation_pending'])
                 self.assertNotIn('observed_counts', row)
             self.assertEqual(report['core_invocations'][1]['observation_status'], 'timeout-prefix-unqualified')
@@ -3227,7 +3357,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292054})
+                             {'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497590})
             self.assertFalse(report['core_recorded_observations_parsed'])
             self.assertFalse(report['mutation_counter_observation_complete'])
             self.assertEqual(report['core_observation_pending_invocations'], ['runs:mutation-baseline'])
@@ -3248,7 +3378,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 70582, 'point_admissions_upper': 2584108})
+                             {'charged_fit_work_upper': 82486, 'point_admissions_upper': 2995180})
             row = report['core_invocations'][1]
             self.assertEqual(row['observation_status'], 'timeout-no-counter-prefix')
             self.assertTrue(row['observation_pending'])
@@ -3273,7 +3403,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 70582, 'point_admissions_upper': 2584108})
+                             {'charged_fit_work_upper': 82486, 'point_admissions_upper': 2995180})
             self.assertEqual(report['core_observation_pending_invocations'],
                              ['runs:mutation-baseline', 'adaptive_history:mutation-baseline'])
             self.assertFalse(report['mutation_counter_observation_complete'])
@@ -3298,7 +3428,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(row['observation_status'], 'timeout-receipt-unqualified')
             self.assertTrue(row['observation_pending'])
             self.assertNotIn('observed_counts', row)
-            self.assertEqual(row['charged_fit_work_upper'], 35291)
+            self.assertEqual(row['charged_fit_work_upper'], 41243)
             self.assertFalse(report['mutation_counter_observation_complete'])
 
     def test_all_known_outcomes_are_charged_even_when_subset_cap_is_exceeded(self):
@@ -3311,11 +3441,11 @@ class CoreAnalysisTests(unittest.TestCase):
                     {'scenario': 'Baseline', 'summary': 'Success', 'log_path': 'unread.log',
                      'phase_results': self.phase_results('Success')}]}))
             report = {'subjects': dict(MODULE.HISTORICAL_S149_SUBJECTS)}
-            with patch.dict(MODULE.GLOBAL_LIMITS, {'charged_fit_work_upper': 35291}):
+            with patch.dict(MODULE.GLOBAL_LIMITS, {'charged_fit_work_upper': 41243}):
                 with self.assertRaisesRegex(MODULE.Incomplete, 'global charged allowance'):
                     MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 70582, 'point_admissions_upper': 2584108})
+                             {'charged_fit_work_upper': 82486, 'point_admissions_upper': 2995180})
             self.assertEqual(len(report['core_observation_pending_invocations']), 2)
             self.assertFalse(report['mutation_counter_observation_complete'])
 
@@ -3327,16 +3457,16 @@ class CoreAnalysisTests(unittest.TestCase):
         inert fixture represents its admitted focused result and launches no tool.
         """
         plan_path = ROOT / 'tasks/inert-coordinator-plan.json'
-        args = SimpleNamespace(lane='mutation', subject='chart', cohort_plan=plan_path,
+        args = SimpleNamespace(lane='mutation', subject='chart_batch', cohort_plan=plan_path,
                                cohort_id='chart', output_dir=Path('/inert-output'))
         policy = {'mutation_inventories': {name: {'count': 1, 'sha256': 'a'*64}
                                            for name in MODULE.SUBJECTS}}
         plan = {'candidate_sha256': 'b'*64, 'recipe_sha256': 'c'*64,
                 'product_inputs_sha256': {}, 'tool_inputs_sha256': {}, 'tool_payloads_sha256': {},
-                'cohorts': [{'id': 'chart', 'subject': 'chart', 'output_dir': '/inert-output'}]}
+                'cohorts': [{'id': 'chart', 'subject': 'chart_batch', 'output_dir': '/inert-output'}]}
         session.product_identity = {}; session.identity = {}; session.source = Path('/inert-source')
         report['tools_sha256'] = {}
-        with patch.dict(MODULE.COORDINATOR_COHORTS, {'mutation_outputs': {'chart': '/inert-output'}}), \
+        with patch.dict(MODULE.COORDINATOR_COHORTS, {'mutation_outputs': {'chart_batch': '/inert-output'}}), \
              patch.object(MODULE, 'read_policy', return_value=policy), \
              patch.object(MODULE, 'read_cohort_plan', return_value=(plan, {'synthetic_reservation': True}, plan_path)), \
              patch.object(MODULE.COHORTS, 'cohort_binding', return_value=plan['cohorts'][0]), \
@@ -3949,13 +4079,13 @@ class CoreAnalysisTests(unittest.TestCase):
                 report = {}
                 label = 'selection:' + outcome['summary']
                 MODULE.record_counts(report, label, {
-                    'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+                    'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
                     **MODULE.selection_reservation(package=True), 'observation_pending': True})
                 row = report['core_invocations'][0]
                 with self.subTest(summary=outcome['summary']):
                     MODULE.observe_mutation_outcome(report, output / 'outcomes.json', label, outcome, row)
-                    self.assertEqual(row['charged_fit_work_upper'], 35291)
-                    self.assertEqual(row['point_admissions_upper'], 1292051)
+                    self.assertEqual(row['charged_fit_work_upper'], 41243)
+                    self.assertEqual(row['point_admissions_upper'], 1497587)
                     if outcome['summary'] == 'CaughtMutant':
                         self.assertFalse(row['observation_pending'])
                         self.assertEqual(row['observed_counts']['selection_recorded_call_subtotals']['intervals'], 1)
@@ -4010,7 +4140,7 @@ class CoreAnalysisTests(unittest.TestCase):
                        'log_path': 'mutant.log', 'phase_results': self.phase_results('CaughtMutant')}
             report = {}
             MODULE.record_counts(report, 'runs:mutation-1', {
-                'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+                'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
                 'observation_pending': True})
             with self.assertRaisesRegex(MODULE.Incomplete, 'conflicts with an error diagnostic'):
                 MODULE.observe_mutation_outcome(report, output / 'outcomes.json',
@@ -4046,7 +4176,7 @@ class CoreAnalysisTests(unittest.TestCase):
                 with self.subTest(log=invalid), patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                     with self.assertRaises(MODULE.Incomplete):
                         MODULE.mutation_accounting(incomplete, work)
-                self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 35291)
+                self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 41243)
                 self.assertTrue(incomplete['core_invocations'][1]['observation_pending'])
             (output / 'compile.log').write_text(diagnostic)
             outcome['phase_results'][0]['process_status'] = {'Failure': 2}
@@ -4057,7 +4187,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.mutation_accounting(incomplete, work)
-            self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 35291)
+            self.assertEqual(incomplete['core_invocations'][1]['charged_fit_work_upper'], 41243)
             self.assertTrue(incomplete['core_invocations'][1]['observation_pending'])
 
     def test_failed_native_mutant_retains_valid_prefix_and_rejects_setup_or_resource_failures(self):
@@ -4081,7 +4211,7 @@ class CoreAnalysisTests(unittest.TestCase):
             with patch.dict(MODULE.PROFILE_LIMITS, {'charged_fit_work_upper': 2000}):
                 MODULE.mutation_accounting(report, work)
             self.assertEqual(report['core_charged_subset_totals'],
-                             {'charged_fit_work_upper': 70582, 'point_admissions_upper': 2584108})
+                             {'charged_fit_work_upper': 82486, 'point_admissions_upper': 2995180})
             caught = report['core_invocations'][1]
             self.assertEqual(caught['observed_counts']['runs_points'], 2)
             self.assertEqual(caught['raw_log_sha256'],
@@ -4129,7 +4259,7 @@ class CoreAnalysisTests(unittest.TestCase):
             self.assertEqual(report['core_direct_and_stats_observations'], expected)
             self.assertEqual(report['core_runs_external_observations']['runs_selections'], 40)
             self.assertEqual(report['core_charged_subset_totals'],
-                         {'charged_fit_work_upper': 70585, 'point_admissions_upper': 2584117})
+                         {'charged_fit_work_upper': 82489, 'point_admissions_upper': 2995189})
             self.assertTrue(report['core_recorded_observations_parsed'])
             MODULE.refresh_accounting(report)
             self.assertEqual(report['core_direct_and_stats_observations'], expected)
@@ -4220,12 +4350,13 @@ class CoreAnalysisTests(unittest.TestCase):
                 return {'exit_code': 0, 'failure': None, 'output': 'inert actual-loop control'}
             with patch.object(MODULE.COMMON.time, 'monotonic', side_effect=lambda: clock[0]):
                 MODULE.COMMON.run_analysis_lanes(MODULE.SCOPE, MODULE.SUBJECTS,
-                    {'mutation_equivalences': [], 'maximum_mutants': 512, 'mutation_wall_seconds': 1200},
+                    {'package': 'time-core', 'mutation_equivalences': [], 'mutation_error_values': {},
+                     'maximum_mutants': 512, 'mutation_wall_seconds': 1200},
                     work, Path('/inert-tools'), run, report, 'mutation')
             campaigns = [row for row in launches if row[0].startswith('mutation-campaign:')]
             self.assertEqual([row[0] for row in campaigns],
-                             ['mutation-campaign:chart', 'mutation-campaign:chart_roundoff', 'mutation-campaign:chart_enclosure', 'mutation-campaign:enclosure'])
-            self.assertEqual([row[2] for row in campaigns], [1000, 925, 850, 775])
+                             ['mutation-campaign:chart_batch'])
+            self.assertEqual([row[2] for row in campaigns], [1150])
             for _, command, _, _ in campaigns:
                 self.assertEqual(command[command.index('--baseline') + 1], 'run')
                 self.assertEqual(command[command.index('--build-timeout') + 1], '90')
@@ -4281,13 +4412,13 @@ class CoreAnalysisTests(unittest.TestCase):
             args = ['--output-dir', temp, '--vendor-dir', temp]
             with patch.object(MODULE, 'execute', side_effect=capture), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(MODULE.main(args), 1)
-                self.assertEqual(MODULE.main(args + ['--subject', 'chart']), 1)
+                self.assertEqual(MODULE.main(args + ['--subject', 'chart_batch']), 1)
                 with self.assertRaises(SystemExit): MODULE.main(args + ['--subject', 'runs'])
-        self.assertEqual(selected, ['all', 'chart'])
+        self.assertEqual(selected, ['all', 'chart_batch'])
         self.assertEqual(scopes, [
-            'Selected critical owners within the four-owner time-core checkpoint coverage'] * 2)
-        self.assertEqual(len(MODULE.SCOPE.select('all')), 4)
-        self.assertEqual(len(MODULE.SCOPE.select('chart')), 1)
+            'Selected chart-batch owner within the eighteen-owner time-core manifest coverage'] * 2)
+        self.assertEqual(len(MODULE.SCOPE.select('all')), 1)
+        self.assertEqual(len(MODULE.SCOPE.select('chart_batch')), 1)
         with self.assertRaises(MODULE.Incomplete): MODULE.SCOPE.select('../residuals')
         # Metadata union requires exactly four owner receipts.
         with tempfile.TemporaryDirectory() as temp:
@@ -4298,14 +4429,14 @@ class CoreAnalysisTests(unittest.TestCase):
                 with self.subTest(receipts=count), \
                      patch.object(MODULE, 'execute', side_effect=MODULE.Incomplete('healthy union argument boundary')) as run, \
                      contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
-                    if count == 4:
+                    if count == 1:
                         self.assertEqual(MODULE.main(cli), 1)
                         run.assert_called_once()
                         self.assertIn('healthy union argument boundary', stderr.getvalue())
                     else:
                         with self.assertRaises(SystemExit): MODULE.main(cli)
                         run.assert_not_called()
-                        self.assertIn('exactly four --cohort-receipt paths', stderr.getvalue())
+                        self.assertIn('exactly one --cohort-receipt path', stderr.getvalue())
 
     def test_fuzz_supervisor_uses_reviewed_wall_limit_for_both_processes(self):
         """Observe actual orchestration using explicitly synthetic process receipts."""
@@ -4705,12 +4836,12 @@ class CoreAnalysisTests(unittest.TestCase):
     def test_history_pending_and_fully_bound_synthetic_schema_have_causal_neighbors(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);policy=self.fixture(root)
-            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],136)
+            self.assertEqual(MODULE.read_policy(root,'contracts')['source_file_count'],139)
             historical = self.historical_scope().select('all')
             self.assertEqual(historical['history'],'crates/time-core/src/regression/history.rs')
             self.assertEqual(list(historical),['regression','residuals','normalization','history','runs','selection','projection','enclosure','projected_batch'])
             self.assertEqual(list(MODULE.SCOPE.select('all')),
-                             ['chart', 'chart_roundoff', 'chart_enclosure', 'enclosure'])
+                             ['chart_batch'])
             for key in ['history_telemetry','normalization_telemetry']:
                 bad=copy.deepcopy(policy);bad[key]['status']='pending-actual-source'
                 self.write_policy(root,bad)
@@ -4778,7 +4909,7 @@ class CoreAnalysisTests(unittest.TestCase):
         self.assertEqual(counts['projection_source_owned_work_uppers']['projection_term_predicate_calls_upper'], 408)
 
     def test_complete_package_cannot_omit_projection_preeffect_charges(self):
-        healthy = {'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051,
+        healthy = {'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587,
                    **MODULE.selection_reservation(package=True), 'observation_pending': True}
         MODULE.record_counts({}, 'synthetic-package', healthy)
         for field in ('projection_reserved_calls', 'projection_reserved_source_work_uppers',
@@ -4809,10 +4940,7 @@ class InventoryAdmissionTests(unittest.TestCase):
     NOW = 1700000100
     ERROR_VALUE = ('{ let _ = (projection, enclose_labeled_scalars, '
                    'FixtureChartProjection::enclosure_distance_seconds); FixtureChartError::Invariant }')
-    SUBJECTS = {'chart': 'crates/time-core/src/regression/chart.rs',
-                'chart_roundoff': 'crates/time-core/src/regression/chart/roundoff.rs',
-                'chart_enclosure': 'crates/time-core/src/chart_enclosure.rs',
-                'enclosure': 'crates/time-core/src/projection_enclosure.rs'}
+    SUBJECTS = {'chart_batch': 'crates/time-core/src/chart_batch.rs'}
 
     def fixture(self, root):
         """Create inert bytes and literal admission limits, not an admitted graph."""
@@ -4839,14 +4967,14 @@ class InventoryAdmissionTests(unittest.TestCase):
             path.write_text('inert input ' + name + '\n')
         product = {name: MODULE.PRODUCT.sha256(root / name) for name in names}
         policy = {
-            'schema_version': 10, 'admission_status': 'admitted-four-owner-chart-error-inventory-only',
+            'schema_version': 11, 'admission_status': 'admitted-single-owner-chart-batch-inventory-only',
             'tool_admission_profile': 'stable-core',
-            'package': 'time-core', 'source_file_count': 136, 'subjects': dict(self.SUBJECTS),
+            'package': 'time-core', 'source_file_count': 139, 'subjects': dict(self.SUBJECTS),
             'maximum_mutants': 512, 'listing_maximum_per_file': 512,
-            'listing_maximum_total': 2048, 'inventory_wall_seconds': 600,
+            'listing_maximum_total': 512, 'inventory_wall_seconds': 600,
             'mutation_jobs': 10, 'mutation_process_limit': 512, 'listing_process_limit': 128,
             'mutation_message_format': 'json',
-            'mutation_error_values': {'chart_enclosure': [self.ERROR_VALUE]},
+            'mutation_error_values': {},
             'mutation_equivalences': [],
             'native_test_invocations': 0, 'campaigns_admitted': False,
             'root': str(root), 'created_unix_seconds': 1700000000,
@@ -4868,11 +4996,11 @@ class InventoryAdmissionTests(unittest.TestCase):
             root = Path(temporary); policy, path = self.fixture(root)
             self.assertEqual(self.read(root, path, policy), policy)
             self.assertEqual(MODULE.INVENTORY_SUBJECTS, self.SUBJECTS)
-            self.assertEqual(len(policy['product_inputs_sha256']), 136)
-            self.assertEqual(len(MODULE.SUBJECTS), 4)
-            self.assertIn('chart', MODULE.SUBJECTS)
+            self.assertEqual(len(policy['product_inputs_sha256']), 139)
+            self.assertEqual(len(MODULE.SUBJECTS), 1)
+            self.assertIn('chart_batch', MODULE.SUBJECTS)
             self.assertFalse(policy['campaigns_admitted'])
-            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 136)
+            self.assertEqual(MODULE.SOURCE_FILE_COUNT, 139)
 
     def test_unknown_fields_duplicate_fields_and_nonfinite_json_reject(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -4881,8 +5009,8 @@ class InventoryAdmissionTests(unittest.TestCase):
             invalid = [json.dumps({**policy, 'unknown': 1}),
                        json.dumps({key: value for key, value in policy.items()
                                    if key != 'mutation_error_values'}),
-                       original.replace('"schema_version": 10', '"schema_version": 10, "schema_version": 10', 1),
-                       original.replace('"schema_version": 10', '"schema_version": NaN', 1),
+                       original.replace('"schema_version": 11', '"schema_version": 11, "schema_version": 11', 1),
+                       original.replace('"schema_version": 11', '"schema_version": NaN', 1),
                        '[]', 'null']
             for text in invalid:
                 path.write_text(text)
@@ -4901,7 +5029,8 @@ class InventoryAdmissionTests(unittest.TestCase):
                        ('mutation_process_limit', 128), ('listing_process_limit', 512),
                        ('native_test_invocations', True), ('campaigns_admitted', 0),
                        ('source_file_count', 80), ('mutation_equivalences', [{}]),
-                       ('mutation_error_values', None), ('mutation_error_values', {}),
+                       ('mutation_error_values', None), ('mutation_error_values', []),
+                       ('mutation_error_values', {'chart_batch': [self.ERROR_VALUE]}),
                        ('mutation_error_values', {'chart_enclosure': ['FixtureChartError::Invariant']}),
                        ('mutation_error_values', {'chart_enclosure': [self.ERROR_VALUE, self.ERROR_VALUE]}),
                        ('mutation_error_values', {'chart': [self.ERROR_VALUE]}),
@@ -4943,7 +5072,7 @@ class InventoryAdmissionTests(unittest.TestCase):
             with self.assertRaises(MODULE.Incomplete): self.read(root, path, healthy)
 
     def test_inventory_execution_only_lists_one_checkpoint_owner_within_campaign_cap(self):
-        for per_file, total, exceeded in [(1, 4, False), (512, 2048, True)]:
+        for per_file, total, exceeded in [(1, 1, False), (512, 512, False)]:
             with self.subTest(per_file=per_file), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary); policy, path = self.fixture(root)
                 session = Mock(tools=Path('/inert-sealed-tools'), source=root,
@@ -4976,8 +5105,8 @@ class InventoryAdmissionTests(unittest.TestCase):
                      patch.object(MODULE, 'fuzz', side_effect=AssertionError('fuzz used')):
                     MODULE.execute(args, report)
                 self.assertEqual(factory.call_args.args[1].lane, 'mutation')
-                self.assertEqual(factory.call_args.args[3].policy, 'tasks/s1.2-chart-inventory-admission-v2.json')
-                self.assertEqual(session.run.call_count, 4)
+                self.assertEqual(factory.call_args.args[3].policy, 'tasks/s1.2-chart-batch-inventory-admission.json')
+                self.assertEqual(session.run.call_count, 1)
                 self.assertTrue(all(not call.kwargs for call in session.run.call_args_list))
                 session.finish.assert_called_once()
                 self.assertEqual(report['inventory_discovery']['total'], total)
@@ -4996,7 +5125,7 @@ class InventoryAdmissionTests(unittest.TestCase):
                                identity=dict(policy['tool_inputs_sha256']))
                 args = SimpleNamespace(lane='inventory', tool_admission_profile='stable-core', subject='all', inventory_admission=path)
                 def attempt(scope, subjects, admitted, tools, run, report, **_kwargs):
-                    name = 'chart'; label = 'mutation-enumeration:' + name
+                    name = 'chart_batch'; label = 'mutation-enumeration:' + name
                     command = [str(tools / 'cargo-mutants'), 'mutants', '--package', 'time-core',
                                '--file', self.SUBJECTS[name], '--test-workspace', 'false',
                                '--cap-lints', 'false', '--jobs', '10', '--jobserver', 'true',
@@ -5017,15 +5146,11 @@ class InventoryAdmissionTests(unittest.TestCase):
                 session.run.assert_not_called()
                 session.finish.assert_called_once()
 
-    def test_exact_chart_error_expression_reaches_run_and_changed_arguments_stop_before_run(self):
-        """Exercise the actual inventory receiver, not just argument construction.
-
-        Session and enumeration are inert substitutes. The callback challenges
-        the receiving closure with a literal command; no Rust or tool runs.
-        """
+    def test_single_owner_receiver_rejects_old_or_extra_error_operators_before_run(self):
+        """A literal healthy listing reaches Session; every wrong command stops first."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); policy, path = self.fixture(root)
-            for change in ('healthy', 'missing', 'changed', 'extra', 'wrong-owner'):
+            for change in ('healthy', 'missing-file', 'old-error', 'extra-error', 'wrong-owner'):
                 session = Mock(tools=Path('/inert-sealed-tools'), source=root,
                                product_identity=dict(policy['product_inputs_sha256']),
                                identity=dict(policy['tool_inputs_sha256']))
@@ -5035,24 +5160,21 @@ class InventoryAdmissionTests(unittest.TestCase):
                 sent_commands = []
 
                 def attempt(scope, subjects, admitted, tools, run, report, **_kwargs):
-                    name = 'chart' if change == 'wrong-owner' else 'chart_enclosure'
-                    error_args = ['--error', self.ERROR_VALUE]
-                    if change == 'missing': error_args = []
-                    if change == 'changed': error_args[1] = 'FixtureChartError::Invariant'
-                    if change == 'extra': error_args += ['--error', self.ERROR_VALUE]
+                    filename = self.SUBJECTS['chart_batch']
                     command = [str(tools / 'cargo-mutants'), 'mutants', '--package', 'time-core',
-                               '--file', self.SUBJECTS[name], '--test-workspace', 'false',
+                               '--file', filename, '--test-workspace', 'false',
                                '--cap-lints', 'false', '--jobs', '10', '--jobserver', 'true',
-                               '--jobserver-tasks', '10', '--cargo-arg=--message-format=json',
-                               *error_args, '--list', '--json']
+                               '--jobserver-tasks', '10', '--cargo-arg=--message-format=json', '--list', '--json']
+                    if change == 'missing-file': del command[4:6]
+                    if change == 'old-error': command[-2:-2] = ['--error', self.ERROR_VALUE]
+                    if change == 'extra-error': command[-2:-2] = ['--error', 'FixtureChartBatchError::Invariant']
+                    if change == 'wrong-owner': command[5] = 'crates/time-core/src/chart_enclosure.rs'
                     sent_commands.append(command)
-                    self.assertEqual(run('mutation-enumeration:' + name, command, 5),
+                    self.assertEqual(run('mutation-enumeration:chart_batch', command, 5),
                                      'synthetic listing received')
-                    # This control tests only command receipt. The separately
-                    # exercised real enumerator owns descriptor parsing/counts.
-                    descriptor = {'package': 'time-core', 'file': self.SUBJECTS[name],
+                    descriptor = {'package': 'time-core', 'file': filename,
                                   'name': 'synthetic-listed-descriptor'}
-                    return SimpleNamespace(inventories={name: {'synthetic': descriptor}},
+                    return SimpleNamespace(inventories={'chart_batch': {'synthetic': descriptor}},
                                            total=1, campaign_budget_exceeded=False)
 
                 with patch.object(MODULE, 'ROOT', root), \
@@ -5065,7 +5187,7 @@ class InventoryAdmissionTests(unittest.TestCase):
                     if change == 'healthy':
                         MODULE.execute_inventory(args, report)
                         session.run.assert_called_once_with(
-                            'mutation-enumeration:chart_enclosure', sent_commands[0], 5)
+                            'mutation-enumeration:chart_batch', sent_commands[0], 5)
                         self.assertEqual(report['native_test_invocations'], 0)
                         self.assertFalse(report['campaigns_admitted'])
                     else:
@@ -5089,8 +5211,8 @@ class InventoryAdmissionTests(unittest.TestCase):
                     changed = copy.deepcopy(policy); changed['created_unix_seconds'] += 1
                     path.write_text(json.dumps(changed))
                 if change == 'duplicate-document':
-                    path.write_text(original.replace('"schema_version": 10',
-                        '"schema_version": 10, "schema_version": 10', 1))
+                    path.write_text(original.replace('"schema_version": 11',
+                        '"schema_version": 11, "schema_version": 11', 1))
                 if change == 'product': session.product_identity['Cargo.lock'] = '0' * 64
                 if change == 'tool': session.identity['scripts/portable-analysis.py'] = '0' * 64
                 now = policy['expires_unix_seconds'] if change == 'expiry' else self.NOW
@@ -5421,7 +5543,7 @@ class ProjectedBatchWrapperTests(unittest.TestCase):
         self.assertEqual(report['core_projected_batch_pending_observation_invocations'], ['synthetic-package'])
         self.assertEqual(report['core_projected_batch_reserved_totals']['projected_batch.call.appends'], 129)
         self.assertEqual(report['core_charged_subset_totals'],
-                         {'charged_fit_work_upper': 35291, 'point_admissions_upper': 1292051})
+                         {'charged_fit_work_upper': 41243, 'point_admissions_upper': 1497587})
 
     def test_package_reservation_rejects_each_missing_or_forged_new_work_owner(self):
         good = {**MODULE.package_charged_upper(), **MODULE.selection_reservation(package=True),
@@ -5555,11 +5677,12 @@ class CheckedInCorePolicyTests(unittest.TestCase):
 
     def test_changed_checkpoint_is_pending_or_exactly_bound_without_historical_credit(self):
         """Pending discovery must fail closed; admitted facts must bind current bytes."""
-        self.assertEqual(MODULE.SOURCE_FILE_COUNT, 136)
-        self.assertEqual(MODULE.FINAL_PACKAGE_TEST_COUNTS,
-                         {'ordinary': 242, 'doctests': 15, 'baseline': 257})
-        self.assertEqual(set(MODULE.SUBJECTS), {'chart', 'chart_roundoff', 'chart_enclosure', 'enclosure'})
-        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 17)
+        self.assertEqual(MODULE.SOURCE_FILE_COUNT, 139)
+        self.assertIn(MODULE.FINAL_PACKAGE_TEST_COUNTS,
+                      ({'ordinary': 0, 'doctests': 0, 'baseline': 0},
+                       {'ordinary': 250, 'doctests': 20, 'baseline': 270}))
+        self.assertEqual(set(MODULE.SUBJECTS), {'chart_batch'})
+        self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 18)
         self.assertEqual(sum(row['count'] for row in
                              MODULE.HISTORICAL_LIFECYCLE_MUTATION_INVENTORIES.values()), 747)
         # This control admits checked-in source, not machine-local run evidence.
@@ -5576,11 +5699,7 @@ class CheckedInCorePolicyTests(unittest.TestCase):
         prior.assert_not_called()
         self.assertEqual(policy['inputs_sha256'], MODULE.PRODUCT.admit_product(ROOT)[1])
         equivalents = policy['mutation_equivalences']
-        if equivalents:
-            self.assertEqual({record['id'] for record in equivalents},
-                             {'S154C-ENC-E01', 'S154C-ENC-E02', 'S154C-ENC-E03', 'S154C-ENC-E04'})
-        else:
-            self.assertEqual(equivalents, [])
+        self.assertEqual(equivalents, [])
         MODULE.admit_core_equivalence_scope(equivalents)
         # Exercise the real maintained proof bytes and shared exact-section guard.
         self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(ROOT, MODULE.SCOPE, policy),
@@ -5591,12 +5710,12 @@ class CheckedInCorePolicyTests(unittest.TestCase):
         reservation = MODULE.CHECKPOINT_SOURCE_RESERVATION
         self.assertEqual(reservation['mutation_variants'],
                          sum(row['count'] for row in policy['mutation_inventories'].values()))
-        self.assertEqual(reservation['mutation_baselines'], 4)
+        self.assertEqual(reservation['mutation_baselines'], 1)
         packages = sum(row['count'] + 1 for row in policy['mutation_inventories'].values())
-        self.assertEqual(reservation['source_work']['charged_fit_work_upper'], packages * 35291 + 35291 + 499)
-        self.assertEqual(reservation['source_work']['point_admissions_upper'], packages * 1292054 + 1292051 + 17256)
+        self.assertEqual(reservation['source_work']['charged_fit_work_upper'], packages * 41243 + 41243 + 499)
+        self.assertEqual(reservation['source_work']['point_admissions_upper'], packages * 1497590 + 1497587 + 17256)
         self.assertEqual(reservation['mutation_package_invocations'],
-                         reservation['mutation_variants'] + 4)
+                         reservation['mutation_variants'] + 1)
         self.assertEqual(set(reservation['source_work']),
                          set(MODULE.cohort_budget_vectors()[0]))
 

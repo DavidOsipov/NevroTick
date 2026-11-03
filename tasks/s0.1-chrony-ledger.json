@@ -1219,7 +1219,7 @@
     {
       "slice": "S154a borrowed mathematical affine chart view",
       "review_date": "2026-11-03",
-      "status": "S154c selected Linux gates/mechanisms passed; additive S155 original chart-batch adapter portable development passed; new-owner qualification pending",
+      "status": "S154c and additive S155 selected Linux-fixture gates/mechanisms passed; full P1 and Windows/product scopes remain open",
       "destinations": [
         "crates/time-core/src/regression/chart.rs",
         "crates/time-core/src/regression/chart/roundoff.rs",
@@ -1259,7 +1259,7 @@
         "/root/adaptive_contract_review"
       ],
       "scope": "Unchanged MonotonicNs; phase minus common affine displacement; rate minus affine rate. Original raw/report provenance retained. Separate bounded new arithmetic. No raw rewrite/refit/credit/state migration/actual acknowledgement.",
-      "rust_qualification": "bounded selected S154c Linux gates and S155 portable development only; no full18-owner/P1/Windows/actual actuation/state migration qualification",
+      "rust_qualification": "Bounded selected S154c/S155 Linux-fixture checkpoints only; no full18-owner/P1/Windows/actual actuation/state migration qualification",
       "release_or_product_claim": false,
       "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154a-chart-portable-green-v1.json",
       "portable_receipt_sha256": "7f6be7ecb19c34adb7ed42f61392d95963e556a2f72d29e4406472956a8c9e7d",
@@ -1575,7 +1575,7 @@
         }
       },
       "s155_checkpoint": {
-        "status": "implemented;138-input portable development passed; fresh selected-owner qualification pending",
+        "status": "Historical138-input portable predecessor retained below; current139-input selected Linux checkpoint is recorded in selected_linux_checkpoint",
         "implementation_kind": "Original same-chart batch adapter delegates existing FixtureBatch/select_fixture; no new Chrony code import or numerical selector algorithm",
         "owner": "crates/time-core/src/chart_batch.rs",
         "owner_sha256": "af585c7421345bcd2469d8135ef164b2e30249eb40b084670020bb7b44636158",
@@ -1669,7 +1669,126 @@
         "routing_audit": "Existing storage task6.6 and Windows task4.10 already fulfill ST-W01\u201307/W11-W01\u201310/follow-up/MSIX dispositions; no task edits or optional cards needed",
         "holds": "Windows execution, separate S142/AES fuzz no-retry and storage experiments remain held; source-only cards unexecuted; complete MSI/OD-05/current Core priority preserved",
         "new_owner_critical_qualification_claim": false,
-        "native_windows_product_or_release_claim": false
+        "native_windows_product_or_release_claim": false,
+        "selected_linux_checkpoint": {
+          "status": "passed-selected-linux-fixture-checkpoint",
+          "candidate_sha256": "30f47ac499300180a52471cb0ec6c10ce38814342fcc634c6967f6dcd47d1246",
+          "product_inputs": 139,
+          "critical_manifest_owners": 18,
+          "selected_owners": [
+            "chart_batch"
+          ],
+          "checkpoint_record": "tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete",
+          "receipts": {
+            "contracts": {
+              "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-contracts-v2/verification.json",
+              "sha256": "7dfb1c5b8324fa29e0231d4001d6471a565d7045ecbde796ca60086f9fc01bcc"
+            },
+            "coverage": {
+              "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-coverage-v1/verification.json",
+              "sha256": "de1f633f4a103f86caebdf450d7886605c6eeaf0d9c80505c01e7cf1ef2c22d5"
+            },
+            "mutation": {
+              "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-mutation-chart_batch-v2/verification.json",
+              "sha256": "f1632e633936bb9c92889a52efa3156963ef1a6f9f086fade8bd3634972dfdc5"
+            },
+            "cohort_union": {
+              "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-cohort-union-v2/verification.json",
+              "sha256": "74a0b62023c80acb950748fbb7537f587efa4d0c4e5f49200487db7efff9ab3e"
+            },
+            "constructor_mechanisms": {
+              "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-constructor-mechanism-controls-v1/verification.json",
+              "sha256": "82ea32fd6695fc0649a8b29515f691ecf830f5f1cfc7a1bf4adc48d1c6751ab1"
+            }
+          },
+          "portable_receipt": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-raw-guard-portable-v1.json",
+            "sha256": "6a1959b1e01f3d04d9babb5d6e3a50d6255a73272d6ab956d33dc0c7dcab9821"
+          },
+          "core_tests": {
+            "ordinary": 250,
+            "doctests": 20,
+            "optimized": 250
+          },
+          "workspace_tests": {
+            "ordinary": 476,
+            "doctests": 127,
+            "optimized": 368
+          },
+          "contracts": {
+            "native_commands": 64,
+            "legal_executions": 3,
+            "negative_compilations": 57,
+            "elapsed_seconds": 27.909778077000055
+          },
+          "coverage": {
+            "covered_lines": 120,
+            "executable_lines": 125,
+            "percent": 96.0,
+            "ordinary_tests_executed": 250,
+            "branch_coverage": "not measured; zero exported records"
+          },
+          "mutation": {
+            "generated": 36,
+            "viable": 21,
+            "killed": 21,
+            "unviable": 15,
+            "survived": 0,
+            "timed_out": 0,
+            "excluded": 0,
+            "viable_percent": 100.0,
+            "baseline_tests": 270,
+            "outer_workers": 10,
+            "inner_jobs": 1
+          },
+          "constructor_mechanisms": {
+            "cases": 4,
+            "native_commands": 8,
+            "elapsed_seconds": 90.88879219699993,
+            "observed_healthy_raw_capacity_sizes": [
+              17,
+              18
+            ],
+            "expected_actual_exit_codes": [
+              0,
+              0,
+              101,
+              101
+            ],
+            "generated_mutation_or_ordinary_test_credit": false,
+            "operation_counts": "source-reserved uppers; not dynamically measured full-product call counts"
+          },
+          "source_archive": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-repaired-campaign-source-v2.tar.gz",
+            "sha256": "71d18e1f037d773aefc63bf73e1cd9c88821db0648fe327051c9a92096659b12"
+          },
+          "source_closure_members": 217,
+          "cohort_plan_sha256": "f788a9f8725b5baf77d143f25c9e687d6be3b563da6780b47cdae83c6a063b78",
+          "prior_contract_attempt": "s155-contracts-v1 incomplete61commands fully retained and charged499fits/17256points; no gate credit",
+          "source_upper_funding": {
+            "failed_plus_fresh_plan_fits": 1568232,
+            "failed_plus_fresh_plan_points": 56942929,
+            "separate_four_package_fits": 164972,
+            "separate_four_package_points": 5990360,
+            "combined_fits": 1733204,
+            "combined_points": 62933289,
+            "observer_overlay_separately_declared": true
+          },
+          "qualification_limits": [
+            "Selected owner only; no full18-owner/P1 claim",
+            "Five uncovered executable lines and zero branch export remain explicit",
+            "Ungenerated constructor/macro bodies use private-copy alternative evidence; unviable variants receive no kill/exclusion credit",
+            "Full stateful generation and actual effect acknowledgement remain open",
+            "Fixed Display formatter has no executed ordinary coverage; its generated replacement is unviable, with no mutation kill credit."
+          ],
+          "next": [
+            "Owner-requested four-lint compiler-policy cohort on new admitted candidate",
+            "Chart-bound principal/combination receiving in existing S1.3 owner"
+          ],
+          "current_delivery_direction": "complete hardened MSIX under amended OD-05 and Windows task4.15; native execution remains held",
+          "new_owner_critical_qualification_claim": true,
+          "native_windows_product_or_release_claim": false
+        }
       }
     }
   ],

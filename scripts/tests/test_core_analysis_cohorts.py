@@ -14,15 +14,42 @@ SPEC.loader.exec_module(MODULE)
 class CohortPlanTests(unittest.TestCase):
     """Synthetic identities test admission mechanics, never a product candidate."""
 
+    def test_s155_single_owner_schema_eleven_and_literal_reservation(self):
+        plan, args = self.fixture()
+        plan['schema_version'] = 11
+        args['subjects'] = {'owner0': 'src/owner0.rs'}
+        inventories = {'owner0': {'count': 300, 'sha256': '0' * 64}}
+        plan['inventories'] = inventories
+        args['inventories'] = inventories
+        plan['cohorts'] = [{'id': 'owner0', 'subject': 'owner0', 'output_dir': '/tmp/owner0'}]
+        # 300 variants + one baseline, followed by one coverage and one contracts
+        # reservation: fits=301*2+2+3, points=301*7+7+4.
+        plan['cumulative_reservation'] = {
+            'mutation_variants': 300, 'mutation_baselines': 1,
+            'mutation_package_invocations': 301,
+            'source_work': {'fits': 607, 'points': 2118},
+        }
+        args['global_limits'] = {'fits': 607, 'points': 2118}
+        try:
+            admitted = MODULE.admit_plan(plan, **args)
+        except MODULE.Incomplete as error:
+            self.fail(f'Required bounded single-owner plan rejected: {error}')
+        self.assertEqual(admitted['reservation'], plan['cumulative_reservation'])
+        union = MODULE.reconcile_receipts(plan, self.receipts(plan, args['subjects']),
+                                          subjects=args['subjects'])
+        self.assertEqual(union['focused_receipts'], 1)
+        self.assertEqual(union['baselines'], 1)
+        self.assertFalse(union['critical_manifest_complete_selection'])
+
     def fixture(self):
-        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(4)}
+        subjects = {f"owner{index}": f"src/owner{index}.rs" for index in range(1)}
         product = {"Cargo.toml": "a" * 64}
         tools = {"scripts/wrapper.py": "b" * 64}
         inventories = {name: {"count": 300 + index, "sha256": str(index) * 64}
                        for index, name in enumerate(subjects)}
         package = {"fits": 2, "points": 7}
         checks = {"coverage": dict(package), "contracts": {"fits": 3, "points": 4}}
-        plan = {"schema_version": 10, "status": "admitted-exact-source-and-cohorts",
+        plan = {"schema_version": 11, "status": "admitted-exact-source-and-cohorts",
                 "candidate_sha256": MODULE.canonical_sha256(product),
                 "product_inputs_sha256": product, "tool_inputs_sha256": tools,
                 "tool_payloads_sha256": {"cargo-mutants": "e" * 64},
@@ -56,44 +83,43 @@ class CohortPlanTests(unittest.TestCase):
                            "mutation_generated_variants_selected_total": plan["inventories"][subject]["count"]})
         return result
 
-    def test_four_owner_checkpoint_has_four_baselines_and_no_manifest_claim(self):
+    def test_single_owner_checkpoint_has_one_baseline_and_no_manifest_claim(self):
         plan, args = self.fixture()
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted["reservation"]["mutation_variants"], 1206)
-        self.assertEqual(admitted["reservation"]["mutation_baselines"], 4)
-        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 2425, "points": 8481})
+        self.assertEqual(admitted["reservation"]["mutation_variants"], 300)
+        self.assertEqual(admitted["reservation"]["mutation_baselines"], 1)
+        self.assertEqual(admitted["reservation"]["source_work"], {"fits": 607, "points": 2118})
         union = MODULE.reconcile_receipts(plan, self.receipts(plan, args["subjects"]), subjects=args["subjects"])
-        self.assertEqual(union["focused_receipts"], 4)
-        self.assertEqual(union["generated_variants"], 1206)
+        self.assertEqual(union["focused_receipts"], 1)
+        self.assertEqual(union["generated_variants"], 300)
         self.assertFalse(union["critical_manifest_complete_selection"])
         self.assertEqual(union['scope'],
-                         'Four changed chart critical owners mutation receipts; '
+                         'Single chart-batch critical owner mutation receipt; '
                          'coverage/contracts and native Windows remain separate.')
 
-    def test_scope_requires_exactly_four_owners(self):
-        for change in ("three", "five", "empty", "duplicate_file"):
+    def test_scope_requires_exactly_one_owner(self):
+        for change in ("empty", "two", "duplicate_file"):
             plan, args = self.fixture()
-            if change == "three":
-                del args['subjects']['owner3']
-            elif change == "five":
-                args['subjects']['owner4'] = 'src/owner4.rs'
-            elif change == "empty":
+            if change == "empty":
                 args['subjects'] = {}
+            elif change == "two":
+                args['subjects']['owner1'] = 'src/owner1.rs'
             else:
-                args['subjects']['owner3'] = args['subjects']['owner0']
-            with self.subTest(change=change), self.assertRaisesRegex(MODULE.Incomplete, "exactly four changed critical owners"):
+                args['subjects']['owner1'] = args['subjects']['owner0']
+            with self.subTest(change=change), self.assertRaisesRegex(
+                    MODULE.Incomplete, "exactly one changed critical owner"):
                 MODULE.admit_plan(plan, **args)
 
-    def test_current_schema_ten_accepts_and_predecessor_nine_rejects(self):
+    def test_current_schema_eleven_accepts_and_predecessor_ten_rejects(self):
         plan, args = self.fixture()
-        plan["schema_version"] = 10
+        plan["schema_version"] = 11
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted["reservation"]["mutation_baselines"], 4)
-        plan["schema_version"] = 9
+        self.assertEqual(admitted["reservation"]["mutation_baselines"], 1)
+        plan["schema_version"] = 10
         with self.assertRaisesRegex(MODULE.Incomplete, "final-source/inventory binding"):
             MODULE.admit_plan(plan, **args)
 
-    def test_four_full_cohorts_reach_the_independent_listing_limit(self):
+    def test_single_full_cohort_reaches_independent_listing_limit(self):
         plan, args = self.fixture()
         for row in plan['inventories'].values():
             row['count'] = 512
@@ -101,19 +127,19 @@ class CohortPlanTests(unittest.TestCase):
             plan, args['package_budget'], args['check_budgets'])
         args['global_limits'] = dict(plan['cumulative_reservation']['source_work'])
         admitted = MODULE.admit_plan(plan, **args)
-        self.assertEqual(admitted['reservation']['mutation_variants'], 2048)
-        self.assertEqual(admitted['reservation']['mutation_baselines'], 4)
-        self.assertEqual(admitted['reservation']['mutation_package_invocations'], 2052)
-        self.assertEqual(admitted['reservation']['source_work'], {'fits': 4109, 'points': 14375})
-        with patch.object(MODULE, 'MAX_LISTING_VARIANTS', 2047), \
+        self.assertEqual(admitted['reservation']['mutation_variants'], 512)
+        self.assertEqual(admitted['reservation']['mutation_baselines'], 1)
+        self.assertEqual(admitted['reservation']['mutation_package_invocations'], 513)
+        self.assertEqual(admitted['reservation']['source_work'], {'fits': 1031, 'points': 3602})
+        with patch.object(MODULE, 'MAX_LISTING_VARIANTS', 511), \
                 self.assertRaisesRegex(MODULE.Incomplete, 'listing ceiling'):
             MODULE.admit_plan(plan, **args)
 
-    def test_reviewed_1508_field_width_accepts_exact_limit_and_rejects_next(self):
-        exact = {f"metric{index}": 1 for index in range(1508)}
+    def test_reviewed_1823_field_width_accepts_exact_limit_and_rejects_next(self):
+        exact = {f"metric{index}": 1 for index in range(1823)}
         self.assertEqual(MODULE._budget(exact), exact)
         with self.assertRaises(MODULE.Incomplete):
-            MODULE._budget({**exact, 'metric1508': 1})
+            MODULE._budget({**exact, 'metric1823': 1})
 
     def test_checkpoint_totals_include_exactly_one_spent_contract_and_one_retry(self):
         expected = {"coverage": 1, "contracts": 2}
@@ -124,7 +150,7 @@ class CohortPlanTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
                 MODULE.historical_s148_remaining_checks(value)
 
-    def test_s154_requires_one_fresh_coverage_and_contracts_without_retry(self):
+    def test_s155_requires_one_fresh_coverage_and_contracts_without_retry(self):
         expected = {"coverage": 1, "contracts": 1}
         self.assertEqual(MODULE._remaining_checks(expected), expected)
         for value in ({"coverage": 1, "contracts": 2}, {"coverage": 1, "contracts": 0},
@@ -167,7 +193,7 @@ class CohortPlanTests(unittest.TestCase):
                 MODULE.reconcile_receipts(plan, receipts, subjects=args["subjects"])
 
     def test_unknown_missing_and_pending_plan_fields_reject(self):
-        for change in ("unknown", "missing", "pending", "schema_bool", "historical_plan", "historical_admission", "historical_s148", "historical_s149", "historical_s150", "historical_s151"):
+        for change in ("unknown", "missing", "pending", "schema_bool", "historical_plan", "historical_admission", "historical_s148", "historical_s149", "historical_s150", "historical_s151", "historical_s154b", "historical_s154c"):
             plan, args = self.fixture()
             if change == "unknown": plan["extra"] = 0
             if change == "missing": del plan["inventories"]
@@ -179,12 +205,16 @@ class CohortPlanTests(unittest.TestCase):
             if change == "historical_s149": plan["schema_version"] = 6
             if change == "historical_s150": plan["schema_version"] = 7
             if change == "historical_s151": plan["schema_version"] = 8
+            if change == "historical_s154b": plan["schema_version"] = 9
+            if change == "historical_s154c": plan["schema_version"] = 10
             with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
                 MODULE.admit_plan(plan, **args)
 
     def test_partition_rejects_unknown_duplicate_missing_overlap_and_output_reuse(self):
         for change in ("unknown", "duplicate_id", "missing", "overlap", "same_output", "relative", "traversal"):
             plan, args = self.fixture()
+            if change in ("duplicate_id", "overlap", "same_output"):
+                plan["cohorts"].append({"id": "owner1", "subject": "owner1", "output_dir": "/tmp/owner1"})
             if change == "unknown": plan["cohorts"][0]["subject"] = "unknown"
             if change == "duplicate_id": plan["cohorts"][1]["id"] = plan["cohorts"][0]["id"]
             if change == "missing": plan["cohorts"].pop()

@@ -174,6 +174,22 @@ class ChartContractControls(unittest.TestCase):
         self.assertIn("let selected=batch.select(minimum)", mutable)
         self.assertLess(mutable.index("values.reverse()"), mutable.index("selected.selection()"))
 
+    def test_descriptor_lifetime_probe_owns_its_non_copy_chart(self):
+        case = MODULE.contract_examples()["chart_batch_descriptor_lifetime"]
+        source = case["source"]
+        # The descriptor is already checked, but intentionally local to bypass.
+        # Copying it from &FixtureAffineChart adds an unrelated E0507 before the
+        # intended returned-borrow diagnostic can qualify this restriction.
+        signature = next(line for line in source.splitlines() if line.startswith("fn bypass"))
+        self.assertIn("original:FixtureAffineChart", signature)
+        self.assertNotIn("original:&", signature)
+        self.assertIn(" let chart=original;\n", source)
+        self.assertNotIn("*original", source)
+        self.assertEqual(case["code"], "E0515")
+        self.assertEqual(case["tokens"], ["chart", "cannot return value referencing"])
+        self.assertEqual(source.splitlines()[case["line"] - 1],
+                         " FixtureChartBatch::new(&chart,at,values).unwrap()")
+
     def test_six_garde_carriers_are_a_gap_map_not_mutation_credit(self):
         self.assertEqual(set(MODULE.GARDE_CARRIERS), {
             "FramesCandidate", "DomainCandidate", "AffineCandidate", "HistoryCandidate",

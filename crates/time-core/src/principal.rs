@@ -45,10 +45,15 @@ use garde::Validate;
 use time_domain::MonotonicNs;
 
 use crate::{
-    ArithmeticOperation, ArithmeticStage, FitError, FixtureMinimum, FixtureOutcomeKind,
-    FixtureProjectedBatch, FixtureProjectedInterval, FixtureSelection, SelectionError,
-    regression::arithmetic,
+    ArithmeticOperation, ArithmeticStage, FitError, FixtureAnchorProjection, FixtureChartInterval,
+    FixtureMinimum, FixtureOutcomeKind, FixtureProjectedBatch, FixtureProjectedInterval,
+    FixtureSelection, SelectionError, regression::arithmetic,
 };
+
+/// Additive retained-owner receiving for explicit mathematical chart views.
+mod chart;
+
+pub use chart::{FixtureChartPrincipalDecision, FixtureChartPrincipalError};
 
 /// Existing fixture population bound, also limiting private state and scratch.
 const MAX_PRINCIPAL_SOURCES: usize = 16;
@@ -593,11 +598,44 @@ fn admit_roster(values: &[NonZeroU64]) -> Result<(), FixturePrincipalError> {
     validated.map_err(|_| FixturePrincipalError::Invariant)
 }
 
+/// Original projection access shared by legacy and chart receiving.
+///
+/// This private adapter borrows the actual original wrappers. Chart geometry,
+/// transformed values and numerical bounds stay in their chart-specific owner;
+/// only unchanged raw-source metadata reaches observation and score admission.
+#[derive(Clone, Copy)]
+enum ReceiverEntries<'entry, 'chart> {
+    /// Original immutable legacy wrappers from their genuine admitted batch.
+    Legacy(&'entry [FixtureProjectedInterval]),
+    /// Original immutable chart wrappers, retaining their descriptor lifetimes.
+    Chart(&'entry [FixtureChartInterval<'chart>]),
+}
+
+impl<'entry> ReceiverEntries<'entry, '_> {
+    /// Return the complete original population without reading any element.
+    const fn len(self) -> usize {
+        match self {
+            Self::Legacy(values) => values.len(),
+            Self::Chart(values) => values.len(),
+        }
+    }
+
+    /// Borrow one actual raw-source projection, or none outside the input slice.
+    fn get_original(self, index: usize) -> Option<&'entry FixtureAnchorProjection> {
+        match self {
+            Self::Legacy(values) => values.get(index).map(FixtureProjectedInterval::projection),
+            Self::Chart(values) => values
+                .get(index)
+                .map(|entry| entry.projection().source_projection()),
+        }
+    }
+}
+
 /// Complete borrowed receiver relationships; every field belongs to one rule.
 #[derive(Clone, Copy)]
-struct ReceiverInput<'a> {
-    /// Original immutable projected entries, never copied into state.
-    entries: &'a [FixtureProjectedInterval],
+struct ReceiverInput<'a, 'chart> {
+    /// Actual original projection metadata, never copied into legacy wrappers.
+    entries: ReceiverEntries<'a, 'chart>,
     /// Complete checked stratum mappings for exactly these entries.
     strata: &'a [FixturePrincipalStratum],
     /// Original checked batch's frame assertion.
@@ -613,10 +651,10 @@ struct ReceiverInput<'a> {
 /// The single contextual garde field covers the entire receiving relationship.
 #[derive(Validate)]
 #[garde(context(FixturePrincipalState))]
-struct ReceiverCandidate<'a> {
+struct ReceiverCandidate<'a, 'chart> {
     /// No skipped relationship: the shared rule examines the whole input.
     #[garde(custom(receiver_rule))]
-    input: ReceiverInput<'a>,
+    input: ReceiverInput<'a, 'chart>,
 }
 
 /// Locate one occupied roster position, bounded by sixteen asserted labels.
@@ -650,7 +688,7 @@ fn source_at(
 }
 
 /// Find one checked stratum by asserted label in an already bounded mapping.
-fn mapped_stratum(input: &ReceiverInput<'_>, label: NonZeroU64) -> Option<u8> {
+fn mapped_stratum(input: &ReceiverInput<'_, '_>, label: NonZeroU64) -> Option<u8> {
     input
         .strata
         .iter()
@@ -660,7 +698,7 @@ fn mapped_stratum(input: &ReceiverInput<'_>, label: NonZeroU64) -> Option<u8> {
 
 /// Inspect metadata coverage and uniqueness after both slice capacities pass.
 fn metadata_issue(
-    input: &ReceiverInput<'_>,
+    input: &ReceiverInput<'_, '_>,
     state: &FixturePrincipalState,
 ) -> Option<FixturePrincipalError> {
     for (index, stratum) in input.strata.iter().enumerate() {
@@ -676,8 +714,11 @@ fn metadata_issue(
             return Some(FixturePrincipalError::DuplicateMetadata { index });
         }
     }
-    for (index, entry) in input.entries.iter().enumerate() {
-        let label = entry.projection().context().source_id();
+    for index in 0..input.entries.len() {
+        let Some(projection) = input.entries.get_original(index) else {
+            return Some(FixturePrincipalError::Invariant);
+        };
+        let label = projection.context().source_id();
         if source_index(state, label).is_none() {
             return Some(FixturePrincipalError::UnknownSource { index });
         }
@@ -690,15 +731,17 @@ fn metadata_issue(
 
 /// Check exact observation/stratum evolution without trusting an update flag.
 fn event_issue(
-    input: &ReceiverInput<'_>,
+    input: &ReceiverInput<'_, '_>,
     state: &FixturePrincipalState,
 ) -> Option<FixturePrincipalError> {
     if input.seed {
         return None;
     }
     let mut changed = false;
-    for (index, entry) in input.entries.iter().enumerate() {
-        let projection = entry.projection();
+    for index in 0..input.entries.len() {
+        let Some(projection) = input.entries.get_original(index) else {
+            return Some(FixturePrincipalError::Invariant);
+        };
         let label = projection.context().source_id();
         let Some(source) = state.source_state(label) else {
             return Some(FixturePrincipalError::Invariant);
@@ -725,7 +768,7 @@ fn event_issue(
 
 /// Find the first receiver failure in capacity, context, metadata, event order.
 fn receiver_issue(
-    input: &ReceiverInput<'_>,
+    input: &ReceiverInput<'_, '_>,
     state: &FixturePrincipalState,
 ) -> Option<FixturePrincipalError> {
     if input.entries.len() > MAX_PRINCIPAL_SOURCES {
@@ -756,7 +799,7 @@ fn receiver_issue(
 /// Run the complete shared receiver rule through mandatory contextual garde.
 /// # Errors
 /// Return one fixed failure without exposing its rejected relationships.
-fn receiver_rule(input: &ReceiverInput<'_>, state: &FixturePrincipalState) -> garde::Result {
+fn receiver_rule(input: &ReceiverInput<'_, '_>, state: &FixturePrincipalState) -> garde::Result {
     if receiver_issue(input, state).is_none() {
         Ok(())
     } else {
@@ -768,7 +811,7 @@ fn receiver_rule(input: &ReceiverInput<'_>, state: &FixturePrincipalState) -> ga
 /// # Errors
 /// Capacity rejects before element reads; other failures preserve typed order.
 fn admit_receiver(
-    input: ReceiverInput<'_>,
+    input: ReceiverInput<'_, '_>,
     state: &FixturePrincipalState,
 ) -> Result<(), FixturePrincipalError> {
     if input.strata.len() > MAX_PRINCIPAL_SOURCES {
@@ -792,12 +835,15 @@ fn admit_receiver(
 /// # Errors
 /// Reject an impossible missing checked lookup without publishing partial state.
 fn stage_entries(
-    input: &ReceiverInput<'_>,
+    input: &ReceiverInput<'_, '_>,
     state: &mut FixturePrincipalState,
 ) -> Result<Option<NonZeroU64>, FixturePrincipalError> {
     let mut updated = None;
-    for entry in input.entries {
-        let projection = entry.projection();
+    for entry_index in 0..input.entries.len() {
+        let projection = input
+            .entries
+            .get_original(entry_index)
+            .ok_or(FixturePrincipalError::Invariant)?;
         let label = projection.context().source_id();
         let index = source_index(state, label).ok_or(FixturePrincipalError::Invariant)?;
         let stratum = mapped_stratum(input, label).ok_or(FixturePrincipalError::Invariant)?;
@@ -1044,6 +1090,48 @@ fn choose_principal(
     Ok(FixturePrincipalOutcomeKind::ReferenceReady)
 }
 
+/// Admit and stage the complete original-source receiver on one private clone.
+///
+/// Both representations preserve the same metadata/event order. This stages no
+/// selection or publication; the caller must finish a genuine same-batch result
+/// before replacing its live state. Scratch remains one fixed-capacity clone.
+/// # Errors
+/// Preserve admission/staging causes and every bit of the caller's live state.
+fn prepare_transition(
+    input: ReceiverInput<'_, '_>,
+    state: &FixturePrincipalState,
+) -> Result<(FixturePrincipalState, Option<NonZeroU64>), FixturePrincipalError> {
+    admit_receiver(input, state)?;
+    let mut staged = state.clone();
+    let updated_source = stage_entries(&input, &mut staged)?;
+    Ok((staged, updated_source))
+}
+
+/// Apply the existing score/credit transition to one genuine selection.
+///
+/// The caller owns unpublished staged state and a selection of its exact input
+/// population with the retained minimum. Already pending credit may be consumed
+/// without a new observation; absence of an event never bypasses ranking.
+/// # Errors
+/// Reject inconsistent selection or unsupported arithmetic before publication.
+fn apply_selection(
+    staged: &mut FixturePrincipalState,
+    selection: &FixtureSelection,
+    updated_source: Option<NonZeroU64>,
+) -> Result<FixturePrincipalOutcomeKind, FixturePrincipalError> {
+    if selection.outcome() == FixtureOutcomeKind::WitnessedFixture {
+        let survivors = survivor_set(staged, selection)?;
+        let (best_index, best_score) = rank_sources(staged, &survivors, updated_source)?;
+        choose_principal(staged, &survivors, best_index, best_score)
+    } else {
+        if selection.witnessed().is_some() {
+            return Err(FixturePrincipalError::Invariant);
+        }
+        staged.principal = None;
+        Ok(FixturePrincipalOutcomeKind::Unavailable)
+    }
+}
+
 /// One real selection paired with the original entries of its checked batch.
 ///
 /// Only `select_same_batch` constructs this private pair. Its immutable borrowed
@@ -1076,16 +1164,18 @@ fn select_same_batch<'batch>(
     })
 }
 
-/// Consume one private same-batch pair after its output relations hold.
+/// Check the output kind and selected original index for one same-batch owner.
+///
+/// Each caller supplies the genuine selection and original entries together;
+/// this shared predicate cannot create a selection or substitute copied entries.
 /// # Errors
 /// Reject any mismatched outcome, selected label/index or supporter association.
-fn complete_decision(
-    selected: SameBatchSelection<'_>,
+fn decision_index(
+    entries: ReceiverEntries<'_, '_>,
+    selection: &FixtureSelection,
     principal_label: Option<NonZeroU64>,
     kind: FixturePrincipalOutcomeKind,
-    updated_source: Option<NonZeroU64>,
-) -> Result<FixturePrincipalDecision<'_>, FixturePrincipalError> {
-    let SameBatchSelection { entries, selection } = selected;
+) -> Result<Option<usize>, FixturePrincipalError> {
     let selected_kind = matches!(
         kind,
         FixturePrincipalOutcomeKind::ReferenceReady
@@ -1099,10 +1189,13 @@ fn complete_decision(
     {
         return Err(FixturePrincipalError::Invariant);
     }
-    let principal_index = if let Some(label) = principal_label {
-        let index = entries
-            .iter()
-            .position(|entry| entry.projection().context().source_id() == label)
+    if let Some(label) = principal_label {
+        let index = (0..entries.len())
+            .find(|&index| {
+                entries
+                    .get_original(index)
+                    .is_some_and(|projection| projection.context().source_id() == label)
+            })
             .ok_or(FixturePrincipalError::Invariant)?;
         if !selection
             .witnessed()
@@ -1112,10 +1205,28 @@ fn complete_decision(
         {
             return Err(FixturePrincipalError::Invariant);
         }
-        Some(index)
+        Ok(Some(index))
     } else {
-        None
-    };
+        Ok(None)
+    }
+}
+
+/// Consume one private same-batch pair after its shared output relations hold.
+/// # Errors
+/// Reject any mismatched outcome, selected label/index or supporter association.
+fn complete_decision(
+    selected: SameBatchSelection<'_>,
+    principal_label: Option<NonZeroU64>,
+    kind: FixturePrincipalOutcomeKind,
+    updated_source: Option<NonZeroU64>,
+) -> Result<FixturePrincipalDecision<'_>, FixturePrincipalError> {
+    let SameBatchSelection { entries, selection } = selected;
+    let principal_index = decision_index(
+        ReceiverEntries::Legacy(entries),
+        &selection,
+        principal_label,
+        kind,
+    )?;
     Ok(FixturePrincipalDecision {
         entries,
         selection,
@@ -1170,7 +1281,7 @@ impl FixturePrincipalState {
             });
         }
         let input = ReceiverInput {
-            entries: batch.entries(),
+            entries: ReceiverEntries::Legacy(batch.entries()),
             strata,
             frame: batch.frame(),
             mapping_generation: batch.mapping_generation(),
@@ -1201,29 +1312,16 @@ impl FixturePrincipalState {
         strata: &[FixturePrincipalStratum],
     ) -> Result<FixturePrincipalDecision<'batch>, FixturePrincipalError> {
         let input = ReceiverInput {
-            entries: batch.entries(),
+            entries: ReceiverEntries::Legacy(batch.entries()),
             strata,
             frame: batch.frame(),
             mapping_generation: batch.mapping_generation(),
             at: batch.projected_at(),
             seed: false,
         };
-        admit_receiver(input, self)?;
-        let mut staged = self.clone();
-        let updated_source = stage_entries(&input, &mut staged)?;
+        let (mut staged, updated_source) = prepare_transition(input, self)?;
         let selected = select_same_batch(batch, staged.minimum)?;
-        let selection = &selected.selection;
-        let kind = if selection.outcome() == FixtureOutcomeKind::WitnessedFixture {
-            let survivors = survivor_set(&staged, selection)?;
-            let (best_index, best_score) = rank_sources(&mut staged, &survivors, updated_source)?;
-            choose_principal(&mut staged, &survivors, best_index, best_score)?
-        } else {
-            if selection.witnessed().is_some() {
-                return Err(FixturePrincipalError::Invariant);
-            }
-            staged.principal = None;
-            FixturePrincipalOutcomeKind::Unavailable
-        };
+        let kind = apply_selection(&mut staged, &selected.selection, updated_source)?;
         let decision = complete_decision(selected, staged.principal, kind, updated_source)?;
         *self = staged;
         Ok(decision)

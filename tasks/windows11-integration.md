@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Package implementation and native qualification remain unexecuted.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Package implementation and native product qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -1408,3 +1408,127 @@ No Windows/WSL operation, Sandbox launch, host change, product build, package
 installation, signing or Store action was performed for this delivery. The next
 permitted action remains publication of this documentation and subsequent
 preparation under the current task's actual authorization and holds.
+
+### 4.17 Primary coordinator adoption of the selected MSIX profile — 3 November 2026
+
+This acknowledgement covers the earlier selected MSIX profile; it predates the
+provisioning/removal research in section 4.15 and Sandbox guidance in section
+4.16. Their next-checkpoint routing is recorded in section 4.18.
+
+At the S155 pure Core checkpoint, the primary development coordinator adopts
+sections 4.13–4.14 and the selected complete-MSIX amendment in
+[OD-05](../docs/nevrotick-owner-decisions.md#71-accepted-choices). The existing
+source card inventories the six-member workspace, missing production roles,
+future manifest fields and role-specific activation owners. Its prepared source
+profile does not qualify a package, service bootstrap, mitigation or Store result.
+Earlier MSI-first and conditional W11-W10 entries in sections 4.10–4.12 retain
+their historical scope; this later disposition governs current delivery work.
+MSI remains an alternative requiring a later owner decision.
+
+| Assignment and owner | Current disposition | Next dependent action |
+| --- | --- | --- |
+| W11-W10, package/build; S0.6/P6 | Selected source/design profile prepared; actual package build and native checks unexecuted | Bind real production payloads and entry points, publisher, selected SDK/tool inputs and supported OS/CPU rows before the final manifest and complete-package checks. Carry explicit content integrity, immutable executable content and the Trusted Launch candidate gates from section 4.14. |
+| W11-W10, platform/security with each process owner; P0/P3/P6 | Source activation map prepared; effective enforcement unqualified and native held | Apply the existing UI/SCM/helper activation owners and module-closure contracts before related adapters; qualify required protections, Store-compatible CIG and healthy/refused workflows on the actual selected creation paths. |
+| W11-W05, platform/security/IPC/lifecycle; S0.2/S0.3/P3/P6 | Supported pre-exposure service provisioning remains unresolved; native held | Identify the authorized supported bootstrap owner and freeze effective account, privilege, SID, owner and ACL order through servicing. No broader service privilege or unselected two-LocalService substitution follows from the source profile. |
+| W11-W05, clock/storage/lifecycle; S0.6/P4/P6 | Recovery through independent removal remains unresolved; native held | Establish a supported barrier or surviving invocable recovery path for Settings/Reset and removal after service stop/crash, including owner/generation, journal continuity and W32Time restoration. Preserve recovery before the last required code or state disappears. |
+| W11-W10, release/build/independent QA; P6/P7 | Source justification ready at its named phase; build, submission and delivered-artifact qualification unexecuted | Prepare the complete candidate without speculative Store preapproval; David owns the controlled Store attempt. Independently qualify actual delivered bytes and lifecycle before broad release; an actual refusal returns to the owner decision. |
+
+The storage task's ST-W01–ST-W07 and this task's W11-W01–W11-W09 keep their
+existing owners, prerequisites and acceptance identities. ST-W01/W11-W01 remain
+unexecuted source-only cards, and D2/D3 work remains deferred. S155 consumes no
+Windows package, persistence, timestamp or service adapter, so this adoption
+adds no prerequisite to its current portable Core work. The Windows execution
+stop, separate fuzz no-retry hold, storage pause and Core priority remain in
+force. This acknowledgement executes no new source card, native probe, package
+or Store action and admits no dependency, tool or additional native profile.
+
+### 4.18 Local routing of provisioning research and Sandbox guidance — 3 November 2026
+
+This pull imports `3c408ba` and `4d8539b` into the active Core checkout. Sections
+4.15–4.16 and MSIX plan section 7.4 retain the new source findings and Sandbox
+skill documentation. The existing primary-coordinator acknowledgement moved
+from section 4.15 to 4.17; its original scope and recorded facts are preserved.
+At the next coordinator checkpoint, reconcile these refinements under existing
+W11-W05/W11-W10 owners before related work; primary adoption of this later
+research and skill handoff is not claimed by the pull.
+
+Supported provisioning and independent-removal recovery remain unresolved.
+Ordinary utility custom actions are blocked under the published grant policy
+absent an applicable Microsoft exception. Disabled-service activation, temporary
+bootstrap, restricted-child and scheduled-recovery alternatives remain unselected.
+Retain the complete-MSIX direction, David's Store attempt and no automatic MSI
+fallback. The later native discriminator remains the bounded inert-journal
+running-versus-stopped/crashed removal pair after its prerequisites are met.
+
+The Sandbox skill supplies source guidance; this integration runs no Windows
+preflight, installation, guest, package or blocked-artifact retry. Preserve Core
+priority, Windows execution STOP, the separate fuzz no-retry hold, storage pause
+and UI-M0 deferrals. Guest disposal establishes no product recovery result.
+
+**Primary coordinator reconciliation, 3 November 2026:** read the later
+sections4.15–4.18 at the completed S155 checkpoint. W11-W05/W11-W10 retain the
+provisioning, grant-policy and independent-removal findings for their next
+source/design action; no alternative service activation or recovery mechanism is
+selected. The Sandbox guidance remains documentation, with native management and
+the running/stopped/crashed removal discriminator held behind their existing
+prerequisites and Windows STOP. No new dependency or execution permission follows.
+The requested compiler-lint cohort and existing Core work remain the active work.
+
+### 4.19 Owner-ready Sandbox scope — 3 November 2026
+
+David now reports Windows Sandbox ready for use and points to the prepared
+management skill. This is scoped authorization for Sandbox management/readiness
+and later admitted guest work; retain the Defender block and do not retry the
+held S134 stager/artifact, the separate AES fuzz runner or paused storage work.
+Host management is distinct from guest payload execution. Begin with bounded,
+read-only installed-CLI/version/inventory and resource observations; identify one
+owned session before connect/share/exec/stop. No host elevation, installation,
+security/service/clock changes, broad writable shares or encoded PowerShell.
+The first readiness observation is an environment check, not a product CHECK
+pass. Preserve active WSL jobs and Core priority. A guest run requires recorded
+identity/configuration, finite time/output/resource bounds and explicit targeting;
+an unrelated existing guest remains untouched.
+
+**Executed readiness result:** passed the bounded built-in smoke on Windows 11
+Pro x64 build 26300 using installed native Sandbox CLI `0.8.107.0`. Owner `/root`
+created fresh instance `074e6da9-7182-411e-8208-ef9bb5116e8e` after observing an
+empty inventory and reconciled its returned ID. Recorded start/exec/stop
+arguments target that ID.
+Direct WSL invocation of the registered `wsb.exe` alias avoided a host shell for
+start/exec/stop. The requested XML disabled networking, vGPU, clipboard, printer,
+audio and video input, enabled ProtectedClient and capped memory at 2048 MB;
+there were no shared folders or LogonCommand. Effective device/network protection
+was not measured. Windows available physical memory was 3967 MB before launch
+and 2827 MB after launch; active WSL work was preserved.
+
+Three `ExistingLogin` guest CMD payloads returned expected guest exits **0, 42,
+0**: success, intentional failure and the default `WDAGUtilityAccount` username
+check. Each host dispatch exited 0, including the guest exit-42 control; host
+success was not treated as guest success. The username check establishes no
+standard unelevated token or complete identity qualification. The 18.06-second
+run used 12 native management commands plus connect, stopped only its owned guest
+and verified empty inventory. A final independent version/inventory bookend also
+found no guest; the connect controller had exited 0.
+The connect controller's PID and exit were retained, but its argv was omitted;
+its exact ID binding cannot be independently reconstructed from these JSON
+receipts. Retain connect arguments in the next run's existing receipt.
+
+Evidence directory:
+`/home/david_osipov/.local/share/nevrotick/windows-sandbox-readiness-20261103-gb2ewnm6`.
+`owned-readiness-result.json` SHA-256:
+`59cab05ce4d07d5bda6568f4e0226fa432a874e2777bef217a5be0ff733b2719`;
+`final-preflight-bookend.json` binds that result and final inventory. Related
+intent, progress, CLI-help and resource receipts remain in the same directory.
+No NevroTick executable or held artifact was shared or run; no PowerShell,
+installation, host configuration/security/service/clock/trust change, package
+operation or product CHECK qualification occurred. Next: retain Core priority;
+use this skill and fresh preflight for a separately admitted bounded guest
+experiment when its product owner and prerequisites are ready. The blocked
+stager/artifact, AES fuzz hold and storage pause remain unchanged.
+
+Independent read-only receipt review found no substantive control defect and
+confirmed the result hash, explicit start/exec/stop target, guest exit controls
+and final absence. The connect-argv omission and protection/token evidence gaps
+above remain explicit. Scoped staged/unstaged whitespace checks passed; all 370
+local links/anchors across this task, the documentation guide and development
+plan resolved. `docs/SHA256SUMS.txt` is absent; no bundle-integrity claim follows.

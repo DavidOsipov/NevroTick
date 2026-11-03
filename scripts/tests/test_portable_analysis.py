@@ -333,6 +333,114 @@ class EvidenceTests(unittest.TestCase):
                    "FixtureChartProjection::enclosure_distance_seconds); FixtureChartError::Invariant }")
 
     @classmethod
+    def chart_batch_inventory_control(cls):
+        """Independent single-owner card facts; no source, tool or native admission."""
+        subjects = (("chart_batch", "crates/time-core/src/chart_batch.rs"),)
+        scope = MODULE.Scope("time-core", subjects, "tasks/s1.2-chart-batch-inventory-admission.json")
+        return scope, {
+            "schema_version": 11,
+            "admission_status": "admitted-single-owner-chart-batch-inventory-only",
+            "package": "time-core", "source_file_count": 139, "subjects": dict(subjects),
+            "mutation_equivalences": [], "mutation_error_values": {},
+            "native_test_invocations": 0, "campaigns_admitted": False,
+            "tool_admission_profile": "stable-core", "mutation_jobs": 10,
+            "mutation_message_format": "json", "mutation_process_limit": 512,
+            "maximum_mutants": 512, "listing_maximum_per_file": 512,
+            "listing_maximum_total": 512, "inventory_wall_seconds": 600,
+            "listing_process_limit": 128,
+        }
+
+    def test_chart_batch_listing_requires_its_exact_noncampaign_role(self):
+        scope, policy = self.chart_batch_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+        self.assertEqual(MODULE.per_subject_mutation_error_args(
+            scope, "crates/time-core/src/chart_batch.rs", policy), [])
+        for lane in ("contracts", "coverage", "all", "fuzz", "inventory", "cohort-union"):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"),
+                                         scope, policy)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane="mutation", tool_admission_profile="full"),
+                                     scope, {**policy, "tool_admission_profile": "full"})
+
+    def test_chart_batch_listing_rejects_changed_and_missing_typed_facts(self):
+        scope, policy = self.chart_batch_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        changes = (("schema_version", 10), ("schema_version", True),
+                   ("source_file_count", 138), ("native_test_invocations", False),
+                   ("campaigns_admitted", 0), ("campaigns_admitted", True),
+                   ("mutation_equivalences", [{}]), ("subjects", {}),
+                   ("mutation_error_values", None), ("mutation_error_values", []),
+                   ("mutation_error_values", {"chart_enclosure": [self.CHART_ERROR]}))
+        for key, value in changes:
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in ("schema_version", "admission_status", "package", "source_file_count", "subjects",
+                    "mutation_equivalences", "mutation_error_values", "native_test_invocations",
+                    "campaigns_admitted", "tool_admission_profile"):
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_chart_batch_scope_cannot_borrow_foreign_paths_or_subjects(self):
+        scope, policy = self.chart_batch_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        for wrong in (
+            MODULE.Scope("time-domain", scope.subjects, scope.policy),
+            MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json"),
+            MODULE.Scope(scope.package, scope.subjects, "tasks/s1.2-chart-inventory-admission-v2.json"),
+            MODULE.Scope(scope.package, (), scope.policy),
+            MODULE.Scope(scope.package, (*scope.subjects, ("other", "src/other.rs")), scope.policy),
+        ):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+
+    def test_chart_batch_empty_operator_map_rejects_missing_and_nonempty_values(self):
+        card, policy = self.chart_batch_inventory_control()
+        scope = MODULE.Scope(card.package, card.subjects, "policy/time-core-analysis.json")
+        filename = "crates/time-core/src/chart_batch.rs"
+        self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+        for value in (None, [], False, {"chart_batch": []}, {"chart_batch": ["false"]},
+                      {"chart_enclosure": [self.CHART_ERROR]}):
+            with self.subTest(value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename,
+                                                       {**policy, "mutation_error_values": value})
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.per_subject_mutation_error_args(scope, filename,
+                                                   {k: v for k, v in policy.items() if k != "mutation_error_values"})
+        self.assertEqual(MODULE.per_subject_mutation_error_args(SCOPE, FILES[0][1], {}), [])
+
+    def test_chart_batch_listing_and_campaign_keep_no_extra_operator(self):
+        card, policy = self.chart_batch_inventory_control()
+        scope = MODULE.Scope(card.package, card.subjects, "policy/time-core-analysis.json")
+        tools = Path("/sealed/tools")
+        prefix = [str(tools / "cargo-mutants"), "mutants", "--package", "time-core", "--file",
+                  "crates/time-core/src/chart_batch.rs", "--test-workspace", "false", "--cap-lints", "false",
+                  "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10",
+                  "--cargo-arg=--message-format=json"]
+        calls = []
+        def run(label, command, timeout):
+            self.assertEqual(command, prefix + ["--list", "--json"])
+            calls.append(label)
+            return json.dumps([{"name": "one", "file": "crates/time-core/src/chart_batch.rs", "package": "time-core"}])
+        found = MODULE.enumerate_mutation_inventories(
+            scope, dict(scope.subjects), policy, tools, run, {},
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=512, maximum_total=512)
+        self.assertEqual(calls, ["mutation-enumeration:chart_batch"])
+        command = [*found.commands["chart_batch"], "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                   "--output", "/work/mutation/chart_batch"]
+        MODULE.mutation_campaign_command(scope, tools, "chart_batch", command,
+                                        expected_jobs=10, expected_message_format="json", policy=policy)
+        with self.assertRaisesRegex(MODULE.Incomplete, "listing only"):
+            MODULE.mutation_campaign_command(card, tools, "chart_batch", command,
+                                            expected_jobs=10, expected_message_format="json", policy=policy)
+        wrong = command.copy()
+        wrong[wrong.index("--baseline"):wrong.index("--baseline")] = ["--error", "false"]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_campaign_command(scope, tools, "chart_batch", wrong,
+                                            expected_jobs=10, expected_message_format="json", policy=policy)
+
+    @classmethod
     def chart_error_inventory_control(cls):
         """Independent exact new listing-only role; no tool admission is run."""
         scope, policy = cls.chart_inventory_control()

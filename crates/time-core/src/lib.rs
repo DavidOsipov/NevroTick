@@ -69,7 +69,8 @@ pub use combination::{
 };
 
 pub use principal::{
-    FixturePrincipalContextField, FixturePrincipalDecision, FixturePrincipalError,
+    FixtureChartPrincipalDecision, FixtureChartPrincipalError, FixturePrincipalContextField,
+    FixturePrincipalDecision, FixturePrincipalError,
     FixturePrincipalOutcomeKind, FixturePrincipalParameterField, FixturePrincipalParameters,
     FixturePrincipalScalarIssue, FixturePrincipalSourceState, FixturePrincipalState,
     FixturePrincipalStep, FixturePrincipalStratum,
