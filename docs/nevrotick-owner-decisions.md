@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.3<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended 3 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.4<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended and OD-01/OD-02 future directions added 3 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -19,8 +19,8 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 
 | ID | Owner instruction | Recorded status | What still needs evidence or a decision |
 | --- | --- | --- | --- |
-| OD-01 | Take selected upstream code, stress-test it, and alter it when bugs or justified optimizations are found | **Accepted reuse direction** | Exact source/dependency licence inventory and notices; permitted Rust/native graph; justification for each intentional behavioral deviation |
-| OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP | **Accepted behavior goal** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
+| OD-01 | Take selected upstream code, stress-test it, and alter it when bugs or justified optimizations are found; independently replace Chrony-derived implementations after Roughtime | **Accepted current reuse and future replacement direction** | Exact source/dependency licence inventory and notices; permitted Rust/native graph; justified behavioral deviations; future replacement qualification, rights review and public licence selection |
+| OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP; add a future Roughtime bootstrap stage for a badly wrong initial date | **Accepted behavior goal and future bootstrap direction** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence; RGT-0 protocol/provider/trust qualification. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
 | OD-03 | Prefer `pool.ntp.org` as the default source; use the supplied NTS directory to find secure servers | **Accepted provider preference; default-profile interaction unresolved** | Pool vendor-zone allocation; which role the Pool fills alongside NTS; qualified NTS operators and compatible time scales |
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
 | OD-05 | Prepare one complete MSIX with the strongest compatible verified protections; David will try Microsoft Store submission with services and reconsider delivery if rejected. Retain the previously accepted Foundation/OpenPGP MSI policies as alternatives, with David as release approver | **Accepted delivery and hardening direction, amended 3 November 2026** | Supported least-privilege service provisioning and recovery, actual package/catalog and per-process mitigation evidence, account/capability admission and the Store outcome; direction is selected, implementation and release are not qualified |
@@ -42,6 +42,17 @@ Apply the existing architecture §20.1 and development-hardening §9.7 policy: i
 
 Before shipping, resolve the root application licence and actual source/native/build/procedural-macro graph under OPEN-1/CHECK-20/26. Keep proprietary branding and application-source licensing explicit and separate. Do not remove upstream attribution, fabricate clean-room provenance or treat process boundaries as automatic licensing exemptions.
 
+**Future direction — 3 November 2026 (direct owner instruction):** David placed
+[CHR-0, independent replacement of Chrony-derived implementations](../ROADMAP.md#chr-0--independently-replace-chrony-derived-implementations),
+immediately after the Roughtime stage. The goal is a qualified replacement that
+does not rely on Chrony's licence. The future public distribution licence remains
+undecided; David will grant Microsoft permission to use and incorporate the
+resulting code into Windows, including proprietary components, within the rights
+established for it. The roadmap owns the replacement scope and exit evidence.
+Current source-derived development, GPL-2.0-only obligations and provenance remain
+in force until the replacement and release decisions are qualified; this future
+direction is not an immediate licence change or an upstream permission grant.
+
 **Owner escalation:** a proposed reuse/dependency change requires incompatible rights, a deliberate algorithm deviation changes security or observable behavior, or a measured performance tradeoff changes the product requirements. Routine compatible fixes within the approved contracts need no repeated policy approval.
 
 ## 4. OD-02 — distinguish authenticated recovery from ordinary correction
@@ -51,6 +62,17 @@ Before shipping, resolve the root application licence and actual source/native/b
 The product should aim to recover a badly wrong local date without an arbitrary small limit merely because the offset is large, provided the authenticated evidence and correction policy justify it. A local clock wrong by approximately 100 years is an explicit research/acceptance target.
 
 That is different from accepting an unrestricted target date or allowing any large step during normal operation. Until the wider path is qualified, existing conservative broker limits apply. Preserve source agreement, fresh evidence, current machine-policy authorization, sole clock ownership, cumulative accounting, and acknowledgment of the actual applied effect.
+
+**Future bootstrap direction — 3 November 2026 (direct owner clarification):**
+David identified Roughtime servers as the intended initial time source for a
+severely wrong local clock. [RGT-0](../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
+records the future stage: establish an authenticated approximate-time interval,
+qualify its handoff to NTS certificate validation and date/era interpretation,
+then complete the existing authenticated recovery and broker gate. Protocol,
+provider/key and Windows-verifier qualification remain outstanding. This extends
+the recovery plan; it does not make Roughtime an implemented source, permit a
+direct bootstrap clock write or replace the current recovery policy before its
+extension is qualified.
 
 ### 4.2 Roles of the sources
 

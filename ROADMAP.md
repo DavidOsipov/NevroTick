@@ -4,6 +4,8 @@
 
 **First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
 
+**Later owner-selected sequence:** [Roughtime bootstrap for a badly wrong clock](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock) → [independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations); future public licence undecided
+
 **Android status:** planned; no Android implementation or handset qualification is established  
 **Original Android research baseline:** [a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab](https://github.com/DavidOsipov/NevroTick/commit/a54c04382cf5e5cb2ae641d7356ce67fe24bc1ab)
 
@@ -31,6 +33,8 @@ applying time to its own clock.
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
 | System-wide Windows DNS | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning) and [detailed DNS/cache design](docs/plans/system-dns-cache-design.md): DNS answers for the whole computer and its applications, DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC with hardware acceleration and multiple CPU cores, and an evaluated adaptive cache. Native integration, actual coverage and performance remain to be qualified. |
+| Roughtime bootstrap | [RGT-0](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock): obtain an authenticated approximate-time interval to bootstrap NTS when the local date is badly wrong; provider, trust-policy and Windows qualification remain future work. |
+| Chrony-independent implementation | [CHR-0](#chr-0--independently-replace-chrony-derived-implementations): owner-selected future replacement stage immediately after Roughtime. Remove reliance on Chrony's licence for the replacement implementation; the future public licence remains open, and David will authorize Microsoft to use the resulting code in Windows within the rights established for it. |
 
 The [architecture](docs/windows-time-architecture.md),
 [owner decisions](docs/nevrotick-owner-decisions.md) and
@@ -115,6 +119,128 @@ must define and qualify its bounded implementation before Android work begins;
 deferral or rejection records the reason and return trigger. Completing this
 evaluation and disposition is the prerequisite to AND-0; it does not require
 adopting Khronos. Research alone proves no protection in the delivered client.
+
+### RGT-0 — Roughtime bootstrap for a badly wrong clock
+
+**Status:** planned future stage; the owner clarified the initial-recovery purpose
+on 3 November 2026. No Roughtime implementation, provider selection or Windows
+qualification is established. This stage is distinct from KHR-0.
+
+**Order:** RGT-0 → CHR-0. This later sequence preserves the current
+Windows → KHR-0 → Android prerequisites. Its scheduling against later Android
+and DNS work remains open; it creates no new active Windows prerequisite.
+
+**Owners:** protocol implementer, NTS/trust-policy owner, independent security
+reviewer and Windows qualification owner.
+
+**Outcome:** use Roughtime servers to obtain an authenticated approximate-time
+interval when a badly wrong Windows date prevents ordinary NTS certificate
+validation. Feed the qualified interval into isolated TLS verification and
+date/era interpretation, then complete authenticated NTS acquisition before any
+broker-authorized system-clock correction. Preserve the interval's uncertainty
+and trust provenance; a signed server assertion is not proof of accurate UTC.
+
+This extends the recovery goal already recorded in
+[OD-02](docs/nevrotick-owner-decisions.md#4-od-02--distinguish-authenticated-recovery-from-ordinary-correction),
+[architecture §8](docs/windows-time-architecture.md#8-recovery-when-the-system-date-breaks-tls)
+and [R-02](docs/nevrotick-research-handoff.md#4-r-02--century-scale-authenticated-recovery).
+Those contracts currently describe cached NTS, strict NTS-KE and optional plain
+NTP hints; they did not select Roughtime. DEC-7 identifies an independent trusted
+time anchor as a reason to revisit the helper design.
+[RFC 10049](https://www.rfc-editor.org/rfc/rfc10049.html), published as
+Experimental in October 2026, explicitly supports NTS certificate-time bootstrap
+in §6. Its long-term server keys supply trust roots independently of X.509 time
+validation. This is a protocol basis to qualify, not a qualified service list.
+
+- [ ] Freeze the supported protocol version, implementation/dependency provenance
+  and interoperability evidence. Review the server/key catalogue, independent
+  operators, authenticated distribution, rotation/revocation and stale-list
+  behavior. RFC 10049 §8 requires at least three operational independently run
+  servers and chained repeated measurements; a one-server demonstration does not
+  qualify this stage.
+- [ ] Define bounded interval admission, monotonic elapsed-time/delay limits,
+  supported true-date/era range, saved-floor conflicts, retries and resource use.
+  Specify the faulty-server/path assumptions and refusal behavior. Qualify the
+  handoff to the actual NTS verifier, including the unresolved Windows
+  trust/revocation gate OPEN-8; supplying a better date does not itself close it.
+- [ ] Keep valid cached/strict NTS acquisition ahead of unnecessary bootstrap.
+  Roughtime must not directly set Windows time, vote as an NTS source, disable
+  certificate checks or authorize a silent plain-NTP fallback. Preserve protected
+  NTS observations, candidate-time revalidation, source agreement and the broker's
+  current correction authority. Until this extension is qualified, the existing
+  strict-default and explicit administrator-enabled recovery policy remains.
+- [ ] Retain deterministic cases for local-date errors in both directions around
+  100 years, supported/unsupported true dates and era boundaries. Challenge
+  malformed responses, bad signatures, request mismatch/replay, contradictory
+  intervals, delay/uncertainty excess, source loss and changed/compromised keys.
+  Demonstrate successful NTS acquisition with valid controls and rejection without
+  clock effects on failure. Native experiments use an owned disposable Windows
+  environment under the existing execution gates; public services are not stress
+  targets.
+
+**Exit RGT-C01:** retain a pinned implementation and trust configuration, reviewed
+interval/admission and key-maintenance policy, controlled protocol evidence,
+actual provider interoperability and Windows verifier/recovery evidence. Show
+both successful bounded bootstrap into NTS and observable blocked outcomes without
+unauthorized clock changes or weakened TLS checks. Record the qualified envelope
+and remaining limitations; a research note or successful handshake alone does not
+complete the stage. CHR-0 follows this completion.
+
+### CHR-0 — independently replace Chrony-derived implementations
+
+**Status:** owner-selected future implementation and provenance/rights review,
+recorded 3 November 2026; no replacement or relicensing has been completed.
+
+**Depends on:** RGT-C01, immediately after the Roughtime stage.
+
+**Owners:** numerical/protocol implementer, independent correctness/security
+reviewer and provenance/licensing reviewer; David owns the eventual licence and
+permission decisions. See the [OD-01 future-direction addendum](docs/nevrotick-owner-decisions.md#3-od-01--source-derived-port-with-independent-verification).
+
+**Outcome:** replace the Chrony-derived implementation with independently
+authored, qualified code that can be distributed without relying on Chrony's
+GPL grant. The future public distribution licence is **undecided**. David will
+grant Microsoft permission to use and incorporate the resulting code into
+Windows, including proprietary components, once the necessary rights are
+established. This is the intended reuse outcome, not a present grant of upstream
+rights or evidence of Microsoft interest or adoption.
+
+- [ ] Freeze a candidate and inventory Chrony-derived implementation, tables,
+  copied tests/fixtures and other included material against the existing
+  [source ledger](tasks/s0.1-chrony-ledger.json) and crate provenance. Identify the
+  actual replacement boundary and all consumers, generated outputs and shipped
+  dependencies; keep original additions and mathematical/protocol facts distinct
+  from adapted implementation.
+- [ ] Specify the required behavior independently from standards, mathematical
+  sources and reviewed product contracts, then implement the replacements with
+  recorded authorship and source provenance. A language change, renamed symbols,
+  AI assistance or a percentage of changed lines does not establish independence;
+  do not describe another translation as a clean-room implementation.
+- [ ] Preserve independently specified numerical/protocol correctness, security,
+  bounded-resource and failure/recovery requirements. Qualify the replacement
+  through the applicable regression, adversarial and platform checks; review
+  intentional behavioral changes. Chrony differential results are supplemental,
+  not the sole expected-result oracle.
+- [ ] Review the complete replacement candidate and its rights/dependency graph.
+  Establish that no retained Chrony-derived material still requires its GPL grant
+  for that candidate, and identify any other terms that would prevent the intended
+  Microsoft permission. Keep unresolved provenance or rights as explicit blockers
+  to claiming licence independence, not as a reason to delete attribution.
+- [ ] Preserve accurate historical releases, source mappings and required notices
+  for retained material. After the rights review, bring the future public licence
+  and the concrete Microsoft permission to David for selection and formulation;
+  do not assume MIT, Apache-2.0, a later GPL version or a proprietary licence now.
+
+**Exit CHR-C01:** retain the pinned replacement candidate, complete provenance and
+dependency inventory, reviewed rights assessment and candidate-specific
+correctness/security/resource evidence. Record any remaining restrictions. Public
+licence selection and the actual Microsoft permission remain explicit release
+decisions; this stage's plan is not a completed legal grant.
+
+Until replacement qualification and the corresponding release decisions, the
+current Chrony-derived code keeps its existing GPL-2.0-only obligations. This
+future stage does not stop the present port or advance its implementation ahead
+of the selected Roughtime predecessor.
 
 ## 2. Intended behavior and limits
 
@@ -635,12 +761,17 @@ Resolve these choices when the dependent stage is ready, using the existing
 - DNSSEC provider/trust/time policy, qualified acceleration and multicore bounds;
   adaptive-cache parameters, statistics privacy/identity and measured adoption.
 - Any later Android-wide DNS integration and its separately qualified scope.
+- Roughtime's protocol/provider/key policy, admitted uncertainty and recovery
+  envelope, Windows verifier qualification and scheduling against other later
+  work; CHR-0 remains its immediate successor.
+- The post-CHR-0 public distribution licence and concrete Microsoft permission,
+  based on the replacement candidate's reviewed rights rather than a licence label.
 
 Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-KHR-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+KHR-C01, RGT-C01, CHR-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.
