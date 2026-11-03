@@ -39,6 +39,7 @@ to own requirements, and task records own executed evidence.
 | What is in scope for the current UI prototype? | [Architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): M0-01–M0-08 and D1–D3 deferrals/re-entry gates; [UI-M0 task](../tasks/ui-m0.md) for implementation ownership and evidence. |
 | Which unresolved decisions or investigations gate dependent work? | [Open decisions](windows-time-architecture.md#22-open-decisions-and-release-blockers), [owner-decision procedure](nevrotick-owner-decisions.md) and [research assignments](nevrotick-research-handoff.md). |
 | How are checks run, and where are results kept? | [TOOLING.md](../TOOLING.md#starting-implementation) and [configured tool execution](../.agents/skills/testing/references/configured-tooling.md); the existing task record owns candidate-specific results and gaps. |
+| How do agents prepare and manage a disposable Windows Sandbox from Windows or WSL? | [manage-windows-sandbox](../.agents/skills/environment/manage-windows-sandbox/SKILL.md): concise procedure with detailed operations, security/configuration, resource, winapp, evidence and troubleshooting references. [Windows task §4.16](../tasks/windows11-integration.md#416-windows-sandbox-management-skill--3-november-2026) records the skill delivery; current execution holds and product CHECK owners remain. |
 
 Keep the identifiers distinct: S-0 is a delivery slice; S0.1–S0.7 are P0
 experiments. UI-M0's M0 checks do not complete the AC/CHECK catalogs or P0/P5.

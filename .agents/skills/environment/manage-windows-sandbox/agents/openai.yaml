@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Windows Sandbox"
+  short_description: "Operate isolated Windows labs without disrupting WSL"
+  default_prompt: "Use $manage-windows-sandbox to prepare an owned Windows Sandbox run, preserve the host and active WSL work, and collect the evidence required by the current task."

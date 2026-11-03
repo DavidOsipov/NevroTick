@@ -292,6 +292,7 @@ no new report tree or orchestration campaign.
 | Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), then applicable accessibility/DPI checks. |
 | Trust, privileges, IPC, crypto, logging or packaging | [Security index](.agents/skills/security/README.md), matching boundary owner. |
 | Cargo dependency changes | [dependency-updates](.agents/skills/environment/dependency-updates/SKILL.md). |
+| Windows Sandbox configuration, WSL-to-guest control or disposable lab evidence | [manage-windows-sandbox](.agents/skills/environment/manage-windows-sandbox/SKILL.md); check current task/incident holds before any Windows command. |
 | Verification, failure triage or commit preparation | [Testing index](.agents/skills/testing/README.md), [testing contract](.agents/skills/testing/CONTRACT.md); smallest relevant evidence layer. |
 
 Use [upstream specialists](.agents/skills/upstream/README.md) for actual

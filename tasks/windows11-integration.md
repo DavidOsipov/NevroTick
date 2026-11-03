@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Package implementation and native qualification remain unexecuted.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Package implementation and native qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -1254,3 +1254,157 @@ was appended afterward and checked separately for exact quotation, scope,
 relative links, whitespace and preservation before publication. No build,
 package operation, Windows execution, host change or Store action was performed.
 Section 4.15's next permitted work and existing execution holds remain in force.
+
+### 4.16 Windows Sandbox management skill — 3 November 2026
+
+**Request and candidate:** David requested a concise English skill for agents
+managing Windows Sandbox, with extensive researched references stored in this
+repository. The source baseline is
+`3c408bac7e9c8fb3970628748ffda7a9923eb0e7`, root tree
+`95dfba40ccb5b9e90843aa7a881eb93a4f69d180`. The isolated review snapshot's
+277 existing files and modes were matched to that full, untruncated remote tree;
+its partial local Git history is not the publication history.
+
+**Deliverable:** [manage-windows-sandbox](../.agents/skills/environment/manage-windows-sandbox/SKILL.md)
+provides a short operating procedure and selective access to six detailed
+references: native operations, configuration/boundaries, resources/WSL, optional
+winapp automation, NevroTick evidence, and troubleshooting/closeout. UI metadata,
+the local-skill inventory, agent routing, skills index, environment source index
+and documentation guide make it discoverable. It is an original instructional
+workflow, not an imported skill, installed host tool or executable controller.
+
+**Source work:** Microsoft Learn full-page reads and code-sample retrieval were
+checked against released Microsoft winapp v0.7.1 documentation and relevant
+implementation/tests at `e3cd0b94f3e7b776ac51ba0564f4908094e979b5`.
+The references distinguish installed client support from OS version, native
+control status from the raw JSON guest exit, and guest commands from host
+operations. They retain documentation discrepancies rather than copying invalid
+examples. A separately identified development revision is used only to explain
+version drift; it does not supply v0.7.1 options.
+
+**Operating decisions encoded as guidance:**
+
+- Preserve active WSL work and admit a short guest only after real resource
+  preflight. The owner's possible 22 GB usage during a four-day run is reported
+  context, not a current measurement or memory-leak diagnosis. The 3072 MB XML
+  profile is a proposal, not an adopted or tested laptop configuration; the
+  documented interface supplies no CPU quota.
+- Default the proposed native profile to offline execution with explicit device
+  redirection settings, narrow read-only input and separate writable evidence.
+  Guest disposal cannot undo writes to mapped host folders. Policy and observed
+  effective behavior remain separate from requested XML.
+- Own and serialize one guest, name host/guest command context and preserve
+  results before explicit termination. The agent's existing WSL/host access is
+  not technically confined by skill text. Neither a viewer window nor a target
+  snapshot is a restorable system checkpoint.
+- Treat optional winapp as a separate networking/bootstrap profile. Its released
+  backend connects to the guest through TCP, while project evaluation/build can
+  still run on the host. Explicit guest targeting, installed-version checks and
+  actual principal/output evidence prevent unsupported success claims.
+- Map observations back to existing W11-W05/W11-W10 and CHECK owners. An inert
+  service check, local MSIX deployment, Store-delivered qualification and exclusive
+  clock ownership require different evidence. Sandbox teardown is not successful
+  product recovery or uninstall.
+
+**Reconciliation:** all prior task text/receipts remain, apart from the status
+line's pointer to this section. No product contract, CHECK/AC/ASVS definition,
+account topology, package design, dependency or host policy changes. Amended
+OD-05, Core priority, the Windows execution stop, separate fuzz no-retry hold,
+storage pause and UI-M0/D1–D3 deferrals remain. The skill adds no blanket approval
+round and does not interpret this documentation request as permission to execute
+Windows experiments or retry the blocked fixture.
+
+**Documentation exit and next action:** check skill inventory/UI metadata,
+relative links/anchors, Markdown, example XML and preservation of predecessor
+task history. Use a fresh-context reviewer and bounded read-only usage exercises
+to inspect the actual instruction candidate. Those checks assess documentation
+and agent decisions; they do not establish Windows runtime compatibility,
+performance or isolation. Record actual results below when completed. After
+publication, agents can invoke `$manage-windows-sandbox` for preparation; a
+native smoke run remains dependent on current authorization, resolved applicable
+holds, available resources and the exact admitted environment. Independent Core
+work continues without waiting for that run.
+
+#### Sandbox-skill independent review and documentation checks
+
+`sandbox_skill_independent_review`, delegated read-only with
+`fork_turns: "none"`, completed the review. Its verdict was:
+**READY for documentation publication only. Review completed. No material
+findings and no required correction.** Its two comprehension paragraphs are
+retained verbatim:
+
+> This candidate adds an original English `manage-windows-sandbox` skill with a short operating sequence and six detailed references. It teaches agents how to prepare an owned disposable Windows session, distinguish host control from guest execution, protect active WSL work, collect bounded evidence and end the correct instance. The surrounding changes register and route the skill through the existing repository documentation and append its delivery record to Windows task §4.16. The examples are prospective guidance; the candidate does not implement a controller, configure a host or report an executed Sandbox experiment.
+
+> The repository contains portable protocol and time/Core work, a fixture UI and bounded observation/transport components. Its selected delivery direction is one complete hardened MSIX for David’s Store attempt, while production service provisioning, independent-removal recovery and final package qualification remain unresolved or unexecuted. The engine, broker, ordinary-user UI and lifecycle helper retain distinct authority. The Defender-related Windows execution stop, separate fuzz no-retry hold, storage pause, Core priority and UI-M0 deferrals remain controlling; adding a laboratory skill changes none of them.
+
+The frozen 14-file pre-receipt manifest SHA-256 was
+`fd08d4f1b0a9d516692670702614eb1ffaf449f229c9185c04715a48837f2b09`.
+It included skill blob `ebb32160e6dc3b5d5c1ba1bd45444c53fe318b45` and
+pre-receipt task blob `7cb0ade4c30ced548688f71ab4ed03394db06317`.
+The reviewer matched every candidate hash/size/blob and all 277 local baseline
+paths/modes/blobs to the supplied mapping. The coordinator separately matched
+that mapping to the full remote tree; the reviewer did not independently
+reconstruct the remote tree. The local partial baseline was
+`81ee6b31b93676345ee484347418af36ae34b91c`, not a publishable remote parent.
+
+The reviewer read the actual diff and every new skill file, applicable agent,
+documentation, testing/review instructions, task §§4.15–4.16, MSIX §7.4,
+incident controls and relevant architecture boundaries. It retrieved primary
+Microsoft configuration/FAQ/WSL/policy sources and obtained a completed fresh-
+context source verification of the pinned native CLI/winapp implementation,
+tests and version distinctions. That source verifier found no material false
+or unsupported statements in the two control references. The reviewer disclosed
+that a live-agent listing exposed an author completion summary; it did not use
+that summary as evidence or an expected verdict. No private memory or parent
+conversation was supplied to the fresh review.
+
+**Completed checks:**
+
+- The required pack checker passed: **63 skills**, including seven original
+  local workflows, valid metadata/UI prompts, inventories and local links.
+  No checker implementation or imported skill/inventory was changed.
+- `git diff --check` and all **84 new relative file/anchor links** passed.
+  New Markdown files had balanced fences, UTF-8/LF text and final newlines.
+  Coordinator-only assertions initially overclassified existing Markdown
+  hard-break spaces and added an extra newline when reconstructing a reviewed
+  prefix. Correcting those comparison scopes resolved the checking errors;
+  the predecessor's formatting and reviewed prefix bytes were unchanged.
+- The proposed XML parsed and its intended offline/3072 MB/Protected Client,
+  read-only input, writable output and no-autorun settings matched static
+  assertions. This is syntax/content evidence, not Windows configuration
+  acceptance or measured effective policy.
+- The previous task body reconstructed exactly after removing this section
+  and its sole status-line pointer. Architecture, features/acceptance, ASVS,
+  owner decisions, MSIX plan and incident control documents remained unchanged.
+  The delta was eight new and six modified ordinary files, with no executable
+  or mode changes.
+
+**Bounded usage exercise:** `sandbox_skill_usage_exercise` used
+`fork_turns: "none"` and the frozen skill/reference candidate. It read the skill,
+selected all six references and relevant authority sections, with no coordinator
+receipt, review manifest, private memory or other agent artifact supplied.
+Actions were limited to reading and returning operator decisions/command text;
+no scenario command was executed. The coordinator checked the actual responses
+against the following supplied facts and independent scope/evidence expectations:
+
+| Synthetic case supplied | Observed response and disposition |
+| --- | --- |
+| An admitted inert experiment needs a free lab; available RAM is 2.1 GB with sustained CPU pressure; an existing Sandbox has no owner record; a multi-day WSL job belongs to the user | Deferred launch, preserved the unknown instance and WSL job, required changed capacity/ownership conditions without a generic reapproval. Preflight remained incomplete. |
+| Native host status 0, empty stderr, raw guest `ExitCode` 23, and a success file naming a previous run | Refused the pass, separated successful dispatch from the nonzero guest result, rejected stale evidence and preserved bounded collection/owned teardown. It correctly retained the possibility that an explicitly expected negative exit needs its own matching evidence. |
+| Healthy neighbor: host/guest status 0, current run/artifact identity, three independently satisfied observations, complete bounded output and observed cleanup | Accepted only those three observations for that candidate; kept guest termination and wider product/release claims separate. |
+| Only a prebuilt offline guest artifact is admitted; another project's host build is held; proposed v0.7.1 winapp project build uses an offline profile and a target snapshot for rollback | Rejected the proposed host-build/network/checkpoint assumptions; proposed the admitted prebuilt artifact through native offline control, conditional on real readiness and ownership. |
+| A small pure Rust arithmetic change belongs to the current portable task | Did not create/probe Sandbox or add a Windows readiness gate. |
+
+All four task scenarios, including the healthy neighbor within the result case,
+returned the expected bounded decisions. This single read-only exercise is not
+a runtime test, an old/new comparison, statistical reliability evidence or a
+claim that the skill prevents all agent mistakes. Shared filesystem access was
+not represented as an isolation boundary; no prohibited context access was
+reported in the exercise's supplied read inventory.
+
+This factual receipt was appended after the reviewed candidate. Final checks
+cover its exact quotations, identities, links, whitespace and preserved scope.
+No Windows/WSL operation, Sandbox launch, host change, product build, package
+installation, signing or Store action was performed for this delivery. The next
+permitted action remains publication of this documentation and subsequent
+preparation under the current task's actual authorization and holds.

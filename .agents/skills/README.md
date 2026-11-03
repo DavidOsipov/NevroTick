@@ -1,7 +1,7 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-and six original NevroTick workflows for the Windows time client in
+and seven original NevroTick workflows for the Windows time client in
 [the documentation guide](../../docs/README.md) and its development host.
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
@@ -35,6 +35,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Trace Rust inputs or secrets through guards to effects or output sinks | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
 | Assess or change Cargo dependencies | [dependency-updates](environment/dependency-updates/SKILL.md) |
 | Analyze WSL storage or clean authorized caches, artifacts and unused Docker data | [wsl-cleanup](environment/wsl-cleanup/SKILL.md) |
+| Configure or manage an owned Windows Sandbox from Windows/WSL and collect disposable-lab evidence | [manage-windows-sandbox](environment/manage-windows-sandbox/SKILL.md), with selective operations, configuration, resource, winapp, evidence and troubleshooting references |
 | Diagnose a specific compiler, borrow/drop or Send/Sync mechanism; use qualified Windows UIA commands | [Selected upstream specialists](upstream/README.md) |
 
 The [canonical architecture](../../docs/windows-time-architecture.md) controls
@@ -98,7 +99,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 62 grouped skills without aliases;
+for precise selection. The pack registers 63 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack

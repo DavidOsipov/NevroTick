@@ -1,4 +1,6 @@
-# Dependency workflow sources
+# Environment workflow sources
+
+## Dependency workflow
 
 Reviewed 28 October 2026. Source skill:
 `/home/david_osipov/personal-website-templated-1/.agents/skills/environment/dependency-updates/SKILL.md`.
@@ -31,3 +33,20 @@ The full David Osipov MIT notice is retained in the dependency leaf.
 Adaptation added, upgraded, downloaded/built no dependencies. Prospective commands
 need selected-toolchain checks. Advisory freshness, license compatibility and
 Windows runtime remain real-graph admission/qualification tasks.
+
+## Windows Sandbox management
+
+The original [manage-windows-sandbox](manage-windows-sandbox/SKILL.md) workflow was
+researched on 3 November 2026 through Microsoft Learn MCP and pinned Microsoft
+`winappCli` documentation, implementation and tests. It is locally authored;
+no upstream skill or executable controller is imported.
+
+Its six directly linked references keep the detailed source registers beside
+the relevant operations, configuration, WSL resource, optional winapp, NevroTick
+evidence and troubleshooting guidance. The released winapp baseline is v0.7.1 at
+`e3cd0b94f3e7b776ac51ba0564f4908094e979b5`; a separately identified development
+revision supplies version-drift evidence, not installed-release guarantees.
+The [existing Windows task](../../../tasks/windows11-integration.md#416-windows-sandbox-management-skill--3-november-2026)
+owns the documentation delivery and checks. Source review does not install or
+qualify Sandbox, adopt the proposed 3072 MB profile, lift execution holds or
+establish native application behavior.

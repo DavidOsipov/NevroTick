@@ -31,6 +31,11 @@
       "name": "qa-state-guided-fuzzing",
       "target": "testing/qa-state-guided-fuzzing/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "manage-windows-sandbox",
+      "target": "environment/manage-windows-sandbox/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }
