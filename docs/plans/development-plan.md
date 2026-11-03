@@ -10,7 +10,7 @@
 
 **Immediate priority:** finish the current bounded Core chain, then secure, bounded NTP/NTS acquisition
 
-**Current task:** the [S155 selected Linux-fixture checkpoint](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and subsequent [S156 four-lint compiler cohort](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) are complete within their recorded scopes. Next is chart-bound principal/combination integration in the existing S1.3 task; the complete eighteen-owner/P1 scope remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
+**Current task:** [S157 retained-owner chart receiving](../../tasks/s1.3-source-selection-readiness.md#s157-retained-owner-chart-receiving--authoring-contract) passed its principal authoring checkpoint; current-owner qualification is next, followed by chart-aware combination with explicit arithmetic bounds. [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their completed scopes; full P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
 The [engine checkpoint](../../tasks/engine-transport-pilot.md#s43-complete-current-engine-mutation-checkpoint)
 records a bounded, unauthenticated two-peer loopback observer, not production
@@ -637,10 +637,15 @@ grants, profiles, toolchain and target flags are unchanged. `panic_in_result_fn`
 remains deferred. This changes no CPU baseline or historical Core mutation score;
 refresh later dependent numerical-analysis bindings for the new candidate.
 
-**Next bounded action — existing S1.3 numerical owner:** connect the chart-bound selection to
-principal/supporter and combination lifecycle under the
-[current selection task](../../tasks/s1.3-source-selection-readiness.md).
-Freeze the next additive contract and independent scenarios before implementation.
+**Next bounded action — existing S1.3 numerical owner:** the
+[S157 principal authoring checkpoint](../../tasks/s1.3-source-selection-readiness.md#s157-principal-authoring-checkpoint--portable-pass-qualification-next)
+passed 22 portable rows on 142 inputs, with workspace 483 ordinary/130 doctests/
+375 optimized executions. Admit and qualify current `principal.rs`, new
+`principal/chart.rs` and changed `chart_batch.rs` cohorts, including strict
+external contracts and reached validation controls. Preserve S155's historical
+binding and reuse unchanged owners; their scores do not transfer to these bytes.
+Then complete the chart-aware combination child under the same task, freezing
+its explicit arithmetic-bound propagation before implementation.
 Carry the same actual adaptive report, common-reference descriptor, observation
 identity/ages and separate arithmetic bound through geometry and consumers.
 Repeated evaluation creates no fresh observation credit; auxiliary rows or an

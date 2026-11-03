@@ -70,10 +70,10 @@ pub use combination::{
 
 pub use principal::{
     FixtureChartPrincipalDecision, FixtureChartPrincipalError, FixturePrincipalContextField,
-    FixturePrincipalDecision, FixturePrincipalError,
-    FixturePrincipalOutcomeKind, FixturePrincipalParameterField, FixturePrincipalParameters,
-    FixturePrincipalScalarIssue, FixturePrincipalSourceState, FixturePrincipalState,
-    FixturePrincipalStep, FixturePrincipalStratum,
+    FixturePrincipalDecision, FixturePrincipalError, FixturePrincipalOutcomeKind,
+    FixturePrincipalParameterField, FixturePrincipalParameters, FixturePrincipalScalarIssue,
+    FixturePrincipalSourceState, FixturePrincipalState, FixturePrincipalStep,
+    FixturePrincipalStratum,
 };
 
 pub use projected_batch::{

@@ -142,20 +142,26 @@ fn retained_owner_preserves_credit_and_actual_chart_provenance() -> TestResult {
     assert!(!retained.reference_ready());
     assert_eq!(retained.selection().minimum(), 2);
     assert_eq!(retained.principal_label(), Some(label(11)?));
-    assert!(ptr::eq(retained.batch(), &batch));
-    assert!(ptr::eq(retained.chart_selection().batch(), &batch));
+    assert!(ptr::eq(retained.batch(), ptr::from_ref(&batch)));
+    assert!(ptr::eq(
+        retained.chart_selection().batch(),
+        ptr::from_ref(&batch)
+    ));
     assert!(ptr::eq(retained.entries().as_ptr(), current.as_ptr()));
     assert!(ptr::eq(
         retained
             .principal_entry()
             .ok_or_else(|| io::Error::other("missing principal"))?,
-        &current[0]
+        ptr::from_ref(&current[0])
     ));
     assert!(ptr::eq(
         retained.entries()[0].projection().chart(),
-        &expected
+        ptr::from_ref(&expected)
     ));
-    assert!(ptr::eq(retained.entries()[1].projection().chart(), &equal));
+    assert!(ptr::eq(
+        retained.entries()[1].projection().chart(),
+        ptr::from_ref(&equal)
+    ));
     assert_eq!(
         retained.entries()[0]
             .projection()
@@ -176,7 +182,7 @@ fn retained_owner_preserves_credit_and_actual_chart_provenance() -> TestResult {
     assert!(retained.entries()[0].projection().center_roundoff_seconds() > 0.0);
     assert_eq!(state, prior);
     let other = FixtureAffineChart::new(
-        FixtureChartFrames::new(label(17)?,label(23)?,label(31)?,label(37)?)?,
+        FixtureChartFrames::new(label(17)?, label(23)?, label(31)?, label(37)?)?,
         expected.domain(),
         5.0 / 1024.0,
         2.0 / 1024.0,
@@ -353,16 +359,38 @@ fn expected_frame_bits_and_metadata_capacity_reject_before_commit() -> TestResul
     let mut state = legacy_ready(&current, 4)?;
     let prior = state.clone();
     let batch = FixtureChartBatch::new(&map, MonotonicNs::new(4 * SECOND), &current)?;
-    for ids in [[31, 23, 19, 29], [17, 37, 19, 29], [17, 23, 41, 29], [17, 23, 19, 43]] {
+    for ids in [
+        [31, 23, 19, 29],
+        [17, 37, 19, 29],
+        [17, 23, 41, 29],
+        [17, 23, 19, 43],
+    ] {
         let expected = FixtureAffineChart::new(
-            FixtureChartFrames::new(label(ids[0])?, label(ids[1])?, label(ids[2])?, label(ids[3])?)?,
-            map.domain(), 4.0/1024.0, 1.0/1024.0,
+            FixtureChartFrames::new(
+                label(ids[0])?,
+                label(ids[1])?,
+                label(ids[2])?,
+                label(ids[3])?,
+            )?,
+            map.domain(),
+            4.0 / 1024.0,
+            1.0 / 1024.0,
         )?;
-        assert!(matches!(state.advance_chart(&expected, &batch, &strata()?), Err(FixtureChartPrincipalError::ChartMismatch{kind:FixtureChartMismatchKind::Frames})));
-        assert_eq!(state,prior);
-        let many=[FixturePrincipalStratum::new(label(11)?,2)?;17];
-        assert!(matches!(state.advance_chart(&expected, &batch, &many), Err(FixtureChartPrincipalError::Principal{source:FixturePrincipalError::MetadataCapacityExceeded})));
-        assert_eq!(state,prior);
+        assert!(matches!(
+            state.advance_chart(&expected, &batch, &strata()?),
+            Err(FixtureChartPrincipalError::ChartMismatch {
+                kind: FixtureChartMismatchKind::Frames
+            })
+        ));
+        assert_eq!(state, prior);
+        let many = [FixturePrincipalStratum::new(label(11)?, 2)?; 17];
+        assert!(matches!(
+            state.advance_chart(&expected, &batch, &many),
+            Err(FixtureChartPrincipalError::Principal {
+                source: FixturePrincipalError::MetadataCapacityExceeded
+            })
+        ));
+        assert_eq!(state, prior);
     }
     Ok(())
 }
@@ -374,32 +402,56 @@ fn expected_frame_bits_and_metadata_capacity_reject_before_commit() -> TestResul
 /// Reject a wrong cause, partial update or failed genuine-neighbor retry.
 #[test]
 fn chart_event_rejections_preserve_credit_for_valid_retry() -> TestResult {
-    let mut owners = sources(17,23)?;
-    let map = chart(0,2,6,4.0/1024.0,1.0/1024.0)?;
-    let original=entries(&owners,[&map,&map],4)?;
-    let mut state=legacy_ready(&original,4)?;
-    let prior=state.clone();
-    owners[0].append(3,14,22,1.0)?;
-    owners[1].append(3,15,22,1.0)?;
-    let both=entries(&owners,[&map,&map],5)?;
-    let both_batch=FixtureChartBatch::new(&map,MonotonicNs::new(5*SECOND),&both)?;
-    assert!(matches!(state.advance_chart(&map,&both_batch,&strata()?),Err(FixtureChartPrincipalError::Principal{source:FixturePrincipalError::MultipleObservations})));
-    assert_eq!(state,prior);
-    let mut neighbor=sources(17,23)?;
-    neighbor[0].append(3,14,22,1.0)?;
-    let current=entries(&neighbor,[&map,&map],5)?;
-    let batch=FixtureChartBatch::new(&map,MonotonicNs::new(5*SECOND),&current)?;
-    let mut control=prior.clone();
-    assert_eq!(state.advance_chart(&map,&batch,&strata()?)?.kind(),FixturePrincipalOutcomeKind::ReferenceReady);
-    assert_eq!(control.advance_chart(&map,&batch,&strata()?)?.kind(),FixturePrincipalOutcomeKind::ReferenceReady);
-    assert_eq!(state,control);
-    let changed=[FixturePrincipalStratum::new(label(11)?,3)?,FixturePrincipalStratum::new(label(22)?,2)?];
-    assert!(matches!(state.advance_chart(&map,&batch,&changed),Err(FixtureChartPrincipalError::Principal{source:FixturePrincipalError::StratumWithoutObservation{index:0}})));
-    assert_eq!(state,control);
-    let old_owners=sources(17,23)?;
-    let older=entries(&old_owners,[&map,&map],5)?;
-    let old_batch=FixtureChartBatch::new(&map,MonotonicNs::new(5*SECOND),&older)?;
-    assert!(matches!(state.advance_chart(&map,&old_batch,&strata()?),Err(FixtureChartPrincipalError::Principal{source:FixturePrincipalError::BackwardObservation{index:0}})));
-    assert_eq!(state,control);
+    let mut owners = sources(17, 23)?;
+    let map = chart(0, 2, 6, 4.0 / 1024.0, 1.0 / 1024.0)?;
+    let original = entries(&owners, [&map, &map], 4)?;
+    let mut state = legacy_ready(&original, 4)?;
+    let prior = state.clone();
+    owners[0].append(3, 14, 22, 1.0)?;
+    owners[1].append(3, 15, 22, 1.0)?;
+    let both = entries(&owners, [&map, &map], 5)?;
+    let both_batch = FixtureChartBatch::new(&map, MonotonicNs::new(5 * SECOND), &both)?;
+    assert!(matches!(
+        state.advance_chart(&map, &both_batch, &strata()?),
+        Err(FixtureChartPrincipalError::Principal {
+            source: FixturePrincipalError::MultipleObservations
+        })
+    ));
+    assert_eq!(state, prior);
+    let mut neighbor = sources(17, 23)?;
+    neighbor[0].append(3, 14, 22, 1.0)?;
+    let current = entries(&neighbor, [&map, &map], 5)?;
+    let batch = FixtureChartBatch::new(&map, MonotonicNs::new(5 * SECOND), &current)?;
+    let mut control = prior.clone();
+    assert_eq!(
+        state.advance_chart(&map, &batch, &strata()?)?.kind(),
+        FixturePrincipalOutcomeKind::ReferenceReady
+    );
+    assert_eq!(
+        control.advance_chart(&map, &batch, &strata()?)?.kind(),
+        FixturePrincipalOutcomeKind::ReferenceReady
+    );
+    assert_eq!(state, control);
+    let changed = [
+        FixturePrincipalStratum::new(label(11)?, 3)?,
+        FixturePrincipalStratum::new(label(22)?, 2)?,
+    ];
+    assert!(matches!(
+        state.advance_chart(&map, &batch, &changed),
+        Err(FixtureChartPrincipalError::Principal {
+            source: FixturePrincipalError::StratumWithoutObservation { index: 0 }
+        })
+    ));
+    assert_eq!(state, control);
+    let old_owners = sources(17, 23)?;
+    let older = entries(&old_owners, [&map, &map], 5)?;
+    let old_batch = FixtureChartBatch::new(&map, MonotonicNs::new(5 * SECOND), &older)?;
+    assert!(matches!(
+        state.advance_chart(&map, &old_batch, &strata()?),
+        Err(FixtureChartPrincipalError::Principal {
+            source: FixturePrincipalError::BackwardObservation { index: 0 }
+        })
+    ));
+    assert_eq!(state, control);
     Ok(())
 }

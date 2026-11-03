@@ -4,7 +4,7 @@
 //! One test has three genuine histories, ten total observations/appends, one
 //! chart, six prepare/tracking projections, six chart and six raw enclosures,
 //! two legacy batches, one chart batch, one seed, two legacy advances and two
-//! chart advances. At most eighteen source-state snapshots inspect only three
+//! chart advances. Twelve source-state snapshots inspect only three
 //! fixed roster members. These are source-only bounds, not observed execution.
 //! No checked product state, detached fit or transformed legacy wrapper is forged.
 
@@ -63,6 +63,11 @@ fn chart_entries<'chart>(
     map: &'chart FixtureAffineChart,
     query: u64,
 ) -> TestResult<[FixtureChartInterval<'chart>; 3]> {
+    let at = MonotonicNs::new(
+        query
+            .checked_mul(SECOND)
+            .ok_or_else(|| io::Error::other("pending-credit query bound"))?,
+    );
     let project = |owner: &Source| {
         let view = owner
             .history
@@ -77,14 +82,8 @@ fn chart_entries<'chart>(
             .sample_count()
             .checked_sub(1)
             .ok_or_else(|| io::Error::other("missing pending-credit fitted row"))?;
-        let projection = view.project_tracking(
-            view.context(),
-            index,
-            anchor,
-            MonotonicNs::new(query * SECOND),
-            terms()?,
-            0.125,
-        )?;
+        let projection =
+            view.project_tracking(view.context(), index, anchor, at, terms()?, 0.125)?;
         Ok::<_, Box<dyn std::error::Error>>(enclose_fixture_chart_projection(&projection)?)
     };
     Ok([
@@ -107,6 +106,75 @@ fn raw_entries(
     ])
 }
 
+/// Construct the three real dyadic trajectories in their shared raw origin.
+/// # Errors
+/// Preserve actual source, context, observation and append failures.
+fn histories(ids: [NonZeroU64; 3]) -> TestResult<[Source; 3]> {
+    let make = |id, phases: &[i32]| {
+        Source::with_context(
+            FixtureContext::new(id, label(17)?, label(23)?),
+            0,
+            phases,
+            22,
+            &[1.0; 3],
+            3,
+        )
+    };
+    Ok([
+        make(ids[0], &[8, 10, 12])?,
+        make(ids[1], &[9, 11, 13])?,
+        make(ids[2], &[10, 12, 14])?,
+    ])
+}
+
+/// Consume seed credit through the genuine legacy route at the fixed t4 query.
+/// # Errors
+/// Preserve actual batch, parameter, minimum and principal failures.
+/// # Panics
+/// Reject any initial credit, watermark, score or distance outside the oracle.
+fn ready_owner(
+    ids: [NonZeroU64; 3],
+    initial_raw: &[FixtureProjectedInterval; 3],
+    strata: &[FixturePrincipalStratum; 3],
+) -> TestResult<FixturePrincipalState> {
+    let batch = FixtureProjectedBatch::new(
+        label(17)?,
+        label(23)?,
+        MonotonicNs::new(4 * SECOND),
+        initial_raw,
+    )?;
+    let parameters = FixturePrincipalParameters::new(0.25, 0.0)?;
+    let minimum = FixtureMinimum::new(2)?;
+    let mut state = FixturePrincipalState::seed(&ids, parameters, minimum, &batch, strata)?;
+    let ready = state.advance(&batch, strata)?;
+    assert_eq!(ready.kind(), FixturePrincipalOutcomeKind::ReferenceReady);
+    assert_eq!(ready.principal_label(), Some(ids[0]));
+    assert_eq!(ready.updated_source(), None);
+    for source in source_facts(&state, ids)? {
+        assert_eq!(source.latest, Some(MonotonicNs::new(2 * SECOND)));
+        assert_eq!(source.score_bits, 1.0_f64.to_bits());
+        assert_eq!(source.distance_bits, Some(0.5_f64.to_bits()));
+        assert_eq!(source.stratum, Some(2));
+        assert!(!source.pending);
+    }
+    Ok(state)
+}
+
+/// Check the independent t5 watermarks, raw distances and sole pending B credit.
+/// # Panics
+/// Reject any changed observation, quality or pending-credit fact.
+fn assert_pending_facts(facts: &[SourceFacts; 3]) {
+    for (index, source) in facts.iter().enumerate() {
+        let latest = if index == 1 { 3 } else { 2 };
+        let distance = if index == 1 { 0.5_f64 } else { 0.625_f64 };
+        assert_eq!(source.latest, Some(MonotonicNs::new(latest * SECOND)));
+        assert_eq!(source.score_bits, 1.0_f64.to_bits());
+        assert_eq!(source.distance_bits, Some(distance.to_bits()));
+        assert_eq!(source.stratum, Some(2));
+        assert_eq!(source.pending, index == 1);
+    }
+}
+
 /// Existing pending B credit causes one replacement estimate without a new event.
 ///
 /// At t5, original distances are A=C=5/8 and B=1/2. With reselection distance
@@ -121,32 +189,7 @@ fn raw_entries(
 #[test]
 fn chart_replacement_consumes_preexisting_pending_credit_once() -> TestResult {
     let ids = [label(11)?, label(22)?, label(33)?];
-    let mut owners = [
-        Source::with_context(
-            FixtureContext::new(ids[0], label(17)?, label(23)?),
-            0,
-            &[8, 10, 12],
-            22,
-            &[1.0; 3],
-            3,
-        )?,
-        Source::with_context(
-            FixtureContext::new(ids[1], label(17)?, label(23)?),
-            0,
-            &[9, 11, 13],
-            22,
-            &[1.0; 3],
-            3,
-        )?,
-        Source::with_context(
-            FixtureContext::new(ids[2], label(17)?, label(23)?),
-            0,
-            &[10, 12, 14],
-            22,
-            &[1.0; 3],
-            3,
-        )?,
-    ];
+    let mut owners = histories(ids)?;
     let strata = [
         FixturePrincipalStratum::new(ids[0], 2)?,
         FixturePrincipalStratum::new(ids[1], 2)?,
@@ -155,28 +198,7 @@ fn chart_replacement_consumes_preexisting_pending_credit_once() -> TestResult {
     let map = chart(0, 2, 6, 4.0 / 1024.0, 1.0 / 1024.0)?;
     let initial = chart_entries(&owners, &map, 4)?;
     let initial_raw = raw_entries(&initial)?;
-    let initial_batch = FixtureProjectedBatch::new(
-        label(17)?,
-        label(23)?,
-        MonotonicNs::new(4 * SECOND),
-        &initial_raw,
-    )?;
-    let parameters = FixturePrincipalParameters::new(0.25, 0.0)?;
-    let minimum = FixtureMinimum::new(2)?;
-    let mut state =
-        FixturePrincipalState::seed(&ids, parameters, minimum, &initial_batch, &strata)?;
-    let ready = state.advance(&initial_batch, &strata)?;
-    assert_eq!(ready.kind(), FixturePrincipalOutcomeKind::ReferenceReady);
-    assert_eq!(ready.principal_label(), Some(ids[0]));
-    assert_eq!(ready.updated_source(), None);
-    let initial_facts = source_facts(&state, ids)?;
-    for source in initial_facts {
-        assert_eq!(source.latest, Some(MonotonicNs::new(2 * SECOND)));
-        assert_eq!(source.score_bits, 1.0_f64.to_bits());
-        assert_eq!(source.distance_bits, Some(0.5_f64.to_bits()));
-        assert_eq!(source.stratum, Some(2));
-        assert!(!source.pending);
-    }
+    let mut state = ready_owner(ids, &initial_raw, &strata)?;
 
     owners[1].append(3, 15, 22, 1.0)?;
     let current = chart_entries(&owners, &map, 5)?;
@@ -196,15 +218,7 @@ fn chart_replacement_consumes_preexisting_pending_credit_once() -> TestResult {
     assert_eq!(retained.updated_source(), Some(ids[1]));
     assert!(!retained.reference_ready());
     let pending_facts = source_facts(&state, ids)?;
-    for (index, source) in pending_facts.iter().enumerate() {
-        let latest = if index == 1 { 3 } else { 2 };
-        let distance = if index == 1 { 0.5_f64 } else { 0.625_f64 };
-        assert_eq!(source.latest, Some(MonotonicNs::new(latest * SECOND)));
-        assert_eq!(source.score_bits, 1.0_f64.to_bits());
-        assert_eq!(source.distance_bits, Some(distance.to_bits()));
-        assert_eq!(source.stratum, Some(2));
-        assert_eq!(source.pending, index == 1);
-    }
+    assert_pending_facts(&pending_facts);
 
     let survivors = current
         .get(1..)
@@ -214,31 +228,47 @@ fn chart_replacement_consumes_preexisting_pending_credit_once() -> TestResult {
         .ok_or_else(|| io::Error::other("missing pending-credit strata"))?;
     let batch = FixtureChartBatch::new(&map, MonotonicNs::new(5 * SECOND), survivors)?;
     let replacement = state.advance_chart(&map, &batch, survivor_strata)?;
-    assert_eq!(replacement.kind(), FixturePrincipalOutcomeKind::ReferenceReady);
+    assert_eq!(
+        replacement.kind(),
+        FixturePrincipalOutcomeKind::ReferenceReady
+    );
     assert_eq!(replacement.principal_label(), Some(ids[1]));
     assert_eq!(replacement.updated_source(), None);
     assert!(replacement.reference_ready());
     assert_eq!(replacement.selection().minimum(), 2);
-    assert!(ptr::eq(replacement.batch(), &batch));
-    assert!(ptr::eq(replacement.chart_selection().batch(), &batch));
+    assert!(ptr::eq(replacement.batch(), ptr::from_ref(&batch)));
+    assert!(ptr::eq(
+        replacement.chart_selection().batch(),
+        ptr::from_ref(&batch)
+    ));
     assert!(ptr::eq(replacement.entries().as_ptr(), survivors.as_ptr()));
     assert!(ptr::eq(
         replacement
             .principal_entry()
             .ok_or_else(|| io::Error::other("missing pending-credit principal"))?,
-        &survivors[0]
+        ptr::from_ref(&survivors[0])
     ));
-    for entry in replacement.entries() {
+    assert_eq!(replacement.entries().len(), 2);
+    for (entry, (id, latest)) in replacement.entries().iter().zip([(ids[1], 3), (ids[2], 2)]) {
         let projection = entry.projection();
         let original = projection.source_projection();
-        assert!(ptr::eq(projection.chart(), &map));
+        assert!(ptr::eq(projection.chart(), ptr::from_ref(&map)));
+        assert_eq!(original.context().source_id(), id);
         assert_eq!(original.context().frame(), label(17)?);
         assert_eq!(original.context().generation(), label(23)?);
+        assert_eq!(
+            original.latest_observed_at(),
+            MonotonicNs::new(latest * SECOND)
+        );
+        assert_eq!(original.projected_at(), MonotonicNs::new(5 * SECOND));
     }
     assert_eq!(state.frame(), label(17)?);
     assert_eq!(state.mapping_generation(), label(23)?);
     assert_eq!(state.minimum().get(), 2);
-    assert_eq!(state.parameters(), parameters);
+    assert_eq!(
+        state.parameters(),
+        FixturePrincipalParameters::new(0.25, 0.0)?
+    );
     assert_eq!(state.roster_len(), 3);
     assert_eq!(state.evaluated_at(), MonotonicNs::new(5 * SECOND));
     let mut consumed_facts = pending_facts;
@@ -254,7 +284,7 @@ fn chart_replacement_consumes_preexisting_pending_credit_once() -> TestResult {
     assert_eq!(replay.principal_label(), Some(ids[1]));
     assert_eq!(replay.updated_source(), None);
     assert!(!replay.reference_ready());
-    assert!(ptr::eq(replay.batch(), &batch));
+    assert!(ptr::eq(replay.batch(), ptr::from_ref(&batch)));
     assert_eq!(state, committed);
     assert_eq!(source_facts(&state, ids)?, consumed_facts);
     Ok(())

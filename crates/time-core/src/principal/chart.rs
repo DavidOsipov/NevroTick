@@ -13,8 +13,8 @@ use garde::Validate;
 
 use super::{
     FixturePrincipalError, FixturePrincipalOutcomeKind, FixturePrincipalState,
-    FixturePrincipalStratum, MAX_PRINCIPAL_SOURCES, ReceiverEntries, ReceiverInput, apply_selection,
-    decision_index, prepare_transition,
+    FixturePrincipalStratum, MAX_PRINCIPAL_SOURCES, ReceiverEntries, ReceiverInput,
+    apply_selection, decision_index, prepare_transition,
 };
 use crate::{
     FixtureAffineChart, FixtureChartBatch, FixtureChartInterval, FixtureChartMismatchKind,
@@ -118,6 +118,50 @@ fn admit_chart(
 /// raw-source provenance, transformed values and separate arithmetic bounds.
 /// No public constructor, mutable access or conversion to legacy entries exists.
 /// This result supplies inert estimate credit, not freshness or a clock effect.
+///
+/// A legal receiver retains the caller's actual batch borrow:
+/// ```
+/// use time_core::{FixtureAffineChart, FixtureChartBatch,
+///     FixtureChartPrincipalDecision, FixtureChartPrincipalError,
+///     FixturePrincipalState, FixturePrincipalStratum};
+/// fn receive<'batch, 'entries, 'chart>(
+///     state: &mut FixturePrincipalState,
+///     expected: &FixtureAffineChart,
+///     batch: &'batch FixtureChartBatch<'entries, 'chart>,
+///     strata: &[FixturePrincipalStratum],
+/// ) -> Result<FixtureChartPrincipalDecision<'batch, 'entries, 'chart>,
+///             FixtureChartPrincipalError> {
+///     state.advance_chart(expected, batch, strata)
+/// }
+/// ```
+/// A detached selection cannot be used to forge principal credit:
+/// ```compile_fail
+/// use time_core::{FixtureChartPrincipalDecision, FixtureChartSelection,
+///     FixturePrincipalOutcomeKind};
+/// fn forge<'batch, 'entries, 'chart>(
+///     selected: FixtureChartSelection<'batch, 'entries, 'chart>,
+/// ) -> FixtureChartPrincipalDecision<'batch, 'entries, 'chart> {
+///     FixtureChartPrincipalDecision { selected, principal_index: None,
+///         principal_label: None, kind: FixturePrincipalOutcomeKind::Unavailable,
+///         updated_source: None }
+/// }
+/// ```
+/// The decision cannot escape the temporary batch that actually selected it:
+/// ```compile_fail
+/// use time_core::{FixtureAffineChart, FixtureChartBatch, FixtureChartInterval,
+///     FixtureChartPrincipalDecision, FixturePrincipalState};
+/// use time_domain::MonotonicNs;
+/// fn escape<'entries, 'chart>(
+///     state: &mut FixturePrincipalState,
+///     chart: &'chart FixtureAffineChart,
+///     at: MonotonicNs,
+///     entries: &'entries [FixtureChartInterval<'chart>],
+/// ) -> Result<FixtureChartPrincipalDecision<'static, 'entries, 'chart>,
+///             Box<dyn std::error::Error>> {
+///     let batch = FixtureChartBatch::new(chart, at, entries)?;
+///     Ok(state.advance_chart(chart, &batch, &[])?)
+/// }
+/// ```
 pub struct FixtureChartPrincipalDecision<'batch, 'entries, 'chart> {
     /// Actual owned output from the retained owner's fixed-minimum batch selection.
     selected: FixtureChartSelection<'batch, 'entries, 'chart>,
@@ -243,7 +287,8 @@ impl FixturePrincipalState {
         expected_chart: &FixtureAffineChart,
         batch: &'batch FixtureChartBatch<'entries, 'chart>,
         strata: &[FixturePrincipalStratum],
-    ) -> Result<FixtureChartPrincipalDecision<'batch, 'entries, 'chart>, FixtureChartPrincipalError> {
+    ) -> Result<FixtureChartPrincipalDecision<'batch, 'entries, 'chart>, FixtureChartPrincipalError>
+    {
         if strata.len() > MAX_PRINCIPAL_SOURCES {
             return Err(FixturePrincipalError::MetadataCapacityExceeded.into());
         }
