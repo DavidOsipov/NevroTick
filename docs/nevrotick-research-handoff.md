@@ -1,6 +1,6 @@
 # NevroTick — research handoff for the next AI
 
-**Document:** NV-RESEARCH-001, revision 1.1<br>
+**Document:** NV-RESEARCH-001, revision 1.2<br>
 **Prepared:** 29 October 2026, Asia/Tbilisi  
 **Owner:** David Osipov  
 **Input:** [Owner decisions NV-DEC-001](nevrotick-owner-decisions.md), [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md)  
@@ -55,6 +55,15 @@ Produce a table of actual proposed Rust/native/build dependencies, exact version
 Escalate a concrete rights conflict or material behavioral deviation to David. Do not ask him to choose a preferred licence label independently of the source he intends to reuse. Do not remove notices to satisfy an installer or signing-provider requirement.
 
 ## 4. R-02 — century-scale authenticated recovery
+
+**Future Roughtime coordination:** [NV-TA-001](plans/time-assurance-integration.md)
+and the [shared task](../tasks/time-assurance-integration.md) now retain the
+owner-requested initial-time research and its proposed cooperation with a
+Khronos watchdog/Ananke-inspired pool. R-02 still owns era, interval, fresh
+agreement and saved-floor supersession questions; TA-C01–TA-C16 add combined
+dependency/frame/conflict cases without replacing these requirements. Neither
+an auxiliary agreement nor a new source label proves independent corroboration
+or grants correction authority. Runtime cooperation does not reorder delivery.
 
 ### Required research result
 
@@ -149,6 +158,12 @@ The NTP Pool preference is recorded, but Pool service is plain NTP and a shipped
 Produce one admission record per selected provider: official identity and ports, operator/reference dependencies, geographic suitability, permission/terms and date, leap/smear policy, DNS/delegated endpoint rules, normal/burst/KoD limits, TLS/AEAD/Windows-verifier behavior, observation environment and open conditions. Apply bounded backoff and provider restrictions. Do not freeze IP addresses or treat two rotating Pool results as assured independent operators.
 
 ## 7. R-05 — Windows trust with a wrong system date
+
+The future [Roughtime handoff](plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives)
+must qualify this same OPEN-8 boundary. TA-W07 owns its coordinated Windows
+experiment when the artifacts/environment are admitted; successful Roughtime or
+Khronos results cannot bypass the required verifier/revocation policy. A preliminary
+global clock step remains a separate, unselected authority alternative.
 
 Qualify the exact Rust TLS provider, verifier, native dependencies and selected Windows service context. A provisional time argument does not establish that every Windows trust/revocation operation uses that time.
 

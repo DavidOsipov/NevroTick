@@ -879,6 +879,26 @@ During recovery, use wording such as: “Checking secure time servers using an u
 
 DNS failure, packet loss, NTS server outage, a wrong-name certificate, an unknown trust anchor, invalid signature, prohibited algorithm, forged NTS NAK or AEAD failure must never enable ordinary plain-NTP discipline. Bootstrap samples cannot alter regular source statistics, persisted drift, leap scheduling or the Windows clock. Every gate requires a valid neighboring case so an implementation that rejects all recovery cannot pass.
 
+### 8.5 Future Roughtime and watchdog coordination
+
+The owner-selected future RGT-0 direction and requested Khronos/Ananke
+coordination are recorded in [OD-02](nevrotick-owner-decisions.md#4-od-02--distinguish-authenticated-recovery-from-ordinary-correction),
+[NV-TA-001](plans/time-assurance-integration.md) and the
+[shared task](../tasks/time-assurance-integration.md). The proposed roles are
+Roughtime initial/coarse interval evidence, primary NTS acquisition, a separately
+evaluated Khronos watchdog and Ananke-inspired pool admission. These are future
+extensions; the existing recovery profile remains until the applicable extension
+and its Windows trust/revocation path are qualified.
+
+Keep evidence ancestry, authentication, source independence, uncertainty and
+comparison epochs distinct. A Roughtime-conditioned NTS association or a second
+calculation over dependent observations creates no extra independent vote.
+Future status must distinguish that Roughtime basis from current plain-bootstrap
+wording without erasing bootstrap history. Auxiliary mechanisms have no separate
+clock writer, ordinary NTS vote or implicit veto authority. The existing engine
+policy and broker retain their respective admission and effect responsibilities.
+OPEN-8 and the current source/clock/resource contracts still apply.
+
 ---
 
 ## 9. Runtime state machine

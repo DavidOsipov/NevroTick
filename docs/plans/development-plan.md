@@ -1239,6 +1239,17 @@ DNS-C owners. DoQ does not become an Android-feasibility prerequisite, and no
 ordering between those later workstreams is invented here. These handoffs add
 no current P0–P7 blocker or permission for Windows/device execution.
 
+The [Roughtime/NTS/Khronos/Ananke coordination plan](time-assurance-integration.md)
+and [shared future task](../../tasks/time-assurance-integration.md) now own the
+requested research, evidence dependencies, comparison epochs, combined cases and
+source/Windows qualification. Reuse that task for KHR-C01 and RGT-C01 while
+retaining their distinct exits. Roughtime can later initialize a recovery frame
+without becoming a prerequisite to the earlier KHR evaluation or Android; its
+later RGT-0 → CHR-0 sequence is unchanged. At the relevant handoff, record the
+selected TA-W assignments and their ready/held/deferred status in that task.
+This routing does not replace section 7's current Core continuation or lift its
+execution gates, including the separately admitted Sandbox scope.
+
 ## 9. Verification commands, phase records and stop rules
 
 Use [TOOLING.md](../../TOOLING.md#starting-implementation) and

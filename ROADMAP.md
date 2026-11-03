@@ -58,6 +58,12 @@ apply to Android ABIs or impose x86 compiler flags on shared portable code.
 
 **Owners:** numerical/protocol implementer, with independent security/test review.
 
+**Coordination and evidence:** the [Roughtime/NTS/Khronos/Ananke design](docs/plans/time-assurance-integration.md)
+and [shared future task](tasks/time-assurance-integration.md) own the proposed
+interaction, dependency accounting, common comparison frame and combined cases.
+Ananke informs pool admission; it is not another protocol vote. Roughtime is a
+separate later bootstrap/coarse-evidence path, not a new KHR-C01 prerequisite.
+
 Evaluate a separate, periodically resampled check of the primary time estimate,
 using Khronos's client-side watchdog idea from
 [Informational RFC 9523](https://www.rfc-editor.org/rfc/rfc9523.html) and
@@ -113,7 +119,7 @@ independent confirmation.
   not automatically to a modified sampler, pool or retry policy.
 
 **Exit KHR-C01:** retain the compared candidates, assumptions, independent
-expected results, actual outcomes and costs in one task under `tasks/`. Record
+expected results, actual outcomes and costs in the [shared task](tasks/time-assurance-integration.md#5-exit-and-claim-discipline). Record
 `ADOPT_LIMITED`, `DEFER` or `REJECT` with evidence and remaining gaps. An adoption
 must define and qualify its bounded implementation before Android work begins;
 deferral or rejection records the reason and return trigger. Completing this
@@ -132,6 +138,11 @@ and DNS work remains open; it creates no new active Windows prerequisite.
 
 **Owners:** protocol implementer, NTS/trust-policy owner, independent security
 reviewer and Windows qualification owner.
+
+**Coordination and evidence:** [NV-TA-001](docs/plans/time-assurance-integration.md)
+records the research, proposed joint state/evidence rules and open choices;
+[TA-W01–TA-W09](tasks/time-assurance-integration.md#3-work-assignments-and-finite-exits)
+own the bounded work and evidence. RGT-C01 remains separate from KHR-C01.
 
 **Outcome:** use Roughtime servers to obtain an authenticated approximate-time
 interval when a badly wrong Windows date prevents ordinary NTS certificate
@@ -177,6 +188,12 @@ validation. This is a protocol basis to qualify, not a qualified service list.
   clock effects on failure. Native experiments use an owned disposable Windows
   environment under the existing execution gates; public services are not stress
   targets.
+- [ ] Qualify bootstrap provenance and the comparison-epoch handoff to any adopted
+  watchdog. Do not count dependent mechanisms as independent votes or filter a
+  watchdog pool until it agrees with the bootstrap estimate. Also test the
+  disabled/deferred/rejected-watchdog configuration; Roughtime completion does
+  not require adopting Khronos. Later optional checks start with the proposed
+  observation mode; a new correction inhibitor needs a separate qualified policy.
 
 **Exit RGT-C01:** retain a pinned implementation and trust configuration, reviewed
 interval/admission and key-maintenance policy, controlled protocol evidence,
@@ -764,6 +781,9 @@ Resolve these choices when the dependent stage is ready, using the existing
 - Roughtime's protocol/provider/key policy, admitted uncertainty and recovery
   envelope, Windows verifier qualification and scheduling against other later
   work; CHR-0 remains its immediate successor.
+- Joint-monitor admission, dependency/epoch accounting and any correction-inhibition
+  policy under [NV-TA-001](docs/plans/time-assurance-integration.md#9-windows-gate-and-explicit-decision-alternatives);
+  no generic majority vote across mechanisms or automatic new clock authority.
 - The post-CHR-0 public distribution licence and concrete Microsoft permission,
   based on the replacement candidate's reviewed rights rather than a licence label.
 

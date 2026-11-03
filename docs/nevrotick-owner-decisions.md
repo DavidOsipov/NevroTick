@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.4<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended and OD-01/OD-02 future directions added 3 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.5<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added 3 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -73,6 +73,17 @@ provider/key and Windows-verifier qualification remain outstanding. This extends
 the recovery plan; it does not make Roughtime an implemented source, permit a
 direct bootstrap clock write or replace the current recovery policy before its
 extension is qualified.
+
+**Coordination request — 3 November 2026 (direct owner instruction):** record
+the Roughtime research and design its cooperation with Khronos/Ananke.
+[NV-TA-001](plans/time-assurance-integration.md) and its
+[shared future task](../tasks/time-assurance-integration.md) own that proposal.
+The design separates the initial rough interval, primary NTS, candidate watchdog
+and Ananke-inspired pool admission, preserving one clock broker and explicit
+dependencies between evidence. This instruction selects the documentation/design
+work; it does not adopt Khronos, a provider/key list, new quorum, direct Roughtime
+clock correction or watchdog inhibition policy. Those decisions remain subject
+to their concrete evidence and existing owner-decision process.
 
 ### 4.2 Roles of the sources
 
