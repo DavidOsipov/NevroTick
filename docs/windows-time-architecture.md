@@ -2141,6 +2141,15 @@ Native UI integration remains section 16's Win32-control prototype. Use document
 
 **Selected MSIX hardening target, 3 November 2026:** use the strongest supported controls compatible with each role's required work, as specified in [the MSIX plan, sections 3.1–3.4](plans/windows-msix-store.md). Map its CIG signer mode, package integrity, immutable-code and per-role requirements into this existing manifest and CHECK-16/18/20/23/26; do not create a second acceptance catalog. Exact startup/SCM activation, legitimate imports, denied neighboring loads and ownership-aware recovery must all be demonstrated. A build flag, Store signature, audit event or unsupported required setting is not a pass. Required incompatibility stays a blocker for the affected profile, not a silent weaker retry; optional hardware controls retain an explicit disposition. This target adopts no AppContainer/PPL topology and does not lift execution holds.
 
+The [concrete MSIX source profile](plans/windows-msix-store.md#71-concrete-source-inventory-and-manifest-profile)
+binds that work to the existing six-member workspace and the still-missing
+production service/helper roles. Its [Trusted Launch target](plans/windows-msix-store.md#311-trusted-launch-for-the-supported-package-profile)
+adds catalog-backed executable admission under package identity on supported
+builds (documented minimum 26100). Keep this boundary distinct from CIG image
+loading and helper/IPC authorization. Freeze the SDK/OS matrix and observe each
+real activation path before claiming it; this continuation changes no supported
+OS floor, service topology or runtime policy by itself.
+
 #### Role ownership
 
 All product executables retain section 15.1's build protections and section 15.2's load-path rules. The following runtime directions require evidence for the final dependency graph and entry point; a row is not a compatibility pass.

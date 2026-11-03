@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Source/design work is ready; package implementation and native qualification remain unexecuted.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile, additional Trusted Launch target and bounded provisioning/recovery gaps. Package implementation and native qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -849,6 +849,10 @@ and existing per-process mitigation manifest; do not repeat the general source
 survey. Read `security-build-deployment`, `security-windows-privileges`,
 `qa-package-artifacts` and the testing contract before dependent implementation.
 
+The subsequent source-profile result and next permitted action are recorded in
+[section 4.14](#414-concrete-msix-source-profile--3-november-2026); retain this
+assignment and its original evidence boundary.
+
 | Existing owner / phase | Required output and independent expectation | Disposition and next evidence |
 | --- | --- | --- |
 | W11-W10, package/build; S0.6/P6 | Exact component/entry-point/dependency/capability inventory, future manifest requirements and immutable code/data layout. Explicit `PackageIntegrity` content enforcement; no mutable/external executable content or runtime-downloaded native code. | Source/design ready. CHECK-16/18/20/23/26 later inspect the actual final manifest/images/inventory and reject tamper while clean installation works. |
@@ -1042,3 +1046,103 @@ implementation. Section 4.12 acknowledges the earlier Learn follow-up only;
 acknowledgement of the later MSIX amendment is not claimed. Preserve the current
 Core priority, Windows execution stop, separate fuzz hold, storage pause and
 UI-M0 deferrals. This integration executes no package, native or Store action.
+
+### 4.14 Concrete MSIX source profile — 3 November 2026
+
+**Request/candidate:** David asked to continue the selected MSIX work. This
+source/design continuation uses `01bcb679cdf09720a1ae54dfdcae25b0864f4d77` and
+the exact four changed plan/architecture/hardening/task files. The isolated
+partial review checkout's 276 starting files were matched to that commit's
+complete untruncated remote tree before edits. Source-profile date is
+3 November 2026, Asia/Tbilisi.
+
+Before publication, main advanced to `1becd9561f9de89d2a61bcabb0d2afc174bee49c`.
+Its Core changes, updated startup/development guidance and task sections
+4.10–4.13 were retained; the new source card moved to section 4.14. The three
+other edited documents and inspected Cargo manifests/flags were unchanged
+upstream. This is the packaging owner's source result; it does not claim the
+primary Core coordinator has adopted or executed the later native assignments.
+
+**Completed source work:** [plan §7.1](../docs/plans/windows-msix-store.md#71-concrete-source-inventory-and-manifest-profile)
+records all six workspace members, actual UI/observer entry points and direct
+dependencies, absent production broker/helper/service entry points, manifest
+fields, capability dispositions and immutable-code/state boundaries.
+[Section 7.2](../docs/plans/windows-msix-store.md#72-concrete-per-role-activation-record)
+maps SCM, package UI and elevated-helper creation to supported initialization
+and remaining creation-time gaps. Full primary-source reads and pinned Microsoft
+reference XSDs supply the facts; no public documentation search was treated as
+Windows behavior.
+
+**Additional protection:** [Trusted Launch](../docs/plans/windows-msix-store.md#311-trusted-launch-for-the-supported-package-profile)
+joins the strongest supported-profile target. Its documented build floor is
+26100, it also requires explicit package integrity, and it limits executables
+running under package identity to signed-catalog entries. It does not replace
+CIG or project authorization. SDK/schema validity, the chosen OS matrix and
+actual UI/SCM/helper identity/launch observations remain pending. The public
+example's lowercase `uap10:content` and incomplete value declaration are retained
+as source defects to avoid copying, not silently repaired platform evidence.
+
+| Assignment / existing checks | Current disposition | Exact remaining work |
+| --- | --- | --- |
+| W11-W10 package/build; CHECK-16/18/20/23/26 | Source inventory and field-level profile prepared | Real production payloads, publisher identity, selected SDK/tool inputs and supported OS/CPU rows are still needed for a complete package. No dummy manifest or tool installation was added. |
+| W11-W10 mitigation; CHECK-16/26/27 | Source activation map prepared; native enforcement unexecuted | Qualify each actual creation path and module closure. The runtime `MitigationOptIn` documentation includes Microsoft/Store/WHQL; no equivalence to the other CIG configuration layers or untested bit combination is adopted. |
+| W11-W05 provisioning; CHECK-1/2/15/16 | Concrete complete-package bootstrap/order gap remains | The service schemas lack the required account/security configuration fields; SCM setters need an authorized owner. Establish pre-exposure token/SID/owner/ACL state and servicing continuity. Two LocalService services remain an unselected alternative. |
+| W11-W05 recovery; CHECK-5/12/13/23/27 | Concrete independent-removal gap remains | Package events, STOP, a surviving journal and helper-initiated removal do not prove recovery for Settings/Reset when the service is stopped. Identify a supported barrier or surviving invocable recovery path. |
+| Release; CHECK-18/23/24 | Capability/reviewer input table prepared; submission unexecuted | Fill with actual candidate identities and observed outcomes, then David owns the controlled Store attempt. No advance certification prerequisite or automatic MSI fallback is introduced. |
+
+**Next permitted action:** carry these precise supported-mechanism questions
+into W11-W05/S0.6 and the existing platform/lifecycle owners; implement only after
+the dependent contract and actual role are ready. The
+[bounded later experiment](../docs/plans/windows-msix-store.md#73-bounded-blockers-and-the-first-later-package-experiment)
+first distinguishes running-service removal from removal after stop/crash,
+with simulated recovery and no clock effects. A separate administrative-harness
+probe can test SCM building blocks, but cannot qualify the production bootstrap.
+Both native experiments remain held by the owner-recorded Windows execution
+stop. Portable Core priority, separate fuzz no-retry hold, storage pause and
+UI-M0/D1–D3 deferrals are unchanged.
+
+This completes the assigned source card with precise open mechanisms and owners.
+It establishes no implemented service, enforced mitigation, package build,
+signing, Store submission or release readiness. Independent review and the final
+candidate's documentation checks are recorded below after execution.
+
+#### Source-profile independent review and checks
+
+`msix_profile_review`, delegated read-only with `fork_turns: "none"`, completed
+the independent review of the four-file source/design candidate. Verdict:
+**READY for the source/design card only; no material findings.** Its
+pre-receipt manifest SHA-256 is
+`935c8510548a9859f1880ac28e237bdb402d41b3e8890100f995a0fe9801119a`.
+The reviewer checked current project contracts and independently retrieved the
+source inventory, pinned service XSDs and consequential Microsoft Learn pages.
+Its comprehension paragraphs are retained verbatim:
+
+> This continuation turns the selected complete-MSIX direction into a concrete source/design card. It inventories the existing workspace and missing production roles, gives the future manifest and activation owners explicit requirements, adds Trusted Launch as a supported-profile qualification target, and narrows the two principal lifecycle questions: how the package establishes service isolation before exposure, and how recovery remains executable through independent uninstall or Reset. It does not assert that those mechanisms are implemented or that the package is ready to build, submit, or release.
+
+> NevroTick currently has six workspace members: a fixture-only Win32 UI, portable protocol and numerical owners, and a bounded observation engine with a CLI. Production broker, lifecycle helper, SCM service entry points, and a qualified complete package remain absent. The selected architecture still requires separate engine and broker authority, an unelevated UI, narrow elevated lifecycle work, and recovery before the last necessary code or journal disappears. David owns the Store attempt. Core work remains the priority, and the Windows, fuzz, storage, and UI deferrals remain in force.
+
+The independent consistency pass and coordinator's direct checks established:
+
+- Four intended Markdown files changed, with no unrelated source/configuration
+  edits. Eight new relative-link occurrences resolve to their actual headings;
+  fifteen new external source links and all source-register references are
+  accounted for. All fourteen Markdown code blocks remain balanced.
+- The 27 CHECK and 20 AC catalogue rows retain their exact content; the 345 ASVS
+  records and worksheet are unchanged. Earlier W11 receipts, including the
+  concurrent sections 4.10–4.13, retain their original content. Removing only
+  this continuation, the status update and section 4.8 pointer reconstructs the
+  exact upstream task. Current Core section 7 is unchanged by this amendment.
+- Both XML fragments parse with their declared namespaces and the documented
+  element casing/values. This is XML well-formedness and source agreement, not
+  Windows SDK schema validation, package construction or enforcement evidence.
+- `git diff --check` passed. The local snapshot's 276 baseline blob identities
+  and modes were compared with the full untruncated `1becd956` remote tree.
+  A transient local-only development-plan truncation was detected and repaired
+  before the final comparison; all 276 then matched. The remote file was intact
+  and is not changed by this amendment.
+
+The review above covers the frozen pre-receipt source card. This factual receipt
+was added afterward and receives final link/whitespace/content checks before
+publication. No product or native gate is closed by these documentation results.
+The next action and existing execution holds remain those recorded in section
+4.14 above.
