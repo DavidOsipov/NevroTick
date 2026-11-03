@@ -47,7 +47,7 @@ that workstream's experiment pause or select its product default.
 | Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml) and bounded [engine](../../crates/nevrotick-engine/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source and loopback acquisition do not establish the complete core or production acquisition. |
 | UI | `main` → native adapter → checked fixture model → standard Win32 controls. Preview edits are transient. | Keep UI-M0 isolated; no network, production IPC, persistence, service, elevation or clock effects. |
 | UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
-| Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and a two-peer loopback engine exist. Production sample admission, acquisition, broker, SCM services, production IPC and MSI remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
+| Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and a two-peer loopback engine exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
 | Dependencies | The six-owner workspace retains the reviewed UI-M0/garde cohort and adds the admitted minimal Tokio/getrandom engine graph. Exchange and core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | The [engine dependency checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) owns its selected graph rows. Integrated checks apply to their recorded source/features. |
 | Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.2](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |
 | Windows 11 integration research | [Completed Microsoft-source investigation](windows11-integration.md) and [bounded agent assignments](../../tasks/windows11-integration.md) refine existing platform, DNS, lifecycle and resource owners. | Source-only follow-up is ready when its slice is assigned; documentation establishes no implemented mechanism, native support or installed-MSI result. Current task ordering and the native-experiment pause remain. |
@@ -80,7 +80,7 @@ service status and a real read-only UI.
 5. **S-2 observe-only integration:** P2 + P3 + early P5 status UI, with D2 restored.
 6. **P4 clock integration:** real bounded correction, ownership, recovery and
    lifecycle in disposable Windows environments.
-7. **P5 finished UI; P6 complete MSI:** finish user journeys, accessibility,
+7. **P5 finished UI; P6 complete hardened MSIX:** finish user journeys, accessibility,
    deployment protections and profile-specific artifact trust. Early P0 UI and
    package feasibility experiments precede these full implementations.
 8. **P7 exact-candidate qualification:** reconcile all required evidence and
@@ -100,7 +100,7 @@ integration, not read-only source analysis or independent pure work.
 | Broker owner | OS-authenticated request + current policy/ownership/budgets → serialized guard/effect → actual acknowledgement | Sole clock-effect owner; hostile authorized engine is part of the threat model. |
 | Platform owner | Narrow role-specific Windows adapter → real token/handle/SCM/clock result | Shared `windows-platform` code grants no generic privilege or command surface. |
 | UI owner | Coherent admitted snapshot → presentation; user intent → independently authorized receiver | Normal user, no direct clock/service-policy writes; UI checks convey no authority. |
-| Lifecycle/release owner | Approved complete package + protected journal → install/maintenance/restoration | One per-machine MSI, both services, UI and narrow helper; no separate engine prerequisite. |
+| Lifecycle/release owner | Approved complete package + protected journal → install/maintenance/restoration | One complete MSIX, both machine services, UI and narrow helper; supported provisioning and recovery, no separate engine prerequisite. |
 
 One worker owns each shared schema, `Cargo.lock`, mutable Windows fixture,
 installer identity and evidence output. Delegations name canonical sections,
@@ -335,7 +335,7 @@ when expanding a row; these operational criteria do not remove catalog cases.
 Complete the existing S0.1–S0.7 cards in
 [architecture §21](../windows-time-architecture.md#21-delivery-phases-and-readiness-gates):
 exact source/graph licences; two service identities; mutual IPC; actual clock
-semantics; accessible UI feasibility; a complete laboratory MSI; finite policy,
+semantics; accessible UI feasibility; complete laboratory MSIX mechanics; finite policy,
 native-work and supported-environment decisions. Begin with the next task in
 section 7, not a scaffold of the entire product.
 
@@ -344,7 +344,7 @@ compatible neighboring graph passes (CHECK-20/26). Real final-account token and
 SCM observations establish CHECK-1/27 subsets. One real status and one protected
 IPC operation exercise allowed/denied callers and fake endpoints (CHECK-2).
 Clock experiments establish measured limits (CHECK-10/11/12). UI feasibility
-uses CHECK-22; laboratory MSI uses CHECK-5/13/23. Review CHECK-4 applicability
+uses CHECK-22; laboratory package uses CHECK-5/13/23. Review CHECK-4 applicability
 and current OPEN decisions without claiming compliance.
 
 For optional storage, P0 can prepare the exact design/provider/account/profile
@@ -504,19 +504,27 @@ and expansion fixtures; they do not add an unapproved translation/locale scope.
 
 ### P6 — complete installation, hardening and release artifacts
 
-Deliver one complete per-machine MSI containing UI, engine, broker, helper and all
-required payloads. Observe install, unelevated launch, upgrade, repair, downgrade
-rejection and uninstall without UI, with other sessions and at every relevant
+Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
+helper and all required payloads. Follow the [MSIX plan](windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
+and amended OD-05: source/design preparation needs no Store preapproval; local
+mechanics and David's controlled Store attempt precede actual Store-delivered
+artifact qualification before broad release. Observe install, unelevated launch,
+upgrade, repair, Reset, downgrade rejection and uninstall without UI, with other sessions and at every relevant
 interruption/reboot point. Preserve one product/version/controller, exact prior
 W32Time state and ownership-aware rollback; do not fight GPO. Disabled required
 rollback must stop takeover before mutation. Pending SCM recovery cannot escape
-maintenance quiescence. Hostile repair properties/transforms/paths cannot become
-privileged commands; old-generation cleanup cannot damage successor ownership.
+maintenance quiescence. Hostile maintenance inputs/paths cannot become privileged
+commands; old-generation cleanup cannot damage successor ownership. Qualify
+last-user removal, machine-service ownership and recovery before the last needed
+code/journal disappears. MSI transactions/hooks are retained reference mechanics,
+not automatically available MSIX operations.
 
 Per-process mitigation manifests distinguish build, creation-time and runtime
 requirements, effective state and valid workflows. Check actual SCM child-policy
-behavior, DLL search/tamper canaries, native provider compatibility and UI/MSI-host
-requirements. Required startup-protection failure blocks normal protected work
+behavior, DLL search/tamper canaries, native provider compatibility and UI/helper
+requirements. Explicit package integrity, sealed executable content and
+Store-compatible CIG follow the [selected profile](windows-msix-store.md#3-package-trust-and-the-privileged-helper).
+Required startup-protection failure blocks normal protected work
 while preserving authorized recovery; compiler flags alone prove no full profile.
 
 For any adopted optional storage route, qualify the installed provider's
@@ -530,11 +538,13 @@ application enclave needs its separate admission only if later selected.
 
 Reconcile exact Cargo/runtime/build/proc-macro/native graph, source grants/notices,
 generated code, SBOM and **complete package payload**, including non-Cargo files.
-Qualify the selected Authenticode or OD-05 initial OpenPGP release profile with
-tamper/wrong-signer/manifest/payload controls and installed-file trust. OpenPGP
-does not establish Windows publisher trust. A valid supported candidate must work
-without developer roots or disabled Windows protections. No automatic updater,
-separate UI package or unqualified MSIX route is added.
+Qualify the selected Store package/catalog profile with tamper/wrong-package/
+manifest/payload controls and installed-file trust, retaining submitted and
+Store-delivered identities separately. A valid supported production candidate
+must work without developer roots or disabled Windows protections. Store-managed
+servicing is subject to the full lifecycle contract; no bespoke privileged
+updater or separate UI package is added. SignPath/OpenPGP MSI profiles remain
+alternatives for a later owner decision, not parallel implementation prerequisites.
 
 P6 exit: CHECK-13/16/18/20/23, applicable CHECK-5/15/26/27 and AC-15/20, with
 profile-specific signing/lifecycle evidence on supported clean Windows machines.
@@ -731,7 +741,7 @@ with evidence, not achieved performance or authority to loosen limits.
 | UI memory/lifecycle | Visible UI ≤48 MiB; separate optional tray budget; default closed UI has no process. |
 | Idle service CPU/wakeups | ≤0.1% of one logical CPU averaged ten minutes; ≤4 timer wakeups/second in the canonical idle tracking condition; retain burst data. |
 | UI latency | Local-action p95 <100 ms; cold usable window <500 ms on named hardware; network/UAC separate. |
-| Storage/package | Aggregate 10 MiB rotating diagnostic budget; initial ≤20 MiB compressed complete MSI, without hidden runtime downloads. |
+| Storage/package | Aggregate 10 MiB rotating diagnostic budget; initial ≤20 MiB compressed complete MSIX, without hidden runtime downloads; this remains an unmeasured target. |
 | Long run | One-hour baseline and 72-hour reconnect/fault soak; no unexplained retained handle/thread/allocation growth before teardown. |
 
 Retain the canonical hard configured cap of 16 logical sources, 64 history samples
@@ -779,7 +789,7 @@ no new product crate, runtime or generic dispatch framework is required.
 | Stage / owner | Next action and observable exit | Existing acceptance mapping |
 | --- | --- | --- |
 | Baseline admission / build owner, next controlled configuration checkpoint | Migrate the Windows target-specific CPU entry to v3 with the entire mitigation vector. Update exact checker/control expectations, affected policy/input bindings and skills measurement guidance together; preserve staged/concurrent work and historical results. Check actual package/feature/target/native/prebuilt inputs, portable and optimized arithmetic, Windows compiler/Clippy/link artifacts and useful failure propagation. No unreviewed global v4, `native` or ambient flag replacement. | CHECK-19/20/25/26; P1 S1.5 and Windows artifact rows |
-| Compatibility / platform and package owners | Declare CPU/OS/VM rows; implement a lower-baseline-compatible prerequisite check before starting any v3 payload. Qualify v3 CPU plus OS vector-state availability, below-v3 refusal and masked guest features. Keep one complete MSI and existing helper privilege/lifecycle constraints; coordinate its final delivery with P6. No unsupported-machine or v3 shipping claim before actual observations. | CHECK-19/20/26; S0.6 and P6 package compatibility |
+| Compatibility / platform and package owners | Declare CPU/OS/VM rows; implement a lower-baseline-compatible prerequisite check before starting any v3 payload. Qualify v3 CPU plus OS vector-state availability, below-v3 refusal and masked guest features. Keep one complete MSIX and existing helper privilege/lifecycle constraints; coordinate its final delivery with P6. No unsupported-machine or v3 shipping claim before actual observations. | CHECK-19/20/26; S0.6 and P6 package compatibility |
 | Hotspot and kernel / affected algorithm or crypto owner | Profile a representative admitted workload and predeclare useful-work metrics, finite bounds, guard metrics and a decision rule. Inspect emitted code before adding an optimized function. Prefer an admitted provider's existing crypto dispatch. Prepare meaningful AVX-512 candidates only where data justify them, while preserving a tested v3 implementation. This stage is required evaluation work; an unused probe is no delivered optimization. | CHECK-7/17/21/25/26 as applicable; P1 numerical work or P2 real NTS workloads |
 | Dispatch safety and parity / implementation and independent QA owners | Declare each function's exact enabled features and safety preconditions. Challenge missing individual features and OS support, v3 fallback, forced baseline, and supported optimized paths. Synthetic inventories test selection only; executing a forced optimized path still requires real detected support. Preserve pure-core unsafe prohibitions, FP operation/intermediate-check order, exact integer results and failure atomicity. Reject changed rounding/underflow behavior without a separate algorithm decision. | CHECK-19/25/26 and affected contract/security scope |
 | Native adoption / performance and release owners | Compare baseline and each supported optimized path on named native Windows hardware/VMs with normal protections. Observe useful latency/CPU, wakeups/power where measurable, startup, memory and binary size; retain raw results and discarded candidates. Ship a specialization only when its predeclared benefit and all correctness/resource guards pass. Reconcile final payload CPU requirements and existing baseline/soak/package gates. | CHECK-19/20/21/25/26; P2 resource evaluation and P6/P7 final artifacts |
@@ -1137,16 +1147,18 @@ intervening implementation, import queue and current stops. The
 owns this reconciliation and the new candidate's review/validation separately
 from the earlier source and publication receipts.
 
-The subsequent [MSIX/Store assessment](windows-msix-store.md) addresses the
-owner's free-signing and distribution question against source baseline
-`070927855ed99e1a0683d9f291d3462d33343118`. The
-[same W11 task](../../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026)
-routes source-only eligibility, supported provisioning and recovery preparation
-through W11-W10 and the existing W11-W05/release owners. Current free onboarding,
-Store package signing and catalog trust do not select a new release profile.
-Prepare one bounded card at the packaging checkpoint; a supported complete
-design and actual Store-delivered qualification are later, conditional exits
-under architecture §19.4. Do not delay the current Core task for this card.
+The subsequent [MSIX/Store plan](windows-msix-store.md) retains the research based
+on `070927855ed99e1a0683d9f291d3462d33343118` and the owner's later 3 November
+decision, amended against `661281ad0e6504338d352b943154522b800974fa`.
+[OD-05](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+now selects one complete hardened MSIX for David's Store attempt with services.
+The [same W11 task](../../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
+routes explicit integrity/sealed-content/CIG and per-role protection design,
+supported provisioning and recovery through W11-W10/W11-W05 and existing owners.
+Preparation needs no Store preapproval. Local qualified mechanics precede the
+owner's controlled submission; the actual Store-delivered candidate is qualified
+before broad release. Store refusal triggers owner reconsideration, not an
+automatic MSI fallback. Do not delay the current Core checkpoint for packaging.
 
 **Status:** research recorded; the
 [original task receipt](../../tasks/windows11-integration.md#41-integration-review-and-documentation-validation-receipt)
@@ -1164,8 +1176,8 @@ action in the existing Windows 11 task before dependent integration. W11-W01's
 source card is ready when the acquisition owner reaches it. W11-W02–W11-W08 stay
 planned at their named phases and prerequisites, with actual Windows execution
 held; W11-W07 additionally needs an evidenced eligible hash workload. W11-W09 is
-deferred until its existing UI re-entry gates; W11-W10 stays conditional, with
-the named MSIX source-only card available to its packaging owner. Apply
+deferred until its existing UI re-entry gates; W11-W10's MSIX preparation is now
+selected, while its other reserves retain their conditional triggers. Apply
 the mapped contracts before related timestamp, clock, DNS, service, maintenance
 or resource integration; optional hardware/APIs/providers/profiles are not made
 mandatory by this queue. No acknowledgement by a separately running agent or
@@ -1176,15 +1188,15 @@ execution of these assignments is claimed by publishing the routing.
 | Source contract → S2.1/P2; engine/platform | W11-W01: distinguish application/QPC/NIC timing; bind actual packet/interface/socket/exchange identity and conversion uncertainty. Add unchanged-route configuration notifications, distinct payload/control admission and selected SDK/binding evidence for contradictory prose. Direct-overlapped completion/retirement cases apply only if that adapter is selected. Healthy/unsupported/stale/saturated cases remain; software comparison precedes hardware work. | CHECK-6/11/21/27; CHECK-7/25 only for affected downstream numerical/construction invariants at their existing scopes; no source-to-native promotion |
 | S0.4/P4; platform/clock | W11-W02: qualify timer/deadline semantics, actual I/O waits and unattended resume, Modern Standby quiescence, delivered correction and residual cleanup. A sleep-excluding clock or relative wait does not prove broker execution or elapsed freshness. Process leap presentation remains separate from leap ownership. | CHECK-10/11/12/21/25/27; DNS-C05/11 for affected consumers |
 | DNS-0/1/3; DNS/platform/lifecycle | W11-W03: freeze native field/ownership contracts, exclusive loopback readiness, bounded reconciliation and namespace/application coverage. Add immediate/pending resolver ownership, NRPT precedence, local-discovery field preservation and the separate OS-cache privacy/Forget boundary. DHCP origin remains unproven by an effective list; private-name failure cannot become public DoQ. | DNS-C01/02/03/11/17; DNS-C14/15 only for affected privacy/Forget claims; applicable CHECK-13/25/27 |
-| P0/P3/P6; platform/security/lifecycle | W11-W04/05: evaluate WSH before custom WFP, with selected COM apartment/security/teardown ownership; observe actual service-setting activation, process-handle restrictions and Restart Manager maintenance admission. Compare declarative MSI ACLs, service-state lifetime and SCM subscriptions under existing lifecycle gates. Optional placement cannot silently absorb mandatory records; storage replacement recovery remains ST-W02/03. | CHECK-1/9/12/13/15/16/23/27, with CHECK-9 limited to delegated certificate retrieval; applicable ST-T03/10/12/17 and DNS-C14/17 |
+| P0/P3/P6; platform/security/lifecycle | W11-W04/05: evaluate WSH before custom WFP, with selected COM apartment/security/teardown ownership; observe effective service settings, process-handle restrictions and package/SCM maintenance admission. Compare service-state lifetime and SCM subscriptions under existing lifecycle gates. Restart Manager and declarative MSI ACL mechanics remain reference for a later MSI choice, not assumed MSIX hooks. Optional placement cannot silently absorb mandatory records; storage replacement recovery remains ST-W02/03. | CHECK-1/9/12/13/15/16/23/27, with CHECK-9 limited to delegated certificate retrieval; applicable ST-T03/10/12/17 and DNS-C14/17 |
 | DNS-4 shadow → DNS-5 refresh; DNS/resources | W11-W06: bounded power/cost/memory observations influence only eligible optional work. Compare global/interface IP Helper hints with destination-aware COM cost for the actual need; hints prove neither route nor authority. Unknown-cost, differing-interface and stop/callback cases preserve fixed caps and required work. EcoQoS needs suitable thread placement and measured benefit. | DNS-C05/08/11/12/18; new hint cases primarily DNS-C11/12/18, DNS-C08 only if model behavior changes; applicable CHECK-21/27 |
 | DNS-2; DNSSEC/crypto/performance | W11-W07: evaluate CNG SIMD hash batches only for an evidenced workload, with independent result parity and latency/cost comparisons. Provider handles and multicore scheduling retain separate ownership; no implicit graph selection or storage-root qualification. | DNS-C04/12/16; applicable CHECK-20/21/25/26/27 |
 | Affected native phase; diagnostics/QA | W11-W08: correlate bounded redacted WPR/WPA events and record loss. Separate local diagnostic authorization/expiry from aggregate ETW controller interest, provider/session/file access and retained data; test two controllers and each selected dump collector. Admit one exact low-resource profile with healthy/fault controls before use. PerfLib V2 remains optional. | CHECK-1/17/21/27, with CHECK-1 limited to diagnostic access; applicable ST-T14/16 and DNS-C12/14 |
 | P5 after existing D2/D3 triggers; UI/accessibility | W11-W09: current-state UIA/local notifications, actual Narrator behavior and current-generation action checks. Assess deployment costs before selecting Windows App SDK; ordinary ticking status cannot create announcement spam. | CHECK-14/17/22; applicable ST-T01/14; UI-M0 D1/D2/D3 remain Deferred |
-| Conditional existing owner; no current prerequisite | W11-W10: re-enter Job Objects/triggers, LPAC/app isolation, stricter CET/EHCONT, full enclaves, identity/WinGet or W32Time-provider alternatives only for a named need. The MSIX/Store cost/distribution question now has a bounded source-only eligibility/provisioning/recovery card; native experiments and channel adoption remain conditional. VBS claim extensions remain prerelease, side-channel fields need a named threat/role, UDP batching needs a bottleneck and VM Generation ID needs a privilege-compatible design. PPL remains excluded as an ordinary utility-service option. | Selected reserve reuses its existing architecture/storage/package owners; full MSIX uses CHECK-1/5/12/13/15/16/18/23/27 and all §19.4 gates; no blanket gate or default adoption |
+| S0.6/P6 packaging/security; other reserves conditional | W11-W10: prepare the selected complete hardened MSIX under the focused plan; record per-role integrity/mitigation, provisioning, recovery and certification notes, then local mechanics → David's Store attempt → actual delivered-artifact qualification. The direction is selected; native work remains held. Job Objects/triggers, LPAC/isolation, full enclaves, identity/WinGet or W32Time-provider changes retain separate need/compatibility gates; strict CET/EHCONT is evaluated within the per-role mitigation profile. VBS claim extensions remain prerelease, side-channel fields need a threat/role, UDP batching a bottleneck and VM Generation ID a privilege-compatible design. PPL remains excluded for an ordinary utility. | Existing architecture/storage/package owners; MSIX uses CHECK-1/2/5/12/13/15/16/18/20/23/24/26/27 and §19.4. No new acceptance IDs or certification-based security waiver |
 
-Preserve DoQ-only upstream and leaf/intermediate pinning, the selected service
-topology, one complete MSI and the independent mandatory-state owner. Native DNS
+Preserve DoQ-only upstream and leaf/intermediate pinning, the least-privilege
+service boundary, one complete MSIX and the independent mandatory-state owner. Native DNS
 policies are coexistence inputs, not permission to add DoH/DoT/DNSCrypt/plaintext
 fallback or enable ZTDNS. Hardware timing, CNG batching, PerfLib, EcoQoS and
 notification packages remain optional mechanisms; a required product property

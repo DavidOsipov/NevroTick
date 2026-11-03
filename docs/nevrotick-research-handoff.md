@@ -1,12 +1,19 @@
 # NevroTick — research handoff for the next AI
 
-**Document:** NV-RESEARCH-001, revision 1.0  
+**Document:** NV-RESEARCH-001, revision 1.1<br>
 **Prepared:** 29 October 2026, Asia/Tbilisi  
 **Owner:** David Osipov  
 **Input:** [Owner decisions NV-DEC-001](nevrotick-owner-decisions.md), [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md)  
 **Repository integration base:** `DavidOsipov/NevroTick@77ad8c416db32d5edfdc9e6a538d76637eaf44f0`. This maintained assignment accompanies the integrated owner-decision record; retrieve the current checkout and relevant updates before acting.
 
 **30 October 2026 trust-lifecycle amendment:** R-02/R-04/R-05 now require explicit authentication ages, semantic time-floor recovery and vote/freshness rules before the dependent production interfaces are frozen. These refine existing open gates; they adopt no key lifetime, stronger quorum, floor-reset privilege or new source preset. Source review and controlled-case specifications below establish no implemented NTS or Windows behavior.
+
+**3 November 2026 delivery amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects complete hardened MSIX preparation and David's Store attempt with services.
+The [focused plan](plans/windows-msix-store.md) and existing W11-W10/W11-W05 task
+own that work; Store preapproval and MSI completion are not preparation gates.
+Technical qualification and actual Store outcome remain open; existing execution
+holds and Core priority remain.
 
 ## 1. Assignment and limits
 
@@ -27,11 +34,15 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-03 — plain-NTP correction limits | OPEN-5/9; CHECK-3/6/7/10/12 | Proposed numerical envelope with attack and usability evidence | Plain-profile automatic actuation policy |
 | R-04 — source preset and provider use | DEC-5/7/8; OPEN-6/8 | Four-operator candidate assessment; Pool role and vendor requirements | Shipped default preset and associated claims |
 | R-05 — Windows certificate/time behavior | OPEN-1/8; CHECK-9/26/27 | Exact provider/trust/revocation/egress qualification design and evidence | NTS implementation paths relying on those guarantees |
-| R-06 — release profiles and signing eligibility | OPEN-11/14; CHECK-16/18/20/23 | Authenticode and initial OpenPGP release evidence paths | The selected public release profile |
+| R-06 — release profiles and signing eligibility | OPEN-11/12/14; CHECK-16/18/20/23 | Selected Store package/catalog, capability and installed-trust evidence; retained MSI signing alternatives only for a later delivery decision | Dependent release claims, not source/design preparation pending Store feedback |
 | R-07 — concrete owner exceptions | OPEN-5/8/9 and affected clauses | Decision cards with compensating controls and bounded residual risk | Affected behavior or assurance claim |
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
-These tasks do not reopen the settled native Win32 direction, two-service authority split, ordinary-user UI, time-only v1, Windows 11 x64 first, or single complete MSI. Future complete MSIX remains research, with no separate MSI service prerequisite.
+These tasks do not reopen the native Win32 direction, two-service authority split,
+ordinary-user UI, time-only v1 or Windows 11 x64 first. The selected delivery target
+is now one complete hardened MSIX; its supported service provisioning and recovery
+remain to be qualified, with no separate MSI service prerequisite. Retained MSI
+profiles are alternatives for a later owner decision.
 
 ## 3. R-01 — source reuse and licence compatibility
 
@@ -157,7 +168,20 @@ Test wrong name, expired/future certificates, revoked intermediates, unavailable
 
 ### Accepted owner policy to preserve
 
-SignPath Foundation's publisher display is acceptable. **David Osipov** approves releases. If no usable free Authenticode route is available initially, a complete MSI with OpenPGP verification artifacts is permitted as a release-policy alternative. This is not permission to skip qualification or sign/publish without David's approval.
+**Current direction:** prepare the complete hardened MSIX, including services, for
+David's Store submission attempt. Follow [plan §7](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners):
+source/design and local test-signed mechanics precede owner-controlled submission;
+actual Store-delivered trust/CIG and lifecycle evidence precede broad release.
+Preparing the candidate requires no prior Store acceptance or signature. R-06
+supplies package/publisher identity, approved-release/helper binding, exact
+dependency/catalog inventory, wrong-clock/offline trust conditions and truthful
+capability justification to the existing W11 task; do not create another survey.
+
+**Retained alternatives:** SignPath Foundation's publisher display is acceptable
+and the earlier complete MSI/OpenPGP policy remains if David later chooses that
+route. The questions below apply then; they do not block selected MSIX preparation.
+**David Osipov** approves releases. Nothing here permits skipping qualification
+or an agent submitting/signing/publishing on his behalf.
 
 ### Research questions
 
@@ -167,11 +191,18 @@ SignPath Foundation's publisher display is acceptable. **David Osipov** approves
 4. What minimum release-key custody, expiry/revocation, backup and rotation process can David operate? Also investigate verification when the user's date is badly wrong: signature/key lifetime checks and a trustworthy time basis must not be bypassed by trusting the unverified installer as an oracle. Prepare a process without generating or exposing private keys. Do not automatically reuse a personal Git commit key.
 5. How does the later Authenticode transition preserve product identity, upgrade/repair/uninstall behavior and explicit anti-downgrade policy? Which trust checks remain channel-specific?
 
-Deliver separate CHECK-18 evidence plans for the Authenticode and OpenPGP profiles. Include correct signer/bytes, tamper, wrong signer, stale/mismatched manifest, payload substitution, maintenance attacks and valid lifecycle controls. Preserve the Authenticode result as unqualified when only OpenPGP is available. Runtime DLL protections, ACLs, native mitigations and licence obligations remain mandatory for the supported release profile.
+If an MSI alternative is later selected, deliver its separate CHECK-18 evidence
+plan for Authenticode or OpenPGP. Include correct signer/bytes, tamper, wrong
+signer, stale/mismatched manifest, payload substitution, maintenance attacks and
+valid lifecycle controls. Preserve the Authenticode result as unqualified when
+only OpenPGP is available. Runtime DLL protections, ACLs, native mitigations and
+licence obligations remain mandatory for every selected release profile.
 
 Primary references: [GnuPG verification and fingerprints](https://gnupg.org/download/integrity_check.html), [Microsoft UAC](https://learn.microsoft.com/en-us/windows/security/application-security/application-control/user-account-control/how-it-works), [Smart App Control](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/overview), [MSIX signing](https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview), [unsigned MSIX testing](https://learn.microsoft.com/en-us/windows/msix/package/unsigned-package).
 
-Do not add a second application package, automatic updater, provider application, paid subscription or OS-protection bypass as a side effect of this research.
+Do not add a second application package, bespoke privileged updater, provider
+application, paid subscription or OS-protection bypass as a side effect of this
+research. Store-managed updates need the selected complete lifecycle qualification.
 
 ## 9. R-07 and R-08 — exception decisions and remaining platform work
 

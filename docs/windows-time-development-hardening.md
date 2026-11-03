@@ -1,6 +1,8 @@
 # Development-environment hardening for the Rust Windows time client
 
-**Owner-decision amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) confirms source-derived reuse with independent stress/bug verification and records the initial OpenPGP release alternative. Existing Authenticode-specific checks still apply to that preferred profile and remain not qualified if unavailable; qualify the separate OpenPGP artifact/installed-file trust path under architecture section 19.5 and research R-06. No missing-signature check may be converted to unconditional success. All other applicable compiler, lint, audit, evidence and hardening requirements remain. No application test is claimed by this amendment.
+**Selected-MSIX amendment, 3 November 2026:** [OD-05 section 7.1](nevrotick-owner-decisions.md#71-accepted-choices) selects one complete hardened MSIX for David's first Microsoft Store submission attempt, with the strongest compatible supported and verified protections for each role. The [MSIX plan](plans/windows-msix-store.md) owns package integrity, Store-compatible CIG, role profiles and independent controls. Preparation needs no speculative Store preapproval; Store acceptance remains external, David controls submission/publication, and the actual Store-delivered artifact needs qualification before broad release. SignPath/OpenPGP MSI profiles remain alternatives only if David later revisits the decision, not prerequisites or automatic fallbacks. Current Core priority, Windows execution stop, fuzzing, storage and UI holds remain unchanged; no production implementation or native execution is claimed.
+
+**Retained owner-decision amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) confirms source-derived reuse with independent stress/bug verification and records the initial OpenPGP MSI alternative. If the owner later selects an MSI route, Authenticode-specific checks still apply to that profile and remain not qualified if unavailable; qualify the separate OpenPGP artifact/installed-file trust path under architecture section 19.5 and research R-06. No missing-signature check may be converted to unconditional success. All other applicable compiler, lint, audit, evidence and hardening requirements remain. No application test is claimed by this amendment.
 
 **Document:** RWTC-DEV-HARDENING-001, revision 1.0  
 **Research date:** 28 October 2026  
@@ -46,7 +48,7 @@ There is no defensible percentage by which this toolset will reduce bugs before 
 | Native memory and resources | Application Verifier Basics, full PageHeap and CDB on affected Windows paths; separate lifecycle retention measurements | Detects reached native heap/API misuse and challenges resource ownership; neither installed tools nor crash-free runs establish absence of leaks |
 | Test sensitivity | At least 90% executable-line coverage per security module; at least 95% mutation score per critical source file | Preserves the accepted architecture's thresholds and exposes weak tests |
 | Windows qualification | Native x64 MSVC execution, PE inspection, runtime mitigation queries, privileged-effect and installer tests | Establishes behavior that portable Rust tests cannot prove |
-| Release | Complete artifact inventory/SBOM, independent exact-candidate review, isolated signing approval | Connects verified source and tests to the actual complete MSI |
+| Release | Complete artifact inventory/SBOM, independent exact-candidate review, owner-controlled submission/publication | Connects verified source and tests to the actual Store-delivered complete MSIX; any later selected MSI alternative needs its own evidence |
 
 Advanced tools are admitted for a named invariant: Miri for suitable Rust memory/aliasing behavior, Windows ASan for a qualified native surface, Loom for a small concurrency protocol, and Kani for a bounded arithmetic/admission property. Requiring all of them everywhere would add unsupported configurations and false assurance.
 
@@ -54,7 +56,7 @@ The compiler, analyzers and test tools are development dependencies and should n
 
 ## 2. Authority, scope and unchanged decisions
 
-The product is a Chrony-derived Rust Windows 11 client with a network engine, a narrow privileged clock broker, an ordinary-user UI and an administrative helper, delivered as **one complete MSI**. The initial native target is `x86_64-pc-windows-msvc`. ARM64 needs its own admitted toolchain, runtime and packaging evidence.
+The product is a Chrony-derived Rust Windows 11 client with a network engine, a narrow privileged clock broker, an ordinary-user UI and an administrative helper. The selected delivery direction is **one complete hardened MSIX**, with Microsoft Store as the first submission attempt; required services and payloads stay inside the complete product. The complete MSI design is retained only for a later owner decision. The initial native target is `x86_64-pc-windows-msvc`. ARM64 needs its own admitted toolchain, runtime and packaging evidence.
 
 The architecture remains authoritative for product behavior and unresolved choices. In particular:
 
@@ -73,7 +75,7 @@ The pinned website guidance at commit `6530d3a8d44cbe4f829b1e09edd3a1c90cffc087`
 
 D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, policy drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator/UIA qualification) are **Deferred**, not Passed, Removed or N/A. Agents must not implement or qualify them or block UI-M0 on them. Preserve standard controls' inherited behavior and labels in one documented reference display configuration. Carry the canonical deferral ledger and triggers into the backlog/next-stage record: restore the relevant D2 rules before live status or real policy/protected commands, and D1/D3 before general-user preview/release or earlier support/qualification claims.
 
-Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker/binding direction. One owner controls the shared native adapter; serialize shared desktop interaction and build outputs. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or MSI qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
+Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker/binding direction. One owner controls the shared native adapter; serialize shared desktop interaction and build outputs. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or package qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
 
 ## 3. Development threat model and execution boundaries
 
@@ -88,7 +90,7 @@ Protect source and requirement integrity, maintainer credentials, dependency pro
 | Hardening flags disappear | Agent adds global `RUSTFLAGS` for warnings and replaces target CFG/link flags | Admit effective environment/configuration, inspect actual commands and final PE/runtime state |
 | Dependency graph changes covertly | Feature unification activates a held crypto backend or server capability | Exact package/target/feature graph review and a failing forbidden-path fixture |
 | Evidence is stale or incomplete | Wrong revision, omitted module, zero tests, missing shard or report-only scanner is called a pass | Identity-bound evidence, explicit expected scope, verified exit propagation and bad/good gate controls |
-| Cache or artifact poisoning | Untrusted job populates an executable cache or substitutes a similarly named MSI | Separate trust domains; exact hashes, origin and artifact manifests; no executable promotion from untrusted output |
+| Cache or artifact poisoning | Untrusted job populates an executable cache or substitutes a similarly named release package | Separate trust domains; exact hashes, origin and artifact manifests; no executable promotion from untrusted output |
 | Test harness masks a product bug | Production computes expected output; tests use a repaired mock; mutant build failure counts as killed | Independent oracle, actual entry point/effect, raw outcome accounting and separate review |
 | Agent damages the host | Clock/SCM/installer tests run elevated on a shared workstation | Disposable guest, one state owner, externally enforced bounds, recovery independent of guest time |
 | Tool or metadata ages silently | Frozen compiler is vulnerable or advisory DB is stale | Reviewed tool updates and fresh security metadata alongside reproducibility snapshots |
@@ -103,17 +105,18 @@ flowchart TD
     A --> D["Independent source and policy review"]
     C --> D
     D --> E["Protected commit"]
-    E --> F["Admitted hosted build"]
-    F --> G["Identified unsigned artifacts"]
-    G --> H["Disposable Windows validation"]
-    H --> I["Human release approval"]
-    G --> J["Controlled signing service"]
-    I --> J
-    J --> K["Final signature and package verification"]
-    K --> L["One complete MSI"]
+    E --> F["Admitted release build"]
+    F --> G["Identified complete MSIX candidate"]
+    G --> H["Local candidate and Windows qualification"]
+    H --> I["Owner's controlled Store submission"]
+    I --> J["Store certification and signing"]
+    J --> K["Actual Store artifact and Windows qualification"]
+    K --> L["Owner-approved broad release"]
 ```
 
-This is a proposed control flow. For SignPath Foundation, all workflow jobs leading to the signing request currently need GitHub-hosted runners; the separate Windows laboratory and its artifact lineage must fit a provider-approved procedure. Rebuilding after testing requires demonstrated equivalence or repeated relevant validation. The signer must never run arbitrary build scripts with its credential. See the standalone [signing guide](windows-time-signing-guide.md).
+This is the proposed flow for the selected complete MSIX. Source/design preparation precedes the depicted candidate stages and does not require speculative Store preapproval; local native qualification remains subject to the current Windows stop. David submits the candidate and controls its audience. Store certification/signing is an external outcome, and final Store-artifact evidence is produced after initial submission, before broad release. A refusal returns to the owner decision, without automatic package splitting, weaker protections or MSI fallback. See the [MSIX plan's sequence](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners).
+
+Keep source/build, locally tested and Store-delivered identities separately. Rebuilding or transformation after testing requires demonstrated equivalence or repeated relevant validation; final catalog/package and installed-file checks use the actual Store-delivered bytes. A signing/submission stage must never run arbitrary build scripts with its credential. If the owner later selects the retained SignPath/MSI route, its hosted-runner and provider-accepted laboratory/artifact lineage rules apply separately; see the [signing guide](windows-time-signing-guide.md).
 
 ### 3.3 Agent workstation and sandbox rules
 
@@ -347,24 +350,64 @@ Verify three layers: **effective build inputs, emitted images and effective runt
 
 Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) as the canonical role/activation/failure contract and manifest schema. This 29 October refinement incorporates useful specificity from the supplied PDFCraft proposal without adopting its CRT, dependencies or UI architecture. Existing tooling observations remain scoped to their recorded fixture. All application-level cases below are **planned / not executed**.
 
+The **3 November selected-MSIX amendment** requires the strongest compatible
+supported and verified profile for each delivered role. The [MSIX plan sections
+3.1–3.4](plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
+own sealed executable content, explicit `uap10:Content Enforcement="on"` under
+`uap10:PackageIntegrity`, Store-compatible CIG, role targets and independent
+controls. Package integrity and per-process image admission are separate
+protections. Keep all executable product content inside the protected declared
+package/dependency graph, with no executable mutable or external content. Use
+section 9.11's packaging cases for actual enforcement and repair observations;
+manifest text alone does not close CHECK-16/18/23/26. [C39]
+
+Qualify the engine and broker's headless/leaf restrictions against their actual
+SCM launch and provider graph. Give the native Win32 UI and elevated helper
+separate profiles that preserve their narrowly permitted activation, callbacks
+and maintenance work. Do not copy a headless profile to the GUI, set every flag
+blindly, or change a shared installer host's policy. A required-control failure
+denies the affected protected work; compatibility recovery cannot silently drop
+the control or expand privilege. Any necessary exception is narrow, supported
+by a reproduced valid case and visible in the canonical role record.
+
 For every delivered executable and applicable DLL, inspect the exact final PE and load configuration with `dumpbin /headers /loadconfig` or an admitted equivalent tool. Record the CFG `Guard`, `CF Instrumented` and `FID table present` indicators where applicable, DEP/ASLR properties, relocations and any selected CET marker. These checks must agree with actual build inputs and the native/prebuilt/static/standard-library inventory; a CFG-positive executable or one successful negative fixture does not prove complete linked-code coverage. `nochecks` remains prohibited. This requirement does not mandate installing Visual Studio just to obtain `dumpbin`. [C10, C11, C15]
 
 Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Preserve query status when an observer's convenience API maps selected unsupported/error/terminating statuses to zero. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations. The [Chromium/NtCoreLib examples](plans/windows-protected-storage-upstream-lessons-2.md#7-mitigations-need-ordered-startup-and-behavioral-evidence) supply concrete cases, not an admitted observer or final-artifact evidence.
+
+Record compile/link, creation and early-runtime activation separately. Microsoft
+documents that `EnableControlFlowGuard`, `EnableUserShadowStack` and
+`SetContextIpValidation` cannot be changed through `SetProcessMitigationPolicy`;
+they cannot all be supplied by a late runtime initializer. Readbacks, image
+metadata and real native behavior must agree on the supported OS/hardware.
+If self-opt-in is used for a supported control, inventory the modules loaded
+before it and qualify that earlier path separately. A child-process creation
+attribute does not establish how SCM or packaged activation creates a role.
+This specification selects no new launcher or global policy rewrite. [C37, C38]
+
+For CIG, record the actual supported configuration layer and Store allowance.
+Exploit Protection's `MicrosoftSignedOnly` with `AllowStoreSignedBinaries` is
+distinct from strict Microsoft-only. The similarly named native policy fields
+are not an assumed bit-for-bit mapping; use the selected SDK and the [plan's
+configuration contract](plans/windows-msix-store.md#32-store-compatible-code-integrity-guard).
+Check final Store-signed images and their full observed import/DLL closure,
+including cold startup, delayed loads and crypto/storage providers. Local test
+signing does not establish Store signer-category admission. [C40]
 
 | Case | Required observation | Legitimate control and scope |
 | --- | --- | --- |
 | Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable. Challenge invalid order and attempted return to a weaker phase in release builds | Expected enforced state admits work. An explicitly optional unavailable hardware enhancement is diagnosed without masquerading as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
 | ACG | Separately exercise harmless executable/writable allocation, protection change on existing executable memory, anonymous executable/writable mapping and file-backed mapping under the no-opt-out/no-downgrade profile; record native denial and effective bits | Ordinary heap use and exact engine/broker/provider workflows succeed, including cold startup and first lazy use. Do not execute injected payloads. Excluded/ignored instrumentation configurations remain unexecuted, not green. |
 | Image loading | Separate controlled remote-image and low-mandatory-label canaries fail to load; CWD/PATH canaries exercise section 15.2 separately | The intended protected dependency loads from its expected path. Mark of the Web is not the low-label fixture; System32 preference is not a directory allowlist. |
-| Strict CFG and handles | Optional Strict CFG denies an incompatible code-bearing DLL; strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
+| Store-compatible CIG | Under the actual enforced role policy, controlled unsigned or non-admitted signer-class DLLs fail to load. Record effective state and actual SCM/package/helper activation, including the pre-opt-in module inventory where applicable | Expected Store-catalog-backed product images and approved Microsoft system DLLs load through legitimate cold/lazy paths. A separately valid unrelated Store image may pass CIG but must fail NevroTick helper/IPC authorization; do not report CIG as product-identity enforcement. |
+| Strict CFG and handles | Target Strict CFG where the complete executable-module graph supports it; an incompatible code-bearing DLL is denied. Strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
 | Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile; harmless requests for `PROCESS_CREATE_PROCESS`/`PROCESS_VM_WRITE` on dummy peers and inherited/duplicated-handle review must also establish the required isolation | Final service APIs, permitted read-only queries, boot-before-login, stop/restart and recovery work. A custom-parent fixture or queried child-policy bit does not close the SCM/composition gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
-| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status; if stricter CET/EHCONT is selected later, inspect actual metadata and module admission for the complete closure | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; optional unsupported hardware remains explicitly unsupported. No additional flag/profile is adopted by the research. |
-| Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid single-MSI install/update/repair/remove completes under each declared release profile. Existing CHECK-12/13/18/23 remain authoritative. |
+| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status; qualify the strongest compatible supported CET/EHCONT restrictions against actual metadata and the complete module closure | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; unsupported hardware remains explicitly unsupported. The selected target does not assert that any untested flag is already admitted or enabled. |
+| Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid complete-MSIX install/update/repair/remove completes; a later owner-selected MSI alternative needs separate evidence. Existing CHECK-12/13/18/23 remain authoritative. |
 | RedirectionGuard candidate | If separately admitted, distinguish audit from enforcement for an in-scope unprivileged junction; record unsupported/query failure and administrator-created/legacy controls | Ordinary file/provider/lifecycle operations succeed; application path checks still reject out-of-scope forbidden paths. Required/optional disposition and OS/build floor remain open; this candidate is not an added release or UI-M0 gate. |
 
 Run native denial/termination tests only in the owned disposable Windows environment of architecture section 14.9, with independent observation, resource/time bounds and cleanup. No test changes the user's clock or global Exploit Protection policy. Audit-first trials apply only to controls with a documented audit mode; an audit event never passes an enforcement case. Preserve UI-M0 deferrals: full production accessibility/IME integration tests run at the existing reentry gates.
 
-Tie records to the complete payload/SBOM and exact package; repeat affected cases when a toolchain, native provider, linked module, startup/hosting path, Windows support matrix or installer policy changes. Use the existing diagnostics and artifact records rather than a new background scanner. Do not copy `+crt-static`, admit held cryptographic providers or add a launcher solely to make a mitigation checklist appear complete.
+Tie records to the complete payload/SBOM and exact package. Preserve submitted and Store-delivered identities separately; repeat affected readbacks, loaded-image observations and negative/valid controls on the actual final Store artifact before broad release. Repeat affected cases when a toolchain, native provider, linked module, startup/hosting path, Windows support matrix or installer policy changes. Use the existing diagnostics and artifact records rather than a new background scanner. Do not copy `+crt-static`, admit held cryptographic providers or add a launcher solely to make a mitigation checklist appear complete.
 
 #### 6.4.1 Protected-storage provider qualification
 
@@ -471,7 +514,7 @@ sources and limits. This section establishes no new flags, kernel or native pass
 | Owner/guarantee | Required implementation and independent observation |
 | --- | --- |
 | Build owner: baseline and artifacts | Change the target-specific CPU entry and exact checker/control expectations together. Preserve the complete CFG/ASLR/DEP and linker-warning vector, profiles, overflow checks, unwind policy and symbols. Inspect effective Rust/native/generated-object flags and final payloads; do not replace the vector through ambient `RUSTFLAGS`. Audit standard-library and prebuilt inputs separately. |
-| Lifecycle/package owner: supported machines | Declare actual CPU/OS/VM rows. A prerequisite check that itself runs on the rejected machine must precede execution of any v3 payload. Observe useful behavior on a v3-capable baseline and clear refusal below it, including masked guest features. Keep one complete MSI; catching an illegal-instruction crash is not admission. Windows 11 branding alone proves no complete feature set. |
+| Lifecycle/package owner: supported machines | Declare actual CPU/OS/VM rows. A prerequisite check that itself runs on the rejected machine must precede execution of any v3 payload. Observe useful behavior on a v3-capable baseline and clear refusal below it, including masked guest features. Keep one complete product package; catching an illegal-instruction crash is not admission. Windows 11 branding alone proves no complete feature set. |
 | Kernel/dispatch owner: available functions | Compile optional specializations ahead of time with explicit `#[target_feature]` sets. Use Rust runtime feature detection, including its OS vector-state checks; select only a function whose whole enabled set is available. `avx512f` alone is not full v4. The baseline path remains reachable; never globally enable AVX-512, alter XCR0, or treat detection as runtime recompilation. |
 | Safety/algorithm owner: unchanged contracts | Keep unsafe code out of the pure core. Any necessary feature-specific unsafe boundary needs a narrow reviewed owner and checked safe interface outside that prohibition. Preserve length/alignment/bounds/lifetimes, exact integer time arithmetic, chronological floating-point operations, intermediate checks and error/failure atomicity. New reductions or FMA rounding require separately justified algorithm changes; no fast-math, reassociation or FTZ/DAZ shortcuts. |
 | Crypto owner: independent capabilities | AES/PCLMUL/VAES are not guaranteed by v2/v3/v4. Use the admitted provider's feature dispatch and fallback; retain provider/licence/trust gates and qualify real small-packet and KE workloads separately. |
@@ -518,7 +561,7 @@ After verified acquisition, deny egress independently and build from staged inpu
 | cargo-deny | Primary blocking dependency policy after qualification | Match exact graph, licenses, source/advisory policy and configured scope. [SC06] |
 | cargo-audit | Optional distinct artifact scan with cargo-auditable; no redundant lockfile gate required | Repeating RustSec checks is not independent vulnerability evidence. [SC07, SC08] |
 | cargo-auditable | Build-only candidate after PE/packaging qualification | Verify embedded inventory survives final transformations; it is not a signature or complete native SBOM. [SC08] |
-| One SPDX/CycloneDX generator | Required reconciled release inventory; cargo-cyclonedx is a candidate | Include native objects, generated source, resources, tools and MSI contents beyond Cargo metadata. [SC14] |
+| One SPDX/CycloneDX generator | Required reconciled release inventory; cargo-cyclonedx is a candidate | Include native objects, generated source, resources, tools and complete package contents beyond Cargo metadata. [SC14] |
 | cargo-vet | Optional staged audit-record system | Needs real maintained review criteria/imports/deltas; exemptions are not performed audits. [SC15] |
 | cargo-crev | Defer as an alternative review ecosystem | Running two overlapping trust systems at kickoff is not necessary. [SC16] |
 | cargo-geiger | Optional unsafe inventory | Statistics do not prove soundness or cover all native/FFI risk. [SC17] |
@@ -527,8 +570,8 @@ After verified acquisition, deny egress independently and build from staged inpu
 The repository bootstrap now installs pinned `cargo-cyclonedx` 0.5.9 in a
 separate release-tool lane. Its [configuration and offline wrapper](../TOOLING.md#release-sbom-tooling)
 produce Rust component inventories and reject target/feature graph mismatches;
-they do not qualify a complete native/MSI SBOM. Every published version must
-attach the reconciled, validated SBOM with its complete MSI and final signed-byte
+they do not qualify a complete native/package SBOM. Every published version must
+attach the reconciled, validated SBOM with its complete package and final signed-byte
 checksums. S6.4/CHECK-26 retain package reconciliation and protected publication.
 
 ### 7.3 cargo-deny outcomes, not copied policy folklore
@@ -579,7 +622,7 @@ Pin direct actions/reusable workflows to reviewed full SHAs and verify repositor
 
 Partition caches by trust domain, toolchain, lock/configuration, target and features. Untrusted runs must not supply trusted release executables. Prefer a fresh release build from verified inputs. Treat artifacts and report archives as untrusted data: fixed schemas/size limits, safe extraction, no path traversal and no scripts executed by the importer.
 
-SBOM, provenance attestation and Authenticode answer different questions. Verify subject hashes and identities; reconcile unsigned evidence with the documented signing transformation and verify the final payload/MSI again. No attestation proves the code is bug-free. [SC28]
+SBOM, provenance attestation and package/catalog or applicable Authenticode signatures answer different questions. Verify subject hashes and identities; reconcile source/build evidence with the documented Store or other selected signing transformation and verify the final payload/package again. No attestation proves the code is bug-free. [SC28]
 
 ## 9. Tests, coverage and evidence of bug detection
 
@@ -812,7 +855,7 @@ adds the following distinguishing cases when their existing adapter is selected:
 | Timestamp/socket adapter; CHECK-6/11/21/27, CHECK-25 for affected construction | Stable-route timestamp-mode changes and queued old metadata cannot mislabel samples. Payload/control truncation, stale reused outputs and dual-stack IPv4/IPv6 metadata are checked separately; valid neighboring inputs still work. Direct-overlapped immediate/pending/close races retain exactly one terminal settlement and real custody without assuming a Tokio-future drop calls native cancellation. |
 | COM adapter; CHECK-16/27 | Correct apartment and allowed activation work under the final profile; incompatible apartment, late process-security initialization, cross-thread interface misuse and callback/reentrant teardown fail or drain under the declared contract. No generic COM framework or wider token is inferred. |
 | Service observer; CHECK-13/14/23/27 | Select the subscription or APC contract explicitly. Healthy new-instance reconciliation works; zero-mask/churn/delete-recreate and callback-active stop cannot deadlock, retain uninstall-blocking handles or publish stale readiness. SCM Running is not authenticated application readiness. |
-| Installer/filesystem; CHECK-1/13/15/23 | A selected declarative MSI descriptor secures owned resources under actual account/SID ordering. Verify inheritance and runtime replacement with allowed and neighboring-denied access; conflicting/invalid authoring fails usefully. Service-deletion state loss cannot erase mandatory restoration or consumed authority. |
+| Installer/filesystem; CHECK-1/13/15/23 | If the owner later selects the retained MSI route, a selected declarative MSI descriptor secures owned resources under actual account/SID ordering. Verify inheritance and runtime replacement with allowed and neighboring-denied access; conflicting/invalid authoring fails usefully. In every package route, service-deletion state loss cannot erase mandatory restoration or consumed authority. |
 | Diagnostics; CHECK-1/17/21/27 | With two ETW controllers, expire product authorization while another keeps the provider enabled; capture-state respects field/resource admission and required events remain useful. Observe permitted/denied provider/session/ETL access separately; local emission expiry proves neither exclusive-session delivery nor deletion of captured data. |
 
 Pin the selected SDK/generated bindings and reconcile the follow-up's inconsistent
@@ -821,29 +864,40 @@ before FFI implementation. Full-page retrieval through MCP is source evidence,
 not ABI/build qualification. The actual I/O-wait timeout, unattended resume and
 adjacent cross-thread QPC cases belong to existing W11-W01/02 timing checks.
 
-For a future complete MSIX only, the [Store refinement](plans/windows-msix-store.md)
-and [W11-W10 assignment](../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026)
-reuse CHECK-1/5/12/13/15/16/18/23/27. Verify effective least-privilege provisioning
-and allowed/denied object access, then ordinary Settings removal, Reset/repair,
-interrupted update and last-user transitions before any application UI launch.
-Normal administrative consent remains required. Observe mandatory recovery
-completion before its last record or executable is removed; Store package
-replacement alone is not that observation. Challenge a package-aware helper
-verifier with an unrelated valid Store-signed package beside the intended
-NevroTick release; qualify the actual catalog/DLL/CIG path and wrong-clock/offline
-matrix. No separate embedded PE signature is assumed necessary without evidence,
-and no currently selected MSI profile or execution hold is changed.
+For the **selected complete hardened MSIX**, the [Store plan](plans/windows-msix-store.md)
+and [W11-W10 assignment](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
+reuse the existing checks below. All native cases remain planned and held. Source
+preparation and capability justification need no speculative Store preapproval;
+David owns the initial submission and the Store decides acceptance. Local
+test-signed mechanics precede submission as applicable; final Store-artifact
+qualification follows signing and precedes broad release.
+
+| Existing owner / checks | Required independent observation and valid control |
+| --- | --- |
+| Package/security; CHECK-16/18/23/26 | Inspect the final manifest's explicit `uap10:PackageIntegrity` / `uap10:Content Enforcement="on"` and absence of executable mutable/external content. Challenge the real launch/load paths with tampering and writable-path canaries; intact installed content and supported repair still work. Use [plan section 3.1](plans/windows-msix-store.md#31-package-integrity-and-sealed-executable-content); a declaration alone is not runtime proof. |
+| Service/provisioning; CHECK-1/5/23/27 | Verify actual supported least-privilege accounts, service SIDs, privileges and allowed/denied object access at first install and boot before UI. Normal administrative consent remains required; no external service prerequisite, default LocalSystem expansion or assumed virtual-account bridge. Valid provisioning and authorized service startup must succeed. |
+| Process/security; CHECK-16/18/20/23/26 | Read back the required per-role profiles under actual SCM, packaged UI and helper activation. Pair Store-compatible CIG and other denial cases with expected system/Store DLL loads and valid workflows, including cold/lazy provider paths. Use [section 6.4](#64-per-process-mitigation-qualification) and plan sections 3.2–3.3; strict Microsoft-only and Store-allowing CIG are distinct. |
+| Helper/IPC identity; CHECK-1/2/15/18 | Reject an unrelated valid Store-signed package, copied-out helper or unapproved release for NevroTick authority beside the intended current installed helper. A signer-class pass is not product authorization; use the actual package/catalog and protected identity contract without assuming separately embedded PE signatures. |
+| Lifecycle/recovery; CHECK-5/12/13/15/23/27 | Observe ordinary Settings removal, Reset/repair, interrupted update and last-user transitions before UI launch. Mandatory recovery completes before its last journal or executable disappears; a replaced package or deleted service is not recovery evidence. Valid maintenance preserves ownership, restores W32Time as required and supports a corrective higher-version release without stale successor overwrite. |
+| Release/inventory; CHECK-18/23/26 | Preserve submitted and Store-delivered package/catalog/manifest/payload identities and reconcile the validated SBOM. On the actual Store artifact, repeat affected readbacks, real loaded-image observations and independent negative/valid controls before broad release. Test signing or a clean source build cannot substitute for this evidence. |
+| Activation/trust; CHECK-9/18/23 | Apply [signing section 5.1](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix) to initial installation, installed startup, helper activation, maintenance and recovery, with bounded retrieval and absent/stale caches. Valid offline/wrong-clock recovery must coexist with rejection of unverified code; no weakened verifier or unconditional trust. |
+
+The [plan's threat matrix](plans/windows-msix-store.md#34-threats-and-independent-controls)
+owns the detailed cases. Failed required protection blocks affected authority;
+it does not authorize weaker loading, privilege expansion or automatic MSI
+fallback. Record an actual Store rejection or concrete blocker for the owner to
+reconsider. The selected preparation direction changes no execution hold.
 
 Sections 6.4/6.4.1 retain the child-handle, stricter-CET and conditional-enclave
 owners; section 9.5.1 retains low-resource profile admission; section 9.8 retains
-trace/counter evidence. Preserve one complete MSI, DoQ-only DNS, optional-storage
+trace/counter evidence. Preserve one complete MSIX, DoQ-only DNS, optional-storage
 versus mandatory-continuity separation and UI-M0 deferrals. The current portable
 Core checkpoint, broad Windows execution stop, separate fuzz no-retry hold and
 storage pause remain under the [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 ## 10. Native Windows qualification and safe experiment ownership
 
-Real Windows tests remain mandatory for service tokens/privileges, pipe identity and impersonation, protected files/registry, reparse/handle lifetime, process mitigations, DLL loading, clock effects, power/resume, accessibility and complete MSI lifecycle. Cross-compilation or a Linux model cannot close those checks.
+Real Windows tests remain mandatory for service tokens/privileges, pipe identity and impersonation, protected files/registry, reparse/handle lifetime, process mitigations, DLL loading, clock effects, power/resume, accessibility and complete-package lifecycle. Cross-compilation or a Linux model cannot close those checks.
 
 Before any privileged experiment, complete the architecture's experiment card: owned guest, exact source/artifacts, allowed operations, absolute/rate/attempt limits, test endpoints, stop condition, external timeout, restoration steps and independent observation. An unspecified bound means the effect is not authorized. Ordinary agents remain unelevated; only the qualified lab task receives its necessary scoped authority.
 
@@ -857,15 +911,15 @@ Retain first failures, retry reasons and cleanup evidence. A clean rerun after d
 
 ### 11.1 Ordered tiers
 
-Independent checks within a tier may run concurrently in isolated owned environments. Every later tier consumes evidence for the same candidate identity.
+Independent checks within a tier may run concurrently in isolated owned environments. Every later tier consumes evidence for the identified candidate lineage, recording any Store/signing transformation and the final delivered artifact separately.
 
 | Tier | Required work | When and authority |
 | --- | --- | --- |
 | T0 — admission | Source/policy/tool identity, lock/feature/source/license/advisory disposition, workflow/secret checks, scope inventory | Before target-controlled execution; tools that invoke Cargo already need the sandbox |
 | T1 — fast contracts | Formatting, compiler/Clippy/rustdoc, applicable constructor/consumer and external compile-fail controls, unit/property/API tests, doctests and qualified SAST | Every relevant PR/configuration change; checked postconditions and no privileged clock effects |
 | T2 — affected behavior | Regression corpus, focused fuzzing, affected coverage/mutation, native integration, applicable native-memory and retention checks, lifecycle/accessibility checks | Based on changed requirements and milestone; missing affected evidence blocks that change |
-| T3 — release candidate | Complete supported matrix, all required critical-file gates, native authority/mitigation/package checks, resource measurements, inventory/SBOM and independent review | Exact source/artifact candidate; full scope cannot be inferred from unrelated older focused runs |
-| T4 — signing/publication | Provider acceptance, human approval, origin-bound signing, final payload/MSI verification and lifecycle evidence | Separate release authority; public release remains blocked until requirements pass |
+| T3 — release candidate | Complete pre-submission candidate matrix, required critical-file gates, local native authority/mitigation/package mechanics, resource measurements, inventory/SBOM and independent review | Exact source/artifact candidate; explicitly retain Store-signature-dependent cases for T4. Local test signing does not pass those cases, and unrelated older runs do not establish candidate coverage |
+| T4 — signing/publication | Owner-controlled Store submission, external certification/signing, then final delivered package/catalog/payload and lifecycle qualification; a later selected MSI alternative uses its own qualified signing flow | Preparation needs no speculative Store preapproval; broad release follows actual final-artifact evidence and David's exact-candidate decision |
 
 Scheduled advisory/secret metadata refresh and long fuzz campaigns run separately and can reopen admitted inputs. They do not modify the lockfile or auto-accept risk.
 
@@ -941,7 +995,7 @@ The table combines adopted bootstrap files and the remaining implementation blue
 | DEV-03: Admit dependency/CI policy | Exact graph/source/license dispositions, freshness receipt, workflow/secret/CodeQL controls | Preserve S0.1 crypto/license hold; actual held dependency blocks only dependent product work |
 | DEV-04: Qualify behavioral evidence | Independent fixtures, nextest/doctests, 90% module and 95% file checkers with complete denominators | P1 core implementation and reviewed critical manifest; no empty green bootstrap |
 | DEV-05: Qualify native analysis/lab | x64 Windows evidence, effective mitigations, bounded lab ownership; native-memory controls and candidate paths; separate retention, ASan and coverage results | AppVerifier/PageHeap/CDB bootstrap controls passed; application/native-product, Leak-layer, soak and ASan qualification remain pending. Tool controls cannot waive required native behavior |
-| DEV-06: Protect promotion | Complete candidate inventory, provider-approved flow, independent release review and final MSI verification | OPEN-11 and production signing gates; no automatic public release from an agent |
+| DEV-06: Protect promotion | Complete candidate inventory, owner-controlled submission, independent review and final delivered package verification under the selected trust profile | OPEN-11 and post-Store qualification before broad release; no automatic public release from an agent |
 
 Bound unresolved tool experiments by time, owner and decision criterion. If a tool cannot analyze a required surface, record the gap and choose an independently justified alternative; do not remove the requirement. Optional model tools need not block starting bounded P0 work.
 
@@ -999,6 +1053,14 @@ The sources below are upstream/vendor documentation and source repositories retr
 - **C34:** LLVM [vectorizer profitability, width and unroll cost models](https://llvm.org/docs/Vectorizers.html).
 - **C35:** LLVM [fast-math flag semantics, including contraction and reassociation](https://llvm.org/docs/LangRef.html#fast-math-flags), and Clang [floating-point and denormal-environment controls](https://clang.llvm.org/docs/UsersManual.html#controlling-floating-point-behavior).
 - **C36:** Broader [Windows dllimport issue #27438](https://github.com/rust-lang/rust/issues/27438), [2024 native-global-data discussion](https://github.com/rust-lang/rust/issues/27438#issuecomment-2360332201), ordinary-application [ThinLTO/LLD issue #81408](https://github.com/rust-lang/rust/issues/81408), later changes [#129079](https://github.com/rust-lang/rust/pull/129079) and [#122790](https://github.com/rust-lang/rust/pull/122790), pinned [import handling](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/consts.rs), [self-import generation](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_ssa/src/back/write.rs#L2294-L2315), and the [native dual-linker regression test](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/tests/run-make/msvc-lld-thinlto-imp-symbols/rmake.rs).
+
+Additional primary Microsoft sources checked for the 3 November selected-MSIX
+amendment; these establish documented semantics, not executed native results:
+
+- **C37:** [CFG policy fields and runtime-setting limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_control_flow_guard_policy).
+- **C38:** [User shadow-stack policy fields and runtime-setting limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_user_shadow_stack_policy).
+- **C39:** [MSIX PackageIntegrity](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-uap10-packageintegrity) and [Content enforcement](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-uap10-content).
+- **C40:** [Code Integrity Guard and Store allowance](https://learn.microsoft.com/en-us/defender-endpoint/exploit-protection-reference#code-integrity-guard), [Exploit Protection PowerShell names](https://learn.microsoft.com/en-us/defender-endpoint/customize-exploit-protection#powershell-reference), [binary-signature policy fields](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_binary_signature_policy) and [process-creation mitigation attributes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
 
 ### Dependency and CI sources
 
@@ -1062,5 +1124,5 @@ The sources below are upstream/vendor documentation and source repositories retr
 - **V23:** [Rust sanitizer stabilization tracking issue 123615](https://github.com/rust-lang/rust/issues/123615).
 - **V24:** [Rust 1.99.1 compiler options source](https://github.com/rust-lang/rust/blob/1.99.1/compiler/rustc_session/src/options.rs).
 
-Related documents: [architecture revision 1.4](windows-time-architecture.md), [MSI signing guide](windows-time-signing-guide.md), [ASVS applicability worksheet](asvs-5.0.0-applicability.md), [independent architecture review](windows-time-review.md) and [unadopted update-system assessment](windows-time-update-assessment.md).
+Related documents: [architecture revision 1.4](windows-time-architecture.md), [package signing guide](windows-time-signing-guide.md), [ASVS applicability worksheet](asvs-5.0.0-applicability.md), [independent architecture review](windows-time-review.md) and [unadopted update-system assessment](windows-time-update-assessment.md).
 

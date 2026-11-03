@@ -44,10 +44,23 @@ authorization/effect checks. All function/module interfaces follow
 [contract enforcement](implementation/implement-rust-contracts/references/contract-enforcement.md),
 including checked transformations and explicit failure/effect obligations.
 Native Win32
-UI, unprivileged network engine, privileged clock broker, administrative helper,
-complete per-machine MSI have distinct owners. Prototype crates require
+UI, unprivileged network engine, privileged clock broker, administrative helper
+and the complete package have distinct owners. Prototype crates require
 dependency qualification. Retained TUF research adopts no updater or second
 release. Future-version work must name changed architecture decisions.
+
+The current [OD-05 delivery decision](../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects one complete hardened MSIX for David's Store submission attempt,
+including services. Use [MSIX hardening §3](../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
+and [its staged work §7](../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners):
+source/design preparation, an admitted local/test-signed candidate, David's Store
+trial, then actual Store-delivered qualification before broad release. Prior Store
+approval/signing is not a prerequisite for preparing the candidate. This current
+decision overrides MSI-only directions in older research and references; retained
+MSI/SignPath/OpenPGP mechanics apply only if David later revisits delivery after
+rejection or concrete technical evidence. Preserve those historical sources and
+upstream provenance. No direction choice proves implementation, lifts the Windows
+stop/separate fuzz hold/storage pause or displaces the current Core task.
 
 Preserve source skills' evidence discipline: existing work, producer → state →
 consumer tracing, independent behavioral oracles; distinguish compiler, simulated,

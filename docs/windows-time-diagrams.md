@@ -5,9 +5,22 @@
 
 These editable Mermaid views are extracted from the [canonical architecture and threat model](windows-time-architecture.md). Keep each diagram in that plan authoritative and regenerate this companion when the architecture changes. GitHub and other Mermaid-capable Markdown renderers display the diagrams directly; the fenced source is also available to edit.
 
-**Distribution contract:** one complete MSI per supported architecture, authenticated under the declared release profile in architecture section 19.5, contains the native UI, engine service, privileged clock broker, helper and required payloads. One product owns install/update/repair/removal. Runtime process separation restricts authority; it does not require separate packages. Any future MSIX must satisfy the same complete-product contract.
+**Distribution contract, amended 3 November 2026:** one complete hardened MSIX per
+supported architecture is selected for David's Store submission attempt with
+services. It contains the native UI, engine service, privileged clock broker,
+helper and required payloads. One product owns install/update/repair/removal;
+runtime process separation does not require separate packages. Architecture
+sections 19.4–19.5 distinguish this target from unqualified provisioning, recovery,
+Store acceptance and actual delivered-artifact evidence. MSI designs remain
+alternatives for a later owner decision.
 
-**Release-profile amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) permits an initial OpenPGP release alternative when free Authenticode is unavailable. This changes release-policy evidence, not process authority or package count. OpenPGP supplies no Windows publisher trust; installed-file integrity and native lifecycle remain qualification gates.
+**Release-profile amendment:** [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects the complete Store MSIX preparation path; no Store preapproval is needed
+to prepare the candidate. The [MSIX plan](plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
+separates local mechanics, David's controlled submission and actual Store-delivered
+qualification before broad release. Retained OpenPGP/MSI permission supplies no
+Windows publisher trust or automatic fallback. These diagrams specify required
+behavior; they prove neither an available MSIX lifecycle hook nor native execution.
 
 **30 October contract amendment:** the correction sequence now reserves authority durably before the clock effect and records the known outcome before successful acknowledgement. Crash-unknown outcomes follow [architecture §10.2.1](windows-time-architecture.md#1021-durable-authority-reservation-and-uncertain-outcomes); the [critical assessment](supporting-reviews/architecture-contract-review.md) records scope and limitations.
 
@@ -140,7 +153,7 @@ The operating-system clock is unchanged throughout candidate-time TLS work. Plai
 
 ```mermaid
 flowchart TD
-    P["One complete approved MSI"] --> V["Preflight complete payload, identities, policy and recovery"]
+    P["One complete approved package"] --> V["Preflight complete payload, identities, policy and recovery"]
     V -->|"Fail or required rollback disabled"| X["Stop before clock takeover"]
     V -->|"Pass"| J["Durably record prior W32Time state and ownership generation"]
     J --> O["Quiesce prior owner and activate one broker generation"]

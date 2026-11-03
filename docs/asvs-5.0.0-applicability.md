@@ -12,6 +12,16 @@ The [architecture and threat model](windows-time-architecture.md) owns product d
 
 ## Common provenance fields
 
+**3 November delivery refinement:** the amended [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects complete hardened MSIX preparation for David's Store attempt with services.
+Use current architecture THR-20 and CHECK-13/15/16/18/23 with the
+[MSIX plan](plans/windows-msix-store.md) for package/catalog identity, immutable
+code, per-process protection and recovery-before-removal evidence. Earlier
+MSI-specific revision notes below retain historical provenance and apply to the
+retained MSI alternative where relevant; they do not require an MSI prerequisite.
+All 345 clause IDs/dispositions and unexecuted statuses remain unchanged. Neither
+this amendment nor Store certification establishes ASVS conformity.
+
 **30 October contract refinement:** [architecture §20.2.1](windows-time-architecture.md#2021-contract-review-acceptance-refinements)
 and [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix)
 add evidence cases for native owner-rights isolation, durable correction accounting,

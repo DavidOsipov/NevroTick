@@ -13,7 +13,7 @@ The motivating problem is a time service that stops working without a useful exp
 
 **Owner amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) records the accepted choices and distinguishes recommendations; [NV-RESEARCH-001](nevrotick-research-handoff.md) assigns unresolved evidence. UI-M0 remains unchanged.
 
-The launch target remains supported Windows 11 x64, a native English-first UI, NTPv4 and NTS client support, and one complete MSI under the declared Authenticode or initial OpenPGP profile. The application is useful with its window closed and before anyone logs in. It does not require an account or a remote control plane.
+**Owner delivery decision, 3 November 2026:** the launch target is supported Windows 11 x64, a native English-first UI, NTPv4/NTS client support and **one complete hardened MSIX prepared for a Microsoft Store submission attempt**, including services. [Architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) separate this selected direction from unresolved provisioning, Store acceptance and actual release qualification. Preparation does not require prior Store approval. Retained MSI/signing designs are fallback/reference options for David to reconsider after rejection or concrete technical evidence, not parallel deliverables. Current Core priority, Windows/fuzz/storage holds and UI-M0 deferrals remain. The application must work with its window closed and before login; synchronization requires no NevroTick account or remote control plane. Store acquisition has its own distribution requirements.
 
 [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
 selects an intended **x86-64-v3** minimum for that x64 product, with qualified
@@ -54,13 +54,13 @@ Security, accessibility and resource behavior are acceptance conditions across t
 
 ### F-01 — Install and maintain one product
 
-The MSI contains the UI, synchronization engine, clock broker, administrative helper, required resources and licenses. Setup explains that synchronization runs in the background and, on an authorized unmanaged machine, the product becomes the active clock controller in place of Windows Time. Setup/privacy information also explains connections to configured time servers and the DNS/certificate-validation services allowed by the admitted network policy.
+The complete MSIX contains the UI, synchronization engine, clock broker, administrative helper, required payloads, resources and licenses. Installation information explains that synchronization runs in the background and, on an authorized unmanaged machine, the product becomes the active clock controller in place of Windows Time. Setup/privacy information also explains connections to configured time servers and the DNS/certificate-validation services allowed by the admitted network policy. No separate service installer or first-UI privilege-provisioning step is required.
 
 Setup checks readiness and preserves the existing Windows Time configuration before handing over. It must not overwrite peer/domain settings or invent a universal state to restore later. Managed machines initially observe without taking control. The ordinary UI opens without inheriting installer elevation.
 
-Updates use one complete MSI authenticated under the explicitly selected release profile; see architecture section 19.5 and OD-05. Repair preserves valid configuration, ownership records and consumed correction allowances. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
+The selected Store route uses complete-package updates after its lifecycle is qualified; see architecture sections 19.4–19.5 and OD-05. Package scheduling/replacement does not itself settle clock recovery. Repair preserves valid configuration, ownership records and consumed correction allowances; Reset must not delete the only mandatory recovery path. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. Updates, last-user removal and delayed payload removal must preserve the correct machine-service owner. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
 
-**Acceptance:** clean install, boot without login, UI closure, complete update, repair and uninstall with no UI present; inject a takeover/maintenance failure and prove the prior or successor owner is respected. A successful file copy is not sufficient installation readiness. [Architecture §§11, 19; CHECK-5/13/18/23]
+**Acceptance:** clean install, boot without login, UI closure, complete update, repair/Reset and removal before first UI launch or with other-user sessions; inject a takeover/maintenance failure and prove the prior or successor owner is respected. A successful file copy, Store certification or local package deployment alone is not sufficient application readiness. [Architecture §§11, 19; CHECK-5/13/18/23]
 
 ### F-02 — Synchronize automatically in the background
 
@@ -291,7 +291,7 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Language | English | Other locales require explicit adoption and QA |
 | Diagnostics | INFO application output; reviewed dependency messages WARN or stricter; bounded redacted export | Shared contract in architecture section 12.3; finite scoped DEBUG, administrative service control, per-user UI control; no secret data or privileged arbitrary export path |
 | Remote telemetry/crash upload | Off | No account or automatic support upload required |
-| Updates | User-initiated complete MSI under declared release profile | OD-05/architecture section 19.5; no silent downgrade of release trust |
+| Updates | Store-managed complete-package updates under the qualified lifecycle | OD-05/architecture sections 19.4–19.5; preserve ownership, mandatory recovery and release trust; no bespoke privileged updater |
 
 The source preset is a release deliverable, not an invitation to hard-code unreviewed endpoints. For each proposed provider, record operator, identity, protocol, supported delegation/ports, usage policy, intended population and time scale. Do not silently enroll a public fleet in a service whose published terms do not permit it. If a suitable default set cannot be qualified, record that as an onboarding/release blocker rather than claim a zero-configuration experience.
 
@@ -301,7 +301,7 @@ The basic UI does not expose a “force time,” “ignore certificate errors,�
 
 ### A. Personal computer, normal first use
 
-Install one MSI → review background synchronization and handover explanation → standard installation elevation → transactional readiness/takeover → open the ordinary UI → see acquisition become qualified tracking.
+Acquire the complete Store package → review background synchronization and handover information → standard administrative authorization for service installation → transactional readiness/takeover → open the ordinary UI → see acquisition become qualified tracking.
 
 The first launch goes directly to status. A short dismissible explanation identifies Sync now and Diagnostics; a second mandatory configuration wizard is unnecessary when the qualified preset is usable. If setup is incomplete, show the exact missing action rather than a fake healthy sample screen.
 
@@ -323,7 +323,7 @@ Open the app → distinguish connection failure from a confirmed service failure
 
 ### F. The user removes the application
 
-Use the product's one Installed apps entry → standard elevated removal → cancel only currently owned transient work → restore the applicable prior Windows Time state → remove components and report the result. Removal must work without the UI running. A later owner or Group Policy change is respected.
+Use the product's one Installed apps entry → supported Windows-authorized removal → cancel only currently owned transient work → restore the applicable prior Windows Time state → remove components and report the result. Removal must work before the first UI launch and without a UI running. A later owner or Group Policy change is respected; another user's registration and machine-service lifetime are handled by the qualified package lifecycle.
 
 ## 7. Visibility when the window is closed
 
@@ -362,7 +362,7 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-12 | F-07 | Suspend/resume, Modern Standby, external clock change and late callbacks preserve generation boundaries. Time asleep is not counted as delivered slew. | CHECK-10/11/27 |
 | AC-13 | F-01/07 | Kill engine and broker during correction. Recover only with current ownership; ambiguous/successor state blocks resets. Crash loops preserve consumed budgets. | CHECK-10/12/27 |
 | AC-14 | F-01/06 | Managed-policy takeover defaults to observation; later GPO/controller activation causes honest conflict handling without fighting the owner. | CHECK-5/13 |
-| AC-15 | F-01 | Update/repair/uninstall with UI closed and old sessions; inject interruption. No partial product, permissive reset, stale-owner restoration or false completion. | CHECK-13/18/23 |
+| AC-15 | F-01 | Store package update, repair/Reset and uninstall before UI launch, with UI closed, old sessions and last-user transitions; inject interruption. No partial product, erased last recovery path, permissive reset, stale-owner restoration or false completion. | CHECK-13/18/23 |
 | AC-16 | F-09 | Failures yield useful redacted evidence; required events survive optional filters; authorized temporary DEBUG expires; floods/full storage cannot block cleanup or create success. | CHECK-2/14/17/27 |
 | AC-17 | F-04/06/08/09/10 | Complete status, editing, UAC cancellation, correction review and export using keyboard/Narrator, contrast and 200% scaling. Focus/announcements remain usable. | CHECK-22 |
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
@@ -384,7 +384,7 @@ The feature scope can be delivered in small integrated slices while preserving t
 | S-3 — Safe unattended synchronization | One owned controller corrects time before login and with UI closed | Broker/platform, installer and engine owners; P3/P4 authority/ownership prerequisites | Independent real clock trajectory, stop/restart/ownership cases, bounded native work and installation handover |
 | S-4 — Recovery and administrative workflows | Source editing, wrong-date recovery and single-use correction review work through the same policy | Network/platform/UI owners; P2/P4/P5 with resolved relevant OPEN-5/6/8 decisions | AC-07–14 valid/failure pairs; no stale approvals, downgrade or hint-derived clock write |
 | S-5 — Finished basic experience | Main/Sources/Settings/Diagnostics, optional tray, support export and complete maintenance are usable | UI, accessibility, packaging and platform owners; P5/P6; lifecycle work began in S-0 | Keyboard/Narrator/scaling, source/state truthfulness, resource measurements and interrupted-maintenance cases |
-| S-6 — Exact public release candidate | One complete package with verified features and declared release profile | P6/P7; David/release/signing/license owners and independent verifier | Complete feature/architecture matrix, actual profile-specific authenticity and installed-file evidence, supported clean-machine lifecycle and no unresolved dependent blocker |
+| S-6 — Exact public release candidate | One complete hardened MSIX prepared for Store submission, then qualified as the actual Store-delivered artifact before public release | P6/P7; David/release/signing/license owners and independent verifier; preparation does not require prior Store approval | Complete feature/architecture matrix, actual Store outcome, package/catalog and installed-file evidence, supported clean-machine lifecycle and no unresolved dependent release blocker |
 
 Do not build the entire settings UI against invented responses and call that S-2. Prototype data must be visibly labelled, and the integrated exit needs actual admitted service data. Similarly, a headless numerical test cannot qualify Windows clock control.
 
@@ -406,8 +406,8 @@ Before later live status, restore D2 and define/test field ownership, state/prof
 | Dedicated handback-to-Windows button | Requires the explicit elevated transaction already identified by the architecture; uninstall retains the established restoration path |
 | Config import/export or free-form policy editor | Additional parser/migration/privileged-input surface; bounded native settings first |
 | Single-source mode and arbitrary controller tuning | Weaker trust or additional numerical policy; add only with explicit labelled requirements and evidence |
-| Automatic background updates or TUF integration | Separate update trust, version/rollback and recovery design; complete MSI updates under the explicit release profile remain the baseline |
-| Complete MSIX channel or native ARM64 support | Equivalent complete-product and platform qualification required |
+| Bespoke privileged automatic updater or TUF integration | Separate update trust, version/rollback and recovery design; the selected Store route instead qualifies the platform's complete-package updates |
+| Native ARM64 support | Separate complete-product and platform qualification required |
 | Russian and other locales | Adopt translations with placeholder/plural, layout and accessibility parity; English first |
 | Remote dashboard, accounts, fleet control, plugins/scripts, NTP server/PTP/refclocks | Outside the workstation client problem and current threat model |
 
@@ -423,7 +423,7 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 | Plain-NTP assurance claims | Explicit unauthenticated profile and resolution of applicable ASVS interpretation/exception questions | Security owner; OPEN-9 |
 | Supported Windows builds | Actual client OS, architecture, power modes and protection configurations | Platform/release; OPEN-2 |
 | UI and tray qualification | Actual UIA, keyboard, Narrator, scaling, startup/closure and measured resource behavior | UI/accessibility; OPEN-10/13 |
-| Complete release path | Exact compatible graph, installer-tool eligibility, OD-05 release profile/key or publisher, installed-file trust and lifecycle recovery | License/packaging/release; OPEN-1/11/14 |
+| Complete Store release path | Exact compatible graph and package tools, supported service provisioning/recovery, package/publisher identity, actual Store outcome, installed-file/helper trust and complete lifecycle | License/packaging/release; OPEN-1/11/12/14; candidate preparation does not await prior Store acceptance |
 
 These are existing phase gates or concrete refinements of them. Missing evidence is not a reason to silently weaken the feature. Proposed UI copy, default presentation and tray choices can be refined with user testing without changing the security semantics.
 

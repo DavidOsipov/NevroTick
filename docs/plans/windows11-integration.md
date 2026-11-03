@@ -19,13 +19,21 @@ without selecting optional APIs or qualifying Windows behavior.
 
 The strongest incremental candidates are packet timestamps, concrete service-scoped network restrictions, DNS configuration and policy adapters, power-aware background work, and lifecycle checks that cover Modern Standby and MSI Restart Manager. Several mechanisms improve an existing design rather than add a new product feature. They should enter the relevant planned work when it is reached; they do not displace the current time-client work.
 
-This amendment records the owner-approved research and future work. It does not select a conditional API, dependency, release channel or different service topology. No application code, system configuration, clock, service, package or dependency is changed by this documentation integration. The existing pause on native experiments remains in force. Proposed tests below are future bounded qualifications, not executed results. Local W11-W task labels locate assignments; existing CHECK, DNS-C and ST-T owners retain acceptance authority.
+This amendment records the owner-approved research and future work. Its original
+survey selected no conditional API, dependency or different service topology.
+The later [OD-05 delivery decision](../nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects complete hardened MSIX preparation under the
+[focused plan](windows-msix-store.md), superseding this survey's earlier MSI-first
+direction. No application code, system configuration, clock, service, package or
+dependency is changed by documentation integration. Existing execution holds
+remain. Proposed tests below are future bounded qualifications; W11-W labels
+locate work while existing CHECK, DNS-C and ST-T owners retain acceptance authority.
 
 ### Baseline inspected
 
 The coordinator refreshed GitHub main and its complete tree at `a6c2401b9a8166515293653f14f637e5543c689e` (tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`, 1,249 entries). Local material was a source/documentation snapshot, not a Git checkout. Relevant sources included the [architecture][R1], [hardening plan][R2], [development plan][R3], [whole-computer DNS plan][R4], [DNS upstream lessons][R5], and [protected-storage plan][R6]. “New” below means a useful addition or concretization relative to those inspected documents; it is not an exhaustive absence claim about every repository file.
 
-The accepted direction remains Rust on Windows 11 x64; an own-process network engine with least privilege; a separate privileged clock broker; an unelevated native Win32 UI; an administrative lifecycle owner; and one complete per-machine MSI. The DNS design is a future whole-computer answering service with loopback ingress, pinned DoQ-only upstream, DNSSEC, bounded work and privacy-preserving caching. Existing VBS/TPM optional-storage decisions and mandatory clock-continuity requirements remain separate. Most of these subsystems are planned, not shipping capabilities.
+The accepted direction remains Rust on Windows 11 x64; an own-process network engine with least privilege; a separate privileged clock broker; an unelevated native Win32 UI; an administrative lifecycle owner; and now one complete hardened MSIX for the owner's Store attempt. Service provisioning and recovery remain unqualified. MSI-specific research below is retained for a later owner-selected alternative, not a prerequisite or assumed MSIX hook. The DNS design remains a future whole-computer answering service with loopback ingress, pinned DoQ-only upstream, DNSSEC, bounded work and privacy-preserving caching. Existing VBS/TPM optional-storage decisions and mandatory clock-continuity requirements remain separate. Most of these subsystems are planned, not shipping capabilities.
 
 Already covered well: clock-domain separation, suspend/resume invalidation, W32Time ownership, restricted service identities, object ACLs, per-role mitigations, protected maintenance state, finite SCM recovery, DNS ownership/restoration, private namespace handling, ETW, and the distinction between isolated CNG roots and full VBS enclaves. This report concentrates on concrete native mechanisms and remaining composition questions.
 
@@ -191,13 +199,17 @@ Candidate messages include unavailable protected storage, optional-cache mode, p
 | Protected Process Light | Strong process protection in eligible scenarios [X9] | Windows levels are reserved and the antimalware route has special eligibility/signing requirements. Ordinary utility Authenticode signing is not sufficient. Exclude as a general NevroTick option. |
 | SCM service triggers | On-demand activation for a genuinely optional component [X10] | An address-arrival trigger is not Internet readiness; named-pipe/RPC endpoint triggers are not first-UDP/53 activation. They do not justify stopping required time/DNS work. |
 
-The later [MSIX/Store investigation](windows-msix-store.md) evaluates the named
-certificate-cost and managed-delivery need within W11-W10. It preserves the
-positive catalog-trust/signing benefits alongside restricted service admission,
-supported least-privilege provisioning and recovery-before-removal gaps. Use
+The later [MSIX/Store plan](windows-msix-store.md) now owns the selected complete
+hardened MSIX target within W11-W10. It preserves the catalog-trust/signing
+benefits alongside restricted service admission, supported least-privilege
+provisioning and recovery-before-removal gaps. Use
 [architecture §19.4](../windows-time-architecture.md#194-future-complete-msix-gate)
-and the [existing task refinement](../../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026);
-this does not select a new channel, split product or changed service account.
+and the [current task amendment](../../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026).
+Source/design preparation does not require prior Store approval; actual Store
+outcome and final-artifact qualification remain distinct later stages. No split
+product or broader service account follows from that choice. The external-location
+identity row above applies only to a later retained-MSI alternative; the selected
+MSIX profile excludes mutable/external executable content.
 
 ## 10. How an implementation agent should use this research
 

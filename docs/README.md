@@ -30,7 +30,7 @@ to own requirements, and task records own executed evidence.
 | What should an agent do with the protected-storage research? | [Protected-storage agent task](../tasks/windows-protected-storage.md): bounded work items, prerequisites, owners, independent expectations, healthy/defect controls and candidate-specific evidence, mapped to the existing storage plan. The native experiment pause and current development priority remain unchanged. |
 | Which Microsoft Windows 11 mechanisms should be evaluated, and where does their work belong? | [Windows 11 integration research](plans/windows11-integration.md), [Microsoft Learn follow-up](plans/windows11-integration-follow-up.md), [phase workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent task](../tasks/windows11-integration.md): packet timestamps, sleep/timer behavior, DNS/WSH integration, service/MSI/COM lifetimes, resource signals, CNG, diagnostics and future UI. The follow-up adds exact completion, metadata, permission, tracing and partial-replacement cases plus source discrepancies. Existing CHECK/DNS-C/ST-T owners and conditional triggers apply; no native pass or automatic API/dependency adoption. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
-| Can Store MSIX remove certificate cost without weakening the complete product? | [MSIX/Store study](plans/windows-msix-store.md), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [existing W11-W10 task refinement](../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026): dated fees/signing scope, service/capability eligibility, supported provisioning, recovery and package-aware trust. Research does not adopt MSIX or qualify a Store release. |
+| How is the selected complete MSIX hardened and prepared for a Store attempt with services? | [MSIX/Store plan](plans/windows-msix-store.md), [amended OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [current W11-W10 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): explicit content integrity, sealed executable paths, Store-compatible CIG, per-role protections, supported service provisioning and recovery. Local mechanics, owner submission and final Store-delivered qualification are separate stages; no working package or Store acceptance is claimed. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
@@ -63,16 +63,30 @@ AES-SIV checkpoint remains evidence for its recorded candidate; the separately
 held fuzz runner must not be retried through another invocation or agent.
 Neither a confirmed false positive nor host compromise is established.
 
-**MSIX and Store research, 3 November 2026:** the
+**Owner-selected hardened MSIX, later on 3 November 2026:** David selected one
+complete MSIX and will try Store publication with its services, reconsidering
+delivery if refused. The [OD-05 amendment](nevrotick-owner-decisions.md#71-accepted-choices)
+and [hardening plan](plans/windows-msix-store.md) supersede the earlier MSI-first
+decision. W11-W10/W11-W05 now prepare that target without Store preapproval;
+MSI remains a retained alternative, not an automatic fallback or predecessor.
+The [current task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
+separates source/design, local candidate qualification, David's controlled Store
+attempt and actual delivered-artifact verification before broad release. Explicit
+package integrity, immutable executable content and per-process mitigations are
+requirements, not active protections. Core priority, Windows/fuzz holds, storage
+pause and UI-M0 deferrals remain; service topology and recovery must still be
+supported and qualified.
+
+**Earlier MSIX and Store research, 3 November 2026:** the
 [focused assessment](plans/windows-msix-store.md) records free Store MSIX signing,
 current free developer-onboarding flows, common catalog trust, native Win32
 packaging, web installation and controlled distribution. It distinguishes those
 benefits from restricted service/elevation approval, the selected virtual-account
 broker's manifest mismatch and unresolved recovery-before-removal provisioning.
 The [task refinement](../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026)
-reuses W11-W10, W11-W05 and existing CHECK owners. Full MSIX remains conditional;
-the MSI, OD-05, current Core task, Windows/fuzz holds, storage pause and UI
-deferrals remain. Source review establishes no account/provider approval,
+reused W11-W10, W11-W05 and existing CHECK owners. At that checkpoint MSIX was
+conditional and MSI remained selected; the later OD-05 decision above supersedes
+that delivery choice. Source review established no account/provider approval,
 installation result or independently trusted extracted executable.
 
 **Microsoft Learn MCP follow-up, 3 November 2026:** the
@@ -98,11 +112,12 @@ place them within existing phases. Canonical refinements cover actual packet/
 interface provenance, Modern Standby execution limits, configured versus effective
 service protection, Restart Manager admission, DNS ownership and native resource
 signals. WSH, packet timestamp adapters, CNG batching, PerfLib and new fault
-profiles remain candidates pending their stated evidence. LPAC, full enclaves,
-package identity and new distribution channels remain conditional; PPL is not
-an ordinary utility-service route. Current work, DoQ-only upstream, the complete
-MSI, storage pause and UI-M0/D1–D3 deferrals remain unchanged. Documentation
-integration establishes no implemented feature, measured speedup or Windows pass.
+profiles remain candidates pending their stated evidence. LPAC and full enclaves
+remain conditional; PPL is not an ordinary utility-service route. This original
+research checkpoint left the complete MSI selected; the later OD-05 amendment
+above selects MSIX preparation. Current work, DoQ-only upstream, storage pause
+and UI-M0/D1–D3 deferrals remain. Documentation integration establishes no
+implemented feature, measured speedup or Windows pass.
 
 The coordinator adopts W11-W01–W11-W10 through
 [development §8.5](plans/development-plan.md#85-windows-11-integration-research-and-qualification)
@@ -278,11 +293,11 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 | 3 | [windows-time-diagrams.md](windows-time-diagrams.md) | Editable Mermaid architecture views aligned with revision 1.4. |
 | 4 | [windows-time-development-hardening.md](windows-time-development-hardening.md) | Strict Rust/Windows agentic development policy, CI, auditors, tool qualification and evidence requirements. See the current tooling record for adopted bootstrap checks; application/native/release qualification remains pending. |
 | 5 | [asvs-5.0.0-applicability.md](asvs-5.0.0-applicability.md) | All 345 ASVS 5.0.0 requirements mapped to proposed applicability/verification; not completed compliance. |
-| 6 | [windows-time-signing-guide.md](windows-time-signing-guide.md) | Practical MSI signing application, artifact workflow and verification guide; provider acceptance remains open. |
+| 6 | [windows-time-signing-guide.md](windows-time-signing-guide.md) | Selected Store MSIX trust/workflow and retained MSI signing alternatives; final artifact verification and provider acceptance remain open. |
 | 7 | [windows-time-update-assessment.md](windows-time-update-assessment.md) | TUF/update research and constraints; no automatic updater or TUF architecture has been adopted. |
 | 8 | [windows-time-review.md](windows-time-review.md) | Independent architecture review and revision 1.4 reconciliation. Its earlier reviewed-baseline label is intentional. |
 
-Accepted owner decisions govern their stated scope; recommendations and open questions remain proposals. The architecture controls the corresponding technical/security contracts. The feature plan supplies proposed presentation and product scope; unresolved provider, numerical, Windows, licensing and signing decisions retain their gates. The complete application remains one MSI. The preferred Authenticode route and owner-approved initial OpenPGP alternative have separate evidence and Windows compatibility claims; neither is qualified by this documentation.
+Accepted owner decisions govern their stated scope; recommendations and open questions remain proposals. The architecture controls the corresponding technical/security contracts. The feature plan supplies proposed presentation and product scope; unresolved provider, numerical, Windows, licensing and signing decisions retain their gates. The selected target is one complete hardened MSIX for David's Store attempt with services. Retained MSI Authenticode/OpenPGP alternatives have separate evidence and Windows compatibility claims; none of these routes is qualified by documentation. Historical MSI-first reviews and receipts describe their original candidates, not the amended OD-05 direction.
 
 ## UI design and brand references
 

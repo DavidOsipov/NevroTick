@@ -43,7 +43,7 @@ Core work and Windows/fuzz/storage execution holds remain under the
 
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
-The selected v1 design is **one complete per-machine MSI** under the Authenticode or initial OpenPGP release profile in section 19.5 containing a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker, and the administration helper. The user installs, updates, repairs and removes one product. The installer owns service installation and reversible Windows Time Service handover. A future MSIX, if qualified, must contain the same complete product with an equivalent lifecycle; separate UI and service distributions are excluded.
+**Owner delivery decision, 3 November 2026:** prepare **one complete hardened MSIX for a Microsoft Store submission attempt**, including the services. The product contains a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker and the administration helper. One product owns installation, updates, repair, removal and reversible Windows Time Service handover. Sections 19.4–19.5 and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) distinguish this selected direction from unresolved provisioning, Store acceptance and actual artifact qualification. Prior Store approval is not a prerequisite for preparing the submission candidate. Retain the MSI design and signing profiles as fallback/reference material for David to reconsider after a Store rejection or concrete technical evidence; they are not a parallel deliverable or an MSIX prerequisite. This decision does not change the current Core priority, Windows execution stop, separate fuzz hold, storage pause or UI-M0 deferrals.
 
 **Revision 1.4 changes:** reconciles a fresh independent review of all maintained Markdown documents and all 345 ASVS clauses. It corrects 16 worksheet records, including seven draft classification changes; makes conditional native HTTP retrieval and legacy NTP entropy decisions explicit; aligns JSON/status wording; and adds a source-derived extreme-date verifier qualification case. Original verification text and prior additions remain traceable. All controls remain unimplemented/unexecuted. See the [full review report](windows-time-review.md).
 
@@ -101,12 +101,12 @@ qualification. P0 investigations and D1–D3 re-entry gates remain unchanged.
 | REQ-1 | Synchronization continues before login and after the UI closes; everyday UI use needs no elevation | Only the broker has clock-setting privilege; machine policy changes require elevation or explicit delegation | CHECK-1, 2, 3, 12 |
 | REQ-2 | Security is designed against applicable ASVS 5.0.0 L1-L3 clauses plus native Windows/time controls | Applicability, implementation and verification are separate; unresolved literal L3 gaps remain visible | CHECK-4, 16, 17, 24 |
 | REQ-3 | Exactly one cooperating product controller writes the clock; W32Time handover and restoration are reversible | Interpret the user's “turn on” as **turn off W32Time during takeover**, then restore its previous state; do not fight Group Policy | CHECK-5, 12, 13 |
-| REQ-4 | Releases have verified artifact provenance under their declared profile; loading untrusted DLLs is prevented by design | Prefer Authenticode. OD-05 permits an initial OpenPGP-signed MSI without project Authenticode if a free route is unavailable; it supplies no Windows publisher trust. Qualify installed-file trust and disclose restrictions | CHECK-16, 18, 23 |
+| REQ-4 | Releases have verified artifact provenance under their declared profile; loading untrusted DLLs is prevented by design | Qualify the selected Store MSIX package/catalog identity, approved release, installed-code trust and exact DLL-admission policy. Store signing is not helper authorization or proof of runtime compatibility; retained MSI profiles require a later delivery decision | CHECK-16, 18, 23 |
 | REQ-5 | Strict, justified Rust and supply-chain checks block unsafe releases | Do not blindly enable contradictory lints; exceptions are narrow, documented and tested | CHECK-19, 20, 24 |
 | REQ-6 | The service is quiet, small and efficient in steady state | Budgets below are proposed targets; publish measurements on named hardware and OS builds | CHECK-21 |
 | REQ-7 | Minimal native UI works with keyboard, Narrator, UI Automation, contrast themes and scaling | Accessibility gates toolkit adoption and release; a toolkit feature flag is insufficient | CHECK-22 |
 | REQ-8 | NTP and NTS operate correctly; one or two explicit plain NTP sources can assist recovery from a badly wrong date | Plain bootstrap hints never directly set Windows time and never silently replace NTS tracking | CHECK-6, 7, 8, 9, 10, 11 |
-| REQ-9 | One complete package installs the UI, both services and helper as one product, with one version/update/repair/uninstall lifecycle | V1 is one per-machine MSI under section 19.5; any future MSIX must also be complete and prove equivalent authority/restoration. No separately installed service prerequisite or UI-only package | CHECK-13, 18, 23 |
+| REQ-9 | One complete package installs the UI, both services and helper as one product, with one version/update/repair/uninstall lifecycle | Prepare a complete MSIX for Store submission under sections 19.4–19.5; qualify machine-service ownership, authority and restoration. No separately installed service prerequisite, MSI prerequisite or UI-only package | CHECK-13, 18, 23 |
 | REQ-10 | Source selection rejects inconsistent sources and uses a principal plus compatible supporters | Lowest latency alone is insufficient; failure to find agreement cannot silently select a single peer | CHECK-7, 8 |
 | REQ-11 | Sleep, network changes, outages and crashes have explicit safe recovery | Windows rate changes have no documented process-lifetime expiry | CHECK-10, 11, 12, 13 |
 | REQ-12 | UI status explains authentication, agreement, freshness and estimated uncertainty separately | An alive service or recent UDP reply is not proof of correct UTC | CHECK-14, 22 |
@@ -138,11 +138,11 @@ The following choices form the implementation baseline. A gated choice is select
 | DEC-6 | Prefer cached NTS associations before any bootstrap hint | Fresh authenticated UDP replies can avoid certificate-time circularity | State is absent, rejected, expired under policy or cryptographically invalid |
 | DEC-7 | Plain NTP bootstrap is opt-in and affects only a provisional TLS verification clock | Repairs gross date errors without writing globally untrusted time | An independent trusted time anchor becomes available; do not add accept-all TLS |
 | DEC-8 | Preserve majority selection and configured minimum agreement | No single-peer fallback after disagreement; availability is traded for correct trust reporting | A deliberate single-source profile is approved and labelled |
-| DEC-9 | One per-machine MSI contains the entire product and owns its lifecycle; use a qualified section 19.5 release profile | Meets least surprise while supporting service accounts, privileges and reversible W32Time handover | A complete MSIX passes equivalent lifecycle/authority gates; split distribution remains excluded |
+| DEC-9 | One complete hardened MSIX is the planned Store delivery target, including both services, UI and helper | Owner-selected submission attempt; retain one-product ownership, least privilege and reversible W32Time handover | Store rejection or concrete technical evidence prompts David to reconsider delivery; no automatic MSI fallback, split product or weaker privilege boundary |
 | DEC-10 | Native, bounded local protocols and files; no embedded web server/WebView | Removes unnecessary network/browser surfaces and runtime overhead | A concrete user need justifies a new threat model and applicability review |
 | DEC-11 | Only broker-acknowledged applied corrections update the engine model | Avoids assuming requested frequency/phase equals actual Windows behavior | Never relaxed; a changed backend must meet the same contract |
 | DEC-12 | Fail to visible holdover/conflict/blocked states when trust is lost | Avoids reporting false synchronization or invoking W32Time as an implicit downgrade | An administrator selects a different explicit profile |
-| DEC-13 | Prefer SignPath Foundation; Foundation publisher display accepted; David Osipov is human approver. OD-05 permits initial OpenPGP releases if free Authenticode is unavailable | Provider eligibility remains external; OpenPGP does not supply Windows publisher trust, and its full installed-artifact trust path must be qualified | Reassess provider/key policy or migrate explicitly to a qualified Authenticode/complete MSIX route; no UI-only workaround |
+| DEC-13 | Prepare the Store MSIX signing/publication route under OD-05; David Osipov remains the human release approver | Store package/catalog trust, project-specific admission and actual delivered artifacts need separate evidence; certification remains external | Retained SignPath and OpenPGP MSI profiles are fallback/reference options for a later owner delivery decision, not prerequisites or automatic alternatives |
 | DEC-14 | Use ASVS L3 as a clause-by-clause design target with native supplements | Provides traceability without pretending a desktop daemon is a web application | A new surface, stricter deployment profile or ASVS version changes applicability |
 | DEC-15 | Pin compiler, SDK, dependencies and checked feature combinations | Makes lint/build/evidence reproducible | Planned update review qualifies a replacement baseline |
 | DEC-16 | Enforce a small portable unsafe-free core and isolate Windows FFI | Shrinks the manually reviewed memory-safety surface | An unavoidable low-level optimization has measured benefit and a reviewed proof |
@@ -253,7 +253,7 @@ The core takes typed events and returns decisions plus deadlines. OS shells obta
 | BND-5 | Elevated helper to policy/lifecycle owner | Elevated administrator or explicit delegated role, revision check, narrow transaction | Reject stale/unauthorized change; preserve last accepted configuration |
 | BND-6 | Files/registry to services | Protected ACLs, versioned bounded parse, integrity/provenance and atomic replacement | Distinguish corrupt optional cache from invalid mandatory policy; never default to weaker trust |
 | BND-7 | Broker to global Windows clock/SCM | Exclusive product ownership, actual capabilities, finite correction contract | Stop unsafe actuation and expose blocked state; recover through explicit lifecycle |
-| BND-8 | Source/dependencies/build to approved installation | Pinned origins, review, license/SBOM, isolated build, profile-specific artifact authentication, David's release approval and protected deployment | Block unqualified release/install; an OpenPGP sidecar alone establishes neither installed helper identity nor Windows publisher trust |
+| BND-8 | Source/dependencies/build to approved installation | Pinned origins, review, license/SBOM, isolated build, profile-specific artifact authentication, David's release approval and protected deployment | Block unqualified release/install; broad Store signer trust alone establishes neither the approved NevroTick release nor helper authority |
 
 ### 3.4 Shared Windows adapters and diagnostics
 
@@ -292,7 +292,7 @@ Keep dependency direction acyclic: portable domain/contracts and the diagnostic 
 
 ### 4.1 Selected account topology
 
-The initial MSI prototype uses a broker under its own virtual service account, such as `NT SERVICE\RustTimeBroker`, and an engine under LocalService with its own restricted service SID. Both are own-process services. The installer grants only the broker the required change-system-time right and configures a required-privilege allowlist for each service. Final service names and SIDs are installer-owned constants.
+The authority design requires separate own-process engine and broker services. The retained MSI design uses a broker virtual service account, such as `NT SERVICE\RustTimeBroker`, and a LocalService engine with its own restricted service SID. That virtual account has no direct packaged-service manifest mapping. The selected MSIX target must establish a supported provisioning design meeting the same boundary before normal service work; neither that account mapping nor the alternative of two separate LocalService processes is qualified. Section 19.4 owns this open implementation question. Grant clock authority only to the broker and configure a required-privilege allowlist for each service; final names and SIDs are protected deployment constants.
 
 LocalService is not sufficient isolation by itself. Windows policy can grant it change-system-time privilege, and its ordinary token includes other powerful rights. SCM's required-privileges setting removes unneeded privileges at process startup; services sharing a process receive the union, which is another reason to avoid shared-process hosting. `SetSystemTime` can enable a present clock privilege, so merely leaving it disabled is not a defense. [S04, S05, S06, S07]
 
@@ -306,9 +306,9 @@ than infer a universal reboot rule. Configuration readback alone cannot admit
 clock takeover. Service-SID write restriction also does not replace explicit
 read-confidentiality ACLs. See [service-state research](plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
 
-Use service SID restrictions, explicit process/token object security and non-inheritable handles. The engine must not open the broker for injection, token duplication or writable memory. ACLs must not grant broad LocalService access merely for convenience. The broker's virtual account can present machine credentials on a network, so installer-owned service network restrictions must deny its external networking. [S08, S09]
+Use service SID restrictions, explicit process/token object security and non-inheritable handles. The engine must not open the broker for injection, token duplication or writable memory. ACLs must not grant broad LocalService access merely for convenience. A virtual account can present machine credentials on a network; under every candidate identity, deployment-owned service network restrictions must deny the broker's external networking. [S08, S09]
 
-The exact token/ACL configuration is a P0 proof gate. If the LocalService/service-SID combination cannot meet isolation tests, use a distinct engine virtual account with restricted privileges and a reviewed outbound policy. This is a constrained fallback, not permission to run both services as LocalSystem.
+The exact token/ACL configuration is a P0 proof gate. If the LocalService/service-SID combination cannot meet isolation tests, the distinct engine virtual-account design remains a comparison requiring supported package provisioning. No account alternative is automatically admitted, and failure is not permission to run both services as LocalSystem. A concrete unsupported requirement blocks the affected implementation/release claim and goes to David for delivery reconsideration.
 
 Object ownership is part of that proof. A service SID in a DACL does not by itself
 change the default owner: a LocalService-created file can remain owned by the
@@ -336,7 +336,7 @@ restricted token can exploit this, or that DPAPI cures shared-account access. [S
 
 A future delegated operator group may receive a documented subset of product operations. It must not receive `SERVICE_CHANGE_CONFIG`, general filesystem/registry write authority or `SeSystemtimePrivilege`. Other processes under an authorized user's identity can exercise that identity's allowed rights. Signing the official UI does not make it the only authorized process. [S10]
 
-The UI runs `asInvoker`. It may invoke the approved installed elevated helper through a standard UAC flow for a specific operation. The preferred profile verifies Authenticode; the initial OpenPGP profile must qualify the protected installed-file identity/integrity path in section 19.5 and cannot treat missing signatures as successful verification. The helper re-reads authoritative service state and validates a bounded request; it must not trust a user-writable temporary command file or accept arbitrary executable paths, registry keys, shell commands or Windows service names. UAC cancellation leaves policy unchanged.
+The UI runs `asInvoker`. It may invoke the approved installed elevated helper through a supported UAC flow for a specific operation. The selected MSIX profile must bind installed package/publisher identity, approved release and actual protected payload to helper/IPC authorization under sections 19.4–19.5; an unrelated Store-signed executable is not authorized. Required Store elevation capability and activation behavior remain unqualified. Retained MSI profiles have their own installed-file trust requirements; missing signatures cannot become successful verification. The helper re-reads authoritative service state and validates a bounded request; it must not trust a user-writable temporary command file or accept arbitrary executable paths, registry keys, shell commands or Windows service names. UAC cancellation leaves policy unchanged.
 
 ---
 
@@ -1076,7 +1076,7 @@ Group Policy can overwrite ordinary W32Time configuration. Detect managed policy
 | Repair | Verify files, account rights, ACLs, effective mitigations and journal | Do not reset trust policy or resurrect a consumed step allowance |
 | Interrupted transaction | Resume or roll back using explicit durable stages | Never infer completion solely from the presence of an executable |
 
-The complete MSI owns UI, helper and both services as one installation. Custom actions must be narrowly scoped, correctly conditioned for install/upgrade/uninstall and paired with rollback actions. They receive validated installer state, not arbitrary user-controlled script paths. Required rollback being disabled blocks takeover before mutation. Repair invoked by an ordinary user is still a privileged input surface. The major-upgrade old-product removal path is not an ordinary uninstall and must respect successor ownership. Test failure after every stage and after reboot interruption. Retain recovery code and the protected journal until restoration has a durable outcome; secrets are removed according to uninstall policy. See section 19 for the single-product contract and CHECK-13/23. [S27, S57, S59, S60]
+The complete package owns UI, helper and both services as one installation. The selected MSIX design must identify a supported lifecycle/recovery mechanism under section 19.4; package transactions and service stops alone do not settle application-owned clock recovery. Elevated lifecycle actions receive validated operation-specific state, not arbitrary user-controlled script paths. Unavailable required rollback/recovery blocks takeover before mutation. Repair invoked by an ordinary user is still a privileged input surface. Removal of an old package during update is not ordinary uninstall and must respect successor ownership. Test failure after every reached stage and after reboot interruption. Retain recovery code and the protected journal until restoration has a durable outcome; secrets are removed according to uninstall policy. The retained MSI design in section 19.3 additionally requires correctly conditioned custom actions with paired rollback. See section 19 and CHECK-13/23. [S27, S57, S59, S60]
 
 Automatic fallback to W32Time on NTS outage is excluded. That would change authentication policy and could create simultaneous control. Use holdover and clear failure reporting. A future explicit “release ownership to Windows” action is an elevated transaction with the same cancellation/restoration guarantees.
 
@@ -1090,10 +1090,12 @@ Exercise delayed restart during update, rollback, repair and removal, including
 interruption and re-enable. The existing service adapter guide already requires
 queued-restart handling; this makes its startup interlock explicit. [S120]
 
-Windows Installer's Restart Manager integration is another start source, not a
-separate lifecycle owner. `MSIDISABLERMRESTART` affects restart only when RM is in
-use; public MSI input cannot clear the protected maintenance guard. Qualify
-commit/rollback with RM enabled and unavailable, retaining honest reboot results.
+For the retained MSI route, Windows Installer's Restart Manager integration is
+another start source, not a separate lifecycle owner. `MSIDISABLERMRESTART` affects
+restart only when RM is in use; public MSI input cannot clear the protected guard.
+That route qualifies commit/rollback with RM enabled and unavailable. The selected
+MSIX route must qualify its actual stop/restart/update sources under the same
+maintenance and ownership admission, retaining honest reboot results.
 If preshutdown is used, select/query a justified finite per-service cleanup budget
 rather than copy an old default. Broker cancellation and mandatory journal work
 remain independent of optional cache saves; this orderly path supplies no cleanup
@@ -1649,7 +1651,7 @@ Normal operation uses three separately authorized process roles: UI, engine and 
 
 The authoritative runtime data-flow and correction-sequence diagrams are in section 3. They show the same flow IDs used below.
 
-This flow is not an independent correctness proof. The broker checks authority, lifecycle and limits; it does not repeat NTS authentication or infer true UTC from an engine claim. Runtime/network and privileged install boundaries stay distinct even though one MSI ships all components.
+This flow is not an independent correctness proof. The broker checks authority, lifecycle and limits; it does not repeat NTS authentication or infer true UTC from an engine claim. Runtime/network and privileged install boundaries stay distinct even though one complete package ships all components.
 
 | Flow | Boundary | Input and trusted decision point | Failure behavior |
 | --- | --- | --- | --- |
@@ -1661,7 +1663,7 @@ This flow is not an independent correctness proof. The broker checks authority, 
 | F6: Broker persistence | BND-6 | Policy/journal bytes → broker bounded schema/provenance/ownership checks → authoritative state | Invalid mandatory policy/ownership state blocks effects |
 | F7: Actuation | BND-7 | Broker plan plus actual Windows observations → ownership and actuation contract → global clock | Conflicting or ambiguous owner blocks every write, including resets |
 | F8: Lifecycle | BND-5/7 | Elevated installer/helper → SCM/service/W32Time state → durable handover or restoration | No arbitrary service mutation; rollback/recovery preserves one current owner |
-| F9: Distribution | BND-8 | Source/dependencies → build/review/signing → one complete protected MSI installation | Reject unqualified payloads/versions; durable install rollback |
+| F9: Distribution | BND-8 | Source/dependencies → build/review → approved Store package → one complete protected installation | Reject unqualified payloads/versions; bind delivered identity and durable recovery |
 
 ### 14.5 Risk treatment and priority
 
@@ -1819,7 +1821,7 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 **Links:** REQ-4/5/14/15; BND-8. **STRIDE:** tampering, elevation of privilege. **Reachability/impact:** upstream/build-script/CI compromise can bypass runtime defenses by modifying the trusted binary itself.
 
-**Path:** Dependency/source/workflow/artifact substitution → build with exposed signing authority → signed compromised MSI/payload.
+**Path:** Dependency/source/workflow/artifact substitution → build or submission with exposed release authority → trusted compromised package/payload.
 
 **Control and failure:** Pinned source/features/lockfile/toolchain/SDK; review procedural macros/build scripts/native code and licenses; bounded isolated untrusted builds without signing secrets; protected release branch and workflow; separate exact-artifact approval; verify the declared release profile's expected signer, artifact/payload inventory and hashes; SBOM/provenance and reproducible unsigned output where achievable. Signing provider eligibility and policy remain external facts to verify.
 
@@ -1831,9 +1833,9 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 **Path:** Install/upgrade/uninstall stage modifies services/privileges/W32Time → crash/reboot/denied subsequent action → inconsistent global state.
 
-**Control and failure:** One complete installer/product/version, protected durable staged journal, preflight in observation, quiesce/cancel old owner, validated handover, narrowly scoped rollback. Major-upgrade uninstall phase does not enable W32Time between versions. Removal restores only product-owned prior state and respects subsequent admin/GPO changes. Repair preserves policy and consumed step budgets. Reboot-interrupted operations reconcile before new actuation. Required rollback being disabled blocks dependent mutations before takeover; do not assume the journal retroactively makes an unsupported installation safe. [S57]
+**Control and failure:** One complete package/product/version, protected durable staged journal, preflight in observation, quiesce/cancel old owner, validated handover and narrowly scoped recovery. Old-package removal during update does not enable W32Time between versions. Removal restores only product-owned prior state and respects subsequent admin/GPO changes. Repair preserves policy and consumed step budgets; Reset cannot erase the last mandatory recovery mechanism. Reboot-interrupted operations reconcile before new actuation. Missing required rollback/recovery blocks dependent mutations before takeover; a journal cannot retroactively make an unsupported installation safe. The retained MSI route additionally rejects disabled required rollback. [S57]
 
-**Residual and owner:** Severe OS/disk failure may require admin repair; full MSIX is not an accepted equivalent until these same guarantees are demonstrated. Installer/platform owner owns qualification. **Verification:** CHECK-13/23, P0/P6: fault at every mutation boundary plus upgrade/downgrade/repair/remove through supported entrypoints; one coherent working version or visible recoverable failure; clean success installs all components and fully removes them together.
+**Residual and owner:** Severe OS/disk failure may require admin repair; selection of MSIX establishes no recovery mechanism or native pass. Installer/platform owner must demonstrate these guarantees for the supported package lifecycle. **Verification:** CHECK-13/23, P0/P6: fault at every mutation boundary plus upgrade/downgrade/repair/remove through supported entrypoints, Reset and last-user transitions; one coherent working version or visible recoverable failure; clean success installs all components and fully removes them together.
 
 #### THR-17 — Valid old state restores obsolete trust or repeats consumed authority
 
@@ -1867,13 +1869,13 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 #### THR-20 — One approved installer becomes a privileged confused deputy
 
-**Links:** REQ-4/9/13; BND-5/6/8. **STRIDE:** elevation of privilege, tampering. **Reachability/impact:** MSI custom actions often run with authority exceeding their input source; repair and maintenance are additional entrypoints even when first installation is safe.
+**Links:** REQ-4/9/13; BND-5/6/8. **STRIDE:** elevation of privilege, tampering. **Reachability/impact:** elevated package provisioning/helper actions can run with authority exceeding their input source; repair and maintenance are additional entrypoints even when first installation is safe. MSI custom actions remain one retained example of this boundary.
 
-**Path:** Public MSI property, transform/command-line value, user-writable custom-action data, executable path, journal or rollback field → elevated/deferred action → arbitrary process, service, registry or filesystem effect.
+**Path:** Untrusted maintenance request, package/activation identity, command-line value, executable path, journal or rollback field → elevated lifecycle action → arbitrary process, service, registry or filesystem effect. The retained MSI route additionally exposes public properties, transforms and custom-action data.
 
 **Control and failure:** Product-owned identifiers and installation roots, strict allowlisted properties and bounded action-specific data; reject unsupported transforms/configuration paths for privileged behavior; no shell interpreter or arbitrary helper path; protected helper with identity/integrity established from the verified package under section 19.5; scoped rollback record validated as strictly as forward execution. Validate in the privileged effect owner, not only in an unelevated UI sequence. Repair/uninstall reauthorize and validate rather than trusting historical input. Avoid advertised/per-user entrypoints that unexpectedly trigger privileged repair.
 
-**Residual and owner:** An authorized administrator can intentionally install arbitrary trusted/untrusted software; that is outside this boundary. The product must not turn a standard user's maintenance request into unintended elevated effects. Installer/security owner owns the custom-action design. **Verification:** CHECK-13/15/18/23, P6: standard-user repair/maintenance requests, malformed property/rollback data, path replacement and normal complete install/repair/remove; forbidden external files/services/processes remain untouched.
+**Residual and owner:** An authorized administrator can intentionally install arbitrary trusted/untrusted software; that is outside this boundary. The product must not turn a standard user's maintenance request into unintended elevated effects. Installer/security owner owns the lifecycle-action design. **Verification:** CHECK-13/15/18/23, P6: standard-user repair/maintenance requests, malformed operation/rollback data, wrong package identity, path replacement and normal complete install/repair/remove; forbidden external files/services/processes remain untouched.
 
 #### THR-21 — Negotiated or resolved server endpoint becomes an unintended network destination
 
@@ -1947,7 +1949,7 @@ An attacker suppresses normal secure acquisition, supplies a chosen plain date a
 
 #### 14.7.3 Ordinary user to elevated lifecycle effect
 
-A user controls a pipe name, MSI property, temporary path or rollback representation. Genuine endpoint identity and operation-specific token checks stop IPC spoofing; fixed installer verbs/paths and privileged-side validation stop arbitrary maintenance effects. One-package installation improves version and lifecycle coherence but concentrates all machine changes in one installer, so custom-action inputs and rollback receive the same scrutiny as broker IPC.
+A user controls a pipe name, maintenance request, temporary path or rollback representation. Genuine endpoint identity and operation-specific token checks stop IPC spoofing; fixed lifecycle verbs/paths and privileged-side validation stop arbitrary maintenance effects. One-package installation improves version and lifecycle coherence but concentrates machine changes at privileged deployment boundaries, so provisioning inputs and rollback receive the same scrutiny as broker IPC. Public properties and transforms remain additional inputs if the retained MSI route is revisited.
 
 #### 14.7.4 Benign crash to persistent time error
 
@@ -1977,7 +1979,7 @@ The revision 1.1 IDs below were checked against both the then-current worksheet 
 | Threat | Exact affected ASVS IDs | Why affected | Precise planned verification addition |
 | --- | --- | --- | --- |
 | THR-19 | `v5.0.0-2.1.3`, `v5.0.0-2.3.2`, `v5.0.0-2.2.3` | Documented limits must cover the sequence and combined effect, not just individually valid fields/requests | CHECK-3/10/12: repeated just-below-limit corrections, alternating signs, actual applied rate integration, relabelled stable compensation and restart must consume the same bounded aggregate authority; legitimate oscillator discipline has an independent acceptable trajectory |
-| THR-20 | `v5.0.0-2.2.1`, `v5.0.0-2.2.2`, `v5.0.0-8.2.1`, `v5.0.0-8.3.1`, `v5.0.0-8.3.3`, `v5.0.0-13.2.2`, `v5.0.0-15.4.2` | MSI maintenance/rollback data crosses into a more privileged intermediary and can race privileged filesystem effects | CHECK-13/15/23: hostile public properties, supported/unsupported transforms, rollback records and user-controlled paths through actual install/repair/remove entrypoints cannot trigger arbitrary service/file/process effects; forward and rollback use effective caller/operation authority and stable validated handles; normal complete lifecycle succeeds |
+| THR-20 | `v5.0.0-2.2.1`, `v5.0.0-2.2.2`, `v5.0.0-8.2.1`, `v5.0.0-8.3.1`, `v5.0.0-8.3.3`, `v5.0.0-13.2.2`, `v5.0.0-15.4.2` | Package provisioning/maintenance/rollback data crosses into a more privileged intermediary and can race privileged filesystem effects | CHECK-13/15/23: hostile requests, wrong package identity, rollback records and user-controlled paths through actual install/repair/remove entrypoints cannot trigger arbitrary service/file/process effects; forward and rollback use effective caller/operation authority and stable validated handles; normal complete lifecycle succeeds. MSI properties/transforms remain format-specific controls if that route is revisited |
 | THR-21 | `v5.0.0-13.1.1`, `v5.0.0-13.2.4`, `v5.0.0-13.2.5` | DNS and negotiated NTP destinations are outbound-resource choices even when received through authenticated TLS | CHECK-6/8/9/21: denied negotiated/resolved loopback/internal/out-of-scope address or port, DNS rebinding and reconnect produce no unauthorized network operation; explicitly approved LAN and legitimate permitted negotiated destinations succeed; retain existing native-adaptation treatment where applicable |
 | THR-22 | `v5.0.0-8.3.2`, `v5.0.0-8.2.1`, `v5.0.0-8.3.1` | A valid old session/token can preserve permissions after policy or role removal | CHECK-2/3/4: revoke delegation during a live real IPC session and before queued sensitive action; test product-policy revision separately from existing Windows token group membership; prohibit effect after effective revocation and record any unresolved literal immediate-revocation gap without calling a later correction equivalent |
 | THR-23 | `v5.0.0-2.3.1`, `v5.0.0-2.3.3`, `v5.0.0-2.3.4`, `v5.0.0-15.4.2` | Install/update ordering, coherent rollback and exclusive ownership constrain which generation may perform effects | CHECK-3/12/13/23: old delayed proposal and mixed-version helper/UI cannot mutate the new generation; fault/reboot at upgrade stages leaves one valid owner or explicit blocked recovery; rollback restores compatible state without replenishing consumed authority; successful permitted upgrade remains usable |
@@ -2046,8 +2048,8 @@ All clock-changing experiments run in disposable Windows VMs with bounded known 
 | Bootstrap trust | Absolute date/era range, saved floor policy, one/two helper mode, retained provenance and expired-key residual | Product/security/protocol, OPEN-6/8/9, P0/P2 |
 | Egress/negotiation policy | Legitimate NTS redirection, approved LAN/private targets, DNS rebinding/reconnect behavior | Protocol/security, OPEN-8, P0/P2 |
 | Crash/ownership limits | Measured restart envelope; ambiguous successor behavior; rate cleanup recovery instructions; leap owner | Platform/core, OPEN-7, P0/P4 |
-| Package maintenance authority | Exact custom actions, property/transform policy, rollback schema and version transitions | Installer/security, OPEN-14, P0/P6 |
-| Signing and release trust | Preferred provider acceptance or qualified initial OpenPGP trust path, protected roles/workflow, key/publisher identity, installed-file integrity and compromise response | David Osipov/release/security, OPEN-11, P0/P6 |
+| Package maintenance authority | Supported MSIX provisioning/recovery mechanism, bounded action inputs, rollback schema and version transitions | Installer/security, OPEN-12/14, P0/P6 |
+| Signing and release trust | Store submission/delivered identity, protected roles/workflow, package/catalog and installed-file integrity, project-specific helper admission and compromise response | David Osipov/release/security, OPEN-11, P0/P6 |
 
 No entry in this table is a request to stop planning. It identifies the fact or authorized decision needed before a specific implementation/release claim. The current model supports bounded P0 experiments; it does not authorize broad clock mutations, accept residual risks, or certify the product.
 
@@ -2078,7 +2080,7 @@ Apply mitigations per executable and verify their effective state. A linker opti
 | Win32k syscall restriction | Headless services if all required APIs work | Never apply blindly to the GUI, which needs windowing functions |
 | Child-process restriction | Broker and engine, which should not launch children | Installer/helper is separately launched through approved UI/OS flow; prove no service dependency needs child execution |
 | Heap corruption termination | All applicable processes | Fail safely rather than continue with corrupted state; qualify recovery |
-| Signature-only image policy | Optional, only where its actual allowed signer classes fit | Windows policy accepts Microsoft/Store/WHQL classes, not an arbitrary allowlist of our Authenticode publisher |
+| Signature-only image policy | Qualify the selected MSIX per-role CIG target under section 15.4 and the MSIX hardening plan | Exact Microsoft/Store/WHQL signer modes and DLL closure matter; this is not an arbitrary allowlist of our publisher or a package-identity check |
 
 Rust's CFG option is documented, but complete coverage must include linked code and the selected standard-library build. Inspect the actual shipped toolchain rather than assuming all prebuilt dependencies are instrumented. If rebuilding the standard library is needed, qualify that controlled toolchain separately; do not silently introduce an unpinned nightly compiler to satisfy a flag. Microsoft's CFG requires compatible compiler/linker output, and `/CETCOMPAT` currently concerns x64. [S30, S31, S32, S35]
 
@@ -2086,7 +2088,7 @@ Set supported runtime policies as early as practical and read back effective pol
 
 Section 15.4 defines the role, activation phase, failure handling and evidence fields for that manifest. Ordinary CFG is the baseline; Strict CFG remains a separate compatibility candidate, not an implied consequence of the compiler flag.
 
-The binary-signature mitigation is particularly easy to misstate. A valid SignPath-signed executable does not mean its own publisher-signed DLLs are automatically permitted by Microsoft's signature-only policy. UI accessibility tools may also need compatible interaction. Use precise loading/ACL controls as the baseline and qualify stronger code-integrity policies where they fit. [S33]
+The binary-signature mitigation is particularly easy to misstate. Store catalog trust does not prove that every image satisfies the exact selected CIG mode, and a valid SignPath-signed executable does not automatically admit its own publisher-signed DLLs. UI accessibility tools may also need compatible interaction. Keep precise loading/ACL controls and qualify the MSIX hardening plan's exact signer modes on the intended installed artifact. [S33]
 
 ### 15.2 DLL and executable search safety
 
@@ -2094,7 +2096,7 @@ Install services only in administrator-protected locations. Quote absolute servi
 
 Avoid optional app DLLs and plugins where static linking is practical and license-compatible. Inventory every remaining imported/dynamically loaded module. Use full trusted paths or explicit `LoadLibraryEx` search flags for system DLLs; configure `SetDefaultDllDirectories` early. Do not depend on CWD, user PATH, relative executable names or implicit user-writable search directories. Safe DLL search mode alone is insufficient. [S34]
 
-Early imports load before application initialization, so late API calls alone do not prevent every sideloading path. Inspect release imports, delay loads, packaged dependencies, helper activation and installer custom actions. For the Authenticode profile, verify package/executable signatures and expected identity before elevation. For the initial OpenPGP profile, qualify the alternate approved-artifact and protected installed-file identity path in section 19.5 before elevation; missing Authenticode is not a successful verification. Neither self-signature checks nor a colocated attacker-writable hash substitutes for protected installation paths.
+Early imports load before application initialization, so late API calls alone do not prevent every sideloading path. Inspect release imports, delay loads, packaged dependencies and helper activation. For the selected MSIX profile, bind package/catalog trust and actual loaded files to the expected installed package and approved release before protected admission. Keep executable code in immutable package locations and mutable state outside them; qualify the exact package-integrity and CIG mechanisms in [the MSIX plan, sections 3.1–3.4](plans/windows-msix-store.md). Rust crates linked into an executable are not separate runtime DLLs; inspect the emitted PE and native/provider loads instead of treating Cargo dependencies as a DLL inventory. Retained MSI profiles separately qualify their signature/installed-file and custom-action paths under section 19.5. Neither self-signature checks nor a colocated attacker-writable hash substitutes for protected installation paths.
 
 Qualification places harmless canary DLLs in controlled user-writable candidate directories in a disposable VM, then exercises all entry points from different working directories. Observe actual loaded module paths using Windows tooling. The valid dependency must still load; a test that prevents the application from launching is not a passing security control.
 
@@ -2113,7 +2115,7 @@ Windows integration means using the host's identities, protection and management
 | Modern Windows Event Log | Installer owns provider resources and a protected product Operational/Admin channel, or an explicitly chosen Application channel; diagnostics writes fixed structured events | Stable IDs for lifecycle, denied privileged operations, policy changes, trust failures and correction decisions; bound retention, ACLs and rate. Do not request `SeAuditPrivilege` or imply arbitrary writes to Windows's Security log. Failed logging cannot block safe clock cleanup |
 | ETW | Optional measured performance/diagnostic provider; disabled events must be inexpensive | Not a substitute for persisted operational events. Test enabling/filtering/unregistration, permissions and redaction; no packet/key/cookie dumps |
 | Defender Firewall / applicable WFP policy | Installer owns product-scoped policy; engine also applies application-level destination admission, broker has external networking denied | Default outbound allow plus a few allow rules is not an allowlist. Windows block precedence means blanket-block-plus-allow-exceptions is not automatically correct. Qualify service SID scope, IPv4/IPv6, DNS/NTS negotiation and delegated certificate retrieval without changing machine-wide policy or adding a kernel driver |
-| Authenticode, SmartScreen, Smart App Control and App Control for Business | For the Authenticode profile, sign the required executable components and complete MSI. The initial OpenPGP profile follows section 19.5 and supplies no Windows publisher-trust claim; both operate under applicable host policy | Signature establishes integrity/publisher evidence, not guaranteed reputation or acceptance. Qualify install/run/update/repair/removal and temporary custom-action paths. Do not install broad enterprise allow policies to bypass an existing deny decision |
+| Package/catalog trust, Authenticode, SmartScreen, Smart App Control and App Control for Business | Qualify the Store-delivered MSIX's identity, content trust, actual loaded code and supported host policies. Retained MSI profiles follow section 19.5 if later selected | Signature establishes integrity/publisher evidence, not helper authority or guaranteed host acceptance. Qualify install/run/update/repair/removal and approved recovery paths. Do not install broad enterprise allow policies to bypass an existing deny decision |
 | Defender, Memory Integrity and other host protections | Test the actual release with the declared supported protections enabled | No antivirus exclusions or disabling host security as a product requirement or performance shortcut. Managed-policy incompatibility produces a useful diagnosed failure |
 
 **Service-network candidate:** qualify `INetFwServiceRestriction::RestrictService`
@@ -2137,6 +2139,8 @@ Native UI integration remains section 16's Win32-control prototype. Use document
 
 **29 October 2026 refinement:** the supplied PDFCraft hardening proposal sharpens WIN-3/WIN-4 and CHECK-16; it does not adopt PDFCraft's dependency graph, static-CRT choice or process topology. NevroTick already separates network parsing from privileged clock effects. Use the existing `windows-platform` adapter and small role-specific policy tables; no new security framework, resident checker or user-facing mitigation switches are required. These are implementation/qualification contracts, not observed application protection. UI-M0 keeps section 16.5's scope and deferrals.
 
+**Selected MSIX hardening target, 3 November 2026:** use the strongest supported controls compatible with each role's required work, as specified in [the MSIX plan, sections 3.1–3.4](plans/windows-msix-store.md). Map its CIG signer mode, package integrity, immutable-code and per-role requirements into this existing manifest and CHECK-16/18/20/23/26; do not create a second acceptance catalog. Exact startup/SCM activation, legitimate imports, denied neighboring loads and ownership-aware recovery must all be demonstrated. A build flag, Store signature, audit event or unsupported required setting is not a pass. Required incompatibility stays a blocker for the affected profile, not a silent weaker retry; optional hardware controls retain an explicit disposition. This target adopts no AppContainer/PPL topology and does not lift execution holds.
+
 #### Role ownership
 
 All product executables retain section 15.1's build protections and section 15.2's load-path rules. The following runtime directions require evidence for the final dependency graph and entry point; a row is not a compatibility pass.
@@ -2146,8 +2150,8 @@ All product executables retain section 15.1's build protections and section 15.2
 | `engine-service` | Dynamic-code prohibition, image-load restrictions, extension-point restrictions and strict handles; qualify headless Win32k and child-process restrictions | DNS, sockets, NTS-KE, TLS/crypto providers, protected secret storage, IPC and SCM lifecycle must work under the final account. No intentional JIT does not prove native-provider compatibility. |
 | `clock-broker` | Same compact headless direction, with no networking or child-launch capability added to make a test pass | Clock adapters, authenticated pipes, owned recovery and SCM lifecycle remain usable. A mitigation-triggered exit cannot reset correction budgets or authorize a global clock reset. |
 | `desktop-ui` | Common build/load protections; separately qualify dynamic-code, extension-point and strict-handle policy | Keep Win32k available. Do not impose a general child prohibition without proving approved elevation and other adopted OS-activation flows. Full assistive-technology/IME compatibility belongs to the applicable production UI gate, not UI-M0. |
-| Standalone `admin-helper` | Common protections plus a profile for its exact elevated lifecycle operations | Qualify SCM/MSI/UAC interactions. Do not inherit a service's no-child or no-Win32k profile solely because the helper is privileged. |
-| MSI custom-action DLL, if selected | Inspect the DLL's build/load properties and actual installer host separately | A library initializer must not apply process-wide service policy to a Windows Installer host. The standalone-helper result does not qualify an in-process custom action. This ownership rule follows the calling-process scope of the mitigation API. [S29, S103] |
+| Standalone `admin-helper` | Common protections plus a profile for its exact elevated lifecycle operations | Qualify package/SCM/UAC interactions and installed-package identity. Do not inherit a service's no-child or no-Win32k profile solely because the helper is privileged. |
+| MSI custom-action DLL, only if that retained route is revisited | Inspect the DLL's build/load properties and actual installer host separately | A library initializer must not apply process-wide service policy to a Windows Installer host. The standalone-helper result does not qualify an in-process custom action. This ownership rule follows the calling-process scope of the mitigation API. [S29, S103] |
 
 AppContainer/LPAC remains the separate experiment in section 19.4, requiring a
 named worker benefit and explicit capability, IPC, launch and lifecycle evidence.
@@ -2165,7 +2169,7 @@ Mitigations establish neither correct UTC nor authority to bypass broker validat
 - **Strict CFG:** separately qualify its code-bearing DLL admission rule, including the resource-only DLL exception. Once enabled it cannot be disabled through the setter. It does not prove that every statically linked native object or Rust standard-library path contains checks. [S96, S102]
 - **Image restrictions:** record `NoRemoteImages`, `NoLowMandatoryLabelImages` and `PreferSystem32Images` individually. Low mandatory integrity is not Mark of the Web; System32 preference changes search order and is not a System32-only allowlist. These controls restrict executable images, not ordinary NTP network traffic or arbitrary data-file access. They supplement section 15.2. [S98]
 - **Strict handles:** when setting the policy, the invalid-handle and permanent-enable fields must match. Record actual query results and debugger/verifier presence: Application Verifier can produce the documented non-permanent exception state, which is not evidence of the product's permanent setting. [S99]
-- **Compatibility trials:** use audit mode only where the specific mitigation supports it. Ordinary CFG, extension-point disabling and strict-handle validation have no audit mode; use isolated enforced tests. Retain the existing signer-class limitation for signature-only image policy under both release profiles. [S33, S102]
+- **Compatibility trials:** use audit mode only where the specific mitigation supports it. Ordinary CFG, extension-point disabling and strict-handle validation have no audit mode; use isolated enforced tests. Record the exact CIG signer mode and its allowed/denied images for the declared delivery profile; Microsoft-only, Store-enabled and project authorization are not interchangeable claims. [S33, S102]
 
 **RedirectionGuard research candidate, 3 November 2026:** evaluate
 `ProcessRedirectionTrustPolicy` separately for the file-owning service and
@@ -2193,7 +2197,7 @@ processes. Extend the access matrix to `PROCESS_CREATE_PROCESS`,
 requests to dummy peers alongside permitted read-only queries. A queried bit and
 one denied child launch cannot establish this composition. [S101]
 
-If later evidence selects persistent per-image settings, qualify no-login boot, restart and MSI upgrade/repair/removal, collisions with administrator/enterprise policy, and ownership-preserving restoration. Such settings identify an image by name/path rather than product version; requalify changed binaries. No machine-wide reset, administrator-policy overwrite or manual user setup step is introduced here. [S102]
+If later evidence selects persistent per-image settings, qualify no-login boot, restart and package update/repair/removal, collisions with administrator/enterprise policy, and ownership-preserving restoration. Such settings identify an image by name/path rather than product version; requalify changed binaries and MSIX versioned package paths. No machine-wide reset, administrator-policy overwrite or manual user setup step is introduced here. [S102]
 
 #### Startup and failure contract
 
@@ -2220,7 +2224,7 @@ Extend the existing per-binary manifest rather than maintaining a second policy 
 
 | Field group | Required record |
 | --- | --- |
-| Candidate identity | Component/host role, source and artifact SHA-256, complete package/version, Authenticode or OpenPGP release profile, target, toolchain/linker and selected features/profile |
+| Candidate identity | Component/host role, source and artifact SHA-256, complete package/version, declared trust profile and Store-delivered identity where applicable, target, toolchain/linker and selected features/profile |
 | Expected control | Exact PE condition or Windows policy/fields; required, conditional or optional disposition; condition/decision owner; activation owner and phase |
 | Observed control | Requested values, effective query values, enforced/audit-only/unavailable/failed/not-executed state, native error, OS build/architecture, relevant CPU/VM support and instrumentation tools |
 | Coverage | Imports, runtime/delay loads, native/prebuilt/static objects and standard-library coverage; unresolved portions remain explicit |
@@ -2280,7 +2284,7 @@ Show local date/time where useful, with UTC available in diagnostics. Label mill
 
 ### 16.5 Restricted first UI milestone: UI-M0
 
-**Owner decision, 29 October 2026:** first build a small native Win32 visual and interaction prototype, running unelevated and disconnected from production services. This restriction applies only to the UI workstream. Engine, broker, protocol, installer and other work may proceed independently under their existing requirements. UI-M0 does not change the eventual architecture, one-MSI distribution or release gates, and does not complete P0 toolkit qualification, S0.5 or P5.
+**Owner decision, 29 October 2026:** first build a small native Win32 visual and interaction prototype, running unelevated and disconnected from production services. This restriction applies only to the UI workstream. Engine, broker, protocol, installer and other work may proceed independently under their existing requirements. UI-M0 does not change the eventual architecture, complete-product distribution or release gates, and does not complete P0 toolkit qualification, S0.5 or P5.
 
 The slice contains an ordinary resizable window with NevroTick branding, Status, Sources and Settings, source details and a small source-edit preview. Checked-in deterministic fixtures feed plain presentation types and native controls. Time/offset/uncertainty/authentication/health are sample values, not live measurements. Keep a persistent **Prototype — sample data** label, including equivalent context in standalone preview dialogs. **Sync now is disabled** with an explanation. Machine-policy controls are visibly unavailable; other protected actions are disabled with explanations or omitted. No Apply transaction, UAC imitation or fabricated synchronization/admin success is permitted.
 
@@ -2328,7 +2332,7 @@ The following are **unmeasured proposed budgets**, not inherited website mandate
 | Closed UI | No UI process by default | Optional tray process is separately budgeted and disabled unless chosen |
 | Idle CPU | At most 0.1% of one logical CPU averaged over ten minutes | Include both services; report wakeups and burst CPU, not only whole-machine percentage |
 | Idle wakeups | At most four timer-driven wakeups per second across services | Tracking state without an active step/slew or visible UI; avoid high-resolution busy polling |
-| Installer size | At most 20 MiB compressed MSI as an initial goal | Include all required payloads; no hidden large runtime download |
+| Package size | At most 20 MiB compressed complete MSIX as an initial goal | Include all required payloads; no hidden large runtime download; measure the actual delivered inventory |
 | UI responsiveness | Typical local actions below 100 ms; cold usable window below 500 ms | p95 on named reference machine; network/UAC work is asynchronous and separately explained |
 | Log storage | 10 MiB rotating diagnostic budget | A hostile packet stream cannot grow storage indefinitely |
 | Source/history bounds | Default four logical sources; hard configured cap 16; at most 64 regression samples/source | Bootstrap helpers are a separate maximum-two list; record fixed queue/cookie limits |
@@ -2401,7 +2405,7 @@ Commit Cargo.lock and use locked dependency resolution. Inventory all runtime/bu
 
 Run advisory/license/origin checks with a pinned RustSec/cargo-deny-compatible workflow, secret scanning and a reviewed data-flow SAST configuration. CodeQL currently documents Rust support, but supported language detection does not prove useful coverage of Windows-specific IPC/FFI. Supply project-specific sources/sinks and valid/invalid controls where needed; track analysis gaps. [S38]
 
-Release builds use clean ephemeral environments, reviewed cache provenance and pinned actions/tools. Record compiler/linker flags, dependencies, generated sources, feature combinations and the unsigned binary hashes. Reproducibility applies to the unsigned build inputs/outputs; signing timestamps may make final signed bytes differ. Generate an SPDX or CycloneDX SBOM and source/provenance manifest. Every published version attaches its prepared, validated and reconciled SBOM assets with the complete MSI and final signed-byte checksums. The [repository SBOM tooling](../TOOLING.md#release-sbom-tooling) prepares the Rust inventory; CHECK-26/S6.4 retain native/generated/resource/MSI reconciliation and exact publication identity.
+Release builds use clean ephemeral environments, reviewed cache provenance and pinned actions/tools. Record compiler/linker flags, dependencies, generated sources, feature combinations and the unsigned binary hashes. Reproducibility applies to the unsigned build inputs/outputs; signing and Store processing may change delivered bytes. Generate an SPDX or CycloneDX SBOM and source/provenance manifest. Every published version makes its validated, reconciled SBOM and source/provenance assets available for the identified complete package and final delivered bytes. Record submitted and Store-delivered identities separately. The [repository SBOM tooling](../TOOLING.md#release-sbom-tooling) prepares the Rust inventory; CHECK-26/S6.4 retain native/generated/resource/package reconciliation and exact publication identity.
 
 The selected workspace release optimization candidate uses `opt-level=3`, thin LTO, one codegen unit and no incremental compilation; `verify-release` inherits it with debug assertions enabled. Retain checked overflow, the existing unwind policy, debugging symbols and Windows mitigations. [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization) selects an intended `x86-64-v3` minimum and a required runtime-optimization workstream: separately compiled higher-feature functions may be selected only after exact CPU/OS feature checks and useful-work qualification. The current admitted configuration still uses `target-cpu=x86-64`; migrating it and its enforcement is planned work, not evidence supplied by this amendment. No global v4 or build-host `native` requirement is adopted. These settings are unmeasured optimization choices, not performance or native qualification. The [hardening guide section 6.5](windows-time-development-hardening.md#65-windows-x64-optimization-policy-and-evidence-limits) records compiler-versus-application scope, the specific open Windows dylib-LTO issue, CPU compatibility, PGO/flag custody and PE/COFF limitations. PGO, BOLT, cross-language LTO and a rebuilt standard library are not adopted. Compare representative correctness, CPU, latency, memory, startup, size and build cost before claiming gains; section 17, CHECK-21 and native/package/release gates remain unchanged. Forbid unsafe fast-math assumptions that invalidate estimator invariants, and inspect emitted PE protections after linking. Do not substitute “release mode” for hardening verification. [S112]
 
@@ -2603,9 +2607,9 @@ The snapshot only supports these scoped historical observations. The 29 October 
 
 ### 18.10 Packaging tools and dependency limits
 
-Keep one complete MSI and no new runtime prerequisite. An installer authoring tool is a build dependency, not a reason to split the product or introduce a downloader. WiX is a candidate, but current WiX 7 licensing includes an Open Source Maintenance Fee/EULA; the fact that our project is OSS does not establish free eligibility. At the research date, the documented 7.0.1 release is a security update. Resolve exact version, security baseline and the actual EULA/eligibility before adoption; no purchase or license acceptance has occurred here. Do not choose an unsupported old installer tool merely to avoid that decision. Existing OPEN-14 owns this tooling gate. [S92]
+Keep one complete MSIX and no separate service/runtime prerequisite. Qualify the actual packaging SDK/tool, manifest schema, CPU/OS requirements and exact payload under OPEN-14; an authoring tool is a build dependency, not permission to split the product. The retained MSI/WiX route is fallback/reference material only. If David revisits it, current WiX 7 licensing includes an Open Source Maintenance Fee/EULA; OSS status alone does not establish free eligibility. At the research date, the documented 7.0.1 release is a security update. Resolve its exact version, security baseline and EULA/eligibility before adoption; no purchase or license acceptance occurred here. Do not select an unsupported old tool to avoid qualification. [S92]
 
-The initial dependency outcome is deliberately incomplete where evidence matters: Windows bindings, owned error/state handling and the bounded runtime are prototype selections; TLS crypto, certificate/bootstrap policy, AEAD and the exact MSI toolchain remain explicit admission gates. All can be researched and prototyped within the existing process and single-package design. No general-purpose “hardening crate” can replace service isolation, current authorization, Windows policy, source agreement or safe clock discipline.
+The initial dependency outcome is deliberately incomplete where evidence matters: Windows bindings, owned error/state handling and the bounded runtime are prototype selections; TLS crypto, certificate/bootstrap policy, AEAD and the exact MSIX toolchain remain explicit admission gates. All can be researched and prototyped within the existing process and single-package design. No general-purpose “hardening crate” can replace service isolation, current authorization, Windows policy, source agreement or safe clock discipline.
 
 ---
 
@@ -2613,7 +2617,7 @@ The initial dependency outcome is deliberately incomplete where evidence matters
 
 ### 19.1 Mandatory single-product contract
 
-**V1 ships one self-contained, per-machine MSI for each supported CPU architecture, authenticated under the selected section 19.5 release profile.** It contains the native UI, engine service, clock broker service, administration helper, required runtime payloads, resources and licenses. A normal installation installs all required components. Optional shortcuts and tray preferences are not separately installed products.
+**The selected v1 delivery target is one complete hardened MSIX for a Microsoft Store submission attempt**, authenticated under the qualified section 19.5 profile before public release. It contains the native UI, engine service, clock broker service, administration helper, required runtime payloads, resources and licenses for the supported architecture. Qualify package registration and machine-service ownership together; a per-user package registration alone does not define service lifetime. A normal installation installs all required components. Optional shortcuts and tray preferences are not separately installed products. No complete package or Store approval exists merely because this direction is selected.
 
 The user sees one product name, release version, Installed apps entry, update operation, repair operation and uninstall operation. They never need to find a second engine installer, match independent UI/service versions, run a privilege-provisioning script or discover that removing the visible app left a hidden service. A nominally single downloader that creates independently managed UI and service products does not meet REQ-9.
 
@@ -2638,7 +2642,7 @@ Do not delete the only recovery code or journal before restoration has a durable
 
 ```mermaid
 flowchart TD
-    P["One complete approved MSI"] --> V["Preflight complete payload, identities, policy and recovery"]
+    P["One complete approved package"] --> V["Preflight complete payload, identities, policy and recovery"]
     V -->|"Fail or required rollback disabled"| X["Stop before clock takeover"]
     V -->|"Pass"| J["Durably record prior W32Time state and ownership generation"]
     J --> O["Quiesce prior owner and activate one broker generation"]
@@ -2664,6 +2668,8 @@ flowchart TD
 The removal node is a transaction, not an instruction to delete recovery code first: section 11 and section 19.2 require durable restoration results before removing the last recovery mechanism. Update-driven removal of the old version does not release ownership to W32Time. Every rate reset, including cleanup, requires current ownership. A private journal cannot overrule a later administrator or Group Policy decision.
 
 ### 19.3 MSI implementation and maintenance security
+
+**Retained fallback/reference only:** this section preserves the earlier MSI design if David later reconsiders delivery after Store rejection or concrete technical evidence. It is not a parallel implementation, required intermediate installer or source of MSIX lifecycle hooks. The selected MSIX design must establish its own supported mechanisms under section 19.4 while retaining sections 11 and 19.2's authority/recovery guarantees.
 
 Apply section 11.2's durable maintenance-startup inhibition and queued SCM restart
 qualification throughout install/update/repair/rollback/removal. A stopped-status
@@ -2691,20 +2697,24 @@ Repair and downgrade are separate from rollback. Repair cannot silently reset so
 
 ### 19.4 Future complete MSIX gate
 
-An all-in-one MSIX is technically possible in the Windows platform: Microsoft supports packaged services and requires administrator installation for them. The declared service account choices are LocalService, NetworkService and LocalSystem; the selected virtual-account broker is not a direct manifest fit. A different topology must prove equivalent isolation. The package format never justifies broadening the broker to LocalSystem by default. [S43, S44]
+**Selected delivery direction, qualification outstanding:** David intends to attempt Store submission of the complete hardened MSIX, including services. Use [the MSIX plan](plans/windows-msix-store.md), sections 3.1–3.4 and 7, for the hardening profile and staged source/design, package, submission and delivered-artifact evidence. Prior Store approval is not required to prepare the candidate or service-capability justification. Native builds/runs remain subject to their existing prerequisites and execution holds; preparation establishes no completed product, eligible provisioner or certification.
+
+Windows supports packaged services and requires administrator installation for them. The declared service account choices are LocalService, NetworkService and LocalSystem; the reference virtual-account broker is not a direct manifest fit. A different account mapping must prove equivalent isolation. The package format never justifies broadening the broker to LocalSystem by default. [S43, S44]
 
 Restricted service capabilities and custom installation/removal hooks also affect the distribution route. The documented custom-action mechanisms have narrow game/partner restrictions; they are not a generally available cleanup hook for this utility. Store acceptance is a separate external decision. [S45, S61]
 
-The [3 November MSIX/Store assessment](plans/windows-msix-store.md) records the
-owner's certificate-cost/distribution question without selecting a replacement
-installer. Accepted Store MSIX packages receive free package signing and common
+The [3 November MSIX/Store assessment](plans/windows-msix-store.md) supplies the
+source basis for the owner's selected direction. Accepted Store MSIX packages
+receive free package signing and common
 catalog trust; Store MSI/EXE publication still requires publisher-provided
 Authenticode signatures. Current free account onboarding does not establish
 country/identity eligibility or permission for restricted capabilities.
 `packagedServices` is usually not approved for Store, while `allowElevation`
 has an exceptional approval route; neither an absolute platform ban nor product
-acceptance follows. Resolve the applicable service-dependency policy and exact
-capabilities for this complete utility before committing to that channel.
+acceptance follows. Prepare truthful service-dependency and capability
+justifications for the complete utility; actual approval is an external result,
+not a prerequisite for preparing the submission. A rejection returns the delivery
+choice to David instead of automatically enabling the retained MSI route.
 
 A separate-process LocalService/service-SID design is a candidate to compare,
 not an adopted substitute for section 4.1. Default LocalService clock authority
@@ -2714,16 +2724,16 @@ normal work, preserve them through repair/update and tolerate managed-policy
 differences. Manifest validity alone establishes none of this; a mandatory first
 UI launch or a wider LocalSystem broker does not close the gap.
 
-A future MSIX is eligible only if **every** gate below passes for the actual intended distribution route:
+Public delivery of the selected MSIX requires **every** applicable gate below for the actual distribution route. These are qualification/release conditions, not prerequisites for source work or preparing an honestly labelled submission candidate:
 
 1. The complete UI, engine, broker, helper and required payloads are included; there is no separate MSI prerequisite or manual rights-provisioning step.
 2. Effective service identities, privileges, process/token/file isolation and broker network restrictions meet the same security boundary.
-3. Any required extra provisioning and capabilities are supported and actually available to this project, including the intended distribution channel's approval and configuration before service exposure.
+3. Required provisioning is supported and configures the effective boundary before service exposure. Requested capabilities and actual Store decisions are recorded separately; ungranted restricted capabilities block delivery through that channel, not preparation of their submission justification.
 4. Installation, update, repair/reset, ordinary Settings uninstall and supported administrative removal work before any application UI launch, across reboot/interruption, with correct W32Time restoration. Normal administrative installation authorization is still required.
 5. Multi-user installation/removal has a clear machine-service owner and cannot leave invisible privileged components or remove another user's required engine unexpectedly.
 6. State migration, publisher identity, rollback and format migration are qualified. MSI/MSIX coexistence cannot create two active clock controllers.
 
-If these conditions are unproven, MSIX is not shipped. The complete MSI remains sufficient for v1. If MSIX is added later, both formats are complete alternatives; users choose one format and do not combine them.
+If required conditions remain unproven, the affected public-release claim stays blocked while independent preparation continues. Store rejection or a demonstrated technical incompatibility prompts David to reconsider delivery with concrete evidence. The retained complete MSI and signing profiles are alternatives to consider then; they are not an automatic fallback, simultaneous deliverable or prerequisite. Any later selected format must preserve the same complete-product boundary.
 
 Package replacement/removal must not erase the only mandatory recovery journal
 or executable recovery path before ownership-aware rate cleanup and W32Time
@@ -2750,7 +2760,7 @@ MSIX full trust is not AppContainer. Full-trust packaged desktop applications re
 An AppContainer UI/worker remains a separate experiment if it improves the measured threat boundary. It must not cause a second installer, broad all-AppContainers pipe access or a new user-visible setup chore. Do not conflate that experiment with packaging qualification.
 
 A package identity with external location is a distinct conditional candidate:
-the complete MSI can remain file/lifecycle owner for a named identity-dependent
+if the MSI route is later selected, it can remain file/lifecycle owner for a named identity-dependent
 feature. Identity alone supplies no sandbox or automatic integrity for external
 files. Qualify trusted package signing, publisher continuity, per-user
 registration, repair/update and complete removal before adoption; OpenPGP sidecars
@@ -2760,37 +2770,39 @@ changes no full-MSIX gate or one-product contract.
 
 ### 19.5 Free signing plan
 
+**Selected route:** prepare the complete MSIX for David's Store submission attempt under OD-05. Qualify package/publisher identity, approved release and installed content together; common catalog trust need not mean an independent embedded signature on every extracted PE. Keep source/build, submitted package and Microsoft-delivered artifact identities distinct, with protected submission/release authority and a reconciled SBOM. Store acceptance/signing and actual installed behavior remain separate results under CHECK-18/23. Preparing the candidate does not depend on prior Store approval or completion of a SignPath/OpenPGP MSI route. The [signing guide](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [MSIX plan](plans/windows-msix-store.md) specify the selected path and retained alternatives.
+
 Qualify the [signing guide's broken-clock lifecycle matrix](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix)
 for installed startup/helper activation, first installation, update/repair and
 removal/restoration under CHECK-9/18/23. Name the actual verifier, execution owner,
 allowed retrieval, time basis, finite native-work custody/deadline and supported
-refusal/recovery route. TLS-only work limits do not cover UI/helper/MSI verification.
+refusal/recovery route. TLS-only work limits do not cover UI/helper/package verification.
 Timestamped Authenticode can survive signer-certificate expiry; this does not
 settle the selected trust/revocation policy. `WTD_REVOKE_NONE` alone is not a
 no-network guarantee. [S119]
 
-OpenPGP admission also needs current trusted-key distribution, revocation/expiry
+For a later selected OpenPGP MSI alternative, admission also needs current trusted-key distribution, revocation/expiry
 and rotation policy: `gpgv` success and a matching fingerprint alone do not supply
 those checks. A valid Foundation publisher display alone does not identify the
 NevroTick project; reject an unrelated legitimately Foundation-signed artifact.
-Preserve OD-05's accepted publisher and initial OpenPGP option while qualifying
-the project-specific admission path. [S119]
+OD-05 retains these earlier publisher/profile choices as fallback/reference material;
+they do not authorize an automatic change from the selected Store path. [S119]
 
-Apply to **SignPath Foundation** once the project meets its eligibility conditions. It is a plausible free OSS signing route, not an entitlement. Its conditions include suitable open-source licensing, maintained/released/documented software and controlled signing roles/review. Confirm treatment of chrony-derived code and all bundled components with the provider. Publisher identity must be settled before freezing any future MSIX identity. [S46]
+If David later selects the MSI/Authenticode alternative, **SignPath Foundation** remains a plausible free OSS signing route, not an entitlement or current submission prerequisite. Its conditions include suitable open-source licensing, maintained/released/documented software and controlled signing roles/review. Confirm treatment of chrony-derived code and all bundled components before relying on that provider. The Store manifest/publisher identity must be established for its own route; Foundation eligibility does not settle it. [S46]
 
-The **Microsoft Store signs accepted MSIX packages** without a separately purchased signing certificate; MSI/EXE submissions still need publisher signing. Store signing is useful only if the complete product and its restricted capabilities are accepted. Azure Artifact Signing is a paid fallback, not a free OSS guarantee. [S47]
+The **Microsoft Store signs accepted MSIX packages** without a separately purchased signing certificate; MSI/EXE submissions still need publisher signing. The complete product's restricted capabilities need actual Store acceptance for distribution, while a candidate and capability justification can be prepared before that answer. Azure Artifact Signing remains a paid alternative, not a free OSS guarantee or selected service. [S47]
 
-**Owner amendment OD-05:** David accepts the Foundation publisher display and is the human release approver. If a usable free Authenticode route is unavailable initially, a complete MSI without project Authenticode signatures may be released with OpenPGP signatures after its applicable gates pass. This supersedes the blanket public-release blocker due solely to unavailable free Authenticode. Do not install a development root on ordinary users' machines or weaken OS protection. OpenPGP, Sigstore and provenance attestations do not supply Windows Authenticode or SmartScreen reputation.
+**Retained OD-05 alternatives:** David's earlier acceptance of Foundation publisher display and a qualified initial OpenPGP MSI profile remains recorded; David remains the human release approver. These are options for an explicit delivery reconsideration after Store rejection or concrete technical evidence, not parallel release work or an automatic fallback. If later selected, all profile-specific gates below still apply. Do not install a development root on ordinary users' machines or weaken OS protection. OpenPGP, Sigstore and provenance attestations do not supply Windows Authenticode or SmartScreen reputation.
 
 The initial OpenPGP profile requires a trusted full release-key fingerprint, detached signature over the exact final MSI, signed artifact/version/source/SBOM manifest, protected signing authority and David's exact-candidate approval. Qualify key expiry/revocation/rotation, tamper/wrong-signer/version-mismatch rejection and clean-machine lifecycle under declared Windows security configurations. Unknown unsigned code may be blocked; report that restriction accurately.
 
-**Installed-code trust gate:** every signed-helper/payload assumption in sections 4.2, 11, 14, 15 and 19 must be evaluated for this profile. Define approved artifact admission, protected code/manifest paths, helper and IPC identity, safe DLL loading, hostile maintenance-input rejection and update lineage. Neither an attacker-writable hash nor a missing signature accepted unconditionally satisfies this gate. Public use of this profile remains blocked until that concrete design and its Windows evidence pass; it is not blocked merely because no Authenticode provider accepted the project. No runtime OpenPGP dependency or bespoke updater is adopted. Research R-06 owns the remaining design.
+**Retained OpenPGP installed-code trust gate:** if that profile is later selected, evaluate every signed-helper/payload assumption in sections 4.2, 11, 14, 15 and 19. Define approved artifact admission, protected code/manifest paths, helper and IPC identity, safe DLL loading, hostile maintenance-input rejection and update lineage. Neither an attacker-writable hash nor a missing signature accepted unconditionally satisfies this gate. Public use requires its concrete design and Windows evidence, plus the later owner delivery decision. No runtime OpenPGP dependency or bespoke updater is adopted. Research R-06 retains the related design questions.
 
-CHECK-18 records separate Authenticode and OpenPGP results. When using the latter, absent Authenticode remains not qualified, never passed or silently ignored. Preserve legitimate upstream signatures and all unrelated security/licence/lifecycle requirements. Signing-provider treatment of Chrony derivation, proprietary brand assets and the first release remains unresolved; do not infer rejection or change the brand licence.
+CHECK-18 distinguishes Store package/catalog evidence from any later selected MSI/Authenticode or OpenPGP evidence. In the OpenPGP case, absent Authenticode remains not qualified, never passed or silently ignored. Preserve legitimate upstream signatures and all unrelated security/licence/lifecycle requirements. Signing-provider treatment of Chrony derivation, proprietary brand assets and the first release remains unresolved; do not infer rejection or change the brand licence.
 
-For the Authenticode profile, sign owned executable/DLL payloads and the final complete installer/package in the provider-approved order, timestamp signatures, verify the resulting chain/publisher and archive hashes/evidence. Preserve upstream signatures where bundled binaries require them; do not assume the provider permits re-signing any third-party binary. Separate signing approval from untrusted build/test jobs.
+For the retained MSI/Authenticode profile, if selected later, sign owned executable/DLL payloads and the final complete installer/package in the provider-approved order, timestamp signatures, verify the resulting chain/publisher and archive hashes/evidence. Preserve upstream signatures where bundled binaries require them; do not assume the provider permits re-signing any third-party binary. Separate signing approval from untrusted build/test jobs. Do not apply this embedded-signature recipe to the Store MSIX route without evidence.
 
-Version 1 uses user-initiated complete-installer updates authenticated under the explicitly selected release profile; a qualified future Store distribution uses its complete-package update mechanism. There is no bespoke privileged auto-updater. If automatic service updates are added, signed metadata, rollback/version policy, atomic replacement and compromised-key recovery need a new threat-model review.
+The selected Store route uses its complete-package delivery/update mechanism after lifecycle qualification; it is not limited to a user-initiated MSI update flow. Store scheduling, version policy and package replacement do not implement NevroTick's quiescence, state migration or recovery. Qualify these under sections 11 and 19.4, including higher-version corrective releases and compromised-release response. No bespoke privileged auto-updater or TUF integration is adopted; any later custom updater requires its own threat-model decision.
 
 ---
 
@@ -2847,12 +2859,12 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-15 | Corrupt/old/incompatible state, reparse/hardlink/path swap, disk-full and interrupted replacement | Protected files cannot redirect privileged writes; invalid critical policy does not become permissive | P3/P4, platform/security |
 | CHECK-16 | Inspect build/PE/runtime evidence against section 15.4's role manifest; test activation/startup failure, actual SCM child-policy enforcement, DLL canaries, import/load paths and valid dependencies | Required protection enforced before normal protected work; valid workflows and applicable UI accessibility remain functional; failure preserves ownership-aware recovery | P0/P6/P7, security/build |
 | CHECK-17 | Secret-bearing paths/exports; required-event filtering; diagnostic-session expiry; sink failure/flooding | Allowlisted useful output at every enabled level; authorized finite collection; non-suppressible required routing; bounded aggregate storage/loss and safe cleanup. See section 12.3 and hardening section 9.8 | P2/P3/P5, security |
-| CHECK-18 | Verify the selected release profile: Authenticode payload/package publisher and tamper controls, or OpenPGP signer/manifest/final MSI plus protected installed-file trust; clean-machine lifecycle and policy restrictions | Invalid candidate rejected; valid supported candidate succeeds without developer roots or disabled protections. Record Authenticode not qualified in the OpenPGP profile; no equivalent-publisher claim | P6/P7, release |
+| CHECK-18 | Verify the selected Store MSIX package/catalog identity, approved release, submitted/delivered artifact lineage, tamper/wrong-package controls and protected installed-code/helper trust; clean-machine lifecycle and policy restrictions. Retained MSI profiles keep their separate evidence if later selected | Invalid candidate rejected; valid supported candidate succeeds without developer roots or disabled protections. Store signature recognition is not project authorization or certification of runtime behavior; no OpenPGP/Authenticode equivalence | P6/P7, release |
 | CHECK-19 | CI valid/invalid lint/SAST/source-origin controls, test-discovery and exit propagation | Relevant bad input fails actual gate; valid code passes; no zero-test success | P1/P7, tooling |
 | CHECK-20 | Complete dependency/feature/license/source and build-provenance inventory | Compatible selected grants, pinned origins, no hidden native/build dependencies or signing exposure | P0/P1/P7, release/license |
 | CHECK-21 | One-hour baseline and 72-hour reconnect/fault soak on named hardware | CPU/memory/wakeups/size/handles meet declared budgets; no teardown-masked leaks | P4/P5/P7, performance |
 | CHECK-22 | Actual UIA, Narrator, keyboard, contrast, scaling, localized long text and tray actions | Every critical action usable; clear trust/error semantics; no focus theft or status spam | P0/P5/P7, accessibility |
-| CHECK-23 | One complete MSI under its declared release profile on a clean machine: install, unelevated launch, update, repair, downgrade rejection, removal without UI and other-user sessions | One product entry/version/lifecycle; all components installed/removed together; no separate engine prerequisite; honest reboot/restoration outcome. Any future full MSIX repeats equivalent gates | P0/P6, packaging |
+| CHECK-23 | One complete MSIX under its declared profile on a clean machine: install, unelevated launch, update, repair/Reset, downgrade rejection, removal before UI launch and with other-user sessions, last-user and interrupted transitions | One product entry/version/lifecycle; all required components installed/removed coherently; no separate engine prerequisite; recovery completes before its last mechanism is removed; honest reboot/restoration outcome. Laboratory mechanics and Store-delivered evidence remain distinct | P0/P6, packaging |
 | CHECK-24 | Independent exact-candidate review of checks, risks, gaps and artifact identity | No planning evidence promoted to runtime pass; unresolved release blockers remain explicit | Each phase/P7, independent reviewer |
 | CHECK-25 | Actual strict decoder, mandatory garde-backed construction and function/module invariant preservation: nested object/array shape, unknown/duplicate/escaped keys, null/missing/defaults, trailing data, exact integer neighbors, transformed-output/finite arithmetic, collection/depth/error bounds and construction/mutation bypass attempts | Invalid input produces no protected effect or secret-bearing output; valid neighbors and exact integer round trips succeed; valid-shaped unauthorized/stale requests still fail current guards | P1/P3/P4, domain/IPC/security; real Windows effects remain CHECK-2/3/10 |
 | CHECK-26 | Exact dependency/native/build/proc-macro graph, package parity/checksums, selected licenses, feature closure, advisory remediation, generated-code provenance and final binary inventory | Deliberately incompatible/unexpected/outdated/feature-expanded fixtures fail the actual release gate; the approved graph succeeds. No crypto license assumption or native component omission; embedded metadata, SBOM and shipped artifacts reconcile | P0/P1/P2/P6/P7, dependency/license/release; graph remains unbuilt in this plan |
@@ -2875,7 +2887,7 @@ owns the corresponding evidence instructions.
 | CHECK-11/12 | Cold boot, restart, Fast Startup, hibernation, sleep and VM restore follow the qualified epoch policy without implicit allowance resets. |
 | CHECK-13/23 | Queued delayed SCM recovery fires during update/repair/rollback/removal and interrupted re-enable. Maintenance inhibition prevents protected work; authorized recovery restores only owned configuration. |
 | CHECK-19/25 | A mixed file has killed safe-function mutants but no generated mutants for a critical unsafe/generated path. Reporting preserves the missing behavior and its alternative evidence; a passing percentage alone cannot qualify it. |
-| CHECK-9/18/23 | Wrong-clock/offline startup/helper/install/repair/removal reaches the declared verifier/retrieval/deadline/refusal/recovery behavior. Reject revoked/unapproved OpenPGP key policy and unrelated Foundation-signed artifacts; supported valid candidates succeed. |
+| CHECK-9/18/23 | Wrong-clock/offline startup/helper/install/repair/removal reaches the declared verifier/retrieval/deadline/refusal/recovery behavior. Reject unrelated Store-signed packages and unauthorized copied-out/old-release artifacts; supported intended candidates succeed. Retained MSI profiles additionally challenge their Foundation/OpenPGP identity and key policy if later selected. |
 
 ### 20.3 Test layers and execution safety
 
@@ -2944,7 +2956,7 @@ The current first UI slice is [UI-M0](#165-restricted-first-ui-milestone-ui-m0):
 | S0.3 | One real status method and one protected method over named pipes, including fake-server and PID-reuse/restart scenarios | CHECK-2 proves bidirectional identity and per-operation authorization; switch to local RPC if the pipe design cannot be proven |
 | S0.4 | Measure read/rate sign, quantization, step, cancel, kill/restart and power behavior with controlled reference time | CHECK-10/11/12 produce actual backend limits; no unsupported finite-expiry guarantee |
 | S0.5 | Representative native window, source list, settings/elevation dialog and tray actions | CHECK-22 establishes UIA/Narrator/keyboard/contrast/scaling viability before toolkit commitment |
-| S0.6 | Qualify installer tool version/license, then a minimal complete laboratory MSI containing UI stub, both services and helper; takeover/rollback/repair/uninstall with hostile inputs | Exercise CHECK-5/13 and lifecycle/authority subset of CHECK-23, including disabled rollback and unattended removal; isolated test signing permitted. No assumption that OSS status alone gives free WiX eligibility; public publisher trust remains P6/CHECK-18 |
+| S0.6 | Qualify MSIX tool/schema and supported provisioning design, then a minimal complete laboratory package containing UI stub, both services and helper; takeover/recovery/repair/Reset/removal with hostile inputs | Exercise CHECK-5/13 and lifecycle/authority subset of CHECK-23, including unavailable recovery and unattended removal; isolated test signing permitted only in the owned lab. Store approval is not a prerequisite for preparing this candidate; execution holds still apply, and retail trust/capability evidence remains P6/CHECK-18 |
 | S0.7 | Review ASVS dispositions, native exception profile, automatic step/date/holdover limits, supported Windows builds and service-account trust/revocation/egress policy; set finite native-work/stop budgets | Explicit owner decisions or blockers, including OPEN-8 bootstrap/current-system-time limits and CHECK-27 admission/escalation contract; no unqualified L3 or Windows-security claim |
 
 **P0 package-signing scope:** S0.6 may use a locally built package and test certificate trusted only inside the disposable laboratory VM when public signing is not yet available. This exercises component identity, package lifecycle, privileges and recovery, not production publisher trust. Record the certificate/trust-store substitution and artifacts explicitly. It cannot satisfy CHECK-18 or the signed public-release portion of CHECK-23. No development root certificate is installed on an ordinary user's machine, and free public-signing acceptance is not a prerequisite for beginning this bounded experiment.
@@ -2995,11 +3007,11 @@ Exit requires CHECK-14/17/21/22 on actual Windows. Manual Narrator/keyboard evid
 
 ### P6 - Deliver hardened packages under the selected release profile
 
-**Outcome:** a supported clean machine can install, upgrade, repair and remove the product with correct clock ownership and the declared release-profile authenticity evidence. Windows publisher trust is claimed only for the qualified Authenticode profile.
+**Outcome:** a supported clean machine can install, upgrade, repair and remove the product with correct clock ownership and the declared release-profile authenticity evidence. The selected MSIX route requires qualified Store package/catalog publisher and installed-content trust; this does not imply an embedded signature on every extracted PE. A later selected MSI route has separate Authenticode or OpenPGP evidence, with no Windows publisher-trust claim from OpenPGP alone.
 
-S6.1 finalizes per-binary mitigations and DLL load policy. S6.2 qualifies the complete MSI lifecycle and fault rollback. S6.3 verifies the one-product user experience, unelevated launch, old in-memory component rejection, repair/downgrade policy and removal of every component. S6.4 establishes signing approval, payload/package verification, SBOM and release provenance. A future complete MSIX has the same single-product and authority gates and is outside the required v1 path; no UI-only package is delivered.
+S6.1 finalizes per-binary mitigations and DLL load policy for the selected complete MSIX. S6.2 qualifies its provisioning, lifecycle and fault recovery. S6.3 verifies one-product behavior, unelevated launch, old in-memory component rejection, repair/Reset/downgrade policy and removal of every component before or without UI launch. S6.4 prepares the Store submission candidate and capability justification, then records actual Store decisions/signing, delivered package verification, SBOM and release provenance. Candidate preparation does not require prior certification; public release still requires the actual approved and qualified artifact. No MSI prerequisite or UI-only package is delivered.
 
-Exit requires CHECK-13/16/18/20/23 for the declared profile. The initial OpenPGP alternative in section 19.5 is permitted when free Authenticode is unavailable, subject to its key, installed-artifact trust and Windows-policy evidence. Do not declare a laboratory certificate or OpenPGP signature equivalent to public Windows publisher trust.
+Exit requires CHECK-13/16/18/20/23 for the declared Store MSIX profile, with applicable authority, dependency and recovery checks. Store rejection or concrete technical infeasibility returns delivery choice to David; the retained MSI/SignPath/OpenPGP paths are not automatic exits. Do not declare a laboratory certificate, local schema pass or OpenPGP signature equivalent to Store-delivered trust and native qualification.
 
 ### P7 - Qualify the exact release candidate
 
@@ -3033,10 +3045,10 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
 | OPEN-10 | Native UI accessibility and measured resource fit | Win32 controls through audited Rust adapter | UI/accessibility, S0.5 |
-| OPEN-11 | Free signing eligibility, stable publisher/key/package identity and qualified initial OpenPGP trust path | OD-05 settles Foundation display, David as human approver and initial OpenPGP alternative. Provider acceptance, brand/port treatment, key lifecycle/project-specific admission, wrong-clock/offline activation and installed-artifact evidence remain open | David/release/security/provider, P0/P6 |
-| OPEN-12 | Future complete MSIX privilege/lifecycle feasibility | Complete MSI is v1; MSIX requires all section 19.4 gates and no external MSI prerequisite | Packaging/platform, separate future gate |
+| OPEN-11 | Store publisher/package identity, capability/certification outcome and delivered-artifact trust | OD-05 selects the complete hardened MSIX submission attempt and David as human release approver. Preparing the candidate requires no prior Store approval; installed-code/helper admission, wrong-clock/offline behavior and actual Store-delivered evidence remain open. Retained MSI signing options require later delivery reconsideration | David/release/security/Store, P0/P6 |
+| OPEN-12 | Selected complete MSIX privilege/provisioning/recovery feasibility | Direction is selected; supported pre-start identities/rights, recovery before removal, multi-user lifetime and all section 19.4 release conditions remain unqualified. No external MSI prerequisite or automatic account broadening | Packaging/platform, S0.6/P6; source preparation can proceed under current holds |
 | OPEN-13 | Final runtime/native-work/stop budgets and permitted deliberate chrony deviations | Measure first slice with Windows protections active; keep permits with actual work, no replacement-pool growth, traceable changes | Core/platform/performance/product, P0/P1/P4 |
-| OPEN-14 | MSI tool version/license/eligibility, maintenance inputs, transaction/rollback schema, durable maintenance inhibition/queued restart handling and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict public-property policy, hostile repair tests and no unintended downgrade | Installer/security/license owners, S0.6/P6 |
+| OPEN-14 | MSIX tool/schema admission, supported elevated lifecycle mechanism, transaction/recovery schema, durable maintenance inhibition/queued restart handling and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict lifecycle-input policy, hostile repair/Reset tests and no unintended downgrade. MSI/WiX-specific gates apply only if that retained route is later selected | Installer/security/license owners, S0.6/P6 |
 
 Use [NV-DEC-001](nevrotick-owner-decisions.md) for owner decisions and [NV-RESEARCH-001](nevrotick-research-handoff.md) for future research. Bring concrete decisions to David only when the next dependent action needs them; preserve accepted choices and record supersession explicitly.
 

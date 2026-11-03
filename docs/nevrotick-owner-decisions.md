@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.2<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.3<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended 3 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -23,7 +23,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-02 | Support very large clock recovery with several NTS sources, potentially a 100-year error; be more conservative with plain NTP | **Accepted behavior goal** | Supported true-date interval, era anchor, exceptional authenticated quorum, direction/startup/runtime rules, correction budgets and real Windows evidence. Twelve hours is a tentative plain-NTP candidate, not an approved constant |
 | OD-03 | Prefer `pool.ntp.org` as the default source; use the supplied NTS directory to find secure servers | **Accepted provider preference; default-profile interaction unresolved** | Pool vendor-zone allocation; which role the Pool fills alongside NTS; qualified NTS operators and compatible time scales |
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
-| OD-05 | Accept the Foundation publisher display; David Osipov is the human approver; use OpenPGP signatures initially if free Authenticode is unavailable | **Accepted release policy** | Provider eligibility or a qualified OpenPGP release process; exact artifacts, key identity, installed-file trust and Windows compatibility evidence |
+| OD-05 | Prepare one complete MSIX with the strongest compatible verified protections; David will try Microsoft Store submission with services and reconsider delivery if rejected. Retain the previously accepted Foundation/OpenPGP MSI policies as alternatives, with David as release approver | **Accepted delivery and hardening direction, amended 3 November 2026** | Supported least-privilege service provisioning and recovery, actual package/catalog and per-process mitigation evidence, account/capability admission and the Store outcome; direction is selected, implementation and release are not qualified |
 | OD-06 | Leave remaining research questions documented for another AI to investigate | **Deferred research** | The companion brief names questions, owners, evidence and stop conditions; deferral grants no implementation waiver |
 | OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
@@ -144,14 +144,59 @@ David decides exceptions **individually**. This is not blanket acceptance of ASV
 
 ### 7.1 Accepted choices
 
-- **Preferred free route:** SignPath Foundation, if the project qualifies and the workflow is approved.
+**3 November 2026 amendment:** David asked to maximize MSIX protection, then try
+publishing the complete application in Microsoft Store with its services. He will
+reconsider delivery after an actual rejection or a concrete technical blocker.
+This supersedes the earlier MSI-first direction and the requirement to obtain
+Store approval before selecting MSIX for preparation. It does not pre-approve an
+unsupported service topology or unsafe lifecycle.
+
+- **Selected preparation target:** one complete hardened MSIX containing the UI,
+  network engine, clock broker, narrow lifecycle helper and required payloads;
+  Microsoft Store is the intended first publication attempt. No split
+  MSI-service/MSIX-UI product or external service prerequisite.
+- **Security objective:** use the strongest compatible, supported and verified
+  controls for each process, including package-content integrity and the
+  Store-compatible code-integrity profile in the
+  [MSIX plan](plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper).
+  A required protection failure must prevent the affected authority/operation;
+  no silent disabling, broader service privilege or weakened recovery to make
+  packaging or certification succeed.
+- **Store outcome:** prepare the candidate and accurate service/capability
+  justification without waiting for speculative preapproval. David makes the
+  account/submission/visibility and release actions. An actual refusal is a
+  decision input, not permission to conceal services or silently ship another
+  channel. Store acceptance and application security qualification are distinct.
+- **Retained free MSI alternative:** SignPath Foundation, if the project qualifies
+  and David later returns to the complete MSI route.
 - **Publisher display:** the Foundation's publisher identity is acceptable to David. Exact issued identity and renewal policy still require verification.
 - **Human release/signing approver:** **David Osipov**.
-- **Initial fallback:** if a usable free Authenticode route is unavailable, permit an initial **complete MSI without project Authenticode signatures**, accompanied by **OpenPGP signatures**. Preserve legitimate upstream signatures where present.
+- **Retained initial MSI fallback:** if that route is chosen and a usable free
+  Authenticode service is unavailable, the earlier permission for a complete MSI
+  with OpenPGP signatures remains. Preserve legitimate upstream signatures.
 
-This explicitly replaces the earlier blanket rule that lack of free public Authenticode must block every public release. It does not authorize an automatic release, remove unrelated product gates, approve a paid certificate, split the package, or turn absent Authenticode evidence into a pass. SignPath's acceptance remains external. [S12]
+The [existing W11-W10/W11-W05 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026)
+owns the preparation and later qualification. The current portable Core priority,
+Windows execution stop, separate fuzz no-retry hold, storage pause and UI-M0
+deferrals remain. This amendment authorizes source/design preparation; it claims
+no working MSIX, native mitigation enforcement, signing or Store acceptance.
+
+The retained MSI fallback still replaces the earlier blanket rule that lack of
+free public Authenticode must block every public release. Neither that permission
+nor the new Store direction authorizes automatic publication, removes unrelated
+product gates, approves a paid certificate or turns absent evidence into a pass.
+SignPath's acceptance remains external. [S12]
 
 ### 7.2 Separate release profiles
+
+The selected Store MSIX profile uses the actual delivered package/catalog,
+approved package identity and installed component lineage, with the exact
+service, mitigation and recovery evidence in
+[architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate)
+and [signing §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries).
+Store signing is not an arbitrary publisher allowlist or helper authorization.
+The following table retains the two **MSI alternatives**; neither is a parallel
+v1 deliverable or a prerequisite to preparing MSIX.
 
 | Requirement | Preferred Authenticode profile | Initial OpenPGP profile |
 | --- | --- | --- |
@@ -185,7 +230,11 @@ Priority order:
 1. Confirm selected-source licence obligations and an admissible crypto/native graph before port/dependency commitments.
 2. Resolve the Pool/NTS default interaction and provider permission before shipping defaults.
 3. Prove era-aware authenticated recovery and propose conservative plain-NTP limits before clock actuation.
-4. Research the unsigned release trust path and SignPath eligibility, including proprietary brand assets and port treatment, before the first public release.
+4. Prepare the owner-selected complete hardened MSIX and Store submission case
+   with services through OD-05 and the existing W11 task. Qualify supported
+   provisioning, recovery, installed trust and per-process protections. Retain
+   unsigned-MSI trust and SignPath eligibility research for a later owner-selected
+   alternative; do not make those provider answers prerequisites to MSIX work.
 5. Continue the existing native account/IPC/clock/lifecycle/resource investigations at their phase gates. Bring concrete exceptions rather than a speculative list of approvals.
 
 The proprietary-artwork/free-signing question is **unresolved**. This work neither concludes SignPath rejects the project nor changes the brand licence. Research and any later authorized provider clarification must answer it.
@@ -259,7 +308,7 @@ the affected checker/configuration changes; each measured kernel owner and an
 independent reviewer qualify the dispatch, fallback and mathematical contract.
 The package owner proves that a baseline-compatible prerequisite check rejects
 unsupported CPU/OS/guest combinations before any v3 payload is started. Preserve one complete
-MSI and existing process/privilege boundaries. Qualification must cover actual
+package and existing process/privilege boundaries. Qualification must cover actual
 supported CPU/OS/VM rows, masked/disabled vector support, numerical and rejection
 parity, latency/resources/artifact size and existing CHECK-19/20/21/25/26 gates.
 

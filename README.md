@@ -23,7 +23,10 @@ integrations are outside the planned timekeeping scope.
 
 - **Windows first:** authenticated network time, chrony-derived estimation,
   source agreement and a lightweight native UI. The planned engine and clock
-  broker have separate privileges and ship in one installer.
+  broker have separate privileges and ship in one complete MSIX. The selected
+  [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
+  package protections, followed by a Microsoft Store submission with services;
+  packaging, native qualification and Store acceptance remain future work.
 - **Android next:** an NTS-backed companion supplying a local SNTP endpoint to
   Android's existing time service, subject to device qualification.
 - **Encrypted DNS later:** **DNS over QUIC (DoQ)** with leaf and intermediate

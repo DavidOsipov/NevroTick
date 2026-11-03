@@ -74,9 +74,10 @@ For a material unresolved choice, prepare the decision card in NV-DEC-001 with
 evidence, options, recommendation and the dependent action, then ask David.
 Routine work within accepted contracts continues. Record the outcome in the
 canonical documents; do not treat silence or research deferral as risk acceptance.
-OD-05 already accepts the Foundation publisher display, David as release approver
-and an initial OpenPGP alternative if free Authenticode is unavailable; the
-profile-specific trust and Windows qualification gates remain.
+Amended OD-05 selects complete hardened MSIX preparation and David's Store
+attempt with services. It retains Foundation display and initial OpenPGP/MSI
+policies as alternatives for a later delivery decision, with David as release
+approver; profile-specific trust and Windows qualification gates remain.
 
 Windows exploit-protection work: read [architecture section 15.4](docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
 and [hardening section 6.4](docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification).
@@ -116,7 +117,8 @@ They map packet timestamp provenance, power/timer semantics, service/network
 confinement, MSI maintenance, DNS ownership and background-resource candidates
 to current CHECK/DNS-C/ST-T owners. Record configured versus effective Windows
 state and distinguish source evidence from native qualification. Conditional
-APIs, analyzer profiles, dependencies and release channels remain unselected;
+APIs, analyzer profiles and dependencies remain unselected unless adopted by
+their current owner; MSIX direction is separately selected under amended OD-05.
 the current product priority, experiment pause and UI-M0 deferrals remain.
 
 At its next checkpoint the coordinator also adopts W11-W01–W11-W10 through
@@ -136,17 +138,22 @@ settings remain conditional. Apply the relevant refinement before dependent
 adapter work and record its disposition in the existing W11 or storage task.
 Retain the current Windows execution stop, separate fuzz hold and storage pause.
 
-MSIX/Store distribution research: read the [focused study](docs/plans/windows-msix-store.md),
+MSIX/Store hardening and delivery: read the [selected plan](docs/plans/windows-msix-store.md),
 [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate)
-and the [existing task refinement](tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026).
-W11-W10 owns the conditional complete-package investigation; W11-W05 and the
-existing release/storage owners supply lifecycle and trust evidence. Prepare one
-source-only eligibility/provisioning/recovery card at the packaging checkpoint;
-do not repeat a general survey or displace the current Core task. Store signing
-and catalog trust are useful capabilities, not service approval or helper
-authorization. Keep the complete MSI and OD-05 until all full-MSIX gates pass;
-no split package, broader service rights, account submission or execution follows
-from this documentation request.
+and the [current task amendment](tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026).
+The 3 November OD-05 amendment selects one complete hardened MSIX for preparation;
+David will try Store submission with services and reconsider delivery if refused.
+W11-W10 owns this selected work; W11-W05 and existing release/security/storage
+owners supply provisioning, mitigation and recovery evidence. Do not wait for
+Store preapproval to prepare the candidate or repeat the general survey. Preserve
+the current Core priority and all execution holds. The plan defines explicit
+package integrity, sealed executable content, Store-compatible CIG and per-role
+protections. Local test-signing and actual Store-delivered qualification are
+separate stages; final Store bytes are checked after controlled submission and
+before broad release. Store signing is neither helper authorization nor a passed
+application-security gate. Retain MSI profiles as alternatives for a later owner
+decision, not a prerequisite or automatic fallback. No split package, broader
+service rights, assistant account/upload action or unqualified release follows.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
@@ -210,7 +217,10 @@ Read canonical sections for exact limits; preserve these boundaries:
 
 - Separate network-facing engine without clock privilege, narrow privileged
   clock broker, normal-user Win32 UI, elevated lifecycle helper. Deliver one
-  complete per-machine MSI. Suggested crate boundaries propose ownership;
+  complete MSIX under amended OD-05, subject to supported service provisioning
+  and complete lifecycle qualification. Older MSI-first summaries are superseded;
+  retain MSI-specific mechanics only for a later owner-selected alternative.
+  Suggested crate boundaries propose ownership;
   scaffolding every crate immediately not required.
 - Treat product user input and external programmatic input as potentially
   malicious. UI controls, local origin, authenticated transport, administrator

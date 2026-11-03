@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The second Microsoft Learn pass and later MSIX/Store refinement are integrated into the assignments below; their scope and evidence are recorded separately in sections 4.4 and 4.6 onward. Source-only follow-up is ready; implementation and native qualification are unexecuted.  
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Source/design work is ready; package implementation and native qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -253,21 +253,23 @@ retrieval; DNS-C14/17 when the DNS service participates.
 
 ### W11-W05 Observe effective SCM, maintenance and process policy
 
-**Owner/stage:** platform/security/lifecycle; P0/P3, P4 cleanup and P6 MSI.
+**Owner/stage:** platform/security/lifecycle; P0/P3, P4 cleanup and P6 complete MSIX.
 **Prerequisites:** existing token/object, mitigation, mandatory-state and
 [installation research](../docs/plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
 
 **Work:** record configured settings, documented activation point, actual token/
 policy and pending restart/reboot separately. Qualify first installation rather
-than assuming a universal reboot. Route Restart Manager starts through the same
-protected maintenance/generation admission as boot, manual and SCM recovery;
-public MSI properties cannot clear it. Extend child-policy observations with
+than assuming a universal reboot. Route every supported package/service restart
+through the same protected maintenance/generation admission as boot, manual and
+SCM recovery. For a later selected MSI alternative, include Restart Manager and
+prove public MSI properties cannot clear that guard. Extend child-policy observations with
 harmless requests for `PROCESS_CREATE_PROCESS`/`PROCESS_VM_WRITE` on dummy peers
 and inherited/duplicated-handle review. The SCM creation-policy route remains
 unresolved; no custom launcher is selected. If preshutdown is used, give it an
 explicit budget independent of optional cache work.
 
-**Second-pass candidates:** evaluate declarative `MsiLockPermissionsEx` before
+**Retained MSI-specific candidates, only if that alternative is later selected:**
+evaluate declarative `MsiLockPermissionsEx` before
 custom ACL actions where it expresses the required descriptor. Qualify account/
 service-SID resolution and ordering, installed/reinstalled resource coverage,
 parent inheritance, conflicting conditions and final owner/DACL behavior after
@@ -292,18 +294,21 @@ Future UI consumers retain D2. These [lifecycle candidates](../docs/plans/window
 reuse this owner and the existing storage task; `ReplaceFileW` failure/recovery
 cases remain with [ST-W02/03](windows-protected-storage.md#st-w02-enforce-operation-outcomes-and-model-durability).
 
-For the conditional full-MSIX route, use the [section 4.6 refinement](#46-msix-and-microsoft-store-refinement--3-november-2026)
+For the selected full-MSIX target, use the [section 4.8 assignment](#48-owner-selected-hardened-msix--3-november-2026)
 with W11-W10. Supported pre-start privilege configuration, update/repair
 persistence, multiuser ownership and recovery-before-removal must preserve the
 same lifecycle boundary. MSIX manifest/service support, package replacement and
-first-UI setup do not substitute for those observations; the selected MSI stays.
+first-UI setup do not substitute for those observations. Prepare the design now;
+native execution retains its hold. Do not use MSI actions/properties as assumed
+MSIX hooks, or require an MSI prerequisite to obtain the intended isolation.
 
 **Controls/exit:** allowed service work and private-object access succeed;
 disallowed token/handle access fails under installed identities. Hold maintenance
 before commit; RM/manual/queued recovery starts must not admit normal protected
-work. Compare successful update, rollback, RM disabled/unavailable and honest
-reboot-required outcomes. Delayed cleanup must not fabricate Stopped. Pure
-lifecycle traces precede disposable native/service/MSI observations; no rights
+work. Compare successful update, supported rollback/recovery and honest
+reboot-required outcomes; RM disabled/unavailable cases apply to the retained
+MSI route. Delayed cleanup must not fabricate Stopped. Pure
+lifecycle traces precede disposable native/service/package observations; no rights
 grant is dismissed because a harmless child-launch test passed. **Mapping:**
 CHECK-1/12/13/15/16/23/27; ST-T03/10/12/17 for affected storage owners.
 
@@ -431,6 +436,8 @@ UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
 The [conditional research](../docs/plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
 and [second-pass reserves](../docs/plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
 own source contracts and limits. These reserves are not a prerequisite list.
+The later OD-05 decision selects the MSIX row for preparation; the other rows
+retain their own conditional triggers. The heading is preserved for existing links.
 
 | Reserve / existing owner | Re-entry condition and bounded exit |
 | --- | --- |
@@ -438,8 +445,8 @@ own source contracts and limits. These reserves are not a prerequisite list.
 | LPAC/AppContainer or preview Win32 app isolation / architecture/security | A named untrusted-work boundary justifies capabilities, IPC, supported launch/deployment and lifetime costs. Observe actual denied access beside admitted work; standalone creation APIs do not prove SCM compatibility. No new privileged broker follows automatically. |
 | Stricter CET/EHCONT / build/security | A selected mitigation property for the exact Rust/native closure; inspect metadata and actual enforcement beside legitimate provider/callback behavior. Existing CHECK-16/20/26 owners remain. |
 | Full VBS enclave / storage/release | A secret operation needs enclave execution beyond isolated CNG roots. Separate runtime build/VBS/HVCI from development/signing eligibility, and use the existing storage task and ST-T11/12/13; the native storage pause remains. |
-| External-location identity or WinGet / UI/packaging | A named identity-dependent feature or qualified distribution need. Keep one complete MSI, profile-specific trust and multi-user repair/removal; existing CHECK-18/23 own final-package evidence. Local notifications alone do not select identity or another updater. |
-| Complete MSIX with Store distribution / packaging/release/security | The owner has named certificate cost and managed delivery as the need. Prepare the bounded source-only card in [section 4.6](#46-msix-and-microsoft-store-refinement--3-november-2026), using the [source assessment](../docs/plans/windows-msix-store.md). Distinguish Store acceptance, supported least-privilege provisioning and complete recovery/lifecycle design before any experiment. All architecture §19.4 gates and CHECK-1/5/12/13/15/16/18/23/27 remain; one complete MSI and OD-05 stay selected pending qualification. |
+| External-location identity or WinGet / UI/packaging | External executable content is excluded by the selected MSIX profile; reconsider only through a later explicit architecture decision, not to bypass packaging gates. An additional WinGet acquisition path needs the same complete-package identity/lifecycle and CHECK-18/23 evidence. Local notifications alone do not select another updater. |
+| Complete hardened MSIX with Store distribution / packaging/release/security | **Selected preparation target under amended OD-05.** Execute the source/design work in [section 4.8](#48-owner-selected-hardened-msix--3-november-2026) using the [focused plan](../docs/plans/windows-msix-store.md). Explicit content integrity, immutable executable paths, Store-compatible CIG and per-role protections join supported service provisioning and complete recovery. Store preapproval is not a preparation gate; actual signed-artifact qualification follows David's controlled Store attempt. All existing §19.4/CHECK owners and execution holds remain; MSI is a retained alternative for a later owner decision. |
 | W32Time provider DLL / architecture/clock | An explicitly different Windows-managed-discipline goal. First reconcile controller ownership, trust and restoration in a source-only decision card; never add it as a competing controller. Existing CHECK-5/10/13 remain. |
 | VBS key claims / storage/security | Actual-key origin evidence is the named blocking question. The new `NCryptCreateClaim`/`NCryptVerifyClaim` extensions are prerelease; the base API floor does not qualify them. Define trusted anchor, subject/freshness binding, replay/version/debug/update policy and attestation-key/hash/padding prerequisites. Do not add roles to wrapping/signing roots or adopt a new root, cloud service or hardware rollback claim. Reuse the storage reserve and ST-T01/05/13. |
 | Side-channel policy fields / per-process security | A named threat, process role and supported hardware/build justify one field. Account for irreversible enablement, scheduler dependencies and common-page exceptions; readback is not an enforcement measurement. Compare healthy timing/crypto/IPC and CPU/energy costs under CHECK-16/21, without raising privileges or enabling every bit. |
@@ -459,7 +466,7 @@ a dependency, weaker fallback, service topology or machine-wide policy here.
 | W11-W01 source contract | Ready bounded next action when assigned to the relevant acquisition owner; not executed by this integration. |
 | Portable implementation/model | No W11 work-item, CHECK, DNS-C or ST-T implementation pass established by this integration. |
 | Native Windows/service identity | Unexecuted; the current Windows execution stop, storage-experiment pause and applicable environment/authorization gates remain. The separate fuzz no-retry hold is also unchanged. |
-| Installed MSI and release | Unexecuted; installed-path, final dependency/artifact and release evidence retain their existing owners. |
+| Installed MSIX and release | Unexecuted; local test-signed mechanics, Store acceptance and actual Store-delivered trust/mitigation qualification remain separate evidence layers. |
 
 For later work, record the selected item and existing acceptance IDs, exact
 source/configuration/graph/candidate, writable owner, admitted runner/environment,
@@ -716,6 +723,11 @@ current Core work and every recorded execution hold remain controlling.
 
 ### 4.6 MSIX and Microsoft Store refinement — 3 November 2026
 
+**Historical checkpoint:** the following request/disposition was current before
+David's later decision in [section 4.8](#48-owner-selected-hardened-msix--3-november-2026).
+Retain its research and evidence identity; its MSI-first/conditional-MSIX selection
+is superseded, not the least-privilege, recovery or execution-hold requirements.
+
 **Request and candidate:** record the completed MSIX/Store research in the
 maintained docs, architecture, plan and existing agent task. Source integration
 starts from `070927855ed99e1a0683d9f291d3462d33343118`, tree
@@ -809,3 +821,92 @@ SDK/native deployment behavior and applicant/vendor approval. No source card,
 MSIX build, Windows run, signing or release was completed by this amendment.
 The next permitted packaging action remains the source-only card in section 4.6
 when that owner is assigned; current Core work and execution holds remain.
+
+### 4.8 Owner-selected hardened MSIX — 3 November 2026
+
+**Request and authority:** David asked to maximize MSIX protection, then try
+Microsoft Store publication with the services himself; after a refusal he will
+reconsider delivery. [OD-05](../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+records this direct amendment. The integrated source/documentation baseline is
+`661281ad0e6504338d352b943154522b800974fa`. Earlier receipts retain their original
+candidates. Complete hardened MSIX is selected for preparation; no finished
+package, active mitigation, supported account mapping or Store acceptance is
+asserted.
+
+**Changed and retained obligations:** MSIX preparation no longer waits for Store
+preapproval or completion of an MSI release. David owns the later submission
+and release action. MSI/SignPath/OpenPGP remain retained alternatives for a later
+decision, with no automatic fallback. Preserve the complete product, separate
+engine/broker authority, independent mandatory-state owner, W32Time restoration,
+existing CHECK/AC/ST-T catalogs, Core priority, Windows execution STOP, separate
+fuzz no-retry hold, storage pause and UI-M0/D1–D3 boundaries. No new acceptance
+catalog, packaging tool, dependency or runtime policy is installed by this work.
+
+**Next bounded action:** W11-W10's packaging/security owner produces the concrete
+source/design profile below with W11-W05 and the release/lifecycle owners. Reuse
+the [focused plan §§3–7](../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
+and existing per-process mitigation manifest; do not repeat the general source
+survey. Read `security-build-deployment`, `security-windows-privileges`,
+`qa-package-artifacts` and the testing contract before dependent implementation.
+
+| Existing owner / phase | Required output and independent expectation | Disposition and next evidence |
+| --- | --- | --- |
+| W11-W10, package/build; S0.6/P6 | Exact component/entry-point/dependency/capability inventory, future manifest requirements and immutable code/data layout. Explicit `PackageIntegrity` content enforcement; no mutable/external executable content or runtime-downloaded native code. | Source/design ready. CHECK-16/18/20/23/26 later inspect the actual final manifest/images/inventory and reject tamper while clean installation works. |
+| W11-W10, platform/security; P0/P3/P6 | Per-role CIG with Store allowance, ACG/CFG/CET/image/extension/child/Win32k targets, activation owner/phase, required versus optional status and bounded failure/recovery. Distinguish SCM activation from child-process attributes; record pre-opt-in loads. | Source/design ready; implementation depends on actual roles/providers. CHECK-16/26/27 later require readback and harmless deny controls beside real permitted workflows; audit or unsupported is not enforced. |
+| W11-W05, platform/IPC/security; S0.2/S0.3/P3 | Supported pre-exposure service provisioning, actual account/privilege/SID/owner/ACL matrix, process/token isolation, broker network denial and package-aware helper/IPC authorization. Neither account name nor a valid Store signer grants authority. | Mapping/provisioning remains unresolved; no LocalSystem shortcut or unqualified two-LocalService selection. CHECK-1/2/15 observe actual denied engine effects and accepted narrow operations after install/repair/update. |
+| W11-W05, clock/storage/lifecycle; S0.6/P4/P6 | Recovery-before-removal protocol with explicit owner/generation, rate cleanup, journal continuity and W32Time restoration. Distinguish service STOP, update, crash, repair, Reset and last-user removal, including no first UI launch. | Supported recovery bridge remains unresolved. CHECK-5/12/13/23/27 later challenge interruption, forced shutdown and successor cleanup; no removal of the last recovery path. |
+| W11-W10, release/build; P6 | Local candidate and certificate/trust evidence labelled separately from actual Store-delivered bytes. Prepare component purpose, capabilities, least privilege, consent, startup, update/removal and reviewer steps for David's submission. | Source notes ready; no prior Store permission needed to prepare them. CHECK-18/23 and affected CHECK-9 carry exact trust/time/offline/certificate-retrieval conditions and approved installed-helper identity. |
+| W11-W10, release/independent QA; P6/P7 | Local complete mechanics → David's controlled/private initial Store attempt → exact delivered package/catalog/dependency/CIG and lifecycle qualification before broad release. Retain actual refusal reason if rejected. | Build/native/submission unexecuted. Existing CHECK-24 review reconciles evidence; certification is no security pass and actual Store signature is not required before the initial submission. |
+
+The source/design exit is an implementable supported mechanism for each required
+boundary, or a precise unresolved blocker with an owner and next action. A source
+card may finish while external certification is unknown. It must not invent
+provisioning support, lower required protection or mark a missing native result
+as passed. Later stages follow
+[plan §7](../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
+and architecture §19.4 with their actual phase/environment prerequisites.
+
+**This amendment's verification:** documentation consistency, preserved canonical
+identifiers/history, current Microsoft primary-source semantics, relative links
+and skill-pack routing. Product builds/tests, service/clock experiments,
+machine-policy changes, account creation, signing and Store upload are outside
+this executed amendment. Review and validation results are recorded below only
+after checking the integrated candidate.
+
+### 4.9 Hardened-MSIX documentation review and validation
+
+The integrated amendment changes 25 maintained documentation/skill-routing files
+against `661281ad0e6504338d352b943154522b800974fa`. The partial review checkout's
+276 original files were matched to the pinned remote Git blob identities; the
+complete remote tree was not truncated. It is not a claim about another agent's
+local staged or dirty state.
+
+Independent source review checked the selected plan and OD-05 against Microsoft
+Learn, including explicit integrity enforcement, Store-compatible CIG, SCM versus
+child-process activation and the noncircular Store-signing sequence. A separate
+integration review checked architecture/features, task/phase routing and skills.
+It found one remaining Authenticode-only P6 publisher-trust sentence; the
+coordinator corrected it to the selected Store package/catalog profile and the
+reviewer verified the fix. No material findings remained in the reviewed scope.
+The coordinator separately inspected the signing/hardening changes.
+
+Completed document checks:
+
+- `python3 -B .agents/skills/scripts/check_skills.py`: **PASS**, all 62 skills'
+  metadata, UI prompts, links and inventories. Imported upstream bytes/notices
+  remain unchanged. The first snapshot preflight lacked linked files; actual
+  pinned targets were fetched and verified before this final pass.
+- Scoped documentation validation: **63 new local-link/anchor combinations**
+  resolve; changed-file types, headings, fences and conflict markers pass.
+  All 27 CHECK and 20 AC rows retain their identifiers; all 345 ASVS clause
+  records are unchanged. The current Core next-task section and earlier W11
+  review/history receipts remain unchanged.
+- `git diff --check`: **PASS** after correcting added-line whitespace.
+  No root documentation `SHA256SUMS.txt` exists; no bundle-integrity claim is
+  substituted for it. The separate design-bundle manifests are untouched.
+
+These are source/documentation results. No product build, native denial test,
+service/clock action, real package/signature, account or Store submission was
+executed. Section 4.8 owns continuation. Recheck this factual receipt, final
+links and changed bytes before expected-parent publication; existing Windows,
+fuzz and storage holds remain.

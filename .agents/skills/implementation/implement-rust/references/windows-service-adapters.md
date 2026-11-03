@@ -5,11 +5,24 @@ stop/restart implementation/review. First read [canonical architecture](../../..
 sections 4, 9–11, 17.1, 18.6, CHECK-27 and S0.2–S0.3. Procedure adopts no dependency
 or production limits.
 
-Documentation-only stage has no Cargo/native candidate. Source review may prove
-API fit/blockers; Windows runtime remains incomplete. Do not create runtime
+Source/design preparation does not establish a service/package candidate. Source
+review may identify API fit/blockers; Windows runtime needs actual evidence. Do not create runtime
 projects, install tools, register services or change clocks merely for checklist
 completion. Execute cases
 only within task-authorized machine/mutation scope.
+
+The [current OD-05 direction](../../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+is a complete hardened MSIX for David's Store trial with services. Read
+[plan §3](../../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
+for package/CIG/per-role controls and
+[§7](../../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
+for local/test-signed mechanics, owner submission and subsequent actual Store-byte
+qualification. Prior Store acceptance is not a prerequisite for source/design
+work or candidate preparation. The supported MSIX service-account/provisioning mapping remains
+open; retain own-process separation and effective least privilege. Earlier MSI
+mechanics are fallback/reference only, not a prerequisite or automatic parallel
+target. Current Core priority, Windows stop, separate fuzz hold and storage pause
+remain.
 
 Navigate to [adapter choice](#freeze-the-adapter-choice-before-coding),
 [lifecycle ownership](#identify-one-lifecycle-owner-per-own-process-service),
@@ -69,7 +82,7 @@ qualification; unresolved counts/durations/flag choices remain P0 decisions.
 
 | Configuration or outcome | Engine record | Broker record |
 | --- | --- | --- |
-| Registration and startup | Fixed installer-owned name/path/arguments, own-process type, LocalService/restricted service SID, required privileges, start mode, dependencies and readiness conditions | Separate fixed identity, virtual account and required privileges; readiness includes ownership assessment and recovery reconciliation. Unavailable/ambiguous ownership permits only the defined read-only Blocked behavior, never a clock write; SCM Running still describes service availability |
+| Registration and startup | Fixed deployment-owned identity/image/arguments, own-process type, supported account and restricted service SID, required-privilege allowlist, start mode, dependencies and readiness conditions; prove removal of dangerous rights before exposure | Separate own-process identity and minimum required privileges through a supported MSIX provisioning method; exact account mapping remains unqualified. Readiness includes ownership assessment and recovery reconciliation. Unavailable/ambiguous ownership permits only defined read-only Blocked behavior, never a clock write; SCM Running still describes service availability |
 | Recovery sequence | Exact ordered action/delay pairs, finite restart budget, terminal behavior and quiet-period reset policy | Separate action/delay pairs and budget justified by the measured retained-rate recovery envelope; do not copy engine values without proof |
 | Failure classification | Explicit `fFailureActionsOnNonCrashFailures`, meaningful Win32/service-specific exit-code mapping, configuration versus effective activation evidence | Same fields; distinguish initialization failure, read-only Blocked availability, ordinary request rejection and fatal failed impersonation reversion. A rejected request is not a process fault; failed reversion follows section 5.4's fatal path, and no successful exit is fabricated to conceal failure |
 | Stop and escalation | Accepted controls by state, monotonic deadlines, native-job custody, SCM-coordinated process recovery and backoff owner | Independent cleanup deadline, attributable clock-state handling, external failure diagnostics and recovery owner |
@@ -198,8 +211,9 @@ access semantics; do not claim every LocalService token can bypass every DACL.
 
 Before freezing storage/process security, qualify a concrete owner-isolation
 mechanism: a valid per-service default owner, an appropriate `OWNER RIGHTS` ACE
-policy, or the architecture's distinct engine virtual-account fallback. The
-`OWNER RIGHTS` policy controls implicit owner permissions; its presence and inheritance must
+policy, or a separately qualified distinct-account design supported by the
+selected package. The retained virtual-account reference is not an admitted MSIX
+mapping. The `OWNER RIGHTS` policy controls implicit owner permissions; its presence and inheritance must
 be inspected on each relevant object rather than inferred from a parent.
 [Microsoft OWNER RIGHTS definition](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/understand-security-identifiers).
 Cover initial creation, staging, log rotation and atomic replacement of secret,
@@ -254,14 +268,20 @@ account SID, service/restricted SIDs, privilege presence/enabled state, object A
 handle inheritance and process identity. Join observations to the executable hash
 and process lifetime; a recycled PID is insufficient.
 
-Use the intended two own-process fixtures: broker virtual account and engine
-LocalService with restricted service SID and required-privilege allowlists. Verify
+Use two own-process fixtures with the exact proposed package-supported identities,
+service SIDs and required-privilege allowlists. The retained MSI design uses a
+broker virtual account and LocalService engine; that account mapping and a
+two-LocalService alternative both need supported pre-start provisioning and native
+proof for MSIX. Do not invent a manifest account or assume the service may grant
+itself configuration rights. Verify
 the engine lacks the architecture's dangerous privileges, including *present but
 disabled* clock privilege. Unexpected rights are a failed configuration gate.
 Stop before a nominally denied raw write if token inspection already violates that
 absence; the test must not turn a known configuration failure into an unbounded effect.
 Do not silently broaden to LocalSystem; record a failed proof and evaluate only
-the architecture's constrained account fallback.
+an architecture-compatible account/provisioning design. Unsupported isolation or
+recovery is a concrete blocker to return to the owner, not permission to add an
+external MSI prerequisite or mandatory first-UI setup.
 
 Pair each denial with a valid-shaped request and a healthy permitted operation:
 
