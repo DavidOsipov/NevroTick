@@ -49,7 +49,7 @@ that workstream's experiment pause or select its product default.
 | UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
 | Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and a two-peer loopback engine exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
 | Dependencies | The six-owner workspace retains the reviewed UI-M0/garde cohort and adds the admitted minimal Tokio/getrandom engine graph. Exchange and core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | The [engine dependency checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) owns its selected graph rows. Integrated checks apply to their recorded source/features. |
-| Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.2](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |
+| Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.3](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |
 | Windows 11 integration research | [Completed Microsoft-source investigation](windows11-integration.md) and [bounded agent assignments](../../tasks/windows11-integration.md) refine existing platform, DNS, lifecycle and resource owners. | Source-only follow-up is ready when its slice is assigned; documentation establishes no implemented mechanism, native support or installed-MSI result. Current task ordering and the native-experiment pause remain. |
 
 Keep one evidence chain: this plan records phase readiness and links to concrete
@@ -597,19 +597,66 @@ passed its configured portable row. The later
 records the retained-prefix/adaptive-history qualification for its two owners;
 reconcile its final candidate, actual scores/equivalences and remaining limits
 before editing, rather than repeating the earlier admission instructions.
-The later [S150 fitted-anchor bridge](../../tasks/s1.2-regression-readiness.md#s150-fitted-anchor-bridge-contract-and-behavioral-red)
-now records implementation and the portable development pass for that adapter.
-Continue its selected projection-owner inventory, finite source reservations,
-consumer contracts and 90% line/95% mutation qualification; do not repeat the
-earlier source-only bridge assignment or transfer S149's adaptive equivalences.
-Reconcile subsequent task addenda before choosing the next action. Preserve the
-actual adaptive report/fitted-observation coupling; auxiliary decision rows and
-unrelated reports cannot become fitted anchors.
+The [S150 selected projection checkpoint](../../tasks/s1.2-regression-readiness.md#s150-selected-linux-fixture-qualification--complete)
+records its completed bounded Linux qualification; retain its candidate limits.
+The later [S151 standard-error checkpoint](../../tasks/s1.2-regression-readiness.md#s151-selected-linux-fixture-gates-and-retained-receiving--complete)
+records completed selected residuals Linux gates, the preserved failed wrapper
+and subsequent zero-native-command receiving reconciliation. Its Garde-discard
+sensitivity limit and complete P1/native gaps remain explicit. Genuine fitted
+tracking at a common instant now runs through supporter combination and lifecycle,
+preserving anchor-based selection. The
+[S152 contract](../../tasks/s1.3-source-selection-readiness.md#s152-same-owner-fitted-tracking-journey--frozen-authoring-contract)
+is frozen in the existing S1.3 task. Its revised 15-case S152b candidate passed
+the portable rows and [four selected Linux owner gates](../../tasks/s1.3-source-selection-readiness.md#s152b-selected-linux-fixture-checkpoint-and-retained-receiving--complete).
+Original incomplete receipts are retained separately from the successful
+data-only reconciliation. The subsequent [S153 isolated Garde controls](../../tasks/s1.3-source-selection-readiness.md#s153-actual-linux-invocation-and-result-use-controls--complete)
+exercise invocation and result use at the three current tracking consumers;
+both compiler-only fixture failures remain recorded. Other generation/mechanism
+limits remain explicit. The
+[S154a mathematical chart view](../../tasks/s1.2-regression-readiness.md#s154a-frozen-mathematical-view-contract)
+is implemented: its additive contract and independent rounding facts are frozen, and the
+[S154b136-input portable checkpoint](../../tasks/s1.2-regression-readiness.md#s154b-final-portable-candidate-and-qualification-binding)
+passed all22 configured rows. Its first contracts passed; coverage and mutation
+found consumer-assertion gaps, four freshly reviewed endpoint equivalences and a
+zero-viable chart-enclosure generation limit. The
+[S154c assertion/generator revision](../../tasks/s1.2-regression-readiness.md#s154b-complete-first-campaign-observations-and-s154c-assertion-revision)
+has passed its [four selected Linux gates](../../tasks/s1.2-regression-readiness.md#s154c-selected-linux-gates--complete-mechanism-controls-next)
+and exact CLI cohort union. Its [22 isolated mechanism controls](../../tasks/s1.2-regression-readiness.md#s154c-isolated-mechanism-controls-and-cleanup--complete)
+then passed44 actual build/execution commands in573.427s on the unchanged d3d0
+candidate. They cover six validator families and three body faults, with no
+generated K/E or ordinary-package-test credit. Original failures and raw outcomes
+remain unchanged. The subsequent cleanup recovered3,638,480,896 bytes and retained
+current evidence;37 older Linux replay executables are losslessly archived.
+The [S155 chart-selection bridge](../../tasks/s1.2-regression-readiness.md#s155-bounded-portable-linux-development-checkpoint--complete)
+is implemented: genuine same-chart interval batch → existing majority selector →
+chart-bound result. Its138-input candidate passed all22 portable rows in85.142s,
+Core249/20/249. Both earlier Clippy setup stops retain zero behavioral tests.
+Next, freshly bind the new owner and138-input/18-critical-file scope for external
+contracts,90% line/95% mutation and Garde invocation/result-use sensitivity;
+the earlier136-input analysis policy remains historical pending rebind. Independent
+raw audit is complete; the new owner's selected qualification remains pending.
+The storage§6.6/Windows§4.12 routing audit acknowledges the earlier Learn/storage
+assignments. Adoption of the later MSIX amendment remains pending at the next
+coordinator checkpoint under [Windows §4.13](../../tasks/windows11-integration.md#413-local-integration-of-the-selected-msix-direction--3-november-2026).
+Source-only cards remain unexecuted and all existing holds remain. Full P1 and
+native evidence remain open. Preserve raw provenance and
+the same actual report, use one common-reference descriptor and consume the
+separate arithmetic bound in chart geometry. Stateful generation continuity and
+actual achieved-correction admission remain later work.
+Fitted-intercept SD must not be paired with a raw-anchor center.
+Reconcile subsequent task addenda and actual current source before acting; admit
+the selected inventory, finite reservations, constructor/consumer contracts and
+90% line/95% mutation gates for that candidate rather than repeating S150 or
+transferring old results. Preserve same-fit geometry and the actual adaptive
+report/fitted-observation coupling; auxiliary rows and unrelated reports cannot
+become fitted anchors.
 This continues P1 without choosing production freshness/correction policy;
 coordinate feedback, dependent S1.4 and native/provider gates remain separate.
 
-**Implementation:** prepare the owned CNG candidate's native memory/lifetime
-campaign under the existing
+**Windows implementation remains held.** The following retained CNG preparation
+does not authorize Windows execution, UAC, image configuration or a retry while
+the [Defender execution stop](../../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped)
+remains in force. Its owned native memory/lifetime campaign is recorded under the existing
 [crypto task](../../tasks/s0.1-crypto-feasibility.md#native-memory-admission-refresh--2-november-2026).
 The current ordinary-user memory-tool Preflight, profile-free held-target
 continuation/recovery controls and local ntdll symbol-resolution observation
@@ -727,6 +774,15 @@ coordinator checkpoint adopt W11-W01–W11-W10 through
 their phase, owner, disposition and next action in that task. Current Core work
 retains priority; this routing requests no native probe, API selection or broad
 Windows survey, and does not lift the Windows/storage/fuzz holds.
+
+The [second Microsoft Learn pass](windows11-integration-follow-up.md#7-existing-owners-and-next-work)
+refines those same W11 assignments and the ST-W storage assignments. At the next
+checkpoint, reconcile its selected completion/ownership/ABI/privacy cases with
+[W11's follow-up record](../../tasks/windows11-integration.md#44-microsoft-learn-second-pass-integration--3-november-2026)
+and [storage's follow-up record](../../tasks/windows-protected-storage.md#65-microsoft-learn-follow-up-routing--3-november-2026).
+Record the responsible owner, applicable phase, ready/held/deferred status and
+next action in those existing tasks before dependent adapter work. Reuse the
+completed source review; neither source-only card is executed by this routing.
 
 ## 8. Performance, limits and qualification environments
 
@@ -970,7 +1026,7 @@ work and the index were preserved.
 
 **Owner request, 2 November 2026:** record the reviewed VBS/TPM/fallback design
 in architecture and plan, inspect upstream implementations, then reconcile this
-execution roadmap with **NV-STORAGE-PLAN-001 revision 1.2**. The
+execution roadmap with **NV-STORAGE-PLAN-001 revision 1.3**. The
 [canonical contract](../windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback)
 owns state/protection/authority; the [focused plan](windows-protected-storage.md)
 owns storage-stage evidence, ST-T01–ST-T18 and retained A/HR review dispositions.
@@ -1182,6 +1238,10 @@ the mapped contracts before related timestamp, clock, DNS, service, maintenance
 or resource integration; optional hardware/APIs/providers/profiles are not made
 mandatory by this queue. No acknowledgement by a separately running agent or
 execution of these assignments is claimed by publishing the routing.
+The second Learn pass adds cases to these existing owners; see its
+[assignment map](windows11-integration-follow-up.md#7-existing-owners-and-next-work)
+and the separate ST-W storage record above. SDK/binding discrepancies and
+conditional candidates remain open until their own evidence gates are met.
 
 | Existing stage / owner | Bounded assignment and observable exit | Existing acceptance ownership |
 | --- | --- | --- |

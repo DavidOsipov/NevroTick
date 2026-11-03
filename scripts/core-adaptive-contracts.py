@@ -1,4 +1,4 @@
-"""Bounded external fixtures for retained runs and adaptive-history contracts.
+"""Bounded external fixtures for retained runs, adaptive history and tracking.
 
 GPL-2.0-only, David Osipov with AI assistance, 2 November 2026.
 The coordinator admits source/artifacts and observes compiler diagnostics and
@@ -165,7 +165,8 @@ fn observation(calls:&mut Calls,context:FixtureContext,phase:PhaseOffsetQ33,nano
 
 
 def _negative(prefix: str, expression: str, code: str,
-              tokens: list[str], neighbor: str) -> dict[str, object]:
+              tokens: list[str], neighbor: str, *,
+              neighbor_file: str = "crates/time-core/tests/adaptive_history.rs") -> dict[str, object]:
     """Place the rejected operation on its own line, with a real legal neighbor."""
     imports = ("use time_core::{FixtureAdaptiveHistory,FixtureAdaptiveHistoryReport,"
                "FixtureObservation};\n")
@@ -173,15 +174,15 @@ def _negative(prefix: str, expression: str, code: str,
     return {"source": head + expression + "\n}\nfn main(){}\n",
             "code": code, "tokens": tokens, "line": len(head.splitlines()) + 1,
             "external_legal_neighbor": {
-                "file": "crates/time-core/tests/adaptive_history.rs", "test": neighbor}}
+                "file": neighbor_file, "test": neighbor}}
 
 
 def contract_examples() -> dict[str, dict[str, object]]:
-    """Return one legal runtime fixture and eight compile-only bypass probes.
+    """Return one legal runtime fixture and thirteen compile-only bypass probes.
 
     Typed parameters avoid constructing invalid domain state. The coordinator
     must observe the intended code/token/line; listed diagnostics are expectations.
-    Existing package tests provide independent live-row/report legal neighbors.
+    Package tests provide legal neighbors; their execution is qualified separately.
     """
     cases = {LEGAL_NAME: {
         "source": legal_contract_source(), "code": None,
@@ -219,4 +220,34 @@ def contract_examples() -> dict[str, dict[str, object]]:
             f"fn bypass(history:FixtureAdaptiveHistory)->&'static {role}{{\n",
             f" history.{method}.unwrap()", "E0515",
             ["history", "cannot return value referencing"], borrowed)
+    tracking_imports = "use time_core::{FixtureAnchorProjection,FixtureTrackingEstimate};\n"
+    tracking_file = "crates/time-core/tests/combination_lifecycle.rs"
+    tracking_neighbor = "distinct_same_context_histories_keep_their_own_tracking_payloads"
+    cases["tracking_payload_private_update"] = _negative(
+        tracking_imports + "fn bypass(value:FixtureTrackingEstimate){\n",
+        " let _=FixtureTrackingEstimate{..value};", "E0451",
+        ["FixtureTrackingEstimate", "private"], tracking_neighbor,
+        neighbor_file=tracking_file)
+    cases["tracking_projection_override"] = _negative(
+        tracking_imports + "fn bypass(mut projection:FixtureAnchorProjection,"
+        "value:FixtureTrackingEstimate){\n",
+        " projection.tracking=Some(value);", "E0616", ["tracking", "private"],
+        tracking_neighbor, neighbor_file=tracking_file)
+    cases["tracking_shared_mutation"] = _negative(
+        tracking_imports + "fn bypass(projection:&FixtureAnchorProjection,"
+        "value:FixtureTrackingEstimate){\n",
+        " *projection.tracking().unwrap()=value;", "E0594",
+        ["cannot assign", "reference"], tracking_neighbor,
+        neighbor_file=tracking_file)
+    cases["tracking_borrow_escape"] = _negative(
+        tracking_imports + "fn bypass(projection:FixtureAnchorProjection)"
+        "->&'static FixtureTrackingEstimate{\n",
+        " projection.tracking().unwrap()", "E0515",
+        ["projection", "cannot return value referencing"], tracking_neighbor,
+        neighbor_file=tracking_file)
+    cases["tracking_payload_default"] = _negative(
+        tracking_imports + "fn bypass(){\n",
+        " let _:FixtureTrackingEstimate=Default::default();", "E0277",
+        ["FixtureTrackingEstimate", "Default"], tracking_neighbor,
+        neighbor_file=tracking_file)
     return cases

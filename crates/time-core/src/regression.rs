@@ -46,6 +46,9 @@ use garde::Validate;
 /// Staged adaptive fixture history separates fitted rows from decision history.
 mod adaptive_history;
 
+/// Borrowed mathematical chart views preserve whole-history raw provenance.
+mod chart;
+
 /// Bounded fixture history owns exclusive staging and complete state publication.
 mod history;
 
@@ -65,6 +68,13 @@ pub use adaptive_history::{
     AdaptiveHistoryError, FixtureAdaptiveHistory, FixtureAdaptiveHistoryReport,
 };
 
+pub use chart::{
+    FixtureAdaptiveChartView, FixtureAffineChart, FixtureChartBoundIssue,
+    FixtureChartBoundOperation, FixtureChartDomain, FixtureChartError, FixtureChartField,
+    FixtureChartFrames, FixtureChartIssue, FixtureChartOutcome, FixtureChartProjection,
+    FixtureChartStep, FixtureChartTracking,
+};
+
 pub use history::{FixtureHistory, FixtureHistoryReport, HistoryError};
 
 pub use normalization::{
@@ -75,13 +85,15 @@ pub use normalization::{
 
 pub use projection::{
     FixtureAnchorProjection, FixtureProjectionError, FixtureProjectionField,
-    FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms,
-    project_fixture_adaptive_anchor, project_fixture_anchor,
+    FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms, FixtureTrackingEstimate,
+    FixtureTrackingField, FixtureTrackingProjectionError, FixtureTrackingStep,
+    project_fixture_adaptive_anchor, project_fixture_adaptive_tracking, project_fixture_anchor,
 };
 
 pub use residuals::{
-    FixtureResidualStatistics, ResidualError, ResidualField, ResidualIssue, ResidualStep,
-    residual_statistics,
+    FixtureResidualStatistics, FixtureStandardError, FixtureStandardErrorField,
+    FixtureStandardErrorStep, FixtureStandardErrors, ResidualError, ResidualField, ResidualIssue,
+    ResidualStep, residual_statistics,
 };
 
 pub use runs::{

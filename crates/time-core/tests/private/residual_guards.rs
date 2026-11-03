@@ -342,3 +342,267 @@ fn public_error_sources_and_formatting_are_total_and_bounded() -> io::Result<()>
     );
     Ok(())
 }
+
+/// Source-bounded S151 scalar and primitive controls; no checked report is forged.
+///
+/// This separate finite recipe performs 28 raw candidate validations, 28 direct
+/// predicate calls, 28 scalar constructions, 16 binary primitive calls and
+/// eight root calls. It emits no attempt marker and performs no fit or history work.
+mod standard_error_controls {
+    use std::error::Error;
+
+    use garde::Validate;
+
+    use super::super::{
+        ArithmeticOperation, ArithmeticStage, FitError, FixtureStandardError,
+        FixtureStandardErrorField, FixtureStandardErrorStep, ResidualIssue,
+        StandardErrorBinaryStep, StandardErrorScalar, StatisticCandidate, residual_issue,
+        standard_error_arithmetic, standard_error_square_root,
+    };
+    use crate::ArithmeticIssue;
+
+    /// Both coefficient units share real Garde admission and preserve legal bits.
+    /// # Panics
+    /// Reject a wrong field/issue, bypassed invalid value or changed legal bits.
+    #[test]
+    fn coefficient_scalar_admission_covers_invalid_and_legal_neighbors() {
+        for field in [
+            FixtureStandardErrorField::Rate,
+            FixtureStandardErrorField::Phase,
+        ] {
+            for (value, issue) in [
+                (f64::NAN, ResidualIssue::NonFinite),
+                (f64::INFINITY, ResidualIssue::NonFinite),
+                (f64::NEG_INFINITY, ResidualIssue::NonFinite),
+                (f64::from_bits(1), ResidualIssue::Subnormal),
+                (-f64::from_bits(1), ResidualIssue::Subnormal),
+                (-f64::MIN_POSITIVE, ResidualIssue::Negative),
+                (-1.0, ResidualIssue::Negative),
+            ] {
+                assert_eq!(residual_issue(value), Some(issue));
+                assert!(StatisticCandidate { value }.validate().is_err());
+                assert_eq!(
+                    StandardErrorScalar::new(value, field).map(|scalar| scalar.value.to_bits()),
+                    Err(FixtureStandardError::InvalidStatistic { field, issue })
+                );
+            }
+            for value in [0.0, -0.0, f64::MIN_POSITIVE, 1.0, 2.0, 64.0, f64::MAX] {
+                assert_eq!(residual_issue(value), None);
+                assert!(StatisticCandidate { value }.validate().is_ok());
+                assert_eq!(
+                    StandardErrorScalar::new(value, field).map(|scalar| scalar.value.to_bits()),
+                    Ok(value.to_bits())
+                );
+            }
+        }
+    }
+
+    /// Literal source-owned binary step expectations; no execution or effects.
+    const BINARY_CASES: [(
+        StandardErrorBinaryStep,
+        FixtureStandardErrorStep,
+        ArithmeticOperation,
+        ArithmeticStage,
+        f64,
+        f64,
+        f64,
+    ); 8] = [
+        (
+            StandardErrorBinaryStep::SpanSquare,
+            FixtureStandardErrorStep::SpanSquare,
+            ArithmeticOperation::Multiply,
+            ArithmeticStage::Geometry,
+            2.0,
+            2.0,
+            4.0_f64,
+        ),
+        (
+            StandardErrorBinaryStep::CenteredTimeSquare,
+            FixtureStandardErrorStep::CenteredTimeSquare,
+            ArithmeticOperation::Multiply,
+            ArithmeticStage::Geometry,
+            2.0,
+            2.0,
+            4.0,
+        ),
+        (
+            StandardErrorBinaryStep::RateVariance,
+            FixtureStandardErrorStep::RateVariance,
+            ArithmeticOperation::Divide,
+            ArithmeticStage::Response,
+            2.0,
+            2.0,
+            1.0,
+        ),
+        (
+            StandardErrorBinaryStep::TimeMean,
+            FixtureStandardErrorStep::TimeMean,
+            ArithmeticOperation::Multiply,
+            ArithmeticStage::Geometry,
+            -1.0,
+            2.0,
+            -2.0,
+        ),
+        (
+            StandardErrorBinaryStep::PhaseMeanProduct,
+            FixtureStandardErrorStep::PhaseMeanProduct,
+            ArithmeticOperation::Multiply,
+            ArithmeticStage::Response,
+            -1.0,
+            2.0,
+            -2.0,
+        ),
+        (
+            StandardErrorBinaryStep::PhaseMeanSquare,
+            FixtureStandardErrorStep::PhaseMeanSquare,
+            ArithmeticOperation::Multiply,
+            ArithmeticStage::Response,
+            2.0,
+            2.0,
+            4.0,
+        ),
+        (
+            StandardErrorBinaryStep::PhaseBaseVariance,
+            FixtureStandardErrorStep::PhaseBaseVariance,
+            ArithmeticOperation::Divide,
+            ArithmeticStage::Response,
+            2.0,
+            2.0,
+            1.0,
+        ),
+        (
+            StandardErrorBinaryStep::PhaseVariance,
+            FixtureStandardErrorStep::PhaseVariance,
+            ArithmeticOperation::Add,
+            ArithmeticStage::Response,
+            2.0,
+            2.0,
+            4.0,
+        ),
+    ];
+
+    /// Every binary step owns its operation and stage, including repeated divides.
+    /// # Panics
+    /// Reject wrong metadata, unsupported raw operands, lost causes or bad neighbors.
+    #[test]
+    fn binary_steps_preserve_actual_operation_stage_and_cause() {
+        for (private, public, operation, stage, left, right, expected) in BINARY_CASES {
+            assert_eq!(private.metadata(), (public, operation, stage));
+            assert_eq!(
+                standard_error_arithmetic(left, right, private).map(f64::to_bits),
+                Ok(expected.to_bits())
+            );
+            let actual = standard_error_arithmetic(f64::INFINITY, 1.0, private);
+            assert_eq!(
+                actual,
+                Err(FixtureStandardError::Arithmetic {
+                    step: public,
+                    source: FitError::Arithmetic {
+                        stage,
+                        operation,
+                        issue: ArithmeticIssue::NonFinite,
+                    },
+                })
+            );
+            if let Err(error) = actual {
+                assert!(matches!(
+                    error
+                        .source()
+                        .and_then(|source| source.downcast_ref::<FitError>()),
+                    Some(FitError::Arithmetic {
+                        issue: ArithmeticIssue::NonFinite,
+                        ..
+                    })
+                ));
+                assert!(format!("{error}").len() < 192);
+                assert!(format!("{error:?}").len() < 256);
+            }
+        }
+    }
+
+    /// Both checked roots preserve step and actual unary source; no fake binary cause.
+    /// # Panics
+    /// Reject relabelled root failures or changed normal/signed-zero neighbors.
+    #[test]
+    fn root_steps_preserve_actual_unary_cause_and_legal_neighbors() {
+        for (field, step) in [
+            (
+                FixtureStandardErrorField::Rate,
+                FixtureStandardErrorStep::RateSquareRoot,
+            ),
+            (
+                FixtureStandardErrorField::Phase,
+                FixtureStandardErrorStep::PhaseSquareRoot,
+            ),
+        ] {
+            for (input, expected) in [(0.0_f64, 0.0_f64), (-0.0, -0.0), (4.0, 2.0)] {
+                assert_eq!(
+                    standard_error_square_root(input, field).map(f64::to_bits),
+                    Ok(expected.to_bits())
+                );
+            }
+            let actual = standard_error_square_root(-1.0, field);
+            assert_eq!(
+                actual,
+                Err(FixtureStandardError::Arithmetic {
+                    step,
+                    source: FitError::SquareRoot {
+                        stage: ArithmeticStage::Response,
+                        issue: ArithmeticIssue::NegativeRadicand,
+                    },
+                })
+            );
+            if let Err(error) = actual {
+                assert!(matches!(
+                    error
+                        .source()
+                        .and_then(|source| source.downcast_ref::<FitError>()),
+                    Some(FitError::SquareRoot {
+                        stage: ArithmeticStage::Response,
+                        issue: ArithmeticIssue::NegativeRadicand
+                    })
+                ));
+                assert!(format!("{error}").len() < 192);
+                assert!(format!("{error:?}").len() < 256);
+            }
+        }
+    }
+
+    /// Public error projection remains total for valid manual non-arithmetic causes.
+    /// # Panics
+    /// Reject erased typed causes, leaked values, excessive output or invented causes.
+    #[test]
+    fn error_format_and_sources_cover_closed_variants() {
+        let source = FitError::CountOutOfRange;
+        let error = FixtureStandardError::Arithmetic {
+            step: FixtureStandardErrorStep::RateVariance,
+            source,
+        };
+        assert_eq!(
+            error
+                .source()
+                .and_then(|cause| cause.downcast_ref::<FitError>()),
+            Some(&source)
+        );
+        let rendered = format!("{error}");
+        assert!(rendered.contains("RateVariance"));
+        assert!(rendered.len() < 192);
+        assert!(format!("{error:?}").len() < 256);
+        for field in [
+            FixtureStandardErrorField::Rate,
+            FixtureStandardErrorField::Phase,
+        ] {
+            for error in [
+                FixtureStandardError::InvalidStatistic {
+                    field,
+                    issue: ResidualIssue::Negative,
+                },
+                FixtureStandardError::ValidationInvariant { field },
+            ] {
+                assert!(error.source().is_none());
+                assert!(format!("{error}").len() < 192);
+                assert!(format!("{error:?}").len() < 256);
+            }
+        }
+    }
+}

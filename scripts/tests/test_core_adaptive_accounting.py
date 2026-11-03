@@ -27,6 +27,16 @@ ROWS = (
     "CORE_LIFECYCLE_RAW_VALIDATION_PROFILE case=lifecycle_raw_event_validation validations=8",
 )
 COMPLETE_PROFILE = "\n".join(ROWS) + "\n"
+RAW_EVENT_TEST = "combination::lifecycle::counter_tests::lifecycle_raw_event_validation"
+RAW_EVENT_ZERO = (
+    "test " + RAW_EVENT_TEST + " ... "
+    "CORE_LIFECYCLE_RAW_VALIDATION_PROFILE case=lifecycle_raw_event_validation validations=0\n"
+    "FAILED\n\n"
+    "---- " + RAW_EVENT_TEST + " stdout ----\n"
+    "Error: FixtureCombinationLifecycleError { .. }\n\n"
+    "failures:\n\n    " + RAW_EVENT_TEST + "\n\n"
+    "test result: FAILED. 61 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out;\n"
+)
 
 
 def stream(rows=ROWS):
@@ -162,6 +172,80 @@ class AdaptiveAccountingTests(unittest.TestCase):
         no_event = MODULE.package_counts(ROWS[-2] + "\n")["adaptive_recorded_source_work_upper"]
         self.assertEqual(no_event["raw_event_fixture_entries_upper"], 0)
         self.assertEqual(no_event["raw_event_update_constructions_upper"], 0)
+
+    def test_caught_event_zero_is_partial_and_reserves_reached_fixture(self):
+        healthy = MODULE.package_counts(stream(), require_complete=True)
+        self.assertEqual(healthy["adaptive_observed_calls"]["raw_event_validations"], 8)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.package_counts(RAW_EVENT_ZERO)
+        token = MODULE.caught_raw_event_zero_prefix(RAW_EVENT_ZERO)
+        self.assertIsNotNone(token)
+        observed = MODULE.package_counts(RAW_EVENT_ZERO, event_zero_prefix=token)
+        self.assertEqual(observed["adaptive_recorded_calls"]["raw_event_validations"], 0)
+        self.assertIsNone(observed["adaptive_observed_calls"])
+        self.assertFalse(observed["adaptive_observation_complete"])
+        self.assertEqual(observed["adaptive_partial_cases"], ["lifecycle_raw_event_validation"])
+        work = observed["adaptive_recorded_source_work_upper"]
+        self.assertEqual(work["raw_lifecycle_validations_upper"], 0)
+        self.assertEqual(work["raw_event_fixture_entries_upper"], 1)
+        self.assertEqual(work["raw_event_update_constructions_upper"], 9)
+        self.assertEqual(work["raw_event_state_equalities_upper"], 8)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.package_counts(RAW_EVENT_ZERO, require_complete=True, event_zero_prefix=token)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.source_work(observed["adaptive_recorded_calls"], event_fixture_reached=1)
+
+    def test_caught_event_zero_requires_exact_unchanged_failed_context(self):
+        token = MODULE.caught_raw_event_zero_prefix(RAW_EVENT_ZERO)
+        self.assertIsNotNone(token)
+        for bad_token in (True, MODULE.CaughtRawEventZeroPrefix("0" * 64)):
+            with self.subTest(token=bad_token), self.assertRaises(MODULE.Incomplete):
+                MODULE.package_counts(RAW_EVENT_ZERO, event_zero_prefix=bad_token)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.package_counts(RAW_EVENT_ZERO + "changed\n", event_zero_prefix=token)
+        for bad in (
+            RAW_EVENT_ZERO.replace("\nFAILED\n", "\nok\n", 1),
+            RAW_EVENT_ZERO.replace("Error: FixtureCombinationLifecycleError { .. }", "Error: other"),
+            RAW_EVENT_ZERO.replace("---- " + RAW_EVENT_TEST, "---- other"),
+            RAW_EVENT_ZERO.replace("    " + RAW_EVENT_TEST + "\n", "    other\n"),
+            RAW_EVENT_ZERO.replace("1 failed;", "2 failed;"),
+            RAW_EVENT_ZERO.replace("validations=0", "validations=9"),
+            RAW_EVENT_ZERO.replace("validations=0\n", "validations=0 extra=0\n"),
+            RAW_EVENT_ZERO + RAW_EVENT_ZERO,
+            RAW_EVENT_ZERO.rstrip("\n"),
+        ):
+            with self.subTest(bad=bad[:120]):
+                context = MODULE.caught_raw_event_zero_prefix(bad)
+                self.assertIsNone(context)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.package_counts(bad, event_zero_prefix=token)
+        other_zero = ROWS[0].replace("points=37 inputs=3 selections=3", "points=0 inputs=0 selections=0")
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.package_counts(RAW_EVENT_ZERO + other_zero + "\n", event_zero_prefix=
+                                  MODULE.caught_raw_event_zero_prefix(RAW_EVENT_ZERO + other_zero + "\n"))
+
+    def test_caught_event_zero_accepts_only_two_observed_block_separators(self):
+        error = "Error: FixtureCombinationLifecycleError { .. }"
+        for newline_count in (2, 3):
+            for newline in ("\n", "\r\n"):
+                text = RAW_EVENT_ZERO.replace(error + "\n\n", error + "\n" * newline_count)
+                text = text.replace("\n", newline)
+                with self.subTest(newline_count=newline_count, newline=repr(newline)):
+                    token = MODULE.caught_raw_event_zero_prefix(text)
+                    self.assertIsNotNone(token)
+                    observed = MODULE.package_counts(text, event_zero_prefix=token)
+                    self.assertEqual(observed["adaptive_recorded_calls"]["raw_event_validations"], 0)
+                    self.assertEqual(observed["adaptive_recorded_source_work_upper"]
+                                     ["raw_event_fixture_entries_upper"], 1)
+                    self.assertFalse(observed["adaptive_observation_complete"])
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.package_counts(text, require_complete=True, event_zero_prefix=token)
+        for newline_count in (1, 4):
+            text = RAW_EVENT_ZERO.replace(error + "\n\n", error + "\n" * newline_count)
+            with self.subTest(newline_count=newline_count):
+                self.assertIsNone(MODULE.caught_raw_event_zero_prefix(text))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.package_counts(text)
 
     def test_doctest_and_source_bound_external_consumer(self):
         doc = MODULE.literal_doctest_reservation()

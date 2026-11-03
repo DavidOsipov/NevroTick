@@ -910,3 +910,135 @@ service/clock action, real package/signature, account or Store submission was
 executed. Section 4.8 owns continuation. Recheck this factual receipt, final
 links and changed bytes before expected-parent publication; existing Windows,
 fuzz and storage holds remain.
+
+The following three local records preserve their original checkpoint facts.
+Statements about S151/S152 work, staging and pending acknowledgement are historical;
+use [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and its current task addenda for present Core status. Section 4.12 records the
+Learn follow-up's subsequent coordinator acknowledgement. Its MSI-first and
+conditional-MSIX dispositions predate the amended OD-05; section 4.8 now owns
+selected MSIX preparation and supersedes those earlier packaging dispositions.
+
+### 4.10 Local second-pass adoption — 3 November 2026
+
+David requested the remote update be pulled and routed to the primary development
+agent. Local `main` fast-forwarded from `45ff247` to `0709278`. At the pull,
+eleven local Core/ledger files were preserved byte-for-byte; there were no staged
+changes or overlapping paths. Existing Core work may continue under its owner.
+The upstream integration review in section 4.5 retains its original candidate;
+it does not qualify this local handoff.
+
+The [startup guide](../AGENTS.md#start-each-task) and
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+route the Learn follow-up into this task and
+[storage §6.5](windows-protected-storage.md#65-microsoft-learn-follow-up-routing--3-november-2026).
+At its next checkpoint, the primary coordinator records each applicable W11/ST-W
+owner, ready/held/deferred disposition and next action in those existing records
+before dependent work. This is a discoverable handoff; acknowledgement by a
+separately running agent remains pending.
+
+W11-W01 and ST-W01 remain unexecuted source-only cards, ready when their owners
+reach the relevant slice. The second pass refines the existing W11-W01–W11-W10 and
+ST-W01–ST-W07 cases; it creates no parallel work-item set or new acceptance IDs.
+W11-W02–W11-W08 and ST-W02–ST-W07 retain their phase/contract prerequisites;
+actual Windows work remains held. W11-W09 remains deferred to D2/D3 re-entry;
+W11-W10 and the storage reserves remain conditional. SDK/binding discrepancies,
+per-call behavior and selected provider/build facts remain open evidence questions.
+
+The existing Core task's S151 addendum records the current portable development
+checkpoint and residuals-owner qualification still to be admitted. The
+coordinator reconciles later Core addenda and current source before proceeding;
+this handoff executes no Core test or Windows operation. The broad Windows stop,
+separate fuzz no-retry hold, storage pause, mandatory-state separation, DoQ-only
+policy, complete MSI and UI-M0 deferrals remain. No provider, dependency, API,
+additional native profile or default is adopted by this routing. New handoff
+edits remain unstaged.
+
+Local documentation checks and a scoped review of this combined handoff are
+recorded below; neither establishes product or native qualification.
+
+### 4.11 Local second-pass handoff review and checks
+
+**3 November 2026:** `learn_followup_final_review`, delegated read-only with
+`fork_turns: "none"`, reviewed the combined four-file routing candidate. Its
+verdict was **revise** for one pending factual receipt: then-numbered section 4.6 (now section 4.10) referred to
+checks and review below before this subsection existed. It found no other
+material routing discrepancy. This subsection supplies the requested receipt;
+the reviewer did not inspect these later receipt bytes. Reviewer comprehension,
+retained verbatim:
+
+> The proposed handoff routes the second Microsoft Learn pass from startup guidance through development-plan §7 into the existing W11 and storage tasks. It asks the coordinator to record owners, dispositions and next actions at the next checkpoint; it does not claim another agent has acknowledged or executed the assignments.
+
+> The current work remains portable Core S151, whose task records a development pass and pending residuals-owner qualification. W11-W01 and ST-W01 are unexecuted source-only cards; Windows execution, the separate fuzz retry and storage experiments remain held. The follow-up adds cases to existing owners without adopting APIs, providers, defaults or native profiles.
+
+The four-file pre-receipt manifest SHA-256 is
+`761f78ba67190dbcaaab68f8b43d9031f6a3811a9a51efc27f22883ef1bc6f22`.
+It binds `AGENTS.md`, `docs/README.md`, `docs/plans/development-plan.md` and this
+task before adding this subsection. The earlier section 4.5 source-integration
+review retains its original, different candidate.
+
+Local checks resolved 903 link/anchor occurrences across twelve imported/current
+documents, found no conflict markers and passed whitespace checks for the routing
+edits. At the pull, eleven local Core/ledger files were byte-identical after the
+fast-forward, with no overlapping paths and no stash. The index was unchanged
+when checked after routing. Concurrent Core work remains under its existing owner
+and may advance independently. The root documentation checksum manifest is absent.
+No product build, analyzer campaign or Windows operation was run for this handoff.
+
+The coordinator's next action remains to record applicable W11/ST-W ownership,
+dispositions and next actions here and in the storage task. W11-W01 and ST-W01
+remain unexecuted source-only cards; separately running-agent acknowledgement is
+not claimed. No API, provider, dependency or native profile is adopted here.
+
+### 4.12 Primary development coordinator disposition — 3 November 2026
+
+The primary P0–P7 coordinator has read development §7/§8.5, the imported work
+queue and this task's §4.4/§4.10 follow-up. S151's later addenda now close its
+selected Linux residuals gates through retained-data receiving; full P1/native
+qualification remains open. The next pure fitted-tracking S152 journey consumes
+no native packet timestamps, storage or Windows adapter, so these assignments
+introduce no new prerequisite for that independent Core work. This is an actual
+coordinator disposition, not execution of a source card or native API.
+
+| Assignment | Owner and disposition | Next dependent action |
+| --- | --- | --- |
+| W11-W01 | Engine/platform/acquisition; source-only card ready, unexecuted | At S2.1/P2 bind exchange, socket generation, interface and conversion provenance; include second-pass ancillary, notification/callback and binding cases before a selected adapter. |
+| W11-W02 | Platform/clock with DNS lifetime consumers; phase-gated, native held | Carry sleep/callback and awake/elapsed timer distinctions into S0.4/P4 and DNS-1/3/5. |
+| W11-W03 | DNS/platform/lifecycle; phase-gated, native held | Freeze DNS-0 ownership, then DNS-1/3 listener/completion cases before native integration. |
+| W11-W04 | Security/lifecycle/platform; phase-gated, native held | Carry effective network/service identity, delegated COM and refusal cases into the selected P0/P3/P6 row. |
+| W11-W05 | Platform/security/lifecycle; phase-gated, native held | Carry effective SCM/process policy, MSI account/SID/ACL order and maintenance outcomes into their existing P0/P3/P4/P6 owners. |
+| W11-W06 | DNS scheduler/resource; conditional on DNS-4/5 baseline | Compare bounded useful work and foreground reservations before adopting native hints; hints remain nonauthoritative. |
+| W11-W07 | DNSSEC/crypto/performance; conditional on measured eligible DNS-2 queue | Preserve independent vectors, graph/provider admission and per-operation behavior before any batch API. |
+| W11-W08 | Diagnostics/QA and reached component; phase-gated, native held | Admit one actual ETW/fault/session/retention row and coordinate shared privacy ownership with ST-W07. |
+| W11-W09 | UI/accessibility; Deferred to D2/D3 re-entry | Restore the relevant real-snapshot/semantic/accessibility owners before P5 notification claims. |
+| W11-W10 | Existing named reserve owners; Conditional | Re-enter only for the documented concrete need and existing decision/qualification gate; no new provider/profile selected. |
+
+W11-W01 and ST-W01 remain unexecuted source-only cards. The broad Windows
+execution stop, separate fuzz no-retry hold and storage-experiment pause remain.
+The follow-up's SDK/generated-binding discrepancies require future actual
+selected-row evidence; this acknowledgement grants no probing, live PowerShell,
+service/clock/configuration effect, dependency or additional native profile.
+
+**Combined local routing, 3 November 2026:** the earlier pending-acknowledgement
+statements in section 4.10 are historical; section 4.12 records the later primary
+coordinator disposition. The subsequently imported MSIX/Store assessment in
+section 4.6 originally identified a conditional W11-W10 source card. That
+MSI-first/conditional-MSIX disposition is superseded by section 4.8 and amended
+OD-05. Historical review hashes retain their original candidate scope; no prior
+review or coordinator acknowledgement proves adoption of the later amendment.
+
+### 4.13 Local integration of the selected MSIX direction — 3 November 2026
+
+This pull combines the owner-selected MSIX amendment `01bcb67` with the local
+Core checkpoint `79d614f`. The local Learn records moved from sections 4.8–4.10
+to 4.10–4.12 to preserve the published MSIX anchors. The retained Chrony ledger's
+historical Windows-task section 4.10 therefore refers to the acknowledgement now
+in section 4.12; its recorded bytes and evidence identities are unchanged.
+W11-W10's packaging/security source/design profile in section 4.8 is ready at its
+named phase; W11-W05's supported service provisioning
+and recovery mechanisms remain unresolved. At the next coordinator checkpoint,
+record adoption, owners and next actions for that amendment here before related
+implementation. Section 4.12 acknowledges the earlier Learn follow-up only;
+acknowledgement of the later MSIX amendment is not claimed. Preserve the current
+Core priority, Windows execution stop, separate fuzz hold, storage pause and
+UI-M0 deferrals. This integration executes no package, native or Store action.

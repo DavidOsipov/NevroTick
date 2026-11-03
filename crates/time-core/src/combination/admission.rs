@@ -5,6 +5,8 @@
 //! Every original metadata record is admitted before a caller can choose the
 //! smaller mathematical contributor set. Neither a decision nor a witness is
 //! manufactured. Fixed capacities bound every scan; no external effects occur.
+//! Modified by David Osipov with AI assistance, 3 November 2026: complete
+//! tracking records share receiving and reduction with legacy anchor records.
 
 use std::num::NonZeroU64;
 
@@ -14,7 +16,7 @@ use crate::{FixturePrincipalDecision, FixturePrincipalOutcomeKind, FixtureProjec
 
 use super::{
     FixtureCombinationError, FixtureCombinedEstimate, FixtureSupporterUncertainty, MAX_SUPPORTERS,
-    Sums, admit_records, complete_estimate, singleton_quantities, supporter_record,
+    RecordSource, RecordView, Sums, admit_record_source, admit_records, complete_estimate,
 };
 
 /// Complete original metadata after actual-witness receiving admission.
@@ -26,7 +28,7 @@ pub(super) struct AdmittedFixtureSupporters<'input, 'entry> {
     /// Actual original principal borrowed through the genuine decision.
     principal: &'input FixtureProjectedInterval,
     /// Every checked record for the original witness, including excluded records.
-    records: &'input [FixtureSupporterUncertainty<'entry>],
+    records: RecordSource<'input, 'entry>,
     /// Complete original witness labels in ascending order.
     labels: [NonZeroU64; MAX_SUPPORTERS],
     /// Occupied original-witness prefix in one through sixteen.
@@ -56,7 +58,14 @@ impl<'entry> AdmittedFixtureSupporters<'_, 'entry> {
         &self,
         label: NonZeroU64,
     ) -> Result<&FixtureSupporterUncertainty<'entry>, FixtureCombinationError> {
-        supporter_record(self.records, label)
+        self.records.find(label).map(|record| record.uncertainty)
+    }
+
+    /// Borrow one admitted record under the same original-witness phase mode.
+    /// # Errors
+    /// Reject contradictory private label coverage without fallback or effects.
+    fn values(&self, label: NonZeroU64) -> Result<RecordView<'_, 'entry>, FixtureCombinationError> {
+        self.records.find(label)
     }
 }
 
@@ -78,6 +87,24 @@ struct RawSupporterAdmission<'input, 'entry> {
     inputs: SupporterAdmissionInputs<'input, 'entry>,
 }
 
+/// Same complete original relationship expressed through the private source view.
+type SourceAdmissionInputs<'input, 'entry> = (
+    &'input FixturePrincipalDecision<'entry>,
+    RecordSource<'input, 'entry>,
+    &'input FixtureProjectedInterval,
+);
+
+/// Mandatory Garde receiving for the closed tracking source representation.
+#[derive(Validate)]
+struct RawSourceAdmission<'input, 'entry> {
+    /// All transformed associations share the same complete receiving predicate.
+    #[garde(custom(|value: &SourceAdmissionInputs<'_, '_>, (): &()| {
+        admit_record_source(value.0, value.1, value.2)
+            .map_err(|_| garde::Error::new("invalid fixture tracking relationship"))
+    }))]
+    inputs: SourceAdmissionInputs<'input, 'entry>,
+}
+
 /// Admit every genuine witnessed record before any compatibility filtering.
 ///
 /// Bounds precede validation/report work. Garde and typed-cause projection use
@@ -89,6 +116,20 @@ pub(super) fn admit_lifecycle_supporters<'input, 'entry>(
     decision: &'input FixturePrincipalDecision<'entry>,
     records: &'input [FixtureSupporterUncertainty<'entry>],
 ) -> Result<Option<AdmittedFixtureSupporters<'input, 'entry>>, FixtureCombinationError> {
+    admit_lifecycle_source(decision, RecordSource::Legacy(records))
+}
+
+/// Admit every original witnessed record under one immutable phase interpretation.
+///
+/// Legacy raw-control shape and predicates remain intact. Tracking uses the same
+/// predicate through a mandatory Garde source-view candidate. No compatibility
+/// filtering, penalty effects or mutable result escape precedes complete admission.
+/// # Errors
+/// Preserve capacity, absent-principal, actual-entry and validation failures.
+pub(super) fn admit_lifecycle_source<'input, 'entry>(
+    decision: &'input FixturePrincipalDecision<'entry>,
+    records: RecordSource<'input, 'entry>,
+) -> Result<Option<AdmittedFixtureSupporters<'input, 'entry>>, FixtureCombinationError> {
     if records.len() > MAX_SUPPORTERS {
         return Err(FixtureCombinationError::CapacityExceeded);
     }
@@ -98,7 +139,7 @@ pub(super) fn admit_lifecycle_supporters<'input, 'entry>(
             | FixturePrincipalOutcomeKind::RetainedWithoutNewEstimate
     );
     let Some(principal) = decision.principal_entry() else {
-        if !records.is_empty() {
+        if records.len() != 0 {
             return Err(FixtureCombinationError::MetadataCountMismatch);
         }
         if selected || decision.principal_label().is_some() {
@@ -109,11 +150,17 @@ pub(super) fn admit_lifecycle_supporters<'input, 'entry>(
     if !selected {
         return Err(FixtureCombinationError::Invariant);
     }
-    let raw = RawSupporterAdmission {
-        inputs: (decision, records, principal),
+    let validated = match records {
+        RecordSource::Legacy(values) => RawSupporterAdmission {
+            inputs: (decision, values, principal),
+        }
+        .validate(),
+        RecordSource::Tracking(_) => RawSourceAdmission {
+            inputs: (decision, records, principal),
+        }
+        .validate(),
     };
-    let validated = raw.validate();
-    admit_records(decision, records, principal)?;
+    admit_record_source(decision, records, principal)?;
     validated.map_err(|_| FixtureCombinationError::Invariant)?;
     let witness = decision
         .selection()
@@ -209,7 +256,7 @@ pub(super) fn combine_lifecycle_supporters(
     let mut labels = [principal_label; MAX_SUPPORTERS];
     let mut occupied = 0_usize;
     let mut sums = Sums::empty();
-    let principal_phase = admitted.principal.projection().center_seconds();
+    let principal_phase = admitted.values(principal_label)?.phase;
     for (index, label) in admitted.labels().enumerate() {
         if !included
             .get(index)
@@ -225,14 +272,14 @@ pub(super) fn combine_lifecycle_supporters(
             .checked_add(1)
             .ok_or(FixtureCombinationError::Invariant)?;
         if admitted.count > 1 {
-            sums = sums.with_supporter(admitted.record(label)?, principal_phase, index)?;
+            sums = sums.with_supporter(admitted.values(label)?, principal_phase, index)?;
         }
     }
     if occupied != count {
         return Err(FixtureCombinationError::Invariant);
     }
     let quantities = if admitted.count == 1 {
-        singleton_quantities(admitted.record(principal_label)?)
+        admitted.values(principal_label)?.singleton()
     } else {
         sums.finish()?
     };

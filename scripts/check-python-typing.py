@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Admit and isolate a pinned checker for two fixture-verification Python owners.
+"""Admit and isolate a pinned checker for four fixture-verification Python owners.
 
 This entry point installs nothing. The external receipt freezes every regular
 file in an owned checker environment, the exact wheel pins, policy and source
@@ -32,6 +32,8 @@ FIXTURE_DIR = "scripts/tests/fixtures/python_typing"
 HELPERS = {
     "scripts/core-combination-accounting.py": "core_combination_accounting.py",
     "scripts/core-analysis-cohorts.py": "core_analysis_cohorts.py",
+    "scripts/core-chart-accounting.py": "core_chart_accounting.py",
+    "scripts/core-chart-contracts.py": "core_chart_contracts.py",
 }
 FIXTURE_NAMES = (
     "typed_consumer.py", "wrong_field.py", "wrong_value.py",
@@ -235,7 +237,8 @@ def inspect_environment(checker_root: Path, files: dict[str, str], policy: dict)
 def inspect_sources(sources: dict[str, bytes]) -> list[str]:
     """Reject unchecked escape hatches/import expansion in the checked closure."""
     allowed = {"__future__", "typing", "re", "hashlib", "json", "pathlib",
-               "core_combination_accounting", "core_analysis_cohorts"}
+               "core_combination_accounting", "core_analysis_cohorts",
+               "core_chart_accounting", "core_chart_contracts"}
     imports = set()
     checked = [*HELPERS, *(f"{FIXTURE_DIR}/{name}" for name in FIXTURE_NAMES)]
     for name in checked:
@@ -343,7 +346,8 @@ def require_result(result: dict, case: tuple[str, str, str, str] | None = None) 
         raise Incomplete(f"Checker execution incomplete: {result['failure']}")
     errors = re.findall(r"^/input/([^:]+):\d+:\d+: error: (.+)  \[([^\]]+)\]$", result["output"], re.MULTILINE)
     if case is None:
-        if result["exit_code"] != 0 or errors or "Success: no issues found in 3 source files" not in result["output"]:
+        expected = f"Success: no issues found in {len(HELPERS) + 1} source files"
+        if result["exit_code"] != 0 or errors or expected not in result["output"]:
             raise Incomplete(f"Healthy typed implementation/consumer failed:\n{result['output'][-6000:]}")
     else:
         _, filename, code, fragment = case
@@ -395,7 +399,7 @@ def execute(root: Path, checker_python: Path, admission: Path, fixtures: bool) -
     inspect_environment(checker_root, files, policy)
     checked_imports = inspect_sources(sources)
     admitted_seconds = time.monotonic() - started
-    evidence = {"schema_version": 1, "status": "incomplete", "scope": "two fixture helpers and independent typed consumer",
+    evidence = {"schema_version": 1, "status": "incomplete", "scope": "four fixture helpers and independent typed consumer",
                 "admission_sha256": digest(receipt_raw), "policy_sha256": digest(policy_raw),
                 "sources": source_hashes, "python_version": policy["python_version"],
                 "mypy_version": policy["mypy_version"], "wheels": policy["wheels"],
@@ -437,7 +441,7 @@ def execute(root: Path, checker_python: Path, admission: Path, fixtures: bool) -
                     selected = scratch / case[0]
                     prepare_source(selected, sources, case)
                 selected_inventory = inventory_tree(selected)
-                selected_files = ["/input/core_combination_accounting.py", "/input/core_analysis_cohorts.py", "/input/typed_consumer.py"]
+                selected_files = [*("/input/" + name for name in HELPERS.values()), "/input/typed_consumer.py"]
                 if case and case[1] != "typed_consumer.py":
                     selected_files.append("/input/" + case[1])
                 command = ["/checker/bin/python", "-I", "-B", "-S", "-c", CHECKER_ENTRY,

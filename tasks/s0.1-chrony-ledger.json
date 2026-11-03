@@ -898,6 +898,779 @@
       "portable_receipt": "s147-adaptive-history-portable-green-v3.json",
       "portable_receipt_sha256": "ec62df37ad4c5f1cd445863143ddd1079dbdacf96eb60f4cf11f1bc429417e45",
       "implemented_source_sha256": "01f3563c3b0f0c16e470f66cd7a596c9a0f90718be441afefd048321b8dc493b"
+    },
+    {
+      "slice": "S151 same-fit coefficient standard errors",
+      "review_date": "2026-11-03",
+      "status": "selected Linux residuals contract/coverage/mutation gates passed; original wrapper failure preserved and corrected by data-only receiving; full CHECK25/P1/native/product/release qualification incomplete",
+      "destination": "crates/time-core/src/regression/residuals.rs",
+      "selected_source_url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/regress.c",
+      "source_sha256": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7",
+      "selected_ranges": [
+        {
+          "function": "RGR_FindBestRegression",
+          "lines": "309-311",
+          "adaptation": "Explicit same-report rate/phase coefficient standard errors; normalized geometry converted through frozen checked steps."
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow 1997-2003",
+        "Copyright (C) Miroslav Lichvar 2011, 2016-2017"
+      ],
+      "notice_obligation": "Preserve complete original regress.c GPLv2 grant/disclaimer, David Osipov AI-assisted modification attribution, existing COPYING and corresponding-source/build obligations.",
+      "deliberate_adaptations": [
+        "Copy checked normalized geometry from the actual producing input into its own report; no caller-supplied input/line association.",
+        "Explicit fallible method adds no rejection to existing fit/append paths; eight checked binary operations and two roots, atomic checked output.",
+        "Retain rateSD then mean/rate product then phaseSD grouping; checked normalized geometry conversion does not imply upstream bit parity.",
+        "Algebraic coefficient diagnostics only; no calibrated confidence/skew/physical uncertainty, eligibility or clock authority."
+      ],
+      "contract_file": "tasks/s1.2-regression-readiness.md",
+      "contract_section": "S151 same-fit standard errors \u2014 frozen authoring contract",
+      "contract_section_sha256": "319842addf97cfe5baa4afae84c0cccad94490ff844f90180bce8bb19dc52ebd",
+      "frozen_contract_copy": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s151-standard-errors-frozen-contract-v1.md",
+      "facts_file": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s151-standard-errors-independent-facts-v1.json",
+      "facts_sha256": "ec68884fe760ad2ec9b39204bde679fb32c788b97bb2202d1fcdd7a7ed5381f6",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "independent_review": [
+        "/root/pure_core_next_owner",
+        "/root/vfbasics_data_review",
+        "/root/adaptive_contract_review"
+      ],
+      "historical_source_review_preserved": true,
+      "release_or_product_claim": false,
+      "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s151-standard-errors-portable-green-v3.json",
+      "portable_receipt_sha256": "cf2872395466f2f572e2b039885abf58faec58cf19fc80791dd44663c4a1b97b",
+      "portable_product_candidate_sha256": "8d26c6e608e30bb21eba065784f7125a2df24bfd0410df0b49b8c35b70dbc3b3",
+      "portable_test_counts": {
+        "by_package": {
+          "nevrotick-ui": {
+            "product-tests": 5,
+            "doctests": 3
+          },
+          "ntp-wire": {
+            "product-tests": 104,
+            "doctests": 70
+          },
+          "time-domain": {
+            "product-tests": 30,
+            "doctests": 20,
+            "optimized-tests": 31
+          },
+          "ntp-exchange": {
+            "product-tests": 63,
+            "doctests": 12,
+            "optimized-tests": 63
+          },
+          "time-core": {
+            "product-tests": 208,
+            "doctests": 9,
+            "optimized-tests": 208
+          },
+          "nevrotick-engine": {
+            "product-tests": 24,
+            "doctests": 2,
+            "optimized-tests": 24
+          }
+        },
+        "tests_executed": 434,
+        "doctests_executed": 116,
+        "optimized_tests_executed": 326
+      },
+      "implemented_source_sha256": {
+        "crates/time-core/src/regression/residuals.rs": "4494ae6e8fd3967d4f3e5f91774c7192b85be8cbe5bb9d90366eb7201db93686",
+        "crates/time-core/src/regression.rs": "198b6bb16e5f7887cebf7df83ef1d4dd7699def01cae84e2976b2fbc593f914d",
+        "crates/time-core/src/lib.rs": "d63c68bfe362c466d5e5f649d36abb673fa87ced4e7a7136e9edec42e8e4259b",
+        "crates/time-core/tests/residuals.rs": "01b56e1688f14b6cbc52eca013af3613196bb827eaa0be29db2c63f1e2f63244",
+        "crates/time-core/tests/private/residual_guards.rs": "ce353bc270656f35471d229b0d0e57fc0063fb1c8c8e65bb95106591ebe8107b"
+      },
+      "qualification_receiving_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s151-retained-receiving-v1.json",
+      "qualification_receiving_sha256": "7df319b1d3987c63aea23945bd3b40f49d1127c38c2f23b2cc436943245ad465",
+      "original_incomplete_mutation_receipt_sha256": "b2ad2acd0ddce51236dd96a3f7a51470a5513cadbf9a34a22776cc56c62129dc",
+      "final_scope_reconciliation_sha256": "fec9a0795cb6729d532ade0cf0bfb90f55a10f614cc78494d55b272317d9a9fc",
+      "remaining_mechanism_evidence": "No generator-targeted Garde omission/discard or forced-disagreement sensitivity control; source call/result-use and raw/shared-rule tests retained separately.",
+      "qualified_evidence_bundle_sha256": "b62fe8bd58b540c8533cdcf02f02824077a445098e8bdac44db07b1ea6578a3e"
+    },
+    {
+      "slice": "S152 same-owner fitted tracking journey",
+      "review_date": "2026-11-03",
+      "status": "implemented; selected S152b Linux gates and S153 three-consumer invocation/result-use controls passed; other mechanism/full-P1/native gaps remain",
+      "destinations": [
+        "crates/time-core/src/regression/projection.rs",
+        "crates/time-core/src/combination.rs",
+        "crates/time-core/src/combination/admission.rs",
+        "crates/time-core/src/combination/lifecycle.rs"
+      ],
+      "selected_sources": [
+        {
+          "file": "sourcestats.c",
+          "sha256": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6",
+          "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sourcestats.c",
+          "selected_lines": "709-714"
+        },
+        {
+          "file": "sources.c",
+          "sha256": "019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d",
+          "url": "https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sources.c",
+          "selected_lines": "894-897,922-926,932-950"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Richard P. Curnow 1997-2003",
+        "Miroslav Lichvar 2011-2014,2016-2018,2021 (sourcestats.c)",
+        "Miroslav Lichvar 2011-2016,2018,2020-2025 (sources.c)"
+      ],
+      "notice_obligation": "Complete original notices/grant/disclaimer retained in PROVENANCE and adapted source; preserve COPYING and corresponding-source/build obligations; David Osipov AI-assisted adaptation3Nov2026.",
+      "deliberate_adaptations": [
+        "Opaque same-report attachment inside original projection, explicit tracking consumers; legacy anchor behavior unchanged.",
+        "Checked fit-reference duration, four ordered primitives and mandatory Garde scalar output.",
+        "All original witnesses admitted at actual final batch slots before filtering; atomic lifecycle commit.",
+        "Conditional synthetic mathematics only, no confidence/eligibility/clock/native claim."
+      ],
+      "contract_file": "tasks/s1.3-source-selection-readiness.md",
+      "contract_section": "S152 same-owner fitted tracking journey \u2014 frozen authoring contract",
+      "contract_section_sha256": "bb98b2a0a14025aa4c275febe1281b1b3781107385dfc2788e0cce2536dc1e31",
+      "frozen_contract_copy": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152-tracking-frozen-contract-v3.md",
+      "facts_file": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152-tracking-independent-facts-v2.json",
+      "facts_sha256": "32c6e2c8e1e43e25288830a35cfa959c98397c4467f626e16c7dfdd2470ebb91",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "independent_review": [
+        "/root/pure_core_next_owner",
+        "/root/vfbasics_data_review",
+        "/root/adaptive_contract_review"
+      ],
+      "historical_source_review_preserved": true,
+      "release_or_product_claim": false,
+      "preauthor_review_correction": "V2 fixes oldest fitted anchor association; v3 preserves existing outside-witness penalty reset and states signed phase/private no-pairing boundary. Earlier artifacts retained before RED.",
+      "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152b-tracking-portable-green-v1.json",
+      "portable_receipt_sha256": "136196dca1d9f9a1e3308a8c0b6c5a568c16a061c484ec4bad5efb9e3fa8a162",
+      "portable_product_candidate_sha256": "c8dd27695fd63decd36334506132364e82c3ecd5dd8d5a6014dac0014f0b277f",
+      "portable_test_counts": {
+        "by_package": {
+          "nevrotick-ui": {
+            "product-tests": 5,
+            "doctests": 3
+          },
+          "ntp-wire": {
+            "product-tests": 104,
+            "doctests": 70
+          },
+          "time-domain": {
+            "product-tests": 30,
+            "doctests": 20,
+            "optimized-tests": 31
+          },
+          "ntp-exchange": {
+            "product-tests": 63,
+            "doctests": 12,
+            "optimized-tests": 63
+          },
+          "time-core": {
+            "product-tests": 223,
+            "doctests": 9,
+            "optimized-tests": 223
+          },
+          "nevrotick-engine": {
+            "product-tests": 24,
+            "doctests": 2,
+            "optimized-tests": 24
+          }
+        },
+        "tests_executed": 449,
+        "doctests_executed": 116,
+        "optimized_tests_executed": 341
+      },
+      "portable_source_archive_sha256": "456eaba602b9bfc11180b944f885ad11f9d6169ba114572b37737887a501c8bb",
+      "implemented_source_sha256": {
+        "crates/time-core/src/regression/projection.rs": "cb5af00a9dfb731b5d2b95fd2cd69f6e08b856097948e5b1c3719a6ee9b23dc5",
+        "crates/time-core/src/combination.rs": "f0de15bb4d11019094292ce4b79d9e82d2f5270b305e1b7a4b670f27f31621c6",
+        "crates/time-core/src/combination/admission.rs": "a7281c21735d235581da6401a3f6824a17242e3724da913e780f63f3f13a1bdf",
+        "crates/time-core/src/combination/lifecycle.rs": "28c6b7d19ce5edd77c2d39062d92b1c8d595760c60825f4414d5cc3f1871ea28",
+        "crates/time-core/src/regression.rs": "f0be0b25c40d2deece5c7d0ab02cdfd278ad11debc0f12d0cba1cf32f7e7321a",
+        "crates/time-core/src/lib.rs": "b5959729e9e9a63fc49d5bd5beec80416abde0c04071a130ff0536af77239b72",
+        "crates/time-core/tests/combination_lifecycle.rs": "cb80c8e934b9a1dc6ef23023d52c378e8b70980613b6df6869e94ad4286e6ad9",
+        "crates/time-core/tests/private/projection_guards.rs": "c8b293c1e4ce886bf4c909752063e00ed2c535a05768d4fda8ad926601665555",
+        "crates/time-core/tests/private/lifecycle_admission.rs": "09810f71269decd7b27ac6584642503465a2eea9c95bbb8e995905a858ba07cc"
+      },
+      "remaining_mechanism_evidence": "Expanded macro-field faults outside generated inventory; direct argument/attachment/commit/Copy fault gaps and whole-adaptive StandardErrors reachability as mapped in task. S153 closes invocation/result-use sensitivity only for TrackingSkewCandidate, TrackingCandidate and RawSourceAdmission; S151 validator sensitivity remains separate. No full CHECK-25/S1.3/P1/Windows/product/release claim.",
+      "historical_S152_C1": {
+        "status": "implemented; final portable Linux14case candidate passed; selected per-owner coverage/mutation/contracts pending",
+        "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152-tracking-portable-green-v2.json",
+        "portable_receipt_sha256": "1614b0de810af054bb93c1f35c886191d0aa3aeda2046dcc25e4ed50df42a4c4",
+        "portable_product_candidate_sha256": "c9ff6ef920e44482f4e29bfced8045b253ded490fe2eb94984fed3364464d3b9",
+        "portable_test_counts": {
+          "by_package": {
+            "nevrotick-ui": {
+              "product-tests": 5,
+              "doctests": 3
+            },
+            "ntp-wire": {
+              "product-tests": 104,
+              "doctests": 70
+            },
+            "time-domain": {
+              "product-tests": 30,
+              "doctests": 20,
+              "optimized-tests": 31
+            },
+            "ntp-exchange": {
+              "product-tests": 63,
+              "doctests": 12,
+              "optimized-tests": 63
+            },
+            "time-core": {
+              "product-tests": 222,
+              "doctests": 9,
+              "optimized-tests": 222
+            },
+            "nevrotick-engine": {
+              "product-tests": 24,
+              "doctests": 2,
+              "optimized-tests": 24
+            }
+          },
+          "tests_executed": 448,
+          "doctests_executed": 116,
+          "optimized_tests_executed": 340
+        },
+        "portable_source_archive_sha256": "275387ecd28cdf1877f0d58143d991bc1ccbc8ea4f2e3f55c7ce68660ed4468c",
+        "combination_mutation_receipt_sha256": "e5a5ea3de4896b4d88f678bbc872b1e1991607295e71efbe4890327ac116333a",
+        "mutation_gate_passed": false,
+        "source_work_spent_receipt_sha256": "8faafdcc71b9fcb8c253e9e9bdcb539fbba80b2724413f5bf20af96f3c257aef",
+        "implemented_source_sha256": {
+          "crates/time-core/src/regression/projection.rs": "cb5af00a9dfb731b5d2b95fd2cd69f6e08b856097948e5b1c3719a6ee9b23dc5",
+          "crates/time-core/src/combination.rs": "f0de15bb4d11019094292ce4b79d9e82d2f5270b305e1b7a4b670f27f31621c6",
+          "crates/time-core/src/combination/admission.rs": "a7281c21735d235581da6401a3f6824a17242e3724da913e780f63f3f13a1bdf",
+          "crates/time-core/src/combination/lifecycle.rs": "28c6b7d19ce5edd77c2d39062d92b1c8d595760c60825f4414d5cc3f1871ea28",
+          "crates/time-core/src/regression.rs": "f0be0b25c40d2deece5c7d0ab02cdfd278ad11debc0f12d0cba1cf32f7e7321a",
+          "crates/time-core/src/lib.rs": "b5959729e9e9a63fc49d5bd5beec80416abde0c04071a130ff0536af77239b72",
+          "crates/time-core/tests/combination_lifecycle.rs": "c097081f8635fed630c0f5dc43f33e277033bf71940dd84ab3a3bf0bd87989a9",
+          "crates/time-core/tests/private/projection_guards.rs": "c8b293c1e4ce886bf4c909752063e00ed2c535a05768d4fda8ad926601665555",
+          "crates/time-core/tests/private/lifecycle_admission.rs": "09810f71269decd7b27ac6584642503465a2eea9c95bbb8e995905a858ba07cc"
+        }
+      },
+      "equivalence_proof_sha256": "b15c84ddec6bfe230f51f2d0d943a398af615db1e2fac57acb4fcba423634758",
+      "selected_linux_gates": {
+        "candidate_sha256": "c8dd27695fd63decd36334506132364e82c3ecd5dd8d5a6014dac0014f0b277f",
+        "coverage_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152b-coverage-v1/verification.json",
+        "coverage_receipt_sha256": "a721ff1d90c9f3044c6cf4fec0a2eee24adbbad50ad8516d2e7c8ed3bed97634",
+        "contracts_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152b-contracts-v1/verification.json",
+        "contracts_receipt_sha256": "e2d30fa1b7ad40577774cf742a761bc331f24f3b9b03915ca520977ee0f2d476",
+        "derived_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s152b-retained-adjudication-v4.json",
+        "derived_receipt_sha256": "d55e72f7e054aa8eeefa4520c9454861c0c5b8935856fc4933cd6110264ac0e1",
+        "receiving_recipe_sha256": "318cd7c79348e294250497d2d030c3653583f775161151f734ddaf339a35cd4f",
+        "receiving_corpus_sha256": "18de35857c66d7eb40db973402bb8661f46f1b65e8fba547ce38071812801ef6",
+        "original_native_archive_sha256": "d6bdf7bb2434ea1b1b59b9591e5e86d44f86518b36158315b056e9ad5ffa64a0",
+        "original_receipts": {
+          "projection": {
+            "status": "passed",
+            "sha256": "de3e0ba079740f1673e27c99f20c50ad1ab9bf1654594b4f06a623cd130f6cd3"
+          },
+          "combination": {
+            "status": "incomplete",
+            "sha256": "f40286178c7a5b4071254f7d2724b80c27a9bf16fc50914d9706072a76fe61ed"
+          },
+          "combination_admission": {
+            "status": "incomplete",
+            "sha256": "a37c375d25eb7793af240b8bdc7390c8194e24abe1ecc4c3f9a8d5138459cd7b"
+          },
+          "combination_lifecycle": {
+            "status": "incomplete",
+            "sha256": "33564c267825c897726898a1cb35cec687a9a1024597dd01365d60c633d75cd4"
+          }
+        },
+        "generated": 486,
+        "baselines": 4,
+        "baseline_tests_each": 232,
+        "caught": 262,
+        "missed": 8,
+        "unviable": 216,
+        "timeouts": 0,
+        "reviewed_equivalent_exclusions": 8,
+        "counter_prefixes_complete": false,
+        "native_commands_during_adjudication": 0,
+        "source_work_reservation_unchanged": true,
+        "python_controls": 328,
+        "generation_gap_map_sha256": "b9074e64ff9d5d424c40c13567144c8e222b252151102a324f4ddc2f72e3e1a4",
+        "native_and_receiving_identities_distinct": true
+      },
+      "validation_invocation_followup": {
+        "status": "passed-ten-scoped-Linux-validation-controls",
+        "joint_summary": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s153-garde-joint-summary-v1.json",
+        "joint_summary_sha256": "0ea830bfda0c94884090278ae86c5dda2ea7cd788a61ed27c20428609bf75c81",
+        "completion_receipt_sha256": "02039886efcfd1c36d2a33240bfc5de1557de9ca210b60fd992ee5b3968243fa",
+        "original_incomplete_receipt_sha256": "c4ffaef113ecd7c30b3f08b8c4b60ff061e2b13945b00ce92c1a4eac9a84eb64",
+        "first_continuation_incomplete_receipt_sha256": "2c0d07f7b68bc455caf3fe92dc6925bafdb917eeae6d3db8c2a46f97f985e41c",
+        "observer_sha256": "616b04848a2429552d0014794e0dc6cafc6453662cbb7a495202a3dec9d60788",
+        "successful_conceptual_cases": 10,
+        "failed_fixture_builds": 2,
+        "actual_declared_build_execution_commands": 22,
+        "source_work_upper": {
+          "package_attempts": 12,
+          "charged_fit_work_upper": 352068,
+          "point_admissions_upper": 13038216
+        },
+        "root_product_and_receiving_inputs_unchanged": true,
+        "generated_kill_or_equivalence_credit": 0,
+        "scope": "Only three bound consumers under labelled isolated callback disagreement; full CHECK-25/P1/native gaps remain."
+      }
+    },
+    {
+      "slice": "S154a borrowed mathematical affine chart view",
+      "review_date": "2026-11-03",
+      "status": "S154c selected Linux gates/mechanisms passed; additive S155 original chart-batch adapter portable development passed; new-owner qualification pending",
+      "destinations": [
+        "crates/time-core/src/regression/chart.rs",
+        "crates/time-core/src/regression/chart/roundoff.rs",
+        "crates/time-core/src/chart_enclosure.rs",
+        "crates/time-core/src/projection_enclosure.rs"
+      ],
+      "selected_sources": [
+        {
+          "file": "sourcestats.c",
+          "sha256": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6",
+          "selected_lines": "728-760",
+          "scope": "retained-row and estimate coordinate consistency; deliberate partial adaptation"
+        },
+        {
+          "file": "sources.c",
+          "sha256": "019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d",
+          "selected_lines": "1542-1558",
+          "scope": "known/unknown dependent-state context; global fanout/reset not implemented"
+        },
+        {
+          "file": "util.c",
+          "sha256": "c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd",
+          "selected_lines": "618-625",
+          "scope": "inspection only; no code or wall-time algorithm imported"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "contract_file": "tasks/s1.2-regression-readiness.md",
+      "contract_section": "S154a frozen mathematical-view contract",
+      "facts_file": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154-affine-roundoff-facts-v1.json",
+      "facts_sha256": "435da0dffa62cfbce563ee0e5a038252e88e0557aac12940186e3061237a87b9",
+      "math_reference_sha256": "67250e7e91acaa0c4acfb633514519a55baf775c10dbe7c863ecc7d0b7d2e08d",
+      "independent_review": [
+        "/root/pure_core_next_owner",
+        "/root/vfbasics_data_review",
+        "/root/adaptive_contract_review"
+      ],
+      "scope": "Unchanged MonotonicNs; phase minus common affine displacement; rate minus affine rate. Original raw/report provenance retained. Separate bounded new arithmetic. No raw rewrite/refit/credit/state migration/actual acknowledgement.",
+      "rust_qualification": "bounded selected S154c Linux gates and S155 portable development only; no full18-owner/P1/Windows/actual actuation/state migration qualification",
+      "release_or_product_claim": false,
+      "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154a-chart-portable-green-v1.json",
+      "portable_receipt_sha256": "7f6be7ecb19c34adb7ed42f61392d95963e556a2f72d29e4406472956a8c9e7d",
+      "portable_product_candidate_sha256": "7aba894647a6c3fb7388587fac18e7523d99ad5922f620f0ac55abd153d5f4df",
+      "portable_test_counts": {
+        "by_package": {
+          "nevrotick-ui": {
+            "product-tests": 5,
+            "doctests": 3
+          },
+          "ntp-wire": {
+            "product-tests": 104,
+            "doctests": 70
+          },
+          "time-domain": {
+            "product-tests": 30,
+            "doctests": 20,
+            "optimized-tests": 31
+          },
+          "ntp-exchange": {
+            "product-tests": 63,
+            "doctests": 12,
+            "optimized-tests": 63
+          },
+          "time-core": {
+            "product-tests": 235,
+            "doctests": 15,
+            "optimized-tests": 235
+          },
+          "nevrotick-engine": {
+            "product-tests": 24,
+            "doctests": 2,
+            "optimized-tests": 24
+          }
+        },
+        "tests_executed": 461,
+        "doctests_executed": 122,
+        "optimized_tests_executed": 353
+      },
+      "portable_source_archive_sha256": "eb9ea844e4f6fd25d1df733da21b9f018e6b20ebe4cf46b12593f32e4499a257",
+      "implemented_source_sha256": {
+        "crates/time-core/PROVENANCE.md": "22e1185b9d21620cf6ad6fa87020f6875638ebc2be9e79a993ae7bc8e265faae",
+        "crates/time-core/src/chart_enclosure.rs": "6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2",
+        "crates/time-core/src/lib.rs": "c59b6b8fbace8e4ebf3a7a2fe0df856546df2a9dee9cb3d10b0010e6c15d6ca4",
+        "crates/time-core/src/projection_enclosure.rs": "6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023",
+        "crates/time-core/src/regression/chart/roundoff.rs": "c79fc05485c0b1f32f3ff80992f45ef8a13c632dc1971c3b60aa96b4f721426f",
+        "crates/time-core/src/regression/chart.rs": "61653580743cd027ed5c41e17550686d9bd0665491dedc29764cc78adb248381",
+        "crates/time-core/src/regression.rs": "52223fcf848927b344673ec810ca0c784045c8e61835a01e9451de236d8f28d4",
+        "crates/time-core/tests/chart.rs": "6cbd6bf014c8c21fa5ed084b1bf47af1e4f9e1c2f7be608330e814c919c9c601",
+        "crates/time-core/tests/private/chart_roundoff.rs": "cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e"
+      },
+      "s154b_checkpoint": {
+        "status": "136-input portable and contracts passed; first coverage below90 forchart/chart_enclosure; all318mutations completed, roundoffqualified, other3incomplete; originalE=[]retained",
+        "candidate_sha256": "d8887f3ca1263f87636f8a9a4de9ccaedede00b5fda0f35a1a261b411d8a4a14",
+        "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-chart-portable-green-v1.json",
+        "portable_receipt_sha256": "3e819eee5815354fbdbdffdc1379233c792969f16b2cb3a56d39c7c8e66a1107",
+        "core_test_counts": {
+          "ordinary": 242,
+          "doctests": 15,
+          "optimized": 242
+        },
+        "workspace_test_counts": {
+          "ordinary": 468,
+          "doctests": 122,
+          "optimized": 360
+        },
+        "source_archive_sha256": "3cab639692c30214010b63707d97c34906fa6ea384127693042da386f96b243b",
+        "discovery_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-inventory-v1/verification.json",
+        "discovery_receipt_sha256": "3be1b34076d510fea6709f9157cb71ef386cd609dc3ecaf6cdca191109c380e9",
+        "selected_inventories": {
+          "chart": {
+            "count": 113,
+            "sha256": "9adc788ace2d545fb4e88e4bd57d1c6d4a52fd543b1eb294ed03be153d32ac42"
+          },
+          "chart_enclosure": {
+            "count": 6,
+            "sha256": "4b7b983a8e30c43fa2f13b10743ad249bea4ca36e4f86d220c35c23d50dfbba6"
+          },
+          "chart_roundoff": {
+            "count": 67,
+            "sha256": "7c7b425b57c2090b7fdb6b64db5b234532789a31d87b3d9d8f6d25366769c8de"
+          },
+          "enclosure": {
+            "count": 132,
+            "sha256": "208eab139265479390441d7e3e6cc1eada3df663a2117e62cacda95bad31f181"
+          }
+        },
+        "binding_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-final-binding-v1.json",
+        "binding_receipt_sha256": "465ec5d24b9e22588d9d2aaa0774ea5d31ea3f20426d134c6f383dc9f6de0da7",
+        "cohort_plan": "tasks/s1.2-chart-cohort-plan.json",
+        "cohort_plan_sha256": "c556396ade57bc466e5f632816d68b815c687a024c2df2b86f5cc3af1792ae8d",
+        "source_budget_fields": 1508,
+        "mutation_variant_count": 318,
+        "mutation_baseline_count": 4,
+        "mutation_equivalence_credit": [],
+        "windows_execution": "held; no action attempted",
+        "product_or_release_claim": false,
+        "mutation_receipts": {
+          "chart": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-mutation-chart-v1/verification.json",
+            "sha256": "bd08d5e5ea4920d08cd647314e2fe0bb42ac47004295c257f925d42611fc6304",
+            "status": "incomplete",
+            "raw_counts": {
+              "K": 41,
+              "M": 11,
+              "U": 61,
+              "T": 0,
+              "X": 0,
+              "E": 0
+            }
+          },
+          "chart_roundoff": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-mutation-chart_roundoff-v1/verification.json",
+            "sha256": "651e96eb7beeb9ffb84894760531463354be9aa926b1083096ed65a096c97993",
+            "status": "passed",
+            "raw_counts": {
+              "K": 37,
+              "M": 0,
+              "U": 30,
+              "T": 0,
+              "X": 0,
+              "E": 0
+            }
+          },
+          "chart_enclosure": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-mutation-chart_enclosure-v1/verification.json",
+            "sha256": "56963f520c090331655249c6bd4ac1c3e7774da942da746752670d9441579dd2",
+            "status": "incomplete",
+            "raw_counts": {
+              "K": 0,
+              "M": 0,
+              "U": 6,
+              "T": 0,
+              "X": 0,
+              "E": 0
+            }
+          },
+          "enclosure": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154b-mutation-enclosure-v1/verification.json",
+            "sha256": "fe5666ebf22712f582d5fb6a2677109ff6b78c63850e9d50aaaf406be1f19729",
+            "status": "incomplete",
+            "raw_counts": {
+              "K": 98,
+              "M": 4,
+              "U": 30,
+              "T": 0,
+              "X": 0,
+              "E": 0
+            }
+          }
+        }
+      },
+      "s154c_checkpoint": {
+        "status": "portable,typing,contracts,selected4line/mutationgates,CLIunionand22privateLinuxmechanismcontrolspassed; full17-owner/P1/nativegatesopen",
+        "candidate_sha256": "d3d0a834459550a8ea6a08904b3ec69499ff90f46dd199bed7fb37a5952807f0",
+        "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154c-chart-portable-green-v1.json",
+        "portable_receipt_sha256": "34e2b8dba6e5e50a67beb8030ba6a4b9bf886bc0cc8a0d9aff1557669f5f4608",
+        "portable_test_counts": {
+          "by_package": {
+            "nevrotick-ui": {
+              "product-tests": 5,
+              "doctests": 3
+            },
+            "ntp-wire": {
+              "product-tests": 104,
+              "doctests": 70
+            },
+            "time-domain": {
+              "product-tests": 30,
+              "doctests": 20,
+              "optimized-tests": 31
+            },
+            "ntp-exchange": {
+              "product-tests": 63,
+              "doctests": 12,
+              "optimized-tests": 63
+            },
+            "time-core": {
+              "product-tests": 242,
+              "doctests": 15,
+              "optimized-tests": 242
+            },
+            "nevrotick-engine": {
+              "product-tests": 24,
+              "doctests": 2,
+              "optimized-tests": 24
+            }
+          },
+          "tests_executed": 468,
+          "doctests_executed": 122,
+          "optimized_tests_executed": 360
+        },
+        "source_archive_sha256": "1309af1eddcaaef18e59e864778757b5d4961e6daffc9933a27b5a06adab6295",
+        "mathematical_oracle": "S144 exact widened Q33 endpoints -4211081217/+4378853377, bothOutwardFraction; independent positive center-error upper<2^-54",
+        "product_changes": "Only existing chart test assertions changed; production source, graph/features and Rust/LLVM flags unchanged",
+        "source_budget_fields": 1508,
+        "chart_budget_fields": 296,
+        "exact_equivalence_proof": "tasks/s1.2-chart-equivalences.md",
+        "equivalence_proof_sha256": "36c6dfd5d60dfbd0882f89ed8e6a511681df64b1c446827c47bee4b678b7aad4",
+        "equivalence_scope": "Four exact freshly reviewed endpoint descriptors; nonecreditedwithoutfreshsource/inventory/actualmissbinding",
+        "windows_execution": "held; no attempt",
+        "product_or_release_claim": false,
+        "mutation_receipts": {
+          "chart": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154c-mutation-chart-v1/verification.json",
+            "sha256": "0abc0f6f5fe7fd8f6bd513fd2777c34a06a954db79c95957f28cdc21685263af",
+            "status": "passed",
+            "generated": 113,
+            "killed": 52,
+            "unviable": 61,
+            "raw_missed": 0,
+            "exact_equivalent": 0,
+            "adjusted_denominator": 52,
+            "native_exit_code": 0
+          },
+          "chart_roundoff": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154c-mutation-chart_roundoff-v1/verification.json",
+            "sha256": "3d01c236aaefc4ceb3c2ca04d671767754d869672691be90f43f7ab91b90c0ab",
+            "status": "passed",
+            "generated": 67,
+            "killed": 37,
+            "unviable": 30,
+            "raw_missed": 0,
+            "exact_equivalent": 0,
+            "adjusted_denominator": 37,
+            "native_exit_code": 0
+          },
+          "chart_enclosure": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154c-mutation-chart_enclosure-v1/verification.json",
+            "sha256": "f6315c68082d9bf2ff810ea14f78f70a482f231445fc490bc7d02b4086116ff9",
+            "status": "passed",
+            "generated": 8,
+            "killed": 1,
+            "unviable": 7,
+            "raw_missed": 0,
+            "exact_equivalent": 0,
+            "adjusted_denominator": 1,
+            "native_exit_code": 0
+          },
+          "enclosure": {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154c-mutation-enclosure-v1/verification.json",
+            "sha256": "ae8fb6996aaee3f046ac380d9bbce51c38176ddbdde1b3fa82692723787ed213",
+            "status": "passed",
+            "generated": 132,
+            "killed": 98,
+            "unviable": 30,
+            "raw_missed": 4,
+            "exact_equivalent": 4,
+            "adjusted_denominator": 98,
+            "native_exit_code": 2
+          }
+        },
+        "cohort_union_sha256": "5f223c962d1d2a5dd911294c6a53ca791f7a3258fedd832ab6a2571c19af896e",
+        "campaign_source_archive_sha256": "dee77bacacbae33b8eb497284e85015fe3fbd7ece9f03a64dc7761ed7bde6f9c",
+        "mechanism_controls": {
+          "status": "passed-twenty-two-private-chart-controls",
+          "receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s154c-mechanism-controls-v1/verification.json",
+          "receipt_sha256": "34c519a38ca88426dd11c5e20f2ab01ed002a2737147cc4f286793eeab59d74a",
+          "elapsed_seconds": 573.427,
+          "independent_derivatives": 22,
+          "fresh_build_commands": 22,
+          "observer_execution_commands": 22,
+          "actual_commands": 44,
+          "genuine_baseline_fixtures": 2,
+          "garde_carriers": [
+            "FramesCandidate",
+            "DomainCandidate",
+            "AffineCandidate",
+            "HistoryCandidate",
+            "ProjectionCandidate",
+            "TrackingPhaseCandidate"
+          ],
+          "per_carrier_results": "Forced Err: ValidationInvariant, callback1; omitted validation: full-output unexpected acceptance, callback0; discarded Err: full-output unexpected acceptance, callback1. Omission/discard require intended panic/exit101.",
+          "manual_body_faults": {
+            "zero_radius": "standard-endpoints",
+            "untransformed_center": "standard-endpoints",
+            "swapped_rounding": "zero-rounding"
+          },
+          "independent_raw_audit": {
+            "copied_source_tool_files_matching": 4752,
+            "sealed_executables_matching": 22,
+            "original_root_inputs_matching": 215,
+            "original_product_inputs": 136,
+            "product_inputs_per_derivative_including_example": 137
+          },
+          "source_work_upper": {
+            "full_package_vector_fields": 1508,
+            "full_package_vectors_reserved": 22,
+            "charged_fit_work_upper": 776402,
+            "point_admissions_upper": 28425188,
+            "observer_and_injection_overlay": "Separate explicit bounds in receipt; not observed product-operation counts"
+          },
+          "ordinary_package_test_invocations_claimed": 0,
+          "generated_kill_or_equivalence_credit": 0,
+          "scope": "Six carrier invocation/result-use mechanisms and three body substitutions only; no full CHECK-25/P1/native Windows/product/release claim"
+        },
+        "subsequent_wsl_cleanup": {
+          "receipt": "/home/david_osipov/.local/share/nevrotick/wsl-cleanup-20261103-evidence-final-ie84uyon/summary.json",
+          "receipt_sha256": "41fdd3d26cde39ceb6c9ed41e83303d263e46a1dc84c8e5cd384d6230e5452d0",
+          "net_bytes_recovered": 3638480896,
+          "available_bytes_at_close": 8066146304,
+          "old_linux_executables_losslessly_archived": 37,
+          "archive": "/home/david_osipov/.local/share/nevrotick/wsl-cleanup-20261103-evidence-final-ie84uyon/historical-linux-replay-binaries.tar.gz",
+          "archive_sha256": "e7885d27d7500217084fa474a129425b29501562db700bf0ae82b8354d40edbe",
+          "retention": "Current sealed executables, source, raw receipts/logs/corpora, Windows and held AES artifacts retained. Restore old ELFs from archive for direct replay; removed caches/intermediates require rebuild/reacquisition, with no bit-identical rebuild claim.",
+          "custody": "HEAD/index/staging and215 qualification inputs unchanged; concurrent unstaged task-document edit retained. Live Qdrant identity/counts unchanged."
+        },
+        "next_bounded_source_gap": {
+          "slice": "S155 same-chart interval batch -> existing majority selector -> chart-bound result",
+          "status": "exact contract and independent fixture being designed; no implementation claim",
+          "task_record": "tasks/s1.2-regression-readiness.md#s155-next-bounded-chart-selection-bridge--contract-design",
+          "holds": "Windows execution, separate fuzz runner and storage experiments remain held; no production eligibility/defaults or achieved-correction authority"
+        }
+      },
+      "s155_checkpoint": {
+        "status": "implemented;138-input portable development passed; fresh selected-owner qualification pending",
+        "implementation_kind": "Original same-chart batch adapter delegates existing FixtureBatch/select_fixture; no new Chrony code import or numerical selector algorithm",
+        "owner": "crates/time-core/src/chart_batch.rs",
+        "owner_sha256": "af585c7421345bcd2469d8135ef164b2e30249eb40b084670020bb7b44636158",
+        "contract_file": "tasks/s1.2-regression-readiness.md#s155-frozen-admission-and-independent-oracle",
+        "checkpoint_record": "tasks/s1.2-regression-readiness.md#s155-bounded-portable-linux-development-checkpoint--complete",
+        "candidate_sha256": "6fef0b31401e7e8d6a0c6a44b3ca9d9986394fde1f237efd6bf69df50144704f",
+        "product_inputs": 138,
+        "critical_core_owners": 18,
+        "portable_receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-portable-development-v3.json",
+        "portable_receipt_sha256": "64174a0dae7815a521faf4fab5eb4f3b624f003a9913eb26ed12ac02ed37239d",
+        "source_archive": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-portable-development-v3-inputs.tar.gz",
+        "source_archive_sha256": "cfdf4c8d16639bd1cbfaac27a0a632162ad147ab7dc606f54fcba9db770f9cd9",
+        "elapsed_seconds": 85.142,
+        "portable_lanes": 22,
+        "all_recorded_exit_codes_zero_and_failures_none": true,
+        "core_tests": {
+          "ordinary": 249,
+          "doctests": 20,
+          "optimized": 249
+        },
+        "workspace_tests": {
+          "ordinary": 475,
+          "doctests": 127,
+          "optimized": 367
+        },
+        "new_scenarios": 7,
+        "new_scenario_execution": "All7 ordinary and optimized; configured receiver rejects ignored/skipped tests",
+        "new_documentation_rows": {
+          "legal": 1,
+          "compile_fail": 4
+        },
+        "independent_raw_oracle_audit": {
+          "status": "complete; no discrepancy",
+          "named_scenarios_passed_both_profiles": 7,
+          "new_doctest_rows_passed": 5,
+          "nextest_skips_and_doctest_ignored_filtered": 0,
+          "current_archive_receipt_source_members_matching": 138,
+          "vendor_packages_matching": 25,
+          "vendor_files_matching": 2232,
+          "current_tool_hashes_matching": 13,
+          "custody_scope": "Configured source/vendor bookends passed. Tool evidence is initial receiving and later current audit, not continuous/per-command custody. Doctest pass alone supplies no diagnostic-specific attribution."
+        },
+        "prior_setup_attempts": [
+          {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-portable-development-v1.json",
+            "sha256": "51ae80e5becfa060cbb076e86aa936c10ab997a62188b2abaf01187f08497513",
+            "elapsed_seconds": 10.651,
+            "recorded_lanes": 4,
+            "behavioral_tests_executed": 0,
+            "classification": "setup/Clippy failure, not behavioral RED",
+            "cause": "Missing private # Errors documentation"
+          },
+          {
+            "path": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s155-portable-development-v2.json",
+            "sha256": "8ed1f1e8de16c868c291eff0b2ed99f42a6cfc311d746ff57f6d9c24fdda86cf",
+            "elapsed_seconds": 9.179,
+            "recorded_lanes": 4,
+            "behavioral_tests_executed": 0,
+            "classification": "setup/Clippy failure, not behavioral RED",
+            "cause": "Five test borrow_as_ptr lint failures"
+          }
+        ],
+        "post_authoring_revisions": "Private Errors documentation; safe test ptr::from_ref; existing component_count None contract; exact time/age and source-loss metadata,1ns mismatch. Production selection/admission logic unchanged after initial authoring.",
+        "new_fixture_source_upper": {
+          "histories": 32,
+          "observations_and_appends_each": 96,
+          "maps": 22,
+          "prepare_projection_enclosure_paths_each": 46,
+          "batch_attempts": 44,
+          "minimum_and_selector_calls_each": 8,
+          "snapshots": 64,
+          "rows_per_snapshot": 3,
+          "direct_getters_upper": 4096,
+          "batch_scratch_slot_writes_per_constructor_upper": 32,
+          "batch_scratch_slot_writes_per_package_upper": 1408
+        },
+        "supplemental_reservation": {
+          "package_units_prepaid": 4,
+          "ordinary_optimized_package_units_invoked": 2,
+          "charged_fit_work_upper": 3188588,
+          "point_admissions_upper": 110402648,
+          "scope": "Unobserved source upper only; not measured fit/point work or new mutation credit. Batch/selector/relationship bounds remain separately declared in frozen task."
+        },
+        "analysis_binding_at_portable_checkpoint": "Historical136-input/17-owner time-core-analysis binding; fresh138-input/new-owner rebind required before analysis",
+        "next_gates": [
+          "External consumer contracts",
+          "90% executable-line coverage",
+          "95% per-file mutation with complete inventory",
+          "New Garde invocation/result-use sensitivity"
+        ],
+        "routing_audit": "Existing storage task6.6 and Windows task4.10 already fulfill ST-W01\u201307/W11-W01\u201310/follow-up/MSIX dispositions; no task edits or optional cards needed",
+        "holds": "Windows execution, separate S142/AES fuzz no-retry and storage experiments remain held; source-only cards unexecuted; complete MSI/OD-05/current Core priority preserved",
+        "new_owner_critical_qualification_claim": false,
+        "native_windows_product_or_release_claim": false
+      }
     }
   ],
   "review_followups": [
@@ -907,15 +1680,39 @@
       "status": "source-only comparison; no control policy or scheduler implementation admitted",
       "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
       "selected_symbols": [
-        { "file": "ntp_core.c", "symbol": "process_response", "lines": "2029-2087, 2363-2450", "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0" },
-        { "file": "ntp_core.c", "symbol": "adjust_poll; get_transmit_poll; get_transmit_delay; set_connectivity", "lines": "861-883, 928-980, 2904-2920", "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0" },
-        { "file": "ntp_sources.c", "symbol": "NSR_ProcessRx; NSR_SetConnectivity", "lines": "1288-1323, 1378-1408", "sha256": "c272f644d8734b6087d8f8d008cb6a9c481a480946dde229d82e2c451fdb2e1f" },
-        { "file": "nts_ntp_client.c", "symbol": "NNC_CheckResponseAuth", "lines": "471-550", "sha256": "f4e51bf8f1115ff745a661dbd22e4665071764cbf6149481c859481e07fccae0" }
+        {
+          "file": "ntp_core.c",
+          "symbol": "process_response",
+          "lines": "2029-2087, 2363-2450",
+          "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0"
+        },
+        {
+          "file": "ntp_core.c",
+          "symbol": "adjust_poll; get_transmit_poll; get_transmit_delay; set_connectivity",
+          "lines": "861-883, 928-980, 2904-2920",
+          "sha256": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0"
+        },
+        {
+          "file": "ntp_sources.c",
+          "symbol": "NSR_ProcessRx; NSR_SetConnectivity",
+          "lines": "1288-1323, 1378-1408",
+          "sha256": "c272f644d8734b6087d8f8d008cb6a9c481a480946dde229d82e2c451fdb2e1f"
+        },
+        {
+          "file": "nts_ntp_client.c",
+          "symbol": "NNC_CheckResponseAuth",
+          "lines": "471-550",
+          "sha256": "f4e51bf8f1115ff745a661dbd22e4665071764cbf6149481c859481e07fccae0"
+        }
       ],
       "independent_comparator": {
         "project": "ntpd-rs",
         "revision": "46ec9bb4d5b6cb24f814f5543d85b9138afb4cba",
-        "selected_files": ["ntp-proto/src/source.rs", "ntp-proto/src/packet/mod.rs", "ntpd/src/daemon/ntp_source.rs"],
+        "selected_files": [
+          "ntp-proto/src/source.rs",
+          "ntp-proto/src/packet/mod.rs",
+          "ntpd/src/daemon/ntp_source.rs"
+        ],
         "evidence": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s133-kod-ntpdrs-review.md",
         "evidence_sha256": "0e4ab5cffbb00cc2ba3a1c64f5083cde78d7e15ddf751c2908c786f6ddafa50b",
         "license_context": "MIT OR Apache-2.0; source review only, no source or Cargo graph imported"

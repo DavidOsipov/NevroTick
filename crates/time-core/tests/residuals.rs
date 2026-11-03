@@ -833,3 +833,337 @@ fn positive_relative_oracle_rejects_false_zero_and_changed_values() {
         assert!(!rounded_zero_statistic_matches(f64::NAN, allowance));
     }
 }
+
+/// Same-fit coefficient diagnostics, with independent frozen numerical facts.
+///
+/// Three finite scopes use at most 15 direct points, five direct inputs and
+/// residual-statistics calls, nine adaptive observations/appends, one adaptive
+/// history and six standard-error calls. Adaptive append internals retain their
+/// existing separately accounted bounds. There is no new observed-work marker.
+mod same_fit_standard_errors {
+    use std::{error::Error, io, num::NonZeroU64};
+
+    use time_core::{
+        ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError, FitInput, FitPoint,
+        FixtureAdaptiveHistory, FixtureContext, FixtureObservation, FixtureResidualStatistics,
+        FixtureRunsStop, FixtureStandardError, FixtureStandardErrorStep, FixtureStandardErrors,
+        residual_statistics,
+    };
+    use time_domain::{MonotonicNs, UtcCoordinateQ32, exchange_arithmetic};
+
+    type TestResult<T = ()> = Result<T, Box<dyn Error>>;
+    const RELATIVE_TOLERANCE: f64 = 1.0 / 274_877_906_944.0;
+    const SECOND: u64 = 1_000_000_000;
+    const VALUES: [i32; 9] = [512, -21, 27, 27, 27, -27, -27, -27, -27];
+
+    /// Admit one fixed nonzero label without changing owner state.
+    /// # Errors
+    /// Reject zero before returning the typed label.
+    fn label(value: u64) -> TestResult<NonZeroU64> {
+        NonZeroU64::new(value).ok_or_else(|| io::Error::other("zero fixture label").into())
+    }
+
+    /// Construct exactly three checked points and their genuine residual report.
+    /// # Errors
+    /// Preserve point, input and residual producer failures without effects.
+    fn report(frame: NonZeroU64, rows: [[f64; 3]; 3]) -> TestResult<FixtureResidualStatistics> {
+        let points = [
+            FitPoint::new(rows[0][0], rows[0][1], rows[0][2])?,
+            FitPoint::new(rows[1][0], rows[1][1], rows[1][2])?,
+            FitPoint::new(rows[2][0], rows[2][1], rows[2][2])?,
+        ];
+        let input = FitInput::new(frame, &points)?;
+        Ok(residual_statistics(&input)?)
+    }
+
+    /// Compare positive normal standard errors using the frozen relative bound.
+    /// # Panics
+    /// Reject unsupported outputs or relative error above 2^-38; no floor applies.
+    fn near_positive(actual: f64, expected: f64) {
+        assert!(actual.is_normal() && actual.is_sign_positive());
+        assert!((actual / expected - 1.0).abs() <= RELATIVE_TOLERANCE);
+    }
+
+    /// Record every pre-existing public report scalar and identity without effects.
+    fn report_snapshot(report: &FixtureResidualStatistics) -> (NonZeroU64, usize, usize, [u64; 5]) {
+        (
+            report.frame(),
+            report.sample_count(),
+            report.degrees_of_freedom(),
+            [
+                report.line().phase_seconds().to_bits(),
+                report.line().phase_rate_seconds_per_second().to_bits(),
+                report.weighted_sse_seconds_squared().to_bits(),
+                report.residual_scale_seconds_squared().to_bits(),
+                report.normalized_data_variance_seconds_squared().to_bits(),
+            ],
+        )
+    }
+
+    /// Check checked-output identity and redacted formatting without changing it.
+    /// # Panics
+    /// Reject different metadata or a Debug rendering that exposes scalar fields.
+    fn check_output(output: &FixtureStandardErrors, frame: NonZeroU64, count: usize) {
+        assert_eq!(
+            (
+                output.frame(),
+                output.sample_count(),
+                output.degrees_of_freedom()
+            ),
+            (frame, count, count - 2)
+        );
+        let debug = format!("{output:?}");
+        assert!(debug.contains("FixtureStandardErrors"));
+        assert!(!debug.contains("phase_standard_error_seconds"));
+        assert!(!debug.contains("rate_standard_error_seconds_per_second"));
+        assert!(!debug.contains("0.124225998"));
+        assert!(!debug.contains("0.007378602"));
+    }
+
+    /// Weighted and common-scale facts and an exact constant-line zero neighbor.
+    /// # Errors
+    /// Preserve genuine fixture admission or standard-error failures.
+    /// # Panics
+    /// Reject incorrect coefficient diagnostics, metadata, zero bits or mutation.
+    #[test]
+    fn weighted_common_divisor_scale_and_exact_zero() -> TestResult {
+        let frame = label(101)?;
+        for divisors in [[1.0, 1.0, 4.0], [4.0, 4.0, 16.0]] {
+            let original = report(
+                frame,
+                [
+                    [-2.0, 0.0, divisors[0]],
+                    [-1.0, 0.125, divisors[1]],
+                    [0.0, 0.0, divisors[2]],
+                ],
+            )?;
+            let before = report_snapshot(&original);
+            let actual = original.standard_errors()?;
+            check_output(&actual, frame, 3);
+            near_positive(
+                actual.phase_standard_error_seconds(),
+                0.124_225_998_749_988_32,
+            );
+            near_positive(
+                actual.rate_standard_error_seconds_per_second(),
+                0.083_333_333_333_333_33,
+            );
+            assert_eq!(report_snapshot(&original), before);
+        }
+        let exact = report(
+            frame,
+            [[-2.0, 0.125, 1.0], [-1.0, 0.125, 1.0], [0.0, 0.125, 1.0]],
+        )?;
+        let before = report_snapshot(&exact);
+        let result = exact.standard_errors()?;
+        check_output(&result, frame, 3);
+        assert_eq!(
+            result.phase_standard_error_seconds().to_bits(),
+            0.0_f64.to_bits()
+        );
+        assert_eq!(
+            result.rate_standard_error_seconds_per_second().to_bits(),
+            0.0_f64.to_bits()
+        );
+        assert_eq!(report_snapshot(&exact), before);
+        Ok(())
+    }
+
+    /// Build a genuine checked Q33 phase from a fixed numerator over 512.
+    /// # Errors
+    /// Preserve coordinate, exchange and observation errors; no history mutation.
+    fn observation(
+        context: FixtureContext,
+        second: u64,
+        value: i32,
+    ) -> TestResult<FixtureObservation> {
+        let at = second
+            .checked_mul(SECOND)
+            .ok_or_else(|| io::Error::other("time overflow"))?;
+        let zero = UtcCoordinateQ32::new(0)?;
+        let shifted = UtcCoordinateQ32::new(i128::from(value) * (1_i128 << 23))?;
+        let phase = exchange_arithmetic(zero, shifted, shifted, zero)?.offset();
+        Ok(FixtureObservation::new(
+            context,
+            MonotonicNs::new(at),
+            phase,
+            1.0,
+        )?)
+    }
+
+    /// Return a checked row's public identity and scalar bits without effects.
+    fn row_bits(row: &FixtureObservation) -> (FixtureContext, u64, i128, u64) {
+        (
+            row.context(),
+            row.observed_at().nanoseconds(),
+            row.phase().numerator(),
+            row.variance_divisor().to_bits(),
+        )
+    }
+
+    /// An owned bounded view of the real history and its terminal selection.
+    #[derive(Debug, PartialEq)]
+    struct HistorySnapshot {
+        context: FixtureContext,
+        minimum: usize,
+        reference: Option<u64>,
+        fitted: usize,
+        auxiliary: usize,
+        rows: Vec<(FixtureContext, u64, i128, u64)>,
+        report_context: FixtureContext,
+        report_reference: u64,
+        report_minimums: (usize, usize),
+        selection: (
+            usize,
+            usize,
+            usize,
+            usize,
+            usize,
+            usize,
+            NonZeroU64,
+            FixtureRunsStop,
+        ),
+        report: (NonZeroU64, usize, usize, [u64; 5]),
+    }
+
+    /// Observe a bounded real history, its selected report and every stored row.
+    /// # Errors
+    /// Reject an impossible count or missing row/report rather than loop unboundedly.
+    fn history_snapshot(history: &FixtureAdaptiveHistory) -> TestResult<HistorySnapshot> {
+        let fitted = history.sample_count();
+        let auxiliary = history.auxiliary_count();
+        let combined = fitted
+            .checked_add(auxiliary)
+            .ok_or_else(|| io::Error::other("count overflow"))?;
+        if combined > 64 || auxiliary > fitted {
+            return Err(io::Error::other("unsupported history count").into());
+        }
+        let mut rows = Vec::with_capacity(combined);
+        for index in 0..combined {
+            rows.push(row_bits(
+                history
+                    .decision_observation(index)
+                    .ok_or_else(|| io::Error::other("missing decision row"))?,
+            ));
+        }
+        let selected = history
+            .report()
+            .ok_or_else(|| io::Error::other("missing report"))?;
+        let selection = selected.selection();
+        Ok(HistorySnapshot {
+            context: history.context(),
+            minimum: history.configured_minimum(),
+            reference: history.reference().map(MonotonicNs::nanoseconds),
+            fitted,
+            auxiliary,
+            rows,
+            report_context: selected.context(),
+            report_reference: selected.reference().nanoseconds(),
+            report_minimums: (selected.configured_minimum(), selected.effective_minimum()),
+            selection: (
+                selection.start(),
+                selection.sample_count(),
+                selection.decision_start(),
+                selection.decision_count(),
+                selection.decision_runs(),
+                selection.fit_runs(),
+                selection.frame(),
+                selection.stop(),
+            ),
+            report: report_snapshot(selection.statistics()),
+        })
+    }
+
+    /// Current selected fit excludes the older auxiliary decision row.
+    /// # Errors
+    /// Preserve checked history and standard-error producer failures.
+    /// # Panics
+    /// Reject a different selected population, diagnostic, metadata or state change.
+    #[test]
+    fn actual_adaptive_selected_fit_excludes_auxiliary_row() -> TestResult {
+        let context = FixtureContext::new(label(11)?, label(17)?, label(23)?);
+        let mut history = FixtureAdaptiveHistory::new(context, 3)?;
+        for (index, value) in VALUES.into_iter().enumerate() {
+            history.try_append(observation(context, u64::try_from(index)?, value)?)?;
+        }
+        assert_eq!((history.sample_count(), history.auxiliary_count()), (8, 1));
+        let before = history_snapshot(&history)?;
+        let report = history
+            .report()
+            .ok_or_else(|| io::Error::other("missing selected report"))?;
+        let statistics = report.selection().statistics();
+        let actual = statistics.standard_errors()?;
+        check_output(&actual, context.frame(), 8);
+        near_positive(
+            actual.phase_standard_error_seconds(),
+            0.030_866_908_739_822_485,
+        );
+        near_positive(
+            actual.rate_standard_error_seconds_per_second(),
+            0.007_378_602_481_509_934,
+        );
+        assert_eq!(history_snapshot(&history)?, before);
+        Ok(())
+    }
+
+    /// Same tiny phases have a valid short-span neighbor and a real long-span error.
+    /// # Errors
+    /// Preserve point, report and healthy-neighbor producer failures.
+    /// # Panics
+    /// Reject a different arithmetic cause, leaked payload or changed source report.
+    #[test]
+    fn tiny_short_span_is_healthy_and_long_span_rejects_rate_variance() -> TestResult {
+        let frame = label(102)?;
+        let a = f64::from_bits(0x2000_0000_0000_0000); // Exactly 2^-511.
+        let short = report(
+            frame,
+            [[-2.0, a, 1.0], [-1.0, -2.0 * a, 1.0], [0.0, a, 1.0]],
+        )?;
+        let short_before = report_snapshot(&short);
+        let ok = short.standard_errors()?;
+        check_output(&ok, frame, 3);
+        near_positive(ok.phase_standard_error_seconds(), 3.335_471_374_863_83e-154);
+        near_positive(
+            ok.rate_standard_error_seconds_per_second(),
+            2.583_645_017_319_833_7e-154,
+        );
+        assert_eq!(report_snapshot(&short), short_before);
+
+        let long = report(
+            frame,
+            [[-4096.0, a, 1.0], [-2048.0, -2.0 * a, 1.0], [0.0, a, 1.0]],
+        )?;
+        let long_before = report_snapshot(&long);
+        let error = long
+            .standard_errors()
+            .err()
+            .ok_or_else(|| io::Error::other("expected rejection"))?;
+        assert!(matches!(
+            &error,
+            FixtureStandardError::Arithmetic {
+                step: FixtureStandardErrorStep::RateVariance,
+                source: FitError::Arithmetic {
+                    stage: ArithmeticStage::Response,
+                    operation: ArithmeticOperation::Divide,
+                    issue: ArithmeticIssue::Subnormal
+                },
+            }
+        ));
+        assert!(matches!(
+            error
+                .source()
+                .and_then(|source| source.downcast_ref::<FitError>()),
+            Some(FitError::Arithmetic {
+                stage: ArithmeticStage::Response,
+                operation: ArithmeticOperation::Divide,
+                issue: ArithmeticIssue::Subnormal
+            })
+        ));
+        let text = format!("{error} {error:?}");
+        assert!(text.contains("RateVariance"));
+        assert!(!text.contains("2.583645"));
+        assert!(!text.contains("3.335471"));
+        assert_eq!(report_snapshot(&long), long_before);
+        Ok(())
+    }
+}

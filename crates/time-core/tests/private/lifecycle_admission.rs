@@ -240,3 +240,99 @@ fn bridge_receiving_and_mask_boundaries() -> TestResult {
     );
     Ok(())
 }
+
+/// Exercise the new raw source carrier with genuine same-entry and copied-entry pairs.
+///
+/// One three-row adaptive history produces one tracked projection/enclosure. Two
+/// one-slot arrays copy that whole immutable entry, then two checked batches and
+/// independently seeded principal owners produce their own genuine decisions.
+/// One real tracking holder borrows only decision A's slot. Two direct Garde calls
+/// and two typed receiving calls check the original and cross-decision pair; no
+/// checked holder, decision, report or attachment is fabricated. The fixed holder
+/// layout must stay within its one-KiB contract. This source-only case emits no
+/// original-family attempt profile and performs no combination reduction.
+/// # Errors
+/// Preserve every genuine producer and healthy receiving failure.
+/// # Panics
+/// Reject shared storage, changed copied provenance, missing tracking, a weakened
+/// actual-entry guard, or an oversized fixed-capacity holder.
+#[test]
+fn tracking_source_receiving_preserves_actual_entry_identity() -> TestResult {
+    use std::{mem::size_of, ptr};
+
+    use crate::{FixtureAdaptiveHistory, project_fixture_adaptive_tracking};
+
+    use super::super::TrackingSupporters;
+    use super::{RawSourceAdmission, RecordSource, admit_record_source};
+
+    assert!(size_of::<TrackingSupporters<'static>>() <= 1024);
+    let source = tag(101)?;
+    let frame = tag(7)?;
+    let generation = tag(11)?;
+    let context = FixtureContext::new(source, frame, generation);
+    let mut history = FixtureAdaptiveHistory::new(context, 3)?;
+    let zero = UtcCoordinateQ32::new(0)?;
+    let phase = exchange_arithmetic(zero, zero, zero, zero)?.offset();
+    for raw in [0, 1_000_000_000, 2_000_000_000] {
+        history.try_append(FixtureObservation::new(
+            context,
+            MonotonicNs::new(raw),
+            phase,
+            1.0,
+        )?)?;
+    }
+    let at = MonotonicNs::new(2_000_000_000);
+    let projection = project_fixture_adaptive_tracking(
+        &history,
+        context,
+        2,
+        at,
+        at,
+        FixtureProjectionTerms::new(0.25, 0.0, 0.0)?,
+        0.125,
+    )?;
+    assert!(projection.tracking().is_some());
+    let entries_a = [enclose_fixture_projection(&projection)?];
+    let entries_b = entries_a;
+    let batch_a = FixtureProjectedBatch::new(frame, generation, at, &entries_a)?;
+    let batch_b = FixtureProjectedBatch::new(frame, generation, at, &entries_b)?;
+    let roster = [source];
+    let strata = [FixturePrincipalStratum::new(source, 1)?];
+    let parameters = FixturePrincipalParameters::new(0.25, 0.0)?;
+    let minimum = FixtureMinimum::new(1)?;
+    let mut owner_a = FixturePrincipalState::seed(&roster, parameters, minimum, &batch_a, &strata)?;
+    let mut owner_b = FixturePrincipalState::seed(&roster, parameters, minimum, &batch_b, &strata)?;
+    let decision_a = owner_a.advance(&batch_a, &strata)?;
+    let decision_b = owner_b.advance(&batch_b, &strata)?;
+    let principal_a = decision_a
+        .principal_entry()
+        .ok_or_else(|| io::Error::other("missing original principal"))?;
+    let principal_b = decision_b
+        .principal_entry()
+        .ok_or_else(|| io::Error::other("missing copied principal"))?;
+    assert!(!ptr::eq(principal_a, principal_b));
+    assert_eq!(
+        principal_a.projection().context(),
+        principal_b.projection().context()
+    );
+    assert_eq!(
+        principal_a.projection().projected_at(),
+        principal_b.projection().projected_at()
+    );
+    let holder = TrackingSupporters::from_decision(&decision_a)?;
+    let records = RecordSource::Tracking(&holder);
+    let own_pair = RawSourceAdmission {
+        inputs: (&decision_a, records, principal_a),
+    };
+    assert!(own_pair.validate().is_ok());
+    admit_record_source(&decision_a, records, principal_a)?;
+    let crossed_pair = RawSourceAdmission {
+        inputs: (&decision_b, records, principal_b),
+    };
+    assert!(crossed_pair.validate().is_err());
+    assert_eq!(
+        admit_record_source(&decision_b, records, principal_b),
+        Err(FixtureCombinationError::EntryMismatch { index: 0 })
+    );
+    Ok(())
+}

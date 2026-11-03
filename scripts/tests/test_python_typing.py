@@ -18,11 +18,25 @@ TYPING = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TYPING)
 
 
-def result(output="Success: no issues found in 3 source files\n", exit_code=0, failure=None):
+def result(output="Success: no issues found in 5 source files\n", exit_code=0, failure=None):
     return {"command": ["synthetic-checker"], "exit_code": exit_code, "failure": failure, "output": output}
 
 
 class AdmissionTests(unittest.TestCase):
+    def test_four_selected_helpers_have_exact_fifteen_input_source_closure(self):
+        expected = {
+            "scripts/core-combination-accounting.py": "core_combination_accounting.py",
+            "scripts/core-analysis-cohorts.py": "core_analysis_cohorts.py",
+            "scripts/core-chart-accounting.py": "core_chart_accounting.py",
+            "scripts/core-chart-contracts.py": "core_chart_contracts.py",
+        }
+        self.assertEqual(TYPING.HELPERS, expected)
+        self.assertEqual(len(TYPING.SOURCE_PATHS), 15)
+        self.assertEqual(len(set(TYPING.SOURCE_PATHS)), 15)
+        sources, hashes = TYPING.source_snapshot(ROOT)
+        self.assertEqual(set(sources), set(TYPING.SOURCE_PATHS))
+        self.assertEqual(set(hashes), set(TYPING.SOURCE_PATHS))
+
     def test_bounded_read_allocates_from_actual_file_size_not_the_large_allowance(self):
         requested = []
         original_fdopen = os.fdopen
@@ -145,13 +159,13 @@ class AdmissionTests(unittest.TestCase):
 
     def test_checked_source_refuses_any_cast_ignore_and_import_expansion(self):
         sources, _ = TYPING.source_snapshot(ROOT)
-        owner = "scripts/core-combination-accounting.py"
-        for extra in ("\nfrom typing import Any\n", "\nfrom typing import cast\n",
-                      "\nvalue = 1  # type: ignore\n", "\n# mypy: ignore-errors\n",
-                      "\nimport arbitrary_module\n", "\nimport typing\nvalue = typing.cast(int, 1)\n"):
-            changed = {**sources, owner: sources[owner] + extra.encode()}
-            with self.subTest(extra=extra), self.assertRaises(TYPING.Incomplete):
-                TYPING.inspect_sources(changed)
+        for owner in TYPING.HELPERS:
+            for extra in ("\nfrom typing import Any\n", "\nfrom typing import cast\n",
+                          "\nvalue = 1  # type: ignore\n", "\n# mypy: ignore-errors\n",
+                          "\nimport arbitrary_module\n", "\nimport typing\nvalue = typing.cast(int, 1)\n"):
+                changed = {**sources, owner: sources[owner] + extra.encode()}
+                with self.subTest(owner=owner, extra=extra), self.assertRaises(TYPING.Incomplete):
+                    TYPING.inspect_sources(changed)
         self.assertIn("core_combination_accounting", TYPING.inspect_sources(sources))
 
     def test_normalized_copy_is_byte_identical_and_only_fault_copy_changes(self):
@@ -224,6 +238,9 @@ class DiagnosticTests(unittest.TestCase):
     def test_healthy_control_requires_real_nonempty_selection(self):
         TYPING.require_result(result())
         for candidate in (result("Success: no issues found in 0 source files\n"),
+                          result("Success: no issues found in 3 source files\n"),
+                          result("Success: no issues found in 4 source files\n"),
+                          result("Success: no issues found in 6 source files\n"),
                           result(exit_code=7), result(failure="wall timeout")):
             with self.subTest(candidate=candidate), self.assertRaises(TYPING.Incomplete):
                 TYPING.require_result(candidate)
@@ -284,11 +301,30 @@ class IntegrationCustodyTests(unittest.TestCase):
     def execute(self):
         return TYPING.execute(self.root, self.checker / "bin/python", self.receipt, False)
 
+    def test_healthy_command_selects_all_four_actual_helpers_and_the_consumer(self):
+        version = result(json.dumps({"python": "3.12.3", "mypy": "2.4.1"}))
+        with patch.object(TYPING, "run", side_effect=[version, result()]) as invoked:
+            evidence = self.execute()
+        expected = {
+            "/input/core_combination_accounting.py", "/input/core_analysis_cohorts.py",
+            "/input/core_chart_accounting.py", "/input/core_chart_contracts.py",
+            "/input/typed_consumer.py",
+        }
+        command = invoked.call_args_list[1].args[0]
+        self.assertEqual({value for value in command if value.startswith("/input/")}, expected)
+        self.assertEqual(len(evidence["sources"]), 15)
+        self.assertEqual(len(evidence["checked_files"]), 5)
+        self.assertEqual(evidence["scope"], "four fixture helpers and independent typed consumer")
+
     def test_stale_source_extra_tool_and_receipt_keys_refuse_before_execution(self):
-        for mode in ("source", "tool", "key"):
+        for mode in ("source", "chart_accounting", "chart_contracts", "tool", "key"):
             with self.subTest(mode=mode), patch.object(TYPING, "run") as invoked:
-                if mode == "source":
-                    target = self.root / "scripts/core-analysis-cohorts.py"
+                if mode in ("source", "chart_accounting", "chart_contracts"):
+                    target = self.root / {
+                        "source": "scripts/core-analysis-cohorts.py",
+                        "chart_accounting": "scripts/core-chart-accounting.py",
+                        "chart_contracts": "scripts/core-chart-contracts.py",
+                    }[mode]
                     original = target.read_bytes()
                     target.write_bytes(original + b"\n# drift\n")
                 elif mode == "tool":
@@ -302,7 +338,7 @@ class IntegrationCustodyTests(unittest.TestCase):
                 with self.assertRaises(TYPING.Incomplete):
                     self.execute()
                 invoked.assert_not_called()
-                if mode == "source":
+                if mode in ("source", "chart_accounting", "chart_contracts"):
                     target.write_bytes(original)
                 elif mode == "tool":
                     target.unlink()

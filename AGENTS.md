@@ -137,6 +137,12 @@ and SCM observers remain candidates; prerelease VBS claims and side-channel
 settings remain conditional. Apply the relevant refinement before dependent
 adapter work and record its disposition in the existing W11 or storage task.
 Retain the current Windows execution stop, separate fuzz hold and storage pause.
+At the next coordinator checkpoint reconcile the follow-up's refinements in the
+[Windows task](tasks/windows11-integration.md#44-microsoft-learn-second-pass-integration--3-november-2026)
+and [storage task](tasks/windows-protected-storage.md#65-microsoft-learn-follow-up-routing--3-november-2026).
+Carry applicable cases into the existing W11/ST-W assignments before their
+dependent adapters; record owner, disposition and next action in those tasks.
+W11-W01 and ST-W01 remain unexecuted source-only cards, not permission to probe.
 
 MSIX/Store hardening and delivery: read the [selected plan](docs/plans/windows-msix-store.md),
 [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate)

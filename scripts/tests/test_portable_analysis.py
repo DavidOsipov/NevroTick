@@ -198,6 +198,298 @@ class EvidenceTests(unittest.TestCase):
                 MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile=profile),
                                          scope, selected_policy)
 
+    @staticmethod
+    def tracking_inventory_control():
+        """Literal four-owner S152 admission; no source, tool or process effect."""
+        subjects = {"projection": "crates/time-core/src/regression/projection.rs",
+                    "combination": "crates/time-core/src/combination.rs",
+                    "combination_admission": "crates/time-core/src/combination/admission.rs",
+                    "combination_lifecycle": "crates/time-core/src/combination/lifecycle.rs"}
+        scope = MODULE.Scope("time-core", tuple(subjects.items()),
+                             "tasks/s1.3-tracking-inventory-admission.json")
+        policy = {"schema_version": 8, "admission_status": "admitted-four-owner-inventory-only",
+                  "package": "time-core", "source_file_count": 130, "subjects": subjects,
+                  "maximum_mutants": 512, "listing_maximum_per_file": 512,
+                  "listing_maximum_total": 2048, "inventory_wall_seconds": 600,
+                  "mutation_jobs": 10, "mutation_process_limit": 512,
+                  "listing_process_limit": 128, "mutation_message_format": "json",
+                  "mutation_equivalences": [], "native_test_invocations": 0,
+                  "campaigns_admitted": False, "tool_admission_profile": "stable-core"}
+        return scope, policy
+
+    def test_stable_core_inventory_admits_only_the_explicit_tracking_listing_card(self):
+        scope, policy = self.tracking_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+
+    def test_stable_core_inventory_rejects_changed_profile_scope_and_card_facts(self):
+        scope, policy = self.tracking_inventory_control()
+        good_args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        invalid = [
+            (SimpleNamespace(lane="mutation"), scope, policy),
+            (SimpleNamespace(lane="mutation", tool_admission_profile="full"), scope, policy),
+            (SimpleNamespace(lane="inventory", tool_admission_profile="stable-core"), scope, policy),
+            (SimpleNamespace(lane="coverage", tool_admission_profile="stable-core"), scope, policy),
+            (good_args, MODULE.Scope("time-domain", scope.subjects, scope.policy), policy),
+            (good_args, MODULE.Scope("time-core", scope.subjects, "tasks/other.json"), policy),
+            (good_args, MODULE.Scope("time-core", (("history", "crates/time-core/src/regression/history.rs"),), scope.policy), policy),
+            (good_args, MODULE.Scope("time-core", scope.subjects * 2, scope.policy), policy),
+            (good_args, MODULE.Scope("time-core", scope.subjects[:-1], scope.policy), policy),
+            (good_args, MODULE.Scope("time-core", tuple(reversed(scope.subjects)), scope.policy), policy),
+            (good_args, MODULE.Scope("time-core", scope.subjects,
+                                     "tasks/s1.2-standard-errors-inventory-admission.json"), policy),
+        ]
+        for field, value in (("schema_version", 7), ("schema_version", True),
+                             ("package", "time-domain"), ("subjects", {}),
+                             ("native_test_invocations", 1), ("native_test_invocations", False),
+                             ("campaigns_admitted", True), ("campaigns_admitted", 0),
+                             ("tool_admission_profile", "full")):
+            invalid.append((good_args, scope, {**policy, field: value}))
+        for field in ("tool_admission_profile", "subjects", "native_test_invocations", "campaigns_admitted"):
+            invalid.append((good_args, scope, {key: value for key, value in policy.items() if key != field}))
+        invalid.append((SimpleNamespace(lane="mutation", tool_admission_profile="full"), scope,
+                        {**policy, "tool_admission_profile": "full"}))
+        for args, candidate_scope, candidate_policy in invalid:
+            with self.subTest(args=args, scope=candidate_scope, policy=candidate_policy), \
+                    self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, candidate_scope, candidate_policy)
+
+    @staticmethod
+    def chart_inventory_control():
+        """Literal S154 listing role; no Session, product or tool admission."""
+        subjects = {
+            "chart": "crates/time-core/src/regression/chart.rs",
+            "chart_roundoff": "crates/time-core/src/regression/chart/roundoff.rs",
+            "chart_enclosure": "crates/time-core/src/chart_enclosure.rs",
+            "enclosure": "crates/time-core/src/projection_enclosure.rs",
+        }
+        scope = MODULE.Scope("time-core", tuple(subjects.items()),
+                             "tasks/s1.2-chart-inventory-admission.json")
+        policy = {"schema_version": 9,
+                  "admission_status": "admitted-four-owner-chart-inventory-only",
+                  "tool_admission_profile": "stable-core", "package": "time-core",
+                  "source_file_count": 136, "subjects": subjects,
+                  "maximum_mutants": 512, "listing_maximum_per_file": 512,
+                  "listing_maximum_total": 2048, "inventory_wall_seconds": 600,
+                  "mutation_jobs": 10, "mutation_process_limit": 512,
+                  "listing_process_limit": 128, "mutation_message_format": "json",
+                  "mutation_equivalences": [], "native_test_invocations": 0,
+                  "campaigns_admitted": False}
+        return scope, policy
+
+    def test_stable_core_chart_inventory_admits_only_its_exact_listing_role(self):
+        scope, policy = self.chart_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        with patch.object(MODULE, "Session") as session, \
+             patch.object(MODULE.ANALYSIS, "admit") as admission:
+            self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+            session.assert_not_called()
+            admission.assert_not_called()
+
+    def test_stable_core_chart_inventory_rejects_role_and_typed_fact_changes(self):
+        scope, policy = self.chart_inventory_control()
+        good = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        tracking_scope, tracking_policy = self.tracking_inventory_control()
+        invalid = [
+            (SimpleNamespace(lane="mutation"), scope, policy),
+            (SimpleNamespace(lane="mutation"), scope, {**policy, "tool_admission_profile": "full"}),
+            (SimpleNamespace(lane="mutation", tool_admission_profile="full"), scope,
+             {**policy, "tool_admission_profile": "full"}),
+            (good, MODULE.Scope("time-domain", scope.subjects, scope.policy), policy),
+            (good, MODULE.Scope("time-core", scope.subjects, "tasks/other.json"), policy),
+            (good, MODULE.Scope("time-core", scope.subjects,
+                                "policy/time-core-analysis.json"), policy),
+            (good, MODULE.Scope("time-core", scope.subjects[:-1], scope.policy), policy),
+            (good, MODULE.Scope("time-core", scope.subjects * 2, scope.policy), policy),
+            (good, MODULE.Scope("time-core", tuple(reversed(scope.subjects)), scope.policy), policy),
+            (good, MODULE.Scope("time-core", tracking_scope.subjects, scope.policy), policy),
+            (good, tracking_scope, policy),
+            (good, scope, tracking_policy),
+        ]
+        for lane in ("inventory", "contracts", "coverage", "fuzz", "all", "cohort-union"):
+            invalid.append((SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy))
+        for profile in (None, True, "", "unknown", "full"):
+            invalid.append((SimpleNamespace(lane="mutation", tool_admission_profile=profile), scope, policy))
+        for field, value in (
+                ("schema_version", 8), ("schema_version", True), ("schema_version", 9.0),
+                ("admission_status", "admitted-four-owner-inventory-only"),
+                ("package", "time-domain"), ("source_file_count", 135), ("source_file_count", 136.0),
+                ("subjects", {}), ("subjects", tracking_policy["subjects"]),
+                ("native_test_invocations", 1), ("native_test_invocations", False),
+                ("campaigns_admitted", True), ("campaigns_admitted", 0),
+                ("mutation_equivalences", [{}]), ("mutation_equivalences", ()),
+                ("tool_admission_profile", "full")):
+            invalid.append((good, scope, {**policy, field: value}))
+        for field in ("schema_version", "admission_status", "package", "source_file_count", "subjects",
+                      "native_test_invocations", "campaigns_admitted", "mutation_equivalences",
+                      "tool_admission_profile"):
+            invalid.append((good, scope, {key: value for key, value in policy.items() if key != field}))
+        for args, candidate_scope, candidate_policy in invalid:
+            with self.subTest(args=args, scope=candidate_scope, policy=candidate_policy), \
+                    self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, candidate_scope, candidate_policy)
+
+    CHART_ERROR = ("{ let _ = (projection, enclose_labeled_scalars, "
+                   "FixtureChartProjection::enclosure_distance_seconds); FixtureChartError::Invariant }")
+
+    @classmethod
+    def chart_error_inventory_control(cls):
+        """Independent exact new listing-only role; no tool admission is run."""
+        scope, policy = cls.chart_inventory_control()
+        scope = MODULE.Scope(scope.package, scope.subjects,
+                             "tasks/s1.2-chart-inventory-admission-v2.json")
+        policy = {**policy, "schema_version": 10,
+                  "admission_status": "admitted-four-owner-chart-error-inventory-only",
+                  "mutation_error_values": {"chart_enclosure": [cls.CHART_ERROR]}}
+        return scope, policy
+
+    def test_chart_error_inventory_role_admits_exact_card_and_rejects_full_fallback(self):
+        scope, policy = self.chart_error_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+        for profile in ("full",):
+            with self.subTest(profile=profile), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane="mutation", tool_admission_profile=profile),
+                                         scope, {**policy, "tool_admission_profile": profile})
+
+    def test_chart_error_inventory_rejects_changed_role_and_typed_error_map(self):
+        scope, policy = self.chart_error_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        bad = [
+            (MODULE.Scope("time-domain", scope.subjects, scope.policy), policy),
+            (MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy), policy),
+            (MODULE.Scope(scope.package, scope.subjects[:1], scope.policy), policy),
+            (MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json"), policy),
+            (MODULE.Scope(scope.package, scope.subjects, "tasks/s1.2-chart-inventory-admission.json"), policy),
+        ]
+        for field, value in (("schema_version", 9), ("schema_version", True),
+                             ("source_file_count", 135), ("native_test_invocations", False),
+                             ("campaigns_admitted", 0), ("campaigns_admitted", True),
+                             ("admission_status", "admitted-four-owner-chart-inventory-only"),
+                             ("subjects", dict(scope.subjects[:1])),
+                             ("mutation_error_values", {}), ("mutation_error_values", None),
+                             ("mutation_error_values", {"chart_enclosure": self.CHART_ERROR}),
+                             ("mutation_error_values", {"chart_enclosure": [self.CHART_ERROR, self.CHART_ERROR]}),
+                             ("mutation_error_values", {"chart": [self.CHART_ERROR]})):
+            bad.append((scope, {**policy, field: value}))
+        for field in ("schema_version", "source_file_count", "native_test_invocations", "campaigns_admitted",
+                      "mutation_error_values", "admission_status", "subjects", "tool_admission_profile"):
+            bad.append((scope, {key: value for key, value in policy.items() if key != field}))
+        for candidate_scope, candidate_policy in bad:
+            with self.subTest(scope=candidate_scope, policy=candidate_policy), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, candidate_scope, candidate_policy)
+        for lane in ("inventory", "contracts", "coverage", "fuzz", "all", "cohort-union"):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+
+    def test_chart_error_listing_and_campaign_share_one_exact_argument(self):
+        card_scope, policy = self.chart_error_inventory_control()
+        scope = MODULE.Scope(card_scope.package, card_scope.subjects, "policy/time-core-analysis.json")
+        tools = Path("/sealed/tools"); calls = []
+        def run(label, command, _timeout):
+            name = label.removeprefix("mutation-enumeration:")
+            calls.append((name, command))
+            expected = ["--error", self.CHART_ERROR] if name == "chart_enclosure" else []
+            prefix = [str(tools / "cargo-mutants"), "mutants", "--package", "time-core", "--file", dict(scope.subjects)[name],
+                      "--test-workspace", "false", "--cap-lints", "false", "--jobs", "10",
+                      "--jobserver", "true", "--jobserver-tasks", "10", "--cargo-arg=--message-format=json"]
+            self.assertEqual(command, prefix + expected + ["--list", "--json"])
+            return json.dumps([{"name": name, "file": dict(scope.subjects)[name], "package": "time-core"}])
+        found = MODULE.enumerate_mutation_inventories(scope, dict(scope.subjects), policy, tools, run, {},
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=512, maximum_total=2048)
+        self.assertEqual(len(calls), 4)
+        for name, prefix in found.commands.items():
+            campaign = [*prefix, "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                        "--output", "/work/mutation/" + name]
+            MODULE.mutation_campaign_command(scope, tools, name, campaign, expected_jobs=10,
+                                             expected_message_format="json", policy=policy)
+            wrong = campaign.copy()
+            if name == "chart_enclosure": del wrong[wrong.index("--error"):wrong.index("--error") + 2]
+            else: wrong[wrong.index("--baseline"):wrong.index("--baseline")] = ["--error", self.CHART_ERROR]
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(scope, tools, name, wrong, expected_jobs=10,
+                                                 expected_message_format="json", policy=policy)
+
+    def test_chart_error_session_rejects_missing_or_substituted_args_before_native(self):
+        scope, policy = self.chart_error_inventory_control()
+        scope = MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json")
+        with self.stable_session() as session:
+            session.scope = scope; session.policy = policy
+            prefix = [str(session.tools / "cargo-mutants"), "mutants", "--package", "time-core",
+                      "--file", dict(scope.subjects)["chart_enclosure"], "--test-workspace", "false", "--cap-lints", "false",
+                      "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10", "--cargo-arg=--message-format=json"]
+            tail = ["--baseline", "run", "--build-timeout", "90", "--timeout", "60", "--output", "/work/mutation/chart_enclosure"]
+            success = {"exit_code": 0, "failure": None, "output": "synthetic complete result"}
+            for arguments in ([], ["--error", "FixtureChartError::Invariant"],
+                              ["--error", self.CHART_ERROR, "--error", self.CHART_ERROR]):
+                with self.subTest(arguments=arguments), patch.object(MODULE.RUNTIME, "run", return_value=success) as native:
+                    with self.assertRaises(MODULE.Incomplete):
+                        session.run("mutation-campaign:chart_enclosure", prefix + arguments + tail, 1,
+                                    mutation_subject="chart_enclosure")
+                    native.assert_not_called()
+            with patch.object(MODULE.RUNTIME, "run", return_value=success) as native:
+                self.assertEqual(session.run("mutation-campaign:chart_enclosure",
+                    prefix + ["--error", self.CHART_ERROR] + tail, 1, mutation_subject="chart_enclosure"), success)
+                native.assert_called_once()
+
+    def test_chart_error_map_is_strict_and_absence_preserves_legacy_scopes(self):
+        scope, policy = self.chart_error_inventory_control()
+        self.assertEqual(MODULE.CHART_ENCLOSURE_ERROR_VALUE, self.CHART_ERROR)
+        for name, filename in scope.subjects:
+            expected = ["--error", self.CHART_ERROR] if name == "chart_enclosure" else []
+            self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), expected)
+        self.assertEqual(MODULE.per_subject_mutation_error_args(SCOPE, dict(FILES)["clock"], {}), [])
+        wrong_scopes = [SCOPE, MODULE.Scope("other", scope.subjects, scope.policy),
+                        MODULE.Scope("time-core", scope.subjects, []),
+                        MODULE.Scope("time-core", scope.subjects, "tasks/other.json"),
+                        MODULE.Scope("time-core", (("other", dict(scope.subjects)["chart_enclosure"]),), scope.policy)]
+        for candidate in wrong_scopes:
+            with self.subTest(scope=candidate), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(candidate, dict(scope.subjects)["chart_enclosure"], policy)
+        class DictSubclass(dict): pass
+        class ListSubclass(list): pass
+        bad_maps = [None, [], "bad", {}, True, DictSubclass(policy["mutation_error_values"]),
+                    {"chart_enclosure": self.CHART_ERROR}, {"chart_enclosure": (self.CHART_ERROR,)},
+                    {"chart_enclosure": ListSubclass([self.CHART_ERROR])}, {"chart_enclosure": []},
+                    {"chart_enclosure": [True]}, {"chart_enclosure": [self.CHART_ERROR + " "]},
+                    {"chart_enclosure": [self.CHART_ERROR], "chart": [self.CHART_ERROR]}]
+        for values in bad_maps:
+            with self.subTest(values=values), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, dict(scope.subjects)["chart_enclosure"],
+                                                       {**policy, "mutation_error_values": values})
+        for package in (None, True, "time-domain"):
+            with self.subTest(package=package), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, dict(scope.subjects)["chart_enclosure"],
+                                                       {**policy, "package": package})
+        for filename in (None, True, "crates/time-core/src/other.rs", "/work/source/" + dict(scope.subjects)["chart_enclosure"]):
+            with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename, policy)
+
+    def test_chart_error_result_rederives_policy_and_inventory_cannot_run_campaign(self):
+        card_scope, policy = self.chart_error_inventory_control()
+        scope = MODULE.Scope(card_scope.package, card_scope.subjects, "policy/time-core-analysis.json")
+        tools = Path("/sealed/tools")
+        command = [str(tools / "cargo-mutants"), "mutants", "--package", "time-core", "--file",
+                   dict(scope.subjects)["chart_enclosure"], "--test-workspace", "false", "--cap-lints", "false",
+                   "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
+                   "--error", self.CHART_ERROR, "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                   "--output", "/work/mutation/chart_enclosure"]
+        result = {"exit_code": 0, "failure": None, "output": "synthetic native observation"}
+        self.assertIs(MODULE.mutation_campaign_result(scope, tools, "chart_enclosure", command, result,
+                      expected_jobs=10, expected_message_format="json", policy=policy), result)
+        for candidate in ({key: value for key, value in policy.items() if key != "mutation_error_values"},
+                          {**policy, "mutation_error_values": {"chart_enclosure": [self.CHART_ERROR + " "]}}):
+            with self.subTest(policy=candidate), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_result(scope, tools, "chart_enclosure", command, result,
+                    expected_jobs=10, expected_message_format="json", policy=candidate)
+        with self.assertRaisesRegex(MODULE.Incomplete, "listing only"):
+            MODULE.mutation_campaign_command(card_scope, tools, "chart_enclosure", command,
+                expected_jobs=10, expected_message_format="json", policy=policy)
+        wrong = command.copy(); wrong[wrong.index("--file") + 1] = dict(scope.subjects)["enclosure"]
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_campaign_command(scope, tools, "chart_enclosure", wrong,
+                expected_jobs=10, expected_message_format="json", policy=policy)
+
     @contextmanager
     def stable_session(self):
         """Real private input trees; only external product/native operations are stubbed."""
@@ -461,9 +753,9 @@ class EvidenceTests(unittest.TestCase):
                 self.assertEqual(session.run("mutation-campaign:clock", ["fixture"], 1,
                                              mutation_subject="clock"), "checked outcome")
                 admission.assert_called_once_with(SCOPE, session.tools, "clock", ["fixture"],
-                                                  expected_jobs=2, expected_message_format="json")
+                                                  expected_jobs=2, expected_message_format="json", policy=session.policy)
                 checked_result.assert_called_once_with(SCOPE, session.tools, "clock", ["fixture"], result,
-                                                       expected_jobs=2, expected_message_format="json")
+                                                       expected_jobs=2, expected_message_format="json", policy=session.policy)
                 self.assertEqual(run.call_args.kwargs["cargo_target_mode"], "worker")
                 self.assertEqual(run.call_args.kwargs["process_limit"], 128)
                 self.assertEqual(run.call_args.kwargs["build_jobs"], 1)
@@ -475,7 +767,7 @@ class EvidenceTests(unittest.TestCase):
                 self.assertEqual(session.run("mutation-campaign:clock", ["fixture"], 1,
                                              mutation_subject="clock"), "checked outcome")
                 admission.assert_called_once_with(SCOPE, session.tools, "clock", ["fixture"],
-                                                  expected_jobs=2, expected_message_format="json")
+                                                  expected_jobs=2, expected_message_format="json", policy=session.policy)
                 self.assertEqual(run.call_args.kwargs["process_limit"], 512)
                 self.assertEqual(run.call_args.kwargs["cargo_target_mode"], "worker")
                 self.assertEqual(run.call_args.kwargs["build_jobs"], 1)
@@ -575,13 +867,19 @@ class EvidenceTests(unittest.TestCase):
             session.report = {"lanes": []}
             success = {"exit_code": 0, "failure": None, "output": raw, "command": ["fixture"]}
             with patch.object(MODULE.RUNTIME, "run", return_value=success):
-                actual = session.run("external-adaptive-legal-execution", ["fixture"], 1)
-                self.assertEqual(actual, raw)
-                self.assertEqual(contracts.contract_counts(actual), expected)
-                self.assertEqual(session.check.call_count, 2)
-                self.assertEqual(session.report["lanes"][-1]["output"], raw)
-                self.assertEqual(json.loads((root / "progress.json").read_text())["lanes"][-1]["output"], raw)
-                for label in ("ordinary-control", "external-adaptive-legal-execution-extra"):
+                # Transport preserves bytes; each contract owner separately
+                # interprets its own record. This payload is the existing
+                # adaptive owner control, not a chart semantic observation.
+                for index, label in enumerate(("external-adaptive-legal-execution",
+                                               "external-chart-legal-execution"), 1):
+                    actual = session.run(label, ["fixture"], 1)
+                    self.assertEqual(actual, raw)
+                    self.assertEqual(contracts.contract_counts(actual), expected)
+                    self.assertEqual(session.check.call_count, 2 * index)
+                    self.assertEqual(session.report["lanes"][-1]["output"], raw)
+                    self.assertEqual(json.loads((root / "progress.json").read_text())["lanes"][-1]["output"], raw)
+                for label in ("ordinary-control", "external-adaptive-legal-execution-extra",
+                              "external-chart-legal-execution-extra"):
                     with self.subTest(label=label):
                         self.assertEqual(session.run(label, ["fixture"], 1), raw.strip())
             for exit_code, failure in ((1, None), (0, "deadline")):
@@ -590,6 +888,8 @@ class EvidenceTests(unittest.TestCase):
                         patch.object(MODULE.RUNTIME, "run", return_value=rejected):
                     with self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
                         session.run("external-adaptive-legal-execution", ["fixture"], 1)
+                    with self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
+                        session.run("external-chart-legal-execution", ["fixture"], 1)
 
     def test_mutation_listing_admits_only_exact_warning_and_complete_strict_json(self):
         warning = (" WARN --jobs=12 is probably too high and may overload your machine: each job runs a separate "

@@ -103,6 +103,11 @@ and retains its portable Core continuation, broad Windows execution stop,
 separate fuzz no-retry hold and earlier adoption/review receipts. Source research
 and this documentation amendment establish no implementation or native result.
 
+After the pull, the coordinator reconciles the refined W11 and ST-W cases at the
+[next task checkpoint](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and records their dispositions in the existing tasks before dependent work.
+The two source-only cards are not recorded as executed by this handoff.
+
 **Microsoft Windows 11 integration research, 3 November 2026:** the
 [source review](plans/windows11-integration.md) records primary Microsoft evidence,
 project-specific adaptations, compatibility limits and distinguishing checks.

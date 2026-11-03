@@ -459,3 +459,28 @@ Windows execution stop, separate fuzz no-retry hold, storage-experiment pause,
 DoQ-only policy, one complete MSI, mandatory-state separation and UI-M0 deferrals
 remain unchanged. No implementation, native test, provider or dependency admission
 is claimed by these routing changes.
+
+### 6.6 Primary development coordinator disposition — 3 November 2026
+
+The primary P0–P7 coordinator has read the imported ST-W queue and §6.5 second-
+pass refinements. The completed bounded S151 Linux checkpoint and next pure
+fitted-tracking S152 journey use neither persistence nor a native storage/provider
+adapter. Preserve that product priority; source-only readiness does not start a
+storage experiment or create a new prerequisite for this Core slice.
+
+| Assignment | Owner and disposition | Next dependent action |
+| --- | --- | --- |
+| ST-W01 | Storage lead with platform/security review; Ready source-only, unexecuted | Select one construction/provider/build/account/profile row, outcome table and ownership/reconciliation map; include ReplaceFileW 1175/1176/1177 and backup/no-backup outcomes before cleanup/retry. No provider probe is authorized. |
+| ST-W02 | Storage/model QA; planned after relevant frozen ST-W01 contract and implementation admission | Separate owner usability from operation outcome; model issued/live/durable/acknowledged state and recovery failures. |
+| ST-W03 | Windows filesystem/lifecycle; phase-gated, native held | Carry actual directory/object authority, service-managed lifetime and final MSI account/SID/ACL cases into P3/S3.3/P6 before destructive effects. |
+| ST-W04 | CNG/crypto/platform; construction-gated, native held | Freeze each operation's status/parameters/lengths and no-UI/refusal behavior; VBS actual-key claims remain conditional and introduce no root or role. |
+| ST-W05 | Process-policy/platform/service-lifecycle; phase-gated, native held | Preserve startup order/status and healthy/refused cases; side-channel fields and RedirectionGuard remain candidates until their named evidence/decision gate. |
+| ST-W06 | IPC/platform/storage; completion-contract-gated, native held | Preserve stop-new-work, publication revocation, actual native completion and custody/reconciliation before related P3/storage integration. |
+| ST-W07 | Secret-memory/diagnostics/privacy; reached-path-gated, native held | Add synthetic-sentinel WER/LocalDumps/debugger artifact cases and allocation/locking/wipe lifetime; coordinate ETW/session/retention with W11-W08. |
+
+ST-W03–07 apply at their named shared boundaries even before optional caching.
+Their existing ST-T/CHECK/DNS-C owners and acceptance identities are preserved.
+The mandatory-state owner stays separate; DoQ-only and one complete MSI policies,
+UI-M0 deferrals, Windows stop, separate fuzz no-retry hold and storage pause are
+unchanged. No source card, provider/build/account/profile row or conditional
+reserve has been executed or selected by this acknowledgement.

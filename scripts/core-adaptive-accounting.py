@@ -6,7 +6,9 @@ launches no tools, performs no I/O, and makes no arbitrary-mutant work claim.
 """
 from __future__ import annotations
 
+import hashlib
 import re
+from typing import NamedTuple
 
 
 class Incomplete(ValueError):
@@ -63,6 +65,49 @@ _RAW_FIELDS = {
 }
 _RAW_PREFIX = "combination::lifecycle::counter_tests::"
 _DECIMAL = r"(0|[1-9][0-9]{0,19})"
+_RAW_EVENT_CASE = "lifecycle_raw_event_validation"
+_RAW_EVENT_TEST = _RAW_PREFIX + _RAW_EVENT_CASE
+
+
+class CaughtRawEventZeroPrefix(NamedTuple):
+    """Text-bound structural evidence; the receiver must verify native Caught."""
+
+    output_sha256: str
+
+
+def caught_raw_event_zero_prefix(output: object) -> CaughtRawEventZeroPrefix | None:
+    """Recognize the one named raw-event setup failure without claiming success.
+
+    Inputs are complete, bounded native Test text. A token requires its exact
+    zero row, failed test, redacted error and consistent failure footer. The
+    caller separately establishes a real Caught outcome and Test exit 101.
+    """
+    if type(output) is not str or len(output) > MAX_OUTPUT_CHARACTERS:
+        raise Incomplete("Caught raw-event prefix requires bounded Test text.")
+    if not output.endswith("\n"):
+        return None
+    line = ("test " + _RAW_EVENT_TEST + " ... " + _RAW
+            + " case=" + _RAW_EVENT_CASE + " validations=0")
+    marker = r"(?m)^" + re.escape(line) + r"\r?\nFAILED\r?$"
+    if len(list(re.finditer(marker, output))) != 1:
+        return None
+    header = "---- " + _RAW_EVENT_TEST + " stdout ----"
+    failures = re.findall(
+        r"(?m)^" + re.escape(header)
+        + r"\r?\nError: FixtureCombinationLifecycleError \{ \.\. \}\r?\n\r?\n(?:\r?\n)?(?=---- |failures:)",
+        output,
+    )
+    footers = re.findall(
+        r"(?m)^failures:\r?\n(?:\r?\n)?((?:    [A-Za-z_][A-Za-z0-9_:]*\r?\n)+)"
+        r"\r?\ntest result: FAILED\. ([0-9]{1,3}) passed; ([0-9]{1,3}) failed; 0 ignored;",
+        output,
+    )
+    if (len(failures) != 1 or not footers
+            or any(int(failed) != len(names.splitlines()) for names, _passed, failed in footers)
+            or sum(name.strip() == _RAW_EVENT_TEST for names, _passed, _failed in footers
+                   for name in names.splitlines()) != 1):
+        return None
+    return CaughtRawEventZeroPrefix(hashlib.sha256(output.encode("utf-8")).hexdigest())
 SOURCE_ONLY_TESTS = tuple("regression::adaptive_history::raw_minimum_guards::" + case for case in (
     "adaptive_raw_minimum_semantic_neighbors",
     "adaptive_combined_prefix_semantic_neighbors",
@@ -118,17 +163,19 @@ def _complete_calls() -> dict[str, int]:
     return total
 
 
-def source_work(calls: object, *, include_raw_minimum: bool = False) -> dict[str, int]:
+def source_work(calls: object, *, include_raw_minimum: bool = False,
+                event_fixture_reached: bool = False) -> dict[str, int]:
     """Project conservative canonical source work from admitted public attempts.
 
     The optional private tests are source-only, not observed attempts. Their
     genuine 25 appends, 29 observations and seven history constructors enter the
     same producer recurrence once. The genuine raw-event fixture is reserved
-    once if its first raw call was reached. Callback/predicate counts overlap
-    their respective validation calls.
+    once if its first raw call or an independently bound pre-validation setup
+    failure was reached. Callback/predicate counts overlap their respective
+    validation calls. The explicit fixture flag only increases the reservation.
     """
-    if type(include_raw_minimum) is not bool:
-        raise Incomplete("Adaptive raw-minimum reservation requires a Boolean scope.")
+    if type(include_raw_minimum) is not bool or type(event_fixture_reached) is not bool:
+        raise Incomplete("Adaptive source reservation requires Boolean scopes.")
     c = _limit_calls(calls)
     private_scope = int(include_raw_minimum)
     private_appends = 25 * private_scope
@@ -139,7 +186,7 @@ def source_work(calls: object, *, include_raw_minimum: bool = False) -> dict[str
     normalizations = appends + c["external_normalizations"]
     observations = c["adaptive_observations"] + private_observations
     histories = c["adaptive_histories"] + private_histories
-    event_fixture = int(c["raw_event_validations"] > 0)
+    event_fixture = int(c["raw_event_validations"] > 0 or event_fixture_reached)
     raw_minimum = 6 if include_raw_minimum else 0
     return {
         "charged_fit_work_upper": 62 * selections,
@@ -248,15 +295,21 @@ def external_legal_reservation() -> dict[str, int]:
             **{"adaptive.work." + key: value for key, value in source_work(calls).items()}}
 
 
-def package_counts(output: object, *, require_complete: bool = False) -> dict[str, object]:
+def package_counts(output: object, *, require_complete: bool = False,
+                   event_zero_prefix: CaughtRawEventZeroPrefix | None = None) -> dict[str, object]:
     """Parse named rows with source caps and distinguish partial from complete.
 
     Missing and partial observations never establish test outcomes. Lines with a
     marker require exact fields, a bounded complete newline and unique case ID.
-    Optional libtest prefixes must name the same case. An all-zero row is invalid.
+    Optional libtest prefixes must name the same case. An all-zero row requires
+    the exact bound failed raw-event context and never establishes completeness.
     """
     if type(output) is not str or len(output) > MAX_OUTPUT_CHARACTERS or type(require_complete) is not bool:
         raise Incomplete("Adaptive observations require bounded text and Boolean completeness.")
+    if event_zero_prefix is not None and (require_complete
+            or type(event_zero_prefix) is not CaughtRawEventZeroPrefix
+            or caught_raw_event_zero_prefix(output) != event_zero_prefix):
+        raise Incomplete("Raw-event zero prefix does not bind the failed Test text.")
     recorded: dict[str, tuple[int, ...]] = {}
     for line in output.splitlines(keepends=True):
         markers = [marker for marker in _ROW_FIELDS if marker in line]
@@ -282,7 +335,9 @@ def package_counts(output: object, *, require_complete: bool = False) -> dict[st
         if test is not None and test not in (case, qualified):
             raise Incomplete("Adaptive libtest prefix does not name its source case.")
         values = tuple(int(value) for value in match.groups()[2:])
-        if (len(values) != len(row[1]) or not any(values)
+        permitted_zero = (case == _RAW_EVENT_CASE and values == (0,)
+                          and event_zero_prefix is not None)
+        if (len(values) != len(row[1]) or (not any(values) and not permitted_zero)
                 or any(value > U64_MAX or value > maximum
                        for value, maximum in zip(values, row[1], strict=True))):
             raise Incomplete("Adaptive case has zero or exceeds its source ceiling.")
@@ -310,4 +365,7 @@ def package_counts(output: object, *, require_complete: bool = False) -> dict[st
             "adaptive_observed_calls": dict(calls) if complete else None,
             "adaptive_observation_scope": ("Named public-attempt records; external_normalizations=0 is the "
                                            "source-bound package scope, not observed telemetry."),
-            "adaptive_recorded_source_work_upper": source_work(calls, include_raw_minimum=True) if recorded else None}
+            "adaptive_recorded_source_work_upper": source_work(
+                calls, include_raw_minimum=True,
+                event_fixture_reached=recorded.get(_RAW_EVENT_CASE) == (0,),
+            ) if recorded else None}

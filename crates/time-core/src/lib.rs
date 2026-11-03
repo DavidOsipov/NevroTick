@@ -38,6 +38,12 @@ mod selection;
 /// Exact Q33 enclosure bridge between checked fixture projection and interval owners.
 mod projection_enclosure;
 
+/// Chart-specific geometry consumes numerical bounds and retains chart provenance.
+mod chart_enclosure;
+
+/// Complete same-chart interval admission with provenance-retaining selection.
+mod chart_batch;
+
 /// Borrowed common-context admission and selection of fixture projection enclosures.
 mod projected_batch;
 
@@ -51,14 +57,15 @@ pub use combination::{
     FixtureCombinationContextField, FixtureCombinationDenominatorField, FixtureCombinationError,
     FixtureCombinationKernelKind, FixtureCombinationKernelOutcome, FixtureCombinationScalarField,
     FixtureCombinationScalarIssue, FixtureCombinationStep, FixtureCombinedEstimate,
-    FixtureSupporterUncertainty, combine_fixture_supporters,
+    FixtureSupporterUncertainty, FixtureTrackingCombinationError, combine_fixture_supporters,
+    combine_fixture_tracking_supporters,
 };
 
 pub use combination::{
     FixtureCombinationLifecycleError, FixtureCombinationLifecycleStep, FixtureCombinationOutcome,
     FixtureCombinationParameterField, FixtureCombinationParameterIssue,
     FixtureCombinationParameters, FixtureCombinationSourceState, FixtureCombinationSourceStatus,
-    FixtureCombinationState, FixtureReachabilityUpdate,
+    FixtureCombinationState, FixtureReachabilityUpdate, FixtureTrackingLifecycleError,
 };
 
 pub use principal::{
@@ -77,6 +84,19 @@ pub use projection_enclosure::{
     enclose_fixture_projection,
 };
 
+pub use chart_enclosure::{FixtureChartInterval, enclose_fixture_chart_projection};
+
+pub use chart_batch::{
+    FixtureChartBatch, FixtureChartBatchError, FixtureChartMismatchKind, FixtureChartSelection,
+};
+
+pub use regression::{
+    FixtureAdaptiveChartView, FixtureAffineChart, FixtureChartBoundIssue,
+    FixtureChartBoundOperation, FixtureChartDomain, FixtureChartError, FixtureChartField,
+    FixtureChartFrames, FixtureChartIssue, FixtureChartOutcome, FixtureChartProjection,
+    FixtureChartStep, FixtureChartTracking,
+};
+
 pub use regression::{
     AdaptiveHistoryError, ArithmeticIssue, ArithmeticOperation, ArithmeticStage, FitError,
     FitInput, FitPoint, FixtureAdaptiveHistory, FixtureAdaptiveHistoryReport,
@@ -84,11 +104,14 @@ pub use regression::{
     FixtureNormalization, FixtureObservation, FixtureProjectionError, FixtureProjectionField,
     FixtureProjectionIssue, FixtureProjectionStep, FixtureProjectionTerms,
     FixtureResidualStatistics, FixtureRunsError, FixtureRunsSelection, FixtureRunsStage,
-    FixtureRunsStop, HistoryError, InsufficientFixture, NormalizationComponent, NormalizationError,
-    NormalizationStep, ObservationError, PointField, PointIssue, PreparedFixtureInput,
-    ResidualError, ResidualField, ResidualIssue, ResidualStep, fit, prepare_fixture_input,
-    project_fixture_adaptive_anchor, project_fixture_anchor, residual_statistics,
-    select_fixture_runs, select_fixture_runs_with_retained,
+    FixtureRunsStop, FixtureStandardError, FixtureStandardErrorField, FixtureStandardErrorStep,
+    FixtureStandardErrors, FixtureTrackingEstimate, FixtureTrackingField,
+    FixtureTrackingProjectionError, FixtureTrackingStep, HistoryError, InsufficientFixture,
+    NormalizationComponent, NormalizationError, NormalizationStep, ObservationError, PointField,
+    PointIssue, PreparedFixtureInput, ResidualError, ResidualField, ResidualIssue, ResidualStep,
+    fit, prepare_fixture_input, project_fixture_adaptive_anchor, project_fixture_adaptive_tracking,
+    project_fixture_anchor, residual_statistics, select_fixture_runs,
+    select_fixture_runs_with_retained,
 };
 
 pub use selection::{

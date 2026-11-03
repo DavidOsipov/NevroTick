@@ -1110,9 +1110,17 @@ outer workers, one inner Cargo/test slot and their admitted 512-task envelope.
 **Stable-core admission, 1 November:** the current time-core policy explicitly
 selects `tool_admission_profile = "stable-core"`. Its native contracts, coverage
 and mutation commands therefore require `--tool-admission-profile stable-core`.
-Full admission remains the API/CLI default and is retained for other consumers
-and the inventory-listing lane. Metadata-only cohort union uses its default flag
-and verifies the native receipts' profile against the plan-bound policy.
+Full admission remains the API/CLI default for other consumers. The current S151
+inventory card explicitly pins `stable-core` and its listing command also requires
+`--tool-admission-profile stable-core`. This exception admits only the canonical
+one-owner residuals discovery role, with zero native test invocations and no
+campaign. The card/profile, exact subjects and noncampaign fields must match
+before a Session starts; the unchanged command guard permits only `--list --json`.
+Stable compiler/vendor/source checks, separately sealed cargo-mutants bytes and
+final readmission remain required; unused nightly/optional payloads are neither
+mounted nor claimed verified by this profile. Metadata-only cohort union uses
+its default flag and verifies native receipts' profile against the plan-bound
+policy. This changes no compiler flags, tool versions or shared installation.
 
 The [later full-admission metadata optimization](tasks/s0.1-protocol-comparison.md#full-tool-admission-metadata-optimization--1-november-2026)
 keeps those scopes and mounts intact. Inventory names schedule terminal checks;

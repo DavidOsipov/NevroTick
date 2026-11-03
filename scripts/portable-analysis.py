@@ -33,6 +33,16 @@ MUTATION_LIST_WARNING = (
     "`cargo` process, and cargo may internally start many threads and subprocesses; values <= 8 "
     "are usually safe\n"
 )
+CHART_ENCLOSURE_ERROR_VALUE = (
+    "{ let _ = (projection, enclose_labeled_scalars, "
+    "FixtureChartProjection::enclosure_distance_seconds); FixtureChartError::Invariant }"
+)
+CHART_ERROR_SUBJECTS = (
+    ("chart", "crates/time-core/src/regression/chart.rs"),
+    ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
+    ("chart_enclosure", "crates/time-core/src/chart_enclosure.rs"),
+    ("enclosure", "crates/time-core/src/projection_enclosure.rs"),
+)
 
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
@@ -427,8 +437,35 @@ def mutation_message_format(policy: dict) -> str:
     return value
 
 
+def per_subject_mutation_error_args(scope: Scope, filename: str, policy: dict) -> list[str]:
+    """Permit one literal error replacement for its exact current chart owner.
+
+    An absent field preserves the legacy invocation. A present field admits no
+    arbitrary Rust expression, another package/file, or renamed policy role.
+    """
+    if not isinstance(policy, dict):
+        raise Incomplete("Mutation error policy is not a mapping.")
+    if "mutation_error_values" not in policy:
+        return []
+    values = policy["mutation_error_values"]
+    if (type(scope) is not Scope or type(scope.package) is not str or scope.package != "time-core"
+            or type(policy.get("package")) is not str or policy["package"] != "time-core"
+            or type(scope.subjects) is not tuple or scope.subjects != CHART_ERROR_SUBJECTS
+            or type(scope.policy) is not str or scope.policy not in {"policy/time-core-analysis.json",
+                                    "tasks/s1.2-chart-inventory-admission-v2.json"}
+            or type(filename) is not str or filename not in dict(CHART_ERROR_SUBJECTS).values()
+            or type(values) is not dict or set(values) != {"chart_enclosure"}
+            or type(values["chart_enclosure"]) is not list or len(values["chart_enclosure"]) != 1
+            or type(values["chart_enclosure"][0]) is not str
+            or values["chart_enclosure"][0] != CHART_ENCLOSURE_ERROR_VALUE):
+        raise Incomplete("Mutation error values differ from the exact chart-enclosure scope and expression.")
+    return (["--error", CHART_ENCLOSURE_ERROR_VALUE]
+            if filename == dict(CHART_ERROR_SUBJECTS)["chart_enclosure"] else [])
+
+
 def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: list,
-                              *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human") -> None:
+                              *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human",
+                              policy=None) -> None:
     """Reject command substitution before a mutation subprocess may be launched."""
     jobs = mutation_jobs({"mutation_jobs": expected_jobs})
     message_format = mutation_message_format({"mutation_message_format": expected_message_format})
@@ -438,6 +475,9 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
                 "--jobserver", "true", "--jobserver-tasks", str(jobs)]
     if message_format == "json":
         expected.append("--cargo-arg=--message-format=json")
+    expected.extend(per_subject_mutation_error_args(scope, filename, {} if policy is None else policy))
+    if policy is not None and "mutation_error_values" in policy and scope.policy != "policy/time-core-analysis.json":
+        raise Incomplete("The chart error inventory card admits listing only, never a campaign.")
     expected.extend(["--baseline", "run", "--build-timeout", "90", "--timeout", "60",
                      "--output", "/work/mutation/" + subject])
     if command != expected:
@@ -445,14 +485,15 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
 
 
 def mutation_campaign_result(scope: Scope, tools: Path, subject: str, command: list, result: dict,
-                             *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human") -> dict:
+                             *, expected_jobs=RUNTIME.MAX_JOBS, expected_message_format="human",
+                             policy=None) -> dict:
     """Retain provisional native 0/2 only for complete-report reconciliation.
 
     Exit 2 is never a command success. Setup/errors/baseline/timeout/signal
     statuses remain immediate incomplete results.
     """
     mutation_campaign_command(scope, tools, subject, command, expected_jobs=expected_jobs,
-                              expected_message_format=expected_message_format)
+                              expected_message_format=expected_message_format, policy=policy)
     if (not isinstance(result, dict) or not {"exit_code", "failure", "output"} <= result.keys()
             or not isinstance(result["output"], str) or result["failure"] is not None
             or type(result.get("exit_code")) is not int or result["exit_code"] not in (0, 2)):
@@ -661,6 +702,7 @@ def enumerate_mutation_inventories(scope, subjects, policy, tools, run, report, 
                   "--jobserver", "true", "--jobserver-tasks", str(workers)]
         if message_format == "json":
             common.append("--cargo-arg=--message-format=json")
+        common.extend(per_subject_mutation_error_args(scope, filename, policy))
         commands[name] = common
         listed = run("mutation-enumeration:" + name, [*common, "--list", "--json"],
                      remaining_timeout(deadline, 120))
@@ -769,6 +811,57 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == "tasks/s1.2-chart-inventory-admission-v2.json"
+            or policy.get("admission_status") == "admitted-four-owner-chart-error-inventory-only"):
+        facts = {"schema_version": 10, "admission_status": "admitted-four-owner-chart-error-inventory-only",
+                 "package": "time-core", "source_file_count": 136, "subjects": dict(CHART_ERROR_SUBJECTS),
+                 "mutation_equivalences": [], "native_test_invocations": 0, "campaigns_admitted": False}
+        if (profile != "stable-core" or scope.package != "time-core"
+                or scope.policy != "tasks/s1.2-chart-inventory-admission-v2.json"
+                or args.lane != "mutation" or scope.subjects != CHART_ERROR_SUBJECTS
+                or "mutation_error_values" not in policy
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("S154c error inventory requires its exact stable-core listing-only card.")
+        per_subject_mutation_error_args(scope, dict(CHART_ERROR_SUBJECTS)["chart_enclosure"], policy)
+        return profile
+    if scope.policy == "tasks/s1.3-tracking-inventory-admission.json":
+        # The wrapper has already admitted the strict, fresh, source-bound card.
+        # This second boundary permits only its exact listing role; the Session
+        # mutation lane selects the sealed cargo-mutants executable, while the
+        # wrapper admits only --list --json without mutation runtime options.
+        subjects = (("projection", "crates/time-core/src/regression/projection.rs"),
+                    ("combination", "crates/time-core/src/combination.rs"),
+                    ("combination_admission", "crates/time-core/src/combination/admission.rs"),
+                    ("combination_lifecycle", "crates/time-core/src/combination/lifecycle.rs"))
+        facts = {"schema_version": 8, "admission_status": "admitted-four-owner-inventory-only",
+                 "package": "time-core", "subjects": dict(subjects),
+                 "native_test_invocations": 0, "campaigns_admitted": False}
+        if (profile != "stable-core" or scope.package != "time-core"
+                or args.lane != "mutation" or scope.subjects != subjects
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("S152 inventory requires its exact stable-core listing role and noncampaign card.")
+        return profile
+    if (scope.policy == "tasks/s1.2-chart-inventory-admission.json"
+            or policy.get("admission_status") == "admitted-four-owner-chart-inventory-only"):
+        # A chart listing card cannot borrow the generic campaign-policy path or
+        # the full-profile fallback. The strict wrapper separately binds every
+        # source/tool byte, freshness and exact listing command before Session.
+        subjects = (("chart", "crates/time-core/src/regression/chart.rs"),
+                    ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
+                    ("chart_enclosure", "crates/time-core/src/chart_enclosure.rs"),
+                    ("enclosure", "crates/time-core/src/projection_enclosure.rs"))
+        facts = {"schema_version": 9, "admission_status": "admitted-four-owner-chart-inventory-only",
+                 "package": "time-core", "source_file_count": 136, "subjects": dict(subjects),
+                 "mutation_equivalences": [], "native_test_invocations": 0, "campaigns_admitted": False}
+        if (profile != "stable-core" or scope.package != "time-core"
+                or scope.policy != "tasks/s1.2-chart-inventory-admission.json"
+                or args.lane != "mutation" or scope.subjects != subjects
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("S154 inventory requires its exact stable-core chart listing role and noncampaign card.")
+        return profile
     if profile == "stable-core" and (
             scope.package != "time-core" or scope.policy != "policy/time-core-analysis.json"
             or args.lane not in {"contracts", "coverage", "mutation"}):
@@ -874,7 +967,7 @@ class Session:
                 raise Incomplete("Mutation campaign cannot borrow another execution mode or failure handler.")
             mutation_campaign_command(self.scope, self.tools, mutation_subject, command,
                                       expected_jobs=mutation_jobs(self.policy),
-                                      expected_message_format=mutation_message_format(self.policy))
+                                      expected_message_format=mutation_message_format(self.policy), policy=self.policy)
         compiler = compiler or self.stable
         night = self.base / self.admitted["policy"]["common_nightly"]
         if self.admission_profile == "stable-core" and (compiler != self.stable or extra_tools is not None):
@@ -914,7 +1007,7 @@ class Session:
         if mutation_subject is not None:
             return mutation_campaign_result(self.scope, self.tools, mutation_subject, command, result,
                                             expected_jobs=mutation_jobs(self.policy),
-                                            expected_message_format=mutation_message_format(self.policy))
+                                            expected_message_format=mutation_message_format(self.policy), policy=self.policy)
         if specimen:
             compiler_cause(result, specimen, command[command.index("--error-format=json") + 1])
             return result["output"]
@@ -926,7 +1019,8 @@ class Session:
                 raise Incomplete("Seeded control did not reach its intended actual failure.")
             return result["output"]
         if (label.startswith("mutation-enumeration:")
-                or label in ("external-legal-execution", "external-adaptive-legal-execution")):
+                or label in ("external-legal-execution", "external-adaptive-legal-execution",
+                             "external-chart-legal-execution")):
             # Strict counter/receipt records need the child's actual delimiters.
             # Admission still requires a successful native result before exposure.
             PRODUCT.ENV.require_ok(result)

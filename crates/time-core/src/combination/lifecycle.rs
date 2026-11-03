@@ -33,6 +33,10 @@
 //! existing checked reduction follow. All per-source/report loops are bounded
 //! by sixteen. Reports contain at most two parameter rules or one relationship
 //! rule and are discarded. These are source bounds, not measured CPU/RSS work.
+//!
+//! Modified by David Osipov with AI assistance, 3 November 2026: S152 adds a
+//! same-owner tracking mode with complete receiving before the shared scoring,
+//! penalty, credit, event and sole-commit behavior.
 
 use std::{fmt, num::NonZeroU64};
 
@@ -46,7 +50,8 @@ use crate::{
 
 use super::{
     AdmittedFixtureSupporters, FixtureCombinationError, FixtureCombinationScalarIssue,
-    FixtureCombinedEstimate, FixtureSupporterUncertainty, MAX_SUPPORTERS,
+    FixtureCombinedEstimate, FixtureSupporterUncertainty, FixtureTrackingCombinationError,
+    MAX_SUPPORTERS, RecordSource, TrackingSupporters, admit_lifecycle_source,
     admit_lifecycle_supporters, combine_lifecycle_supporters, uncertainty_issue,
 };
 
@@ -54,6 +59,80 @@ use super::{
 const MATURE_UPDATES: u8 = 8;
 /// Chrony's mature and outside-witness distant-source penalty.
 const DISTANT_PENALTY: u8 = 32;
+
+/// Additive tracking lifecycle failure without raw entries or state payloads.
+#[derive(PartialEq)]
+pub enum FixtureTrackingLifecycleError {
+    /// A complete original witness participant lacks its tracking attachment.
+    MissingTracking {
+        /// Canonical ascending witness ordinal, issued only in zero through fifteen.
+        index: usize,
+    },
+    /// Preserve the real checked principal, compatibility or reduction failure.
+    Lifecycle {
+        /// Actual bounded cause from the existing transactional lifecycle owner.
+        source: FixtureCombinationLifecycleError,
+    },
+}
+
+impl fmt::Debug for FixtureTrackingLifecycleError {
+    /// Reveal only the type without entries, labels, parameters or prior state.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("FixtureTrackingLifecycleError { .. }")
+    }
+}
+
+impl fmt::Display for FixtureTrackingLifecycleError {
+    /// Emit a fixed bounded code without formatting numerical or source payloads.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingTracking { .. } => {
+                formatter.write_str("fixture tracking missing metadata")
+            }
+            Self::Lifecycle { .. } => formatter.write_str("fixture tracking lifecycle failure"),
+        }
+    }
+}
+
+impl std::error::Error for FixtureTrackingLifecycleError {
+    /// Borrow the actual delegated lifecycle cause without allocation or effects.
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Lifecycle { source } => Some(source),
+            Self::MissingTracking { .. } => None,
+        }
+    }
+}
+
+impl From<FixtureCombinationLifecycleError> for FixtureTrackingLifecycleError {
+    /// Preserve an actual legacy-owner cause without interpreting or changing state.
+    fn from(source: FixtureCombinationLifecycleError) -> Self {
+        Self::Lifecycle { source }
+    }
+}
+
+impl From<FixtureTrackingCombinationError> for FixtureTrackingLifecycleError {
+    /// Preserve missing canonical ordinal or the exact existing combination cause.
+    fn from(error: FixtureTrackingCombinationError) -> Self {
+        match error {
+            FixtureTrackingCombinationError::MissingTracking { index } => {
+                Self::MissingTracking { index }
+            }
+            FixtureTrackingCombinationError::Combination { source } => Self::Lifecycle {
+                source: FixtureCombinationLifecycleError::Combination { source },
+            },
+        }
+    }
+}
+
+/// Closed per-call metadata source; neither mode resets lifecycle state.
+#[derive(Clone, Copy)]
+enum SupporterMode<'input, 'entry> {
+    /// Borrow existing explicit uncertainties and preserve anchor-phase semantics.
+    Legacy(&'input [FixtureSupporterUncertainty<'entry>]),
+    /// Derive complete fitted tracking only after the genuine staged decision.
+    Tracking,
+}
 
 /// Explicit uncalibrated fixture parameter whose constructor rejected input.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1188,8 +1267,35 @@ impl FixtureCombinationState {
         strata: &[FixturePrincipalStratum],
         uncertainties: &[FixtureSupporterUncertainty<'_>],
     ) -> Result<FixtureCombinationOutcome<'batch>, FixtureCombinationLifecycleError> {
-        if strata.len() > MAX_SUPPORTERS || uncertainties.len() > MAX_SUPPORTERS {
-            return Err(FixtureCombinationLifecycleError::CapacityExceeded);
+        self.advance_mode(batch, strata, SupporterMode::Legacy(uncertainties))
+            .map_err(|error| match error {
+                FixtureTrackingLifecycleError::Lifecycle { source } => source,
+                // Legacy mode never derives attachments; keep contradictory state closed.
+                FixtureTrackingLifecycleError::MissingTracking { .. } => {
+                    FixtureCombinationLifecycleError::Invariant
+                }
+            })
+    }
+
+    /// Stage one original transaction under a single explicit metadata source.
+    ///
+    /// The derived holder lives only inside the receiving/reduction block and
+    /// drops before the genuine decision moves into the output. Complete witness
+    /// metadata precedes scoring/filtering. Existing outside-witness resets remain;
+    /// only ready decisions evaluate compatibility, countdown and new emissions.
+    /// Every failure leaves the entire original owner unchanged.
+    /// # Errors
+    /// Preserve the first capacity, principal, metadata, compatibility or commit guard.
+    fn advance_mode<'batch>(
+        &mut self,
+        batch: &'batch FixtureProjectedBatch<'_>,
+        strata: &[FixturePrincipalStratum],
+        mode: SupporterMode<'_, '_>,
+    ) -> Result<FixtureCombinationOutcome<'batch>, FixtureTrackingLifecycleError> {
+        if strata.len() > MAX_SUPPORTERS
+            || matches!(mode, SupporterMode::Legacy(records) if records.len() > MAX_SUPPORTERS)
+        {
+            return Err(FixtureCombinationLifecycleError::CapacityExceeded.into());
         }
         let previous_principal = self.inner.principal.principal();
         let previous_rounds = self.inner.emitted_rounds;
@@ -1199,8 +1305,22 @@ impl FixtureCombinationState {
             .advance(batch, strata)
             .map_err(|source| FixtureCombinationLifecycleError::Principal { source })?;
         let (combined, round, statuses) = {
-            let admitted = admit_lifecycle_supporters(&decision, uncertainties)
-                .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
+            let tracking = match mode {
+                SupporterMode::Legacy(_) => None,
+                SupporterMode::Tracking => Some(TrackingSupporters::from_decision(&decision)?),
+            };
+            let admitted = match mode {
+                SupporterMode::Legacy(records) => admit_lifecycle_supporters(&decision, records),
+                SupporterMode::Tracking => admit_lifecycle_source(
+                    &decision,
+                    RecordSource::Tracking(
+                        tracking
+                            .as_ref()
+                            .ok_or(FixtureCombinationLifecycleError::Invariant)?,
+                    ),
+                ),
+            }
+            .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
             let mut statuses = prepare_scoring(&mut staged, &decision)?;
             if decision.kind() == FixturePrincipalOutcomeKind::ReferenceReady {
                 if decision.principal_label() != previous_principal {
@@ -1229,6 +1349,24 @@ impl FixtureCombinationState {
         )?;
         self.inner = staged;
         Ok(outcome)
+    }
+
+    /// Advance using tracking derived only from the genuine batch's actual entries.
+    ///
+    /// No metadata override or detached report is accepted. Every original
+    /// witnessed attachment is admitted before filtering, including a later-excluded
+    /// participant and retained decisions. Shared principal credit, outside-witness
+    /// resets and ready-only compatibility/countdown behavior remain unchanged.
+    /// Only the final checked outcome commits state; no clock or network effect occurs.
+    /// # Errors
+    /// Preserve the first missing attachment or actual staged lifecycle failure;
+    /// rejection leaves the complete owner and supplied batch/strata unchanged.
+    pub fn advance_tracking<'batch>(
+        &mut self,
+        batch: &'batch FixtureProjectedBatch<'_>,
+        strata: &[FixturePrincipalStratum],
+    ) -> Result<FixtureCombinationOutcome<'batch>, FixtureTrackingLifecycleError> {
+        self.advance_mode(batch, strata, SupporterMode::Tracking)
     }
 
     /// Copy this fixture instance's committed emission count without consuming it.

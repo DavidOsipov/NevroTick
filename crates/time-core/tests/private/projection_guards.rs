@@ -406,3 +406,277 @@ fn closed_errors_preserve_bounded_formatting_and_actual_typed_sources() -> io::R
     }
     Ok(())
 }
+
+/// Bounded raw S152 checks; no checked history or tracking payload is forged.
+mod fitted_tracking_raw_controls {
+    use std::error::Error;
+
+    use garde::Validate;
+
+    use super::super::{
+        ArithmeticOperation, ArithmeticStage, FitError, FixtureProjectionError,
+        FixtureProjectionIssue, FixtureTrackingField, FixtureTrackingProjectionError,
+        FixtureTrackingStep, TrackingCandidate, TrackingSkewCandidate, admit_tracking_skew,
+        term_issue, tracking_arithmetic, tracking_issue,
+    };
+    use crate::{ArithmeticIssue, FixtureStandardError, FixtureStandardErrorStep};
+
+    /// Form one raw four-scalar candidate; this mints no checked output.
+    fn candidate(field: FixtureTrackingField, value: f64) -> TrackingCandidate {
+        TrackingCandidate {
+            phase: if field == FixtureTrackingField::Phase {
+                value
+            } else {
+                1.0
+            },
+            phase_sd: if field == FixtureTrackingField::PhaseStandardDeviation {
+                value
+            } else {
+                1.0
+            },
+            rate_sd: if field == FixtureTrackingField::RateStandardDeviation {
+                value
+            } else {
+                1.0
+            },
+            skew: if field == FixtureTrackingField::TrackingSkew {
+                value
+            } else {
+                1.0
+            },
+        }
+    }
+
+    /// Raw skew admission preserves fixed issue priority and supported bits.
+    /// # Panics
+    /// Reject a failed Garde rule, wrong typed issue or changed legal bit pattern.
+    #[test]
+    fn raw_skew_uses_mandatory_rule_and_preserves_legal_bits() {
+        for (value, issue) in [
+            (f64::NAN, FixtureProjectionIssue::NonFinite),
+            (f64::INFINITY, FixtureProjectionIssue::NonFinite),
+            (f64::NEG_INFINITY, FixtureProjectionIssue::NonFinite),
+            (f64::from_bits(1), FixtureProjectionIssue::Subnormal),
+            (-f64::from_bits(1), FixtureProjectionIssue::Subnormal),
+            (-1.0, FixtureProjectionIssue::Negative),
+        ] {
+            assert_eq!(term_issue(value), Some(issue));
+            assert!(TrackingSkewCandidate { value }.validate().is_err());
+            assert_eq!(
+                admit_tracking_skew(value).map(f64::to_bits),
+                Err(FixtureTrackingProjectionError::InvalidScalar {
+                    field: FixtureTrackingField::TrackingSkew,
+                    issue,
+                })
+            );
+        }
+        for value in [0.0_f64, -0.0, f64::MIN_POSITIVE, 1.0, f64::MAX] {
+            assert_eq!(term_issue(value), None);
+            assert!(TrackingSkewCandidate { value }.validate().is_ok());
+            assert_eq!(
+                admit_tracking_skew(value).map(f64::to_bits),
+                Ok(value.to_bits())
+            );
+        }
+    }
+
+    /// Four-field checks admit signed phase while keeping SD/skew nonnegative.
+    /// # Panics
+    /// Reject any unsupported value, wrong role/first error or false legal rejection.
+    #[test]
+    fn final_tracking_candidate_preserves_field_domain_and_precedence() {
+        let fields = [
+            FixtureTrackingField::Phase,
+            FixtureTrackingField::PhaseStandardDeviation,
+            FixtureTrackingField::RateStandardDeviation,
+            FixtureTrackingField::TrackingSkew,
+        ];
+        for field in fields {
+            for (value, issue) in [
+                (f64::NAN, FixtureProjectionIssue::NonFinite),
+                (f64::INFINITY, FixtureProjectionIssue::NonFinite),
+                (f64::from_bits(1), FixtureProjectionIssue::Subnormal),
+                (-f64::from_bits(1), FixtureProjectionIssue::Subnormal),
+            ] {
+                assert_eq!(tracking_issue(value, field), Some(issue));
+                let raw = candidate(field, value);
+                assert!(raw.validate().is_err());
+                assert_eq!(
+                    raw.admit(),
+                    Err(FixtureTrackingProjectionError::InvalidScalar { field, issue })
+                );
+            }
+            if field != FixtureTrackingField::Phase {
+                let value = -1.0;
+                assert_eq!(
+                    tracking_issue(value, field),
+                    Some(FixtureProjectionIssue::Negative)
+                );
+                let raw = candidate(field, value);
+                assert!(raw.validate().is_err());
+                assert_eq!(
+                    raw.admit(),
+                    Err(FixtureTrackingProjectionError::InvalidScalar {
+                        field,
+                        issue: FixtureProjectionIssue::Negative,
+                    })
+                );
+            }
+        }
+        for (field, value) in [
+            (FixtureTrackingField::Phase, -1.0),
+            (FixtureTrackingField::Phase, -0.0),
+            (FixtureTrackingField::PhaseStandardDeviation, 0.0),
+            (FixtureTrackingField::TrackingSkew, f64::MIN_POSITIVE),
+        ] {
+            assert_eq!(tracking_issue(value, field), None);
+            let raw = candidate(field, value);
+            assert!(raw.validate().is_ok());
+            assert_eq!(raw.admit(), Ok(()));
+        }
+        let both_bad = TrackingCandidate {
+            phase: f64::NAN,
+            phase_sd: -1.0,
+            rate_sd: 1.0,
+            skew: 1.0,
+        };
+        assert_eq!(
+            both_bad.admit(),
+            Err(FixtureTrackingProjectionError::InvalidScalar {
+                field: FixtureTrackingField::Phase,
+                issue: FixtureProjectionIssue::NonFinite,
+            })
+        );
+    }
+
+    /// Every closed tracking step retains its one actual Response-stage primitive.
+    /// # Panics
+    /// Reject incorrect mapping, unsupported input/result or lost typed cause.
+    #[test]
+    fn closed_tracking_steps_preserve_operation_and_typed_failure() {
+        for (step, operation, expected) in [
+            (
+                FixtureTrackingStep::RateShift,
+                ArithmeticOperation::Multiply,
+                2.0_f64,
+            ),
+            (FixtureTrackingStep::Phase, ArithmeticOperation::Add, 3.0),
+            (
+                FixtureTrackingStep::StandardDeviationGrowth,
+                ArithmeticOperation::Multiply,
+                2.0,
+            ),
+            (
+                FixtureTrackingStep::StandardDeviation,
+                ArithmeticOperation::Add,
+                3.0,
+            ),
+        ] {
+            assert_eq!(step.operation(), operation);
+            assert_eq!(
+                tracking_arithmetic(1.0, 2.0, step).map(f64::to_bits),
+                Ok(expected.to_bits())
+            );
+            for (value, issue) in [
+                (f64::INFINITY, ArithmeticIssue::NonFinite),
+                (f64::from_bits(1), ArithmeticIssue::Subnormal),
+            ] {
+                assert_eq!(
+                    tracking_arithmetic(value, 1.0, step),
+                    Err(FixtureTrackingProjectionError::Arithmetic {
+                        step,
+                        source: FitError::Arithmetic {
+                            stage: ArithmeticStage::Response,
+                            operation,
+                            issue,
+                        },
+                    })
+                );
+            }
+        }
+        for (left, right, issue) in [
+            (f64::MIN_POSITIVE, 0.5, ArithmeticIssue::Subnormal),
+            (
+                f64::MIN_POSITIVE,
+                f64::MIN_POSITIVE,
+                ArithmeticIssue::ZeroUnderflow,
+            ),
+        ] {
+            assert_eq!(
+                tracking_arithmetic(left, right, FixtureTrackingStep::RateShift),
+                Err(FixtureTrackingProjectionError::Arithmetic {
+                    step: FixtureTrackingStep::RateShift,
+                    source: FitError::Arithmetic {
+                        stage: ArithmeticStage::Response,
+                        operation: ArithmeticOperation::Multiply,
+                        issue,
+                    },
+                })
+            );
+        }
+    }
+
+    /// Public errors preserve actual nested causes and bounded redacted formatting.
+    /// # Panics
+    /// Reject lost sources, invented sources or unbounded formatting.
+    #[test]
+    fn tracking_errors_preserve_nested_causes_and_bounded_formats() {
+        let projection = FixtureTrackingProjectionError::Projection {
+            source: FixtureProjectionError::BackwardProjection,
+        };
+        assert_eq!(
+            projection
+                .source()
+                .and_then(|source| source.downcast_ref::<FixtureProjectionError>()),
+            Some(&FixtureProjectionError::BackwardProjection)
+        );
+        let cause = FixtureStandardError::Arithmetic {
+            step: FixtureStandardErrorStep::RateVariance,
+            source: FitError::CountOutOfRange,
+        };
+        let standard = FixtureTrackingProjectionError::StandardErrors { source: cause };
+        assert_eq!(
+            standard
+                .source()
+                .and_then(|source| source.downcast_ref::<FixtureStandardError>()),
+            Some(&cause)
+        );
+        assert_eq!(
+            standard
+                .source()
+                .and_then(|source| source.source())
+                .and_then(|source| source.downcast_ref::<FitError>()),
+            Some(&FitError::CountOutOfRange)
+        );
+        let arithmetic = FixtureTrackingProjectionError::Arithmetic {
+            step: FixtureTrackingStep::Phase,
+            source: FitError::CountOutOfRange,
+        };
+        assert_eq!(
+            arithmetic
+                .source()
+                .and_then(|source| source.downcast_ref::<FitError>()),
+            Some(&FitError::CountOutOfRange)
+        );
+        let invalid = FixtureTrackingProjectionError::InvalidScalar {
+            field: FixtureTrackingField::Phase,
+            issue: FixtureProjectionIssue::NonFinite,
+        };
+        assert!(invalid.source().is_none());
+        assert!(
+            FixtureTrackingProjectionError::ValidationInvariant
+                .source()
+                .is_none()
+        );
+        for error in [
+            projection,
+            standard,
+            arithmetic,
+            invalid,
+            FixtureTrackingProjectionError::ValidationInvariant,
+        ] {
+            assert!(format!("{error}").len() < 192);
+            assert!(format!("{error:?}").len() < 256);
+        }
+    }
+}

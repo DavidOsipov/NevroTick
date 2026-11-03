@@ -1,8 +1,51 @@
 // SPDX-License-Identifier: GPL-2.0-only
+/*
+chronyd/chronyc - Programs for keeping computer clocks accurate.
+
+Original sourcestats.c notice:
+Copyright (C) Richard P. Curnow  1997-2003
+Copyright (C) Miroslav Lichvar  2011-2014, 2016-2018, 2021
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of version 2 of the GNU General Public License as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+/*
+chronyd/chronyc - Programs for keeping computer clocks accurate.
+
+Original sources.c notice:
+Copyright (C) Richard P. Curnow  1997-2003
+Copyright (C) Miroslav Lichvar  2011-2016, 2018, 2020-2025
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of version 2 of the GNU General Public License as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 //! Pure fixture-anchor projection from one borrowed committed history.
 //!
 //! Modified by David Osipov with AI assistance, 3 November 2026: the adaptive
 //! fitted-anchor adapter shares the original checked projection arithmetic.
+//! S152 adds same-owner fitted tracking under the retained Chrony 4.9
+//! `sourcestats.c` 709–714 and `sources.c` 922–924 contract. Tracking remains
+//! separate from the original raw-anchor center and observation authority.
 //!
 //! The history alone owns the held observation, latest instant and fitted rate.
 //! Asserted context and exact anchor time are checked before any arithmetic. Age
@@ -10,7 +53,7 @@
 //! to positive seconds. Phase reuses the exact Q33 conversion owner. Every
 //! binary64 primitive is separately evaluated and checked before another can hide
 //! a rejected intermediate. No fused multiply-add or fitted-intercept substitute
-//! is used. Supplied distance terms are fixture assertions, never confidence,
+//! is used for the anchor center. Supplied distance terms are fixture assertions, never confidence,
 //! authentication, freshness policy, integer enclosure or correction authority.
 //!
 //! Work and scalar scratch are constant. Projection borrows rather than copies
@@ -25,8 +68,9 @@ use time_domain::{DomainError, MonotonicDurationNs, MonotonicNs};
 
 use super::{
     ArithmeticOperation, ArithmeticStage, FitError, FixtureAdaptiveHistory, FixtureContext,
-    FixtureHistory, FixtureLine, FixtureObservation, NormalizationComponent, NormalizationError,
-    NormalizationStep, arithmetic,
+    FixtureHistory, FixtureLine, FixtureObservation, FixtureResidualStatistics,
+    FixtureStandardError, NormalizationComponent, NormalizationError, NormalizationStep,
+    arithmetic,
     normalization::{integer_to_f64, normalization_arithmetic, phase_seconds},
 };
 
@@ -158,6 +202,100 @@ impl std::error::Error for FixtureProjectionError {
     }
 }
 
+/// Scalar role in the tracking payload's declared final admission order.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureTrackingField {
+    /// Signed fitted phase at the common evaluation instant, in seconds.
+    Phase,
+    /// Nonnegative fitted phase standard deviation at that instant, in seconds.
+    PhaseStandardDeviation,
+    /// Nonnegative same-fit rate standard deviation, in seconds per second.
+    RateStandardDeviation,
+    /// Separately asserted nonnegative tracking skew, in seconds per second.
+    TrackingSkew,
+}
+
+/// One separate checked primitive in the fitted tracking transformation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureTrackingStep {
+    /// Multiply the same fitted rate by the fit-reference age.
+    RateShift,
+    /// Add the checked shift to the same fitted intercept.
+    Phase,
+    /// Multiply the same fitted rate SD by the fit-reference age.
+    StandardDeviationGrowth,
+    /// Add the checked growth to the fitted intercept SD.
+    StandardDeviation,
+}
+
+impl FixtureTrackingStep {
+    /// Select the sole actual operation for a closed step, without arithmetic.
+    const fn operation(self) -> ArithmeticOperation {
+        match self {
+            Self::RateShift | Self::StandardDeviationGrowth => ArithmeticOperation::Multiply,
+            Self::Phase | Self::StandardDeviation => ArithmeticOperation::Add,
+        }
+    }
+}
+
+/// Additive bounded tracking rejection, preserving the actual nested cause.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureTrackingProjectionError {
+    /// Existing anchor projection, duration or exact conversion failed.
+    Projection {
+        /// Original projection cause, including its time-domain or conversion source.
+        source: FixtureProjectionError,
+    },
+    /// The same selected report rejected its standard-error calculation.
+    StandardErrors {
+        /// Actual same-fit diagnostic failure, without an independently supplied report.
+        source: FixtureStandardError,
+    },
+    /// Shared supported-domain or field-specific sign admission rejected a scalar.
+    InvalidScalar {
+        /// Actual scalar role; signed phase has no nonnegative restriction.
+        field: FixtureTrackingField,
+        /// First finite/subnormal/sign failure, without raw numeric payload.
+        issue: FixtureProjectionIssue,
+    },
+    /// A separately evaluated fitted transformation failed before publication.
+    Arithmetic {
+        /// Closed role of the actual multiply or add operation.
+        step: FixtureTrackingStep,
+        /// Actual Response-stage shared arithmetic failure.
+        source: FitError,
+    },
+    /// Mandatory admission disagreed with its maintained scalar predicate.
+    ValidationInvariant,
+}
+
+impl fmt::Display for FixtureTrackingProjectionError {
+    /// Emit fixed bounded codes and typed fields, never numeric values or reports.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Projection { .. } => formatter.write_str("tracking projection failure"),
+            Self::StandardErrors { .. } => formatter.write_str("tracking standard-error failure"),
+            Self::InvalidScalar { field, issue } => {
+                write!(formatter, "tracking scalar {field:?}: {issue:?}")
+            }
+            Self::Arithmetic { step, .. } => write!(formatter, "tracking arithmetic {step:?}"),
+            Self::ValidationInvariant => formatter.write_str("tracking validation invariant"),
+        }
+    }
+}
+
+impl std::error::Error for FixtureTrackingProjectionError {
+    /// Borrow actual typed causes without allocation, relabelling or effects.
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Projection { source } => Some(source),
+            Self::StandardErrors { source } => Some(source),
+            Self::Arithmetic { source, .. } => Some(source),
+            Self::InvalidScalar { .. } | Self::ValidationInvariant => None,
+        }
+    }
+}
+
 /// Sole raw-term predicate; accepts both zero signs and preserves all input bits.
 ///
 /// Constant-work checks admit finite normal nonnegative values or either zero,
@@ -187,6 +325,105 @@ fn term_rule(value: &f64, (): &()) -> garde::Result {
     } else {
         Err(garde::Error::new("invalid fixture projection term"))
     }
+}
+
+/// Classify any raw tracking scalar, preserving the shared support precedence.
+///
+/// Phase alone is signed. Its negative normal branch remains admitted; no input
+/// bits are changed, and SD/skew keep the same nonnegative term rule.
+fn tracking_issue(value: f64, field: FixtureTrackingField) -> Option<FixtureProjectionIssue> {
+    match term_issue(value) {
+        Some(FixtureProjectionIssue::Negative) if field == FixtureTrackingField::Phase => None,
+        other => other,
+    }
+}
+
+/// Adapt the shared signed-phase predicate to mandatory borrowed Garde admission.
+/// # Errors
+/// Reject only unsupported raw phase with fixed text and no state change.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "garde custom rules borrow their raw field and context"
+)]
+fn tracking_phase_rule(value: &f64, (): &()) -> garde::Result {
+    if tracking_issue(*value, FixtureTrackingField::Phase).is_none() {
+        Ok(())
+    } else {
+        Err(garde::Error::new("invalid fixture tracking phase"))
+    }
+}
+
+/// One untrusted supplied tracking skew, separate from checked projection terms.
+#[derive(Validate)]
+struct TrackingSkewCandidate {
+    /// Both signed zeros are legal; the shared rule rejects unsupported negatives.
+    #[garde(custom(term_rule))]
+    value: f64,
+}
+
+/// Mandatorily admit one supplied skew without publishing a tracking association.
+/// # Errors
+/// Preserve the shared scalar cause, or a Garde/predicate disagreement.
+fn admit_tracking_skew(value: f64) -> Result<f64, FixtureTrackingProjectionError> {
+    let raw = TrackingSkewCandidate { value };
+    let validated = raw.validate();
+    if let Some(issue) = term_issue(value) {
+        return Err(FixtureTrackingProjectionError::InvalidScalar {
+            field: FixtureTrackingField::TrackingSkew,
+            issue,
+        });
+    }
+    validated.map_err(|_| FixtureTrackingProjectionError::ValidationInvariant)?;
+    Ok(value)
+}
+
+/// Four unpublished transformed scalars, with no report or projection authority.
+#[derive(Validate)]
+struct TrackingCandidate {
+    /// Signed common-time phase retains the shared finite normal-or-zero domain.
+    #[garde(custom(tracking_phase_rule))]
+    phase: f64,
+    /// Common-time phase SD retains the shared nonnegative supported domain.
+    #[garde(custom(term_rule))]
+    phase_sd: f64,
+    /// Same-fit rate SD retains the shared nonnegative supported domain.
+    #[garde(custom(term_rule))]
+    rate_sd: f64,
+    /// Supplied tracking skew retains the same nonnegative supported domain.
+    #[garde(custom(term_rule))]
+    skew: f64,
+}
+
+impl TrackingCandidate {
+    /// Admit all four raw scalars without minting or attaching any public result.
+    /// # Errors
+    /// Return the first shared phase/phase-SD/rate-SD/skew cause or Garde disagreement.
+    fn admit(&self) -> Result<(), FixtureTrackingProjectionError> {
+        let validated = self.validate();
+        for (value, field) in [
+            (self.phase, FixtureTrackingField::Phase),
+            (self.phase_sd, FixtureTrackingField::PhaseStandardDeviation),
+            (self.rate_sd, FixtureTrackingField::RateStandardDeviation),
+            (self.skew, FixtureTrackingField::TrackingSkew),
+        ] {
+            if let Some(issue) = tracking_issue(value, field) {
+                return Err(FixtureTrackingProjectionError::InvalidScalar { field, issue });
+            }
+        }
+        validated.map_err(|_| FixtureTrackingProjectionError::ValidationInvariant)
+    }
+}
+
+/// Execute one unfused tracking primitive under its fixed operation and stage.
+/// # Errors
+/// Preserve the actual checked arithmetic cause without publishing partial data.
+fn tracking_arithmetic(
+    left: f64,
+    right: f64,
+    step: FixtureTrackingStep,
+) -> Result<f64, FixtureTrackingProjectionError> {
+    arithmetic(left, right, step.operation(), ArithmeticStage::Response)
+        .map_err(|source| FixtureTrackingProjectionError::Arithmetic { step, source })
 }
 
 /// Three raw terms, each mandatorily covered by the same scalar rule owner.
@@ -312,6 +549,56 @@ impl FixtureProjectionTerms {
     }
 }
 
+/// Opaque fitted tracking values associated only by their enclosing projection.
+///
+/// No public constructor, mutation or reattachment path exists. Context, fitted
+/// rate and all instants remain owned by the original enclosing projection;
+/// copying these four values cannot bind them to another entry or grant credit.
+#[derive(Clone, Copy)]
+pub struct FixtureTrackingEstimate {
+    /// Checked signed fitted phase at the enclosing projection's evaluation time.
+    phase_seconds: f64,
+    /// Checked nonnegative same-fit phase SD aged to that same instant.
+    phase_standard_deviation_seconds: f64,
+    /// Checked nonnegative same-fit rate SD, unchanged by projection.
+    rate_standard_deviation_seconds_per_second: f64,
+    /// Separately checked supplied tracking skew, not projection growth skew.
+    tracking_skew_seconds_per_second: f64,
+}
+
+impl fmt::Debug for FixtureTrackingEstimate {
+    /// Reveal only the type without numeric payloads or contextual identifiers.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("FixtureTrackingEstimate { .. }")
+    }
+}
+
+impl FixtureTrackingEstimate {
+    /// Copy the same-fit phase at the enclosing evaluation instant without effects.
+    #[must_use]
+    pub const fn phase_seconds(&self) -> f64 {
+        self.phase_seconds
+    }
+
+    /// Copy the checked same-fit phase SD at that instant without recomputation.
+    #[must_use]
+    pub const fn phase_standard_deviation_seconds(&self) -> f64 {
+        self.phase_standard_deviation_seconds
+    }
+
+    /// Copy the original same-fit rate SD, retaining supported signed-zero bits.
+    #[must_use]
+    pub const fn rate_standard_deviation_seconds_per_second(&self) -> f64 {
+        self.rate_standard_deviation_seconds_per_second
+    }
+
+    /// Copy the independent supplied tracking skew without calibration or effects.
+    #[must_use]
+    pub const fn tracking_skew_seconds_per_second(&self) -> f64 {
+        self.tracking_skew_seconds_per_second
+    }
+}
+
 /// Immutable result from one actual held anchor and its same-history fitted rate.
 ///
 /// Observation and fit instants remain distinct from projection time; repeated
@@ -353,6 +640,8 @@ pub struct FixtureAnchorProjection {
     growth_seconds: f64,
     /// Checked half-delay plus dispersion, then growth, in seconds.
     distance_seconds: f64,
+    /// Optional same-owner fitted tracking; legacy producers leave it absent.
+    tracking: Option<FixtureTrackingEstimate>,
 }
 
 impl fmt::Debug for FixtureAnchorProjection {
@@ -443,6 +732,14 @@ impl FixtureAnchorProjection {
     pub const fn distance_seconds(&self) -> f64 {
         self.distance_seconds
     }
+
+    /// Borrow same-owner fitted tracking without supplying a rebinding operation.
+    ///
+    /// Absence identifies a legacy anchor-only projection, not zero uncertainty.
+    #[must_use]
+    pub const fn tracking(&self) -> Option<&FixtureTrackingEstimate> {
+        self.tracking.as_ref()
+    }
 }
 
 /// Convert only an exact checked elapsed difference, never an absolute reading.
@@ -500,6 +797,8 @@ struct ProjectionSource<'a> {
     fit_reference: MonotonicNs,
     /// This same report's checked terminal line; never an independently supplied fit.
     line: &'a FixtureLine,
+    /// Exact same report that owns the borrowed line, never a separately supplied fit.
+    statistics: &'a FixtureResidualStatistics,
 }
 
 impl<'a> ProjectionSource<'a> {
@@ -533,13 +832,15 @@ impl<'a> ProjectionSource<'a> {
         let latest_observed_at = history
             .reference()
             .ok_or(FixtureProjectionError::MissingAnchor)?;
+        let statistics = report.statistics();
         Ok(Self {
             context: expected_context,
             anchor,
             anchor_observed_at,
             latest_observed_at,
             fit_reference: report.reference(),
-            line: report.statistics().line(),
+            line: statistics.line(),
+            statistics,
         })
     }
 
@@ -575,13 +876,15 @@ impl<'a> ProjectionSource<'a> {
         let latest_observed_at = history
             .reference()
             .ok_or(FixtureProjectionError::MissingAnchor)?;
+        let statistics = report.selection().statistics();
         Ok(Self {
             context: expected_context,
             anchor,
             anchor_observed_at,
             latest_observed_at,
             fit_reference: report.reference(),
-            line: report.selection().statistics().line(),
+            line: statistics.line(),
+            statistics,
         })
     }
 
@@ -645,6 +948,7 @@ impl<'a> ProjectionSource<'a> {
             terms,
             growth_seconds,
             distance_seconds,
+            tracking: None,
         })
     }
 }
@@ -706,6 +1010,81 @@ pub fn project_fixture_adaptive_anchor(
 ) -> Result<FixtureAnchorProjection, FixtureProjectionError> {
     ProjectionSource::adaptive(history, expected_context, anchor_index, expected_anchor_at)?
         .project(at, terms)
+}
+
+/// Prepare same-owner raw-anchor and fitted tracking output at one explicit time.
+///
+/// The single whole-history capsule binds anchor, line and selected statistics.
+/// Complete original projection precedes supplied-skew admission, same-fit
+/// standard errors, fit-reference age, and four separate tracking primitives.
+/// Final mandatory scalar admission precedes the sole attachment publication.
+/// No detached projection/report pairing helper exists. The owner and all real
+/// observation instants stay unchanged; no fit, history scan or effect occurs.
+/// # Errors
+/// Preserve existing projection failures first, then skew, standard-error,
+/// reference duration/conversion, arithmetic and final scalar causes in order.
+pub fn project_fixture_adaptive_tracking(
+    history: &FixtureAdaptiveHistory,
+    expected_context: FixtureContext,
+    anchor_index: usize,
+    expected_anchor_at: MonotonicNs,
+    at: MonotonicNs,
+    projection_terms: FixtureProjectionTerms,
+    tracking_skew_seconds_per_second: f64,
+) -> Result<FixtureAnchorProjection, FixtureTrackingProjectionError> {
+    let source =
+        ProjectionSource::adaptive(history, expected_context, anchor_index, expected_anchor_at)
+            .map_err(|source| FixtureTrackingProjectionError::Projection { source })?;
+    let statistics = source.statistics;
+    let mut projection = source
+        .project(at, projection_terms)
+        .map_err(|source| FixtureTrackingProjectionError::Projection { source })?;
+    let skew = admit_tracking_skew(tracking_skew_seconds_per_second)?;
+    let errors = statistics
+        .standard_errors()
+        .map_err(|source| FixtureTrackingProjectionError::StandardErrors { source })?;
+    let elapsed = at
+        .duration_since(projection.fit_reference)
+        .map_err(|source| FixtureTrackingProjectionError::Projection {
+            source: FixtureProjectionError::Domain { source },
+        })?;
+    let elapsed = elapsed_seconds(elapsed)
+        .map_err(|source| FixtureTrackingProjectionError::Projection { source })?;
+    let shift = tracking_arithmetic(
+        projection.phase_rate_seconds_per_second,
+        elapsed,
+        FixtureTrackingStep::RateShift,
+    )?;
+    let phase = tracking_arithmetic(
+        statistics.line().phase_seconds(),
+        shift,
+        FixtureTrackingStep::Phase,
+    )?;
+    let rate_sd = errors.rate_standard_error_seconds_per_second();
+    let growth = tracking_arithmetic(
+        rate_sd,
+        elapsed,
+        FixtureTrackingStep::StandardDeviationGrowth,
+    )?;
+    let phase_sd = tracking_arithmetic(
+        errors.phase_standard_error_seconds(),
+        growth,
+        FixtureTrackingStep::StandardDeviation,
+    )?;
+    let candidate = TrackingCandidate {
+        phase,
+        phase_sd,
+        rate_sd,
+        skew,
+    };
+    candidate.admit()?;
+    projection.tracking = Some(FixtureTrackingEstimate {
+        phase_seconds: candidate.phase,
+        phase_standard_deviation_seconds: candidate.phase_sd,
+        rate_standard_deviation_seconds_per_second: candidate.rate_sd,
+        tracking_skew_seconds_per_second: candidate.skew,
+    });
+    Ok(projection)
 }
 
 /// Raw source-derived guards construct no checked history, terms or projection.

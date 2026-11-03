@@ -70,7 +70,7 @@ class AdaptiveContractTests(unittest.TestCase):
                 with self.assertRaises(MODULE.Incomplete):
                     MODULE.contract_counts(value)
 
-    def test_registry_has_eight_distinct_contract_diagnostics(self):
+    def test_registry_has_thirteen_distinct_contract_diagnostics(self):
         cases = MODULE.contract_examples()
         expected = {
             "adaptive_history_private_update": "E0451",
@@ -81,6 +81,11 @@ class AdaptiveContractTests(unittest.TestCase):
             "adaptive_fitted_row_escape": "E0515",
             "adaptive_decision_row_escape": "E0515",
             "adaptive_report_escape": "E0515",
+            "tracking_payload_private_update": "E0451",
+            "tracking_projection_override": "E0616",
+            "tracking_shared_mutation": "E0594",
+            "tracking_borrow_escape": "E0515",
+            "tracking_payload_default": "E0277",
         }
         self.assertEqual({name: item["code"] for name, item in cases.items()
                           if item["code"] is not None}, expected)
@@ -92,11 +97,46 @@ class AdaptiveContractTests(unittest.TestCase):
                 line = specimen["source"].splitlines()[specimen["line"] - 1]
                 self.assertNotIn("use time_core", line)
                 self.assertTrue(line.strip())
-                self.assertEqual(specimen["external_legal_neighbor"]["file"],
-                                 "crates/time-core/tests/adaptive_history.rs")
-                self.assertIn(specimen["external_legal_neighbor"]["test"],
-                              (ROOT / "crates/time-core/tests/adaptive_history.rs").read_text())
+                neighbor = specimen["external_legal_neighbor"]
+                expected_file = ("crates/time-core/tests/combination_lifecycle.rs"
+                                 if name.startswith("tracking_")
+                                 else "crates/time-core/tests/adaptive_history.rs")
+                self.assertEqual(neighbor["file"], expected_file)
+                self.assertIn("fn " + neighbor["test"] + "(",
+                              (ROOT / expected_file).read_text())
                 self.assertNotIn("unsafe", specimen["source"])
+
+    def test_tracking_probes_target_exact_operations_and_readonly_neighbor(self):
+        cases = MODULE.contract_examples()
+        expected = {
+            "tracking_payload_private_update": (
+                "let _=FixtureTrackingEstimate{..value};",
+                ["FixtureTrackingEstimate", "private"]),
+            "tracking_projection_override": (
+                "projection.tracking=Some(value);", ["tracking", "private"]),
+            "tracking_shared_mutation": (
+                "*projection.tracking().unwrap()=value;", ["cannot assign", "reference"]),
+            "tracking_borrow_escape": (
+                "projection.tracking().unwrap()",
+                ["projection", "cannot return value referencing"]),
+            "tracking_payload_default": (
+                "let _:FixtureTrackingEstimate=Default::default();",
+                ["FixtureTrackingEstimate", "Default"]),
+        }
+        for name, (expression, tokens) in expected.items():
+            with self.subTest(name=name):
+                specimen = cases[name]
+                self.assertEqual(
+                    specimen["source"].splitlines()[specimen["line"] - 1].strip(), expression)
+                self.assertEqual(specimen["tokens"], tokens)
+                self.assertEqual(specimen["external_legal_neighbor"], {
+                    "file": "crates/time-core/tests/combination_lifecycle.rs",
+                    "test": "distinct_same_context_histories_keep_their_own_tracking_payloads"})
+                self.assertIn(
+                    "use time_core::{FixtureAnchorProjection,FixtureTrackingEstimate};",
+                    specimen["source"])
+                self.assertNotIn("project_fixture_adaptive_tracking(", specimen["source"])
+                self.assertNotIn("adaptive_calls", specimen)
 
     def test_legal_source_contains_actual_receivers_and_fixed_record(self):
         specimen = MODULE.contract_examples()[MODULE.LEGAL_NAME]

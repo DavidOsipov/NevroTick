@@ -21,7 +21,7 @@
 *
 **********************************************************************
 */
-//! Private owner for fresh-line fixture residual diagnostics in seconds squared.
+//! Private owner for same-fit residual diagnostics and coefficient standard errors.
 //!
 //! Modified by David Osipov with AI assistance, 30 October 2026. The guarded
 //! operation sequence adapts selected Chrony 4.9 `RGR_FindBestRegression`
@@ -30,6 +30,10 @@
 //! chooses that function; the supplemental weighted-regression function has a
 //! different normalization association. See ../../PROVENANCE.md and the additive
 //! private source ledger for retained notices and deliberately omitted behavior.
+//! Modified by David Osipov with AI assistance, 3 November 2026, to retain the
+//! same-fit geometry and expose explicit coefficient standard errors from
+//! regress.c 309-311. Physical-time geometry is reconstructed from the existing
+//! normalized geometry; this adaptation claims no Chrony bit parity.
 //!
 //! The sole public producer fits one immutable input exactly once, then computes
 //! chronological residuals using that returned line and prepared input geometry.
@@ -39,6 +43,9 @@
 //! no input mutation, I/O or other external effects. Scalar validation owns only
 //! a bounded one-field temporary report. Fixed report fields are below 512 logical
 //! bytes; this is no allocation, RSS, native-resource or uncertainty qualification.
+//! The separate standard-error method uses eight checked binary primitives and
+//! two checked roots, then mandatory rate/phase admission. It retains no input
+//! borrow, performs no fit or scan, and does not alter the residual producer.
 
 use std::{fmt, num::NonZeroU64};
 
@@ -46,7 +53,7 @@ use garde::Validate;
 
 use super::{
     ArithmeticOperation, ArithmeticStage, BatchPoints, FitError, FitInput, FitPoint, FixtureLine,
-    arithmetic, fit, runs::TerminalCandidate,
+    Geometry, arithmetic, checked_square_root, fit, runs::TerminalCandidate,
 };
 
 /// Published algebraic diagnostic, with squared-second units for every variant.
@@ -174,6 +181,325 @@ impl std::error::Error for ResidualError {
     }
 }
 
+/// Coefficient diagnostic role; rate admission precedes phase admission.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureStandardErrorField {
+    /// Fitted rate standard error in seconds per second.
+    Rate,
+    /// Fitted phase standard error in seconds at the original zero reference.
+    Phase,
+}
+
+/// Separate checked primitive in the frozen same-fit standard-error sequence.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureStandardErrorStep {
+    /// Multiply the retained span by itself in the Geometry stage.
+    SpanSquare,
+    /// Multiply normalized centered spread by squared span in Geometry.
+    CenteredTimeSquare,
+    /// Divide residual scale by centered physical-time spread in Response.
+    RateVariance,
+    /// Take the checked rate-variance square root in Response.
+    RateSquareRoot,
+    /// Multiply normalized mean time by span in Geometry.
+    TimeMean,
+    /// Multiply mean physical time by rate standard error in Response.
+    PhaseMeanProduct,
+    /// Square the preceding phase contribution in Response.
+    PhaseMeanSquare,
+    /// Divide residual scale by inverse-divisor weight sum in Response.
+    PhaseBaseVariance,
+    /// Add the base variance and squared mean-time contribution in Response.
+    PhaseVariance,
+    /// Take the checked phase-variance square root in Response.
+    PhaseSquareRoot,
+}
+
+/// Bounded typed standard-error rejection without raw geometry or numeric values.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FixtureStandardError {
+    /// One binary primitive or root failed, retaining its actual typed cause.
+    Arithmetic {
+        /// Exact primitive in the new diagnostic sequence.
+        step: FixtureStandardErrorStep,
+        /// Actual shared arithmetic or square-root error, without relabelling.
+        source: FitError,
+    },
+    /// The shared output predicate rejected one final standard error.
+    InvalidStatistic {
+        /// Quantity role, carrying its distinct phase or rate units.
+        field: FixtureStandardErrorField,
+        /// Shared nonfinite/subnormal/negative predicate result.
+        issue: ResidualIssue,
+    },
+    /// Mandatory Garde disagreed with the shared output predicate.
+    ValidationInvariant {
+        /// Quantity whose private scalar construction rejected publication.
+        field: FixtureStandardErrorField,
+    },
+}
+
+impl fmt::Display for FixtureStandardError {
+    /// Format bounded role/step/cause metadata, never raw geometry or reports.
+    ///
+    /// Manually supplied public causes remain supported and use their existing
+    /// bounded typed formatting; no error text is parsed or stored.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Arithmetic { step, source } => {
+                write!(
+                    formatter,
+                    "fixture standard-error arithmetic {step:?}: {source}"
+                )
+            }
+            Self::InvalidStatistic { field, issue } => {
+                write!(
+                    formatter,
+                    "fixture standard-error statistic {field:?}: {issue:?}"
+                )
+            }
+            Self::ValidationInvariant { field } => {
+                write!(
+                    formatter,
+                    "fixture standard-error validation invariant {field:?}"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for FixtureStandardError {
+    /// Borrow every retained public cause unchanged; other variants have no cause.
+    ///
+    /// This total projection performs no arithmetic, allocation or filtering.
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Arithmetic { source, .. } => Some(source),
+            Self::InvalidStatistic { .. } | Self::ValidationInvariant { .. } => None,
+        }
+    }
+}
+
+/// Private finite normal nonnegative or signed-zero coefficient-error scalar.
+///
+/// Its containing result field owns the phase-seconds or rate-seconds/second
+/// meaning. Only mandatory shared Garde admission may publish a value.
+#[derive(Clone, Copy)]
+struct StandardErrorScalar {
+    /// Original admitted scalar bits, without normalization or a positive floor.
+    value: f64,
+}
+
+impl StandardErrorScalar {
+    /// Admit any raw scalar through the existing shared Garde rule and predicate.
+    ///
+    /// Field selects only the error's units/role; all raw binary64 values are
+    /// supported inputs to this check. Validation always runs before publishing
+    /// unchanged bits. One bounded one-field temporary report is discarded.
+    /// # Errors
+    /// Return `NonFinite`, `Subnormal` or `Negative` in shared predicate order, then
+    /// an otherwise unexplained Garde disagreement. No partial value escapes.
+    fn new(value: f64, field: FixtureStandardErrorField) -> Result<Self, FixtureStandardError> {
+        let validation = StatisticCandidate { value }.validate();
+        if let Some(issue) = residual_issue(value) {
+            return Err(FixtureStandardError::InvalidStatistic { field, issue });
+        }
+        validation.map_err(|_| FixtureStandardError::ValidationInvariant { field })?;
+        Ok(Self { value })
+    }
+}
+
+/// Binary-only step selection prevents callers from relabelling operations/stages.
+#[derive(Clone, Copy)]
+enum StandardErrorBinaryStep {
+    /// Checked squared physical span.
+    SpanSquare,
+    /// Checked centered physical-time spread.
+    CenteredTimeSquare,
+    /// Residual scale divided by centered physical-time spread.
+    RateVariance,
+    /// Checked physical mean time.
+    TimeMean,
+    /// Mean time multiplied by fitted rate standard error.
+    PhaseMeanProduct,
+    /// Squared mean-time/rate-error contribution.
+    PhaseMeanSquare,
+    /// Residual scale divided by inverse-divisor weight sum.
+    PhaseBaseVariance,
+    /// Sum of base phase variance and squared mean-time contribution.
+    PhaseVariance,
+}
+
+impl StandardErrorBinaryStep {
+    /// Map every binary-only step to its sole public step, primitive and stage.
+    ///
+    /// Exhaustive mapping has constant work, no arithmetic or effects, and no
+    /// unsupported square-root variant requiring a synthetic error fallback.
+    const fn metadata(
+        self,
+    ) -> (
+        FixtureStandardErrorStep,
+        ArithmeticOperation,
+        ArithmeticStage,
+    ) {
+        match self {
+            Self::SpanSquare => (
+                FixtureStandardErrorStep::SpanSquare,
+                ArithmeticOperation::Multiply,
+                ArithmeticStage::Geometry,
+            ),
+            Self::CenteredTimeSquare => (
+                FixtureStandardErrorStep::CenteredTimeSquare,
+                ArithmeticOperation::Multiply,
+                ArithmeticStage::Geometry,
+            ),
+            Self::RateVariance => (
+                FixtureStandardErrorStep::RateVariance,
+                ArithmeticOperation::Divide,
+                ArithmeticStage::Response,
+            ),
+            Self::TimeMean => (
+                FixtureStandardErrorStep::TimeMean,
+                ArithmeticOperation::Multiply,
+                ArithmeticStage::Geometry,
+            ),
+            Self::PhaseMeanProduct => (
+                FixtureStandardErrorStep::PhaseMeanProduct,
+                ArithmeticOperation::Multiply,
+                ArithmeticStage::Response,
+            ),
+            Self::PhaseMeanSquare => (
+                FixtureStandardErrorStep::PhaseMeanSquare,
+                ArithmeticOperation::Multiply,
+                ArithmeticStage::Response,
+            ),
+            Self::PhaseBaseVariance => (
+                FixtureStandardErrorStep::PhaseBaseVariance,
+                ArithmeticOperation::Divide,
+                ArithmeticStage::Response,
+            ),
+            Self::PhaseVariance => (
+                FixtureStandardErrorStep::PhaseVariance,
+                ArithmeticOperation::Add,
+                ArithmeticStage::Response,
+            ),
+        }
+    }
+}
+
+/// Evaluate one mapped binary primitive over independently checked raw operands.
+///
+/// Every raw binary64 pair is admitted to the shared arithmetic guard. The step
+/// owns operation/stage; no report association or prior scalar check is assumed.
+/// There is no allocation, mutation or partially published diagnostic.
+/// # Errors
+/// Retain the exact shared arithmetic cause under the mapped public step.
+fn standard_error_arithmetic(
+    left: f64,
+    right: f64,
+    step: StandardErrorBinaryStep,
+) -> Result<f64, FixtureStandardError> {
+    let (step, operation, stage) = step.metadata();
+    arithmetic(left, right, operation, stage)
+        .map_err(|source| FixtureStandardError::Arithmetic { step, source })
+}
+
+/// Evaluate one checked root over the complete raw binary64 domain.
+///
+/// Role chooses only `RateSquareRoot` or `PhaseSquareRoot`; both belong to Response.
+/// The existing root owner checks its input/result and preserves signed zeros.
+/// There is no allocation, mutation, clamp or independent result publication.
+/// # Errors
+/// Preserve the actual shared `SquareRoot` cause with its corresponding step.
+fn standard_error_square_root(
+    value: f64,
+    field: FixtureStandardErrorField,
+) -> Result<f64, FixtureStandardError> {
+    let step = match field {
+        FixtureStandardErrorField::Rate => FixtureStandardErrorStep::RateSquareRoot,
+        FixtureStandardErrorField::Phase => FixtureStandardErrorStep::PhaseSquareRoot,
+    };
+    checked_square_root(value, ArithmeticStage::Response)
+        .map_err(|source| FixtureStandardError::Arithmetic { step, source })
+}
+
+/// Immutable conditional standard errors for one original fitted population.
+///
+/// Phase refers to that fit's original zero-reference instant. These algebraic
+/// diagnostics imply no calibrated confidence, tracking skew, aged uncertainty,
+/// eligibility or clock authority. There is no public constructor, mutation,
+/// Default or decoding route. Fixed fields remain below 512 logical bytes.
+/// The existing producer and immutable getters are the legal public route;
+/// metadata cannot be rewritten independently of its fitted population:
+/// ```compile_fail
+/// use time_core::FixtureStandardErrors;
+/// fn replace_population(mut result: FixtureStandardErrors) {
+///     result.sample_count = 0;
+/// }
+/// ```
+/// A default cannot fabricate a report without a fitted population:
+/// ```compile_fail
+/// use time_core::FixtureStandardErrors;
+/// let result = FixtureStandardErrors::default();
+/// ```
+#[derive(Clone, Copy)]
+pub struct FixtureStandardErrors {
+    /// Same checked fitted report's asserted frame, without new authority.
+    frame: NonZeroU64,
+    /// Same report's current fitted population in three through 64.
+    sample_count: usize,
+    /// Same report's exact sample count minus two.
+    degrees_of_freedom: usize,
+    /// Standard error in seconds at the fitted zero-reference instant.
+    phase: StandardErrorScalar,
+    /// Standard error in seconds per second of the fitted physical rate.
+    rate: StandardErrorScalar,
+}
+
+impl fmt::Debug for FixtureStandardErrors {
+    /// Format identity/count metadata only, excluding both numeric diagnostics.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("FixtureStandardErrors")
+            .field("frame", &self.frame)
+            .field("sample_count", &self.sample_count)
+            .field("degrees_of_freedom", &self.degrees_of_freedom)
+            .finish_non_exhaustive()
+    }
+}
+
+impl FixtureStandardErrors {
+    /// Return the original fitted report's asserted frame without new authority.
+    #[must_use]
+    pub const fn frame(&self) -> NonZeroU64 {
+        self.frame
+    }
+
+    /// Return the original fitted population without scanning or effects.
+    #[must_use]
+    pub const fn sample_count(&self) -> usize {
+        self.sample_count
+    }
+
+    /// Return the original fitted count minus two without new arithmetic.
+    #[must_use]
+    pub const fn degrees_of_freedom(&self) -> usize {
+        self.degrees_of_freedom
+    }
+
+    /// Return the admitted phase standard error in seconds, preserving its bits.
+    #[must_use]
+    pub const fn phase_standard_error_seconds(&self) -> f64 {
+        self.phase.value
+    }
+
+    /// Return admitted rate standard error in seconds per second unchanged.
+    #[must_use]
+    pub const fn rate_standard_error_seconds_per_second(&self) -> f64 {
+        self.rate.value
+    }
+}
+
 /// Sole output predicate: finite normal nonnegative values or either signed zero.
 ///
 /// All raw f64 values are admitted for this constant-work, effect-free check.
@@ -210,7 +536,8 @@ fn statistic_rule(value: &f64, (): &()) -> garde::Result {
 /// One raw statistic, covered by the shared garde rule with no skipped fields.
 #[derive(Validate)]
 struct StatisticCandidate {
-    /// Raw squared-second output; the rule permits values above the point range.
+    /// Raw nonnegative diagnostic; the checked wrapper owns its physical units.
+    /// The shared rule permits values above the point-input range.
     #[garde(custom(statistic_rule))]
     value: f64,
 }
@@ -322,6 +649,8 @@ pub struct FixtureResidualStatistics {
     residual_scale: ResidualScalar,
     /// Privately admitted (scale*n)/W, in seconds squared.
     normalized_data_variance: ResidualScalar,
+    /// Exact producing input's checked time/divisor geometry; four scalar copies.
+    geometry: Geometry,
 }
 
 impl fmt::Debug for FixtureResidualStatistics {
@@ -377,6 +706,79 @@ impl FixtureResidualStatistics {
     #[must_use]
     pub const fn normalized_data_variance_seconds_squared(&self) -> f64 {
         self.normalized_data_variance.value
+    }
+
+    /// Calculate conditional phase/rate standard errors from this report alone.
+    ///
+    /// The retained geometry belongs to the exact input that produced the line
+    /// and residual scale; no unrelated input or line can be supplied. Compute
+    /// `H*H, Szz*H_squared, scale/V, rate root, mean_z*H, mean_time*rate_error`,
+    /// that product squared, scale/W, their phase-variance sum and phase root in
+    /// that order. Each primitive is separately rounded and guarded. The scale
+    /// is SSE/(n-2), never normalized data variance; no FMA or clamp is used.
+    ///
+    /// Rate then phase pass mandatory shared Garde admission before the complete
+    /// pair is published with unchanged frame/count/degrees of freedom. There
+    /// are eight binary primitives, two roots and two scalar admissions, with
+    /// constant scalar scratch and no refit, scan, retained allocation, report
+    /// mutation or external effect. Garde's bounded temporary report is discarded.
+    /// # Errors
+    /// Return the first unsupported primitive/root in the stated order, then
+    /// the first rate/phase scalar admission error. No partial pair escapes.
+    pub fn standard_errors(&self) -> Result<FixtureStandardErrors, FixtureStandardError> {
+        let span_squared = standard_error_arithmetic(
+            self.geometry.span,
+            self.geometry.span,
+            StandardErrorBinaryStep::SpanSquare,
+        )?;
+        let centered_time_square = standard_error_arithmetic(
+            self.geometry.centered_z_square,
+            span_squared,
+            StandardErrorBinaryStep::CenteredTimeSquare,
+        )?;
+        let rate_variance = standard_error_arithmetic(
+            self.residual_scale.value,
+            centered_time_square,
+            StandardErrorBinaryStep::RateVariance,
+        )?;
+        let rate_error =
+            standard_error_square_root(rate_variance, FixtureStandardErrorField::Rate)?;
+        let mean_time = standard_error_arithmetic(
+            self.geometry.mean_z,
+            self.geometry.span,
+            StandardErrorBinaryStep::TimeMean,
+        )?;
+        let mean_product = standard_error_arithmetic(
+            mean_time,
+            rate_error,
+            StandardErrorBinaryStep::PhaseMeanProduct,
+        )?;
+        let mean_square = standard_error_arithmetic(
+            mean_product,
+            mean_product,
+            StandardErrorBinaryStep::PhaseMeanSquare,
+        )?;
+        let base_variance = standard_error_arithmetic(
+            self.residual_scale.value,
+            self.geometry.weight,
+            StandardErrorBinaryStep::PhaseBaseVariance,
+        )?;
+        let phase_variance = standard_error_arithmetic(
+            base_variance,
+            mean_square,
+            StandardErrorBinaryStep::PhaseVariance,
+        )?;
+        let phase_error =
+            standard_error_square_root(phase_variance, FixtureStandardErrorField::Phase)?;
+        let rate = StandardErrorScalar::new(rate_error, FixtureStandardErrorField::Rate)?;
+        let phase = StandardErrorScalar::new(phase_error, FixtureStandardErrorField::Phase)?;
+        Ok(FixtureStandardErrors {
+            frame: self.frame(),
+            sample_count: self.sample_count,
+            degrees_of_freedom: self.degrees_of_freedom,
+            phase,
+            rate,
+        })
     }
 }
 
@@ -440,6 +842,7 @@ fn finish_statistics(
             normalized_data_variance,
             ResidualField::NormalizedDataVariance,
         )?,
+        geometry: input.geometry,
     })
 }
 

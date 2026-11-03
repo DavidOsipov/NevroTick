@@ -37,6 +37,8 @@
 //! Mandatory scalar admission and the actual-entry receiving boundary precede
 //! deterministic checked phase/rate reductions over the complete witness set.
 //! A genuine singleton preserves all five source/uncertainty bit patterns.
+//! Modified by David Osipov with AI assistance, 3 November 2026: S152 derives
+//! same-owner tracking from actual witnessed slots while preserving legacy phase.
 //!
 //! All inputs remain borrowed and unchanged. Capacity is sixteen before indexed
 //! work; no caller-defined supporter subset, compatibility penalty, event credit,
@@ -57,6 +59,50 @@ use crate::{
 
 /// Existing fixture participant capacity; checked before indexing caller records.
 const MAX_SUPPORTERS: usize = 16;
+
+/// Additive rejection for deriving tracking from actual witnessed entries.
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub enum FixtureTrackingCombinationError {
+    /// An original witness participant has no same-owner tracking attachment.
+    MissingTracking {
+        /// Canonical ascending witness ordinal, issued only in zero through fifteen.
+        index: usize,
+    },
+    /// Preserve the existing checked admission or numerical reduction failure.
+    Combination {
+        /// Actual bounded combination cause without fabricated participant metadata.
+        source: FixtureCombinationError,
+    },
+}
+
+impl fmt::Debug for FixtureTrackingCombinationError {
+    /// Reveal only the error type without entries, source labels or values.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("FixtureTrackingCombinationError { .. }")
+    }
+}
+
+impl fmt::Display for FixtureTrackingCombinationError {
+    /// Format a fixed bounded code without admitting error fields to diagnostics.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingTracking { .. } => {
+                formatter.write_str("fixture tracking missing metadata")
+            }
+            Self::Combination { .. } => formatter.write_str("fixture tracking combination failure"),
+        }
+    }
+}
+
+impl std::error::Error for FixtureTrackingCombinationError {
+    /// Borrow the actual delegated cause without allocation or state effects.
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Combination { source } => Some(source),
+            Self::MissingTracking { .. } => None,
+        }
+    }
+}
 
 /// Supplied uncertainty role, in its constructor's first-error order.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -415,6 +461,163 @@ impl<'entry> FixtureSupporterUncertainty<'entry> {
     }
 }
 
+/// One source-derived record, retaining the actual immutable original entry.
+#[derive(Clone, Copy)]
+struct DerivedTrackingRecord<'entry> {
+    /// Existing mandatory scalar admission owns all three uncertainty values.
+    uncertainty: FixtureSupporterUncertainty<'entry>,
+    /// Checked fitted phase copied only from this same entry's opaque attachment.
+    phase: f64,
+}
+
+/// Fixed-capacity same-witness tracking records; no public construction or pairing.
+struct TrackingSupporters<'entry> {
+    /// Occupied records borrow actual final batch slots; unused slots stay absent.
+    records: [Option<DerivedTrackingRecord<'entry>>; MAX_SUPPORTERS],
+    /// Complete original witness cardinality, or zero for an absent principal.
+    count: usize,
+}
+
+impl<'entry> TrackingSupporters<'entry> {
+    /// Derive every original witness record before any filtering or state commit.
+    ///
+    /// Entry lookup follows canonical witness order and borrows the actual
+    /// contiguous decision slots. A missing attachment rejects even a participant
+    /// that compatibility would later exclude. At most sixteen records are built;
+    /// no entry, history, observation credit or state is changed.
+    /// # Errors
+    /// Preserve missing canonical witness ordinal or actual checked admission cause.
+    fn from_decision(
+        decision: &'entry FixturePrincipalDecision<'_>,
+    ) -> Result<Self, FixtureTrackingCombinationError> {
+        let mut records = [None; MAX_SUPPORTERS];
+        if decision.principal_entry().is_none() {
+            return Ok(Self { records, count: 0 });
+        }
+        let witness = decision.selection().witnessed().ok_or(
+            FixtureTrackingCombinationError::Combination {
+                source: FixtureCombinationError::Invariant,
+            },
+        )?;
+        let count = witness.supporters().len();
+        if count == 0 || count > MAX_SUPPORTERS || decision.entries().len() > MAX_SUPPORTERS {
+            return Err(FixtureTrackingCombinationError::Combination {
+                source: FixtureCombinationError::Invariant,
+            });
+        }
+        for (index, label) in witness.supporters().enumerate() {
+            let entry = decision
+                .entries()
+                .iter()
+                .find(|entry| entry.projection().context().source_id() == label)
+                .ok_or(FixtureTrackingCombinationError::Combination {
+                    source: FixtureCombinationError::Invariant,
+                })?;
+            let tracking = entry
+                .projection()
+                .tracking()
+                .ok_or(FixtureTrackingCombinationError::MissingTracking { index })?;
+            let uncertainty = FixtureSupporterUncertainty::new(
+                entry,
+                tracking.phase_standard_deviation_seconds(),
+                tracking.rate_standard_deviation_seconds_per_second(),
+                tracking.tracking_skew_seconds_per_second(),
+            )
+            .map_err(|source| FixtureTrackingCombinationError::Combination { source })?;
+            *records
+                .get_mut(index)
+                .ok_or(FixtureTrackingCombinationError::Combination {
+                    source: FixtureCombinationError::Invariant,
+                })? = Some(DerivedTrackingRecord {
+                uncertainty,
+                phase: tracking.phase_seconds(),
+            });
+        }
+        Ok(Self { records, count })
+    }
+}
+
+/// Immutable source choice; only the tracking holder may supply fitted phase.
+#[derive(Clone, Copy)]
+enum RecordSource<'input, 'entry> {
+    /// Existing caller-supplied uncertainties retain original anchor-phase semantics.
+    Legacy(&'input [FixtureSupporterUncertainty<'entry>]),
+    /// Complete same-entry derived records retain fitted-phase semantics.
+    Tracking(&'input TrackingSupporters<'entry>),
+}
+
+/// One immutable original-entry record with its source-owned phase interpretation.
+#[derive(Clone, Copy)]
+struct RecordView<'input, 'entry> {
+    /// Borrow the checked uncertainties and actual original entry together.
+    uncertainty: &'input FixtureSupporterUncertainty<'entry>,
+    /// Anchor or fitted phase supplied only by the corresponding private source.
+    phase: f64,
+}
+
+impl<'input, 'entry> RecordView<'input, 'entry> {
+    /// Bind legacy phase to its own entry without interpreting an optional attachment.
+    fn legacy(uncertainty: &'input FixtureSupporterUncertainty<'entry>) -> Self {
+        Self {
+            uncertainty,
+            phase: uncertainty.entry.projection().center_seconds(),
+        }
+    }
+
+    /// Copy one genuine singleton under its established phase mode, without arithmetic.
+    fn singleton(self) -> Quantities {
+        let mut quantities = singleton_quantities(self.uncertainty);
+        quantities.phase_seconds = self.phase;
+        quantities
+    }
+}
+
+impl<'input, 'entry> RecordSource<'input, 'entry> {
+    /// Return the raw supplied count or private checked holder's occupied count.
+    const fn len(self) -> usize {
+        match self {
+            Self::Legacy(records) => records.len(),
+            Self::Tracking(holder) => holder.count,
+        }
+    }
+
+    /// Borrow an occupied record without exposing padding or pairing different sources.
+    fn get(self, index: usize) -> Option<RecordView<'input, 'entry>> {
+        match self {
+            Self::Legacy(records) => records.get(index).map(RecordView::legacy),
+            Self::Tracking(holder) => {
+                if index >= holder.count {
+                    return None;
+                }
+                holder
+                    .records
+                    .get(index)?
+                    .as_ref()
+                    .map(|record| RecordView {
+                        uncertainty: &record.uncertainty,
+                        phase: record.phase,
+                    })
+            }
+        }
+    }
+
+    /// Find an actual original label after complete bounded membership admission.
+    /// # Errors
+    /// Reject contradictory private coverage instead of supplying alternate metadata.
+    fn find(
+        self,
+        label: NonZeroU64,
+    ) -> Result<RecordView<'input, 'entry>, FixtureCombinationError> {
+        match self {
+            Self::Legacy(records) => supporter_record(records, label).map(RecordView::legacy),
+            Self::Tracking(_) => (0..self.len())
+                .filter_map(|index| self.get(index))
+                .find(|record| record_label(record.uncertainty) == label)
+                .ok_or(FixtureCombinationError::Invariant),
+        }
+    }
+}
+
 /// Closed mathematical-kernel outcome, without reference or event authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FixtureCombinationKernelKind {
@@ -633,6 +836,21 @@ fn admit_records(
     records: &[FixtureSupporterUncertainty<'_>],
     principal: &FixtureProjectedInterval,
 ) -> Result<(), FixtureCombinationError> {
+    admit_record_source(decision, RecordSource::Legacy(records), principal)
+}
+
+/// Admit complete original membership under a private legacy or tracking view.
+///
+/// Capacity and a genuine principal are supplied by the receiving owner. The
+/// bounded predicate preserves context, pointer identity, duplicate and membership
+/// order for every occupied record; no phase is recomputed or state changed.
+/// # Errors
+/// Preserve the first original receiving cause or inconsistent private occupancy.
+fn admit_record_source(
+    decision: &FixturePrincipalDecision<'_>,
+    records: RecordSource<'_, '_>,
+    principal: &FixtureProjectedInterval,
+) -> Result<(), FixtureCombinationError> {
     let witness = decision
         .selection()
         .witnessed()
@@ -650,7 +868,11 @@ fn admit_records(
     {
         return Err(FixtureCombinationError::Invariant);
     }
-    for (index, record) in records.iter().enumerate() {
+    for index in 0..records.len() {
+        let record = records
+            .get(index)
+            .ok_or(FixtureCombinationError::Invariant)?
+            .uncertainty;
         admit_context(record.entry, principal, index)?;
         if !decision
             .entries()
@@ -660,10 +882,9 @@ fn admit_records(
             return Err(FixtureCombinationError::EntryMismatch { index });
         }
         let label = record_label(record);
-        if records
-            .iter()
-            .take(index)
-            .any(|previous| record_label(previous) == label)
+        if (0..index)
+            .filter_map(|previous| records.get(previous))
+            .any(|previous| record_label(previous.uncertainty) == label)
         {
             return Err(FixtureCombinationError::DuplicateUncertainty { index });
         }
@@ -775,16 +996,17 @@ impl Sums {
     /// update is returned until the entire supporter contribution succeeds.
     fn with_supporter(
         &self,
-        record: &FixtureSupporterUncertainty<'_>,
+        view: RecordView<'_, '_>,
         principal_phase: f64,
         index: usize,
     ) -> Result<Self, FixtureCombinationError> {
         use ArithmeticOperation::{Add, Divide, Multiply, Subtract};
         use FixtureCombinationStep as Step;
 
+        let record = view.uncertainty;
         let projection = record.entry.projection();
         let distance = projection.distance_seconds();
-        let phase = projection.center_seconds();
+        let phase = view.phase;
         let rate = projection.phase_rate_seconds_per_second();
         let phase_sd = record.phase_standard_deviation_seconds;
         let rate_sd = record.rate_standard_deviation_seconds_per_second;
@@ -999,7 +1221,21 @@ pub fn combine_fixture_supporters(
     decision: &FixturePrincipalDecision<'_>,
     uncertainties: &[FixtureSupporterUncertainty<'_>],
 ) -> Result<FixtureCombinationKernelOutcome, FixtureCombinationError> {
-    if uncertainties.len() > MAX_SUPPORTERS {
+    combine_records(decision, RecordSource::Legacy(uncertainties))
+}
+
+/// Reduce one complete actual witness using a single consistent phase source.
+///
+/// Scalar and membership owners precede all reductions. Every contributor and
+/// the original principal use this same source interpretation. Singleton copies,
+/// ascending reductions, failure order and external-effect absence are shared.
+/// # Errors
+/// Preserve exact receiving, denominator, arithmetic and publication failures.
+fn combine_records(
+    decision: &FixturePrincipalDecision<'_>,
+    records: RecordSource<'_, '_>,
+) -> Result<FixtureCombinationKernelOutcome, FixtureCombinationError> {
+    if records.len() > MAX_SUPPORTERS {
         return Err(FixtureCombinationError::CapacityExceeded);
     }
     let kind = decision.kind();
@@ -1009,7 +1245,7 @@ pub fn combine_fixture_supporters(
             | FixturePrincipalOutcomeKind::RetainedWithoutNewEstimate
     );
     let Some(principal) = decision.principal_entry() else {
-        if !uncertainties.is_empty() {
+        if records.len() != 0 {
             return Err(FixtureCombinationError::MetadataCountMismatch);
         }
         if selected_kind || decision.principal_label().is_some() {
@@ -1023,7 +1259,7 @@ pub fn combine_fixture_supporters(
     if !selected_kind {
         return Err(FixtureCombinationError::Invariant);
     }
-    admit_records(decision, uncertainties, principal)?;
+    admit_record_source(decision, records, principal)?;
     let witness = decision
         .selection()
         .witnessed()
@@ -1037,12 +1273,12 @@ pub fn combine_fixture_supporters(
             .ok_or(FixtureCombinationError::Invariant)? = label;
     }
     let quantities = if count == 1 {
-        singleton_quantities(supporter_record(uncertainties, principal_label)?)
+        records.find(principal_label)?.singleton()
     } else {
-        let principal_phase = principal.projection().center_seconds();
+        let principal_phase = records.find(principal_label)?.phase;
         let mut sums = Sums::empty();
         for (index, label) in witness.supporters().enumerate() {
-            let record = supporter_record(uncertainties, label)?;
+            let record = records.find(label)?;
             sums = sums.with_supporter(record, principal_phase, index)?;
         }
         sums.finish()?
@@ -1054,11 +1290,29 @@ pub fn combine_fixture_supporters(
     })
 }
 
+/// Derive tracking quantities only from a genuine decision's original entries.
+///
+/// All original witness attachments are derived before reduction, even for a
+/// retained decision. No caller-supplied uncertainty, detached report or rebinding
+/// input is accepted. The bounded holder borrows actual final slots, and only the
+/// owned estimate escapes; no state, observation credit or external effect changes.
+/// # Errors
+/// Reject the first missing canonical witness attachment or preserve the actual
+/// shared admission/denominator/arithmetic failure without dropping a participant.
+pub fn combine_fixture_tracking_supporters(
+    decision: &FixturePrincipalDecision<'_>,
+) -> Result<FixtureCombinationKernelOutcome, FixtureTrackingCombinationError> {
+    let holder = TrackingSupporters::from_decision(decision)?;
+    combine_records(decision, RecordSource::Tracking(&holder))
+        .map_err(|source| FixtureTrackingCombinationError::Combination { source })
+}
+
 /// Complete original admission and checked contributor-subset reduction.
 mod admission;
 
 use admission::{
-    AdmittedFixtureSupporters, admit_lifecycle_supporters, combine_lifecycle_supporters,
+    AdmittedFixtureSupporters, admit_lifecycle_source, admit_lifecycle_supporters,
+    combine_lifecycle_supporters,
 };
 
 /// Transactional fixture-only compatibility and lifecycle state owner.
@@ -1068,7 +1322,7 @@ pub use lifecycle::{
     FixtureCombinationLifecycleError, FixtureCombinationLifecycleStep, FixtureCombinationOutcome,
     FixtureCombinationParameterField, FixtureCombinationParameterIssue,
     FixtureCombinationParameters, FixtureCombinationSourceState, FixtureCombinationSourceStatus,
-    FixtureCombinationState, FixtureReachabilityUpdate,
+    FixtureCombinationState, FixtureReachabilityUpdate, FixtureTrackingLifecycleError,
 };
 
 /// Independent genuine-public-input cases share only crate exports with this owner.

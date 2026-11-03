@@ -2699,3 +2699,875 @@ fn lifecycle_capacity_neighbors_preserve_pending_credit() -> TestResult {
     assert_eq!(p.get(|| owners.control.emitted_rounds())?, 1);
     Ok(())
 }
+
+/// Independent S152 fitted-tracking journeys over genuine adaptive owners.
+///
+/// All rows, scores, intervals and outcomes come through public checked owners;
+/// no product field, tracking payload, witness or lifecycle state is fabricated.
+/// Source-owned finite work is accounted separately from the original profiles.
+mod fitted_tracking_journey {
+    use std::{error::Error, io, num::NonZeroU64};
+
+    use time_core::{
+        FixtureAdaptiveHistory, FixtureAnchorProjection, FixtureCombinationDenominatorField,
+        FixtureCombinationError, FixtureCombinationLifecycleError, FixtureCombinationOutcome,
+        FixtureCombinationParameters, FixtureCombinationSourceStatus, FixtureCombinationState,
+        FixtureContext, FixtureMinimum, FixtureObservation, FixturePrincipalOutcomeKind,
+        FixturePrincipalParameters, FixturePrincipalStratum, FixtureProjectedBatch,
+        FixtureProjectedInterval, FixtureProjectionError, FixtureProjectionIssue,
+        FixtureProjectionTerms, FixtureSupporterUncertainty, FixtureTrackingCombinationError,
+        FixtureTrackingField, FixtureTrackingLifecycleError, FixtureTrackingProjectionError,
+        combine_fixture_supporters, combine_fixture_tracking_supporters,
+        enclose_fixture_projection, project_fixture_adaptive_anchor,
+        project_fixture_adaptive_tracking,
+    };
+    use time_domain::{MonotonicNs, UtcCoordinateQ32, exchange_arithmetic};
+
+    type TestResult<T = ()> = Result<T, Box<dyn Error>>;
+    const SECOND: u64 = 1_000_000_000;
+    const RELATIVE_TOLERANCE: f64 = 1.0 / 274_877_906_944.0;
+
+    /// Admit a fixed nonzero fixture label without effects.
+    /// # Errors
+    /// Reject zero before publication.
+    fn label(value: u64) -> TestResult<NonZeroU64> {
+        NonZeroU64::new(value).ok_or_else(|| io::Error::other("zero label").into())
+    }
+
+    /// Compare nonzero finite fixture outputs against a pre-frozen relative bound.
+    /// # Panics
+    /// Reject zero, nonfinite values or relative error above 2^-38.
+    fn near(actual: f64, expected: f64) {
+        assert!(actual.is_finite() && actual != 0.0 && expected != 0.0);
+        assert!((actual / expected - 1.0).abs() <= RELATIVE_TOLERANCE);
+    }
+
+    /// One genuine adaptive owner and its unchanged caller-asserted identity.
+    struct Source {
+        context: FixtureContext,
+        history: FixtureAdaptiveHistory,
+    }
+
+    impl Source {
+        /// Build at most nine exact, chronologically ordered Q32 input phases.
+        /// # Errors
+        /// Preserve all genuine coordinate, observation, append and fit failures.
+        fn new(id: u64, values: &[i32], shift: u32, divisors: &[f64]) -> TestResult<Self> {
+            if values.len() != divisors.len() || values.len() > 9 {
+                return Err(io::Error::other("fixture row bound").into());
+            }
+            let context = FixtureContext::new(label(id)?, label(17)?, label(23)?);
+            let mut result = Self {
+                context,
+                history: FixtureAdaptiveHistory::new(context, 3)?,
+            };
+            for (index, (&value, &divisor)) in values.iter().zip(divisors).enumerate() {
+                result.append(u64::try_from(index)?, value, shift, divisor)?;
+            }
+            Ok(result)
+        }
+
+        /// Append one checked exact source observation at a supplied second.
+        /// # Errors
+        /// Reject overflow or preserve the actual domain and owner failures.
+        fn append(&mut self, second: u64, value: i32, shift: u32, divisor: f64) -> TestResult {
+            let ticks = i128::from(value)
+                .checked_shl(shift)
+                .ok_or_else(|| io::Error::other("fixture shift"))?;
+            let time = second
+                .checked_mul(SECOND)
+                .ok_or_else(|| io::Error::other("time overflow"))?;
+            let zero = UtcCoordinateQ32::new(0)?;
+            let shifted = UtcCoordinateQ32::new(ticks)?;
+            let phase = exchange_arithmetic(zero, shifted, shifted, zero)?.offset();
+            let row =
+                FixtureObservation::new(self.context, MonotonicNs::new(time), phase, divisor)?;
+            self.history.try_append(row)?;
+            Ok(())
+        }
+
+        /// Project the actual requested fitted anchor with or without tracking.
+        /// # Errors
+        /// Preserve genuine projection, skew and standard-error failures.
+        fn project(
+            &self,
+            index: usize,
+            anchor: u64,
+            at: u64,
+            terms: FixtureProjectionTerms,
+            tracked: bool,
+        ) -> TestResult<FixtureAnchorProjection> {
+            let anchor = MonotonicNs::new(
+                anchor
+                    .checked_mul(SECOND)
+                    .ok_or_else(|| io::Error::other("anchor overflow"))?,
+            );
+            let at = MonotonicNs::new(
+                at.checked_mul(SECOND)
+                    .ok_or_else(|| io::Error::other("projection overflow"))?,
+            );
+            if tracked {
+                Ok(project_fixture_adaptive_tracking(
+                    &self.history,
+                    self.context,
+                    index,
+                    anchor,
+                    at,
+                    terms,
+                    0.125,
+                )?)
+            } else {
+                Ok(project_fixture_adaptive_anchor(
+                    &self.history,
+                    self.context,
+                    index,
+                    anchor,
+                    at,
+                    terms,
+                )?)
+            }
+        }
+    }
+
+    /// Build the exact pair into final contiguous owned storage.
+    /// # Errors
+    /// Preserve actual producer and enclosure failures; no batch is forged.
+    fn entries(
+        a: &Source,
+        b: &Source,
+        at: u64,
+        a_terms: FixtureProjectionTerms,
+        b_terms: FixtureProjectionTerms,
+        a_tracking: bool,
+        b_tracking: bool,
+    ) -> TestResult<[FixtureProjectedInterval; 2]> {
+        let ap = a.project(2, 2, at, a_terms, a_tracking)?;
+        let bp = b.project(2, 2, at, b_terms, b_tracking)?;
+        Ok([
+            enclose_fixture_projection(&ap)?,
+            enclose_fixture_projection(&bp)?,
+        ])
+    }
+
+    /// Create a genuine pair batch borrowing only its final original slots.
+    /// # Errors
+    /// Preserve batch owner failures; no copied entries are substituted.
+    fn batch(
+        entries: &[FixtureProjectedInterval],
+        at: u64,
+    ) -> TestResult<FixtureProjectedBatch<'_>> {
+        let nanos = at
+            .checked_mul(SECOND)
+            .ok_or_else(|| io::Error::other("batch time overflow"))?;
+        Ok(FixtureProjectedBatch::new(
+            label(17)?,
+            label(23)?,
+            MonotonicNs::new(nanos),
+            entries,
+        )?)
+    }
+
+    /// Seed an independent real lifecycle owner using only fixed explicit parameters.
+    /// # Errors
+    /// Preserve actual principal, minimum and lifecycle admission failures.
+    fn seed(
+        batch: &FixtureProjectedBatch<'_>,
+        roster: &[NonZeroU64],
+        strata: &[FixturePrincipalStratum],
+        minimum: usize,
+    ) -> TestResult<FixtureCombinationState> {
+        Ok(FixtureCombinationState::seed(
+            roster,
+            FixturePrincipalParameters::new(1.0 / 1024.0, 0.0)?,
+            FixtureCombinationParameters::new(2.0, 0.0)?,
+            FixtureMinimum::new(minimum)?,
+            batch,
+            strata,
+        )?)
+    }
+
+    /// Borrow the required actual tracking attachment without inventing a fallback.
+    /// # Errors
+    /// Reject an absent attachment before any numerical assertion.
+    fn tracking(
+        projection: &FixtureAnchorProjection,
+    ) -> TestResult<&time_core::FixtureTrackingEstimate> {
+        projection
+            .tracking()
+            .ok_or_else(|| io::Error::other("tracking absent").into())
+    }
+
+    /// Observe the exact raw interval and attached fitted facts for both sources.
+    /// # Errors
+    /// Reject a missing genuine attachment.
+    /// # Panics
+    /// Reject altered endpoint, raw phase, fitted phase, SD or skew facts.
+    fn check_pair(entries: &[FixtureProjectedInterval; 2]) -> TestResult {
+        assert_eq!(
+            (entries[0].interval().lower(), entries[0].interval().upper()),
+            (-3_579_139_414, 5_010_795_179)
+        );
+        assert_eq!(
+            (entries[1].interval().lower(), entries[1].interval().upper()),
+            (-3_042_268_502, 5_547_666_091)
+        );
+        for (entry, raw, fitted) in [
+            (&entries[0], 1.0 / 12.0, 7.0 / 36.0),
+            (&entries[1], 7.0 / 48.0, 37.0 / 144.0),
+        ] {
+            near(entry.projection().center_seconds(), raw);
+            let attached = tracking(entry.projection())?;
+            near(attached.phase_seconds(), fitted);
+            near(
+                attached.phase_standard_deviation_seconds(),
+                0.290_892_665_416_655,
+            );
+            near(
+                attached.rate_standard_deviation_seconds_per_second(),
+                1.0 / 12.0,
+            );
+            assert_eq!(
+                attached.tracking_skew_seconds_per_second().to_bits(),
+                0.125_f64.to_bits()
+            );
+        }
+        Ok(())
+    }
+
+    /// Inspect an actual ready outcome and both explicit combination modes.
+    /// # Errors
+    /// Preserve actual missing-witness, metadata and kernel failures.
+    /// # Panics
+    /// Reject a fabricated principal/round, witness or either numerical route.
+    fn check_ready(
+        ready: &FixtureCombinationOutcome<'_>,
+        actual_batch: &FixtureProjectedBatch<'_>,
+        roster: [NonZeroU64; 2],
+    ) -> TestResult {
+        assert_eq!(
+            ready.principal().kind(),
+            FixturePrincipalOutcomeKind::ReferenceReady
+        );
+        assert_eq!(ready.principal().principal_label(), Some(roster[0]));
+        assert_eq!(ready.witness_count(), Some(2));
+        assert_eq!(ready.contributor_count(), Some(2));
+        assert_eq!(ready.emitted_round(), Some(label(1)?));
+        assert_eq!(
+            ready.source_status(roster[0]),
+            Some(FixtureCombinationSourceStatus::Principal)
+        );
+        assert_eq!(
+            ready.source_status(roster[1]),
+            Some(FixtureCombinationSourceStatus::Contributor)
+        );
+        let witness = ready
+            .principal()
+            .selection()
+            .witnessed()
+            .ok_or_else(|| io::Error::other("missing witness"))?;
+        assert_eq!(
+            (
+                witness.component_lower(),
+                witness.component_upper(),
+                witness.witness()
+            ),
+            (-3_042_268_502, 5_010_795_179, -3_042_268_502)
+        );
+        let combined = ready
+            .combined()
+            .ok_or_else(|| io::Error::other("missing estimate"))?;
+        near(combined.phase_seconds(), 65.0 / 288.0);
+        near(
+            combined.phase_standard_deviation_seconds(),
+            0.294_230_637_074_397_8,
+        );
+        near(combined.phase_rate_seconds_per_second(), 1.0 / 24.0);
+        near(
+            combined.rate_standard_deviation_seconds_per_second(),
+            0.058_925_565_098_878_96,
+        );
+        near(
+            combined.tracking_skew_seconds_per_second(),
+            0.088_388_347_648_318_45,
+        );
+        let direct = combine_fixture_tracking_supporters(ready.principal())?;
+        near(
+            direct
+                .combined()
+                .ok_or_else(|| io::Error::other("missing direct estimate"))?
+                .phase_seconds(),
+            65.0 / 288.0,
+        );
+        let legacy = [
+            FixtureSupporterUncertainty::new(&actual_batch.entries()[0], 0.25, 0.125, 0.125)?,
+            FixtureSupporterUncertainty::new(&actual_batch.entries()[1], 0.25, 0.125, 0.125)?,
+        ];
+        let legacy_result = combine_fixture_supporters(ready.principal(), &legacy)?;
+        near(
+            legacy_result
+                .combined()
+                .ok_or_else(|| io::Error::other("missing legacy estimate"))?
+                .phase_seconds(),
+            11.0 / 96.0,
+        );
+        Ok(())
+    }
+
+    /// Observe source watermark, pending credit and penalty without mutation.
+    /// # Errors
+    /// Reject a label absent from either actual owner view.
+    fn credit(
+        owner: &FixtureCombinationState,
+        label: NonZeroU64,
+    ) -> TestResult<(Option<MonotonicNs>, bool, u8)> {
+        let principal = owner
+            .principal_state()
+            .source_state(label)
+            .ok_or_else(|| io::Error::other("missing principal source"))?;
+        let lifecycle = owner
+            .source_state(label)
+            .ok_or_else(|| io::Error::other("missing lifecycle source"))?;
+        Ok((
+            principal.latest_observed_at(),
+            principal.pending(),
+            lifecycle.penalty(),
+        ))
+    }
+
+    /// The full adaptive→copied enclosure→batch→principal/kernel/lifecycle route.
+    /// # Errors
+    /// Preserve all genuine producer, admission and lifecycle failures.
+    /// # Panics
+    /// Reject changed raw witness, fitted facts, legacy route or observation credit.
+    #[test]
+    fn fitted_journey_preserves_raw_witness_legacy_mode_and_real_credit() -> TestResult {
+        let mut a = Source::new(11, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+        let b = Source::new(22, &[1, 3, 1], 28, &[1.0, 1.0, 4.0])?;
+        let terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let original = entries(&a, &b, 4, terms, terms, true, true)?;
+        let actual_batch = batch(&original, 4)?;
+        let strata = [
+            FixturePrincipalStratum::new(label(11)?, 2)?,
+            FixturePrincipalStratum::new(label(22)?, 2)?,
+        ];
+        let roster = [label(11)?, label(22)?];
+        check_pair(&original)?;
+        let mut owner = seed(&actual_batch, &roster, &strata, 2)?;
+        let ready = owner.advance_tracking(&actual_batch, &strata)?;
+        check_ready(&ready, &actual_batch, roster)?;
+        let credits = [credit(&owner, roster[0])?, credit(&owner, roster[1])?];
+        let later = entries(&a, &b, 5, terms, terms, true, true)?;
+        let later_batch = batch(&later, 5)?;
+        let retained = owner.advance_tracking(&later_batch, &strata)?;
+        assert_eq!(
+            retained.principal().kind(),
+            FixturePrincipalOutcomeKind::RetainedWithoutNewEstimate
+        );
+        assert_eq!(retained.emitted_round(), None);
+        assert_eq!(
+            [credit(&owner, roster[0])?, credit(&owner, roster[1])?],
+            credits
+        );
+        assert_eq!(owner.emitted_rounds(), 1);
+        a.append(3, 0, 28, 1.0)?;
+        let fresh_a = a.project(3, 3, 5, terms, true)?;
+        let fresh_b = b.project(2, 2, 5, terms, true)?;
+        let fresh = [
+            enclose_fixture_projection(&fresh_a)?,
+            enclose_fixture_projection(&fresh_b)?,
+        ];
+        let fresh_batch = batch(&fresh, 5)?;
+        let next = owner.advance_tracking(&fresh_batch, &strata)?;
+        assert_eq!(next.principal().updated_source(), Some(roster[0]));
+        assert_eq!(next.emitted_round(), Some(label(2)?));
+        Ok(())
+    }
+
+    /// Existing raw-only producers and legacy lifecycle remain a healthy control.
+    /// # Errors
+    /// Preserve actual source, batch, metadata and lifecycle failures.
+    /// # Panics
+    /// Reject a tracking attachment, changed legacy center or missing round.
+    #[test]
+    fn legacy_raw_only_neighbor_remains_unchanged() -> TestResult {
+        let a = Source::new(11, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+        let b = Source::new(22, &[1, 3, 1], 28, &[1.0, 1.0, 4.0])?;
+        let terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let original = entries(&a, &b, 4, terms, terms, false, false)?;
+        assert!(original[0].projection().tracking().is_none());
+        assert!(original[1].projection().tracking().is_none());
+        let actual_batch = batch(&original, 4)?;
+        let strata = [
+            FixturePrincipalStratum::new(label(11)?, 2)?,
+            FixturePrincipalStratum::new(label(22)?, 2)?,
+        ];
+        let roster = [label(11)?, label(22)?];
+        let metadata = [
+            FixtureSupporterUncertainty::new(&actual_batch.entries()[0], 0.25, 0.125, 0.125)?,
+            FixtureSupporterUncertainty::new(&actual_batch.entries()[1], 0.25, 0.125, 0.125)?,
+        ];
+        let mut owner = seed(&actual_batch, &roster, &strata, 2)?;
+        let ready = owner.advance(&actual_batch, &strata, &metadata)?;
+        assert_eq!(ready.emitted_round(), Some(label(1)?));
+        near(
+            ready
+                .combined()
+                .ok_or_else(|| io::Error::other("missing legacy estimate"))?
+                .phase_seconds(),
+            11.0 / 96.0,
+        );
+        Ok(())
+    }
+
+    /// Selected post-prune geometry excludes the earlier auxiliary decision row.
+    /// # Errors
+    /// Preserve genuine history, projection and tracking failures.
+    /// # Panics
+    /// Reject wrong fitted population, raw-anchor identity or negative tracked phase.
+    #[test]
+    fn post_prune_tracking_uses_fitted_suffix_and_oldest_fitted_anchor() -> TestResult {
+        let source = Source::new(
+            11,
+            &[512, -21, 27, 27, 27, -27, -27, -27, -27],
+            23,
+            &[1.0; 9],
+        )?;
+        assert_eq!(
+            (
+                source.history.sample_count(),
+                source.history.auxiliary_count()
+            ),
+            (8, 1)
+        );
+        let terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let projected = source.project(0, 1, 9, terms, true)?;
+        near(projected.center_seconds(), -499.0 / 3584.0);
+        let attached = tracking(&projected)?;
+        near(attached.phase_seconds(), -15.0 / 224.0);
+        near(
+            attached.phase_standard_deviation_seconds(),
+            0.038_245_511_221_332_42,
+        );
+        Ok(())
+    }
+
+    /// Two genuine same-context histories cannot be conflated by their metadata.
+    /// # Errors
+    /// Preserve genuine history and projection failures.
+    /// # Panics
+    /// Reject an inferred attachment, rebound estimate or changed raw projection.
+    #[test]
+    fn distinct_same_context_histories_keep_their_own_tracking_payloads() -> TestResult {
+        assert!(size_of::<Option<time_core::FixtureTrackingEstimate>>() <= 40);
+        let a = Source::new(11, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+        let twin = Source::new(11, &[1, 3, 1], 28, &[1.0, 1.0, 4.0])?;
+        assert_eq!(a.context, twin.context);
+        let terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let ap = a.project(2, 2, 4, terms, true)?;
+        let tp = twin.project(2, 2, 4, terms, true)?;
+        let raw = a.project(2, 2, 4, terms, false)?;
+        assert!(raw.tracking().is_none());
+        near(tracking(&ap)?.phase_seconds(), 7.0 / 36.0);
+        near(tracking(&tp)?.phase_seconds(), 37.0 / 144.0);
+        let copied = enclose_fixture_projection(&ap)?;
+        let original = tracking(&ap)?;
+        let retained = tracking(copied.projection())?;
+        assert_eq!(
+            retained.phase_seconds().to_bits(),
+            original.phase_seconds().to_bits()
+        );
+        assert_eq!(
+            retained.phase_standard_deviation_seconds().to_bits(),
+            original.phase_standard_deviation_seconds().to_bits()
+        );
+        assert_eq!(
+            retained
+                .rate_standard_deviation_seconds_per_second()
+                .to_bits(),
+            original
+                .rate_standard_deviation_seconds_per_second()
+                .to_bits()
+        );
+        assert_eq!(
+            retained.tracking_skew_seconds_per_second().to_bits(),
+            original.tracking_skew_seconds_per_second().to_bits()
+        );
+        Ok(())
+    }
+
+    /// Whole witness admission precedes filtering and missing tracking rolls back.
+    /// # Errors
+    /// Preserve genuine seed/projection construction failures.
+    /// # Panics
+    /// Reject an omitted later-excluded entry, fabricated partial result or commit.
+    #[test]
+    fn missing_later_excluded_tracking_preserves_complete_lifecycle() -> TestResult {
+        let a = Source::new(11, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+        let b = Source::new(22, &[1, 3, 1], 28, &[1.0, 1.0, 4.0])?;
+        let a_terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let b_terms = FixtureProjectionTerms::new(1.5, 0.0, 0.0)?;
+        let actual = entries(&a, &b, 4, a_terms, b_terms, true, false)?;
+        let mixed_batch = batch(&actual, 4)?;
+        let strata = [
+            FixturePrincipalStratum::new(label(11)?, 2)?,
+            FixturePrincipalStratum::new(label(22)?, 2)?,
+        ];
+        let roster = [label(11)?, label(22)?];
+        let complete = entries(&a, &b, 4, a_terms, b_terms, true, true)?;
+        let complete_batch = batch(&complete, 4)?;
+        let mut healthy = seed(&complete_batch, &roster, &strata, 2)?;
+        let ready = healthy.advance_tracking(&complete_batch, &strata)?;
+        assert_eq!(ready.principal().principal_label(), Some(roster[0]));
+        assert_eq!(ready.witness_count(), Some(2));
+        assert_eq!(ready.contributor_count(), Some(1));
+        assert_eq!(
+            ready.source_status(roster[1]),
+            Some(FixtureCombinationSourceStatus::DistanceExcluded)
+        );
+        near(
+            ready
+                .combined()
+                .ok_or_else(|| io::Error::other("missing excluded-source estimate"))?
+                .phase_seconds(),
+            7.0 / 36.0,
+        );
+        let mut owner = seed(&mixed_batch, &roster, &strata, 2)?;
+        let control = seed(&mixed_batch, &roster, &strata, 2)?;
+        let rejected = owner.advance_tracking(&mixed_batch, &strata).err();
+        let expected = Some(FixtureTrackingLifecycleError::MissingTracking { index: 1 });
+        assert_eq!(rejected, expected);
+        assert_eq!(owner, control);
+        Ok(())
+    }
+
+    /// An unavailable genuine decision does not fabricate tracking requirements.
+    /// # Errors
+    /// Preserve genuine seed, projection and decision failures.
+    /// # Panics
+    /// Reject invented principal, combined result or observation credit.
+    #[test]
+    fn unavailable_principal_preserves_no_estimate_with_mixed_attachments() -> TestResult {
+        let a = Source::new(11, &[-14, -14, -14], 28, &[1.0; 3])?;
+        let b = Source::new(22, &[14, 14, 14], 28, &[1.0; 3])?;
+        let terms = FixtureProjectionTerms::new(1.0 / 32.0, 0.0, 0.0)?;
+        let actual = entries(&a, &b, 4, terms, terms, true, false)?;
+        let batch = batch(&actual, 4)?;
+        let strata = [
+            FixturePrincipalStratum::new(label(11)?, 2)?,
+            FixturePrincipalStratum::new(label(22)?, 2)?,
+        ];
+        let roster = [label(11)?, label(22)?];
+        let mut owner = seed(&batch, &roster, &strata, 2)?;
+        let unavailable = owner.advance_tracking(&batch, &strata)?;
+        assert_eq!(
+            unavailable.principal().kind(),
+            FixturePrincipalOutcomeKind::Unavailable
+        );
+        assert_eq!(unavailable.principal().principal_label(), None);
+        assert!(unavailable.combined().is_none());
+        assert_eq!(unavailable.emitted_round(), None);
+        let direct = combine_fixture_tracking_supporters(unavailable.principal())?;
+        assert!(direct.combined().is_none());
+        assert_eq!(owner.emitted_rounds(), 0);
+        Ok(())
+    }
+
+    /// An untracked entry outside the genuine witness remains a legal nonvoter.
+    /// # Errors
+    /// Preserve genuine producer, batch and lifecycle failures.
+    /// # Panics
+    /// Reject a fabricated requirement on a nonwitness or changed combined result.
+    #[test]
+    fn untracked_nonwitness_does_not_block_actual_witness() -> TestResult {
+        let a = Source::new(11, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+        let b = Source::new(22, &[1, 3, 1], 28, &[1.0, 1.0, 4.0])?;
+        let outsider = Source::new(33, &[-16, -16, -16], 28, &[1.0; 3])?;
+        let pair_terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let outsider_terms = FixtureProjectionTerms::new(1.0 / 32.0, 0.0, 0.0)?;
+        let pair = entries(&a, &b, 4, pair_terms, pair_terms, true, true)?;
+        let absent = outsider.project(2, 2, 4, outsider_terms, false)?;
+        let actual = [pair[0], pair[1], enclose_fixture_projection(&absent)?];
+        let batch = batch(&actual, 4)?;
+        let roster = [label(11)?, label(22)?, label(33)?];
+        let strata = [
+            FixturePrincipalStratum::new(label(11)?, 2)?,
+            FixturePrincipalStratum::new(label(22)?, 2)?,
+            FixturePrincipalStratum::new(label(33)?, 2)?,
+        ];
+        let mut owner = seed(&batch, &roster, &strata, 2)?;
+        let ready = owner.advance_tracking(&batch, &strata)?;
+        assert_eq!(ready.witness_count(), Some(2));
+        assert_eq!(
+            ready.source_status(roster[2]),
+            Some(FixtureCombinationSourceStatus::OutsideWitness)
+        );
+        near(
+            ready
+                .combined()
+                .ok_or_else(|| io::Error::other("missing estimate"))?
+                .phase_seconds(),
+            65.0 / 288.0,
+        );
+        Ok(())
+    }
+
+    /// Check both public tracking error wrappers against an actual delegated cause.
+    ///
+    /// The caller supplies a genuine failed tracking lifecycle reduction. Three
+    /// source requests/downcasts retain that exact lifecycle and combination cause;
+    /// the copied public error variant constructs no checked estimator or state.
+    /// # Errors
+    /// Reject an unexpected wrapper or a missing correctly typed delegated source.
+    /// # Panics
+    /// Reject any delegated cause that differs from its actual stored value.
+    fn check_tracking_failure_sources(error: &FixtureTrackingLifecycleError) -> TestResult {
+        let FixtureTrackingLifecycleError::Lifecycle { source: lifecycle } = error else {
+            return Err(io::Error::other("missing lifecycle failure").into());
+        };
+        let actual_lifecycle = error
+            .source()
+            .and_then(|source| source.downcast_ref::<FixtureCombinationLifecycleError>())
+            .ok_or_else(|| io::Error::other("lost lifecycle cause"))?;
+        assert_eq!(actual_lifecycle, lifecycle);
+        let FixtureCombinationLifecycleError::Combination {
+            source: combination,
+        } = lifecycle
+        else {
+            return Err(io::Error::other("missing combination failure").into());
+        };
+        let actual_combination = actual_lifecycle
+            .source()
+            .and_then(|source| source.downcast_ref::<FixtureCombinationError>())
+            .ok_or_else(|| io::Error::other("lost combination cause"))?;
+        assert_eq!(actual_combination, combination);
+        let tracking = FixtureTrackingCombinationError::Combination {
+            source: *actual_combination,
+        };
+        assert_eq!(
+            tracking
+                .source()
+                .and_then(|source| source.downcast_ref::<FixtureCombinationError>()),
+            Some(combination)
+        );
+        Ok(())
+    }
+
+    /// A real singleton preserves zero, while an original pair keeps denominator checks.
+    /// # Errors
+    /// Preserve genuine owner construction and healthy singleton failures.
+    /// # Panics
+    /// Reject a zero floor, pair-to-singleton shortcut or partial lifecycle commit.
+    #[test]
+    fn singleton_zero_and_original_pair_denominators_are_distinct() -> TestResult {
+        let zero = Source::new(11, &[0, 0, 0], 28, &[1.0; 3])?;
+        let b = Source::new(22, &[1, 3, 1], 28, &[1.0, 1.0, 4.0])?;
+        let terms = FixtureProjectionTerms::new(0.5, 0.0, 0.0)?;
+        let one_projection = zero.project(2, 2, 4, terms, true)?;
+        let one = [enclose_fixture_projection(&one_projection)?];
+        let one_batch = batch(&one, 4)?;
+        let roster = [label(11)?];
+        let strata = [FixturePrincipalStratum::new(label(11)?, 2)?];
+        let mut singleton = seed(&one_batch, &roster, &strata, 1)?;
+        let ready = singleton.advance_tracking(&one_batch, &strata)?;
+        assert_eq!(ready.emitted_round(), Some(label(1)?));
+        let combined = ready
+            .combined()
+            .ok_or_else(|| io::Error::other("missing singleton"))?;
+        assert_eq!(
+            combined
+                .rate_standard_deviation_seconds_per_second()
+                .to_bits(),
+            0.0_f64.to_bits()
+        );
+        assert_eq!(
+            combined.phase_standard_deviation_seconds().to_bits(),
+            0.0_f64.to_bits()
+        );
+        for b_distance in [0.5, 1.5] {
+            let other_terms = FixtureProjectionTerms::new(b_distance, 0.0, 0.0)?;
+            let actual = entries(&zero, &b, 4, terms, other_terms, true, true)?;
+            let pair = batch(&actual, 4)?;
+            let roster = [label(11)?, label(22)?];
+            let strata = [
+                FixturePrincipalStratum::new(label(11)?, 2)?,
+                FixturePrincipalStratum::new(label(22)?, 2)?,
+            ];
+            let mut owner = seed(&pair, &roster, &strata, 2)?;
+            let control = seed(&pair, &roster, &strata, 2)?;
+            let actual = owner.advance_tracking(&pair, &strata).err();
+            let expected = Some(FixtureTrackingLifecycleError::Lifecycle {
+                source: FixtureCombinationLifecycleError::Combination {
+                    source: FixtureCombinationError::ZeroDenominator {
+                        index: 0,
+                        field: FixtureCombinationDenominatorField::RateStandardDeviation,
+                    },
+                },
+            });
+            assert_eq!(actual, expected);
+            check_tracking_failure_sources(
+                actual
+                    .as_ref()
+                    .ok_or_else(|| io::Error::other("missing actual denominator failure"))?,
+            )?;
+            assert_eq!(owner, control);
+        }
+        Ok(())
+    }
+
+    /// Raw projection association errors retain precedence over invalid new skew.
+    /// # Errors
+    /// Preserve the genuine checked source and term construction failures.
+    /// # Panics
+    /// Reject changed typed precedence, new attachment on an old path or mutation.
+    #[test]
+    fn projection_errors_precede_invalid_tracking_skew() -> TestResult {
+        let source = Source::new(11, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+        let terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        let rejected = project_fixture_adaptive_tracking(
+            &source.history,
+            source.context,
+            2,
+            MonotonicNs::new(2 * SECOND),
+            MonotonicNs::new(SECOND),
+            terms,
+            f64::NAN,
+        )
+        .err();
+        let expected = Some(FixtureTrackingProjectionError::Projection {
+            source: FixtureProjectionError::BackwardProjection,
+        });
+        assert_eq!(rejected, expected);
+        let rejected = project_fixture_adaptive_tracking(
+            &source.history,
+            source.context,
+            2,
+            MonotonicNs::new(2 * SECOND),
+            MonotonicNs::new(4 * SECOND),
+            terms,
+            f64::NAN,
+        )
+        .err();
+        let expected = Some(FixtureTrackingProjectionError::InvalidScalar {
+            field: FixtureTrackingField::TrackingSkew,
+            issue: FixtureProjectionIssue::NonFinite,
+        });
+        assert_eq!(rejected, expected);
+        for (skew, issue) in [
+            (f64::INFINITY, FixtureProjectionIssue::NonFinite),
+            (f64::NEG_INFINITY, FixtureProjectionIssue::NonFinite),
+            (f64::from_bits(1), FixtureProjectionIssue::Subnormal),
+            (-f64::from_bits(1), FixtureProjectionIssue::Subnormal),
+            (-1.0, FixtureProjectionIssue::Negative),
+        ] {
+            let actual = project_fixture_adaptive_tracking(
+                &source.history,
+                source.context,
+                2,
+                MonotonicNs::new(2 * SECOND),
+                MonotonicNs::new(4 * SECOND),
+                terms,
+                skew,
+            )
+            .err();
+            let expected = Some(FixtureTrackingProjectionError::InvalidScalar {
+                field: FixtureTrackingField::TrackingSkew,
+                issue,
+            });
+            assert_eq!(actual, expected);
+        }
+        for skew in [0.0_f64, -0.0, f64::MIN_POSITIVE] {
+            let projection = project_fixture_adaptive_tracking(
+                &source.history,
+                source.context,
+                2,
+                MonotonicNs::new(2 * SECOND),
+                MonotonicNs::new(4 * SECOND),
+                terms,
+                skew,
+            )?;
+            assert_eq!(
+                tracking(&projection)?
+                    .tracking_skew_seconds_per_second()
+                    .to_bits(),
+                skew.to_bits()
+            );
+        }
+        let old = source.project(2, 2, 4, terms, false)?;
+        assert!(old.tracking().is_none());
+        near(old.center_seconds(), 1.0 / 12.0);
+        Ok(())
+    }
+
+    /// Preserve all sixteen genuine tracked supporters at the supported capacity.
+    ///
+    /// Sixteen bounded three-row adaptive owners supply final contiguous entries
+    /// before the single batch is borrowed. One lifecycle advance and one direct
+    /// kernel consume its same genuine decision; both build sixteen-record holders.
+    /// The independently frozen equal-source oracle has no principal disagreement.
+    /// # Errors
+    /// Preserve genuine history, projection, enclosure, batch and reduction failures.
+    /// # Panics
+    /// Reject a lost witness, capacity off-by-one, raw-phase substitution, changed
+    /// canonical contributor set, principal, event ordinal or combined uncertainty.
+    #[test]
+    fn sixteen_tracking_supporters_preserve_complete_witness() -> TestResult {
+        let mut actual = Vec::with_capacity(16);
+        let mut roster = Vec::with_capacity(16);
+        let mut strata = Vec::with_capacity(16);
+        let terms = FixtureProjectionTerms::new(0.25, 0.0, 0.125)?;
+        for id in 1..=16 {
+            let source = Source::new(id, &[0, 2, 0], 28, &[1.0, 1.0, 4.0])?;
+            let source_label = source.context.source_id();
+            let projection = source.project(2, 2, 4, terms, true)?;
+            near(projection.center_seconds(), 1.0 / 12.0);
+            actual.push(enclose_fixture_projection(&projection)?);
+            roster.push(source_label);
+            strata.push(FixturePrincipalStratum::new(
+                source_label,
+                if id == 1 { 1 } else { 2 },
+            )?);
+        }
+        let actual_batch = batch(&actual, 4)?;
+        let mut owner = FixtureCombinationState::seed(
+            &roster,
+            FixturePrincipalParameters::new(1.0 / 1024.0, 1.0 / 1024.0)?,
+            FixtureCombinationParameters::new(2.0, 0.0)?,
+            FixtureMinimum::new(16)?,
+            &actual_batch,
+            &strata,
+        )?;
+        let ready = owner.advance_tracking(&actual_batch, &strata)?;
+        let decision = ready.principal();
+        assert_eq!(decision.kind(), FixturePrincipalOutcomeKind::ReferenceReady);
+        assert_eq!(decision.principal_label(), Some(roster[0]));
+        assert_eq!(ready.witness_count(), Some(16));
+        assert_eq!(ready.contributor_count(), Some(16));
+        assert_eq!(ready.emitted_round(), Some(label(1)?));
+        let selection = decision.selection();
+        assert_eq!(selection.population(), 16);
+        assert_eq!(selection.minimum(), 16);
+        let witness = selection
+            .witnessed()
+            .ok_or_else(|| io::Error::other("missing capacity witness"))?;
+        assert_eq!(witness.supporters().collect::<Vec<_>>(), roster);
+        let direct = combine_fixture_tracking_supporters(decision)?;
+        for result in [ready.combined(), direct.combined()] {
+            let combined = result.ok_or_else(|| io::Error::other("missing capacity estimate"))?;
+            assert_eq!(combined.supporter_count(), 16);
+            assert_eq!(combined.supporters().collect::<Vec<_>>(), roster);
+            assert_eq!(combined.principal_label(), roster[0]);
+            near(combined.phase_seconds(), 7.0 / 36.0);
+            near(combined.phase_rate_seconds_per_second(), 1.0 / 24.0);
+            near(
+                combined.phase_standard_deviation_seconds(),
+                0.290_892_665_416_655,
+            );
+            near(
+                combined.rate_standard_deviation_seconds_per_second(),
+                1.0 / 48.0,
+            );
+            near(combined.tracking_skew_seconds_per_second(), 1.0 / 32.0);
+        }
+        Ok(())
+    }
+}

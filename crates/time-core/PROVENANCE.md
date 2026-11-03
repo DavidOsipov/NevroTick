@@ -738,3 +738,174 @@ confidence/skew clamps, production source quality, correction feedback, restorat
 and Windows effects remain outside this activation. The independent rational
 oracle remains separate from any executed Rust observations; source authoring
 does not establish those remaining obligations.
+
+## S151 same-fit standard errors — pretranslation, 3 November 2026
+
+Before authoring, the existing S1.2 task freezes an explicit fallible coefficient-
+standard-error method over the genuine residual report. Contract SHA-256 is
+`319842addf97cfe5baa4afae84c0cccad94490ff844f90180bce8bb19dc52ebd`; independent exact facts SHA-256 is
+`ec68884fe760ad2ec9b39204bde679fb32c788b97bb2202d1fcdd7a7ed5381f6`. The retained source remains Chrony 4.9 commit
+`8df4f1263e206585e6c4e61352d042c2dd12916a`, regress.c SHA-256
+`bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7`.
+Selected RGR_FindBestRegression statements are lines 309-311: rate standard
+error, mean/rate product and phase standard error. Earlier same-fit residual
+scale and geometry are already separately owned. Copy the actual producing
+input's private normalized Geometry into the residual report; the new method
+derives V and u through the frozen checked operations, then retains the selected
+upstream standard-error grouping. Normalized geometry conversion, checked
+nonfinite/subnormal/underflow rejection, atomic typed output and explicit-only
+calculation are deliberate adaptations; no Chrony bit parity is claimed.
+
+Retain the complete regress.c notices for Richard P. Curnow 1997-2003 and
+Miroslav Lichvar 2011, 2016-2017, GPL version 2 grant/disclaimer, existing
+GPL-2.0-only COPYING and corresponding-source/build obligations. Modification
+attribution is David Osipov with AI assistance, 3 November 2026. No additional
+source file or dependency is imported, and no upstream executable is run.
+
+The result reports phase seconds at the original zero-reference instant and
+rate seconds/second, not confidence bounds, calibrated tracking skew, physical
+uncertainty, sample eligibility or correction authority. Existing fitting and
+append behavior stays under its previous contract. Independent weighted/common-
+scale, selected post-prune, zero-residual and public tiny-output boundary facts
+precede implementation. This is authoring/provenance admission only; behavioral
+RED/GREEN and exact-candidate qualification remain pending.
+
+## S152 same-owner fitted tracking — pretranslation, 3 November 2026
+
+The S1.3 task freezes genuine adaptive-history → raw-anchor projection with opaque
+same-owner fitted tracking → actual-entry combination/lifecycle. Contract SHA-256
+`bb98b2a0a14025aa4c275febe1281b1b3781107385dfc2788e0cce2536dc1e31`; independent facts SHA-256
+`32c6e2c8e1e43e25288830a35cfa959c98397c4467f626e16c7dfdd2470ebb91` precede source authoring.
+Selected Chrony revision remains `8df4f1263e206585e6c4e61352d042c2dd12916a`.
+`sourcestats.c` SHA `9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6`
+contributes SST_GetTrackingData lines709–714; `sources.c` SHA
+`019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d` contributes
+acquisition894–897, fit-reference age922–924, weights925–926, reductions932–950.
+Tracking root-delay/dispersion lines715–718 are excluded. Reuse existing checked
+normalization/arithmetic/standard errors and actual-entry admission. Private
+same-owner association, explicit new APIs, bounded Garde construction and failure
+atomicity are deliberate adaptations; legacy selection/combination stays intact.
+No C executable, differential bit parity, physical confidence, native Windows or
+release qualification is implied. David Osipov with AI assistance, 3 November 2026.
+
+Retain both complete original notices alongside the adapted source, existing
+GPL-2.0-only COPYING and corresponding-source/build obligations. These are the
+original file headers, not blanket clearance for another dependency/package graph.
+
+### sourcestats.c original notice
+
+```text
+/*
+  chronyd/chronyc - Programs for keeping computer clocks accurate.
+
+ **********************************************************************
+ * Copyright (C) Richard P. Curnow  1997-2003
+ * Copyright (C) Miroslav Lichvar  2011-2014, 2016-2018, 2021
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * 
+ **********************************************************************
+
+  =======================================================================
+
+  This file contains the routines that do the statistical
+  analysis on the samples obtained from the sources,
+  to determined frequencies and error bounds. */
+```
+
+### sources.c original notice
+
+```text
+/*
+  chronyd/chronyc - Programs for keeping computer clocks accurate.
+
+ **********************************************************************
+ * Copyright (C) Richard P. Curnow  1997-2003
+ * Copyright (C) Miroslav Lichvar  2011-2016, 2018, 2020-2025
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * 
+ **********************************************************************
+
+  =======================================================================
+
+  The routines in this file manage the complete pool of sources that
+  we might be synchronizing to.  This includes NTP sources and others
+  (e.g. local reference clocks, eyeball + wristwatch etc).
+
+  */
+```
+
+## S154a mathematical affine chart view — 3 November 2026
+
+The existing S1.2 task freezes a borrowed, inert mathematical chart view before
+translation. Selected Chrony revision remains
+`8df4f1263e206585e6c4e61352d042c2dd12916a`. Rechecked retained files:
+
+- `sourcestats.c` SHA256
+  `9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6`,
+  SST_SlewSamples728–760: both retained decision rows and fitted coefficients must
+  agree about a coordinate change.
+- `sources.c` SHA256
+  `019021c49f6ccc545fc78513494136cc4edd015e757b9dee4cd811b6d9b8759d`,
+  slew_sources1542–1558: known changes versus unknown-step reset and dependent
+  selection. Global fanout/reset/selection migration is **not implemented** here.
+- `util.c` SHA256
+  `c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd`,
+  UTI_AdjustTimespec618–625, inspected for the coordinate convention only.
+  No util.c text or wall-time adjustment algorithm is copied.
+
+This is a deliberate partial adaptation, not SST_SlewSamples bit parity:
+MonotonicNs instants stay unchanged, positive-behind phase maps as
+phase'=phase−(D+F*(t−common_reference)), and rate'=rate−F. Chrony's remapped wall
+times and `(old_frequency-dfreq)/(1-dfreq)` denominator are inapplicable to this
+unchanged independent variable and are not imported. Original genuine Q33 rows,
+same-report statistics and exact observation identities remain immutable. A
+distinct chart view/projection carries target labels and separately bounded new
+floating arithmetic. It does not update raw histories or install actual clock
+correction state. Refused/Unknown are fixture request outcomes, not broker proof.
+
+Independent rational fixtures and the binary64 u+eta bound were frozen in the
+S154a task before authoring. The new outward-bound arithmetic and chart-specific
+enclosure adapter are David Osipov with AI assistance, 3 November 2026; they reuse
+the existing checked primitives and exact Q33 enclosure owner. Retain the complete
+sourcestats.c/sources.c notices already reproduced above, the notices with the
+adapted owner, existing GPL-2.0-only COPYING and corresponding-source/build
+obligations. No new dependency or upstream executable is adopted. Authoring and
+mathematical review establish no Rust/native execution, achieved effect, physical
+UTC uncertainty, stateful generation migration or product qualification.
+
+### S155 chart-bound interval batch and selection
+
+`src/chart_batch.rs` is an additive original Rust adapter by David Osipov with AI
+assistance, 3 November 2026. It follows the repository's existing projected-batch
+admission pattern and delegates interval uniqueness and majority/minimum semantics
+to the existing qualified owners; it copies no additional upstream algorithm.
+Complete chart descriptor values/bits and exact evaluation time are checked while
+each original chart interval and the selection-to-batch borrow remain intact.
+The existing Chrony provenance, notices, GPL-2.0-only licence and corresponding
+source/build obligations remain. No dependency, actual clock correction, history
+migration, production eligibility or physical-uncertainty claim is introduced.
+The S154c evidence records its historical candidate; S155 needs its own checks.

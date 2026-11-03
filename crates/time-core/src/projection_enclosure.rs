@@ -585,3 +585,30 @@ pub fn enclose_fixture_projection(
 #[cfg(test)]
 #[path = "../tests/private/enclosure_guards.rs"]
 mod enclosure_guards;
+
+/// Reuse the exact endpoint owner for an already labelled scalar consumer.
+///
+/// All raw operands and labels remain accepted arguments: `enclose_scalars`
+/// checks its finite/range contract and `FixtureInterval::new` checks the label
+/// and ordered integer endpoints. The complete tuple preserves both rounding
+/// facts. This bridge allocates no owned input, changes no state and grants no
+/// provenance or physical uncertainty; its caller must retain that provenance.
+/// # Errors
+/// Preserve endpoint admission/arithmetic failure before interval construction.
+pub(crate) fn enclose_labeled_scalars(
+    label: u64,
+    center_seconds: f64,
+    distance_seconds: f64,
+) -> Result<
+    (
+        FixtureInterval,
+        FixtureEndpointRounding,
+        FixtureEndpointRounding,
+    ),
+    FixtureEnclosureError,
+> {
+    let bounds = enclose_scalars(center_seconds, distance_seconds)?;
+    let interval = FixtureInterval::new(label, bounds.lower, bounds.upper)
+        .map_err(|source| FixtureEnclosureError::Interval { source })?;
+    Ok((interval, bounds.lower_rounding, bounds.upper_rounding))
+}
