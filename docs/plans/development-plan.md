@@ -1137,6 +1137,17 @@ intervening implementation, import queue and current stops. The
 owns this reconciliation and the new candidate's review/validation separately
 from the earlier source and publication receipts.
 
+The subsequent [MSIX/Store assessment](windows-msix-store.md) addresses the
+owner's free-signing and distribution question against source baseline
+`070927855ed99e1a0683d9f291d3462d33343118`. The
+[same W11 task](../../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026)
+routes source-only eligibility, supported provisioning and recovery preparation
+through W11-W10 and the existing W11-W05/release owners. Current free onboarding,
+Store package signing and catalog trust do not select a new release profile.
+Prepare one bounded card at the packaging checkpoint; a supported complete
+design and actual Store-delivered qualification are later, conditional exits
+under architecture §19.4. Do not delay the current Core task for this card.
+
 **Status:** research recorded; the
 [original task receipt](../../tasks/windows11-integration.md#41-integration-review-and-documentation-validation-receipt)
 retains its reviewed candidate, with later adoption/integration evidence recorded
@@ -1153,7 +1164,8 @@ action in the existing Windows 11 task before dependent integration. W11-W01's
 source card is ready when the acquisition owner reaches it. W11-W02–W11-W08 stay
 planned at their named phases and prerequisites, with actual Windows execution
 held; W11-W07 additionally needs an evidenced eligible hash workload. W11-W09 is
-deferred until its existing UI re-entry gates; W11-W10 stays conditional. Apply
+deferred until its existing UI re-entry gates; W11-W10 stays conditional, with
+the named MSIX source-only card available to its packaging owner. Apply
 the mapped contracts before related timestamp, clock, DNS, service, maintenance
 or resource integration; optional hardware/APIs/providers/profiles are not made
 mandatory by this queue. No acknowledgement by a separately running agent or
@@ -1169,7 +1181,7 @@ execution of these assignments is claimed by publishing the routing.
 | DNS-2; DNSSEC/crypto/performance | W11-W07: evaluate CNG SIMD hash batches only for an evidenced workload, with independent result parity and latency/cost comparisons. Provider handles and multicore scheduling retain separate ownership; no implicit graph selection or storage-root qualification. | DNS-C04/12/16; applicable CHECK-20/21/25/26/27 |
 | Affected native phase; diagnostics/QA | W11-W08: correlate bounded redacted WPR/WPA events and record loss. Separate local diagnostic authorization/expiry from aggregate ETW controller interest, provider/session/file access and retained data; test two controllers and each selected dump collector. Admit one exact low-resource profile with healthy/fault controls before use. PerfLib V2 remains optional. | CHECK-1/17/21/27, with CHECK-1 limited to diagnostic access; applicable ST-T14/16 and DNS-C12/14 |
 | P5 after existing D2/D3 triggers; UI/accessibility | W11-W09: current-state UIA/local notifications, actual Narrator behavior and current-generation action checks. Assess deployment costs before selecting Windows App SDK; ordinary ticking status cannot create announcement spam. | CHECK-14/17/22; applicable ST-T01/14; UI-M0 D1/D2/D3 remain Deferred |
-| Conditional existing owner; no current prerequisite | W11-W10: re-enter Job Objects/triggers, LPAC/app isolation, stricter CET/EHCONT, full enclaves, identity/WinGet or W32Time-provider alternatives only for a named need. VBS claim extensions remain prerelease, side-channel fields need a named threat/role, UDP batching needs a bottleneck and VM Generation ID needs a privilege-compatible design. PPL remains excluded as an ordinary utility-service option. | Selected reserve reuses its existing architecture/storage/package owners; no blanket gate or default adoption |
+| Conditional existing owner; no current prerequisite | W11-W10: re-enter Job Objects/triggers, LPAC/app isolation, stricter CET/EHCONT, full enclaves, identity/WinGet or W32Time-provider alternatives only for a named need. The MSIX/Store cost/distribution question now has a bounded source-only eligibility/provisioning/recovery card; native experiments and channel adoption remain conditional. VBS claim extensions remain prerelease, side-channel fields need a named threat/role, UDP batching needs a bottleneck and VM Generation ID needs a privilege-compatible design. PPL remains excluded as an ordinary utility-service option. | Selected reserve reuses its existing architecture/storage/package owners; full MSIX uses CHECK-1/5/12/13/15/16/18/23/27 and all §19.4 gates; no blanket gate or default adoption |
 
 Preserve DoQ-only upstream and leaf/intermediate pinning, the selected service
 topology, one complete MSI and the independent mandatory-state owner. Native DNS

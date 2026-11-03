@@ -2695,16 +2695,55 @@ An all-in-one MSIX is technically possible in the Windows platform: Microsoft su
 
 Restricted service capabilities and custom installation/removal hooks also affect the distribution route. The documented custom-action mechanisms have narrow game/partner restrictions; they are not a generally available cleanup hook for this utility. Store acceptance is a separate external decision. [S45, S61]
 
+The [3 November MSIX/Store assessment](plans/windows-msix-store.md) records the
+owner's certificate-cost/distribution question without selecting a replacement
+installer. Accepted Store MSIX packages receive free package signing and common
+catalog trust; Store MSI/EXE publication still requires publisher-provided
+Authenticode signatures. Current free account onboarding does not establish
+country/identity eligibility or permission for restricted capabilities.
+`packagedServices` is usually not approved for Store, while `allowElevation`
+has an exceptional approval route; neither an absolute platform ban nor product
+acceptance follows. Resolve the applicable service-dependency policy and exact
+capabilities for this complete utility before committing to that channel.
+
+A separate-process LocalService/service-SID design is a candidate to compare,
+not an adopted substitute for section 4.1. Default LocalService clock authority
+does not prove a suitable effective token. The supported provisioning method
+must remove engine privileges and establish object/process isolation before
+normal work, preserve them through repair/update and tolerate managed-policy
+differences. Manifest validity alone establishes none of this; a mandatory first
+UI launch or a wider LocalSystem broker does not close the gap.
+
 A future MSIX is eligible only if **every** gate below passes for the actual intended distribution route:
 
 1. The complete UI, engine, broker, helper and required payloads are included; there is no separate MSI prerequisite or manual rights-provisioning step.
 2. Effective service identities, privileges, process/token/file isolation and broker network restrictions meet the same security boundary.
-3. Any required extra provisioning and capabilities are supported and actually available to this project.
-4. Installation, update, repair/reset, ordinary Settings uninstall and supported administrative removal work before any UI launch, across reboot/interruption, with correct W32Time restoration.
+3. Any required extra provisioning and capabilities are supported and actually available to this project, including the intended distribution channel's approval and configuration before service exposure.
+4. Installation, update, repair/reset, ordinary Settings uninstall and supported administrative removal work before any application UI launch, across reboot/interruption, with correct W32Time restoration. Normal administrative installation authorization is still required.
 5. Multi-user installation/removal has a clear machine-service owner and cannot leave invisible privileged components or remove another user's required engine unexpectedly.
 6. State migration, publisher identity, rollback and format migration are qualified. MSI/MSIX coexistence cannot create two active clock controllers.
 
 If these conditions are unproven, MSIX is not shipped. The complete MSI remains sufficient for v1. If MSIX is added later, both formats are complete alternatives; users choose one format and do not combine them.
+
+Package replacement/removal must not erase the only mandatory recovery journal
+or executable recovery path before ownership-aware rate cleanup and W32Time
+restoration are settled. An ordinary service stop is not an uninstall signal;
+old-version cleanup cannot restore a competing controller during update. Repair,
+Reset, last-user removal, delayed payload removal and interrupted migration need
+separate observations under CHECK-5/12/13/15/23/27. Returning an older package to
+the Store listing does not roll back machines already updated to a higher version;
+plan a higher-version corrective release without replenishing clock authority.
+Optional `UpdateWhileInUse=defer` on supported Windows builds proves no recovery
+transaction and must not indefinitely prevent security updates.
+
+Qualify package-aware installed-code trust under CHECK-16/18/23: the expected
+package/publisher identity, approved release and actual loaded files must be
+bound to helper authorization and the selected DLL-admission profile. Common
+catalog trust is real evidence, but neither an unrelated Store-signed executable
+nor an unqualified extracted PE is admitted by that fact alone. A separate
+embedded signature on each PE is not presumed mandatory for a future qualified
+MSIX profile. Use the [signing guidance](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries)
+and existing wrong-clock/offline matrix for actual installed and recovery paths.
 
 MSIX full trust is not AppContainer. Full-trust packaged desktop applications retain ordinary desktop permissions. AppContainer is a separate isolation choice requiring explicit capabilities and IPC/accessibility proof; the broker's time authority is not sandboxed merely by using an `.msix` extension. [S42]
 

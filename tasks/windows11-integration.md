@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The second Microsoft Learn pass is integrated into the assignments below; its scope and evidence are recorded separately in section 4.4 onward. Source-only follow-up is ready; implementation and native qualification are unexecuted.  
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The second Microsoft Learn pass and later MSIX/Store refinement are integrated into the assignments below; their scope and evidence are recorded separately in sections 4.4 and 4.6 onward. Source-only follow-up is ready; implementation and native qualification are unexecuted.  
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -9,7 +9,8 @@
 
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),
 the [Windows 11 research](../docs/plans/windows11-integration.md), its
-[Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md) and
+[Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md), the
+[MSIX/Store assessment](../docs/plans/windows-msix-store.md) for packaging work, and
 [development §8.5](../docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
 The research retains primary-source contracts, proposed adaptations and support
 limits; this record owns bounded assignments and subsequent execution evidence.
@@ -291,6 +292,12 @@ Future UI consumers retain D2. These [lifecycle candidates](../docs/plans/window
 reuse this owner and the existing storage task; `ReplaceFileW` failure/recovery
 cases remain with [ST-W02/03](windows-protected-storage.md#st-w02-enforce-operation-outcomes-and-model-durability).
 
+For the conditional full-MSIX route, use the [section 4.6 refinement](#46-msix-and-microsoft-store-refinement--3-november-2026)
+with W11-W10. Supported pre-start privilege configuration, update/repair
+persistence, multiuser ownership and recovery-before-removal must preserve the
+same lifecycle boundary. MSIX manifest/service support, package replacement and
+first-UI setup do not substitute for those observations; the selected MSI stays.
+
 **Controls/exit:** allowed service work and private-object access succeed;
 disallowed token/handle access fails under installed identities. Hold maintenance
 before commit; RM/manual/queued recovery starts must not admit normal protected
@@ -432,6 +439,7 @@ own source contracts and limits. These reserves are not a prerequisite list.
 | Stricter CET/EHCONT / build/security | A selected mitigation property for the exact Rust/native closure; inspect metadata and actual enforcement beside legitimate provider/callback behavior. Existing CHECK-16/20/26 owners remain. |
 | Full VBS enclave / storage/release | A secret operation needs enclave execution beyond isolated CNG roots. Separate runtime build/VBS/HVCI from development/signing eligibility, and use the existing storage task and ST-T11/12/13; the native storage pause remains. |
 | External-location identity or WinGet / UI/packaging | A named identity-dependent feature or qualified distribution need. Keep one complete MSI, profile-specific trust and multi-user repair/removal; existing CHECK-18/23 own final-package evidence. Local notifications alone do not select identity or another updater. |
+| Complete MSIX with Store distribution / packaging/release/security | The owner has named certificate cost and managed delivery as the need. Prepare the bounded source-only card in [section 4.6](#46-msix-and-microsoft-store-refinement--3-november-2026), using the [source assessment](../docs/plans/windows-msix-store.md). Distinguish Store acceptance, supported least-privilege provisioning and complete recovery/lifecycle design before any experiment. All architecture §19.4 gates and CHECK-1/5/12/13/15/16/18/23/27 remain; one complete MSI and OD-05 stay selected pending qualification. |
 | W32Time provider DLL / architecture/clock | An explicitly different Windows-managed-discipline goal. First reconcile controller ownership, trust and restoration in a source-only decision card; never add it as a competing controller. Existing CHECK-5/10/13 remain. |
 | VBS key claims / storage/security | Actual-key origin evidence is the named blocking question. The new `NCryptCreateClaim`/`NCryptVerifyClaim` extensions are prerelease; the base API floor does not qualify them. Define trusted anchor, subject/freshness binding, replay/version/debug/update policy and attestation-key/hash/padding prerequisites. Do not add roles to wrapping/signing roots or adopt a new root, cloud service or hardware rollback claim. Reuse the storage reserve and ST-T01/05/13. |
 | Side-channel policy fields / per-process security | A named threat, process role and supported hardware/build justify one field. Account for irreversible enablement, scheduler dependencies and common-page exceptions; readback is not an enforcement measurement. Compare healthy timing/crypto/IPC and CPU/energy costs under CHECK-16/21, without raising privileges or enabling every bit. |
@@ -447,7 +455,7 @@ a dependency, weaker fallback, service topology or machine-wide policy here.
 | Evidence layer | Current state |
 | --- | --- |
 | Microsoft source investigation and critical source/fit review | Completed research retained in the linked document; documentation facts and engineering inferences are distinguished. No native experiments were executed. |
-| Documentation, architecture, plan and task integration | Earlier integration and local-adoption review/validation retain the candidates in sections 4.1–4.3. The current second-pass integration is recorded separately from section 4.4; earlier passes do not qualify changed text. |
+| Documentation, architecture, plan and task integration | Earlier integration and local-adoption review/validation retain the candidates in sections 4.1–4.3. The second-pass integration is recorded from section 4.4; the MSIX/Store amendment is recorded from section 4.6. Earlier passes do not qualify changed text. |
 | W11-W01 source contract | Ready bounded next action when assigned to the relevant acquisition owner; not executed by this integration. |
 | Portable implementation/model | No W11 work-item, CHECK, DNS-C or ST-T implementation pass established by this integration. |
 | Native Windows/service identity | Unexecuted; the current Windows execution stop, storage-experiment pause and applicable environment/authorization gates remain. The separate fuzz no-retry hold is also unchanged. |
@@ -705,3 +713,99 @@ non-force publication with exact path/blob verification. A substantive later edi
 reopens only its affected review conclusions. W11-W01's source card, ST-W01 and
 later implementation/native assignments remain unexecuted by this integration;
 current Core work and every recorded execution hold remain controlling.
+
+### 4.6 MSIX and Microsoft Store refinement — 3 November 2026
+
+**Request and candidate:** record the completed MSIX/Store research in the
+maintained docs, architecture, plan and existing agent task. Source integration
+starts from `070927855ed99e1a0683d9f291d3462d33343118`, tree
+`b3375bf865414e3c4958a33dd71de43c2e501ea5`. The partial API snapshot is matched by
+Git blob identities; it is not a local checkout or a report of another agent's
+dirty/staged state. The [source assessment](../docs/plans/windows-msix-store.md)
+retains Microsoft Learn and actual SignPath evidence checked 2 November UTC.
+
+**Disposition:** the named cost/distribution question makes one W11-W10
+source-only card useful at the packaging checkpoint. It does not replace W11-W01
+or development §7's portable Core work. One complete MSI, OD-05, current service
+topology, acceptance catalogs and historical task receipts remain. All full-MSIX
+gates in [architecture §19.4](../docs/windows-time-architecture.md#194-future-complete-msix-gate)
+must pass before adoption. Research or documentation review proves no Store
+approval, supported provisioner, effective token or native recovery behavior.
+
+**Next bounded action:** the packaging/release owner prepares that single card
+from the existing study, with W11-W05's lifecycle owner and security review.
+Read `plan-architecture`, `security-build-deployment`, the testing contract and
+the applicable service/privilege guidance. Record the exact proposed package,
+known supporting method, unresolved dependency, owner and next evidence for
+each row; do not restart a broad API or signing-provider survey.
+
+| Card section / existing owner | Required source/design result | Later distinguishing evidence |
+| --- | --- | --- |
+| Publisher and Store admission / release | Actual account/country assumptions, manifest identity and requested service/elevation capabilities; draft precise §10.2.4 and capability questions for the complete utility. Free onboarding and Windows schema support are separate from eligibility. | Record a real response when contact is authorized; certification and account acceptance remain distinct from CHECK-18/23 application evidence. |
+| Supported provisioning / platform/security | Map the current virtual-account mismatch. Name a supported way to establish required privileges, SIDs, owners/ACLs and network restrictions before service exposure and after repair/update. Compare a separate-process LocalService alternative only if it can meet the same boundary. | CHECK-1/15/16: legitimate work succeeds while engine clock authority, token/memory injection and neighboring-service data access fail under actual installed identities. Missing provisioning support leaves MSIX deferred. |
+| Recovery and machine lifetime / W11-W05, clock, storage | Identify who quiesces work and settles rate/journal/W32Time recovery before the last required code or record disappears. Distinguish STOP, update, Settings uninstall, repair, Reset, last-user removal and delayed payload removal; no mandatory first UI launch or external installer. | CHECK-5/12/13/15/23/27: healthy maintenance and interrupted/reboot paths preserve current ownership, consumed authority, mandatory continuity and later administrator/GPO changes. Optional cache removal must not erase the only recovery path. |
+| Installed trust / release/security | Define package/publisher identity, approved release, actual payload and helper/IPC binding. Keep catalog trust, embedded signatures and CIG policy distinct; carry the signing guide's wrong-clock/offline matrix. | CHECK-16/18/23: valid intended Store-delivered package works; tampered, unrelated valid Store-signed and unauthorized copied-out/old-release artifacts cannot gain helper authority. Actual dependency loading and recovery refusal must be observed. |
+| Delivery and corrective updates / packaging/release | Keep a complete product. Compare Store Web Installer's online entry point, any specifically qualified offline path, initial private audience/flights and higher-version corrective release. `UpdateWhileInUse=defer` is conditional, not a cleanup guarantee. | CHECK-13/18/23: actual delivery/update preserves one controller and compatible state; listing rollback does not masquerade as downgrade of already updated machines or permit indefinite security-update delay. |
+
+**Source-card exit:** a reviewer can distinguish established source contracts,
+project-specific inferences, missing vendor/provisioning answers and each later
+observation. A named unsupported requirement justifies deferring the channel,
+not broadening service privileges or splitting the product. The card can finish
+with an explicit unresolved external question; no invented approval is needed.
+
+**Later exits:** first identify a concrete supported full-package design, then
+qualify the actual intended Store-delivered artifact and supported Windows
+builds under the existing phase/environment gates. Store certification is not
+proof of application correctness. Normal administrative installation consent
+remains; behavior before first application UI launch and before login must be
+observed separately. Reuse the existing CHECK owners and this evidence record.
+
+This documentation request authorizes no account creation, Microsoft/provider
+contact, application upload, signing request or Store release. Source-only
+preparation is permitted; current Windows execution STOP, separate fuzz no-retry
+hold, storage pause and UI-M0/D1–D3 boundaries remain. Final documentation
+review/validation is recorded separately below after completion; no code,
+installation or product-qualification result is claimed.
+
+### 4.7 MSIX documentation review and validation
+
+**Completed independent review:** a fresh-context reviewer
+(`fork_turns: none`) inspected the frozen ten-file candidate for the
+documentation-integration stage and returned **ready, with no material
+findings**. The review did not inherit the author discussion or retrieve private
+memory. Its attributed comprehension paragraphs are retained verbatim:
+
+> The amendment records what complete MSIX distribution through Microsoft Store could offer NevroTick: free package signing, catalog-backed content trust, hosted delivery and updates. It integrates that research into the existing architecture, signing guidance and W11 work queue, while making service admission, supported provisioning and recovery-before-removal explicit unresolved conditions. Its immediate continuation is one bounded source/design card at the packaging checkpoint; it does not select MSIX or authorize an experiment or submission.
+
+> The current documented product has implemented portable protocol/Core owners and a restricted native UI prototype, with further Core qualification in progress. Its selected deployment and service design remains a complete per-machine MSI, a LocalService network engine, a separate virtual-account clock broker and an elevated lifecycle helper; these planned product boundaries are not established native deployment results. OD-05 retains conditional SignPath signing and an accepted initial OpenPGP alternative subject to its outstanding qualification gates. Windows execution, the separate fuzz retry, storage experiments and the specified UI extensions remain held or deferred.
+
+The reviewed manifest SHA-256 is
+`9041cb822f8b799238d691062d7bd5bb097edd68b60d49e90a633801c53365d8`.
+The completed raw review SHA-256 is
+`5688e866716a14b337b6580206d5ee1ff001b849415948a2c3a8efb380a6ba73`.
+These identify the candidate before this factual receipt. The reviewer corrected
+its own phrase about OpenPGP qualification to the wording above; candidate bytes
+and the documentation-stage verdict did not change.
+
+The reviewer independently matched all ten candidate SHA-256/Git blob identities
+and the nine existing source blobs against `0709278`; the tenth document is new.
+All 32 distinct changed/new local-link and anchor combinations resolved against
+the complete pinned tree and retrieved target bytes. Consequential fees, account
+policy, services, custom actions, catalog trust and lifecycle assertions were
+checked against retained primary pages; this was not a fresh exhaustive retrieval
+of every source or a native experiment.
+
+The coordinator's scoped documentation check also passed those 32 combinations,
+all 30 source-register identities and added-whitespace/conflict/heading checks.
+All 27 CHECK, 18 DNS-C and 18 ST-T catalog rows, development section 7, accepted
+owner decisions and prior W11/storage task receipts remain unchanged. Counts
+describe the frozen pre-receipt candidate; the coordinator rechecks this factual
+appendix before expected-parent, non-force publication and verifies the resulting
+commit/tree/path identities. No root documentation checksum bundle is present.
+
+Review covered the ten changed Markdown files and the relevant existing owners;
+it excluded product-code auditing, an implemented package-aware verifier, actual
+SDK/native deployment behavior and applicant/vendor approval. No source card,
+MSIX build, Windows run, signing or release was completed by this amendment.
+The next permitted packaging action remains the source-only card in section 4.6
+when that owner is assigned; current Core work and execution holds remain.

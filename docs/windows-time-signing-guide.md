@@ -204,6 +204,59 @@ Azure Artifact Signing currently requires a paid Azure subscription. Public Trus
 
 A valid signature also does **not guarantee the absence of SmartScreen prompts**. Reputation and other Windows protections remain separate considerations. Microsoft's current guidance says EV certificates no longer automatically bypass SmartScreen reputation checks. Paying for EV solely to promise warning-free installation would be an unsound plan. [S11]
 
+### 6.1 Store MSIX trust and publication boundaries
+
+The [MSIX/Store source assessment](plans/windows-msix-store.md), checked
+2 November 2026 UTC and recorded 3 November locally, refines the conditional
+route above. The complete MSI and OD-05 remain selected; no Store account,
+provider approval, signed package or new release profile is established here.
+
+For an accepted Store MSIX, Microsoft supplies the package signature after
+certification; the developer does not need a purchased public certificate or
+signing token for that route. Current Individual and Company onboarding waive
+their former registration fees through `storedeveloper.microsoft.com`. Select
+the truthful account type and verify country/document eligibility; old portal
+flows and broad market-availability statements are not sufficient evidence.
+Store MSI/EXE submissions still require trusted installer and PE signatures;
+the initial OpenPGP profile does not meet that requirement.
+
+Microsoft documents a common catalog signature for the files in an MSIX app.
+This supports a package-aware trust candidate and must not be dismissed as trust
+only in an outer archive. It does not establish an independently usable embedded
+Authenticode signature on every extracted EXE/DLL. Before adopting this route:
+
+- Bind the installed package's exact identity, approved release and payload to
+  the privileged-helper and IPC admission contract; an unrelated valid Store
+  package must fail beside the intended valid NevroTick package.
+- Verify the actual DLL/import closure under the selected CIG/App Control
+  configuration. Store signature recognition does not grant NevroTick role
+  authorization or prove that every dependency loads under that profile.
+- Retain source/build and Store-delivered artifact identities separately because
+  Store signing changes the package. Observe tampering and valid update/repair
+  controls on the actual installed distribution artifact.
+- Apply section 5.1's wrong-clock/offline cases to first installation, pre-login
+  startup, helper activation, maintenance and recovery. Signing and timestamping
+  alone do not settle those paths.
+
+The Store Web Installer can offer website/GitHub-first acquisition of a published
+free MSIX through the Store backend. It is an online delivery entry point, not a
+standalone offline full installer or a separately managed prerequisite product.
+Official `winget download` supports package/dependency acquisition and an offline
+license workflow, but availability, licensing, rehosting and actual offline
+behavior still need route-specific evidence. It is not a free signature service
+for arbitrary newly built GitHub artifacts.
+
+Private audience and package flights can support a later controlled release;
+they do not waive certification or capability restrictions. Choose private
+audience before first public publication if needed. A listing rollback to an
+older package does not downgrade already updated installations: a corrective
+higher-version release and compatible state recovery remain necessary. Preserve
+David's exact-candidate release authority, truthful publisher/package identity,
+and all [architecture §19.4 gates](windows-time-architecture.md#194-future-complete-msix-gate).
+The [existing W11-W10 assignment](../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026)
+owns the bounded eligibility/provisioning investigation; SignPath remains the
+separate conditional free-Authenticode route for the complete MSI.
+
 ## 7. Development and the accepted initial OpenPGP release profile
 
 The architecture already permits an isolated, test-signed S0.6 MSI to qualify installation, privilege separation and removal behavior. Trust that test certificate only inside the disposable laboratory VM; record the substituted trust store and certificate in the evidence. Restore or destroy the VM afterward.

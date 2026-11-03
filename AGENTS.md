@@ -136,6 +136,18 @@ settings remain conditional. Apply the relevant refinement before dependent
 adapter work and record its disposition in the existing W11 or storage task.
 Retain the current Windows execution stop, separate fuzz hold and storage pause.
 
+MSIX/Store distribution research: read the [focused study](docs/plans/windows-msix-store.md),
+[architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate)
+and the [existing task refinement](tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026).
+W11-W10 owns the conditional complete-package investigation; W11-W05 and the
+existing release/storage owners supply lifecycle and trust evidence. Prepare one
+source-only eligibility/provisioning/recovery card at the packaging checkpoint;
+do not repeat a general survey or displace the current Core task. Store signing
+and catalog trust are useful capabilities, not service approval or helper
+authorization. Keep the complete MSI and OD-05 until all full-MSIX gates pass;
+no split package, broader service rights, account submission or execution follows
+from this documentation request.
+
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
 The current [Cargo workspace](Cargo.toml) contains

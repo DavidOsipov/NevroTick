@@ -191,6 +191,14 @@ Candidate messages include unavailable protected storage, optional-cache mode, p
 | Protected Process Light | Strong process protection in eligible scenarios [X9] | Windows levels are reserved and the antimalware route has special eligibility/signing requirements. Ordinary utility Authenticode signing is not sufficient. Exclude as a general NevroTick option. |
 | SCM service triggers | On-demand activation for a genuinely optional component [X10] | An address-arrival trigger is not Internet readiness; named-pipe/RPC endpoint triggers are not first-UDP/53 activation. They do not justify stopping required time/DNS work. |
 
+The later [MSIX/Store investigation](windows-msix-store.md) evaluates the named
+certificate-cost and managed-delivery need within W11-W10. It preserves the
+positive catalog-trust/signing benefits alongside restricted service admission,
+supported least-privilege provisioning and recovery-before-removal gaps. Use
+[architecture §19.4](../windows-time-architecture.md#194-future-complete-msix-gate)
+and the [existing task refinement](../../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026);
+this does not select a new channel, split product or changed service account.
+
 ## 10. How an implementation agent should use this research
 
 Use the existing phase, CHECK, DNS-C and storage-task owners. Select one relevant mechanism when its product slice is reached, then record:

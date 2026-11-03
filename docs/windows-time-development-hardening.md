@@ -821,6 +821,19 @@ before FFI implementation. Full-page retrieval through MCP is source evidence,
 not ABI/build qualification. The actual I/O-wait timeout, unattended resume and
 adjacent cross-thread QPC cases belong to existing W11-W01/02 timing checks.
 
+For a future complete MSIX only, the [Store refinement](plans/windows-msix-store.md)
+and [W11-W10 assignment](../tasks/windows11-integration.md#46-msix-and-microsoft-store-refinement--3-november-2026)
+reuse CHECK-1/5/12/13/15/16/18/23/27. Verify effective least-privilege provisioning
+and allowed/denied object access, then ordinary Settings removal, Reset/repair,
+interrupted update and last-user transitions before any application UI launch.
+Normal administrative consent remains required. Observe mandatory recovery
+completion before its last record or executable is removed; Store package
+replacement alone is not that observation. Challenge a package-aware helper
+verifier with an unrelated valid Store-signed package beside the intended
+NevroTick release; qualify the actual catalog/DLL/CIG path and wrong-clock/offline
+matrix. No separate embedded PE signature is assumed necessary without evidence,
+and no currently selected MSI profile or execution hold is changed.
+
 Sections 6.4/6.4.1 retain the child-handle, stricter-CET and conditional-enclave
 owners; section 9.5.1 retains low-resource profile admission; section 9.8 retains
 trace/counter evidence. Preserve one complete MSI, DoQ-only DNS, optional-storage
