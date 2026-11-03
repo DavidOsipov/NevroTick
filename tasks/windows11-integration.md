@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile, additional Trusted Launch target and bounded provisioning/recovery gaps. Package implementation and native qualification remain unexecuted.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Package implementation and native qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -1146,3 +1146,111 @@ was added afterward and receives final link/whitespace/content checks before
 publication. No product or native gate is closed by these documentation results.
 The next action and existing execution holds remain those recorded in section
 4.14 above.
+
+### 4.15 Provisioning and independent-removal research — 3 November 2026
+
+**Request and baseline:** David requested deeper research into the unresolved
+service provisioning and independent-removal questions, then explicitly asked
+to retain that research in English in the repository documentation and tasks.
+The publication basis is `474698543a07a69830d606388c5c2539e9a4e2ec`; the isolated
+276-file review snapshot was matched to that commit's full remote tree.
+This is a documentation handoff, not permission to adopt an alternative topology
+or resume native work.
+
+**Canonical continuation:** [MSIX plan §7.4](../docs/plans/windows-msix-store.md#74-service-provisioning-and-independent-removal-research)
+owns the facts, candidate comparison, residual boundaries and bounded next
+observations. Sections 5 and 7.1 of that plan now classify custom actions as
+blocked for the ordinary utility scenario under the published grant policy,
+rather than merely an unspecified partner possibility. An explicit applicable
+Microsoft exception could change that disposition; the technical custom-
+capability name alone does not.
+
+**Completed research:** full Microsoft Learn reads establish the ineffective
+SCM database lock, manual-service trigger possibility, StartService/readiness
+distinction, configured-versus-effective privilege/SID state, restricted-child
+creation and permanent privilege-removal tradeoff. Lifecycle findings refine
+final stopped acknowledgement, delayed restart, same-account failure commands,
+package/SCM notification limits, state deletion and W32Time trigger/task startup.
+The source register retains S01–S64 and adds S65–S87. No native outcome is inferred.
+
+| Existing assignment / checks | Disposition after this research | Next dependent action |
+| --- | --- | --- |
+| W11-W05 provisioning; CHECK-1/2/15/16 | Supported API building blocks; production owner/order still unresolved | Compare initially disabled services plus explicit elevated activation with a short-lived automatic LocalSystem bootstrap. Record activation UX, authority, Store capability and servicing tradeoffs through the existing owner-decision process before implementation. Neither is selected. |
+| W11-W05/W11-W10 engine isolation; CHECK-1/2/15/16/26/27 | Restricted engine child is an unselected topology alternative | Freeze creation token/attributes, effective isolation, broker rights/networking, package identity and restart/lifetime contract before any native prototype. Do not add launcher privileges or adopt AppContainer by implication. |
+| W11-W05 lifecycle/storage; CHECK-5/12/13/23/27 | Independent Settings/Reset/final-removal recovery remains unresolved | First identify a supported pre-removal barrier or retained authorized invocation. Challenge running-service versus stopped/crashed-service removal with an inert journal; a surviving record alone is not a recovery mechanism. |
+| W11-W05 maintenance; CHECK-5/12/13/23/27 | Source-grounded delayed-restart and refused-update cases prepared | Include already queued restart during maintenance, cleanup before stopped acknowledgement, and version B refusing admission while version A's W32Time takeover remains. Safe refusal must not be confused with restored availability. |
+| Release/W11-W10; CHECK-18/23/24 | Custom-action route blocked under ordinary published eligibility | Keep it outside the normal implementation route unless applicable Microsoft exception evidence appears. Preserve David's selected Store attempt with services and the absence of an automatic MSI fallback. |
+
+An OS-owned scheduled recovery task remains a visible, unselected alternative.
+Its external privileged state, secure executable/data binding, successor checks,
+large-clock-jump behavior and eventual self-removal require a separate complete
+contract. A fixed service-control command does not implement the existing clock
+ownership/journal protocol. This research does not accept a hidden watchdog or
+relax recovery before the last usable mechanism disappears.
+
+**Next permitted work:** retain these findings with W11-W05/S0.6 and the existing
+platform, security, lifecycle and release owners. Resolve the applicable owner
+choice before dependent implementation; independent Core work continues. The
+existing section 7.3 removal pair remains the first native discriminator after
+its prerequisites and execution hold are resolved. Provisioning interruption,
+update/repair, restricted-child restart and queued-restart cases are bounded
+follow-ups, not an instruction to launch a full matrix now.
+
+David also requested research into an isolated Windows experiment environment
+for agents developing through WSL on a Windows 11 computer. That request is
+environment-design work: it does not authorize host clock/service/Defender
+changes, retry the blocked fixture or lift the current Windows execution stop.
+Keep the separate fuzz no-retry hold, storage pause and UI-M0/D1–D3 deferrals.
+
+**Reconciliation:** amended OD-05 and the complete-MSIX objective remain; all
+prior source/native receipts retain their recorded candidates. The new material
+narrows public capability availability and adds supported facts, candidate costs
+and counterexamples. No account topology, new persistent privileged role,
+dependency, implementation, package build, signing or Store action is adopted.
+Independent review and final documentation-check results follow after execution.
+
+#### Lifecycle-research independent review and checks
+
+`msix_research_writeback_review`, delegated read-only with `fork_turns: "none"`,
+completed the independent review. Verdict: **READY for the English MSIX research
+documentation handoff only; no material findings.** The reviewer also used a
+fresh-context, read-only verifier for the bounded custom-action, token and
+service-activation claims. Its comprehension paragraphs are retained verbatim:
+
+> This change retains the completed provisioning and independent-removal investigation in the existing MSIX plan and Windows task. It tightens the ordinary utility custom-action disposition, compares explicitly unselected provisioning and engine arrangements, and records concrete service-state, recovery-lifetime and servicing counterexamples. The deliverable is a source-research handoff with existing owners and bounded later observations; it does not select a topology, implement a package, or establish native behavior.
+
+> The current authoritative design is one complete hardened MSIX prepared for David’s Store attempt, preserving separate engine and broker authority, an unelevated UI, narrow elevated lifecycle operations, and recovery before the last necessary mechanism disappears. The supplied repository record has portable protocol/Core work and fixture or observation components; production service/helper and complete-package qualification remain outstanding. Current Core work, the Windows execution stop, separate fuzz no-retry hold, storage pause and UI-M0 deferrals remain in force.
+
+The frozen pre-receipt manifest SHA-256 is
+`dc5453c78678d015805ea7e61840b3d927bbd38fc41b887ea699ad79346426cd`.
+It identifies the reviewed plan blob
+`58489c8fae3fb5155cf8723df89aa0e4a051f794` and task blob
+`25a8eabf7339523a40568e0be7494037ce4838c5`, before this receipt was added.
+The reviewer matched those bytes and their baseline blobs to the supplied local
+review snapshot; the coordinator separately matched all 276 baseline files and
+modes to the full untruncated remote `4746985` tree. The partial local snapshot
+is not publishable remote history.
+
+The independent review and coordinator's documentation checks established:
+
+- Exactly the two intended Markdown files changed, with no mode or executable
+  changes. `git diff --check` passed; the plan's two fenced blocks are balanced.
+- S01–S87 are unique and contiguous, with no undefined source references.
+  The S01–S64 register entries are byte-preserved. Both new cross-document
+  links resolve to the actual section 7.4 and section 4.15 headings.
+- Removing section 4.15 and restoring only the declared status-line update
+  reconstructs the previous task body and all its earlier receipts exactly.
+  The 27 CHECK rows, 20 AC rows and 345 ASVS records remain unchanged, as do
+  the account, lifecycle, owner-decision, Core-priority and execution-hold
+  contracts.
+- Targeted primary-source reads support the custom-action eligibility boundary,
+  configured-versus-effective service state, restricted-child qualifications,
+  failure-action timing and removal-notification limits at the stated scope.
+  Proposed topologies, activation UX and a scheduled recovery task remain
+  explicitly unselected; no source statement substitutes for native evidence.
+
+The review verdict covers the frozen pre-receipt candidate. This factual receipt
+was appended afterward and checked separately for exact quotation, scope,
+relative links, whitespace and preservation before publication. No build,
+package operation, Windows execution, host change or Store action was performed.
+Section 4.15's next permitted work and existing execution holds remain in force.

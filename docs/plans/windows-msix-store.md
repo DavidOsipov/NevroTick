@@ -5,6 +5,7 @@
 **Repository basis:** `070927855ed99e1a0683d9f291d3462d33343118`.  
 **Hardening amendment:** 3 November 2026, against `661281ad0e6504338d352b943154522b800974fa`; new Microsoft Learn sources checked on that date.<br>
 **Source-profile continuation:** 3 November 2026, Asia/Tbilisi, against `01bcb679cdf09720a1ae54dfdcae25b0864f4d77`; sections 3.1.1 and 7.1 onward record the concrete profile and remaining supported-mechanism gaps.<br>
+**Lifecycle research continuation:** 3 November 2026, against `474698543a07a69830d606388c5c2539e9a4e2ec`; section 7.4 records supported building blocks, unselected alternatives and distinguishing observations. David requested this research be retained in English; no alternative is adopted by that request.<br>
 **Method:** Microsoft Learn MCP searches and full-page retrieval, supplemented by
 the official SignPath conditions. Search snippets were not the final evidence.
 
@@ -444,11 +445,14 @@ stop or clean file removal alone does not establish this application-specific
 order. A stop can also mean update, restart or failure; treating every stop as
 uninstall would conflate different ownership transitions.
 
-The public `customInstallActions` policy describes restricted game/partner uses;
-`UninstallActions` is documented for MSIXVC games. The capability table also names
-the exceptional `Microsoft.classicAppInstaller_8wekyb3d8bbwe` route. Preserve that
-exception rather than declaring universal OS impossibility, but no generally
-available utility grant route was established. [S14, S21]
+The public `customInstallActions` grant policy is stronger than unspecified
+partner eligibility: it limits the capability to particular Microsoft/partner
+desktop games and says other scenarios will not receive it. The separate
+technical condition names `Microsoft.classicAppInstaller_8wekyb3d8bbwe` as a
+custom capability, not a package dependency or a general utility entitlement.
+Treat this route as blocked under the published policy for NevroTick's ordinary
+scenario; only explicit applicable Microsoft exception evidence could change
+that disposition. This does not prove universal OS impossibility. [S14, S21]
 
 The current GDK path runs install actions **before first title launch**, not
 initial package installation. It depends on retail Store execution; local
@@ -634,7 +638,7 @@ The package author uses this field-level profile when real components exist:
 | `packagedServices` | Required for declared `windows.service` extensions | Disclose the real engine and broker; record their own-process SCM service entries, executable paths, accounts and startup configuration. Account/provisioning mapping remains unresolved under section 4. [S14–S17] |
 | `allowElevation` | Justified only for the intended bounded elevated lifecycle operations | Exact helper activation and Store capability admission remain unresolved; normal UI use stays unelevated. [S14] |
 | `localSystemServices`, mutable/external executable content | Excluded from this selected profile | Do not insert broader authority or mutable code to get a package accepted or a mitigation test to pass. |
-| `customInstallActions` and `Microsoft.classicAppInstaller_8wekyb3d8bbwe` | Exceptional route under investigation, not an assumed entitlement or ready manifest entry | Require evidence of applicable eligibility, activation/ordering and lifecycle semantics; public naming alone proves none of these for NevroTick. [S14, S21, S22] |
+| `customInstallActions` and `Microsoft.classicAppInstaller_8wekyb3d8bbwe` | Blocked for this ordinary utility scenario under the published grant policy; retain only as an explicitly confirmed exception | The technical capability condition does not override the games-only grant policy. Any actual exception still needs activation/ordering and lifecycle evidence. [S14, S21, S22] |
 | Other capabilities/extensions/dependencies | Only individually justified by an actual component | No speculative broad filesystem, COM, protocol, startup-task, shell or networking declaration. Full-trust network confinement still needs the actual service/WFP owner. |
 
 The immutable layout contains the approved UI/service/helper images, admitted
@@ -722,6 +726,213 @@ startup before login, restoration/removal results and exact reviewer steps for
 the frozen candidate. Missing rows stay unresolved; do not submit planned
 protections or hypothetical removal results as implemented facts.
 
+### 7.4 Service provisioning and independent-removal research
+
+This continuation refines sections 4, 5 and 7.3 using Microsoft Learn full-page
+reads. It separates documented APIs, architecture proposals and native evidence.
+The selected complete-MSIX direction, current account/authority contracts and
+recovery requirement remain authoritative. None of the candidates below is a
+chosen topology, approved capability, implemented mechanism or Windows pass.
+The source inventory remains that of section 7.1.
+
+#### Provisioning candidates and decision boundaries
+
+The configuration APIs exist; the unresolved question is which trusted package
+role applies them in a safe order and retains the guarantee through servicing.
+Do not give the network-facing engine `SERVICE_CHANGE_CONFIG`: that right also
+allows changing the service executable. Configuring service DACL/owner requires
+the corresponding `WRITE_DAC`/`WRITE_OWNER` authority. Readback through
+`QueryServiceConfig2W` is necessary but does not prove the effective token or
+object isolation of an already running process. [S54, S55, S69–S71]
+
+| Unselected candidate | Useful property | Remaining cost or evidence |
+| --- | --- | --- |
+| Initially disabled services plus an explicitly elevated enable/configure operation | Supplies a narrow configuration owner without a permanent LocalSystem runtime role | Changes activation UX if it requires an initial user action; helper elevation/Store eligibility, exact package identity and servicing behavior remain unqualified. Do not silently add mandatory first UI launch. |
+| Short-lived automatic LocalSystem bootstrap service, with functional services initially disabled | A manifest-supported account/start mode could provide configuration without depending on UI launch | Adds a privileged service registration and `localSystemServices`; process exit does not remove that registration. First-start ordering, protected re-entry, interruption, idempotence and repair/update/SID activation remain unqualified. This is not a broader LocalSystem clock broker or an adopted exception. |
+| One SCM broker creating a restricted engine child | Can establish the engine's token restrictions and creation-time mitigations before engine entry | Changes topology and supervision. It does not itself supply all broker/service configuration authority, outbound-network confinement or independent-uninstall recovery. |
+
+The first two candidates are inferred compositions of supported manifest/SCM
+building blocks, not Microsoft-endorsed complete MSIX recipes. The manifest
+permits disabled and automatic services and LocalSystem/LocalService accounts;
+Store approval is a separate condition. Changing a packaged service to a virtual
+account through the general SCM setter would likewise require a supported
+servicing contract; API support for virtual accounts does not establish that
+MSIX preserves a manifest/account mismatch. [S14, S16, S17, S55, S69]
+
+For an explicit enable operation, keep service names, executable ownership,
+permitted operations and expected package identities product-controlled. The
+helper must not accept arbitrary executable paths, service names, command lines,
+accounts or security descriptors from UI/IPC. Configure while functional services
+remain disabled, verify each transition, then obtain admission evidence from
+the actual fresh processes before allowing networking/IPC/clock ownership.
+Interrupted provisioning must remain nonfunctional and recoverable. Reconcile
+the selected lifecycle with the existing owner-decision procedure before its
+dependent implementation.
+
+#### SCM facts that change the implementation design
+
+| Documented fact | Consequence for NevroTick |
+| --- | --- |
+| A manual service can have a start trigger; Microsoft's desktop10 example uses `StartupType="manual"` with a domain-join trigger. [S67] | Manual mode is not a pre-provisioning barrier. Use disabled state for the candidate and verify that premature starts fail, then separately qualify every permitted activation path. |
+| Since Vista, `LockServiceDatabase` is compatibility-only and has no database-locking effect. [S65] | Do not implement a fictitious atomic multi-service transaction by taking that lock. Every interrupted intermediate state needs a safe disposition. |
+| Win32 `StartServiceW` returns after SCM learns that the ServiceMain thread was created, without waiting for the first status update. [S66] | Successful launch is not token, mitigation, IPC or application-readiness evidence. Require a bounded admission result bound to the actual process and generation. |
+| Required privileges apply at the next service start; shared-process services receive a union, and `SeChangeNotifyPrivilege` is retained. [S19] | Inspect own-process hosting and effective privileges. RequiredPrivileges removes authority; it does not manufacture missing privileges. |
+| The service-SID reference documents next-system-start activation. [S20] | Distinguish configuration readback, pending reboot and separately observed first-install behavior. Do not assume a restart alone establishes every requested SID property. |
+| UserRights CSP's ChangeSystemTime policy requires LocalService to remain assigned. [S68] | The account name cannot prove that a network engine lacks clock authority. Check actual machine policy and token, including absence rather than temporary disabling of forbidden privileges. |
+
+The CSP statement is scoped to its documented policy/platform support; it is not
+a claim that every token on every Windows configuration is identical. The
+generic account description and a successful configuration call are insufficient
+substitutes for native token and denied-operation evidence.
+
+#### Restricted child: concrete benefit and restart tradeoff
+
+`CreateRestrictedToken` can remove privileges, mark SIDs deny-only and add
+restricting SIDs. The documented access check evaluates both ordinary and
+restricting SID sets. Microsoft explicitly supports passing a restricted copy
+of the caller's own primary token to `CreateProcessAsUserW` without
+`SeAssignPrimaryTokenPrivilege`. The latter API still typically requires
+`SeIncreaseQuotaPrivilege`; it can temporarily enable a required privilege
+already present in the caller's token. [S72, S73]
+
+This makes a broker-created engine a credible way to keep clock/debug/
+impersonation authority out of the engine from process creation. It also gives
+the broker ownership of supported creation attributes. It does not retroactively
+restrict the SCM-launched broker's loader/CRT path, establish package identity
+for the child, prove Trusted Launch/CIG behavior, or provide broker network
+denial. An AppContainer/LPAC alternative would require its own supported token,
+capability, networking, IPC and identity qualification; it is not silently
+combined with this restricted-token proposal.
+
+Permanent removal differs from disabling: a removed privilege cannot be restored
+to the same token. If the broker removes authority needed by the selected child
+creation path, its later engine-restart strategy must still work. Retaining a
+necessary minimal privilege or obtaining a fresh SCM process are alternatives
+to qualify. Keeping an unrestricted duplicate token merely to regain supposedly
+removed authority would preserve that authority. [S74]
+
+Account sharing remains a substantive boundary. Default process security derives
+from token security, and dangerous process/handle access can undermine isolation.
+Explicit process/thread/token/IPC/journal descriptors and controlled handle
+inheritance must deny engine-to-broker escalation while permitting legitimate
+IPC. An `OWNER RIGHTS` ACE can replace the owner's implicit READ_CONTROL and
+WRITE_DAC permissions; its existence does not prove a proposed descriptor is
+correct. Retain the architecture's per-object matrix and actual positive/negative
+Windows controls. The broker also becomes responsible for child lifetime,
+bounded restart and preventing an orphan engine after broker failure. [S73,
+S75, S76]
+
+#### Custom-action policy and lifecycle refinement
+
+The current S14 grant policy blocks ordinary NevroTick use of custom actions;
+the separate custom-capability formula does not override it. If Microsoft later
+confirms an applicable exception, obtain the exact supported channel, process
+identity, service-start ordering, failure/cancellation behavior and cleanup/data
+lifetime contract before relying on it.
+
+The GDK/MSIXVC documentation says installation actions run before first title
+launch, continue toward launch after failed actions, and retry failed/incomplete
+install actions on later launches. Uninstall actions depend on matching prior
+install/repair action names; a successful action name may be skipped across an
+update, so changing arguments alone is not a migration identity. Local
+Add-AppxPackage/wdApp development installation does not execute this documented
+Store pipeline. These are GDK-path facts, not a proven description of every
+possible exceptional classicAppInstaller path. The launch-failure discussion does
+not prove that every uninstall failure is ignored. No service ordering or
+uninstall-veto guarantee is inferred. [S14, S21, S22]
+
+#### Recovery lifetime, stop acknowledgement and delayed restart
+
+Detailed MSIX virtualization/uninstallation documentation concerns packaged and
+redirected state. It does not promise transactional rollback of arbitrary SCM
+changes to the pre-existing W32Time service. This is why clean-uninstall claims
+do not close the application-specific restoration requirement. Service-managed
+state remains unsuitable as the sole surviving journal because SCM deletes it
+when the service is removed. [S37, S61, S62]
+
+`SERVICE_STOPPED` is the final acknowledgement: Microsoft requires necessary
+cleanup before that report, one stopped report only, and no further work because
+the process may be terminated at any time afterward. Do not acknowledge stopped
+and then schedule restoration in a background task. A separately qualified
+recovery handoff must actually retain an authorized, invocable owner, not only
+a record asserting that somebody will restore later. [S77]
+
+SCM failure actions cover process death without stopped status and, when the
+configured non-crash flag applies, stopped status with a nonzero exit code.
+A successful planned stop is not equivalent. A recovery command runs under the
+service's account, not an automatically elevated one. An already queued restart
+cannot be canceled; Microsoft documents explicit disabling to prevent delayed
+unexpected restart. Keep the durable maintenance/generation admission barrier
+even when the service was manually started and stopped after the failure.
+The failure flag's documented next-system-start activation remains separate from
+configuration readback. [S54, S78, S79]
+
+Neither the ordinary package uninstall event arguments nor the newer package
+extension uninstall arguments establish a deferral/acknowledgement contract.
+`SERVICE_NOTIFY_DELETE_PENDING` is an observation after DeleteService is invoked;
+it needs a live observer and does not turn service handles into a supported
+package-removal veto. DeleteService defers SCM entry removal until relevant
+handles are closed and the service stops. That does not prove necessary package
+payload, registration and recovery invocation remain available. [S57, S80, S81,
+S87]
+
+**Supported design inference:** independent recovery requires all of retained
+trusted data, executable code, authority and an invocation path. An in-package
+watchdog can supervise another role while alive, but shared package lifetime
+alone proves no survivor after final removal. This preserves the bounded open
+question; it does not assert that every Windows mechanism is impossible.
+
+#### Alternatives that reduce or move the recovery problem
+
+| Unselected approach | Useful property | Unresolved boundary |
+| --- | --- | --- |
+| Restore before the helper's own removal request | Controls that request's order | Independent Settings/administrative removal and Reset can bypass it. |
+| Preserve W32Time startup configuration and only stop it temporarily | Reduces persistent changes | W32Time can be trigger/task started. Polling and stopping it again leaves a competing-controller interval; exclusivity still needs proof. [S82] |
+| Retain an OS-owned recovery task using inbox executable actions | Could preserve an invocable mechanism without a separate installed application binary | Adds privileged state outside MSIX; needs explicit acceptance, protected data/action binding, suitable rights, update/successor discrimination, correct clock handling and eventual self-removal. [S83–S86] |
+
+A fixed `sc.exe` sequence does not implement ownership-generation checks,
+clock-rate cleanup and journal reconciliation. A surviving recovery task must
+not restore stale pre-update state underneath a valid successor. A calendar
+StartBoundary is a date/time, not evidence of a monotonic lease that remains
+correct after large forward/backward clock corrections. A post-removal task
+could only satisfy the existing alternative of retaining an invocable recovery
+mechanism until restoration; it cannot prove restoration occurred before payload
+removal. The hidden off-package watchdog remains unselected. [S84–S86]
+
+**Counterexample to design against, not an observed product bug:** version A has
+taken ownership and disabled W32Time; version B starts after an update, detects
+unsafe token/configuration/mitigation state and correctly refuses normal work;
+W32Time is still disabled. Fail-closed admission protects actuation authority but
+does not itself restore synchronization availability. Qualify recovery despite
+normal-work refusal before allowing the original takeover. Never weaken the
+admission checks to make this scenario appear successful.
+
+#### Bounded next evidence under the existing owners
+
+Keep section 7.3's running-versus-stopped removal pair as the first lifecycle
+discriminator. An external observer records controls, cleanup, dummy journal
+completion, service deletion and payload/data lifetime; it must not perform the
+claimed recovery. Only a credible mechanism surviving that pair justifies the
+larger Reset/update/reboot/multiuser matrix.
+
+For provisioning, the next inert package experiment compares disabled initial
+services, refused premature start, interruption between configuration steps,
+fresh effective tokens and one update/repair. An external administrative harness
+can establish API behavior but cannot supply the production provisioning owner.
+If the restricted-child alternative is selected for investigation, separately
+observe child identity/privilege absence, permitted IPC, denied broker access,
+restart after privilege removal and child lifetime after broker failure.
+The delayed-restart maintenance case is a distinct later observation. None of
+these requires real clock/W32Time changes for its first distinguishing result.
+
+W11-W05 retains provisioning/security CHECK-1/2/15/16 and lifecycle/storage
+CHECK-5/12/13/23/27; W11-W10 retains activation/mitigation CHECK-16/26/27 and
+release CHECK-18/23/24. The
+[continuation task](../../tasks/windows11-integration.md#415-provisioning-and-independent-removal-research--3-november-2026)
+records disposition. Current Core priority and all Windows/fuzz/storage/UI holds
+remain. Researching a safer Windows laboratory is not permission to run these
+experiments on the developer's host or to retry the Defender-triggering fixture.
+
 ## 8. Primary source register
 
 Sources are dated retrieval evidence, not frozen platform guarantees. The
@@ -791,3 +1002,26 @@ documentation does not establish actual project eligibility or native behavior.
 - **S62:** [GetServiceRegistryStateKey and uninstall deletion](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-getserviceregistrystatekey).
 - **S63:** [Microsoft desktop6 reference XSD](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/resources/AppxPackaging/Manifest/Schema/2018/DesktopManifestSchema_v6.xsd), pinned `CT_Service` and account/startup types.
 - **S64:** [Microsoft desktop7 reference XSD](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/resources/AppxPackaging/Manifest/Schema/2020/DesktopManifestSchema_v7.xsd), same pinned source revision.
+- **S65:** [LockServiceDatabase compatibility-only behavior since Vista](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-lockservicedatabase).
+- **S66:** [StartServiceW completion and disabled-service error](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-startservicew).
+- **S67:** [Predefined service triggers and manual-start example](https://learn.microsoft.com/uwp/schemas/appxpackage/uapmanifestschema/element-desktop10-predefinedtriggerevents).
+- **S68:** [UserRights CSP ChangeSystemTime and required LocalService assignment](https://learn.microsoft.com/windows/client-management/mdm/policy-csp-userrights#changesystemtime).
+- **S69:** [ChangeServiceConfigW, startup mode and virtual-account support](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfigw).
+- **S70:** [QueryServiceConfig2W configuration readback](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-queryserviceconfig2w).
+- **S71:** [SetServiceObjectSecurity and descriptor rights](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setserviceobjectsecurity).
+- **S72:** [CreateRestrictedToken and restricted own-token process creation](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-createrestrictedtoken).
+- **S73:** [CreateProcessAsUserW rights, descriptors and handle inheritance](https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessasuserw).
+- **S74:** [Permanent removal versus disabling token privileges](https://learn.microsoft.com/windows/win32/secbp/changing-privileges-in-a-token).
+- **S75:** [Process security and dangerous object/handle access](https://learn.microsoft.com/windows/win32/procthread/process-security-and-access-rights).
+- **S76:** [OWNER RIGHTS and implicit owner permissions](https://learn.microsoft.com/windows-server/identity/ad-ds/manage/understand-special-identities-groups#owner-rights).
+- **S77:** [SetServiceStatus, cleanup and final stopped acknowledgement](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setservicestatus).
+- **S78:** [Service failure actions and recovery-command account](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw).
+- **S79:** [Non-crash failure-action conditions and activation](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actions_flag).
+- **S80:** [Service deletion notification and observer lifetime](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-notifyservicestatuschangew).
+- **S81:** [DeleteService and SCM entry lifetime](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-deleteservice).
+- **S82:** [W32Time trigger/task startup on Windows clients](https://learn.microsoft.com/troubleshoot/windows-client/active-directory/w32time-not-start-on-workgroup). Do not generalize its historical exact schedule to every supported build.
+- **S83:** [Task Scheduler registered tasks](https://learn.microsoft.com/windows/win32/taskschd/tasks).
+- **S84:** [Task actions and ordered executable operations](https://learn.microsoft.com/windows/win32/taskschd/task-actions).
+- **S85:** [Task registration, execution identity and security](https://learn.microsoft.com/windows/win32/taskschd/security-contexts-for-running-tasks).
+- **S86:** [Calendar-based trigger StartBoundary](https://learn.microsoft.com/windows/win32/taskschd/trigger-startboundary).
+- **S87:** [Package-extension uninstall event arguments](https://learn.microsoft.com/uwp/api/windows.applicationmodel.packageextensions.packageextensionpackageuninstallingeventargs).
