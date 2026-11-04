@@ -168,6 +168,11 @@ and [existing W11 task §4.21](tasks/windows11-integration.md#421-release-operat
 Keep first-stable support terms proposed until David decides them, and carry
 account, containment, corrective-state and recovery rehearsals into the existing
 P6/P7 owners. A written runbook lifts no execution hold or release blocker.
+Follow [OD-05 §7.5](docs/nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
+for [enhanced build provenance](docs/plans/release-provenance.md): attestations,
+independent reproducible builds and a public proof bundle are optional, with no
+new release blocker. Preserve the separately required custody, SBOM/licence,
+package integrity, installed identity and native/lifecycle evidence.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 

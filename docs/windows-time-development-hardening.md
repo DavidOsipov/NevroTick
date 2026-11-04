@@ -644,6 +644,13 @@ Partition caches by trust domain, toolchain, lock/configuration, target and feat
 
 SBOM, provenance attestation and package/catalog or applicable Authenticode signatures answer different questions. Verify subject hashes and identities; reconcile source/build evidence with the documented Store or other selected signing transformation and verify the final payload/package again. No attestation proves the code is bug-free. [SC28]
 
+Under [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026),
+GitHub/Sigstore attestations, independent bit-for-bit builds and a public
+source-to-Store proof bundle are optional; their absence is not a release gate.
+Apply attestation verification if that evidence is supplied. Required SBOM,
+source/licence custody and package/installed trust checks retain their existing
+scope. The [focused record](plans/release-provenance.md) owns the optional work.
+
 ## 9. Tests, coverage and evidence of bug detection
 
 ### 9.1 Meaningful execution and doctests

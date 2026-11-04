@@ -102,6 +102,11 @@ Freeze these limits in the first pure implementation slice before accepting its
 parser. Reproducible generation and independent date/offset fixtures must agree.
 No build retrieves mutable network data implicitly.
 
+The [pure-leap entry and finite-input tables](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint)
+identify the completed numerical predecessors, current Core scheduling boundary
+and fields still to freeze. This data-generation requirement does not adopt the
+optional whole-application [reproducible-build experiment](release-provenance.md).
+
 Absent or expired metadata does not erase valid historical entries. Do not invent
 expiry in 2100, silently map absence to 1900/1970, or accept an unsupported
 `infinity` spelling. Non-expiring future behavior is derived from the explicit
@@ -278,7 +283,7 @@ no proof that the ordinary product observed or handled it correctly.
 
 | Stage | Work and exit | Existing owners/checks |
 | --- | --- | --- |
-| Pure knowledge contract | Add bounded private history/coverage/rule constructors and reproducible pinned-data generation in the `time-domain` boundary. Freeze intervals and limits. Independent history, absent/expired metadata, malformed replacement and 2027 no-impulse fixtures discriminate failures from healthy controls. | S1.4 after S1.3 prerequisites; CHECK-7/25/26 |
+| Pure knowledge contract | Add bounded private history/coverage/rule constructors and reproducible pinned-data generation in the `time-domain` boundary. Freeze intervals and limits through [the task's explicit entry](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint). Independent history, absent/expired metadata, malformed replacement and 2027 no-impulse fixtures discriminate failures from healthy controls. | S1.4 leap child after the current Core checkpoint and applicable recorded prerequisites; CHECK-7/25/26 |
 | Pure policy and source integration | Add the decision table, guard transitions and provenance/generation contract in `time-core`; carry raw LI and full exchange span through `ntp-exchange` and the production engine admission path. All-LI=0 must succeed; no stale fit, downgraded quorum or announcement storm may authorize effects. | S1.4/P2; CHECK-6/7/8/11/14/25 |
 | Windows adapter and broker | Implement the selected process-mode/mapping boundary and guard cancellation/reacquisition using supported APIs. Observe OS-handled/missing/unexpected event scenarios, both signs, actual residual and no duplicate action. | S0.4/P4 and W11-W02; CHECK-10/11/12/27 |
 | Package, storage and presentation | Bind dataset provenance to the authenticated package; retain protected correction continuity through update/rollback; project coverage/conflict/guard/native-knowledge status to UI/export. | P3/P5/P6; CHECK-14/15/17/18/23/24 |
@@ -286,6 +291,12 @@ no proof that the ordinary product observed or handled it correctly.
 No stage creates a blanket dependency on completing all platform research before
 the next pure task. No existing portable pass closes the Windows gate. The task
 record owns the case matrix, implementation readiness and review evidence.
+At the reconciled `d066d59` baseline, selected S157/S158 and S1.4a–c results exist;
+the first pure S1.4 consumer is therefore distinct from the still-unimplemented
+leap-knowledge child. Static history/coverage/rule work does not require production
+freshness, installed mapping generations or actual broker effects. Those
+obligations enter when a later consumer uses them; full LP-C04 acquisition/guard
+evidence cannot be claimed from a pure calendar subcase.
 
 ## 8. Sources and inspection pins
 

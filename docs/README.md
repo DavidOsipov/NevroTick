@@ -36,8 +36,10 @@ to own requirements, and task records own executed evidence.
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | How is the selected complete MSIX hardened and prepared for a Store attempt with services? | [MSIX/Store plan](plans/windows-msix-store.md), [amended OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [current W11-W10 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): explicit content integrity, sealed executable paths, Store-compatible CIG, per-role protections, supported service provisioning and recovery. Local mechanics, owner submission and final Store-delivered qualification are separate stages; no working package or Store acceptance is claimed. |
 | Which stable releases are supported, and how are unsafe releases or compromised publication authority handled? | [Release policy](release-policy.md): current no-stable status, proposed first-stable support/backport baseline, exact candidate promotion, Store containment, compatible corrective releases and incident recovery. [Existing W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026) owns documentation evidence and remaining decisions/rehearsals; no support commitment or native/account pass follows from the document. |
+| Can a Store release carry independently checkable evidence of its source and build? | [Enhanced build provenance](plans/release-provenance.md) records the possible attestation, reproducible-build and delivered-payload chain and its limits. [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026) makes this additional assurance optional, with no new release blocker; existing artifact custody, SBOM/licence, integrity and installed-product checks remain required. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | How are leap seconds, silent-LI servers and Windows event ownership handled? | [Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales) owns the selected contract; [NV-LP-001](plans/leap-second-policy.md) records primary evidence, local knowledge, source/guard/Windows behavior; [S1.4's task](../tasks/s1.4-leap-policy.md) owns implementation cases and remaining native gates. |
+| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) reconcile completed S157/S158/S1.4a–c scopes with the current Core checkpoint, explicit date/data/import bounds and later protocol/native work. The first pure S1.4 consumer already exists; this separate leap child is pending. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
 | What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-20, mapped to technical checks. |
@@ -59,6 +61,15 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Optional provenance, later on 4 November 2026:** David asked to retain the
+[source-to-Store research](plans/release-provenance.md) without making its
+additional proof a release blocker. This is an accepted instruction in
+[OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026),
+distinct from the still-proposed stable-support commitment below. Attestations,
+independent bit-for-bit rebuilds and a public proof bundle remain optional;
+required custody, SBOM/licence, package integrity and installed/native lifecycle
+checks keep their existing owners. No reproducible release is claimed.
 
 **Release operations, 4 November 2026:** the [release policy](release-policy.md)
 consolidates supported-version records, backport decisions, bad-release

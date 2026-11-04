@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.8<br>
+**Document:** NV-DEC-001, revision 1.9<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
@@ -10,6 +10,11 @@
 **4 November release-operations addition:** section 7.4 records authorized
 research/documentation and a proposed support baseline, not a new accepted
 maintenance commitment or release approval.
+
+**Later 4 November provenance decision:** section 7.5 records David's accepted
+instruction to retain enhanced source-to-Store evidence as optional work, with
+no new release blocker. This decision is separate from the proposed support
+terms in section 7.4.
 
 ## 1. Authority and purpose
 
@@ -304,6 +309,33 @@ distribution containment and installed-device recovery require distinct
 evidence; an authentic malicious package from compromised publication authority
 has no established independent on-device rejection guarantee. Preserve the
 existing THR-15 risk decision and current execution dispositions.
+
+### 7.5 Optional enhanced build provenance — 4 November 2026
+
+**Accepted owner instruction:** record the research on proving a release's
+connection to the repository, but do not make that additional assurance a
+mandatory release blocker. The [focused provenance record](plans/release-provenance.md)
+retains the evidence, limitations and possible later experiment.
+
+GitHub/Sigstore artifact attestations, an independently reproduced Windows
+build, and a public source-to-Store verification bundle are **optional**.
+Their absence alone does not block a release, P6/P7 closure, the Store attempt
+or the current Core work. Do not import them as mandatory work through a task
+index, CHECK mapping or the release-policy qualification matrix. A later
+decision to require them must explicitly amend this instruction.
+
+Existing source/build/artifact custody, corresponding-source and licence
+obligations, required SBOM/payload reconciliation, package trust and tamper
+checks, installed-product identity, lifecycle and native qualification remain
+under their existing owners. Reproducible generation of admitted public data
+is likewise distinct from an independent bit-for-bit rebuild of the complete
+application. An optional experiment's absence or lack of reproducibility is
+not itself a release blocker; a discovered failure of an existing mandatory
+integrity or security requirement still follows that requirement.
+
+No complete reproducible release or source-to-delivered-byte proof is claimed.
+Neither signing, attestation nor matching rebuilds prove that approved source,
+dependencies or build infrastructure contain no malicious behavior.
 
 ## 8. OD-06 — future research and decision queue
 

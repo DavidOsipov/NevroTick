@@ -227,6 +227,13 @@ artifact are separate stages. Neither Store acceptance before preparation nor
 a final Store signature before initial submission is required. No account,
 accepted capability, signed artifact or executed Windows result is claimed.
 
+[OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
+makes enhanced build provenance optional: GitHub/Sigstore attestations,
+independent reproducible builds and a public verification bundle are not release
+blockers. [The provenance record](plans/release-provenance.md) explains their
+possible use and the Store transformation. Required signing/trust, exact
+artifact custody, SBOM/licence and installed-payload checks below remain distinct.
+
 For an accepted Store MSIX, Microsoft supplies the package signature after
 certification; the developer does not need a purchased public certificate or
 signing token for that route. Current Individual and Company onboarding waive

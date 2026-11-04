@@ -265,7 +265,7 @@ matrix. Preserve section 7's current Core checkpoint and existing execution hold
 
 | Existing stage / owner | Required handoff and observable exit |
 | --- | --- |
-| S1.4 after selection prerequisites; domain/core | Keep immutable historical offsets separate from future coverage and the effective-dated continuous-UTC rule. All-LI=0 remains usable; local knowledge drives the event guard, never LI-majority event learning. Exercise absent/expired metadata, unknown coverage and the 2027 no-impulse boundary. CHECK-7/25/26 and policy CHECK-6/8/11/14. |
+| S1.4 leap child; domain/core | Use the [explicit pure-leap entry conditions](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) after the current Core checkpoint. Keep immutable historical offsets separate from future coverage and the effective-dated continuous-UTC rule. All-LI=0 remains usable; local knowledge drives the event guard, never LI-majority event learning. Exercise absent/expired metadata, unknown coverage and the 2027 no-impulse boundary. CHECK-7/25/26 and policy CHECK-6/8/11/14. |
 | P2; protocol/engine | Carry raw LI, source-scale provenance, the whole possible T1–T4 span and current policy/mapping generations into admission. Reject a contradictory observation without resetting healthy peers. Unknown future coverage permits same-segment tracking with a qualifier outside possible-event guards. CHECK-6/7/8/11/14/25. |
 | S0.4/P4 and W11-W02; platform/broker | Qualify kernel-only explicit leap execution, process presentation, mapping, finite guard/cancellation and fresh residual recovery. No extra scheduled leap, global leap-setting change or synthetic ±1-second correction. CHECK-10/11/12/27; native assumptions remain open. |
 
@@ -765,8 +765,15 @@ unrelated fit cannot become fitted anchors, and fitted-intercept SD cannot be
 paired with a raw-anchor center. Preserve independently configured minimum
 agreement, no single-peer fallback and failure atomicity. Stateful generation
 continuity and actual achieved-correction admission need their own contracts;
-a mathematical chart grants no acknowledgement or clock authority. S1.4 follows
-its selection prerequisites; production eligibility/freshness choices remain open.
+a mathematical chart grants no acknowledgement or clock authority. The
+[pure-leap entry table](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint)
+now distinguishes completed S157/S158 predecessors, scoped S1.4a–c evidence,
+the unfinished current rate-delivery checkpoint and the leap child's finite
+date/data/import freeze. The first pure S1.4 consumer already exists; the
+first leap-knowledge child is still pending. Calendar construction does not
+consume broker acknowledgements or production freshness/defaults, whereas
+dependent controller/guard equations retain their actual numerical and runtime
+prerequisites. This clarification does not move the current Core queue.
 
 At each bounded checkpoint:
 
@@ -784,7 +791,7 @@ At each bounded checkpoint:
 
 | Owner / existing workstream | Disposition and next action |
 | --- | --- |
-| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Selected design, implementation pending. Prepare its bounded pure contract after the current Core checkpoint and applicable selection prerequisites; route protocol admission and native mapping/recovery to their existing owners. This adds no prerequisite to the current Core checkpoint and lifts no execution hold. |
+| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Selected design, leap implementation pending. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) govern activation after the current Core checkpoint; source-only preparation can proceed now. Preserve completed predecessor scopes, route protocol admission and native mapping/recovery to their later owners, and do not require all production S1.3/Windows work for static calendar construction. This adds no prerequisite to the current Core checkpoint and lifts no execution hold. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |
@@ -1271,6 +1278,13 @@ mandatory-state, maintenance and restoration qualification. A written runbook
 does not close OPEN-3/11/12/14 or choose a provisioning mechanism. Preserve
 section 7's current Core priority and the later scoped Sandbox disposition, blocked
 stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals.
+
+The later accepted [OD-05 §7.5 decision](../nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
+keeps [enhanced source-to-Store proof](release-provenance.md) optional. GitHub/
+Sigstore attestations, independent reproducible builds and a public proof bundle
+are not release blockers or extra P6/P7 prerequisites. Required source/artifact
+custody, SBOM/licence, integrity, installed identity and lifecycle evidence retain
+their existing scope.
 
 The [latest provisioning/removal research](windows-msix-store.md#74-service-provisioning-and-independent-removal-research)
 and [task §4.18 handoff](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026)

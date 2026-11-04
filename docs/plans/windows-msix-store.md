@@ -569,6 +569,13 @@ fallback; no exact future price is promised. [S01, S28]
 
 ## 7. Bounded continuation and existing acceptance owners
 
+The [accepted optional-provenance decision](../nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
+keeps attestations, independent reproducible builds and the public
+[source-to-Store evidence bundle](release-provenance.md) outside mandatory
+release prerequisites. The submitted/delivered identity, integrity, SBOM/licence,
+installed trust and native/lifecycle checks below remain required; they do not
+implicitly require that additional proof.
+
 The selected work remains **W11-W10 with W11-W05 and the existing release/security
 owners**. Source/design preparation is ready and does not require Store
 preapproval. It does not replace the current Core checkpoint or lift an execution

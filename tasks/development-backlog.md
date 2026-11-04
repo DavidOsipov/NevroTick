@@ -26,6 +26,12 @@ provisioning/recovery, one-product lifecycle and submission/delivered provenance
 there. Complete CHECK-20/26, SBOM and non-Cargo payload reconciliation belong to
 that exit; MSI is an alternative for a later David decision, not a prerequisite.
 
+[Enhanced source-to-Store proof](../docs/plans/release-provenance.md) is optional
+under [OD-05 §7.5](../docs/nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026).
+Attestations, independent rebuilds and a public proof bundle add no P6/P7
+activation or release-blocking requirement. Required custody, SBOM/licence,
+package integrity and installed-product checks above keep their existing scope.
+
 ## P0 platform and policy
 
 **Owner:** platform/security, with IPC, clock, UI and architecture/policy owners
@@ -66,7 +72,7 @@ CHECK-6/7/8/19/20 and pure CHECK-25; this proves no Windows effect.
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
 | S1.4 discipline/holdover / Core/domain | Applicable S1.3 selection/combination and current reference, achieved-effect and active-time delivered-rate contracts; finish the current child first, then freeze one abstract controller/holdover transition. | Independent trajectories give bounded step/slew/holdover proposals; stale generations, duplicate/unknown effects and unacknowledged requests cannot create delivered correction or fresh observations. CHECK-7/8/10/11/25, AC-19. Current S1.4a–c and rate-delivery receipts stay in S1.3. |
-| S1.4 leap child / domain/Core/protocol | Use [the existing leap task](s1.4-leap-policy.md) after its selection/numerical prerequisites; activate its first pure knowledge/interpretation slice. | Independently known calendar/LI cases preserve useful silent-LI admission, finite/unknown coverage and guard/reacquisition; invalid replacement is atomic and no synthetic leap effect arises. Existing LP-C cases and CHECK-6/7/8/11/14/25/26. Native mapping stays S0.4/P4. |
+| S1.4 leap child / domain/Core/protocol | Use [the explicit entry and finite-input tables](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) after the current Core checkpoint. S157/S158 and selected S1.4a–c retain completed predecessor scopes; freeze the leap child's own date/data/import limits before dependent implementation. Static constructors do not require every later production contract. | Pure history/coverage/rule cases and atomic replacement are the first exit. Full silent-source acquisition, guard/reacquisition and LP-C04 stay in protocol integration; native mapping stays S0.4/P4. Existing LP-C cases and CHECK-6/7/8/11/14/25/26 retain their owning slices. |
 | S1.5 verification closure / tooling/dependency/QA | Existing configured application gates and selected critical owners; maintain required checks now, close remaining phase scope at its actual checkpoint. Deferred QF-02 recipe maintenance stays acknowledged in the active Core task. | Healthy code/inputs pass and intended lint/SAST/discovery/admission faults fail actual gates; retained provenance, applicable per-file coverage/mutation and exact receipt scope support closure. CHECK-19/20/25/26. No new implementation prerequisite or duplicate campaign. |
 
 ## P2 acquisition

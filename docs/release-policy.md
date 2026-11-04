@@ -129,7 +129,7 @@ historical identity/status changes instead of rewriting old approvals.
 
 ### 3.1 Required release record
 
-Bind approval to a reproducible evidence record containing:
+Bind approval to an auditable candidate evidence record containing:
 
 - Source commit/tree, release branch/tag, reviewed changes and immutable workflow
   inputs; toolchain/SDK, lockfile, features, build/native dependencies and licenses.
@@ -152,6 +152,10 @@ evidence. Rebuilds receive their own identities. Never move a release tag or
 replace different bytes under the same approved artifact identity. Checksums and
 attestations identify material/provenance; they do not prove benign source or
 authoritative approval. [W07, W09]
+
+Section 3.3 distinguishes this required custody record from optional enhanced
+build provenance. The record does not require an independent bit-for-bit rebuild
+or a GitHub/Sigstore attestation.
 
 ### 3.2 Promotion sequence
 
@@ -177,6 +181,22 @@ Keep required failures, unexecuted checks and unresolved technical blockers
 visible. Emergency urgency can remove unrelated optional work; it cannot convert
 missing mandatory release evidence into a pass. The policy is not a prerequisite
 for unrelated portable Core work.
+
+### 3.3 Optional enhanced provenance
+
+[OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
+records David's accepted decision: artifact attestations, independent
+reproducible builds and a public source-to-Store evidence bundle are optional
+release strengthening. The [research and possible experiment](plans/release-provenance.md)
+add no mandatory row to §9 and no prerequisite to §3.2, P6/P7 or release approval.
+Their absence alone is not a blocker; report an unperformed or unsuccessful
+optional comparison without claiming the stronger property.
+
+Section 3.1's source/build custody, SBOM/licence and exact payload records, and
+the existing package trust, integrity, installed identity and native/lifecycle
+checks retain their required scope. A detected violation of those requirements
+is handled under its existing gate even if found during optional work. This
+decision does not approve the proposed first-stable support terms in §2.
 
 ## 4. Distribution containment: choose the actual Store operation
 

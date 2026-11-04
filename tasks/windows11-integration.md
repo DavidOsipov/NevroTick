@@ -1770,3 +1770,38 @@ David retains account, Store submission and publication authority; retained MSI
 profiles add no prerequisite. OPEN-11 and CHECK-18/23/24 own this operational exit.
 P7's whole-product reconciliation is the separate
 [final qualification parent](development-backlog.md#p7-final-qualification).
+
+### 4.23 Optional build-provenance research — 4 November 2026
+
+David requested research on evidence connecting a Store release to his repository,
+then explicitly directed that it be documented **without a mandatory release
+blocker**. [OD-05 §7.5](../docs/nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026)
+records the accepted decision. The [focused research](../docs/plans/release-provenance.md)
+and [release-policy §3.3](../docs/release-policy.md#33-optional-enhanced-provenance)
+separate the optional assurance from existing release obligations.
+
+| Item | Disposition and owner |
+| --- | --- |
+| GitHub/Sigstore provenance attestations | Optional build/release enhancement; no selected workflow or executed attestation. |
+| Independent reproducible Windows build | Optional later experiment; no bit-for-bit application or package result established. |
+| Public source-to-Store evidence bundle | Optional release communication and verification; actual Store transformations and complete delivered-payload comparison remain unmeasured. |
+| Exact source/build/submitted/delivered identities, required SBOM/licences, package trust and installed-product/lifecycle checks | Existing mandatory S6.4/CHECK owners retain their scope. These obligations do not implicitly require the three optional mechanisms above. |
+
+The research separates signed provenance from independent compilation evidence
+and neither from a guarantee of benign source. Store re-signing prevents assuming
+outer-package hash equality; any future enhanced claim must state its actual
+artifact/comparison scope. Missing optional evidence or unresolved reproducibility
+alone cannot block P6/P7 or release. A discovered violation of an existing
+mandatory integrity/security requirement still follows its existing gate.
+
+This is documentation only. No workflow, build, signing, account, Store submission,
+installed check or native experiment was executed. Current Core priority and the
+scoped execution dispositions remain. The first-stable support proposal in §4.21
+has not been approved by this separate provenance decision.
+
+
+The integrated optional-provenance and leap-entry documentation received a
+completed fresh-context review, **READY for documentary integration**. Its
+[candidate identity, verbatim comprehension, limitations and documentation checks](s1.4-leap-policy.md#entry-reconciliation-and-independent-review--4-november-2026)
+are retained in the shared entry-reconciliation record. This evidence adds no
+release qualification or obligation to execute the optional provenance experiment.
