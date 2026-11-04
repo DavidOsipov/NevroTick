@@ -127,6 +127,48 @@ for retained backing buffers, and use the existing
 [performance procedure](../../optimize-rust-performance/SKILL.md) before claiming
 CPU, allocation or memory savings. An additional type alone is no measured improvement.
 
+## Domain equivalence and trait contracts
+
+Review invalid states and equivalent representations separately. Use "tightness"
+as a modeling question, not a numerical quality target:
+accepting only valid states does not ensure one representation per domain value.
+Define which values mean the same thing for the actual consumer before choosing
+comparison, deduplication or collection keys. A lawful derived trait can still
+encode the wrong domain identity.
+
+Where the domain equates multiple accepted forms, canonicalize through the checked
+construction path, use a dedicated semantic key, or implement the relevant traits
+consistently over the same semantic projection. Preserve the original form when
+its bytes, presentation or provenance matter; canonical storage is not mandatory.
+Derive traits only when the stored fields and their comparison order express the
+intended meaning. For an unordered pair, a private sorted representation may make
+derivation appropriate; an ordered interval must instead reject reversed bounds
+under its existing contract. Sorting is not a universal repair.
+
+When these traits are implemented, preserve their documented laws:
+
+- Equal values must hash equally from the same hasher initial state. Unequal
+  values need not have different hashes; collisions are permitted.
+- `Ord::cmp` returning `Ordering::Equal` must agree with equality;
+  `partial_cmp(a, b)` must agree with `Some(cmp(a, b))`. Implement `Ord` only when
+  the intended relation is a total order; retain partial or explicitly scoped
+  comparison where that is the actual contract.
+- Keep equality, hash and ordering behavior stable while a value is a collection
+  key. Review manual and derived implementations together when fields change.
+
+Apply equivalence at its owning semantic layer. Do not normalize opaque tokens,
+authentication-covered bytes or ordered histories merely to remove alternatives.
+Preserve input needed for strict admission and authentication, and distinctions
+such as provenance, logical-source identity and generation where consumers require
+them. Normalization collisions must follow the domain's explicit reject/coalesce
+rule. Route changes to accepted meaning, wire or persisted representation through
+[contract evolution](../../evolve-data-contracts/SKILL.md).
+
+Use [contract tests](../../../testing/qa-contract-tests/SKILL.md) with equivalent
+inputs and distinct controls at the affected consumers. Standard-library
+hash output is not a stable serialization format or a fixed test oracle; verify
+the relevant equality/hash/ordering relationships and collection behavior instead.
+
 ## Prepare and commit owned state
 
 Use this pattern when a failed update must preserve the previous valid state.

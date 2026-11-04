@@ -41,6 +41,13 @@ Choose smallest model that makes meaningful mistakes hard to express:
 - Never erase operational failure into `None`, empty results or stale success.
   Redact secrets; retain structured context sufficient to diagnose rejection.
 
+Make changed code readable in the domain's terms: use established names and keep
+decisions, failures and effects traceable. Extract a helper when it names a
+coherent operation or isolates a meaningful rule. Keep related matching, loops
+and invariant-bearing updates together when extraction would obscure their
+relationship. Treat nesting and function length as review signals, not fixed
+limits; format and Clippy success do not establish comprehensibility.
+
 For floating-point estimation, exact-to-floating seams or numerical admission
 thresholds, use [numerical kernels](references/numerical-kernels.md). Separate
 independent mathematical results from rounded execution controls; freeze the

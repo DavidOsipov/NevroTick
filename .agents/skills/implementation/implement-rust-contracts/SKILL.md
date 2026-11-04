@@ -28,6 +28,9 @@ When choosing an invariant-bearing type, use
 [Parse, don't validate](references/contract-enforcement.md#parse-dont-validate-preserve-established-invariants)
 to work backward from the consumer's required facts. Preserve the checked result
 without treating structural validity as authentication or current permission.
+For identity, normalization or comparison changes, also define
+[domain equivalence and trait contracts](references/contract-enforcement.md#domain-equivalence-and-trait-contracts).
+Two valid representations can still denote the same domain value.
 
 For uncertain constructor, transformation or guard bypasses across functions,
 use [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to

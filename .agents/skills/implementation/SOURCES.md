@@ -24,6 +24,30 @@ implementation or article text is imported. Existing Serde and type-safety
 sources below remain applicable. Local source inspection illustrates scoped
 guarantees, not passing tests or a measured resource improvement.
 
+## Domain equivalence and readability — 4 November 2026
+
+The user supplied a Markdown export of the
+[Rust codebase discussion](https://www.reddit.com/r/rust/comments/1xlwg4h/cleanest_best_written_rust_codebases/).
+This records the supplied excerpt, not a live retrieval or all collapsed replies.
+Its domain-fit, tightness and readability comments motivated the existing
+[contract reference](implement-rust-contracts/references/contract-enforcement.md#domain-equivalence-and-trait-contracts),
+Rust implementation guidance and targeted contract-test cases. The original
+Parse explanation and pure-core/effect ownership already cover the other relevant
+mechanisms; project-name recommendations alone establish no reusable contract.
+
+| Source inspected | Finding used and limit |
+| --- | --- |
+| Supplied Reddit comments on [domain fit](https://www.reddit.com/r/rust/comments/1xlwg4h/comment/19s1bb406orpf/), [tightness](https://www.reddit.com/r/rust/comments/1xlwg4h/comment/19s1f0hfbw1tt/) and [readability](https://www.reddit.com/r/rust/comments/1xlwg4h/comment/19s19mi8pxmbm/) | Separate invalid states from equivalent representations; name coherent domain operations. These are review prompts, not a 100% tightness target, fixed nesting quota or independently verified codebase ranking. |
+| Rust [`Hash` and `Eq`](https://doc.rust-lang.org/std/hash/trait.Hash.html#hash-and-eq), [`Ord`](https://doc.rust-lang.org/std/cmp/trait.Ord.html), [`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) and [`BTreeMap`](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html) | Equal values require equal hashes, ordering traits must agree, and key behavior must remain stable while stored. Hash bytes are not generally portable/stable; lawful derives still need the correct domain meaning. |
+| Microsoft [Pragmatic Rust Guidelines: applicability](https://microsoft.github.io/rust-guidelines/guidelines/index.html#applicability) and [universal guidance](https://microsoft.github.io/rust-guidelines/guidelines/universal/index.html) | Motivation and project context govern adoption. No blanket crate splitting, lint/tool adoption, naming quota or Drop-only native-completion policy follows from this review. Existing NevroTick ownership and execution contracts control. |
+
+The additions are original local instructions, with no copied upstream code or
+new skill/dependency. The discussion's Unicode example is not adopted: Rust
+[`char`](https://doc.rust-lang.org/std/primitive.char.html#validity-and-layout)
+models scalar values up to `0x10FFFF` excluding surrogate code points; unassigned
+values are not generally invalid. Domain-specific text rules require their own
+contract. Source review establishes no product implementation or measured gain.
+
 ## Numerical and state-update procedures — 30 October 2026
 
 The [numerical procedure](implement-rust/references/numerical-kernels.md) extends

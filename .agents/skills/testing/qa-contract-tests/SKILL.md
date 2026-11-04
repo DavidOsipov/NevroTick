@@ -30,6 +30,12 @@ Test unknown/duplicate/escaped keys, object-versus-array shape, missing/null/inv
 
 Compatibility: freeze supported producer/consumer version/feature matrix. Compare meaning, units, presence/defaults, failure behavior; shape/round trips insufficient. Public Rust visibility/type/trait claims need minimal real external consumer; separate wire-version/Rust-source compatibility.
 
+When identity, canonicalization or comparison/hashing changes, apply
+[domain-equivalence cases](../../implementation/implement-rust-contracts/references/contract-enforcement.md#domain-equivalence-and-trait-contracts):
+pass equivalent inputs and distinct controls through actual constructors and the
+affected hash/ordered collection consumers. Check the specified canonical output
+and idempotence where promised; add no collection or trait solely for this check.
+
 Verify invalid input causes no prohibited effect; valid-shaped unauthorized/stale input fails current guard. Cross-process Windows enforcement requires native checks. Disputed expectation: locate authoritative contract before changing tests/production.
 
 Check post-transform bounds, invalid-update state preservation and release-active
