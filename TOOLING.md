@@ -683,6 +683,12 @@ separate. This is a handoff contract, not a new publication job or authorization
 to upload now. The current Cargo graph does not supply a complete package or
 release workflow; full payload reconciliation and publication remain pending.
 
+The [release policy](docs/release-policy.md) owns the candidate approval/status
+record and subsequent withdrawal or publishing-authority incident. Bind SBOM
+and artifact evidence to that record while keeping support terms proposed until
+approved. This tooling receipt supplies no operational recovery rehearsal or
+installed-device remediation evidence.
+
 ## Native Windows memory diagnostics
 
 The **Windows SDK 10.0.28000.2957** Application Verifier and Debugging Tools

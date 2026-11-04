@@ -1521,3 +1521,12 @@ NV-LP-001/S1.4 authority and existing Windows/storage/fuzz dispositions remain.
 No dependency was installed; no Core typing policy, Cargo graph, application
 runtime or Windows state changed. The scope supplies no native Windows/package,
 live-server, crypto, security-coverage/mutation or product-release pass.
+
+**Release-operations routing, 4 November 2026:** before later approved C delivery,
+use the [release policy](../docs/release-policy.md) and
+[existing W11 handoff](windows11-integration.md#421-release-operations-integration--4-november-2026)
+for whole-release withdrawal, compatible correction and publishing-authority
+recovery. OMI-R03/OMI-R08 and OPEN-CAT-03 retain actual installed-adoption,
+freshness and surviving-recovery evidence. The policy introduces no runtime
+catalogue update mechanism and does not requalify the collector or the frozen
+review/execution receipts above.

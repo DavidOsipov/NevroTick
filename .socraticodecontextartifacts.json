@@ -63,7 +63,12 @@
     {
       "name": "signing-guide",
       "path": "./docs/windows-time-signing-guide.md",
-      "description": "Operational guide to preferred Authenticode and owner-approved initial OpenPGP release profiles, human approval, artifact/installed-file trust and complete MSI lifecycle. Exact provider/key/Windows qualification remains pending; no automatic signing or release authority."
+      "description": "Guide to the selected complete hardened Store MSIX, owner-controlled submission, submitted/delivered artifact and installed-file trust, with MSI/Authenticode/OpenPGP retained only for a later owner decision. Store acceptance, effective protections and native lifecycle qualification remain pending; no automatic signing or release authority."
+    },
+    {
+      "name": "release-policy",
+      "path": "./docs/release-policy.md",
+      "description": "Operational release specification: current no-stable support status, proposed first-stable maintenance/backport model, exact-candidate promotion, Store containment, mandatory-state-preserving correction and publication-authority recovery. Support approval, account readiness, rehearsals and native qualification remain separate open evidence under W11-W10/W11-W05 and existing CHECK owners."
     },
     {
       "name": "architecture-review",

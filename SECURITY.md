@@ -35,11 +35,20 @@ production-supported release series or a backport schedule. Please identify the
 exact revision you assessed; reproducing an issue on current development code is
 helpful, but reports about older snapshots are also welcome.
 
+The [release policy](docs/release-policy.md) records that current status and a
+**proposed** first-stable maintenance model, together with release withdrawal,
+corrective-package and publishing-account recovery procedures. The support
+proposal needs David's approval; the procedures need their recorded rehearsals
+and product evidence. Writing them establishes no supported version, response
+deadline or completed recovery control.
+
 The current workspace contains a fixture-only native Windows UI and portable
-protocol, arithmetic, exchange-fixture and numerical components. It does not
-provide live NTP/NTS communication, production IPC, installed services or system
-clock adjustment. The initial product target is Windows 11 x64; Linux/WSL checks
-and Windows cross-builds provide narrower evidence than native Windows tests.
+protocol, arithmetic, exchange-fixture and numerical components, plus a bounded,
+unauthenticated two-peer loopback observer. Its observations are ineligible for
+clock control; it does not qualify production NTP/NTS acquisition, production IPC,
+installed services or system clock adjustment. The initial product target is
+Windows 11 x64; Linux/WSL checks and Windows cross-builds provide narrower evidence
+than native Windows tests.
 
 The [product roadmap](ROADMAP.md) also records future Android timekeeping and
 DNS-over-QUIC with leaf/intermediate certificate pinning. Those capabilities are

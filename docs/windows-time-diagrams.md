@@ -22,6 +22,10 @@ qualification before broad release. Retained OpenPGP/MSI permission supplies no
 Windows publisher trust or automatic fallback. These diagrams specify required
 behavior; they prove neither an available MSIX lifecycle hook nor native execution.
 
+The [release policy](release-policy.md) owns support-status proposals, operational
+withdrawal and corrective-release recovery. Its procedures and this companion
+do not establish an approved support promise or completed rehearsal.
+
 **30 October contract amendment:** the correction sequence now reserves authority durably before the clock effect and records the known outcome before successful acknowledgement. Crash-unknown outcomes follow [architecture §10.2.1](windows-time-architecture.md#1021-durable-authority-reservation-and-uncertain-outcomes); the [critical assessment](supporting-reviews/architecture-contract-review.md) records scope and limitations.
 
 ## Reading the views
@@ -185,3 +189,8 @@ flowchart TD
 ```
 
 The removal node is a transaction, not an instruction to delete recovery code first: section 11 and section 19.2 require durable restoration results before removing the last recovery mechanism. Update-driven removal of the old version does not release ownership to W32Time. Every rate reset, including cleanup, requires current ownership. A private journal cannot overrule a later administrator or Group Policy decision.
+
+“Prior working product” requires current release eligibility and compatibility
+with retained mandatory state, not merely a valid old signature or an earlier
+successful run. The [release policy](release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+separates listing containment, corrective code and owned state recovery.

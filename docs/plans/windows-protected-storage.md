@@ -89,6 +89,11 @@ votes. Kernel leap execution is not a broker acknowledgement. Native continuity
 and measured residual correction remain with OPEN-7/S0.4/P4; the storage owner
 neither schedules an event nor fabricates a ±1-second effect.
 
+Use the [release-policy recovery procedure](../release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+for a corrective release or permitted binary fallback. The current mandatory
+state owners retain schema, authority and narrowly authorized floor-supersession
+rules; optional-cache recovery cannot replace their qualification.
+
 DNS demand history is optional private optimization state. Loss may produce an empty learning model; it cannot relax DoQ, certificate pins, DNSSEC or routing policy. Ordinary DNS service remains independent of statistics persistence.
 
 Use two nonsecret durable control records. The lifecycle owner's **installation witness** distinguishes `Provisioning(transaction-id)`, `Initialized` and explicitly authorized `Recovery(transaction-id)`. Matching initial catalogue publication is acknowledged durably and consumes that provisioning authority; an interruption reconciles the same transaction. Missing expected catalogue/key in an initialized installation means recovery, while a missing optional snapshot may simply mean fresh acquisition.
@@ -315,7 +320,7 @@ Follow the repository [planning guide](../../.agents/skills/planning/README.md) 
 | **S3.3 persistence and lifecycle** — platform/service/security | Qualify witness consumption, catalogue/exact-envelope commit, migration/retirement, every interruption and actual handler authorization. Simulated clock backend suffices for storage work; broker authority remains separate. | CHECK-1/2/3/14/15/17/25/27; real clock effects remain P4. |
 | **Future DNS storage** — DNS/privacy/platform | Use independent keys and owner; exercise ordinary DNS beside learning failure, privacy barriers and retained inaccessible blobs. | DNS-C11–15/17 within the DNS phase plan; no reordering of current Windows work. |
 | **P5/D2 status** — UI/service/security | Integrate coherent current status, first-connection notice, reconnect, strict-policy suspension and acknowledgement behavior; retain accessible bounded announcements. | D2 remains deferred until its existing re-entry trigger; CHECK-14/17/22/25. |
-| **Package/release qualification** — build/release/platform | Reconcile final payload, providers/imports, actual mitigation manifest and account/upgrade/repair/removal behavior for declared release profiles. | CHECK-13/16/18/20/21/23/26; no release evidence supplied here. |
+| **Package/release qualification** — build/release/platform | Reconcile final payload, providers/imports, actual mitigation manifest and account/upgrade/repair/removal behavior for declared release profiles, including the [release-policy corrective-state cases](../release-policy.md#9-qualification-matrix-and-remaining-decisions). | CHECK-13/16/18/20/21/23/26; no release evidence supplied here. |
 
 Before native execution, explicitly freeze the provider's **wrapping and signing** support, Windows/SDK/CPU/VM builds, generated versus imported origin, cross-boot/silent operation and evidence for each reopened key. API base-version minima, section 5's separate full-enclave runtime/tooling requirements and CNG VBS support are different facts. NCrypt VBS flags retain a prerelease documentation notice; requalify the selected path rather than inherit a universal minimum. [P1, P11–P12]
 

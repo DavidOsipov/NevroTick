@@ -421,7 +421,7 @@ The protected-storage plan separately covers future DNS demand/history snapshots
 | Private authority | Release/catalogue signing private keys, service credentials, recovery material and key-custody/access policy. None is bundled in MSIX/MSI, placed in client RAM for catalogue verification, or saved in source history. |
 | Build/review evidence | Exact input revisions and approved normalized-snapshot identity, adapter/generator/schema identity, reviewed catalogue diff, operator-permission review, release approval and artifact digest/signature identity. The [offline Python collector](../../tools/server-catalogue/README.md) belongs to R under existing `tools/` and emits unapproved versioned JSON evidence. The future C builder must build the exact reviewed snapshot; changed parsing/normalization/schema inputs invalidate that data approval. Candidate outputs remain separate from approved release inputs. |
 | Qualification evidence | Decoder/resource/negative-test results, actual package/signature/content-integrity verification and provider/key-rotation evidence when implemented, bound to the candidate artifact and environment. Planned checks are not completed qualification. |
-| Recovery/change record | Authorized key rotation/withdrawal and publication lineage; public counterparts go into the relevant trusted release metadata, not an unauthenticated downloadable replacement. |
+| Recovery/change record | Authorized key rotation/withdrawal and publication lineage under the [release policy](../release-policy.md); public counterparts go into the relevant trusted release metadata, not an unauthenticated downloadable replacement. |
 
 **Lifetime:** publisher retention follows release/key governance and provenance needs; it is not a client telemetry retention choice. Client catalogue verification requires only the admitted public trust material or trusted expected digest. Microsoft package signing does not require supplying NevroTick publisher secrets to the installed application and does not authenticate time-server behavior.
 
@@ -539,6 +539,12 @@ For a separate catalogue resource, proposed loader order is **bounded read of ex
 Keep explicit MSIX `PackageIntegrity` / `Content Enforcement="on"` in the actual final manifest and qualify delivered behavior; Microsoft's documented default equals off. [MSIX integrity](https://learn.microsoft.com/en-us/windows/msix/desktop/tamper-protection) The retained MSI alternative's package/cabinet signature verification does not establish the same installed-content enforcement; it needs qualified installed-file ACLs, immutable code and actual catalogue revalidation. [Windows Installer signatures](https://learn.microsoft.com/en-us/windows/win32/msi/digital-signatures-and-windows-installer) CIG/image-signature policy restricts executable image loading, not arbitrary catalogue/database authenticity. [Image-signature policy](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_binary_signature_policy)
 
 An authentic catalogue can still be obsolete, withdrawn, or restored together with an older signed application. Revision floors and timestamps need trusted lifecycle/time rules; first install, long offline periods and whole-system rollback remain OPEN-CAT-03. Rejecting an update does not authorize an unreviewed downloaded replacement, TOFU or an independent updater. No currentness or correct-UTC claim follows from a successful signature/digest check.
+
+Whole-release withdrawal and compatible corrective packages follow the
+[operational release policy](../release-policy.md#5-bad-release-runbook).
+Publication status is not installed adoption or an on-device catalogue denylist;
+the actual catalogue freshness, key-withdrawal and compatibility mechanisms
+remain OPEN-CAT-03 and the existing data-owner work.
 
 ### 5.6 How can unauthorized SQLite changes be prevented?
 

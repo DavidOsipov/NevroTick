@@ -1,11 +1,15 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.7<br>
+**Document:** NV-DEC-001, revision 1.8<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
+
+**4 November release-operations addition:** section 7.4 records authorized
+research/documentation and a proposed support baseline, not a new accepted
+maintenance commitment or release approval.
 
 ## 1. Authority and purpose
 
@@ -274,6 +278,32 @@ Keep CHECK-18's Authenticode result **not qualified**. Add separately identified
 Review every place that currently assumes a signed helper/payload. Establish how an approved package reaches protected installed paths, how ordinary users are prevented from substituting the helper or DLLs, how callers/endpoints are authenticated, and how maintenance validates its inputs and artifact lineage. A hash stored beside an attacker-writable executable is insufficient. Do not replace a signature check with unconditional acceptance. R-06 must produce the branch-specific integrity/identity design before this release route is qualified.
 
 All licence/source obligations, runtime hardening, privileged-boundary checks and relevant feature gates remain. Later migration to Authenticode must preserve one-product upgrade identity and reject unsupported rollback or silent reversion to a weaker release policy.
+
+### 7.4 Release operations and proposed stable support — 4 November 2026
+
+The owner requested research and integration of the missing stable-release
+support and bad-release recovery procedures. The resulting
+[release policy](release-policy.md) is the operational owner for support records,
+backports, promotion, containment, corrective packages and publishing-authority
+recovery. It preserves OD-05's selected complete Store MSIX and David's account,
+submission, visibility and exact-candidate authority.
+
+**Proposed, not yet approved:** the latest explicitly designated, qualified,
+non-withdrawn stable release is the normal maintenance target, with a recorded
+transition for users still served its predecessor. No stable release, LTS term,
+parallel backport promise, fixed response/remediation deadline or backup release
+approver is established. Use the existing decision-card process before the first
+stable commitment to settle the actual support matrix, capacity, communication
+and rollout criteria. Silence or completion of this research is not approval.
+
+The [existing W11 task](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
+routes the remaining OPEN-11/14 operational decisions and rehearsals to
+W11-W10, with W11-W05 for ownership and mandatory-state recovery. The procedure
+does not close OPEN-3/12/14's provisioning/removal gaps. Account recovery,
+distribution containment and installed-device recovery require distinct
+evidence; an authentic malicious package from compromised publication authority
+has no established independent on-device rejection guarantee. Preserve the
+existing THR-15 risk decision and current execution dispositions.
 
 ## 8. OD-06 — future research and decision queue
 

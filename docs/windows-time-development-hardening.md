@@ -1014,7 +1014,8 @@ Skipped, timed-out, unsupported or missing required cases cannot be summarized a
 | `verification/gate-fixtures/` | Independent deliberately bad/good checker controls |
 | `verification/` scripts or a reviewed `xtask` crate | Gate orchestration, outcome/denominator checking and evidence receipts |
 | `.github/workflows/`, `.github/CODEOWNERS` | Isolated checks, protected ownership, release separation and recorded hosted settings |
-| `docs/toolchain-and-ci.md`, `docs/release-policy.md` | Admitted configuration and operational release/recovery procedures |
+| `docs/toolchain-and-ci.md` | Future configuration documentation in this blueprint; not present. Use the adopted configuration and `TOOLING.md` meanwhile |
+| [docs/release-policy.md](release-policy.md) | Written operational release/recovery specification; first-stable support commitment is proposed and actual account/native/recovery rehearsals remain pending |
 
 The table combines adopted bootstrap files and the remaining implementation blueprint; inspect the checkout and [tooling record](../TOOLING.md) before assuming a file or gate exists. Prefer one authoritative policy source with generated reports to contradictory duplicated rules. Gate implementation itself is security-relevant code and needs negative controls and independent review.
 
@@ -1027,7 +1028,7 @@ The table combines adopted bootstrap files and the remaining implementation blue
 | DEV-03: Admit dependency/CI policy | Exact graph/source/license dispositions, freshness receipt, workflow/secret/CodeQL controls | Preserve S0.1 crypto/license hold; actual held dependency blocks only dependent product work |
 | DEV-04: Qualify behavioral evidence | Independent fixtures, nextest/doctests, 90% module and 95% file checkers with complete denominators | P1 core implementation and reviewed critical manifest; no empty green bootstrap |
 | DEV-05: Qualify native analysis/lab | x64 Windows evidence, effective mitigations, bounded lab ownership; native-memory controls and candidate paths; separate retention, ASan and coverage results | AppVerifier/PageHeap/CDB bootstrap controls passed; application/native-product, Leak-layer, soak and ASan qualification remain pending. Tool controls cannot waive required native behavior |
-| DEV-06: Protect promotion | Complete candidate inventory, owner-controlled submission, independent review and final delivered package verification under the selected trust profile | OPEN-11 and post-Store qualification before broad release; no automatic public release from an agent |
+| DEV-06: Protect promotion | Complete candidate inventory, owner-controlled submission, independent review, final delivered package verification and the [release-operations evidence](release-policy.md#9-qualification-matrix-and-remaining-decisions) under the selected trust profile | OPEN-11/14, approved support/transition terms, applicable account/access/recovery rehearsals and post-Store qualification before broad release; no automatic public release from an agent |
 
 Bound unresolved tool experiments by time, owner and decision criterion. If a tool cannot analyze a required surface, record the gap and choose an independently justified alternative; do not remove the requirement. Optional model tools need not block starting bounded P0 work.
 
@@ -1036,6 +1037,12 @@ Bound unresolved tool experiments by time, owner and decision criterion. If a to
 The environment is ready for a particular development stage when its required tools and configurations are admitted, isolation is demonstrated, checker controls pass, scope/ownership is recorded and the next task has an independent acceptance oracle. Later-stage requirements can remain explicitly pending until the relevant implementation exists.
 
 The environment is ready for public release only when the complete artifact-specific matrix, license and signing decisions, native behavior, resource/accessibility checks and release recovery requirements are satisfied. A comprehensive document and strict compiler settings are preparation, not completed verification.
+
+Use the [release policy](release-policy.md) for support status, containment,
+publishing-authority incidents and compatible state-preserving correction. Its
+matrix refines existing CHECK owners; documentation review is not a rehearsal,
+and a support proposal does not settle the separately required dependency
+remediation deadlines in ASVS 15.2.1/CHECK-26.
 
 ## 13. Research and review record
 

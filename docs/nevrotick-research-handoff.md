@@ -233,6 +233,16 @@ supplies package/publisher identity, approved-release/helper binding, exact
 dependency/catalog inventory, wrong-clock/offline trust conditions and truthful
 capability justification to the existing W11 task; do not create another survey.
 
+The [release policy](release-policy.md) now supplies the source-based operational
+draft for stable support, backports, withdrawal, compatible corrective releases
+and compromised publication authority. Its support baseline remains proposed;
+account readiness, real access/recovery rehearsals and installed-state/native
+evidence remain open. Continue through
+[W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
+and OPEN-11/14 instead of repeating the release survey. This common operational
+work applies to the selected Store route; it is not limited to the retained
+MSI key-custody questions below.
+
 **Retained alternatives:** SignPath Foundation's publisher display is acceptable
 and the earlier complete MSI/OpenPGP policy remains if David later chooses that
 route. The questions below apply then; they do not block selected MSIX preparation.

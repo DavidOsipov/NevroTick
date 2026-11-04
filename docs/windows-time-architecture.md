@@ -1172,11 +1172,22 @@ Group Policy can overwrite ordinary W32Time configuration. Detect managed policy
 
 | Operation | Required sequence | Failure behavior |
 | --- | --- | --- |
-| Upgrade | Quiesce engine; broker cancels transient slew; persist versioned state; replace protected binaries; start one broker generation; verify version/capability compatibility | Roll back to the compatible previous version/state; do not briefly enable W32Time during a major upgrade's uninstall phase |
+| Upgrade | Quiesce engine; broker cancels transient slew; persist versioned state; replace protected binaries; start one broker generation; verify version/capability compatibility | Use only a qualified compatible code/state transition, preserving current mandatory authority and uncertain outcomes; do not enable W32Time beneath the successor |
 | Failed activation | Keep journal authoritative; stop partially started new services; restore previous clock owner | Report restoration result and preserve diagnostic evidence |
 | Uninstall | Stop engine; cancel broker corrections; remove product-owned changes; restore original W32Time state if ownership still matches | Respect later administrator/GPO changes; explain divergence rather than overwriting it |
 | Repair | Verify files, account rights, ACLs, effective mitigations and journal | Do not reset trust policy or resurrect a consumed step allowance |
 | Interrupted transaction | Resume or roll back using explicit durable stages | Never infer completion solely from the presence of an executable |
+
+Rollback here means qualified transaction recovery, not restoration of all
+pre-update data. Restored code must admit the current mandatory schemas and
+preserve reserved/consumed authority, uncertain outcomes, policy and ownership
+history. A source reversion, package rollback, Store listing change and recovery
+of installed state are separate operations. Follow the
+[release-policy compatibility and recovery procedure](release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+for a higher-version Store correction or any permitted binary fallback. The
+existing narrow time-floor supersession contract remains; release recovery
+grants no generic floor deletion or budget refund and cannot itself authorize
+a clock effect.
 
 The complete package owns UI, helper and both services as one installation. The selected MSIX design must identify a supported lifecycle/recovery mechanism under section 19.4; package transactions and service stops alone do not settle application-owned clock recovery. Elevated lifecycle actions receive validated operation-specific state, not arbitrary user-controlled script paths. Unavailable required rollback/recovery blocks takeover before mutation. Repair invoked by an ordinary user is still a privileged input surface. Removal of an old package during update is not ordinary uninstall and must respect successor ownership. Test failure after every reached stage and after reboot interruption. Retain recovery code and the protected journal until restoration has a durable outcome; secrets are removed according to uninstall policy. The retained MSI design in section 19.3 additionally requires correctly conditioned custom actions with paired rollback. See section 19 and CHECK-13/23. [S27, S57, S59, S60]
 
@@ -2784,6 +2795,11 @@ flowchart TD
 
 The removal node is a transaction, not an instruction to delete recovery code first: section 11 and section 19.2 require durable restoration results before removing the last recovery mechanism. Update-driven removal of the old version does not release ownership to W32Time. Every rate reset, including cleanup, requires current ownership. A private journal cannot overrule a later administrator or Group Policy decision.
 
+“Prior working product” requires current release eligibility and compatibility
+with retained mandatory state, not merely a valid old signature or an earlier
+successful run. The [release policy](release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+separates listing containment, corrective code and owned state recovery.
+
 ### 19.3 MSI implementation and maintenance security
 
 **Retained fallback/reference only:** this section preserves the earlier MSI design if David later reconsiders delivery after Store rejection or concrete technical evidence. It is not a parallel implementation, required intermediate installer or source of MSIX lifecycle hooks. The selected MSIX design must establish its own supported mechanisms under section 19.4 while retaining sections 11 and 19.2's authority/recovery guarantees.
@@ -2921,6 +2937,17 @@ For the retained MSI/Authenticode profile, if selected later, sign owned executa
 
 The selected Store route uses its complete-package delivery/update mechanism after lifecycle qualification; it is not limited to a user-initiated MSI update flow. Store scheduling, version policy and package replacement do not implement NevroTick's quiescence, state migration or recovery. Qualify these under sections 11 and 19.4, including higher-version corrective releases and compromised-release response. No bespoke privileged auto-updater or TUF integration is adopted; any later custom updater requires its own threat-model decision.
 
+The [release policy](release-policy.md) owns current support status, the proposed
+first-stable maintenance commitment, release records, containment and publishing-
+authority recovery. Its [qualification matrix](release-policy.md#9-qualification-matrix-and-remaining-decisions)
+adds operational cases to existing CHECK owners. Documented procedures still
+need their actual rehearsals and exact-candidate evidence before public release.
+A valid same-product package published through compromised Store authority can
+replace the enforcement boundary; no independent on-device rejection mechanism
+has been established. Retain [THR-15](#thr-15--build-or-signing-pipeline-publishes-trusted-malware)
+and OPEN-11's explicit risk/evidence decision instead of treating signer-category
+admission or a release-status table as that mechanism.
+
 ---
 
 ## 20. Verification strategy and acceptance checks
@@ -3005,6 +3032,13 @@ owns the corresponding evidence instructions.
 | CHECK-13/23 | Queued delayed SCM recovery fires during update/repair/rollback/removal and interrupted re-enable. Maintenance inhibition prevents protected work; authorized recovery restores only owned configuration. |
 | CHECK-19/25 | A mixed file has killed safe-function mutants but no generated mutants for a critical unsafe/generated path. Reporting preserves the missing behavior and its alternative evidence; a passing percentage alone cannot qualify it. |
 | CHECK-9/18/23 | Wrong-clock/offline startup/helper/install/repair/removal reaches the declared verifier/retrieval/deadline/refusal/recovery behavior. Reject unrelated Store-signed packages and unauthorized copied-out/old-release artifacts; supported intended candidates succeed. Retained MSI profiles additionally challenge their Foundation/OpenPGP identity and key policy if later selected. |
+
+Apply the [release-operations matrix](release-policy.md#9-qualification-matrix-and-remaining-decisions)
+to the same existing CHECK families: support transitions, Store halt and
+corrective delivery, bad-version state, publication-authority recovery and
+incident closure need distinct evidence and successful neighboring controls.
+Written procedures, tabletop reasoning and source review are preparation;
+they do not execute account, Store, native or installed-device recovery cases.
 
 ### 20.3 Test layers and execution safety
 
@@ -3130,6 +3164,11 @@ S6.1 finalizes per-binary mitigations and DLL load policy for the selected compl
 
 Exit requires CHECK-13/16/18/20/23 for the declared Store MSIX profile, with applicable authority, dependency and recovery checks. Store rejection or concrete technical infeasibility returns delivery choice to David; the retained MSI/SignPath/OpenPGP paths are not automatic exits. Do not declare a laboratory certificate, local schema pass or OpenPGP signature equivalent to Store-delivered trust and native qualification.
 
+Prepare and rehearse the [release operations](release-policy.md#9-qualification-matrix-and-remaining-decisions)
+under those same owners: approved support/transition record, usable account and
+access-recovery arrangements, containment, deliverable compatible correction and
+state-preserving recovery. The present document supplies no rehearsal result.
+
 ### P7 - Qualify the exact release candidate
 
 **Outcome:** a reviewer can reproduce the claimed functionality and see every limitation against the exact shipped artifacts.
@@ -3137,6 +3176,11 @@ Exit requires CHECK-13/16/18/20/23 for the declared Store MSIX profile, with app
 Run the applicable integrated checks, per-critical-file mutation/coverage gates, supported OS/architecture matrix, long-run resource checks, accessibility evidence and final ASVS/native-control assessment. Reconcile source/dependency/configuration changes since earlier results; invalidate affected evidence. Preserve first failures and rerun reasons.
 
 A fresh reviewer checks requirement coverage, protected effects, provenance, unresolved ASVS interpretations and rollback. Product/security-policy owners decide explicit exceptions; reviewer agreement is not authority to accept risk. Public release requires complete required evidence, approved exceptions with accurate claims, compatible licensing, actual artifact authentication for its declared profile and David's approval. OD-05 supplies only its stated release-policy exception, not blanket risk acceptance.
+
+That exact-candidate decision also identifies the supported platform/version
+matrix, corrective transitions, operational rehearsal evidence and actual release
+status from [the release policy](release-policy.md). Its proposed first-stable
+baseline is not an approved support commitment until David records that choice.
 
 ### 21.1 Planning estimates and staffing
 
@@ -3162,10 +3206,10 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
 | OPEN-10 | Native UI accessibility and measured resource fit | Win32 controls through audited Rust adapter | UI/accessibility, S0.5 |
-| OPEN-11 | Store publisher/package identity, capability/certification outcome and delivered-artifact trust | OD-05 selects the complete hardened MSIX submission attempt and David as human release approver. Preparing the candidate requires no prior Store approval; installed-code/helper admission, wrong-clock/offline behavior and actual Store-delivered evidence remain open. Retained MSI signing options require later delivery reconsideration | David/release/security/Store, P0/P6 |
+| OPEN-11 | Store publisher/package identity, capability/certification outcome, delivered-artifact trust and release-operations readiness | OD-05 selects the complete hardened MSIX submission attempt and David as human release approver. Preparing the candidate requires no prior Store approval; installed-code/helper admission, wrong-clock/offline behavior, actual Store-delivered evidence, approved support terms and rehearsed publishing-authority recovery remain open. Retained MSI signing options require later delivery reconsideration | David/release/security/Store, P0/P6; exact support/release decision at P7 |
 | OPEN-12 | Selected complete MSIX privilege/provisioning/recovery feasibility | Direction is selected; supported pre-start identities/rights, recovery before removal, multi-user lifetime and all section 19.4 release conditions remain unqualified. No external MSI prerequisite or automatic account broadening | Packaging/platform, S0.6/P6; source preparation can proceed under current holds |
 | OPEN-13 | Final runtime/native-work/stop budgets and permitted deliberate chrony deviations | Measure first slice with Windows protections active; keep permits with actual work, no replacement-pool growth, traceable changes | Core/platform/performance/product, P0/P1/P4 |
-| OPEN-14 | MSIX tool/schema admission, supported elevated lifecycle mechanism, transaction/recovery schema, durable maintenance inhibition/queued restart handling and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict lifecycle-input policy, hostile repair/Reset tests and no unintended downgrade. MSI/WiX-specific gates apply only if that retained route is later selected | Installer/security/license owners, S0.6/P6 |
+| OPEN-14 | MSIX tool/schema admission, supported elevated lifecycle mechanism, transaction/recovery schema, durable maintenance inhibition/queued restart handling and permitted version transitions | One complete package; exact authoring-tool gate, fixed protected identities/paths, strict lifecycle-input policy, hostile repair/Reset tests and no unintended downgrade. Corrective releases must qualify bad-version/partial/skipped-migration states and retain mandatory authority under the release policy. MSI/WiX-specific gates apply only if that retained route is later selected | Installer/security/license owners, S0.6/P6 |
 
 Use [NV-DEC-001](nevrotick-owner-decisions.md) for owner decisions and [NV-RESEARCH-001](nevrotick-research-handoff.md) for future research. Bring concrete decisions to David only when the next dependent action needs them; preserve accepted choices and record supersession explicitly.
 

@@ -60,6 +60,13 @@ Setup checks readiness and preserves the existing Windows Time configuration bef
 
 The selected Store route uses complete-package updates after its lifecycle is qualified; see architecture sections 19.4–19.5 and OD-05. Package scheduling/replacement does not itself settle clock recovery. Repair preserves valid configuration, ownership records and consumed correction allowances; Reset must not delete the only mandatory recovery path. Uninstall removes the product components and restores the applicable previous Windows Time state while respecting subsequent administrator or Group Policy changes. Updates, last-user removal and delayed payload removal must preserve the correct machine-service owner. An interrupted or failed operation reports its actual restoration outcome and retains the required recovery mechanism.
 
+The [release policy](release-policy.md) owns declared support status and the
+operational bad-release procedure. Its first-stable maintenance baseline is
+proposed. A corrective Store release must work from the affected installed state;
+listing withdrawal or returning older code to the listing does not itself repair
+that state. User guidance must name a qualified recovery path, with an honest
+blocked outcome when none exists.
+
 **Acceptance:** clean install, boot without login, UI closure, complete update, repair/Reset and removal before first UI launch or with other-user sessions; inject a takeover/maintenance failure and prove the prior or successor owner is respected. A successful file copy, Store certification or local package deployment alone is not sufficient application readiness. [Architecture §§11, 19; CHECK-5/13/18/23]
 
 ### F-02 — Synchronize automatically in the background
@@ -394,7 +401,7 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-12 | F-07 | Suspend/resume, Modern Standby, external clock change, leap guards and late callbacks preserve generation boundaries. Time asleep is not counted as delivered slew. Fresh post-guard quorum restores useful tracking; no synthetic second or false native-event acknowledgement. | CHECK-10/11/27 |
 | AC-13 | F-01/07 | Kill engine and broker during correction. Recover only with current ownership; ambiguous/successor state blocks resets. Crash loops preserve consumed budgets. | CHECK-10/12/27 |
 | AC-14 | F-01/06 | Managed-policy takeover defaults to observation; later GPO/controller activation causes honest conflict handling without fighting the owner. | CHECK-5/13 |
-| AC-15 | F-01 | Store package update, repair/Reset and uninstall before UI launch, with UI closed, old sessions and last-user transitions; inject interruption. No partial product, erased last recovery path, permissive reset, stale-owner restoration or false completion. | CHECK-13/18/23 |
+| AC-15 | F-01 | Store package update, compatible higher-version correction from affected state, repair/Reset and uninstall before UI launch, with UI closed, old sessions and last-user transitions; inject interruption. No partial product, erased last recovery path, permissive reset, stale-owner restoration or false completion; listing containment is not installed recovery. | CHECK-13/18/23 |
 | AC-16 | F-09 | Failures yield useful redacted evidence; required events survive optional filters; authorized temporary DEBUG expires; floods/full storage cannot block cleanup or create success. | CHECK-2/14/17/27 |
 | AC-17 | F-04/06/08/09/10 | Complete status, editing, UAC cancellation, correction review and export using keyboard/Narrator, contrast and 200% scaling. Focus/announcements remain usable. | CHECK-22 |
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
@@ -416,7 +423,7 @@ The feature scope can be delivered in small integrated slices while preserving t
 | S-3 — Safe unattended synchronization | One owned controller corrects time before login and with UI closed | Broker/platform, installer and engine owners; P3/P4 authority/ownership prerequisites | Independent real clock trajectory, stop/restart/ownership cases, bounded native work and installation handover |
 | S-4 — Recovery and administrative workflows | Source editing, wrong-date recovery and single-use correction review work through the same policy | Network/platform/UI owners; P2/P4/P5 with resolved relevant OPEN-5/6/8 decisions | AC-07–14 valid/failure pairs; no stale approvals, downgrade or hint-derived clock write |
 | S-5 — Finished basic experience | Main/Sources/Settings/Diagnostics, optional tray, support export and complete maintenance are usable | UI, accessibility, packaging and platform owners; P5/P6; lifecycle work began in S-0 | Keyboard/Narrator/scaling, source/state truthfulness, resource measurements and interrupted-maintenance cases |
-| S-6 — Exact public release candidate | One complete hardened MSIX prepared for Store submission, then qualified as the actual Store-delivered artifact before public release | P6/P7; David/release/signing/license owners and independent verifier; preparation does not require prior Store approval | Complete feature/architecture matrix, actual Store outcome, package/catalog and installed-file evidence, supported clean-machine lifecycle and no unresolved dependent release blocker |
+| S-6 — Exact public release candidate | One complete hardened MSIX prepared for Store submission, then qualified as the actual Store-delivered artifact before public release | P6/P7; David/release/signing/license owners and independent verifier; preparation does not require prior Store approval | Complete feature/architecture matrix, actual Store outcome, package/catalog and installed-file evidence, supported clean-machine lifecycle, approved support/transition record and required [operational rehearsals](release-policy.md#9-qualification-matrix-and-remaining-decisions); no unresolved dependent release blocker |
 
 Do not build the entire settings UI against invented responses and call that S-2. Prototype data must be visibly labelled, and the integrated exit needs actual admitted service data. Similarly, a headless numerical test cannot qualify Windows clock control.
 
@@ -455,7 +462,7 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 | Plain-NTP assurance claims | Explicit unauthenticated profile and resolution of applicable ASVS interpretation/exception questions | Security owner; OPEN-9 |
 | Supported Windows builds | Actual client OS, architecture, power modes and protection configurations | Platform/release; OPEN-2 |
 | UI and tray qualification | Actual UIA, keyboard, Narrator, scaling, startup/closure and measured resource behavior | UI/accessibility; OPEN-10/13 |
-| Complete Store release path | Exact compatible graph and package tools, supported service provisioning/recovery, package/publisher identity, actual Store outcome, installed-file/helper trust and complete lifecycle | License/packaging/release; OPEN-1/11/12/14; candidate preparation does not await prior Store acceptance |
+| Complete Store release path | Exact compatible graph and package tools, supported service provisioning/recovery, package/publisher identity, actual Store outcome, installed-file/helper trust, complete lifecycle and the release-policy support/incident readiness decisions | License/packaging/release; OPEN-1/11/12/14; candidate preparation does not await prior Store acceptance |
 
 These are existing phase gates or concrete refinements of them. Missing evidence is not a reason to silently weaken the feature. Proposed UI copy, default presentation and tray choices can be refined with user testing without changing the security semantics.
 

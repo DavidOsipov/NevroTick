@@ -12,6 +12,15 @@ The [architecture and threat model](windows-time-architecture.md) owns product d
 
 ## Common provenance fields
 
+**4 November release-operations routing:** the [release policy](release-policy.md)
+documents support proposals, promotion, withdrawal and incident recovery under
+existing CHECK-13/15/17/18/23/24/26/27 owners. Its proposed support model and
+absence of a fixed public response deadline do not satisfy or waive
+`v5.0.0-15.2.1`'s separately required approved remediation deadlines and actual
+dependency-release gate. Those choices and rehearsals remain open. All 345
+clause IDs, original verification fields, classifications and unexecuted statuses
+below remain unchanged; this routing adds no conformance result.
+
 **3 November delivery refinement:** the amended [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
 selects complete hardened MSIX preparation for David's Store attempt with services.
 Use current architecture THR-20 and CHECK-13/15/16/18/23 with the

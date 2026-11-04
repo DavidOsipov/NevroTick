@@ -1,6 +1,6 @@
 # Signing the Windows time client: a practical package guide
 
-**Revision:** 1.0 with owner-decision, trust-lifecycle and selected-MSIX amendments, 3 November 2026
+**Revision:** 1.0 with owner-decision, trust-lifecycle, selected-MSIX and release-operations amendments, 4 November 2026
 
 **Research date:** 28 October 2026  
 **Status:** Preparation guide; Store acceptance, production package signing and native qualification are **not completed**.
@@ -14,6 +14,11 @@
 Preparation can proceed without speculative Store preapproval. The [MSIX plan](plans/windows-msix-store.md) defines the package-integrity, Store-compatible code-integrity and role-specific protection requirements, capability justification and qualification sequence. The current Core priority, Windows execution stop, fuzzing, storage and UI holds still apply. This documentation change does not authorize a held native experiment or claim a working package.
 
 David retains account, submission, publication and exact-candidate release decisions. Store certification and signing are external outcomes. Initial controlled submission precedes verification of the actual Store-signed artifact; broad release follows the required post-Store artifact and native checks. See [section 6.1](#61-store-msix-trust-and-publication-boundaries) and the plan's publication sequence.
+
+The [release policy](release-policy.md) owns the current support statement,
+proposed first-stable baseline, exact release-status records and incident
+procedures. Its written preparation supplies no support approval or completed
+account, access-removal, renewal or recovery rehearsal.
 
 **Retained alternatives:** sections 2–5 preserve the SignPath Foundation research and MSI Authenticode workflow; section 7 preserves the previously accepted initial OpenPGP MSI profile. Neither is a prerequisite for the selected Store MSIX, a simultaneous v1 distribution promise or an automatic fallback. If David later returns to MSI, the Foundation publisher display and David's human-approver role remain recorded, and that route still needs its own eligibility, trust and native qualification. The Foundation's conditions and application remain [S1–S3]; any later provider contact is a separate authorized action.
 
@@ -316,6 +321,15 @@ submission and controls visibility/release; broad release requires the final
 Store-artifact checks above. SignPath and OpenPGP MSI remain retained alternatives
 only if he later revisits the distribution decision.
 
+Use [release-policy §4](release-policy.md#4-distribution-containment-choose-the-actual-store-operation)
+to distinguish initial private audience, later flights, gradual updates, halt and
+availability controls. Record publication containment separately from installed
+recovery and any publishing-authority incident. A corrective package must qualify
+the affected state and actual delivery route; a Store signature does not prove
+that malicious same-product publication through a compromised account is
+independently rejected on the device. [Section 7](release-policy.md#7-compromised-publisher-repository-or-build-authority)
+preserves that residual and the distinct MSA/Entra/application recovery routes.
+
 ## 7. Development and the accepted initial OpenPGP release profile
 
 This section preserves the earlier MSI decision and its verification requirements. It applies only if David later selects that route; it is neither a prerequisite for Store MSIX nor the automatic response to Store rejection.
@@ -360,7 +374,8 @@ See [NV-DEC-001 section 7](nevrotick-owner-decisions.md#7-od-05--signing-and-rel
 | Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final Store-artifact evidence required before broad release |
 | Exact-candidate visibility and broad release after post-Store qualification | David Osipov | Owner decision retained; no publication by this work |
 | SignPath eligibility or OpenPGP key/profile qualification if MSI is later selected | Maintainer / provider / verifier | Retained alternatives only; neither a selected-MSIX prerequisite nor an automatic fallback |
-| Renewal, revocation, access removal and recovery | Release/security owner | Must be written and rehearsed before public release |
+| Stable-support and transition commitment | David Osipov / release owner | [Release-policy §2](release-policy.md#2-support-status-and-proposed-baseline) is proposed; no stable series, support lifetime, backport schedule or response deadline approved |
+| Renewal, revocation, access removal and recovery | Release/security owner | [Operational procedures are written](release-policy.md#7-compromised-publisher-repository-or-build-authority); actual private inventory and applicable renewal/access/recovery rehearsals remain pending and required before public release |
 
 **OPEN-11 tracks acceptance and qualification of the selected Store MSIX route, while preserving the earlier MSI alternatives.** Preparation does not wait for speculative Store preapproval. Initial controlled submission does not claim completed post-Store checks. Broad release requires the actual delivered artifact's authentication, installed-file trust, protection and lifecycle evidence, with David's exact-candidate decision. A provider account, a screenshot of a certificate or this guide alone is insufficient.
 

@@ -596,8 +596,18 @@ servicing is subject to the full lifecycle contract; no bespoke privileged
 updater or separate UI package is added. SignPath/OpenPGP MSI profiles remain
 alternatives for a later owner decision, not parallel implementation prerequisites.
 
+Use the [release policy](../release-policy.md) for the proposed support baseline,
+exact release/status record, containment and compatible corrective releases.
+W11-W10 owns account/access/renewal and publication-recovery preparation and
+rehearsals; W11-W05 supplies current-owner and mandatory-state recovery evidence.
+Qualify bad-version, partial and skipped migration states, actual corrective
+delivery and useful authorized recovery beside refusal. The operational document
+is written; its support commitment and actual rehearsals remain open.
+
 P6 exit: CHECK-13/16/18/20/23, applicable CHECK-5/15/26/27 and AC-15/20, with
-profile-specific signing/lifecycle evidence on supported clean Windows machines.
+profile-specific signing/lifecycle evidence on supported clean Windows machines
+and the applicable [operational evidence](../release-policy.md#9-qualification-matrix-and-remaining-decisions)
+under existing CHECK-17/18/23/24/26 owners.
 
 ### P7 — final integrated acceptance
 
@@ -622,6 +632,13 @@ conformance from skill use or a narrow test suite. A fresh reviewer checks exact
 artifacts, remaining risk, recovery and claims. Release needs complete required
 evidence, resolved applicable blockers/explicit owner decisions, compatible
 licensing and David's approval for the exact candidate.
+
+That approval includes the actual supported platform/version and transition
+matrix, the recorded maintenance commitment, operational rehearsal results and
+corrective recovery limits. The release-policy proposal is not itself that
+decision. Store containment, publishing-authority recovery and installed-case
+restoration require distinct observations; unobserved/offline devices remain
+explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
@@ -1177,6 +1194,17 @@ Preparation needs no Store preapproval. Local qualified mechanics precede the
 owner's controlled submission; the actual Store-delivered candidate is qualified
 before broad release. Store refusal triggers owner reconsideration, not an
 automatic MSI fallback. Do not delay the current Core checkpoint for packaging.
+
+**Release operations, 4 November 2026:** the [release policy](../release-policy.md)
+and [W11 task §4.21](../../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
+route source-based support/backport preparation, Store containment, publishing-
+authority recovery and compatible corrective releases to the same owners.
+W11-W10's document is prepared; support terms need David's decision and actual
+account/Store/native rehearsals remain open at P6/P7. W11-W05 retains P0/P4/P6
+mandatory-state, maintenance and restoration qualification. A written runbook
+does not close OPEN-3/11/12/14 or choose a provisioning mechanism. Preserve
+section 7's S157/Core priority and the later scoped Sandbox disposition, blocked
+stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals.
 
 The [latest provisioning/removal research](windows-msix-store.md#74-service-provisioning-and-independent-removal-research)
 and [task §4.18 handoff](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026)

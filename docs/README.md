@@ -4,7 +4,7 @@
 **Snapshot date:** 29 October 2026  
 **Canonical architecture:** RWTC-ARCH-001, revision 1.4
 
-The maintained set contains ten principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report, a critical architecture-contract assessment, a state-guided fuzzing experiment report and a Verus assessment. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. Proposed behavior and planned checks are not implementation evidence.
+The maintained set contains eleven principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report, a critical architecture-contract assessment, a state-guided fuzzing experiment report and a Verus assessment. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. The release policy adds operational preparation with proposed support terms. Proposed behavior and planned checks are not implementation evidence.
 
 ## Plans, acceptance and execution evidence
 
@@ -34,6 +34,7 @@ to own requirements, and task records own executed evidence.
 | Which Microsoft Windows 11 mechanisms should be evaluated, and where does their work belong? | [Windows 11 integration research](plans/windows11-integration.md), [Microsoft Learn follow-up](plans/windows11-integration-follow-up.md), [phase workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent task](../tasks/windows11-integration.md): packet timestamps, sleep/timer behavior, DNS/WSH integration, service/MSI/COM lifetimes, resource signals, CNG, diagnostics and future UI. The follow-up adds exact completion, metadata, permission, tracing and partial-replacement cases plus source discrepancies. Existing CHECK/DNS-C/ST-T owners and conditional triggers apply; no native pass or automatic API/dependency adoption. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | How is the selected complete MSIX hardened and prepared for a Store attempt with services? | [MSIX/Store plan](plans/windows-msix-store.md), [amended OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [current W11-W10 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): explicit content integrity, sealed executable paths, Store-compatible CIG, per-role protections, supported service provisioning and recovery. Local mechanics, owner submission and final Store-delivered qualification are separate stages; no working package or Store acceptance is claimed. |
+| Which stable releases are supported, and how are unsafe releases or compromised publication authority handled? | [Release policy](release-policy.md): current no-stable status, proposed first-stable support/backport baseline, exact candidate promotion, Store containment, compatible corrective releases and incident recovery. [Existing W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026) owns documentation evidence and remaining decisions/rehearsals; no support commitment or native/account pass follows from the document. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | How are leap seconds, silent-LI servers and Windows event ownership handled? | [Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales) owns the selected contract; [NV-LP-001](plans/leap-second-policy.md) records primary evidence, local knowledge, source/guard/Windows behavior; [S1.4's task](../tasks/s1.4-leap-policy.md) owns implementation cases and remaining native gates. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
@@ -57,6 +58,18 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Release operations, 4 November 2026:** the [release policy](release-policy.md)
+consolidates supported-version records, backport decisions, bad-release
+containment, state-preserving correction and recovery of publishing authority.
+Its latest-qualified-stable baseline is **proposed**, pending David's first-stable
+decision; no supported stable release or fixed response/remediation deadline
+exists. Store listing changes do not repair already updated devices, and
+authentic same-product publication through compromised authority has no proven
+independent on-device rejection gate. The [W11 continuation](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026)
+keeps actual rehearsals, account readiness, native recovery and final-artifact
+evidence open under existing owners. The current Core priority, scoped Sandbox
+permission, blocked artifacts, fuzz/storage holds and UI-M0 deferrals remain.
 
 **Leap policy, 4 November 2026:** [OD-09](nevrotick-owner-decisions.md#13-od-09--leap-policy-and-silent-servers)
 records the requested multi-agent GitHub MCP/Windows Learn MCP research and
@@ -348,6 +361,7 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 | --- | --- | --- |
 | A | [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) | Owner instructions of 29 October; accepted choices, recommendations and unresolved policy distinguished. |
 | B | [nevrotick-research-handoff.md](nevrotick-research-handoff.md) | Bounded future research, NTS operator candidates, evidence requirements and owner decision cards. |
+| C | [release-policy.md](release-policy.md) | Current support status and proposed stable-maintenance model; exact-candidate promotion, withdrawal, corrective recovery and publishing-authority incidents. Required operational rehearsals and product qualification remain open. |
 | 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, twenty acceptance scenarios and staged delivery. |
 | 2 | [windows-time-architecture.md](windows-time-architecture.md) | Canonical creation specification, revision 1.4: technical contracts, threat model, NTP/NTS, Windows authority and release gates. |
 | 3 | [windows-time-diagrams.md](windows-time-diagrams.md) | Editable Mermaid architecture views aligned with revision 1.4. |

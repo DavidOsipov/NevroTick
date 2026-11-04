@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 4 November 2026; earlier dated receipts retain their recorded time zones.<br>
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Package implementation and native product qualification remain unexecuted.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Package implementation and native product qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -10,7 +10,8 @@
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),
 the [Windows 11 research](../docs/plans/windows11-integration.md), its
 [Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md), the
-[MSIX/Store assessment](../docs/plans/windows-msix-store.md) for packaging work, and
+[MSIX/Store assessment](../docs/plans/windows-msix-store.md) for packaging work,
+the [release policy](../docs/release-policy.md) for support/promotion/incident work, and
 [development §8.5](../docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification).
 The research retains primary-source contracts, proposed adaptations and support
 limits; this record owns bounded assignments and subsequent execution evidence.
@@ -26,6 +27,7 @@ or [ST-T owners](../docs/plans/windows-protected-storage.md#7-focused-threat-sce
 | Modern Standby, service-setting activation, Restart Manager and powerful process handles | Added composition cases for existing timing, service, mitigation and package owners; source documentation establishes no effective state. |
 | Current development and user interface | Development §7's current portable Core checkpoint and P0–P7 order remain. UI-M0 stays fixture-only; D1, D2 and D3 remain Deferred until their existing re-entry gates. |
 | DNS and storage policy | DoQ-only upstream with leaf/intermediate pins remains; no implicit DoH/DoT/DNSCrypt/plaintext fallback or ZTDNS enablement. Optional VBS/TPM/no-cache state remains separate from mandatory clock authority. |
+| Release operations | The release policy prepares support records, containment and corrective recovery; its first-stable support baseline remains proposed. Existing W11-W10/W11-W05 and CHECK/OPEN owners retain actual decisions, rehearsals and native evidence. |
 
 This request authorizes documentation integration. It does not lift the current
 Windows execution stop, separate fuzz no-retry hold or storage-experiment pause,
@@ -35,6 +37,11 @@ work uses its existing applicable authorization, contract and environment gates;
 this task adds no blanket approval round. Material changes to product policy or
 trust boundaries use the existing owner-decision procedure, blocking only their
 dependent work. Do not scaffold product code to make a planning check executable.
+
+Current Windows scope follows the later [section 4.19 disposition](#419-owner-ready-sandbox-scope--3-november-2026):
+owned-Sandbox management and separately admitted guest work are permitted within
+that boundary. The blocked stager/artifact, separate fuzz hold, storage pause
+and restrictions on general host Windows execution remain.
 
 Use [plan-code-change](../.agents/skills/planning/plan-code-change/SKILL.md) and
 the [testing contract](../.agents/skills/testing/CONTRACT.md). Select only relevant
@@ -332,6 +339,12 @@ first-UI setup do not substitute for those observations. Prepare the design now;
 native execution retains its hold. Do not use MSI actions/properties as assumed
 MSIX hooks, or require an MSI prerequisite to obtain the intended isolation.
 
+For bad-release recovery, apply [release-policy §6](../docs/release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+to the affected version's actual mandatory state, partial migrations and uncertain
+effects. A compatible code fallback cannot restore an obsolete authority ledger;
+new-version refusal must retain a usable recovery route while prior takeover
+remains. The procedure adds no new native execution grant or provisioning owner.
+
 **Controls/exit:** allowed service work and private-object access succeed;
 disallowed token/handle access fails under installed identities. Hold maintenance
 before commit; RM/manual/queued recovery starts must not admit normal protected
@@ -483,6 +496,12 @@ retain their own conditional triggers. The heading is preserved for existing lin
 | UDP coalescing/segmentation / selected transport | A measured bottleneck justifies a backend/option comparison, such as future DoQ. Prove original datagram boundaries, short-final-segment and missing/truncated-control outcomes, per-datagram accounting and timestamp attribution. This is not DNS request coalescing or a reason to change NTP defaults/global offloads; existing CHECK-6/21/25/27 and affected DNS-C12 apply. |
 | VM Generation ID / clock/security | A restore-witness need has a supported privilege design. The documented admin/SYSTEM device access is not permission to broaden engine/broker accounts. Cover missing/access-denied device, stale read/change, restore and cancellation; a witness cannot reset consumed authority or prove a trustworthy boot counter. Reuse CHECK-11/12/15/27. |
 
+Selected MSIX preparation also consumes [section 4.21](#421-release-operations-integration--4-november-2026)
+and the [release policy](../docs/release-policy.md). W11-W10 retains support and
+publication/incident readiness; W11-W05 retains mandatory-state and lifecycle
+recovery. Source preparation is recorded, while owner choices and actual
+rehearsals remain open at their existing phase gates.
+
 Protected Process Light is excluded as a normal utility-service option; ordinary
 publisher signing supplies no protected-service eligibility. No reserve selects
 a dependency, weaker fallback, service topology or machine-wide policy here.
@@ -495,8 +514,9 @@ a dependency, weaker fallback, service topology or machine-wide policy here.
 | Documentation, architecture, plan and task integration | Earlier integration and local-adoption review/validation retain the candidates in sections 4.1–4.3. The second-pass integration is recorded from section 4.4; the MSIX/Store amendment is recorded from section 4.6. Earlier passes do not qualify changed text. |
 | W11-W01 source contract | Ready bounded next action when assigned to the relevant acquisition owner; not executed by this integration. |
 | Portable implementation/model | No W11 work-item, CHECK, DNS-C or ST-T implementation pass established by this integration. |
-| Native Windows/service identity | Unexecuted; the current Windows execution stop, storage-experiment pause and applicable environment/authorization gates remain. The separate fuzz no-retry hold is also unchanged. |
+| Native Windows/service identity | No product qualification established by this integration; section 4.19's scoped Sandbox permission and all remaining artifact/fuzz/storage and environment gates apply. |
 | Installed MSIX and release | Unexecuted; local test-signed mechanics, Store acceptance and actual Store-delivered trust/mitigation qualification remain separate evidence layers. |
+| Stable-release operations and incident recovery | Written source-based specification and proposed support baseline in section 4.21; actual support approval, account readiness, rehearsals and native recovery remain pending. |
 
 For later work, record the selected item and existing acceptance IDs, exact
 source/configuration/graph/candidate, writable owner, admitted runner/environment,
@@ -1590,3 +1610,133 @@ stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals. Historic
 receipts keep their original candidates; Store submission and broad release
 remain David's separate decisions. The S1.4 task records the coordinated
 documentation review and final-candidate checks.
+
+### 4.21 Release operations integration — 4 November 2026
+
+**Scope and candidate:** the owner's requested audit §2.1 addition covers stable
+support/backports, bad-release containment and recovery, and compromised
+publication authority. It does not reopen the separate MSIX provisioning survey.
+The source baseline is upstream `dcda54448241d54c0554d141f636fab55364d1f4`.
+The coordinator verified an untruncated 1,082-blob tree and 403 included
+source-documentation/skill/task/manifest files by Git blob identity. The isolated
+local documentation snapshot uses synthetic commits `822cfd8` and `058b43d`;
+those are workspace identities, not upstream history or product-build receipts.
+Product source and archived design/assets are not fully materialized locally.
+
+**Research and integration completed:** three distinct research roles supplied
+GitHub upstream evidence, Microsoft Learn MCP platform evidence and other primary
+security/incident sources. The fourth agent read all three finalized handoffs,
+reconciled contradictions and produced the 631-line release-policy draft,
+SHA-256 `7327b551bbcc96fde348441c738919a22aa3c0b64b9468444a9425414331f57d`.
+Its own reference check resolved all 18 local links/headings at the intended
+`docs/` location. The fifth agent integrated that draft and maintained-document
+routing. Earlier launch failures supplied no review evidence; only completed
+research/synthesis work is counted here. A supporting read-only secondary-surface
+scan completed after its initial launch failure and supplied impact routing,
+not a product or exact-candidate qualification.
+
+The coordinator read the complete draft and source/semantic integration, then
+requested one explicit addition: Microsoft Repair retains app data, while Reset
+deletes its app-data scope and reinstalls. The canonical policy adds that
+qualification and MS-06, without inferring the fate of all separate ProgramData
+or mandatory machine state. The [primary source register](../docs/release-policy.md#102-primary-source-register)
+retains the durable references and distinguishes vendor facts, transferable
+upstream practices and proposed NevroTick procedure. No source survey or
+historical test result is promoted to native recovery evidence.
+
+| Existing owner / stage | Current disposition | Next dependent action |
+| --- | --- | --- |
+| W11-W10; David/release, OPEN-11/14, P6/P7 | Operational specification written; no stable release or approved maintenance commitment | Use [release-policy §2](../docs/release-policy.md#2-support-status-and-proposed-baseline) for the concrete first-stable decision: qualified latest stable, bounded transition overlap, backport exceptions, supported profiles, communication/response ownership and rollout criteria. No numerical SLA/LTS/notice period is invented. |
+| W11-W10; release/security, CHECK-18/20/24 | Publication-authority and account recovery procedures prepared; actual private inventory and rehearsals pending | Bind actual MSA/Entra/users/apps and credential/access/renewal owners, recovery contacts and trusted artifact custody. Rehearse only through the applicable authorized arrangements; David retains account/submission/visibility/release actions. |
+| W11-W10; release/package, CHECK-18/23/24/26 | Store containment and corrective-delivery cases prepared; no Store operation performed | Qualify private audience, flights, gradual update/halt, unsafe fallback/cloned-submission and actual corrective reach/version headroom. Keep submitted/delivered identity and available versus installed recovery separate. |
+| W11-W05 with W11-W10; clock/state/lifecycle, P0/P4/P6, CHECK-5/12/13/15/23/27 | Compatible recovery obligations clarified; supported provisioning/independent-removal mechanisms and native results still open | Freeze the required old/bad/new schema and generation matrix. Preserve consumed/reserved authority, uncertain effects, original W32Time state, maintenance inhibition and successor/admin/GPO ownership. Demonstrate a useful authorized recovery beside refusal; a new version's safe refusal does not repair prior takeover. |
+| Existing diagnostics and independent release owners, CHECK-17/24/26 | Incident record, bounded guidance and closure criteria written | Qualify actual redacted export/evidence paths and exact corrective artifact. Record distribution containment, recovered publishing authority, available correction, recovered installed case and unresolved populations as separate outcomes. |
+
+**Canonical reconciliation:** the single [release policy](../docs/release-policy.md)
+owns operations. Architecture §11.2 now distinguishes compatible transaction/code
+recovery from restoring all pre-update data; mandatory state and narrowly
+authorized floor supersession keep their original owners. Signing §8 distinguishes
+written procedures from pending rehearsals. Hardening §12.1 identifies this
+existing policy separately from the still-future `toolchain-and-ci.md`. Root
+README/SECURITY now describe the existing bounded, unauthenticated ineligible
+loopback observer without claiming production NTP/NTS, services or clock effects.
+The semantic-document registry routes the policy and corrects its stale MSI-first
+signing description; no index setting or indexing operation changed.
+
+Current feature, package, development, diagram, ASVS, storage and release-bound
+calendar/catalogue surfaces link the same operational owner. All CHECK/OPEN/AC/OD
+identities remain; ASVS's 345 clause records and unmet remediation-deadline
+requirements retain their classifications and evidence status. Historical
+reviews, frozen candidate receipts and archived copies keep their original
+scope. No imported skill, product source, dependency, build workflow or Windows
+configuration is changed by this documentation integration.
+
+**Unresolved limits:** the first-stable support commitment; actual account and
+recovery readiness; the supported Windows/CPU/package transition matrix;
+provisioning and recovery before independent Reset/removal; wrong-clock/offline
+behavior; and actual delivered-artifact/lifecycle qualification remain open.
+An authentic malicious same-product Store package has no established independent
+on-device rejection guarantee; local file protection also does not prevent
+whole-machine snapshot rollback. These remain explicit THR-15/17 and existing
+OPEN-11/12/14 evidence/risk decisions, not accepted exceptions.
+
+Retain section 4.19's narrow Sandbox scope, the blocked stager/artifact, separate
+fuzz no-retry hold, storage pause, UI-M0 deferrals and current S157/Core priority.
+No product test, native drill, account/credential action, Store submission,
+signing, publication or contact with a third party was performed by the five
+research/integration roles. Documentation validation and independent review below
+have only their stated candidate and source/document scope.
+
+#### Release-policy independent draft review
+
+Reviewer `/root/research_github` completed the bounded read-only review of the
+frozen draft SHA-256 `7327b551bbcc96fde348441c738919a22aa3c0b64b9468444a9425414331f57d`.
+The reviewer did not author that draft, but retained its earlier GitHub research
+context and authored one of the analyst's inputs. **This was not a fresh-context
+review.** Its result does not cover the fifth agent's concurrent integrated edits.
+The raw review SHA-256 is
+`0233fc7e2a3d8ff7de3c51521872d02072084b6c58be22196ebb0c0cd8d1fbcc`.
+
+The reviewer's comprehension is preserved verbatim:
+
+> The draft consolidates NevroTick's release operations into one policy: explicit support status and a proposed first-stable maintenance model, exact-candidate promotion, distribution containment, compatible corrective releases, and recovery after publication authority is compromised. It separates changes to source, distribution, installed code and protected state, and assigns the decisions and evidence needed for each. It does not propose a new updater or pretend that a written runbook supplies an implemented recovery command.
+
+> The current system is an early-stage project with a selected complete hardened Store MSIX direction and planned privileged timekeeping boundaries. David controls the Store attempt and exact release approval; native package, lifecycle, state-migration and delivered-artifact qualification remain incomplete. Existing contracts require current clock ownership, durable correction accounting, preserved W32Time restoration evidence and an invocable recovery path. The missing provisioning/removal bridge, publication-compromise residual and whole-machine rollback limits remain open in the draft rather than being treated as solved.
+
+> **Verdict: READY for documentation integration.**
+>
+> **Material findings requiring correction:** none in the frozen draft and stated review scope.
+
+The reviewer directly rechecked the consequential Store rollout/flight/version/
+visibility distinctions and primary publication/incident guidance, while reusing
+its pinned upstream reads. Its explicit limits retain support approval,
+OPEN-11/12/14, real account exercises, native recovery and actual Store-produced
+artifacts as unfinished. No new finding IDs or product passes were issued.
+The coordinator separately reviewed the integrated semantic changes, including
+the Repair/Reset/MS-06 addition, and found no material blocker in that scope.
+Final publication still requires the exact frozen candidate and remote-head
+checks; this receipt itself performs no release or repository publication.
+
+#### Documentation validation and preserved evidence
+
+The fifth agent ran these documentation-only checks on the integrated worktree
+against the verified synthetic baseline `058b43dbd8cfeb0b2dcfe312a433fb82dde8ef27`.
+The canonical policy SHA-256 is
+`6db4adbcf4be6378db09805c04d929e558b46e5311984effc3bcf0e4f21827b5`.
+
+| Actual check | Observed result and limit |
+| --- | --- |
+| `git diff --check` | Passed; no changed whitespace errors. No application build was run. |
+| Local Markdown references against the full upstream tree plus current additions | Scanned 1,447 references across 25 changed Markdown files; zero new missing targets/headings. Forty-five pre-existing occurrences of 40 temporary workspace links remain in the verbatim catalogue-task review at lines 942–1038; they are unchanged provenance, not newly valid repository links. Headings were checked where their target text is materialized locally. |
+| Semantic-document registry | JSON parsed; 17 unique names and paths, all 17 local targets present, exactly one release-policy entry. No index operation or setting change. |
+| Canonical identities and ASVS records | Preserved all 27 CHECK, 14 OPEN, 26 THR, 20 AC, 9 OD and 345 ASVS clause identifiers in their declared order. All ASVS clause records are byte-identical to the baseline; no status/classification or remediation obligation was changed. |
+| Baseline and unchanged-file hashes | All 403 baseline files match the pinned upstream Git blob identities. All 378 unchanged baseline files remain byte-identical, including 241 skill files and 12 supporting-review files. This is not a requalification of absent product binaries or unmaterialized assets. |
+| Historical receipts and diagrams | Preserved W11 §§4.1–4.20, storage-task §6 onward, catalogue-draft §9 onward, architecture §24 onward and every original byte of the catalogue task. All five diagram-companion Mermaid fences are unchanged and match their canonical architecture counterparts. |
+| Changed-file scope and authority reconciliation | 26 files: 25 Markdown documents, including the new policy, and one context-routing JSON file. Existing task/phase owners, current Core priority and scoped execution dispositions remain. Source review covers both conservative refusal and useful authorized recovery; it supplies no runtime outcome. |
+
+The original documentation snapshot HEAD is unchanged and no local commit,
+remote write or staged publication was performed by the integrator. The
+coordinator owns final exact-candidate validation and any authorized repository
+publication. No product/account/Store/native case in release-policy §9 is marked
+executed by these checks. The next product actions remain the bounded owner
+assignments above; documentation acceptance does not lift their prerequisites.

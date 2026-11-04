@@ -117,6 +117,11 @@ integrity failure under existing package policy, not permission to run altered
 code with an `Unknown` calendar. An otherwise valid supported bundle may honestly
 contain unknown future coverage.
 
+Whole-release withdrawal and corrective delivery follow the
+[release policy](../release-policy.md#6-mandatory-state-compatibility-and-owned-recovery).
+Its operational procedures preserve this dataset's provenance and the separate
+mandatory-state owner; they supply no runtime calendar updater or native pass.
+
 `ContinuousFrom` establishes absence of subsequent events; it does not fill an
 earlier coverage gap. If an intervening offset is unknown, current TAI−UTC remains
 unknown until independently established, even inside the continuous regime.

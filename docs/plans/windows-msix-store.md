@@ -6,6 +6,7 @@
 **Hardening amendment:** 3 November 2026, against `661281ad0e6504338d352b943154522b800974fa`; new Microsoft Learn sources checked on that date.<br>
 **Source-profile continuation:** 3 November 2026, Asia/Tbilisi, against `01bcb679cdf09720a1ae54dfdcae25b0864f4d77`; sections 3.1.1 and 7.1 onward record the concrete profile and remaining supported-mechanism gaps.<br>
 **Lifecycle research continuation:** 3 November 2026, against `474698543a07a69830d606388c5c2539e9a4e2ec`; section 7.4 records supported building blocks, unselected alternatives and distinguishing observations. David requested this research be retained in English; no alternative is adopted by that request.<br>
+**Operational continuation:** 4 November 2026, against `dcda54448241d54c0554d141f636fab55364d1f4`; the [release policy](../release-policy.md) adds support proposals, Store containment and incident/recovery procedures, with actual rehearsals and product evidence still pending.<br>
 **Method:** Microsoft Learn MCP searches and full-page retrieval, supplemented by
 the official SignPath conditions. Search snippets were not the final evidence.
 
@@ -504,7 +505,7 @@ experiment is bounded in section 7.3.
 | --- | --- | --- |
 | First installation | Packaged services require administrative installation. [S15] | Work before first **application UI launch**; this does not promise installation without normal administrative authorization. |
 | In-use update | `uap17:UpdateWhileInUse=defer` is Windows 11 24H2+; specified force-update shutdown options are ignored, but required OS updates/reboot may force close. [S23] | Candidate scheduling aid; qualify service behavior, cleanup and bounded adoption of security fixes. |
-| Bad Store release | Restoring an older package in Store protects new acquisitions; already upgraded installations need a higher-version corrective release. [S02] | Package-listing rollback does not repair migrated data or deployed clock state. |
+| Bad Store release | Restoring an older package in Store can serve new acquisitions after its suitability is assessed; already upgraded installations need a higher-version corrective release. [S02] | [Release-policy §§4–6](../release-policy.md#4-distribution-containment-choose-the-actual-store-operation) distinguish containment, deliverable correction and current mandatory-state recovery. An unsafe fallback is not automatically recommended. |
 | Repair versus Reset | Repair retains app data; Reset permanently removes it and reinstalls. [S25] | Map optional caches and mandatory authority/journal state separately; preserve a supported recovery path. |
 | Multiple users | Staging, registration, deregistration and destaging differ; other registrations/provisioning/processes can retain payload. [S24] | Define the machine-service owner, last-user transition and ordinary/admin removal outcomes. |
 | Update/interruption | Existing architecture requires quiescence, current generation and durable maintenance/recovery ownership. | Old-package cleanup must not restore W32Time underneath its successor or reset consumed correction authority. |
@@ -515,6 +516,13 @@ and removal. Record actual verifier, package/OS identity, trust/time/cache input
 retrieval policy, finite work and safe refusal/recovery. Store signing proves
 neither universal success nor universal failure with severely wrong dates or no
 network. Do not weaken authentication or trust policy to manufacture a pass.
+
+The [release-policy compatibility matrix](../release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+requires recovery from the bad version's actual schemas, partial migrations,
+consumed/uncertain effects and current ownership. Reusing older code in a new
+package does not authorize an old authority snapshot. These procedures retain
+the independent-removal gap above; they supply no new provisioning mechanism or
+native result.
 
 ## 6. Delivery, controlled audiences and alternatives
 
@@ -529,6 +537,14 @@ cannot become private again. Testers need personal Microsoft accounts; an
 unlisted public app is not private access control. Package flights still pass
 certification. These are useful controlled-release candidates, not capability
 exceptions or guaranteed revocation of copies already acquired. [S10, S11]
+
+The [operational control table](../release-policy.md#4-distribution-containment-choose-the-actual-store-operation)
+adds the distinct gradual-update rollout, halt/fallback, cloned-submission and
+mandatory-metadata cases with current Microsoft sources. Initial audience,
+flight membership and update percentage are different controls; an unavailable
+listing is not recall. Qualify the actual former-owner, flight and corrective-
+update reach for the selected visibility setting before promising containment
+or recovery. David retains every Store action and expansion decision.
 
 There is an official download path: `winget download` can retrieve Store
 packages, dependencies and offline licences. Its normal offline-license workflow
@@ -568,6 +584,10 @@ using these successive exits rather than another plan or approval campaign:
    before UI/login, exact accounts/rights, elevation and user consent, resources,
    removal/restoration and reproducible reviewer steps. Preserve unresolved
    questions with a concrete evidence owner; no general research rerun.
+   Prepare the [release record and incident procedures](../release-policy.md)
+   with explicit support-proposal status, compatibility matrix, account recovery
+   owner and rehearsal plan. This adds no implementation prerequisite to the
+   current Core slice.
 2. **Build and qualify a complete local candidate when prerequisites permit.**
    Implement actual roles and packaging through the existing phase work. Inspect
    the emitted manifest, capability/dependency closure, service declarations,
@@ -597,6 +617,10 @@ using these successive exits rather than another plan or approval campaign:
    compatible alternatives to David; do not broaden authority or silently switch
    to MSI. If accepted but a technical gate fails, correct the candidate and
    requalify instead of treating acceptance as a waiver.
+   Before broad release, complete the applicable operational rehearsals and
+   obtain David's actual stable-support/transition decision. Preserve separate
+   observations for contained distribution, available correction and recovered
+   installed cases; publication alone is none of those native recovery results.
 
 | Existing owners | Additional distinguishing evidence |
 | --- | --- |
@@ -605,6 +629,7 @@ using these successive exits rather than another plan or approval campaign:
 | CHECK-18/23; signing/release, CHECK-9 for affected certificate-retrieval policy | Actual package/catalog identity and supported trust/time conditions; tamper/wrong-project rejection alongside valid installed startup and maintenance. |
 | CHECK-16/20/26; build/security | Actual Store-produced binary/dependency closure supports explicit integrity enforcement, sealed executable content and the role-specific CIG/ACG/CFG/CET/image policies; source/licence/SBOM lineage and compatible positive controls accompany denied actions. |
 | CHECK-24; independent review | Exact candidate, source/approval gaps and native observations remain separate; no planned case or documentation pass becomes a release claim. |
+| W11-W10/W11-W05; existing release, state and lifecycle CHECK owners | [Release-policy §9](../release-policy.md#9-qualification-matrix-and-remaining-decisions) supplies support transition, halt/correction, publishing-authority and bad-state recovery cases. The support baseline is proposed; account/Store/native rehearsals remain unexecuted. |
 
 Record disposition and evidence in the existing Windows task. The MSIX direction
 is selected now; **release qualification** still requires every applicable

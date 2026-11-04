@@ -276,6 +276,12 @@ deferred until their existing re-entry gate; no live storage or service UI enter
 UI-M0. Final package identity, native account/profile and lifecycle results have
 their own acceptance owners.
 
+For release incidents, apply [the release policy](../docs/release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
+to those existing package/state owners. The
+[W11 operational handoff](windows11-integration.md#421-release-operations-integration--4-november-2026)
+owns preparation and rehearsal routing; this storage task retains its paused
+implementation/native work and its mandatory-versus-optional state boundary.
+
 For restored time-model/evidence consumers, carry the admitted dataset/rule
 revision, complete supported date/era hypotheses and compatible scale segment
 through current mapping and guard checks. Unknown future coverage can remain a

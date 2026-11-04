@@ -64,6 +64,7 @@ Windows 11 x64, `x86_64-pc-windows-msvc`. Start with
 | [Development hardening](docs/windows-time-development-hardening.md) | Enforcement/qualification policy; inspect actual configuration and TOOLING.md for adopted bootstrap checks versus pending application/native evidence. |
 | [ASVS applicability](docs/asvs-5.0.0-applicability.md) | Applicability/planned verification; no completed compliance. |
 | [Signing guide](docs/windows-time-signing-guide.md) | Provider, signing, complete-package workflow; eligibility/native verification require evidence. |
+| [Release policy](docs/release-policy.md) | Current support status, proposed first-stable commitment, promotion, withdrawal and publication-authority recovery. Existing W11 task owns actual rehearsals/results; documentation supplies no support approval or release pass. |
 | [Update assessment](docs/windows-time-update-assessment.md) | Retained research; TUF/automatic updater not adopted. |
 
 Accepted owner decisions govern their stated scope; recommendations remain
@@ -161,6 +162,12 @@ before broad release. Store signing is neither helper authorization nor a passed
 application-security gate. Retain MSI profiles as alternatives for a later owner
 decision, not a prerequisite or automatic fallback. No split package, broader
 service rights, assistant account/upload action or unqualified release follows.
+
+Release support and incidents use [the release policy](docs/release-policy.md)
+and [existing W11 task §4.21](tasks/windows11-integration.md#421-release-operations-integration--4-november-2026).
+Keep first-stable support terms proposed until David decides them, and carry
+account, containment, corrective-state and recovery rehearsals into the existing
+P6/P7 owners. A written runbook lifts no execution hold or release blocker.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 

@@ -5,6 +5,14 @@
 **Baseline:** `windows-time-architecture.md`, RWTC-ARCH-001 revision 1.4.  
 **Input:** David Osipov's ArtCraft proposal, issue 888, its supplied Markdown attachment, and the live issue discussion. [P1, P2]
 
+**Current routing, 4 November 2026:** the assessment below retains its original
+MSI-era candidate and source findings. Amended [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects complete Store MSIX preparation; the [release policy](release-policy.md)
+now owns current support-status proposals, containment and incident procedures.
+Neither addition adopts TUF, this assessment's UpdateTrustState, a custom
+updater or a separate download/signing authority. Operational/native rehearsals
+remain open under the existing W11 task.
+
 ## 1. Assessment
 
 **The proposal is relevant to this product. Independent release authorization, persistent trust, explicit downgrade policy and preservation of verified bytes would strengthen a future update path. TUF is a credible framework to evaluate for that purpose. Its implementation cannot be selected yet.**

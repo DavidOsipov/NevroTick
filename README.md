@@ -50,11 +50,16 @@ Start with the [skills index](.agents/skills/README.md) for ideas to adapt.
 
 **Early development — the current software does not synchronize your clock.**
 
-The workspace contains a sample-data Windows UI and portable protocol/numerical
-fixtures, with no live time-server traffic, services or clock changes.
-NTS, Android, DoQ, pinning and the complete installer remain future work.
+The workspace contains a sample-data Windows UI, portable protocol/numerical
+fixtures and a bounded, unauthenticated two-peer loopback observer. Its
+observations are ineligible for clock control. Production NTP/NTS acquisition,
+installed services, clock changes, Android, DoQ, pinning and the complete
+installer remain future work.
 See the [development plan](docs/plans/development-plan.md) and
 [UI-M0 task](tasks/ui-m0.md) for current results and qualification gaps.
+No production-supported stable release is declared. The
+[release policy](docs/release-policy.md) records current support status, the
+proposed first-stable baseline and the preparation required for bad-release recovery.
 
 ## Repository overview
 
@@ -65,6 +70,7 @@ See the [development plan](docs/plans/development-plan.md) and
 | [time-domain](crates/time-domain/) | Checked timestamp, era, offset and elapsed-time arithmetic. |
 | [ntp-exchange](crates/ntp-exchange/) | Unauthenticated fixture association and deterministic scenarios. |
 | [time-core](crates/time-core/) | Regression, residuals, normalization, bounded history and fixture selection. |
+| [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated loopback observation pilot; no production service or clock authority. |
 
 ## Getting started with development
 
@@ -93,6 +99,7 @@ TOOLING.md also covers dependency checks and Windows cross-builds for
 | Architecture and decisions | [Architecture](docs/windows-time-architecture.md), [owner decisions](docs/nevrotick-owner-decisions.md) |
 | UI and artwork | [Design v0.2](docs/nevrotick-design-v0.2/README.md), [brand kit](docs/NevroTick-AVIF-kit-v1/README.md) |
 | Vulnerability reporting | [SECURITY.md](SECURITY.md) |
+| Release support and recovery | [Release policy](docs/release-policy.md): proposed support baseline, approval, withdrawal and incident procedures |
 
 Contributors should read [AGENTS.md](AGENTS.md) and the
 [testing contract](.agents/skills/testing/CONTRACT.md), preserve upstream
