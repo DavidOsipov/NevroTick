@@ -1,21 +1,21 @@
 # Server catalogue and advisory statistics: continuation task
 
-**4 November 2026 — discussion-stage handoff; implementation and measurements not run.** This task belongs to the [existing draft and §10 comparison card](../docs/plans/server-catalogue-and-statistics-draft.md#10-minimum-record-profile-and-bounded-comparison-card), the [storage tables](../docs/plans/server-catalogue-storage-tables.md) and the later [binary catalogue refinement](../docs/plans/server-catalogue-binary-format.md). It does not create a competing product queue or replace protected-storage/time-assurance tasks.
+**4 November 2026 — catalogue/storage design plus a later offline publisher input stage.** Sections 1–7 retain the discussion milestones; §8 records the separately authorized R implementation and its exact verification scope. Production C, Q/H measurements and runtime/native qualification remain open. This task belongs to the [existing draft and §10 comparison card](../docs/plans/server-catalogue-and-statistics-draft.md#10-minimum-record-profile-and-bounded-comparison-card), the [storage tables](../docs/plans/server-catalogue-storage-tables.md) and the later [binary catalogue refinement](../docs/plans/server-catalogue-binary-format.md). It does not create a competing product queue or replace protected-storage/time-assurance tasks.
 
 ## 1. Scope and current disposition
 
-Prepared: six minimum logical record families, separate catalogue/Q/H comparisons, reproducible input recipes, a literal independent-oracle seed and a bounded first pilot. The later owner direction prefers binary catalogue shipment and requires Roughtime key/profile support in the first schema; §7 records that refinement and future publisher tooling. No final encoding, dependency, provider roster, trust policy, retention default or automatic server-exclusion rule is adopted.
+Prepared: six minimum logical record families, separate catalogue/Q/H comparisons, reproducible input recipes, a literal independent-oracle seed and a bounded first pilot. The later owner direction prefers binary catalogue shipment and requires Roughtime key/profile support in the first schema; §7 records that documentary refinement. §8 adds the concrete offline R collector and semantic diff; C generation and approval remain future work. No final C encoding, runtime dependency, approved provider roster, trust policy, retention default or automatic server-exclusion rule is adopted.
 
 The original continuation baseline was commit `d6bb2bdcd2145950586407698490b61d9e12ced9`, actual tree `3635c70a72cd32ca0a7f66cc545719c1aae46ece`. Its 28 locally used documentation files were matched to Git blobs; this was not a full source checkout or target-code audit. That checkpoint preserved draft §§1–9; the later binary refinement updates current catalogue passages while preserving the historical raw reports and their candidate scope. The completed continuation review is retained below and does not review the later refinement.
 
-[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent) retains S157/S1.3 Core priority. The protected-storage pause and Windows/fuzz holds retain their stated scope; they do not create a blanket prohibition on separately admitted portable work. No target/native experiment is executed by this documentation change. Ordinary NTP/NTS catalogue and quality data are in scope independently of RGT-0; requiring Roughtime schema fields now does not alter RGT-0 → CHR-0.
+[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent) retains S157/S1.3 Core priority. The protected-storage pause and Windows/fuzz holds retain their stated scope; they do not create a blanket prohibition on separately admitted portable work. Section 8's bounded Python host-fixture route supplies no target/native qualification. Ordinary NTP/NTS catalogue and quality data are in scope independently of RGT-0; requiring Roughtime schema fields now does not alter RGT-0 → CHR-0.
 
 ## 2. Ownership and authority
 
 | Boundary | Owner and acceptance basis |
 | --- | --- |
 | Catalogue/schema, current admission and policy | Existing source/configuration owner; DATA-01–09 and OPEN-CAT-01/02/03. No roster or signature decision here. |
-| Publisher collection, semantic review and deterministic build | Existing catalogue/release owner; R, DATA-01/24 and the binary refinement. Future Python tooling under `tools/` emits candidates or approved build artifacts; collection supplies no approval, signing or publication authority. |
+| Publisher collection, semantic review and deterministic build | Existing catalogue/release owner; R, DATA-01/24 and the binary refinement. The offline Python input stage under `tools/` emits unapproved candidates and diffs. A later approved-input builder remains separate; collection supplies no source approval, signing or release-publication authority. |
 | Attempt facts, compatible aggregation and explanation | Engine/core contracts; DATA-10–20, OPEN-DATA-01/04. Freshness, operator dependence and actual correction effects remain explicit. |
 | Advisory Q/H, publication, cleanup and migration | Storage owner; OPEN-DATA-02/03/06 and OPEN-ST-01/02. Existing mandatory stores and protected secrets retain independent authority. |
 | Independent oracle and finite execution | QA/testing owner under [testing CONTRACT](../.agents/skills/testing/CONTRACT.md); §10.3 literal/analytical expectations, paired valid/refusal controls and §10.4 budget. |
@@ -26,8 +26,8 @@ UI receives bounded projections; it does not open the database. Quality history 
 
 ## 3. Next bounded preparation
 
-This section retains the Q0/Q-J statistical-store preparation. The source-only
-catalogue/schema continuation is recorded separately in §7 within this same task;
+This section retains the Q0/Q-J statistical-store preparation. The
+catalogue/schema continuation and later offline R stage are recorded in §§7–8 within this same task;
 it neither executes nor silently renames the pilot below.
 
 The next development coordinator first reconciles this handoff with its actual checkout and active task. Prepare only the Q0-versus-Q-J no-raw comparison: freeze the concrete schema/presence rules and queries, independent literal/generated oracle, exact fixture hashes, two adapter acknowledgement/recovery contracts and configured runner. Bind commit plus dirty bytes, relevant dependency/features/tool versions, host/filesystem, effective settings and output limits before execution. Missing admission/tool/harness prerequisites are recorded as missing; no package acquisition or product implementation is implied.
@@ -44,7 +44,7 @@ At the original continuation checkpoint, two source/design helpers supplied the 
 
 A read-only availability check in this task's selected Linux x86_64 Python 3.12.14 interpreter reported SQLite 3.53.1 and `zstandard` 0.25.0; `pyarrow`, `cbor2` and `psutil` were absent there. No workload ran and no package was installed. This says nothing about other interpreters, Rust/Windows bindings, an admitted product graph or global tool availability.
 
-Remaining: concrete fixture/schema/adapter artifacts, actual configured-runner admission and execution, resource measurements, broader cases justified by a result, and any later native/package/security qualification. No CHECK, TA-W or ST-W gate is closed. The existing documentation index already routes to the draft; §10 routes here.
+For the Q0/Q-J preparation above, remaining work is concrete fixture/schema/adapter artifacts, configured-runner admission and execution, resource measurements and cases justified by a result. The separate offline R input stage and its host-fixture evidence are in §8. Native/package/security qualification remains open. No CHECK, TA-W or ST-W gate is closed. The existing documentation index already routes to the draft; §10 routes here.
 
 ## 5. Review and reconciliation record
 
@@ -393,6 +393,10 @@ This review establishes no implementation vulnerability, native ACL result, deco
 
 ## 7. Binary catalogue and future collector refinement — 4 November 2026
 
+This section records the completed documentary checkpoint. The subsequent
+offline R implementation and its evidence are in §8; the original review packets
+below retain their historical scope.
+
 **Documentation baseline:** `7550f83292f959a6d0acbb2d396e964a6bcf4b01`;
 selected-file snapshot, not a local source checkout. The
 [binary catalogue design](../docs/plans/server-catalogue-binary-format.md)
@@ -438,7 +442,7 @@ verified owner routing, canonical OPEN/CHECK/TA/ST identities, report preservati
 links and documentary key/source data. It establishes no format winner, measured
 resource result or implementation qualification.
 
-**Next continuation:** prepare the relevant schema/fixture, preset/policy and
+**Next continuation at that checkpoint:** prepare the relevant schema/fixture, preset/policy and
 compatibility contracts under the owners above before dependent catalogue/tool
 implementation. OMI-R01's routing repair is complete; its product choice remains
 open under OPEN-CAT-02/R-04/OD-03. OMI-R02–08 refine already-owned future controls,
@@ -480,7 +484,7 @@ executed evidence.
 | R1-03; R2-F01; R3-F07 | OPEN-CAT-01 retains representation/signature/trust-root strategy, 02 roster/profile/cold resolution, and 03 freshness/withdrawal/rollback. Existing IDs were not reassigned. | Reopen if those routing meanings drift; no signature or roster decision is closed here. |
 | R1-04; R2-F02; R3-F01 | Required country/region-or-unknown, provenance/scope and time-scale/leap/smear compatibility are explicit in the refined schema. | DATA-03/05; all candidate encodings must retain equal semantics. |
 | R3-F02/03/04 | Stable source/endpoint/key/binding identities, typed variants, reference integrity, normalization, exact scoped key authorization and distinct lifecycle states are explicit; no implicit cross-product or profile inference. | DATA-01–09; OPEN-CAT-01–03. Concrete encodings, bounds, transitions and actual verifier admission remain future. |
-| R1-05; R3-F05 | The existing task/development chain owns future `tools/server-catalogue/build_catalogue.py`; exact reviewed snapshots, bounded adapters, conflicts/partial results and safe deterministic generation are specified. | R/DATA-01/24. Changed normalized input/schema/adapter invalidates prior data approval; no collector is implemented. |
+| R1-05; R3-F05 | The existing task/development chain owns future `tools/server-catalogue/build_catalogue.py`; exact reviewed snapshots, bounded adapters, conflicts/partial results and safe deterministic generation are specified. | R/DATA-01/24. Changed normalized input/schema/adapter invalidates prior data approval. No collector existed at this documentary checkpoint; the later offline input stage is recorded separately in §8. |
 | R1-06 | Historical draft/task reports and the dated census remain under their original identities. The 13-key inventory is a narrower documentary check. | Old reports do not review later candidates; future key/profile changes require renewed evidence. |
 | OMI-R01 | Binary proposal §§4.3/8, canonical OPEN-CAT-02, storage terminology, this task and development §8.7 now distinguish catalogue/preset/configured/active membership and route automatic-replacement scope. | OPEN-CAT-02/R-04/OD-03; product choice and preset location remain open, without adding a Core prerequisite. |
 | OMI-R02–08 | Concrete C/E, withdrawal, cold-start, usable-group, resource, history and recovery scenarios are retained in §7.2; the underlying controls already have owners. | Apply at the stated contract/integration triggers; these are proposed future cases, not executed passes or new publication blockers. |
@@ -1137,3 +1141,383 @@ After this documentation milestone, the existing catalogue task owns the next re
 ````
 
 </details>
+
+## 8. Offline publisher collector — 4 November 2026
+
+**Continuation baseline:** `e65face06250db346643475a64962272af4ac79b`.
+**Stage:** the offline R implementation, corrected host-fixture checks and
+independent final review are complete. The scoped publication verdict is READY;
+R-CODE-01 and R-CODE-02 are verified fixed at the identities below.
+**Concurrent integration baseline:** `a29b5aa6fe572484bc30355418325a163f23e369`;
+its leap-policy amendment is preserved. The source/test candidate has separate
+SHA-256 identities in §8.3. This selected-file workspace has no local Git HEAD/index.
+
+David's continuation advances the relevant publisher input/fixture work. The
+bounded milestone is an offline standard-library Python collector for the three
+captured source formats below and an exact-input semantic comparison. Its
+[tool contract](../tools/server-catalogue/README.md) owns the R manifest,
+candidate/diff schemas, normalization, limits, output publication and error
+semantics. R / DATA-01 / DATA-24 remains the existing owner; this is not a new
+production C schema or a second source-policy authority.
+
+### 8.1 Concrete preparation and scope
+
+The input pipeline is explicit local files plus required byte counts/digests →
+closed adapter → preserved raw claim and checked R interpretation →
+unapproved candidate snapshot → revalidated, hash-bound comparison.
+Missing or malformed sources remain failed source results. Unsupported known
+Roughtime experiments remain visible. Neither a complete parse, a hash, an
+informational URL, nominal owner nor an absent row supplies provider approval,
+independence, source retirement or live time evidence.
+
+The first implementation has three adapters. It has no network acquisition,
+operator-page/HTML adapter, general YAML parser, approval/signing, production
+binary generation or client runtime integration. JSON is the publisher evidence
+representation only; binary C delivery remains the owner's direction. Source
+redistribution terms and actual service-use permission remain distinct.
+
+| Captured discovery input | Immutable revision / source blob | Independent documentary expectation |
+| --- | --- | --- |
+| [NTS Markdown](https://github.com/jauderho/nts-servers/blob/247a47ee6d0b4da95b19257dc70027378f6f8c76/README.md) | `247a47ee6d0b4da95b19257dc70027378f6f8c76` / `dda2668919380ed7fe5f87c0a2c8d8a0545d20f2` | 86 ordinary-table rows + 20 source-claimed VM rows. Five columns; retain owner/location/stratum/notes and the endpoint link label. |
+| [Public-NTP Markdown](https://github.com/jauderho/public-ntp-servers/blob/fa07c5440f4c2301697e978b2be36b743d3dd8f2/README.md) | `fa07c5440f4c2301697e978b2be36b743d3dd8f2` / `63e8a490a55a8c12dc3496f02ca6bec6dc2df372` | 258 ordinary-table rows + 13 source-claimed VM rows. Six columns including AS claims; unknown values, Pool aliases and missing use/leap/smear evidence remain explicit. |
+| [Roughtime ecosystem](https://github.com/tannerryan/roughtime/blob/09ffa30abfb8c9ea22b81858edf393f6c5a7ddef/ecosystem.json) | `09ffa30abfb8c9ea22b81858edf393f6c5a7ddef` / `cd9eb5043fd7ff77845333ffe97b8318303ff94e` | 14 source records: 13 Ed25519-labelled and one known ML-DSA-44 experiment. One Ed25519 record has two transports. Numeric and string profile claims remain distinct. |
+
+The Markdown exports preserve restrictions that the NTS TOML/chrony exports
+omit, including `Distro use only`. The paired YAML/converter identities can be
+recorded as inert related provenance; neither converter is executed. A first-table
+row is unmarked for virtualization, not evidence of physical hardware. Group
+labels such as `All`, `Distro` or `Google NTP` are not countries. Empty notes
+cannot establish ordinary UTC, no-smear, operator permission or unrestricted use.
+Pool names are dynamic aliases; no DNS-member enumeration or vendor assignment
+occurs.
+
+### 8.2 Selected checks and execution boundary
+
+The tool README freezes finite R-only source/record/string/depth/output limits,
+the complete-source grammar, exact byte identities, absence/unknown states,
+candidate claim identities versus review joins, and fresh-output publication.
+Those caps and IDs do not settle OPEN-CAT-01 production limits or identities.
+No-clobber publication must distinguish failure before publication from cleanup
+failure after the output link already exists.
+
+Use original synthetic fixtures and literal independent expected values, plus
+the separately captured pinned source files as documentary smoke inputs. Required
+controls cover all three adapters, link label/URL separation, use/unknown/VM
+preservation, JSON duplicate/type/size failures, key encoding/profile boundaries,
+endpoint grammar, source drift/completeness, deterministic output, key/metadata/
+multiplicity/removal comparisons, stored-snapshot bypasses, source digest mismatch,
+and reached publication/forbidden-effect failures with useful healthy neighbors.
+
+The actual provided interpreter is Python 3.12.14 at
+`/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12`,
+executable SHA-256
+`fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7`.
+This is a separately identified host-fixture route, not the historical pinned
+Core checker. Use `-I -B -S -X dev -W error`, a closed selected source/import set
+and an owned output location. The chosen supervisor has one worker, zero
+automatic retries, 30 seconds wall time per child, 10 seconds CPU, 512 MiB address
+space and 2 MiB captured output. Record actual source/test/fixture/supervisor
+identities and first failures. Import-isolation flags and reached audit-hook
+controls are not OS network isolation or a hostile-code sandbox.
+
+The existing fixed Core mypy profile, Cargo admission, selected Core work and
+Q0/Q-J pilot are unchanged. No package installation, public time-server probe,
+native Windows action or blocked runner follows. Actual application security
+coverage/mutation and release obligations retain their own applicability and
+qualification; ordinary publisher tests cannot be relabelled as those passes.
+
+### 8.3 Completed local verification and exact candidate
+
+The initial frozen implementation passed 34 named synthetic tests in six fixed
+child commands and five pinned-source CLI controls. That pass did not detect the
+two material issues subsequently found by independent source review. Four new
+named regression controls were run against that initial source: all reached the
+intended bad behavior, with no setup or budget failure. The nonzero results are
+retained as RED evidence, not hidden by a retry.
+
+After the narrow repairs, **38 named tests passed in eight fixed child commands**.
+No test was skipped; there was no automatic retry or budget failure. The two
+output-closure methods have separate child commands to keep the original
+per-child CPU/wall limits. Five final CLI controls also matched their expected
+outcomes. The coordinator independently read the receipts and matched every
+recorded final source/test/fixture/supervisor hash to the files; this is evidence
+inspection, not a second execution or native qualification.
+
+| Final selected test entry | Tests | Exit | Observed child wall time |
+| --- | ---: | ---: | ---: |
+| `ParsingTests` | 8 | 0 | 0.433 s |
+| `CollectionTests` | 7 | 0 | 0.686 s |
+| `DiffTests` | 7 | 0 | 1.097 s |
+| `BoundaryTests` | 4 | 0 | 0.300 s |
+| `WorkLimitTests` | 4 | 0 | 7.582 s |
+| `PublicationTests` | 6 | 0 | 0.307 s |
+| `OutputClosureTests.test_generated_token_overflow_refuses_before_publication` | 1 | 0 | 11.826 s |
+| `OutputClosureTests.test_non_bmp_strings_remain_importable_at_decoded_limit` | 1 | 0 | 0.475 s |
+
+The controls cover exact shape/types and duplicate members; literal/DNS endpoint
+and port boundaries; canonical public-key encoding; unsupported profile
+accounting; raw use/location/AS/VM evidence; deterministic source ordering and
+claim identities; duplicate multisets and binding changes; imported-snapshot
+forgery; failed-source versus absent-claim comparison; count/byte/depth/string/work
+limits; and reached no-clobber, file-sync, link, cleanup and diagnostic failures
+beside useful valid neighbors. New cases check non-BMP strings through
+collect → imported comparison at 2,049 and 4,096 decoded characters, reject 4,097,
+and refuse generated 2 × 1,024 × 8 address fan-out before publication when its
+canonical token count exceeds the unchanged 500,000-token limit.
+
+| Pinned-source CLI control | Expected and actual exit | Observed result |
+| --- | ---: | --- |
+| Collect NTS + NTP + Roughtime snapshots | 0 | 106 NTS, 271 NTP and 14 Roughtime records. NTS/NTP contain 20/13 source-claimed VM rows; one Roughtime experiment remains unsupported. |
+| Repeat the same captured inputs | 0 | Identical output bytes and digest. |
+| Wrong NTS source digest with healthy neighbors | 3 | Explicit incomplete snapshot; all 285 NTP/Roughtime records survive, failed NTS has zero rows. |
+| Compare complete and incomplete snapshots | 3 | NTS comparison is blocked and emits no absent-row/retirement conclusion. |
+| Reuse the existing complete output name | 2 | `output-exists`; the prior artifact stays byte-identical. |
+
+The complete final candidate has **391 source records / 392 scoped endpoint
+claims**, 352,470 bytes, SHA-256
+`024a7bcce628602440ad16d405af336d4370aa3c2ec34e408a06a571464472f4`.
+The extra transport is an address binding, not another operator. This is a
+publisher evidence artifact, not the shipped binary catalogue or a product-size
+measurement. No availability, accuracy, service permission, independent-provider
+count, cryptographic verification or shipped-roster approval follows from it.
+
+| Captured source | Bytes | Exact SHA-256 |
+| --- | ---: | --- |
+| NTS README | 10,848 | `423f34a1512282b0b0128369a9bf87e960d35fe365510f5a020cb6c9caf3839f` |
+| Public-NTP README | 19,739 | `89ea9c7c7f77e7d80b9512b1d596053a9ab646fa688685e6446a992749a1afb4` |
+| Roughtime ecosystem | 5,617 | `f4602b67ddfb3b8c550a9f1bb1bb8fd1ab5c88c29ffb4716ad989aa26a444a70` |
+
+The source revision/blob links are in §8.1. Only original synthetic fixtures are
+committed under the tool directory; the captured upstream bodies and generated
+candidate files stayed in the selected maintainer workspace.
+
+| Final tool or verification input | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `implementation-checks.child.py` | 1,275 | `ba13d8846ab10f9d9b1784397efec0197a16a4be58c198713555650f9d1563b3` |
+| `implementation-checks.py` | 10,907 | `49ffdd35a0b06243f50508573b1b28771c02b9ead73840db5bc8c7a91e405a85` |
+| `tools/server-catalogue/README.md` | 17,310 | `4035a55333d03b910a6820a66ce7a5db03278829a381f6385c41f3a809af8ada` |
+| `tools/server-catalogue/build_catalogue.py` | 36,165 | `4ae7c388c5dacb4b0d246939240e2b6e90302982433636e48cda3871dee13300` |
+| `tools/server-catalogue/fixtures/README.md` | 2,429 | `4e78e99e5e979743b0d58dd0bca87d79cee3417aa4e37d69d5e10d5506cc07e6` |
+| `tools/server-catalogue/fixtures/ntp.md` | 296 | `10606f69c0b2bd3b5ffbde2b34a10aba72b911ad92ddb791c4c7e4f4345d562e` |
+| `tools/server-catalogue/fixtures/nts.md` | 461 | `e876ff5ec1e1ee4dbf04ad3876eb05b0d05e472289ac74ce2776217f2357bc33` |
+| `tools/server-catalogue/fixtures/roughtime.json` | 789 | `8e75ee285669ab5ead6a0a89bb67d62063377249ac1c1f3583149198a3ff2988` |
+| `tools/server-catalogue/test_build_catalogue.py` | 37,530 | `24ad2615ad1a288ec9fad4365cd6d9cb5c0b993db830c884f0c82900c0786026` |
+
+The two `implementation-checks.*.py` entries identify the scratch supervisor and
+audit wrapper used for this execution, not new maintained Core tools or a
+portable installed product. They used the interpreter/flags/caps in §8.2. The
+wrapper reached socket/process rejection controls before the selected entry
+point; source/import inspection found no such route in the collector. This is
+not OS isolation. The eight selected test entries above and the five explicit CLI
+operations define the executed scope; a future rerun must identify its actual
+interpreter, supervisor, fixture paths and output directory rather than claim
+admission from these historical hashes.
+
+| Retained execution receipt | Scope | SHA-256 |
+| --- | --- | --- |
+| `implementation-checks.tests-01.json` | Initial 34-test candidate | `9fe72caab6df94bad361ac3ce0909af4f6c8d1705018f5977d37fd310f087215` |
+| `implementation-checks.smoke-01.json` | Initial five CLI controls | `25d5ac1cb45f894eacd8195a42faede129fb4f9a59fefad777a99b0c579de37b` |
+| `implementation-checks.regressions-red-01.json` | Four new tests; intended failures on original source | `5d956ebc8bbda53ce77b27696fc71a8e5bff948d29792d95968f79225bc58415` |
+| `implementation-checks.tests-02.json` | Corrected 38-test candidate | `fdf4f20d142c6915ff47bc8e9336dcbc555b65124b6a3ffac360ead535f95e3f` |
+| `implementation-checks.smoke-02.json` | Corrected five CLI controls | `e363407a62bef24498d0cf6157221de26013348a7eb827fdfeed77c7eb4fa7fb` |
+
+Initial source SHA-256 was
+`efef36d9feb911d69f17712c58b1593ebcf55485484ccbe67d6d2391ea366fe2`;
+its test SHA-256 was
+`f59b32b3e9733e8df9021c520d96b60be33d17e301d5b0f92afaae4ce2d18c6c`.
+The final table above replaces neither those historical identities nor the
+actual failed regression outcomes. Bounded execution times are not a format
+benchmark, a Rust/Windows CPU/RAM measurement or application security coverage.
+
+### 8.4 Independent findings and corrected behavior
+
+| Finding | Reached defect in the original candidate | Narrow correction and verification |
+| --- | --- | --- |
+| **R-CODE-01 — Medium** | An immediate stdout write failure after successful link returned 2 although the complete output existed; cleanup-warning stderr failure could escape as `OSError`. | Fixed diagnostic messages use best-effort write/flush and cannot reclassify the committed 0/3 return. Tests reach failed stdout for complete/incomplete output and failed cleanup-warning stderr; useful neighboring publication remains available. Interpreter shutdown, termination and lost acknowledgement still require inspecting the existing artifact; they do not authorize overwrite or rollback. |
+| **R-CODE-02 — Medium** | Non-BMP text could pass collection but exceed the reader's six-character escape allowance after ASCII encoding. Separately, raw-plus-normalized address fan-out could emit a candidate above the importer's lexical token cap. | Allow at most twelve encoded characters per decoded character while retaining the 4,096-character limit. Both generated candidate and diff bytes now pass the shared strict JSON boundary before output staging. Unicode and maximum-fan-out controls reproduce the old failures and pass on the corrected candidate; the 500,000-token and all execution caps remain unchanged. |
+
+The fresh `collector_contract_code_review` agent completed the full initial
+source, test, fixture, supervisor/audit and receipt review, then inspected the
+exact corrected delta and RED/final evidence. Its **READY** verdict is limited to
+this seven-file offline R utility; no material finding remains open in that scope.
+The coordinator accepts that disposition and independently checked the final
+identities and evidence. The review did not rerun the author's tests. Initial
+agent-start/capacity errors and the earlier contract-only response are not counted
+as completed code reviews.
+
+Original review report SHA-256:
+`db5cb22b18a1325000777ae1484c102382a9a095378921b83d966449afa6aed1`.
+The packet below is preserved verbatim. Relative `work/`, `base/`, supervisor and
+receipt paths identify the selected review workspace, not maintained navigation.
+Old reports in §§5–7 retain their original byte identities and scope.
+
+<details>
+<summary>Completed independent contract/code review and verified corrections</summary>
+
+````markdown
+# Independent R collector contract and code review
+
+Reviewer: `collector_contract_code_review`. Scope: the offline publisher collector's concrete R contract, strict admission, authority neutrality, semantic joins, saved-candidate revalidation, deterministic comparison, and publication/error boundaries. This is a scratch review, not a maintained task amendment.
+
+**Final candidate-scoped verdict: ready for publication as the bounded, offline, unapproved R-evidence utility described by its README.** Both material findings below are verified fixed on source SHA-256 `4ae7c388c5dacb4b0d246939240e2b6e90302982433636e48cda3871dee13300`, test SHA-256 `24ad2615ad1a288ec9fad4365cd6d9cb5c0b993db830c884f0c82900c0786026`, and README SHA-256 `4035a55333d03b910a6820a66ce7a5db03278829a381f6385c41f3a809af8ada`. No material finding remains open within this reviewed stage. This verdict supplies no production-catalogue, native Windows, cryptographic, full-regression or release qualification.
+
+## Comprehension
+
+The proposed utility accepts explicitly supplied local source snapshots and a manifest that binds their exact bytes. It recognizes two bounded Markdown list grammars and one bounded Roughtime JSON grammar, retains the original claims and provenance, and derives normalized unapproved evidence. A source failure must remain visible, with no records attributed to that failed source, while valid neighboring sources can survive in a visibly incomplete candidate. Comparison consumes two hash-bound candidates, independently revalidates their raw claims and all derivations, and reports review changes without granting retirement, approval, selection, signing, or protocol authority.
+
+The supplied canonical plan describes a later release catalogue, its exact key/profile/endpoint bindings, and separately owned runtime and lifecycle qualification. Those production representations, permanent IDs, trust transitions, provider permissions and native Windows gates remain future work for their existing owners. This R slice neither supplies the final catalogue nor expands the active-source policy. Its source claims and semantic review anchors are deliberately narrower than permanent service identities; a valid parse or matching digest authenticates no publisher or time source.
+
+## Status and inspected inputs
+
+Contract review: completed for the initial README identity below. The full first frozen implementation/test review identified two material correctness findings on source `efef36d9...`, tests `f59b32b3...`, and README `bf1cec30...`. That candidate's verdict was **revise before publication**. The narrow corrections, revised tests, current README and actual RED/final receipts have now been inspected and rehashed; the final verdict above applies only to the repaired identity. No candidate code was executed by this reviewer; existing bounded executions and retained artifacts were independently assessed.
+
+All paths below are relative to `/workspace/scratch/2fc5e474c1c0/nevrotick-collector-contract-20261104`.
+
+| Input | SHA-256 | Inspected scope |
+| --- | --- | --- |
+| `work/tools/server-catalogue/README.md` | `f485e872716eeb9de9cac89682f89d996a60f3aa6243cf4545f9989f4efa71e4` | Complete concrete R contract |
+| `base/docs/plans/server-catalogue-binary-format.md` | `7eb73c3fcec40ba85e82dbda7d984ef75a959fd3976f8801dd87227fb8aa5aa3` | Sections 4–8 |
+| `base/AGENTS.md` | `5a5165a453b77d632f1feef4ca176a4ba0e54d209a9f8921964624e0059ed2f0` | Complete; `work/AGENTS.md` byte-identical by `diff -u` |
+| `base/.agents/skills/testing/CONTRACT.md` | `f7cff763b33ed33a70d14d68270ca05bdc1c19347095536b012901eb57c2023a` | Complete |
+| `base/.agents/skills/testing/qa-independent-review/SKILL.md` | `004154ef1c7d765372625be5afba08b66e9fb311578ff6c736369afb5fb2da34` | Complete |
+| `base/.agents/skills/planning/plan-independent-review/SKILL.md` | `c3a2e59381bfffc4e485aab6c4243917576ac0b7c55b02279c757982cce0f9c9` | Complete |
+| `base/.agents/skills/planning/references/review-and-handoff.md` | `9a2e1a3338a2a6612e05bdd920e4f47b5db7bc75b9286d71aadcf403086ca52a` | Complete |
+
+Documentation-guide routing was read for the current catalogue/publisher ownership. The supplied `work` tree is an extracted snapshot: both `git rev-parse --show-toplevel` and `git status --short` return exit 128 because no Git repository is present. No local HEAD/index/clean-worktree claim is made. A routing search over the historical base task exposed some embedded review headings/snippets; those conclusions were not used as evidence, and no other review report or private KB was consulted. The later current `work/AGENTS.md` has SHA-256 `bdd20244818aa94d19ccde196db155f28f6296a5c232a5422aa78bc19ef6016e`; its inspected difference adds leap-policy routing for leap/LI, UTC scale, calendar or Windows mapping changes. This utility retains unqualified time behavior and changes none of those policies.
+
+### First frozen implementation and evidence identities
+
+| Input | SHA-256 | Inspected scope |
+| --- | --- | --- |
+| `work/tools/server-catalogue/build_catalogue.py` | `efef36d9feb911d69f17712c58b1593ebcf55485484ccbe67d6d2391ea366fe2` | All 804 lines |
+| `work/tools/server-catalogue/test_build_catalogue.py` | `f59b32b3e9733e8df9021c520d96b60be33d17e301d5b0f92afaae4ce2d18c6c` | All 583 lines |
+| `work/tools/server-catalogue/README.md` | `bf1cec30fb53614eb3be296c80a191bb64e88bc2c12efaed130f19658f4eaa8c` | Complete frozen contract |
+| `work/tools/server-catalogue/fixtures/README.md` | `4e78e99e5e979743b0d58dd0bca87d79cee3417aa4e37d69d5e10d5506cc07e6` | Complete literal expectations |
+| `work/tools/server-catalogue/fixtures/nts.md` | `e876ff5ec1e1ee4dbf04ad3876eb05b0d05e472289ac74ce2776217f2357bc33` | Complete synthetic fixture |
+| `work/tools/server-catalogue/fixtures/ntp.md` | `10606f69c0b2bd3b5ffbde2b34a10aba72b911ad92ddb791c4c7e4f4345d562e` | Complete synthetic fixture |
+| `work/tools/server-catalogue/fixtures/roughtime.json` | `8e75ee285669ab5ead6a0a89bb67d62063377249ac1c1f3583149198a3ff2988` | Complete synthetic fixture |
+| `implementation-checks.py` | `219a3d661b54263097808e128b608a883de3a5e81f0b9bd43a279b48baf94184` | Complete supervisor source |
+| `implementation-checks.child.py` | `ba13d8846ab10f9d9b1784397efec0197a16a4be58c198713555650f9d1563b3` | Complete isolated/audited child source |
+| `implementation-checks.tests-01.json` | `9fe72caab6df94bad361ac3ce0909af4f6c8d1705018f5977d37fd310f087215` | Complete executed receipt |
+| `implementation-checks.smoke-01.json` | `25d5ac1cb45f894eacd8195a42faede129fb4f9a59fefad777a99b0c579de37b` | Complete executed receipt |
+
+The coordinator pointed out the possible postpublication diagnostic error path; I independently verified it against the frozen source before reporting R-CODE-01. R-CODE-02's supplementary-Unicode case arose in this review; the coordinator independently raised the related aggregate-token case, which I also traced against the source. These are reconciled source findings, not reviewer votes or independent repeated executions.
+
+## Independent expected results for the frozen pass
+
+The applicable ownership is R / DATA-01 / DATA-24, with canonical normalization, binding and failure constraints from binary-format §§4–8. The required host evidence, if execution is authorized, is the README's exact Python 3.12 route under the supplied bounded supervisor; source review alone cannot establish a test pass.
+
+| Boundary | Independent expectation |
+| --- | --- |
+| Manifest/source/import admission | Byte, structural and aggregate limits precede the relevant growth; wrong exact types, duplicate members, drift and unsupported spellings cannot normalize into valid claims. |
+| Claim normalization | Original key/profile/address bindings and raw metadata survive; missing, zero, unknown and unsupported states stay distinct. No parser result grants an approved profile, permission, independence or UTC qualification. |
+| Failed/incomplete source | A source failure is visible and has no surviving partial records; a good neighbor remains useful. An incomplete/failed source cannot become an empty success or mass documentary retirement. |
+| Stored candidate | The comparison entry point verifies every closed shape, raw-to-derived join, count and overlap group, including direct malicious snapshot inputs that never pass through collection. |
+| Semantic comparison | Canonical host or exact Roughtime name anchors retain duplicate claims as multisets. Reordering/locator changes do not become semantic removals; changed keys/profiles/transports/ports/metadata/multiplicity are visible. Missing, failed or changed-adapter sources block row comparison. |
+| Publication and diagnostics | All validation and encoding precede publication. Existing output survives all failures. The successful hard link is the publication point; errors after that point must not falsely promise that no completed output exists. Diagnostics remain static and do not echo untrusted arguments or data. |
+| Execution claim | Actual discovered/selected counts, controls, failures, bounds and candidate identity determine the scope of evidence. An audit hook is not OS network isolation, and this route establishes no Windows, runtime crypto, full regression or release result. |
+
+## Material findings on the first frozen candidate
+
+### R-CODE-01 — Postpublication diagnostic I/O can report “no completed output” after committing output
+
+**Severity:** medium; correction required before the utility is called ready for this R contract. **Boundary:** truthful publication/error state, README exit codes and completed-link commit point; binary-format §6.2/§6.3. **Candidate/location:** `efef36d9...`, `main` lines 790–800; `publish` lines 747–760.
+
+`publish` completes the hard link and returns success before `main` writes its warning/status diagnostics. Both writes remain inside the outer `except OSError` block. If the postpublication stdout write raises `BrokenPipeError`/`OSError`, with stderr still usable, `main` prints `refused: local-io` and returns 2 even though the completed output exists. A failed cleanup-warning write can reach the same outcome. The frozen test covers an unlink failure with healthy diagnostic streams, but not a reached diagnostic failure after the link.
+
+The README assigns exit 2 the concrete meaning “no new completed output,” so this is an observable contract contradiction, not a cosmetic logging preference. Preserve committed 0/3 status across reached postpublication diagnostic failures and cover broken stdout/stderr with valid neighboring publication. Distinguish any remaining process-shutdown/forced-interruption limit honestly. The initial evidence was an exact source trace, subsequently corroborated by the bounded RED receipt. **Final disposition: verified fixed**, as detailed below.
+
+### R-CODE-02 — Generated candidates can fall outside the shared import bounds
+
+**Severity:** medium; correction required before publishing a purportedly importable candidate. **Boundary:** finite JSON limits, accepted raw-to-normalized transformation, and fully admitted deterministic output; binary-format §§4.2 and 6.2/6.3. **Candidate/location:** `efef36d9...`, `json_preflight` lines 200–209, `encoded` lines 257–268, `collect` lines 589–591, and `main` line 790.
+
+There are two concrete manifestations of the same missing output-admission guarantee:
+
+- A valid Markdown owner/notes cell with 2,049 supplementary Unicode characters such as U+1F600 is below the 4,096 decoded-character and 8,192 line limits. The constructor accepts it. `ensure_ascii=True` emits a 12-character surrogate-pair escape for each character, but the JSON lexical scanner allows only approximately `6 * MAX_STRING` source characters for a string. Collection therefore publishes valid canonical Unicode bytes that self-comparison rejects as `json-string`.
+- Two sources of 1,024 short Ed25519 rows each, with eight short addresses per row, can fit the declared source bytes and record/address limits. Each output row contains both raw and normalized address structures; a static count yields approximately 283 lexical tokens per row, exceeding 579,000 tokens for the rows alone, above the 500,000 cap. Collection validates the object structure and encoded byte length but does not apply the final encoded bytes to the shared lexical gate. Such a candidate can be published and then rejected as `json-tokens` during import. Large comparisons can likewise expand their two inputs, so the publication guarantee needs to cover the diff path too.
+
+The narrowly applicable correction is to retain bounded lexical work while admitting canonical surrogate pairs for the promised decoded-string limit, and to enforce shared byte/lexical/container admission before publication. A valid UTF-8 Markdown source must survive collect→self-diff at the supplementary-Unicode boundary; an over-limit decoded string must still fail. An expanded candidate exceeding the shared output-token limit must fail before publication, with an admitted neighboring case retained. The initial evidence was source-level reachability and arithmetic, subsequently corroborated by the bounded RED receipt. **Final disposition: verified fixed**, as detailed below.
+
+## Boundaries supported by the inspected implementation
+
+The strict decoder bounds input bytes, JSON lexical depth/container/token work and decoded strings, rejects duplicate members before dictionary normalization, and uses exact integer checks that exclude booleans. All three adapters use complete source shapes. Source-local failures discard that source's partial records, while aggregate limits raise separately. The source manifest requires one to eight unique descriptors and binds raw bytes before parsing.
+
+The normalized constructor keeps geography, permission and independence unknown and time behavior unqualified. It distinguishes numeric maximum-version advertisements, unresolved IETF labels and unsupported algorithm/profile evidence; key encoding/length checks grant no cryptographic authorization. Original address lists stay within their original record and key/profile scope. Markdown notes never change family. No network or child-process route exists in the reviewed utility imports or call graph.
+
+The saved-candidate gate rebuilds every record through the same constructor. Canonical encoded-byte comparisons catch Python boolean/integer equality aliases as well as changed derived fields, counts and review groups. Complete source observed digest/length must agree with the artifact descriptor. Roughtime pointers are checked against numeric enumeration; Markdown line order and table-class progression are checked. These gates validate internal consistency; they cannot independently authenticate a source artifact that was not supplied to the comparison command, which the unapproved-evidence contract explicitly acknowledges.
+
+Semantic grouping preserves duplicate meanings as multisets. Table anchors use normalized host and family; Roughtime anchors use the exact display-name claim. Reordering records is separated from semantic change. Rebinding keys among duplicate-name records is retained as a binding-scope change even when the individual field multisets stay equal. Missing/failed/changed-adapter sources are blocked without mass absence/retirement. Publication uses a restrictive same-directory temporary, file flush/sync, and non-clobbering hard link; existing-output, link-failure, fsync-failure and post-link cleanup behavior have direct selected controls.
+
+## Executed evidence assessed and remaining limits
+
+The initial receipt identifies 34 test methods selected across six children: Parsing 8, Collection 7, Diff 7, Boundary 4, WorkLimit 4 and Publication 4. Every selected method reports `ok`; all six child exits are 0, with no recorded skip, retry or budget failure. I inspected the actual assertions and original synthetic fixtures rather than accepting the author's pass label. The cases include independent literal endpoints/key bytes/status expectations, malformed and useful neighboring inputs, actual public `main` collection/comparison paths, forged stored snapshots, duplicate-name rebinding and reached publication failure injection. These tests do not cover the two findings above. The evidence remains attached to its initial hashes and is not a pass for moving revised bytes.
+
+The test and smoke children used `/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3.12` with `-I -B -S -X dev -W error`, runtime SHA-256 `fa67443527ed9647f760d807e2a38f26340757123e643c4639cf273ed15d5ea7`, reported version 3.12.14. The inspected supervisor configures one worker, no retries, 30 seconds wall time per child, 10 seconds CPU, 512 MiB address space, 2 MiB combined output and no core dumps. The audit child reaches one refused socket attempt and one refused process attempt before running the target. These are selected host controls, not OS network isolation or a hostile-code sandbox. No over-budget termination control was recorded in these receipts, and this review does not certify the supervisor against arbitrary hostile child behavior.
+
+The smoke receipt contains five actual commands with exits 0, 0, 3, 3 and 2. I independently rehashed the retained outputs and used an independent JSON data reader to inspect them. The complete candidate has 271 NTP, 106 NTS and 14 Roughtime records: 391 records and 392 scoped endpoints, including one unsupported algorithm record. All retained time behavior is unqualified and service-use permission unknown. The 14 Roughtime locators are numerically ordered `/servers/0` through `/servers/13`. The deliberately bad NTS digest yields zero retained NTS rows while the other 285 records survive. Its comparison blocks that source with no absent/added/changed rows. The repeated complete bytes match exactly, and the final overwrite attempt preserves the earlier output.
+
+Retained smoke identities: complete/repeat candidate `b851a091e68d4bd215359e942622fef98da13346223dec975ca1ca20e8da4bc8`; incomplete candidate `ced3079ab9a9fbbdf18d17f40401705842bc16933a9d1e2ce7dd73a42b0f2f0f`; comparison `f679b7f105a242585efb51b0d8929abb43aa087207b7f85c92f6457770819765`. Source metadata `upstreams/source-identities.json` hashes to `cf6b16bf9b9e14dd86fdd0319a0272988736719d460f6b14c90458e17fc45bd3`; the three local source file hashes match that manifest. This review did not independently fetch or authenticate upstream repository history or operator statements.
+
+No new candidate execution, installation, benchmark, probe, GitHub mutation or maintained-file edit was performed by this reviewer. No full-regression, coverage/mutation, mypy, Cargo, native Windows, runtime cryptographic, production-format or release qualification is established.
+
+## Verified correction and final-candidate evidence
+
+### Exact revised identities
+
+| Input | SHA-256 |
+| --- | --- |
+| `work/tools/server-catalogue/build_catalogue.py` | `4ae7c388c5dacb4b0d246939240e2b6e90302982433636e48cda3871dee13300` |
+| `work/tools/server-catalogue/test_build_catalogue.py` | `24ad2615ad1a288ec9fad4365cd6d9cb5c0b993db830c884f0c82900c0786026` |
+| `work/tools/server-catalogue/README.md` | `4035a55333d03b910a6820a66ce7a5db03278829a381f6385c41f3a809af8ada` |
+| `implementation-checks.py` | `49ffdd35a0b06243f50508573b1b28771c02b9ead73840db5bc8c7a91e405a85` |
+| `implementation-checks.regressions-red-01.json` | `5d956ebc8bbda53ce77b27696fc71a8e5bff948d29792d95968f79225bc58415` |
+| `implementation-checks.tests-02.json` | `fdf4f20d142c6915ff47bc8e9336dcbc555b65124b6a3ffac360ead535f95e3f` |
+| `implementation-checks.smoke-02.json` | `e363407a62bef24498d0cf6157221de26013348a7eb827fdfeed77c7eb4fa7fb` |
+
+The original fixtures and audit child retain the hashes recorded above. I inspected the initial `implementation-review.md` checkpoint at SHA-256 `c4577603c19ba825450bb770b047f69c9e237f889beedbcef2080576dd2fc8ca`; its author's summary was not substituted for the source, assertions or receipts. Source/test/README and final receipt hashes were checked again immediately before report completion.
+
+### R-CODE-01 resolution
+
+Final source lines 770–777 use a best-effort diagnostic helper that performs both write and flush inside the `OSError`/`ValueError` handler. `main` lines 808–817 use that helper and preserve the selected committed return after publication. The helper changes no stream, artifact or authority. The README now distinguishes normal return from abnormal interpreter shutdown or OS termination, retaining the completed-link publication point and avoiding a universal process-exit promise.
+
+The added tests reach broken stdout for both complete and incomplete output, verify the actual completed file and preserve an independent healthy file. A separate case reaches broken stderr while a post-link cleanup warning is required and verifies incomplete output still returns 3. The RED receipt shows the original source returning 2 instead of 0/3 and propagating the warning-stream error; these are behavioral failures at the intended path. Both methods pass on the final source. The ordinary cleanup, link-failure, file-sync failure and existing-output controls also remain green. This resolves the finding within the documented normal-return scope; it does not test every interpreter shutdown path.
+
+### R-CODE-02 resolution
+
+Final source line 206 allows twelve encoded characters per decoded string character while the shared decoded 4,096-character check remains unchanged. Final `main` lines 802–807 encodes, then sends candidate or diff bytes through `strict_json` before entering the publication function. The 500,000-token cap is unchanged. Generated fan-out can now cause an explicit refusal before the output directory is touched; it cannot publish a candidate that fails the same shared lexical gate merely because it originated from this utility.
+
+The added Unicode method collects real UTF-8 Markdown cells containing 2,049 and 4,096 supplementary characters and successfully self-compares each emitted file. At 4,097 characters, the offending source fails and the valid NTP neighbor survives. The fan-out method uses two 1,024-row sources with eight short addresses per row, verifies their input sizes, preserves and reloads a healthy neighboring candidate, and requires exit 2 with no final file. Its RED receipt additionally observes that the old source's emitted candidate is rejected by `load_snapshot` specifically as `json-tokens`; this is not an unrelated setup failure. Both methods pass on the repaired source. The shared prepublication gate covers both commands; no separate maximum-size diff-output failure campaign was run or claimed.
+
+### Final actual results
+
+The final test receipt selects **38 methods across eight children**: 8 Parsing, 7 Collection, 7 Diff, 4 Boundary, 4 WorkLimit, 6 Publication, and the 2 OutputClosure methods in separate children. All actual child exits are 0 and every selected method reports `ok`. No skipped method, retry, cancellation or budget failure is recorded. The two larger closure methods were separated in the fixed selection without increasing the CPU, wall, memory or output limits. The final full scoped suite also re-exercised the common decoder and publication callers affected by the changes.
+
+The final smoke receipt records the same five expected outcomes, 0/0/3/3/2, on the repaired producer. I independently rehashed and inspected the retained final outputs. The complete 352,470-byte candidate and its identical repeat both hash to `024a7bcce628602440ad16d405af336d4370aa3c2ec34e408a06a571464472f4`; the incomplete candidate hashes to `cf9bc25d7629931eaccab82488637cf72f9d6e58cc3fbf4a4fae41c758e6a4c5`; the comparison hashes to `b7cb0a22ddb11e173f22de1a67c53cfe69bad3fcc866509d74bab0a31b129f9b`. The observed corpus remains 391 records, 392 scoped endpoint claims and one unsupported experiment. Independent JSON comparison of the initial and repaired complete candidates, excluding only `producer_sha256`, reports no difference. These facts preserve the data/authority behavior while binding the final output to the corrected source.
+
+Both material findings are closed for this exact candidate. The final readiness conclusion uses actual reached RED→GREEN evidence and source inspection. It makes no claim that this reviewer independently reran the implementation's executions, that the finite test selection proves absence of all defects, or that the later production/native/release gates are satisfied.
+
+## Permitted next action
+
+The coordinator may integrate this review and publish the authorized seven-file R utility with its current task/documentation handoff. Preserve the original and corrected identities, RED evidence, final receipts and existing deferred production/runtime owners. Any subsequent relevant source, test, contract or fixture change invalidates the affected parts of this candidate-specific conclusion and requires proportionate reassessment.
+
+````
+
+</details>
+
+### 8.5 Remaining work under existing owners
+
+This closes the local-input/diff stage of R / DATA-01 / DATA-24. Next prepare
+explicit operator evidence and reviewed approval binding, including use terms,
+unsmeared scale, exact Roughtime profile/rotation/withdrawal and provider
+dependence; the three community adapters cannot establish those facts. Optional
+network acquisition needs its own bounded source/redirect/TLS profile. Approved
+C construction still needs the chosen representation, stable IDs, concrete
+schema/limits, trust/replay lifecycle and actual Rust admission or generated-data
+contract. No production default, preset, automatic replacement or weaker quorum
+is selected here.
+
+The separate Q0/Q-J pilot, current S157/S1.3 priority, RGT-0 → CHR-0 order,
+NV-LP-001/S1.4 authority and existing Windows/storage/fuzz dispositions remain.
+No dependency was installed; no Core typing policy, Cargo graph, application
+runtime or Windows state changed. The scope supplies no native Windows/package,
+live-server, crypto, security-coverage/mutation or product-release pass.

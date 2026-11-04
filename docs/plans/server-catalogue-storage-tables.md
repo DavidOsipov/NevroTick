@@ -1,7 +1,7 @@
 # Server catalogue and statistics — storage and format tables
 
 **Recorded:** 4 November 2026  
-**Status:** discussion reference; not a format, dependency, quota or implementation decision  
+**Status:** product-storage discussion reference; C/Q/H formats, runtime dependencies and quotas remain proposals. The separately implemented R input stage is identified below.  
 **Source baseline:** `3f074edf6b9d4c8cd9fdf37a6e20832233b4946f`
 
 These tables preserve the storage discussion and its format-review refinements.
@@ -13,8 +13,10 @@ chain, not another execution plan.
 
 The later [binary catalogue refinement](server-catalogue-binary-format.md)
 records the owner's preference for binary shipment and first-schema Roughtime
-key/profile fields. Its future Python collector belongs under existing `tools/`.
-These refinements concern C and publisher work R; they select no final encoding
+key/profile fields. The [offline Python input stage](../../tools/server-catalogue/README.md)
+now belongs under existing `tools/`, with candidate-specific evidence in
+[task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026).
+These refinements concern C and publisher work R; they select no final C encoding
 and do not replace the separate Q0/Q-J comparison.
 
 The [architecture](../windows-time-architecture.md), especially §§6, 12 and 17,
@@ -96,7 +98,7 @@ authority, merge incompatible segments or restore a pending exchange.
 | **UI preferences and status projections.** DATA-23. | U: user profile; bounded display state in RAM. | Typed RAM view model; applicable selected IPC uses versioned UTF-8 JSON. Preferences-file format remains **unselected**. | Keep user presentation settings separate from machine authority. | Byte caps **unset**; current display state does not accumulate for 30 days. | No direct privileged database access or policy authority. Projections are bounded; stale values are explicitly historical. |
 | **Explicit support exports.** DATA-23. | U: user-selected output written by the unelevated UI. | Format **unselected**; needs version/schema, declared contents and redaction rules. | A deliberate portable support artifact, not an automatic raw database copy. | Per-export cap **unset**. Arbitrarily retained user copies have no defined installation-wide 30-day total. | Preview and redact; exclude secrets and unbounded dumps. Do not introduce a privileged arbitrary-path writer. Export does not restore trusted state. |
 | **Future DNS learning and optional snapshots.** Separate DATA-22 boundary. | Separate DNS owner/store/privacy lifecycle. | Data schema and encoding **unselected**. Protected snapshots have their own authenticated-envelope contract. | Different privacy, forgetting and validity requirements from time-source statistics. | Zero for a profile without the feature; future limits **unset**. | Separate privacy epochs, forget barriers and secret custody. Do not merge DNS learning into Q merely because both classes are called statistics. |
-| **Publisher curation, release evidence and signing custody.** DATA-01 and DATA-24. | R: outside the installed client; future collection/build tool under existing `tools/`. | Source fixtures, reviewable normalized candidates/diffs, versioned provenance manifests, hashes/signatures and provider-managed protected key objects. The future builder emits the selected C representation from the exact approved normalized snapshot; no single encoding applies to all R. | Explain releases and preserve signing authority independently of client reset or uninstall. | Zero client-held publisher private signing keys, full research corpus or Python runtime introduced for collection. Publisher retention/capacity is a separate policy. | Bound and validate untrusted source inputs. Bind approval to the reviewed snapshot and relevant adapter/schema/generator identities. Collection, review approval, signing and publication remain separate acts with their existing owners. The client receives only required public verification material. |
+| **Publisher curation, release evidence and signing custody.** DATA-01 and DATA-24. | R: outside the installed client; offline input tool under existing `tools/`, with approved-input build/signing still separate. | **Current input stage:** closed versioned UTF-8 JSON manifest, candidate and semantic diff; original synthetic Markdown/JSON fixtures. **Other R owners:** reviewed approvals, release hashes/signatures and protected key objects; the collector takes no signing secrets. The future builder emits the selected C representation from the exact approved normalized snapshot; no single encoding applies to all R. | Explain releases and preserve signing authority independently of client reset or uninstall. | Zero client-held publisher private signing keys, full research corpus or Python runtime introduced for collection. Publisher retention/capacity is a separate policy. | Bound and validate untrusted source inputs. Bind approval to the reviewed snapshot and relevant adapter/schema/generator identities. Collection, review approval, signing and publication remain separate acts with their existing owners. The client receives only required public verification material. |
 
 ## 5. Reviewed format candidates
 

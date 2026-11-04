@@ -6,7 +6,7 @@
 
 **Inspected project baseline:** `7550f83292f959a6d0acbb2d396e964a6bcf4b01`
 
-**Scope:** source-only design and documentation; no implemented catalogue, importer, benchmark, live-server verification or release approval.
+**Scope:** C remains a design proposal: no implemented release catalogue, benchmark, live-server verification or release approval. The later [offline R input stage](../../tools/server-catalogue/README.md) implements candidate collection and semantic diff under [task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026); its fixture evidence does not qualify C or the client runtime.
 
 ## 1. Direction, authority and present scope
 
@@ -167,7 +167,7 @@ The pinned ecosystem also contains an experimental ML-DSA-44 entry. It is exclud
 
 ## 6. Future Python collection and build tool
 
-**Planned location:** `tools/server-catalogue/build_catalogue.py`. David called the area “Tools”; the existing repository directory is lowercase `tools/`, which should be reused rather than creating a case-only sibling on Windows. The script is future work; no file, dependency, scheduled crawler or client runtime is implemented by this document.
+**Location:** [`tools/server-catalogue/build_catalogue.py`](../../tools/server-catalogue/build_catalogue.py), using the existing lowercase `tools/` directory. The [R contract and CLI](../../tools/server-catalogue/README.md) now implement the offline input stage described in §6.4. Approval, C generation and package integration remain future work. This tool introduces no scheduled crawler, extra dependency or client Python runtime.
 
 The tool belongs to R/publisher preparation. It collects candidate NTP/pool, NTS and Roughtime definitions, normalizes them, produces a reviewable semantic diff and eventually emits the selected binary resource or generated tables from approved inputs. Collection is not default admission, signing or publication.
 
@@ -182,7 +182,7 @@ new trust root or clock authority; §6.2's explicitly bounded publisher fetch st
 | Family | Initial input candidates | Required handling |
 | --- | --- | --- |
 | NTS | [jauderho/nts-servers][C13], then linked operator declarations | Community list discovers candidates. Preserve operators, names/roles/ports, source version and experimental/usage status; do not manufacture missing identity or a pin from a scraped certificate. |
-| NTP/pools | Operator-published service lists; official Pool documentation and an assigned vendor-zone configuration | A public DNS answer is not a harvestable permanent pool roster. Preserve dynamic aliases and usage constraints; project-default Pool use needs its own vendor arrangement [C14]. |
+| NTP/pools | [Companion public-NTP directory][C15]; operator-published service lists; official Pool documentation and an assigned vendor-zone configuration | The first adapter reads the directory's pinned generated Markdown, retaining raw AS/owner/notes as claims. A public DNS answer is not a harvestable permanent pool roster. Preserve dynamic aliases and usage constraints; project-default Pool use needs its own vendor arrangement [C14]. |
 | Roughtime | Pinned ecosystem lists and operator publications in §5 | Decode key bytes strictly, preserve exact profile evidence and key/endpoint pairings, distinguish unsupported candidates and deprecations; never infer profile from port alone. |
 
 RFC 10049's common JSON list uses an integer `version` for the highest advertised protocol version; that is not a catalogue schema version or an enumeration of every supported version [C5]. Preserve it as a source claim. A source-specific adapter may accept a documented quoted-version variant, but must label that compatibility rule rather than call it the RFC spelling. Boolean `true`, floating `1.0`, exponent notation and arbitrary strings must not become integer `1` by Python coercion. An ambiguous `IETF-Roughtime` label remains unresolved; a higher advertised version does not establish support for every lower version. The raw field and source identity remain available in R.
@@ -190,6 +190,8 @@ RFC 10049's common JSON list uses an integer `version` for the highest advertise
 Adapter output carries separate input-schema/adapter identity, normalized candidate identity, exact source claims and their provenance, and review disposition. It cannot manufacture an admitted-profile marker or resolve a disagreement by copying the most recent row. The collector's upstream JSON is independent of NevroTick's future binary schema. Any upstream `sources`, `reports` or documentation URLs remain evidence data unless separately admitted for the specific fetch operation; they grant no recursive fetch or report-submission authority.
 
 ### 6.2 Bounded pipeline and publication boundary
+
+This is the complete publisher pipeline contract. §6.4 identifies the implemented local-input subset; acquisition, approval, artifact generation and consumer/package admission below remain future stages.
 
 1. **Acquire or reuse pinned source artifacts.** Default parsing/build tests use saved fixtures. Optional fetch is explicit and bounded by allowlisted source origin, time, response size, redirects, concurrency and total work. Preserve retrieval URL/final origin, source commit/blob or digest, retrieval time and applicable usage/licence evidence. Validate HTTPS normally; a broken maintainer clock is no reason to disable TLS validation.
 2. **Parse as untrusted data.** No upstream code execution, shell interpolation, unsafe deserialization or fetching arbitrary URLs embedded in candidate records. Bound structures before materializing collections; reject duplicate object members before Python dictionaries or other normalization discard the evidence. Require complete supported source shapes/types and distinguish allowed ancillary fields from adapter/schema drift. Network-time probes are a separately scoped optional activity, not a side effect of parsing a list.
@@ -203,13 +205,27 @@ A future collector may accept upstream JSON while delivering binary output. Do n
 
 ### 6.3 Proposed outputs and acceptance controls
 
-Before implementation freeze the output location/schema and update policy. Proposed outputs: normalized candidate records, provenance manifest, rejected/conflicting-record report, semantic diff, exact reviewed input snapshot and deterministic artifact built from that snapshot. Candidate, admitted input and packaged artifact are distinct states with bound identities. Fetch/parse drift reports a partial/failing source result instead of a successful empty list. They may initially share one tool and a small fixture set; no additional daemon or database is required.
+Before each dependent stage, freeze its output location/schema and update policy. The R input stage now has that contract in the tool README; C and approval artifacts remain unimplemented. Full-pipeline proposed outputs: normalized candidate records, provenance manifest, rejected/conflicting-record report, semantic diff, exact reviewed input snapshot and deterministic artifact built from that snapshot. Candidate, admitted input and packaged artifact are distinct states with bound identities. Fetch/parse drift reports a partial/failing source result instead of a successful empty list. They may initially share one tool and a small fixture set; no additional daemon or database is required.
 
 Required paired controls include: a valid published 32-byte root and a truncated/malformed encoding; valid explicit v1 and ambiguous draft labels or coercible wrong types; duplicate consistent claims versus conflicting IDs/material; correctly parsed bracketed IPv6 versus ambiguous host/port; a legitimate operator declaration versus an unsupported experimental service; approved root overlap versus an unreviewed second key; the retired Cloudflare tuple versus its documented successor; source outage versus explicit retirement; valid old catalogue versus incompatible schema or unknown profile; complete replacement versus interrupted staging; and a valid operator-approved default versus an unapproved Pool alias.
 
 Add independent controls for variant-field substitution, dangling/cross-source references, reordered tables with unchanged stable IDs, normalization collisions, absent/zero/unknown time policy, local-ID collision, and a changed candidate after its review. Pair recognized inert Roughtime records with an unknown data-profile rejection, and prove that disabling/unqualifying the RGT runtime leaves ordinary NTP/NTS behavior within its existing policy. Confirm that a valid neighboring catalogue remains usable and a failed candidate has no publication or network effect. These are future checks at the actual source adapter and Rust consumer, not claims of executed tests or proof from a shared serializer round trip.
 
 Probe results, if later added, record protocol/key binding, result stage, observation time/basis and failure reason. A successful response is evidence for that observation only; it is neither a lifetime availability promise nor a new root-authority grant.
+
+### 6.4 Implemented offline R input stage
+
+The [tool README](../../tools/server-catalogue/README.md) is the concrete version-1 manifest, candidate, comparison and failure contract. The [task receipt](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) records exact candidates, host-fixture results and review limits. These R formats do not freeze C's wire schema or stable product IDs.
+
+| Implemented boundary | Meaning and remaining limit |
+| --- | --- |
+| Three closed source adapters | NTS and companion NTP generated Markdown, plus ecosystem Roughtime JSON, from explicit local snapshots. SHA-256, expected length and optional Git-blob checks precede parsing. No fetch, DNS resolution or protocol probe. |
+| Unapproved candidate snapshot | Preserve original source claims, provenance, unknown permission/independence/scale, exact Roughtime public-key bytes and profile/address scope. Known unsupported experiments remain visible; a complete candidate means source parsing completed, not source admission. |
+| Semantic comparison | Revalidate exact input snapshots and all derived fields. Preserve duplicate multiplicity and provenance changes; failed, missing or incompatible sources block the relevant comparison rather than inventing retirement. R claim locators and diff joins are not permanent runtime identities. |
+| Finite local work and output | Explicit bytes/count/depth/string/output caps; no-clobber publication into an owned directory. The tested POSIX link boundary and cleanup outcome do not establish Windows durability or a hostile-filesystem sandbox. |
+| Publisher-only JSON | Versioned manifests, candidates and diffs are review evidence R. The client's preferred binary C, signatures, approval binding, Rust admission and release delivery remain with their existing owners. |
+
+Source-scale and announcement text remains raw evidence. This adapter deliberately reports normalized time behavior as unqualified; it cannot admit the unsmeared-UTC profile required by NV-LP-001. A later explicit operator-evidence/approval stage must supply that provenance. Collection also does not apply deprecations or rotations as authority: a known older key remains an unapproved claim until its lifecycle evidence is reviewed.
 
 ## 7. Compatibility, failure and release lifecycle
 
@@ -243,7 +259,7 @@ For optional state, distinguish safe discard from required historical interpreta
 
 ## 8. Open questions and smallest subsequent work
 
-These are scoped preparation gaps, not new blockers for current Core development. The existing task must assign their resolution before the dependent catalogue/tool implementation; implementation and measurements remain future work.
+These are scoped preparation gaps, not new blockers for current Core development. The existing task assigns their resolution before dependent C, approval or runtime work. The offline R input stage in §6.4 has its own frozen contract and bounded verification; production implementation and resource comparisons remain future work.
 
 | Question | Existing owner / dependency | Required next evidence |
 | --- | --- | --- |
@@ -256,10 +272,10 @@ These are scoped preparation gaps, not new blockers for current Core development
 | Catalogue, reviewed preset, configured and active membership; automatic replacement scope | OPEN-CAT-02; R-04; OD-03; source/default and acquisition owners | Identify the preset's C/policy owner and stable-ID binding before the relevant schema freeze. If replacement is selected, declare eligible population, trigger, stable reselection, finite traversal and continuing provider budgets. Reordering C or adding unselected entries must not change ordinary traffic; selected-source loss follows the authorized policy or reports insufficiency. No default, traversal permission or new Core prerequisite is adopted. |
 | Q/H retention, context cardinality and catalogue migration | OPEN-DATA-02/03/04/06; storage owner | Required questions and compatible populations, whole-family limits and recovery; preserve unresolved prior DATA/EXP/SEC audit findings. |
 | Optional detailed-history default and irreversible loss of detail | OPEN-DATA-02/03; product/storage owner | Named questions requiring detail versus summaries; mandatory conflict minimum remains TA-W02. |
-| Builder adapters, source availability, deterministic output and private tooling scope | R/DATA-01/24; catalogue task | Frozen source fixtures, semantic-diff behavior and acquisition limits; implementation later in tools. |
+| Publisher acquisition, approved-input build and private tooling scope | R/DATA-01/24; catalogue task §8 | Local source adapters and revalidated semantic diff now have a concrete R contract. Next define explicit operator evidence and approval binding; acquire only under a separately frozen fetch profile. C generation still depends on its schema/representation and consumer contract. |
 | Final installed/removal lifecycle and physical placement | Existing W11/ST-W owners | Actual owner/ACL/update/Reset/uninstall observations when admitted; source research alone closes no native gate. |
 
-The owner-requested five-role documentation review and integration are complete for this discussion stage. The [existing task](../../tasks/server-catalogue-and-statistics.md#71-completed-documentation-review-and-dispositions) retains the original reports, candidate identities, verified documentary corrections and still-open owner assignments. The next source-only work is to freeze the relevant logical-to-wire, preset/policy, compatibility and fixture contracts under those owners before dependent implementation. No format benchmark, Python implementation or live-server campaign was part of the completed documentation milestone.
+The owner-requested five-role documentation review and integration are complete for this discussion stage. The [existing task](../../tasks/server-catalogue-and-statistics.md#71-completed-documentation-review-and-dispositions) retains the original reports, candidate identities, verified documentary corrections and still-open owner assignments. That documentation milestone included no format benchmark, Python implementation or live-server campaign. The subsequent owner-requested continuation implements only §6.4's offline R stage. The relevant logical-to-wire, preset/policy and compatibility contracts remain open before dependent C/runtime implementation.
 
 Future catalogue measurements compare JSON only as a reference if useful, then one binary candidate at a time. Record encoding, delivered placement and runtime access separately. Measure actual incremental linked code and generated data, compressed package and installed allocation, old/new update staging, startup admission/copies/allocations, steady lookups and CPU, private bytes, relevant mapped/image residency and peak overlap without double-counting shared pages. Preserve equal semantics and security requirements; do not turn this into a catalogue-only serialization ranking. Q/H write/flush amplification, checkpoint/rewrite and migration headroom stay in their separate workload accounting. Q0/Q-J retains its existing preparation scope; this catalogue preference does not silently rename or execute that pilot.
 
@@ -281,6 +297,7 @@ Future catalogue measurements compare JSON only as a reference if useful, then o
 [C12]: https://github.com/tannerryan/roughtime/blob/09ffa30abfb8c9ea22b81858edf393f6c5a7ddef/ecosystem.json
 [C13]: https://github.com/jauderho/nts-servers
 [C14]: https://www.ntppool.org/en/vendors.html
+[C15]: https://github.com/jauderho/public-ntp-servers/blob/fa07c5440f4c2301697e978b2be36b743d3dd8f2/README.md
 
 - **C1–C4:** binary representation, schema and generated-data possibilities; not implementation measurements.
 - **C5–C6:** Roughtime and NTS protocol boundaries; current project owners retain complete admission/verification contracts.
@@ -288,3 +305,4 @@ Future catalogue measurements compare JSON only as a reference if useful, then o
 - **C12:** pinned community ecosystem data, matching fetched Git blob as recorded above; nominal group labels are not independence proof.
 - **C13:** discovery input proposed by David, not an independently authenticated authority for all listed services.
 - **C14:** official Pool vendor/default requirements; no vendor-zone application or external communication was performed.
+- **C15:** pinned discovery input for the first offline NTP adapter; owner/AS/notes are source claims, not verified use permission, independence, no-smear evidence or current availability.

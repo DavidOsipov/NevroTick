@@ -1,0 +1,28 @@
+{
+  "servers": [
+    {
+      "name": "Alpha",
+      "version": 1,
+      "publicKeyType": "ed25519",
+      "publicKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "addresses": [
+        {"protocol": "udp", "address": "Rough.Invalid.:5319"},
+        {"protocol": "tcp", "address": "[2001:db8::33]:5319"}
+      ]
+    },
+    {
+      "name": "Beta",
+      "version": "IETF-Roughtime",
+      "publicKeyType": "ed25519",
+      "publicKey": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
+      "addresses": [{"protocol": "udp", "address": "legacy.invalid:2002"}]
+    },
+    {
+      "name": "Gamma",
+      "version": "ml-dsa-44",
+      "publicKeyType": "ml-dsa-44",
+      "publicKey": "AA==",
+      "addresses": [{"protocol": "udp", "address": "experimental.invalid:2002"}]
+    }
+  ]
+}

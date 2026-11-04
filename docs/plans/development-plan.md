@@ -706,7 +706,7 @@ At each bounded checkpoint:
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |
-| Catalogue/source/release, [existing catalogue task](../../tasks/server-catalogue-and-statistics.md#7-binary-catalogue-and-future-collector-refinement--4-november-2026) | The five-role documentation integration is complete. Next prepare the relevant schema/fixture, preset/policy and compatibility contracts for binary C and the future Python collector under existing `tools/`. OPEN-CAT-02/R-04/OD-03 retains catalogue-to-preset/configured/active membership and automatic-replacement scope. This adds no prerequisite to Core or permission for a benchmark, collector implementation or public-server probe. Q0/Q-J keeps its separate preparation and open audit findings. |
+| Catalogue/source/release, [existing catalogue task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) | The five-role documentation integration is complete; the later owner-authorized continuation adds a bounded offline Python input stage for R candidates and revalidated semantic diff under `tools/`. Its exact host-fixture/review evidence is separate from product/native qualification. Next prepare explicit operator evidence/approval binding and the relevant C schema, preset/policy and compatibility contracts. OPEN-CAT-02/R-04/OD-03 retains membership and automatic-replacement scope. This adds no prerequisite to Core, format benchmark or public-server probe. Q0/Q-J keeps its separate preparation and open audit findings. |
 | Package/lifecycle, [Windows task §4.17](../../tasks/windows11-integration.md#417-primary-coordinator-adoption-of-the-selected-msix-profile--3-november-2026) | Earlier selected complete-MSIX/source-profile adoption is recorded. Supported provisioning and independent-removal recovery remain unresolved under W11-W05/W11-W10. |
 | Package/lifecycle, [later handoff §4.18](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026) | The primary coordinator now records reconciliation of the later provisioning/removal and Sandbox findings at the completed S155 checkpoint. W11-W05/W11-W10 retain the next source/design action; no activation/recovery alternative or execution permission is selected. |
 
@@ -1295,9 +1295,14 @@ The [binary catalogue refinement](server-catalogue-binary-format.md),
 [existing task](../../tasks/server-catalogue-and-statistics.md) share one
 catalogue/statistics workstream. The owner prefers binary release data for
 hundreds of NTP/pool, NTS and Roughtime records, with Roughtime public keys in the
-first schema and a future Python collection/build tool under existing `tools/`.
-Constrained CBOR and generated immutable tables remain candidates; exact format,
-schema/caps, signature strategy, roster and runtime graph are unresolved.
+first schema and Python publisher tooling under existing `tools/`. The
+[offline R input contract](../../tools/server-catalogue/README.md) now implements
+three local adapters, unapproved candidates and revalidated semantic diff;
+[task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026)
+records exact host-fixture checks and their limits. Constrained CBOR and generated
+immutable tables remain C candidates; its format, schema/caps, signature strategy,
+approved roster and runtime graph are unresolved. R's JSON is publisher evidence,
+not the selected C encoding or a client dependency.
 
 Ordinary catalogue preparation is independent of the later RGT-0 implementation;
 placing its key fields now does not change RGT-0 → CHR-0. Keep source admission
@@ -1305,8 +1310,11 @@ and OD-03, release trust and W11/ST-W lifecycle, and TA-W runtime key/bootstrap
 qualification with their existing owners. Catalogue cardinality grants no extra
 active sources, sockets or histories. The requested five-role documentation
 review and integration are complete; the existing task preserves raw reports,
-dispositions and checked candidate identities. The next source-only step is the
-relevant schema/fixture and compatibility freeze. OPEN-CAT-02/R-04/OD-03 also
+dispositions and checked candidate identities. The later R-only continuation
+freezes its own versioned local-input/diff contract and finite host-fixture route;
+it introduces no fetch/probe, approval, signing or release-catalogue generator.
+Next define explicit operator-evidence and approval binding, then the relevant
+C schema/fixture and compatibility contracts. OPEN-CAT-02/R-04/OD-03 also
 owns reviewed preset membership versus catalogue, configured and active sets,
 including whether automatic replacement is in scope; no default or traversal
 permission is selected. The task routes retained C/E composition, withdrawal,
