@@ -353,6 +353,18 @@ recovery delay and residual effect; do not claim a finite lease or destructor cl
 after broker death. Leave W32Time restoration to its existing protected transaction
 owner; no generic test teardown may overwrite later administrator/GPO/successor state.
 
+For independent removal/Reset after service death, apply
+[architecture §11.2](../../../../../docs/windows-time-architecture.md#112-upgrade-rollback-and-uninstall)
+and [MSIX plan §7.6](../../../../../docs/plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026).
+Prove usable code, protected data, current authority and independent invocation
+together; task/SCM/clock and cross-user observation rights are distinct. Package
+retention plus a task remains unselected. Start the inert removal pair with a
+durable obligation still pending, then observe fresh activation and actual effect
+beside clean-STOP/successor controls. Record observer retention/launch effects
+without supplying recovery; preserve required CHECK-27/native-memory instrumentation
+and its control. Keep completed restoration, a retained usable path and authorized
+no-restoration distinct in the existing task receipt.
+
 ## Small disposable-VM experiment card and receipts
 
 Prepare card before S0.2 clock-writing subcase or S0.4 writes; retain same

@@ -64,6 +64,18 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
+**Independent MSIX removal, 5 November 2026:** the
+[recovery continuation](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+and [W11 task §4.25](../tasks/windows11-integration.md#425-independent-removal-with-outstanding-recovery--5-november-2026)
+refine the held inert test pair to begin with recovery pending at removal and
+observe fresh independent activation in the already-stopped/crashed case. Native
+package retention plus an independent task
+remains unselected; retained bytes do not establish usable recovery. Supported
+activation, authority, version handoff and retirement remain unresolved. This
+source refinement preserves the separate provisioning gap, selected complete
+MSIX, Core priority, scoped Sandbox/native restrictions, fuzz/storage holds,
+UI-M0 deferrals and optional enhanced provenance.
+
 **Pre-start MSIX provisioning, 5 November 2026:** the
 [focused continuation](plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
 and [W11 task §4.24](../tasks/windows11-integration.md#424-pre-start-service-provisioning-refinement--5-november-2026)

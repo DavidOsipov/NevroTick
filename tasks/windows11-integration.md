@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
-**Date:** 4 November 2026; earlier dated receipts retain their recorded time zones.<br>
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Package implementation and native product qualification remain unexecuted.<br>
+**Date:** 5 November 2026, Asia/Tbilisi; earlier dated receipts retain their recorded time zones.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Section 4.24 refines pre-start provisioning; section 4.25 refines independent removal with recovery still pending. Package implementation and native product qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -350,6 +350,14 @@ precedes fresh-process admission and normal work; creation-time protection must
 already hold. This source refinement neither selects a candidate nor admits the
 probe. The independent-removal pair and all current execution dispositions remain.
 
+The [independent-removal continuation](#425-independent-removal-with-outstanding-recovery--5-november-2026)
+and [MSIX plan §7.6](../docs/plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+require the same durable dummy obligation to remain pending at removal in both
+running and already-stopped/crashed cases. Prove fresh independent activation,
+usable code/data/current rights and the actual effect/outcome; keep clean STOP,
+successor denial and observer/instrumentation controls separate. Native package
+retention plus an independent task remains unselected and incomplete.
+
 For bad-release recovery, apply [release-policy §6](../docs/release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
 to the affected version's actual mandatory state, partial migrations and uncertain
 effects. A compatible code fallback cannot restore an obsolete authority ledger;
@@ -512,9 +520,11 @@ and the [release policy](../docs/release-policy.md). W11-W10 retains support and
 publication/incident readiness; W11-W05 retains mandatory-state and lifecycle
 recovery. Source preparation is recorded, while owner choices and actual
 rehearsals remain open at their existing phase gates.
-The [current provisioning refinement](#424-pre-start-service-provisioning-refinement--5-november-2026)
-supplies W11-W05/W11-W10's next bounded source/evidence routing without changing
-the selected complete-package direction or those phase gates.
+The [provisioning refinement](#424-pre-start-service-provisioning-refinement--5-november-2026)
+and separate [independent-removal refinement](#425-independent-removal-with-outstanding-recovery--5-november-2026)
+supply W11-W05/W11-W10's next bounded source/evidence routing. Retention does not
+establish post-deregistration activation or recovery authority; the selected
+complete-package direction and phase gates remain.
 
 Protected Process Light is excluded as a normal utility-service option; ordinary
 publisher signing supplies no protected-service eligibility. No reserve selects
@@ -1949,3 +1959,186 @@ bounded source/design preparation under those owners; any actual probe still
 needs its exact fixture, actor/context, Windows/channel row, finite operations
 and existing environment admission. Current Core priority, all stated holds,
 the separate removal gap and optional enhanced-provenance policy remain.
+
+### 4.25 Independent removal with outstanding recovery — 5 November 2026
+
+**Request and baseline:** continue the next audit gap: independent Settings
+uninstall/Reset when the service has already stopped/crashed and machine recovery
+is still pending. The upstream basis is
+`4e23c781ca0b2e03e80289bca891dae6df09b6d6`; the clean local materialization was
+`ac2b51b1ba88cc378fe372dac212f7e0b4df66c9`, a workspace identity rather than
+upstream publication history. The three completed GitHub, web and Microsoft Learn
+research lanes were reconciled in the fourth-agent synthesis before documentary
+integration. These source reports supply no native result or claim that every
+researcher independently verified the remote tree.
+Initial launches of those four roles failed with context-window errors; their
+bounded retries completed. Failed launches supplied no usable finding or review
+result and are not counted as completed research.
+
+**Inspected scope and integration:** applicable repository instructions and
+planning/architecture/threat, security/privilege/deployment, native-proof,
+testing/lifecycle and service-adapter guidance; MSIX §§5/7.3–7.5, architecture
+§11/THR-12/13/16/§19.4, current W11-W05/W10, scoped Sandbox §4.19 and provisioning
+§4.24. This is a bounded recovery investigation, not a full implementation audit.
+[MSIX plan §7.6](../docs/plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+owns the new findings, primary evidence and future experiment. The source register
+retains S01–S102 and appends S103–S121. Current architecture, hardening, development
+routing and service-adapter guidance consume that same contract. Earlier §4
+receipts and the separate §7.5 provisioning record retain their original content
+and candidate-specific scope.
+
+**Material result:** the supported composition of trusted compatible code,
+protected mandatory data, current authority and independent invocation remains
+unproved after every product service stops. Native dynamic dependencies can retain
+opted-in main-package content; combining retention with an independent task is a
+plausible **unselected inference**, with provisioning, post-deregistration launch,
+identity, permissions, version handoff, timing and final retirement unresolved.
+The guide's unpackaged-caller pattern is an applicability gap, not a blanket
+prohibition or a supported self-pinning recipe. Its build-22621 feature floor
+does not lower the full hardening profile, including Trusted Launch's separate
+floor. Genuine strong references differ from incidental open-file survival.
+
+`EnvironmentManager` supplies contrary evidence to any universal claim that
+uninstall can never restore external state, but its resource-specific facility
+is no generic W32Time or clock-recovery hook. The pinned WSL/MSIX Core installation
+owners and TranslucentTB's user-process recovery have different authority and
+lifetime contracts. No copied helper, embedded/external MSI, task/provider,
+privileged resolver or wider engine/broker authority is adopted by analogy.
+
+| Existing owner / checks | Current disposition | Next dependent action |
+| --- | --- | --- |
+| W11-W05 lifecycle; CHECK-5/12/13/23/27 | Source contract refined; supported independent owner remains unresolved | Name the candidate's production provisioning/activation assumptions, then prepare the same held S0.6 running/already-stopped removal pair with a durable obligation pending at removal. A clean earlier stop that already restored state does not exercise this gap. |
+| W11-W05 authority/state; CHECK-1/2/15/16 | Required rights and cleanup authority remain separate proofs | Bind actual task/clock/SCM/cross-user-observation and code/anchor/journal access to fixed operations and current ownership. Added ACL grants and retained references need supported retirement; no privilege/DACL bypass or machine-wide conclusion from a current-user empty result. |
+| W11-W10 package/activation; CHECK-16/18/23/26/27 | Native retained-content/task composition unselected and unqualified | Establish the exact OS/channel, opt-in, actual retained content and fresh post-deregistration activation with package identity, module closure, Trusted Launch/CIG and initial process protection intact. Retained bytes or a manual laboratory launch is narrower evidence. |
+| W11-W05/W11-W10 servicing; CHECK-5/12/13/23/27 | Successor/version and final-removal cases remain open | Later challenge A's pending recovery while B refuses normal admission, stale A cleanup under admitted B, and dependency criteria retaining B while a task names A. Preserve mandatory schemas, consumed/uncertain authority and administrator/GPO changes; retire remaining task/anchor/rights only in qualified order. |
+| W11-W10 release; CHECK-18/23/24 | Complete hardened MSIX remains the selected preparation target | Keep missing lifecycle support explicit in candidate/certification notes. Use NV-DEC-001 before a dependent choice of surviving privileged state or topology; an unresolved mechanism supplies no automatic MSI fallback or Store/native pass. |
+
+**First future removal discriminator, held and unexecuted:** the inert fixture's
+own transaction establishes owner A, original dummy X, product-owned Y and a
+durable pending recovery obligation. Immediately before independent Settings
+removal, an observer must see Y and no matching completion receipt. Compare the
+running service with the already-stopped/crashed service under that same initial
+condition. Observe the actual actor, dummy effect and durable disposition relative
+to service/registration/code/data loss. A retained-path claim needs fresh activation
+after the relevant deregistration, without an old product process supplying
+continuity. A self-reported marker alone establishes no Y→X effect.
+
+Retain clean STOP as a separate successful-recovery control and an admitted
+successor/later-policy case as a no-restoration control, beside useful current-owner
+completion. If a task or SCM restart settles recovery before removal, keep the
+useful result but record the missing pending-at-removal condition. An abrupt exit
+or interrupted inert seam needs its own admitted bounds; required work cannot
+simply continue in the dying process after `SERVICE_STOPPED`.
+
+The observer does not restore X, write completion, invoke the actor or pin code
+solely to produce survival. Record mappings, genuine references, service/debugger
+and inherited handles, unrelated registrations/provisioning and their actual
+effects. Retain required CHECK-27/native-memory instrumentation with an appropriate
+control; not every query handle pins payload. Bind real identity/token, entry
+point/user, Windows/channel, task/anchor/generation, raw errors and independent
+elapsed order. External teardown follows the result boundary and is not product
+recovery. Finite attempts/time/work/output and cleanup ownership remain required.
+
+Keep completed restoration, a verified retained invocable path, authorized
+successor/divergence with durable no-restoration disposition, and pending recovery
+without a usable actor distinct. Read-only Blocked protects authority without
+proving restored availability. Only a credible first result justifies expanding
+to pending-obligation Reset, nonfinal/last/all-user removal, deprovisioning,
+update/repair/re-registration and reboot/interruption. The inert pair measures no
+clock-rate retention or residual phase envelope; those existing native gates
+remain separate.
+
+**Next permitted action and holds:** continue bounded source/design work on the
+supported owner/invocation question and review the integrated documents. Actual
+execution still needs the exact candidate, mechanism, actor/context, environment,
+finite operations and existing admission. Section 4.24's handle-only provisioning
+probe remains a separate prerequisite; this research admits neither experiment.
+OPEN-3/12/14 remain open and unavailable recovery blocks takeover before mutation.
+Current Core priority, section 4.19's scoped Sandbox permission, blocked S134
+artifact/general native restrictions, separate fuzz hold, storage pause and
+UI-M0 D1–D3 deferrals remain. Enhanced attestations, independent reproducible
+builds and a public proof bundle stay optional; required custody, SBOM/licence,
+package integrity, installed identity and lifecycle evidence retain their scope.
+No code/manifest/dependency, build, native/service/clock/trust, Store or release
+action is performed by this amendment.
+
+**At integration handoff, independent review and verification are pending
+coordinator.** This integration record claims no completed fresh review, final
+link/preservation/skill check or native qualification. The coordinator owns the
+exact-candidate review and subsequent documentation verification receipt.
+
+#### Independent review and documentation verification — 5 November 2026
+
+**Reviewed candidate:** upstream
+`4e23c781ca0b2e03e80289bca891dae6df09b6d6` plus the seven-file documentary
+diff with SHA-256
+`f3dd2d35d8d708bb8dde9bfab04d589dc05892169be1288c6e6babafb1fb1c19`.
+The reviewer verified the working diff and all seven file digests against the
+frozen inputs. The synthetic local baseline was not represented as upstream
+history. This coordinator receipt is a subsequent append; the six other files
+are unchanged and the reviewed task remains its byte-identical prefix.
+
+**Review accounting:** `recovery_review` was launched with
+`fork_turns: "none"`, the actual request, frozen candidate, canonical requirements,
+primary evidence and read-only scope. Its initial context-window launch failure
+produced no usable review and is **not run**. One bounded retry **completed** the
+requested review. It did not consult the private research/synthesis reports,
+parent discussion or memory. The integration worker likewise had an initial
+context-window failure followed by completed read-only preparation and the
+subsequent authorized integration. Those failures are not zero-finding results;
+the earlier research/synthesis outcomes remain recorded above.
+
+The reviewer inspected the full frozen diff and changed integrated sections,
+applicable planning/security/privilege/deployment/native-proof/testing guidance,
+OD-05, current Core and Sandbox dispositions, W11 routing, and representative
+workspace manifests/source for existing versus planned behavior. It independently
+checked the decisive S103–S121 sources and affected existing Microsoft contracts.
+Some initial web opens failed; alternate primary retrieval supplied the needed
+content. No unresolved missing technical input controls the verdict. The full
+remote-tree materialization, earlier workers' histories, historical native receipts
+and repository link/skill checks remain coordinator evidence, not work attributed
+to this reviewer.
+
+**Reviewer comprehension, preserved verbatim:**
+
+> The amendment sharpens the unresolved recovery question for an MSIX removed while every product service is stopped and a machine obligation remains outstanding. It separates the survival of trusted code, protected data, current authority and independent invocation. It also strengthens the planned inert removal comparison so that earlier successful cleanup, surviving bytes or observer assistance cannot be mistaken for recovery through removal. Native dependency retention combined with an independent task remains an option to investigate, not an adopted mechanism.
+
+> The inspected workspace contains six Rust members: a fixture UI, inert protocol and numerical owners, modeled Core behavior and a bounded loopback transport pilot. The production service pair, clock broker, lifecycle helper and complete MSIX recovery arrangement remain planned and unqualified. The current Core continuation retains priority; Sandbox readiness does not admit this experiment, the blocked artifact and fuzz/storage restrictions remain, and UI-M0 D1–D3 are deferred. This change supplies documentation and source interpretation rather than new implementation or Windows results.
+
+**Raw verdict:** “READY for documentary integration. Review completed.”
+No material documentation-stage finding was identified; no REC-R issue was
+raised. The raw report SHA-256 is
+`663d5d1d13eb8569c1a664828fa9f2b10412da2ad4dd35ef663cccae41f18a29`.
+This verdict covers the documentary candidate and bounded source/design
+continuation, not topology selection, experiment admission, native qualification
+or release.
+
+**Documentation verification:**
+
+- `git diff --check`: passed. The focused check covered **945 local links** in
+  the seven changed documents, with no new or preexisting target/heading failures.
+- The intended seven Markdown paths are the entire delta. Five architecture
+  Mermaid blocks, the canonical ID set, historical task §4 content, prior
+  provisioning §7.5 and all **102** earlier source entries are byte-preserved.
+  The full hardening lifecycle-qualification row is also byte-preserved; the
+  preliminary inert experiment does not replace its restoration requirements.
+- All **121** source IDs are unique and contiguous; every source ID used in
+  bracketed citations is defined. Markdown fences remain balanced.
+- `python3 -B .agents/skills/scripts/check_skills.py`: **PASS, 63 skills**, covering
+  metadata, UI prompts, local links and inventories in the verified local
+  materialization. No missing snapshot target or policy bypass was involved.
+- `python3 -B .agents/skills/scripts/test_check_skills.py -v`: **25 tests passed**.
+  These are skill-checker controls, not product, package, service or Windows tests.
+- The coordinator rechecks the appended receipt's links, whitespace, preservation
+  and frozen-prefix identity before publication. The unchanged six-file and skill
+  inputs retain their earlier scoped verification; no unrelated campaign is rerun.
+
+**Current exit and next action:** source synthesis, documentary integration and
+independent review are complete. The supported independent recovery owner,
+post-deregistration activation, actual rights, version/successor handoff and final
+retirement remain open with W11-W05/W11-W10. Continue the bounded source/design
+question and prepare any material owner decision before its dependent action.
+The pending-obligation inert pair still requires its exact admitted mechanism,
+fixture, actor/context, Windows/channel row, finite work and cleanup. Current
+Core priority, the separate provisioning gap, execution holds and optional
+enhanced-provenance policy remain. No native recovery or release pass is claimed.

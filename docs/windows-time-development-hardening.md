@@ -934,6 +934,17 @@ update from same-version repair/re-registration. W11-W05/W11-W10 and their
 existing CHECK owners retain these planned cases; the separate removal pair,
 current execution holds and optional enhanced-provenance policy are unchanged.
 
+For recovery, [architecture §11.2](windows-time-architecture.md#112-upgrade-rollback-and-uninstall)
+and [MSIX plan §7.6](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+govern the preliminary held inert pair: begin both removal cases with the same
+durable dummy obligation pending, then observe fresh independent activation,
+actual effect and durable outcome beside clean-STOP/successor controls. A verified
+retained invocable path is intermediate evidence, not completed restoration.
+Record observer effects without supplying recovery or artificial code retention;
+retain CHECK-27/native-memory instrumentation with its appropriate control.
+Retained-package/task composition remains unselected; this inert evidence measures
+no clock-rate recovery envelope or full lifecycle qualification.
+
 The [plan's threat matrix](plans/windows-msix-store.md#34-threats-and-independent-controls)
 owns the detailed cases. Failed required protection blocks affected authority;
 it does not authorize weaker loading, privilege expansion or automatic MSI

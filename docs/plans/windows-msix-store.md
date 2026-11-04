@@ -505,6 +505,12 @@ actions. Preserve the restricted/custom-capability exception above.
 
 A protected journal, service cleanup and helper-driven restore-before-remove are
 useful parts of the design. They do not close that independent-removal path.
+When removal begins with the service already stopped/crashed and recovery still
+pending, trusted code, protected data, current authority and a supported independent
+invocation must remain usable together. A clean earlier STOP that already settled
+the obligation is a different case. The [focused continuation](#76-independent-removal-with-outstanding-recovery--5-november-2026)
+separates genuine package retention from recovery activation and qualifies the
+same first experiment with an outstanding inert obligation.
 The lifecycle owner must supply the supported mechanism and ordering evidence
 before real takeover; a hidden off-package watchdog, mandatory first UI launch
 or separate installer is not selected as a workaround. The initial distinguishing
@@ -751,27 +757,39 @@ than a deployable or release-qualified package:
 | Existing owner / checks | Exact remaining condition | Next useful evidence |
 | --- | --- | --- |
 | W11-W05 platform/security; CHECK-1/2/15/16 | Manifest-supported account topology, actual per-operation rights and supported no-UI provisioning/reentry before functional exposure | Begin with section 7.5's handle-only rights discriminator; separately resolve invocation and the section 4 account/ordering bridge. Do not promote two LocalService services to a chosen topology without the same-account isolation proof. |
-| W11-W05 lifecycle/storage; CHECK-5/12/13/23/27 | Recovery owner remains invocable until durable restoration, including independent removal/Reset when the service is already stopped | Identify the removal bridge, then challenge running versus stopped-service removal before expanding the package matrix. A record without executing code cannot restore the system. |
+| W11-W05 lifecycle/storage; CHECK-5/12/13/23/27 | Recovery owner remains invocable until durable restoration, including independent removal/Reset when the service is already stopped | Identify the supported bridge, then compare running versus already-stopped/crashed removal with the same durable pending obligation. Observe actual independent activation and recovery before expanding the matrix; a record or retained bytes alone cannot restore the system. |
 | W11-W10 platform/build; CHECK-16/18/20/26/27 | Concrete launch path and module graph satisfy required CIG and other policies; Trusted Launch supported on the selected OS row | Inspect real emitted/loaded images and runtime admission once actual roles exist. Preserve the pre-entry loader gap and the documented signer-class distinction. |
 | Release/packaging; CHECK-18/23/24 | Real identity, production payloads, qualified local mechanics and candid capability/reviewer notes | Build the complete submission candidate through P3/P4/P6 when those prerequisites permit. David's Store attempt precedes genuine Store-byte trust tests; prior certification remains no preparation prerequisite. |
 
 **First native experiment, still held:** use one inert locally test-signed
 package with an automatic test service, no first UI launch and no clock/W32Time
-mutation. Record controls, protected lifecycle generation, cleanup start and a
-durable simulated recovery-complete marker. An independent observer records
-service/package events but never performs the claimed cleanup.
+mutation. First name the candidate's supported production provisioning and
+activation route. Its own fixture transaction records owner/generation A,
+original dummy value X, product-owned value Y and a durable pending recovery
+obligation. Immediately before removal, independently observe Y and no matching
+completion receipt; neither an observer-written marker nor already completed
+cleanup establishes that precondition.
 
-Start with two cases: ordinary Settings removal while the service runs, and
-the same removal after it has already stopped/crashed. Use an ordinary service
-STOP as the control trace. The independent expectation is that the proposed
-supported recovery owner actually runs, and incomplete recovery cannot destroy
-the last usable recovery path. Merely seeing STOP or a retained file is not a
-pass. Bind code, package, Windows build, tokens, elapsed work, interruption and
-cleanup to the receipt; one build's observation does not create a platform
-guarantee. Only a credible mechanism surviving this pair justifies expanding
-to Reset, update, reboot/interruption and multiuser cases. GDK-dependent action
-execution needs its documented Store pipeline and cannot be qualified by local
-registration. Existing Windows STOP and package/environment prerequisites remain.
+Compare ordinary Settings removal while the service runs with the same removal
+after it has already stopped/crashed, keeping that obligation outstanding. The
+supported recovery owner must actually run and settle the dummy effect, or
+demonstrate a still-usable independently invocable recovery path through the
+claimed boundary. A retained-path claim needs a fresh activation after the
+relevant deregistration, with no old product process supplying continuity.
+Retain ordinary clean STOP and current-successor/no-restoration cases as separate
+controls. If SCM recovery or a task completes cleanup before removal, record that
+useful result but classify the trial as missing the pending-at-removal condition.
+
+The independent observer records service/package events, actual Y→X and durable
+completion without performing recovery, launching its actor or pinning code just
+to manufacture survival. Record observer handles, mappings, debugger and real
+dependency references that could affect lifetime or scheduling. Retain required
+CHECK-27/native-memory instrumentation and an appropriate control for its effects.
+Section 7.6 defines the evidence distinctions and receipt. One build's observation
+does not establish a platform guarantee. Only a credible mechanism surviving
+this pair justifies Reset, update, reboot/interruption and multiuser expansion.
+GDK-dependent execution needs its documented Store pipeline and cannot be qualified
+by local registration. Existing native and package/environment gates remain.
 
 The provisioning owner first uses [section 7.5's handle-only discriminator](#75-pre-start-provisioning-authority-and-admission--5-november-2026)
 on two inert initially disabled services. An explicitly administrative laboratory
@@ -978,10 +996,13 @@ admission checks to make this scenario appear successful.
 #### Bounded next evidence under the existing owners
 
 Keep section 7.3's running-versus-stopped removal pair as the first lifecycle
-discriminator. An external observer records controls, cleanup, dummy journal
-completion, service deletion and payload/data lifetime; it must not perform the
-claimed recovery. Only a credible mechanism surviving that pair justifies the
-larger Reset/update/reboot/multiuser matrix.
+discriminator, with a durable dummy obligation still pending when removal begins.
+The already-stopped/crashed row requires actual independent activation, not a
+clean STOP that settled the obligation earlier. An external observer records the
+effect, durable completion and service/code/data lifetime without supplying
+recovery or artificial survival; section 7.6 retains instrumentation controls.
+Only a credible mechanism surviving that pair justifies the larger
+Reset/update/reboot/multiuser matrix.
 
 For provisioning, section 7.5 first separates actual object rights and supported
 invocation. Conditional later inert cases compare disabled initial services,
@@ -1145,6 +1166,195 @@ provenance remains optional; required artifact and lifecycle evidence remains.
 The [current task continuation](../../tasks/windows11-integration.md#424-pre-start-service-provisioning-refinement--5-november-2026)
 owns disposition and subsequent candidate-specific receipts.
 
+### 7.6 Independent removal with outstanding recovery — 5 November 2026
+
+**Source synthesis; independent recovery remains unresolved.** The completed
+GitHub, web and Microsoft Learn investigations refine the same W11-W05/W11-W10
+gap against upstream `4e23c781ca0b2e03e80289bca891dae6df09b6d6`. No reviewed
+composition yet establishes supported recovery when independent removal or Reset
+begins with every product service stopped and a machine obligation outstanding.
+The evidence identifies a plausible retention building block and a stronger
+discriminator, not an adopted topology or native result. Section 7.5's actual
+object-rights and no-UI provisioning/reentry prerequisites remain separate.
+
+#### Four lifetimes and the actual removal scope
+
+Under [architecture §11.2](../windows-time-architecture.md#112-upgrade-rollback-and-uninstall),
+recovery needs trusted compatible **code**, protected mandatory **data**, current
+operation **authority** and supported independent **invocation** together. A
+directory/family match, recreated journal, Store signature or event notification
+cannot substitute for the corresponding lifetime. The existing journal remains
+authoritative; this refinement introduces no parallel recovery record.
+
+Package registration and staged-content lifetime are distinct. Genuine strong
+references can prevent destaging; removal can finish before eventual collection.
+That is stronger than an incidental open file, but does not establish continued
+service registration, removed-user activation or recovery authority. The older
+Windows App SDK design describes partial retention caused by in-use DLLs; that
+warning does not establish arbitrary partial destaging under a valid native
+install-time strong reference. [S24, S103, S115]
+
+Treat one-user, last-user, all-users, deprovisioning, Reset, Repair and update as
+separate rows. Repair retains app data; Reset removes that app-data scope and
+reinstalls. Neither overview specifies every machine-service/data transition or
+a recovery barrier. A staged newer package does not prove an admitted successor.
+`GetPackagesByPackageFamily` is current-user scoped; cross-user `FindPackages` /
+`FindPackagesForUser` need administrative authority. An empty current-user result
+or access denial cannot establish final machine removal for a LocalService actor.
+[S24, S25, S112, S113]
+
+#### Conditional retained-package and independent-invoker composition
+
+**Unselected design inference:** a persistent native Windows dynamic dependency
+could retain opted-in main-package content while an independently registered
+invoker, such as Task Scheduler, supplies recovery activation. This could preserve
+sealed package bytes instead of copying out a helper. It adds persistent machine
+state and unresolved provisioning, activation, authority, timing, version and
+retirement obligations. No task, dependency, provider, copied helper or extra
+privileged role is selected by this finding.
+
+Microsoft's specific guide/schema permit the **OS** dynamic-dependency
+implementation to target a main package opting in through
+`uap15:DependencyTarget` on Windows 11 22H2/build 22621+. The Mdd/Windows App SDK
+implementation cannot target Main. Older leaf-page framework wording and a
+general API build-22000 floor do not supersede that feature condition. The guide
+frames its normal caller as an unpackaged app/installer: this is a NevroTick
+applicability gap, neither a blanket packaged-caller prohibition nor a supported
+self-pinning recipe. Build 22621 is only this feature's floor; it does not lower
+the selected hardening profile's requirements, including Trusted Launch's
+separate documented build-26100 floor. [S50, S103, S104]
+
+Persistent dependency criteria include family, minimum version and architecture;
+they do not exact-pin version A. Runtime resolution chooses a matching version
+in the caller's user context. A process-lifetime dependency ends with its process;
+file/key artifacts can outlast the creator. System-scope creation and explicit
+deletion need administrative authority. Retention, runtime graph membership and
+actual executable activation are separate observations. [S103, S105–S108]
+
+**Version counterexample:** A arms a dependency and a task names A's versioned
+executable; B later satisfies the criteria but refuses normal admission.
+Retention of B proves neither preservation of A's absolute path nor B's ability
+to reconcile A's journal. A supported compatible recovery handoff must precede
+loss of A's usable path. `ExecAction.Path` is not a documented package-family /
+version resolver; scanning for the newest directory would introduce privileged
+resolver logic rather than close this proof. [S103, S110]
+
+Post-deregistration launch is still the decisive missing link. Adding a package
+to a graph establishes neither SCM registration, packaged activation, elevation
+nor NevroTick authorization. The actual invoker must start compatible trusted
+code with the required package identity, Trusted Launch/CIG and module closure.
+A copied-out PE, inbox interpreter or unrelated Store-signed image cannot inherit
+the product's operation authority. No weakened integrity or mitigation profile
+is a recovery substitute; section 3 remains controlling.
+
+Task hardening supplies a task SID for its documented LocalService/NetworkService
+action setup and removes unlisted privileges from non-COM executable actions;
+COM hosting can carry broader shared privileges. The definition, registration
+credentials and actual token must agree. Task/folder DACLs separately govern
+modification, execution and deletion, and these settings do not retroactively
+prove initial process/thread/token protection. [S85, S109, S111]
+
+Keep clock privilege, W32Time service-object rights, cross-user package observation
+and task/code/anchor/journal access as separate authority proofs. Privilege
+reduction grants no absent privilege; clock-setting authority grants no SCM
+configuration right. Fixed operation-specific targets must remain product-owned,
+without an arbitrary path/script/service/descriptor command interface. A proposed
+W32Time ACL grant is another persistent change: `SERVICE_CHANGE_CONFIG` does not
+provide `WRITE_DAC` to retire it. Dependency use likewise proves no authority to
+delete a system-scoped reference. Artifact expiry and explicit deletion need their
+own rights and crash-safe ordering proof. [S55, S68, S69, S71, S105–S109, S112,
+S113, S116]
+
+After durable completion or qualified transfer, task, anchor/reference and added
+rights need interruption-safe retirement; indefinite privileged residue is not
+complete removal. A surviving privileged mechanism needs the existing NV-DEC-001
+decision before dependent implementation, preserving the complete-product boundary.
+
+Task triggers provide invocation opportunities, not a removal acknowledgement or
+hard recovery deadline. `StartWhenAvailable` concerns missed time triggers and
+documents a default ten-minute queue delay. Boot-only recovery waits for a future
+reboot; polling consumes resources without creating a hard elapsed-time bound.
+Event stability, task conditions, retry exhaustion and no-login activation remain
+specific evidence gaps. A calendar boundary is not a monotonic lease. [S86, S114]
+
+#### Contrary evidence and limits of transfer
+
+Microsoft documents uninstall restoration for environment variables changed
+through `EnvironmentManager`; the pinned tracker records prior/current values,
+and its design describes best-effort cleanup. This defeats a universal assertion
+that MSIX can never restore external state. It is a resource-specific facility,
+not an extension for W32Time, rate or arbitrary journal recovery. Its tracker
+registry is not an undocumented command interface. [S117, S118]
+
+| Inspected example | Useful fact and boundary |
+| --- | --- |
+| WSL uninstall | The pinned path invokes `MsiConfigureProductEx` with `INSTALLSTATE_ABSENT`; WiX owns service/MSIX removal actions. It does not establish a complete-MSIX-only native Settings hook. No embedded/external MSI is admitted. [S119] |
+| MSIX Core | Its manager has a separate MSI owner. The inspected synchronous modern-Windows removal path redirects to native removal, while its PSF removal handler does nothing. Do not generalize that dispatch observation to every overload or to a product cleanup callback. [S120] |
+| TranslucentTB | An Explorer component restores taskbar appearance after client death and separately terminates Explorer on matching package removal/update; its DLL path uses temporary copies. This is an independent-process, in-memory resource-recovery example, not a durable privileged clock/SCM owner or a selected sealed-code topology. [S121] |
+
+The precise clock-adjustment API supplies no documented process-exit lease or
+automatic package-removal rollback. That absence proves neither indefinite
+retention nor identical reboot behavior on every build. The inert experiment
+below measures no retained rate or residual phase envelope; architecture §10.4
+keeps that native obligation. Restoring a universal Automatic/Running W32Time
+state would still violate prior-state and successor/GPO requirements. [S116]
+
+#### Held discriminator with an obligation pending at removal
+
+Reuse section 7.3's same two removal cases and the existing S0.6/disposable-
+environment card. **Held and unexecuted:** source preparation and scoped Sandbox
+readiness do not admit this experiment. First identify a plausible supported
+mechanism and its actual provisioning/activation assumptions. Bound attempts,
+duration, work/output, interruption and cleanup before any execution. Use inert
+dummy state only: no clock/W32Time mutation, production network, first UI or
+blocked artifact.
+
+Section 7.3 supplies the pending-at-removal setup and clean-STOP/successor controls.
+An earlier cleanup means that precondition was not met; a marker alone proves no
+dummy effect. A retained-path claim needs fresh actual activation after the
+relevant deregistration, without an old product process or manual laboratory
+launcher supplying continuity. An admitted interrupted inert seam must not rely
+on required work continuing in the dying process after `SERVICE_STOPPED`. [S77]
+
+Record observer mappings, genuine references, service/debugger/inherited handles
+and unrelated registration/provisioning that could affect lifetime or scheduling;
+not every query handle pins payload. The observer supplies neither restoration,
+completion nor activation. Preserve required CHECK-27/native-memory instrumentation
+and its appropriate control. Bind actual package/code/dependency, Windows/channel,
+entry point/user, process/token/package identity, task/anchor/generation, raw errors
+and independent elapsed order. Teardown follows the result boundary and remains
+external cleanup evidence.
+
+Distinguish completed restoration, a verified retained invocable path, authorized
+successor/divergence with durable no-restoration disposition, and pending recovery
+without a usable actor. These are evidence distinctions, not new runtime states.
+A retained path is narrower than completed restoration; read-only Blocked proves
+no restored availability. Timeout, queued restart, an old registration, event or
+retained bytes alone is no pass.
+
+Only a credible result justifies later pending-obligation Reset, nonfinal/last-user/
+all-users/deprovisioning, update, repair/re-registration and reboot/interruption
+rows. Prioritize stale A cleanup under admitted B, B refusing normal admission
+while A still needs recovery, and criteria retaining B while A's task names A.
+Wrong identity/generation, incompatible journal and successor changes must deny
+writes beside useful valid controls; no reset of consumed authority or weakened
+admission can manufacture success.
+
+**Remaining support question:** which owner can be invoked with every product
+service stopped, and either complete pending machine recovery before destructive
+removal/Reset or retain trusted compatible code, protected data and current
+authority until durable settlement? The answer must cover OS/channel/capabilities,
+account/rights, activation, user scope, version handoff, finite failure and final
+retirement. It remains with W11-W05 lifecycle CHECK-5/12/13/23/27 and authority
+CHECK-1/2/15/16, plus W11-W10's existing package/activation/release checks.
+
+The [current task §4.25](../../tasks/windows11-integration.md#425-independent-removal-with-outstanding-recovery--5-november-2026)
+owns disposition and later receipts. OPEN-3/12/14 remain open; dependent takeover
+stays blocked before mutation. Complete hardened MSIX, Core priority, scoped
+Sandbox disposition, S134/general native restrictions, fuzz/storage holds,
+UI-M0 D1–D3 deferrals and optional enhanced-provenance policy remain. No new
+topology, privilege grant, external/embedded MSI or mandatory UI setup follows.
+
 ## 8. Primary source register
 
 Sources are dated retrieval evidence, not frozen platform guarantees. The
@@ -1254,3 +1464,22 @@ employee reply. Their limited evidentiary scope is stated in section 7.5.
 - **S100:** [UWP UpdateTask invocation](https://learn.microsoft.com/windows/uwp/launch-resume/run-a-background-task-during-updatetask).
 - **S101:** [Preinstall task context, execution and retry limits](https://learn.microsoft.com/windows-hardware/customize/preinstall/preinstall-tasks).
 - **S102:** [Package Support Framework script invocation](https://learn.microsoft.com/windows/msix/psf/run-scripts-with-package-support-framework).
+- **S103:** [Native versus Mdd dynamic dependencies, package criteria and caller pattern](https://learn.microsoft.com/windows/apps/desktop/modernize/framework-packages/use-the-dynamic-dependency-api). The guide's unpackaged caller framing leaves NevroTick applicability unresolved.
+- **S104:** [Main-package DependencyTarget opt-in and feature floor](https://learn.microsoft.com/uwp/schemas/appxpackage/uapmanifestschema/element-uap15-dependencytarget).
+- **S105:** [TryCreatePackageDependency](https://learn.microsoft.com/windows/win32/api/appmodel/nf-appmodel-trycreatepackagedependency) and [AddPackageDependency](https://learn.microsoft.com/windows/win32/api/appmodel/nf-appmodel-addpackagedependency): criteria, scope and runtime lifetime.
+- **S106:** [Package dependency process/file/key lifetime artifacts](https://learn.microsoft.com/windows/win32/api/appmodel/ne-appmodel-packagedependencylifetimekind).
+- **S107:** [System-scope dependency creation](https://learn.microsoft.com/windows/win32/api/appmodel/ne-appmodel-createpackagedependencyoptions).
+- **S108:** [Package dependency deletion and authority](https://learn.microsoft.com/windows/win32/api/appmodel/nf-appmodel-deletepackagedependency).
+- **S109:** [Task Scheduler security hardening](https://learn.microsoft.com/windows/win32/taskschd/task-security-hardening).
+- **S110:** [Task executable Path](https://learn.microsoft.com/windows/win32/taskschd/execaction-path).
+- **S111:** [Task logon types and service-account context](https://learn.microsoft.com/windows/win32/api/taskschd/ne-taskschd-task_logon_type).
+- **S112:** [Current-user package-family enumeration](https://learn.microsoft.com/windows/win32/api/appmodel/nf-appmodel-getpackagesbypackagefamily).
+- **S113:** [FindPackages](https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager.findpackages?view=winrt-26100) and [FindPackagesForUser](https://learn.microsoft.com/uwp/api/windows.management.deployment.packagemanager.findpackagesforuser?view=winrt-26100): cross-user observation authority.
+- **S114:** [StartWhenAvailable time-trigger scope and default delay](https://learn.microsoft.com/windows/win32/api/taskschd/nf-taskschd-itasksettings-get_startwhenavailable).
+- **S115:** [Pinned Windows App SDK dynamic-dependency design](https://github.com/microsoft/WindowsAppSDK/blob/3fd98f6ec5f3348d75d62407e828e9cf2fd211b8/specs/dynamicdependencies/DynamicDependencies.md#L666-L784). Incidental in-use retention is distinct from a genuine native strong reference.
+- **S116:** [Precise clock-adjustment setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise) and [getter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise): privilege/mode contract, with no documented process-exit lease.
+- **S117:** [EnvironmentManager resource-specific uninstall restoration](https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.windows.system.environmentmanager?view=windows-app-sdk-2.0).
+- **S118:** [Pinned environment-variable tracking](https://github.com/microsoft/WindowsAppSDK/blob/3fd98f6ec5f3348d75d62407e828e9cf2fd211b8/dev/EnvironmentManager/ChangeTracker/EnvironmentVariableChangeTracker.cpp#L8-L77) and [best-effort design](https://github.com/microsoft/WindowsAppSDK/blob/3fd98f6ec5f3348d75d62407e828e9cf2fd211b8/specs/AppLifecycle/EnvironmentVariables/AppLifecycle%20-%20Environment%20Variables%20(EV).md#L13-L24).
+- **S119:** [Pinned WSL MSI uninstall call](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/src/windows/common/install.cpp#L408-L423) and [WiX service/MSIX removal owner](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/msipackage/package.wix.in#L678-L839).
+- **S120:** MSIX Core [separate MSI owner](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/MsixCore/MsixMgrWix/Product.wxs#L10-L70), [synchronous removal dispatch](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/MsixCore/msixmgrLib/PackageManager.cpp#L118-L153) and [empty PSF removal handler](https://github.com/microsoft/msix-packaging/blob/25a65f5c1690930813bcc10cdf1d59fa865f2bb1/MsixCore/msixmgr/PSFScriptExecuter.cpp#L13-L75), at the same pinned revision.
+- **S121:** TranslucentTB [independent taskbar restoration/package callbacks](https://github.com/TranslucentTB/TranslucentTB/blob/d4636e439865df0a1a1419db408e055740ce5c74/ExplorerTAP/taskbarappearanceservice.cpp#L153-L356) and [temporary DLL copy](https://github.com/TranslucentTB/TranslucentTB/blob/d4636e439865df0a1a1419db408e055740ce5c74/TranslucentTB/loadabledll.cpp#L11-L86). Pinned user-process analogy, not privileged recovery qualification.

@@ -1242,6 +1242,19 @@ a clock effect.
 
 The complete package owns UI, helper and both services as one installation. The selected MSIX design must identify a supported lifecycle/recovery mechanism under section 19.4; package transactions and service stops alone do not settle application-owned clock recovery. Elevated lifecycle actions receive validated operation-specific state, not arbitrary user-controlled script paths. Unavailable required rollback/recovery blocks takeover before mutation. Repair invoked by an ordinary user is still a privileged input surface. Removal of an old package during update is not ordinary uninstall and must respect successor ownership. Test failure after every reached stage and after reboot interruption. Retain recovery code and the protected journal until restoration has a durable outcome; secrets are removed according to uninstall policy. The retained MSI design in section 19.3 additionally requires correctly conditioned custom actions with paired rollback. See section 19 and CHECK-13/23. [S27, S57, S59, S60]
 
+Independent removal/Reset with an already-stopped/crashed service and an
+outstanding obligation requires a supported independently invocable owner.
+Trusted compatible code, protected mandatory data, current operation authority
+and invocation must remain usable together until durable settlement; retained
+bytes or a journal alone are insufficient. For qualification, establish a pending
+inert obligation at removal and observe fresh activation, actual effect and
+durable outcome. A clean
+earlier STOP, manual laboratory launch or package-absence observation cannot
+substitute. The [focused recovery refinement](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+keeps retained-package/task composition unselected and separates completed
+restoration, a verified retained path and an authorized successor/divergence
+disposition. It introduces no new recovery authority or journal.
+
 Automatic fallback to W32Time on NTS outage is excluded. That would change authentication policy and could create simultaneous control. Use holdover and clear failure reporting. A future explicit “release ownership to Windows” action is an elevated transaction with the same cancellation/restoration guarantees.
 
 Quiescence includes previously queued SCM recovery. A pending restart cannot be
@@ -1965,6 +1978,13 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 **Control and failure:** Keep transient phase budget distinct from stable compensation; bound rate and correction duration; configure/test SCM recovery; durable ownership and consumed step state; successor-aware startup reconciliation. Cleanup after engine death is possible while broker remains alive. Broker's own death cannot be described as a kernel-enforced lease expiry.
 
+If independent removal begins after broker death with recovery still pending,
+section 11.2 also requires an authorized owner that can actually be invoked
+through that boundary. A queued restart, retained package or clean earlier stop
+does not establish this. The inert removal discriminator observes invocation
+and dummy-state recovery; it measures none of this threat's retained-rate or
+residual-phase envelope.
+
 **Residual and owner:** Recovery may be delayed or fail; additional error depends on retained rate and elapsed recovery. Numeric rate equality alone does not prove ownership. Platform/product owner must accept measured worst-case envelopes or change architecture. **Verification:** CHECK-12, P4: kill broker/engine during positive/negative transient; crash loop; no-login boot; successor writing during outage. Recovery acts only with current ownership; ambiguous/observe-only startup issues no reset.
 
 #### THR-13 — Competing clock controller creates oscillation or unsafe reset
@@ -1974,6 +1994,12 @@ The following are design threat scenarios, not confirmed application vulnerabili
 **Path:** Competing controller changes startup/rate/UTC → product ignores ownership loss or blindly resets → controllers fight or valid successor adjustment is overwritten.
 
 **Control and failure:** Protected handover journal, prior-state preservation, managed-machine observation default, one current product generation, ownership check before every write. Cancel internal work on ambiguity; no unconditional global reset after authority is lost. Detect/report conflicts rather than repeatedly disable GPO's controller. No automatic W32Time fallback during NTS outage.
+
+An independently invoked recovery actor follows the same current-owner checks.
+Stale A cleanup must not restore W32Time beneath admitted B; a staged newer
+package or an empty current-user package query establishes neither successor
+admission nor final machine removal. Preserve a durable authorized no-restoration
+disposition beside the valid current-owner completing control.
 
 **Residual and owner:** A product mutex cannot constrain arbitrary admin/kernel/host writes, and Windows adjustment has no owner-aware compare-and-swap. Platform/installer owner documents manual recovery. **Verification:** CHECK-5/12/13, P0/P4/P6: active/disabled/managed W32Time, takeover failure, successor race and valid uninterrupted ownership.
 
@@ -2001,9 +2027,17 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 **Links:** REQ-3/9/11; BND-5/7/8. **STRIDE:** tampering/availability through transaction failure. **Reachability/impact:** normal upgrade failure or power loss can leave W32Time disabled while new services cannot run, or leave conflicting versions active.
 
-**Path:** Install/upgrade/uninstall stage modifies services/privileges/W32Time → crash/reboot/denied subsequent action → inconsistent global state.
+**Path:** Install/upgrade/uninstall stage modifies services/privileges/W32Time → crash/reboot/denied subsequent action, or independent removal/Reset with the service already stopped and recovery pending → inconsistent global state without a usable recovery owner.
 
 **Control and failure:** One complete package/product/version, protected durable staged journal, preflight in observation, quiesce/cancel old owner, validated handover and narrowly scoped recovery. Old-package removal during update does not enable W32Time between versions. Removal restores only product-owned prior state and respects subsequent admin/GPO changes. Repair preserves policy and consumed step budgets; Reset cannot erase the last mandatory recovery mechanism. Reboot-interrupted operations reconcile before new actuation. Missing required rollback/recovery blocks dependent mutations before takeover; a journal cannot retroactively make an unsupported installation safe. The retained MSI route additionally rejects disabled required rollback. [S57]
+
+Under section 11.2, qualify running and already-stopped/crashed removal with the
+same durable obligation pending at removal, independent activation and separate
+clean-STOP/successor controls. Keep one-user, final/all-user removal, Reset and
+update distinct. Dependency criteria retaining B cannot substitute for a usable
+recovery path for A; B's correct normal-admission refusal must not strand A's
+obligation. Observer-assisted restoration or artificial code retention supplies
+no product recovery result.
 
 **Residual and owner:** Severe OS/disk failure may require admin repair; selection of MSIX establishes no recovery mechanism or native pass. Installer/platform owner must demonstrate these guarantees for the supported package lifecycle. **Verification:** CHECK-13/23, P0/P6: fault at every mutation boundary plus upgrade/downgrade/repair/remove through supported entrypoints, Reset and last-user transitions; one coherent working version or visible recoverable failure; clean success installs all components and fully removes them together.
 
@@ -2941,6 +2975,14 @@ the Store listing does not roll back machines already updated to a higher versio
 plan a higher-version corrective release without replenishing clock authority.
 Optional `UpdateWhileInUse=defer` on supported Windows builds proves no recovery
 transaction and must not indefinitely prevent security updates.
+
+Apply [MSIX plan §7.6](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+to independent removal with recovery pending after service stop/death. Native
+main-package retention plus an independent invoker remains an unselected
+composition; retained content is not supported activation, current authority or
+completed restoration. Its feature floor does not lower the full hardening
+profile's OS floor, and any surviving privileged state needs a qualified final
+retirement. No copied helper or external installation owner is adopted.
 
 Qualify package-aware installed-code trust under CHECK-16/18/23: the expected
 package/publisher identity, approved release and actual loaded files must be

@@ -798,6 +798,7 @@ At each bounded checkpoint:
 | Catalogue/source/release, [existing catalogue task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) | The five-role documentation integration is complete; the later owner-authorized continuation adds a bounded offline Python input stage for R candidates and revalidated semantic diff under `tools/`. Its exact host-fixture/review evidence is separate from product/native qualification. Next prepare explicit operator evidence/approval binding and the relevant C schema, preset/policy and compatibility contracts. OPEN-CAT-02/R-04/OD-03 retains membership and automatic-replacement scope. This adds no prerequisite to Core, format benchmark or public-server probe. Q0/Q-J keeps its separate preparation and open audit findings. |
 | Package/lifecycle, [Windows task §4.17](../../tasks/windows11-integration.md#417-primary-coordinator-adoption-of-the-selected-msix-profile--3-november-2026) | Earlier selected complete-MSIX/source-profile adoption is recorded. Supported provisioning and independent-removal recovery remain unresolved under W11-W05/W11-W10. |
 | Package/lifecycle, [later handoff §4.18](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026) | The primary coordinator now records reconciliation of the later provisioning/removal and Sandbox findings at the completed S155 checkpoint. W11-W05/W11-W10 retain the next source/design action; no activation/recovery alternative or execution permission is selected. |
+| Package/lifecycle, [current refinements §§4.24–4.25](../../tasks/windows11-integration.md#425-independent-removal-with-outstanding-recovery--5-november-2026) | Pre-start authority/invocation and independent removal remain separate W11-W05/W11-W10 gaps. Prepare the supported recovery-owner question and the same held removal pair with recovery pending at removal and fresh independent activation; retained-package/task composition remains unselected. This source work adds no Core prerequisite or native grant. |
 
 Keep these assignments in their existing task chain. The current Core work
 consumes no Windows service/storage/package adapter, so those source-only cards
@@ -1298,8 +1299,10 @@ task alternatives remain unselected. Source preparation does not adopt a topolog
 
 Once Windows execution is explicitly permitted and the experiment's own gates
 are ready, the first lifecycle discriminator is the bounded inert-journal removal
-pair with the service running versus already stopped/crashed. Only a credible
-recovery result justifies the larger Reset/update/reboot/multiuser matrix. The
+pair with the service running versus already stopped/crashed and the same durable
+obligation pending at removal. Require actual independent activation and keep
+clean STOP/successor controls distinct. Only a credible recovery result justifies
+the larger Reset/update/reboot/multiuser matrix. The
 separate provisioning discriminator uses initially disabled services, refused
 premature starts, interrupted configuration, fresh effective-token evidence and
 one update/repair; an external administrative harness is not the production
@@ -1316,6 +1319,15 @@ process verification before normal work; creation-time protection must already
 hold. The source synthesis selects none of the three candidates, closes no
 OPEN-3/12/14 gate and grants no native execution. The separate removal pair,
 current Core order, scoped Sandbox disposition and all other holds remain.
+
+**Independent-removal refinement, 5 November 2026:**
+[MSIX plan §7.6](windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
+and [task §4.25](../../tasks/windows11-integration.md#425-independent-removal-with-outstanding-recovery--5-november-2026)
+refine that same held pair and the four lifetimes required by architecture §11.2.
+Native package retention plus an independent task is an unselected composition,
+with activation, authority, successor/version and retirement gaps. Source findings
+close no OPEN-3/12/14 gate, lower no hardening floor and admit no experiment;
+§7.5 provisioning, Core order and current dispositions remain separate.
 
 **Status:** research recorded; the
 [original task receipt](../../tasks/windows11-integration.md#41-integration-review-and-documentation-validation-receipt)
