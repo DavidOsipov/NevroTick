@@ -675,6 +675,7 @@ At each bounded checkpoint:
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |
+| Catalogue/source/release, [existing catalogue task](../../tasks/server-catalogue-and-statistics.md#7-binary-catalogue-and-future-collector-refinement--4-november-2026) | The five-role documentation integration is complete. Next prepare the relevant schema/fixture, preset/policy and compatibility contracts for binary C and the future Python collector under existing `tools/`. OPEN-CAT-02/R-04/OD-03 retains catalogue-to-preset/configured/active membership and automatic-replacement scope. This adds no prerequisite to Core or permission for a benchmark, collector implementation or public-server probe. Q0/Q-J keeps its separate preparation and open audit findings. |
 | Package/lifecycle, [Windows task §4.17](../../tasks/windows11-integration.md#417-primary-coordinator-adoption-of-the-selected-msix-profile--3-november-2026) | Earlier selected complete-MSIX/source-profile adoption is recorded. Supported provisioning and independent-removal recovery remain unresolved under W11-W05/W11-W10. |
 | Package/lifecycle, [later handoff §4.18](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026) | The primary coordinator now records reconciliation of the later provisioning/removal and Sandbox findings at the completed S155 checkpoint. W11-W05/W11-W10 retain the next source/design action; no activation/recovery alternative or execution permission is selected. |
 
@@ -1254,6 +1255,35 @@ Roughtime-only qualification must disclose an absent reserve. At the relevant ha
 selected TA-W assignments and their ready/held/deferred status in that task.
 This routing does not replace section 7's current Core continuation or lift its
 execution gates, including the separately admitted Sandbox scope.
+
+### 8.7 Catalogue preparation and release data
+
+The [binary catalogue refinement](server-catalogue-binary-format.md),
+[DATA inventory and comparison card](server-catalogue-and-statistics-draft.md),
+[storage tables](server-catalogue-storage-tables.md) and
+[existing task](../../tasks/server-catalogue-and-statistics.md) share one
+catalogue/statistics workstream. The owner prefers binary release data for
+hundreds of NTP/pool, NTS and Roughtime records, with Roughtime public keys in the
+first schema and a future Python collection/build tool under existing `tools/`.
+Constrained CBOR and generated immutable tables remain candidates; exact format,
+schema/caps, signature strategy, roster and runtime graph are unresolved.
+
+Ordinary catalogue preparation is independent of the later RGT-0 implementation;
+placing its key fields now does not change RGT-0 → CHR-0. Keep source admission
+and OD-03, release trust and W11/ST-W lifecycle, and TA-W runtime key/bootstrap
+qualification with their existing owners. Catalogue cardinality grants no extra
+active sources, sockets or histories. The requested five-role documentation
+review and integration are complete; the existing task preserves raw reports,
+dispositions and checked candidate identities. The next source-only step is the
+relevant schema/fixture and compatibility freeze. OPEN-CAT-02/R-04/OD-03 also
+owns reviewed preset membership versus catalogue, configured and active sets,
+including whether automatic replacement is in scope; no default or traversal
+permission is selected. The task routes retained C/E composition, withdrawal,
+cold-start, usable-group, resource, history and recovery scenarios to their
+existing owners before dependent work. Any later measurement or implementation
+needs its concrete contract, candidate and existing admission.
+Q0/Q-J remains the separate no-raw preparation card, with its recorded findings
+still open. Section 7's Core priority and scoped holds remain controlling.
 
 ## 9. Verification commands, phase records and stop rules
 

@@ -285,6 +285,16 @@ rotation/removal, stale lists, signed-list rollback and offline recovery. A vali
 signature proves origin, not currentness. Do not learn replacement root keys from
 unauthenticated DNS responses or treat MSIX signing as source-time correctness.
 
+**Catalogue refinement, 4 November 2026:** the
+[binary catalogue design](server-catalogue-binary-format.md) and
+[existing catalogue task](../../tasks/server-catalogue-and-statistics.md) now
+require Roughtime public-key algorithm/bytes, exact protocol profile,
+source/endpoint scope and provenance in the first catalogue schema. Schema
+preparation and a future publisher-side collector do not activate RGT-0 or admit
+the documented keys as a shipped roster. Ordinary NTP/NTS catalogue work may
+proceed independently; this plan retains runtime verification, rotation,
+conflict, bootstrap and source-minimum authority.
+
 Resolve the endpoint/DNS bootstrap cycle explicitly. Candidate addresses or a
 separately permitted resolution path still need destination admission before
 network access. Future DNSSEC/DoQ consumers may use qualified time through their
@@ -334,6 +344,12 @@ No new cryptographic primitive, standalone clock-setting CLI or production
 server dependency is selected here.
 
 ### 8.1 Public server inventory — 3 November 2026
+
+This census retains its dated endpoint/operator scope. The later
+[4 November public-key inventory](server-catalogue-binary-format.md#52-initial-public-key-evidence-inventory--4-november-2026)
+records key bytes for the pinned ecosystem's 13 Ed25519 rows. It is a narrower
+documentary check, not a replacement census, an approved roster or new live
+availability evidence.
 
 The broader source census found **14 documented candidate hostnames, grouped
 into about 10 nominal operators**. This is a lower-bound inventory of published

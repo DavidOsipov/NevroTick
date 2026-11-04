@@ -6,6 +6,12 @@
 **Mode/status:** documentation and future work definition; protocol/runtime implementation and qualification have not run.<br>
 **Coordinator:** future numerical/protocol owner, with independent security and Windows reviewers; David owns material policy choices.
 
+**Catalogue linkage, 4 November 2026:** the
+[binary catalogue refinement](../docs/plans/server-catalogue-binary-format.md)
+and [catalogue task](server-catalogue-and-statistics.md) carry the first-schema
+public-key requirement and future publisher tooling. The 3 November protocol
+research and review receipts below retain their original candidate scope.
+
 ## 1. Request, scope and retained authority
 
 Record the Roughtime research and design how it cooperates with Khronos/Ananke.
@@ -30,6 +36,14 @@ correction from Roughtime/Khronos. Windows P0–P7 → KHR-C01 → Android and t
 RGT-0 → CHR-0 sequence remain. Roughtime-only qualification does not depend on
 adopting Khronos. Claiming the combined automatic-reserve profile does require
 the relevant reserve implementation and integration evidence.
+
+Roughtime key/profile support is required in the first catalogue schema even
+while this task's runtime work remains future. A usable Roughtime record needs
+its admitted root-key algorithm/bytes, exact profile, endpoint scope and
+provenance; an optional-key diagnostic path cannot create authenticated evidence.
+The ordinary NTP/NTS catalogue and publisher collector can be prepared before
+RGT-0. Their binary preference changes neither the strict JSON policy/IPC/journal
+contracts nor this task's roadmap order, roster qualification or acceptance exits.
 
 Read AGENTS.md, the documentation guide, the architecture, NV-TA-001 and the
 current [development next-task record](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
@@ -76,7 +90,7 @@ run. Later unresolved choices do not block this documentation handoff.
 | **TA-W03 — Roughtime/dependency owner** | Select exact wire/client/crypto graph under CHECK-26; implement bounded inert decoding and mandatory-root-key evidence construction after TA-W02 | Valid response accepted; missing/wrong root, version/unit errors, malformed/replayed input and invalid intervals cannot create authenticated evidence. **Future** |
 | **TA-W04 — core/engine owner** | Model branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth | TA-C01–TA-C07/10/13/16/18/21 controls reach the policy consumer; no duplicate credit, stale admission or extra clock controller. **Future** |
 | **TA-W05 — KHR numerical/security owner** | After the Windows-plan handoff, evaluate cold-start reserve candidates, Ananke-inspired admission, initial roster/refresh and bounded sampling against the unchanged baseline; do not import periodic-watchdog security bounds | KHR-0's recovery/error/false-acceptance/latency/cost evidence plus `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs qualified bounded implementation. **Future KHR phase** |
-| **TA-W06 — RGT transport/trust owner** | Reconcile the pinned inventory by wire version/operator/key/upstream, admit catalogues and update/rollback rules, qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first | Exact compatibility and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries are not live passes. **Future RGT phase** |
+| **TA-W06 — RGT transport/trust owner** | Reconcile the dated census and linked first-schema key inventory by wire version/operator/key/upstream; consume the catalogue owner's required key/profile bindings, admit update/rollback rules, and qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first | Exact compatibility and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries and decoded public-key lengths are not live passes. **Future RGT phase** |
 | **TA-W07 — Windows/NTS owner** | With admitted artifacts and owned disposable environment, exercise both date-basis routes under OPEN-8/R-02/R-05, exact error categories and fresh isolated verification across hypotheses | Valid supported-date recovery and explicit failure for bad identity/revocation/era; TA-C11/19/20/22, no unauthorized effect, observed cleanup/restoration. **Conditional; no execution authorized by this task alone** |
 | **TA-W08 — engine/performance/security owner** | Exercise the selected profile's forced-reserve, resource, cancellation, conflict and broker boundaries; include healthy-NTS/untriggered and disabled/deferred reserve variants | TA-C08/11/12/14–TA-C22 plus relevant integrated cases; aggregate limits and actual effects observed. **Future; environment follows the selected claims** |
 | **TA-W09 — coordinator/independent reviewer** | Reconcile candidate-specific evidence and remaining policy/operational gaps | Separate KHR-C01 and RGT-C01 dispositions; preserve CHR-0 ordering and user-visible claims. **Future; no combined automatic pass** |
