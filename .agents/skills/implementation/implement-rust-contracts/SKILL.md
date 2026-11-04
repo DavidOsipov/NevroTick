@@ -24,6 +24,11 @@ When a synchronous internal API must bind objects to one evaluation, consider
 Use them only when a narrow trial improves the contract; ordinary borrow lifetimes
 prove no evaluation identity, and brands replace no current-authority guard.
 
+When choosing an invariant-bearing type, use
+[Parse, don't validate](references/contract-enforcement.md#parse-dont-validate-preserve-established-invariants)
+to work backward from the consumer's required facts. Preserve the checked result
+without treating structural validity as authentication or current permission.
+
 For uncertain constructor, transformation or guard bypasses across functions,
 use [CodeQL data-flow analysis](../../testing/references/codeql-data-flow.md) to
 investigate raw-input sources and protected sinks. Model checked-result use

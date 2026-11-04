@@ -5,6 +5,25 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Preserving established invariants — 4 November 2026
+
+The [Parse, don't validate explanation](implement-rust-contracts/references/contract-enforcement.md#parse-dont-validate-preserve-established-invariants)
+clarifies the existing private-construction and checked-consumer contract. It adds
+a method for choosing the representation from the consumer's required facts and
+uses existing `EraWindow`, `RawDatagram` and `RequestTiming` APIs as local examples.
+It adds no skill, dependency, product behavior or runtime qualification claim.
+
+| Source inspected | Finding used and limit |
+| --- | --- |
+| Alexis King, [Parse, don't validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) (5 November 2019) | Preserve established information in a more precise value; refine the relevant branch and choose useful representations. The principle is not a ban on internal predicates, multiple parsing passes or necessary runtime checks. |
+| [Rust API Guidelines: C-VALIDATE](https://rust-lang.github.io/api-guidelines/dependability.html#c-validate) | Prefer argument types that exclude invalid inputs; retain dynamic enforcement for properties that types cannot practically express. The page's optional debug-only/unchecked alternatives do not relax NevroTick's production rejection requirements. |
+| [Rust HashMap: FromIterator](https://doc.rust-lang.org/std/collections/struct.HashMap.html#impl-FromIterator%3C(K,+V)%3E-for-HashMap%3CK,+V,+S%3E) | Equal keys cause values to be dropped during collection; map construction alone cannot prove duplicate-free input. Preserve the existing raw-input rejection contract. |
+
+The explanation and project examples are original local writing; no upstream
+implementation or article text is imported. Existing Serde and type-safety
+sources below remain applicable. Local source inspection illustrates scoped
+guarantees, not passing tests or a measured resource improvement.
+
 ## Numerical and state-update procedures — 30 October 2026
 
 The [numerical procedure](implement-rust/references/numerical-kernels.md) extends

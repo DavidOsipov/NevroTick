@@ -60,6 +60,73 @@ cannot enforce a runtime rejection contract. Handle invalid input and arithmetic
 failure explicitly; do not turn expected rejection into a panic, fallback default,
 silent clamp or ignored `Result`. Test assertions still supply observations.
 
+## Parse, don't validate: preserve established invariants
+
+When admission establishes a stable property required by later consumers, return
+the smallest private domain value or immutable parsed view that carries it, and
+make those consumers require that representation. A successful check followed by
+passing the original general-purpose value loses the type-level evidence. Keep
+the existing shared garde/domain rules inside checked construction; this principle
+selects no new validation framework or blanket typestate conversion.
+
+Design from the consumer's actual requirements:
+
+1. Name the exact fact the operation needs, its enforcing owner and its lifetime.
+   A numeric range, complete frame and current permission are different facts.
+2. Choose a representation that excludes meaningful mistakes: private newtypes
+   for units or identities, variants with their required data for exclusive states,
+   or a constrained collection when a consumer really requires its invariant.
+   Do not wrap every primitive or invent a nonempty requirement to fit an example.
+3. Establish that fact before any consumer or protected effect that relies on it.
+   Refine only the relevant branch when different outcomes require different facts;
+   an inert wire type may retain fields whose semantics are not yet admitted.
+4. Review transformations that weaken the guarantee. Filtering, removing, slicing,
+   merging or extracting a raw inner value can lose nonemptiness, bounds, units or
+   identity. Preserve the property by construction, expose an honestly weaker
+   result, or use checked construction before another consumer relies on it.
+
+The existing [era APIs](../../../../../crates/time-domain/src/era.rs) illustrate
+checked construction followed by a consumer that requires the resulting type:
+
+```rust
+let window = EraWindow::new(earliest, latest)?;
+let coordinate = unfold_ntp(seconds, fraction, &window)?;
+```
+
+`EraWindow` carries checked coordinate bounds and endpoint ordering. It proves no
+trust in the supplied time anchor; `unfold_ntp` still returns `Result` because the
+window may admit zero or multiple era candidates; its implementation also retains
+checked arithmetic. Preserve real failure cases when a stronger input type
+eliminates only some of them.
+
+The existing [datagram parser](../../../../../crates/ntp-wire/src/datagram.rs)
+provides a second representation: `RawDatagram` borrows immutable input after the
+complete bounded extension chain is admitted. Its iterator uses that invariant
+without allocating a copied packet. The framing contract grants no authentication,
+exchange association or sample eligibility. Keep these layer-specific meanings
+when changing either raw or domain types.
+
+A pure predicate used inside construction may return `bool` or `Result<(), E>`;
+an immediately consumed current-state guard can also return `Result<(), E>`.
+Require the checked value where another consumer needs a stable fact, rather than
+banning helper signatures. For example,
+[`RequestTiming`](../../../../../crates/ntp-exchange/src/context.rs) establishes
+the shape of an interval, while the
+[association owner](../../../../../crates/ntp-exchange/src/association.rs) must
+still check the current deadline and generations when processing the response.
+
+Preserve input evidence during conversion. Collecting pairs into a `HashMap` can
+discard duplicate-key values; the resulting unique keys do not prove the original
+input was duplicate-free. Reject duplicates before loss when required by
+[strict admission](strict-boundaries.md#decoding-without-representation-loss).
+
+Keep constructor/mutation/deserialization review and the existing consumer checks
+below. State each type's exact guarantee and the remaining dynamic conditions
+beside its owner. Prefer moving or borrowing data over redundant copies, account
+for retained backing buffers, and use the existing
+[performance procedure](../../optimize-rust-performance/SKILL.md) before claiming
+CPU, allocation or memory savings. An additional type alone is no measured improvement.
+
 ## Prepare and commit owned state
 
 Use this pattern when a failed update must preserve the previous valid state.
