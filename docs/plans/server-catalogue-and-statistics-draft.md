@@ -808,3 +808,104 @@ Final publication uses the real remote base tree and an expected-head lease,
 not a synthetic local repository. The coordinator reports actual publication
 and remote-content verification separately. These documentary checks are not
 execution of the proposed cases in §7 or completion of any product phase.
+
+## 10. Minimum record profile and bounded comparison card
+
+**Addendum: 4 November 2026. Status: discussion proposal; no format, dependency, retention default or security policy adopted.** This develops OPEN-CAT-01, OPEN-DATA-02/03/04 and OPEN-ST-01/02. Sections 1–9 are preserved byte-for-byte from commit `d6bb2bdcd2145950586407698490b61d9e12ced9` (tree `3635c70a72cd32ca0a7f66cc545719c1aae46ece`). Their historical review receipts do not review this addendum. The new [task and review record](../../tasks/server-catalogue-and-statistics.md) carries the same workstream forward. No benchmark has run.
+
+### 10.1 Minimum logical records
+
+The six families below refine the DATA inventory; they are not six required tables, files or public API types. C/Q/H retain §5's conceptual meanings. The engine owns advisory quality writes; the core remains independent of files and ambient clocks; UI receives bounded service projections. Existing strict JSON/domain-construction boundaries remain unchanged. A format experiment does not replace their parsers or authorize a Cargo dependency.
+
+| Family and proposed identity | Minimum information and lifecycle |
+| --- | --- |
+| **Catalogue/source profile — C.** Artifact `(lineage, revision)`; stable source/operator/endpoint IDs within it. | Schema/reader compatibility, release binding, payload length/digest/counts, review and provenance references. Source operator/dependence identities, host/port/transport, exact protocol/version, time-scale/leap policy and country/region with method or explicit unknown. Separate NTS KE identity from negotiated-destination policy; Roughtime keys/wire profiles and future NTS pins are conditional variants. Authentication-envelope fields depend on OPEN-CAT-01. Changed definitions require fresh admission; Q labels/tombstones do not become current source authority. DATA-01–07. |
+| **Immutable observation context — RAM; minimal Q.** `(history_generation, context_id)` under a local origin namespace. | Source/endpoint/definition/catalogue references; applicable protocol, association, policy/key/pin, network/resolution, boot/power/clock-mapping and actual applied-effect generations; timestamp provenance and transformation/evaluator references. Do not multiply one authority into several fictitious independent generations. Bound retired dictionary entries; retain only those needed by surviving records. Missing context makes interpretation unavailable, rather than substituting today's definitions. No duplicate resolver cache or client-location history. DATA-03/04/08/09/19. |
+| **Attempt outcome/observation — normally RAM.** `(engine_incarnation, attempt_id)`; accepted measurements have distinct observation IDs. | Context/round, reason/stage, applicable send/arrival/processing/deadline instants, stage outcomes, terminal category and bounded reason. Distinguish scheduled/admitted/sent/received/validated/authenticated/eligible; a stage not run is not a failure. RTT, NTP four-timestamp delay, signed phase and defined uncertainty exist only when produced. Later selection belongs to an assessment; unassessed is not unselected. Drop unnecessary packets/T1–T4 after computation. Never restore pending exchanges; logical request retirement does not release native buffers/handles/permits before actual completion. DATA-10–12. |
+| **Compatible population aggregate — Q.** `(history_generation, compatibility_key, population_id, evaluator_revision)`. | Source/path/protocol/time-scale and relevant reference/clock context; disjoint covered observations; coverage bounds/time basis, stage denominators, metric counts, gaps and usable-observation age basis. Per metric: count, mean, M2, min/max and missing/rejected counts. With no values, mean/extrema are absent; sample variance requires at least two. Keep quality dimensions separate. Merge only compatible disjoint populations; hourly/daily representations cannot both receive credit. Unknown UTC uses labelled run segments. No scalar honesty probability is required. DATA-16. |
+| **Sparse assessment/transition/evidence reference — conditional Q/H.** `(producer_incarnation, assessment_id)`. | Evaluation instant, context, assessed observation and reference/support IDs, dependence limitations/bootstrap ancestry, verdict/reason and evaluator revision. Record whether the source influenced its comparison reference. A selection assessment cannot create another observation. Qualified rebasing references the actual acknowledged broker effect. Future cooldown variants need scope, old/new state, evidence, rule revision, deadline and recovery; they do not remove administrator restrictions. Safety-conflict ownership and conditional durability remain TA-W02/OPEN-DATA-05. DATA-13/14/17/18. |
+| **Coverage/commit/segment manifest — Q; optional H reference.** `(history_generation, commit_id)` and a segment ID where detail exists. | Producer/event ranges, aggregate/checkpoint generation, dictionary/schema references, exact counts/bytes, reconciliation state, known gaps or unknown suffix, loss and supersession. An aggregate update and its coverage share one attributable durable acceptance identity. External-file publication and Q commit are separate operations; reconcile exact content and ambiguous outcomes without double credit. A digest does not authenticate an attacker-controlled record. A watermark cannot reconstruct discarded raw inputs. DATA-19/20. |
+
+Local identities are opaque, not hardware serials, and cannot be reused across reset to revive old data. Facts eligible for aggregation carry producer-incarnation sequence information. Versioned presence tags distinguish unknown, unavailable, not applicable, not run, rejected and intentionally not retained; **zero remains a value**. Bound context cardinality independently of the existing 16 active-source and 64 regression-sample-per-source caps. Incompatible contexts split populations unless a qualified compatibility rule permits a merge.
+
+Proposed relative units are nanoseconds for durations, RTT, NTP delay, signed phase and uncertainty; positive phase means Windows behind. M2 has squared units and counts are exact integers. Uncertainty retains its bound/estimate meaning. Production widths, ranges and absolute calendar/era representation remain OPEN-DATA-04; signed 64-bit Unix nanoseconds are not assumed to cover the recovery goal. Event, processing and evaluation instants remain distinct; monotonic values require clock/generation/suspend semantics. See [architecture §6](../windows-time-architecture.md#6-domain-types-and-state-authority).
+
+Mandatory policy, trusted floors, correction authority/journals and clock/W32Time lifecycle stay with their existing owners. NTS/DNS secrets, exact committed-envelope identity, root/data/privacy generations and separate authentication ages remain with [protected storage](windows-protected-storage.md). No Q/H reset refunds authority, clears uncertain effects, revives requests or proves a conflict resolved. This profile adds no durable/global quarantine, certificate pin, automatic exclusion or new bootstrap policy. Ordinary NTP/NTS data work does not depend on completing RGT-0; conditional Roughtime fields preserve the current RGT-0 → CHR-0 sequence.
+
+### 10.2 Compare equivalent capabilities
+
+| Lane | Mutable advisory state Q | Optional detail H | Question |
+| --- | --- | --- | --- |
+| C-J / C-C | Not applicable | Not applicable | Same immutable catalogue as JSON / CBOR: bounded admission, bytes and decode cost. |
+| Q0 | SQLite typed rows | Absent | Can dictionaries, aggregates, gaps and sparse events answer the required questions? |
+| Q-J | Bounded versioned JSON snapshot | Absent | Can simpler full-snapshot persistence provide the same Q operations and recovery contract? |
+| H-R | Same Q contract | SQLite typed event rows | Cost of detailed filtering/replay. |
+| H-B | Same Q contract | SQLite compressed BLOB batches | Same detail, including decoding and filtering. |
+| H-P | Same Q contract | Completed Parquet segments, internal Zstd | Same detail with column selection. |
+| H-S | Same Q contract | Completed JSONL batches, Zstd | Simple sequential-detail baseline. |
+
+Q0 and Q-J expose identical summary/update/expiry/query results and explicitly unavailable raw replay. Charge Q-J's full decode/rewrite/publication cost. For an H comparison, freeze one common Q implementation and identical detail fields/ordering/retention; use identical JSONL input bytes for H-B/H-S. One raw representation suffices. H-B counts toward its entire database family, not a second free allowance. Parquet uses [internal page compression](https://parquet.apache.org/docs/file-format/data-pages/compression/), not an outer wrapper. These lanes compare mechanisms; none selects a product library or promises smaller/faster results.
+
+### 10.3 Synthetic inputs and independent expectations
+
+All quantities in §§10.3–10.6 are **proposed fixture/run settings, not product defaults or measurements**. Freeze literal schema, presence tags, sort order, numerical tolerances, oracle and resulting fixture digests before execution. No real endpoint, signing key, NTS secret or network call belongs in these fixtures. Synthetic verification labels never establish protocol authentication.
+
+Catalogue recipes use 16, 256 or 4,096 entries: index `i`, operator `floor(i/4)`, hostname `s{six-digit-i}.invalid`, protocol tag `i mod 3`, region `i mod 4`, revision 1 and provenance text of `1+(i mod 256)` repeated `a` characters. Both encodings retain identical fields and meanings. Freeze remaining valid port/transport/profile fields in the fixture schema; protocol tags are synthetic variants, not supported-server claims. Measure bounded decoding separately from the unresolved release-authentication construction.
+
+For quality/history, use sources `s=0…15`, tick `k` and scheduled-slot identity `16k+s`, delivered in that order. A missing outcome has a gap marker, not a fabricated attempt result. Delivered outcome ID is `o:<slot>`; a successful measurement is `m:<slot>`. Let `r=k mod 50`: `r=0` is a telemetry gap, `r=1,2` timeout, `r=3,4` verification rejection, `r=5` cancellation, all others success. These categories imply counts analytically:
+
+| Profile | Ticks per source; interval | Scheduled slots | Delivered outcomes | Successful measurements |
+| --- | --- | ---: | ---: | ---: |
+| First pilot | 200; 64 s | 3,200 | 3,136 | 2,816 |
+| Ordinary | 9,450; 64 s | 151,200 | 148,176 | 133,056 |
+| Context churn | 9,450; 64 s | 151,200 | 148,176 | 133,056 |
+| Burst | 86,400; 1 s | 1,382,400 | 1,354,752 | 1,216,512 |
+
+For received rejection/success outcomes, `RTT_ns = 1,000,000 + 1,000s + 17(k mod 101)`. Success additionally has `offset_ns = 1,000(s−8) + 25((k mod 31)−15)` and `uncertainty_ns = floor(RTT_ns/2)+1,000`. All other metric fields are absent with reason. RTT and offset therefore have different valid counts. Use operator `floor(s/4)` and evaluator 1; these labels grant no independence.
+
+Ordinary elapsed time is `64k` seconds, starting at synthetic UTC `2026-01-01T00:00:00Z`; context label is `floor(elapsed/86,400) mod 2`, catalogue revision `1+floor(elapsed/172,800)`. Complete context identity also includes source, run and catalogue revision. Churn instead uses context label `floor(k/50)`—189 labels and 3,024 source/context pairs—and resets monotonic time at `k=6,750`; remaining outcomes have a new run and unknown UTC. Preserve those run segments without inventing UTC or using the fixture author's hidden elapsed time to assign freshness.
+
+Burst uses elapsed `k` seconds and the ordinary context/revision rules. For less repetitive values, initialize unsigned 32-bit `x=0x4E545031`; advance once per scheduled slot using `x ^= x<<13; x ^= x>>17; x ^= x<<5`, truncating to 32 bits after each step. Replace received RTT with `1,000,000+(x mod 100,001)` and successful offset with `(x mod 200,001)−100,000`; recompute uncertainty and preserve absence rules. Patterned synthetic data cannot predict real compression ratios.
+
+**Independent oracle:** use a literal six-slot ledger before the generated corpus:
+
+| Slot | Expected fact | RTT ns | Offset ns |
+| --- | --- | ---: | ---: |
+| 0 | One telemetry gap; no delivered outcome | Absent | Absent |
+| 16 | Timeout | Absent | Absent |
+| 48 | Verification rejection | 1,000,051 | Absent |
+| 80 | Cancellation | Absent | Absent |
+| 96 | Success | 1,000,102 | −8,225 |
+| 248 | Success | 1,008,255 | 0 |
+
+Expect six scheduled slots, five outcomes, two successes, three RTT values and two offset values. This ledger is a separate tiny fixture, not a contiguous workload. QA independently derives generated counts/sums/squared sums and compatible partitions with exact integers/rationals. A separate moment control `[-20,0,20] ns` has `n=3`, mean 0, M2 `800 ns²`, sample variance `400 ns²`. Valid controls include no-valid-value buckets and exact integer `9,007,199,254,740,993`; never lose it through floating conversion. Pair valid disjoint merges/current-generation records with duplicate credit, overlapping rollups, wrong generation and incompatible-frame refusals. Shared codec round trips or agreement between adapters are not the oracle.
+
+### 10.4 Small pilot and broader cases
+
+The first executable candidate compares **only Q0 versus Q-J**, without raw history, using the literal ledger and 200-tick profile. Use two acknowledged batches of 1,600 scheduled slots, retaining their exact commit receipts throughout the pilot. Exercise update/read/restart, idempotent same-identity recovery and refusal of the same identity with different content. Outside a future bounded receipt window, refuse replay or explicitly report unavailable reconciliation; do not infer that an old batch is new. Read latest summaries for sources 0/7/15, all-source summaries and coverage; raw replay is explicitly unavailable.
+
+Pilot envelope: **15 minutes total**, one worker, two adapter trials of at most 60 seconds each, no automatic reruns. Preparation within the run, controls, interruptions, recovery and cleanup all count. Record prerequisite/harness preparation separately; an unready harness is not a benchmark result. Proposed process ceiling is 512 MiB and total output ceiling 256 MiB. Stop on a correctness mismatch, resource ceiling or missing equivalent durability contract; retain partial/failure results. A pilot supplies feasibility/accounting evidence, not a statistically supported winner.
+
+Optional later coverage exists only for a named unresolved capability/capacity question. Larger profiles use batches of 4,096 slots plus the final partial batch; fixture retention is seven qualified days hourly, 180 days daily and seven days detail with a 1.5-million-slot ceiling. Unknown-age detail shares that ceiling and retains at most two runs. Apply identical logical expiry and charge physical slack. Query classes add last-day summaries, context gaps, source-0 last-60-tick detail, slot-96 lookup and full retained-detail scan; derive each answer independently. Advancing fixture time by 8 and 181 days checks known-age expiry without inventing age for unknown segments.
+
+Select relevant interruption points around payload preparation/flush/publication, Q commit/acknowledgement, retirement, compaction, migration copy/activation and recovery. Reconcile orphan/missing segments and lost replies; include disk exhaustion, insufficient migration headroom and one interrupted recovery. Mark inapplicable external-file stages as such. Proposed v1→v2 adds nullable `path_kind` with old values unknown; reject unsupported majors, preserve admissible old state and separately owned mandatory-state sentinels. Parser controls include duplicate IDs, wrong types, truncation, unsupported versions and oversized expansion. These are future cases under §7, not completed ST-T/CHECK evidence.
+
+A possible **upper envelope**, never a required next campaign: at most 54 workload trials (six Q/H lanes × three profiles × three repetitions) at 90 seconds, 18 catalogue trials at 10 seconds, and 72 fault traces plus 24 parser controls at 10 seconds. Those invocation caps total 100 minutes; complete campaign cap is 150 minutes including setup/control/cleanup, one worker and 2 GiB total output. The 512-MiB process ceiling still applies. Choose only relevant cases, rotate lane order deterministically and record planned/consumed totals. No automatic retry or tuning sweep; expansion requires a new explicit question and recorded remaining budget, not a blanket new permission gate.
+
+### 10.5 Fair persistence and resource accounting
+
+Freeze identical logical fields, indexes, retention, acknowledgement and recovery obligations before ranking. Proposed SQL settings are 4-KiB pages, WAL, `synchronous=FULL`, 8-MiB suggested page cache, disabled mmap/autocheckpoint/auto-vacuum, file-backed temporaries and explicit checkpoints every eight batches plus final drain. Read back effective settings, including compile-time overrides. [SQLite's synchronization contract](https://www.sqlite.org/pragma.html#pragma_synchronous) distinguishes FULL/NORMAL durability in WAL; changing the setting changes the comparison. A cache setting is not a process-memory ceiling.
+
+For later compressed lanes, freeze one admitted Zstd implementation/version, level 3, one thread and no trained dictionary; cap decoded batches at 8 MiB. Proposed Parquet layout is one row group per batch, 64-KiB target pages and a 256-KiB dictionary ceiling, with declared fallback encodings and metadata. Charge all buffers. This is a candidate recipe, not an admitted library graph.
+
+Every acknowledged batch must survive the **declared** restart model; an unacknowledged one may be absent or committed once after reconciliation. Snapshot/external-segment adapters need explicit flush/publication barriers. Portable process termination and injected barrier failure do not establish power-loss behavior, Windows DACL enforcement or package qualification. Without equivalent demonstrated adapter semantics, report no durability-equivalent performance ranking.
+
+Report logical retained bytes, logical file lengths, allocated filesystem bytes and peak complete-family footprint separately: database/indexes, WAL/shared memory/journals, temporaries, staging, orphans, segment metadata and simultaneous old/new migration copies. Charge candidate and harness memory separately and combined, including decode copies, codec workspace, imports/startup and allocator overhead. Record CPU/wall time, bytes read/written, flushes, commit/query latency and recovery work. Label first-open/repeat reads; a fresh process is not proof of a cold OS cache. Python/Arrow process costs cannot be presented as Rust-on-Windows application costs.
+
+For scale only, `148,176 × 192 = 28,449,792 bytes` (about 27.13 MiB) assumes a hypothetical 192-byte payload per delivered outcome; it excludes gaps, dictionaries, indexes and publication overhead. It is not a measured file size. Earlier 32/64-MiB discussion examples remain unselected and separate from the existing diagnostic budget.
+
+### 10.6 Decision and continuation rule
+
+Correctness, bounded work and equivalent persistence obligations precede performance ranking. Preserve failures/skips/cancellations; report every later repetition. Differences within 10% or unstable ordering justify no winner under this proposed practical screen, which is not a significance test. Raw history needs a useful question that neither Q0 nor Q-J answers before its cost is justified. Catalogue authentication/freshness, Q/H selection, loss tolerance, production budgets and pins stay with their existing OPEN decisions.
+
+The [task](../../tasks/server-catalogue-and-statistics.md) records the next bounded preparation, owner mapping and actual review. Current Core priority and the scoped protected-storage, Windows and fuzz holds remain. The protected-storage pause is not a global prohibition on unrelated admitted portable work. This documentation closes no implementation/qualification gate and selects no new cryptographic mechanism.
