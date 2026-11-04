@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
 **Date:** 5 November 2026, Asia/Tbilisi; earlier dated receipts retain their recorded time zones.<br>
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Section 4.24 refines pre-start provisioning; section 4.25 refines independent removal with recovery still pending. Package implementation and native product qualification remain unexecuted.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Section 4.24 refines pre-start provisioning; section 4.25 refines independent removal with recovery still pending. Section 4.26 records partial W11-W01 preparation through the S2.1 engine handoff. Package implementation and native product qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -55,10 +55,13 @@ and admitted profiles remain the execution authority.
 
 ## 2. Next source-only assignment
 
-Prepare **one W11-W01 timestamp-provenance card** when the relevant acquisition
-owner is assigned. This is a ready source/documentation action alongside the
-existing plan, not a replacement for development §7's current portable Core
-checkpoint or the engine's separately held native qualification.
+Continue **one W11-W01 timestamp-provenance card** from the
+[partial preparation in §4.26](#426-s21-timestamp-provenance-preparation--5-november-2026)
+when the relevant acquisition owner is assigned. Its engine handoff preserves
+real acquisition facts and separates experimental measurement from later Core
+admission; the finite mapping profile and selected SDK/backend questions remain.
+This source/documentation action does not replace development §7's proof-first
+queue or the engine's separately held native qualification.
 Reuse the completed research; do not restart a general Windows API survey.
 
 The card identifies the proposed producer → metadata → conversion → sample
@@ -95,6 +98,10 @@ become prerequisites for the next time-client slice.
 **Owner/stage:** engine/platform; source card first, optional adapter in S2.1/P2.
 **Prerequisites:** existing exchange, units, generation and admission contracts;
 [timestamp research](../docs/plans/windows11-integration.md#1-measure-packets-closer-to-the-network-stack).
+
+**Current source disposition:** [§4.26](#426-s21-timestamp-provenance-preparation--5-november-2026)
+records partial preparation through the existing engine card. The complete card,
+selected mapping/adapter contract and all native qualification remain open.
 
 **Work:** distinguish application, software-QPC and NIC timestamps. Bind metadata
 to the exchange, socket generation, actual interface and current conversion
@@ -536,7 +543,7 @@ a dependency, weaker fallback, service topology or machine-wide policy here.
 | --- | --- |
 | Microsoft source investigation and critical source/fit review | Completed research retained in the linked document; documentation facts and engineering inferences are distinguished. No native experiments were executed. |
 | Documentation, architecture, plan and task integration | Earlier integration and local-adoption review/validation retain the candidates in sections 4.1–4.3. The second-pass integration is recorded from section 4.4; the MSIX/Store amendment is recorded from section 4.6. Earlier passes do not qualify changed text. |
-| W11-W01 source contract | Ready bounded next action when assigned to the relevant acquisition owner; not executed by this integration. |
+| W11-W01 source contract | Partially prepared in [§4.26](#426-s21-timestamp-provenance-preparation--5-november-2026); the engine handoff identifies current producers/consumers and evidence gaps. Finite mapping/profile, selected SDK/backend questions and complete card exit remain open. |
 | Portable implementation/model | No W11 work-item, CHECK, DNS-C or ST-T implementation pass established by this integration. |
 | Native Windows/service identity | No product qualification established by this integration; section 4.19's scoped Sandbox permission and all remaining artifact/fuzz/storage and environment gates apply. |
 | Installed MSIX and release | Unexecuted; local test-signed mechanics, Store acceptance and actual Store-delivered trust/mitigation qualification remain separate evidence layers. |
@@ -2142,3 +2149,45 @@ The pending-obligation inert pair still requires its exact admitted mechanism,
 fixture, actor/context, Windows/channel row, finite work and cleanup. Current
 Core priority, the separate provisioning gap, execution holds and optional
 enhanced-provenance policy remain. No native recovery or release pass is claimed.
+
+### 4.26 S2.1 timestamp-provenance preparation — 5 November 2026
+
+**Disposition:** W11-W01 is **partially prepared source work**. The
+[existing engine integration card](engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
+records the actual runtime producers, the separate `Composition::deliver`/`record`
+fixture chain and the absent engine-runtime bridge. It incorporates completed
+GitHub, standards/web and Microsoft Learn MCP research through a fourth analysis
+and fifth documentation integration. The card retains the inspected candidate,
+launch/retry disposition and primary sources; this is not a completed native card or
+an independent-review receipt.
+
+**Prepared portion:** preserve genuine socket/request/endpoint identity, raw
+header claims, software send-call and receive-return observations, processing
+expiry, mapping/policy/calendar context and consume-once publication. Adjacent
+`Instant`/`SystemTime` readings do not establish simultaneous capture, packet
+placement or a stable UTC mapping. Increasing QPC does not prove that mapping
+survived wall-clock, sleep or presentation changes. The Windows oversize error
+can charge socket consumption without assigning peer identity, blame or freshness.
+Native operation buffers, permits and identity remain owned through terminal
+completion; these documentary contracts do not identify Tokio's backend behavior.
+The engine card's first experimental measurement remains `eligible=0`; later
+uncertainty/reference-time admission and actual Core acceptance are distinct exits.
+
+**Remaining source and execution gaps:** the acquisition/platform owner still
+needs the selected capture convention, finite mapping validity/error terms and
+invalidation/unsupported outcomes, exact SDK/generated-binding and backend
+questions, independent cases with finite resources, environment and cleanup.
+Retain the existing ancillary/header and unregister discrepancies. Optional
+software/NIC timestamps and direct-overlapped I/O remain conditional; their
+supported, configured and observed states, interface attribution, queued metadata
+and completion controls require their own evidence if selected. No native case,
+API adoption or full W11-W01 completion is claimed.
+
+Continue that bounded source contract when the owner reaches S2.1/P2, using this
+card and W11-W01's existing cases rather than repeating a general API survey.
+[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+keeps S1.1c's rounding/era proof continuation first. The selected Linux Core
+checkpoint, leap implementation/proof scope, complete MSIX, optional enhanced
+release provenance, S134/native and fuzz restrictions, storage pause and UI-M0
+D1–D3 deferrals retain their recorded status. This preparation lifts no hold and
+supplies no source-to-native qualification.

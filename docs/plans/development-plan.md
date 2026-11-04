@@ -431,6 +431,15 @@ qualified opt-in recovery; S2.4 adversarial/resource/secret handling. A diagnost
 consumer must expose actual admitted results and failure reasons. Do not wire
 production networking into UI-M0.
 
+The [S2.1 integration card](../../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
+prepares two distinct exits: first, one real controlled-UDP exchange through
+checked mapping/era/arithmetic to an experimental measurement with
+`authentication=none eligible=0`; later, justified uncertainty/reference-time
+admission and the actual history/estimator consumer. Existing fixture composition
+and its divisor `1.0` do not close the runtime bridge. Both exits retain the
+existing mathematical proof, KoD, DNS, resource and native owners; the first
+measurement alone completes neither S2.1 nor P2.
+
 The existing [protocol comparison follow-up](../../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up)
 owns the RFC 8915 alignment checklist and completed
 [KoD source-to-scheduler review](../../tasks/s0.1-protocol-comparison.md#kod-source-to-scheduler-review).
@@ -675,6 +684,13 @@ property open. Continue independent authorized work without claiming the affecte
 phase complete. Runtime, behavioral, native and release gates, all execution
 holds, and optional enhanced release provenance retain their separate status.
 
+**Prepared S2.1 source work:** the [engine integration card](../../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
+records the runtime-to-measurement gap, existing fixture consumer and independent
+controls. [W11-W01 §4.26](../../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
+is partial source preparation. Continue its finite capture/mapping contract and
+dependent uncertainty/Core admission when their owners reach the slice; this
+adds no prerequisite to or replacement for the proof-first continuation above.
+
 **Execution holds and later Sandbox scope.** The [Defender incident record](../../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped)
 retains the blocked S134 stager/artifact. David's later [owner-ready Sandbox
 disposition and actual readiness result](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
@@ -826,7 +842,7 @@ At each bounded checkpoint:
 | Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Pure checked knowledge/interpretation and offline generation are implemented with an initial portable pass; complete the current new-owner qualification. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) preserve completed predecessor scopes. Route protocol admission and native mapping/recovery to their later owners; do not require all production S1.3/Windows work for static calendar construction. No execution hold is lifted. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
-| Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |
+| Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01 has [partial source preparation](../../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026) linked to the engine integration card. Finish the selected capture/mapping profile and SDK/backend questions before dependent implementation; reuse completed research, without a broad survey or native probe. |
 | Catalogue/source/release, [existing catalogue task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) | The five-role documentation integration is complete; the later owner-authorized continuation adds a bounded offline Python input stage for R candidates and revalidated semantic diff under `tools/`. Its exact host-fixture/review evidence is separate from product/native qualification. Next prepare explicit operator evidence/approval binding and the relevant C schema, preset/policy and compatibility contracts. OPEN-CAT-02/R-04/OD-03 retains membership and automatic-replacement scope. This adds no prerequisite to Core, format benchmark or public-server probe. Q0/Q-J keeps its separate preparation and open audit findings. |
 | Package/lifecycle, [Windows task §4.17](../../tasks/windows11-integration.md#417-primary-coordinator-adoption-of-the-selected-msix-profile--3-november-2026) | Earlier selected complete-MSIX/source-profile adoption is recorded. Supported provisioning and independent-removal recovery remain unresolved under W11-W05/W11-W10. |
 | Package/lifecycle, [later handoff §4.18](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026) | The primary coordinator now records reconciliation of the later provisioning/removal and Sandbox findings at the completed S155 checkpoint. W11-W05/W11-W10 retain the next source/design action; no activation/recovery alternative or execution permission is selected. |
@@ -1366,10 +1382,11 @@ close no OPEN-3/12/14 gate, lower no hardening floor and admit no experiment;
 retains its reviewed candidate, with later adoption/integration evidence recorded
 in that task. Earlier checks do not qualify the second-pass edits.
 Implementation, native Windows and selected-package qualification are unexecuted by
-this amendment. The next source-only action can prepare
-[W11-W01's timestamp-provenance card](../../tasks/windows11-integration.md#2-next-source-only-assignment)
-when the acquisition owner reaches it. It does not displace section 7's current
-portable Core checkpoint or require a broad API survey before that work continues.
+this amendment. [W11-W01's partial source card](../../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
+now links the existing engine's first measurement and later Core admission exits.
+The acquisition owner continues the remaining capture/mapping and selected
+SDK/backend questions. This does not displace section 7's proof-first queue or
+require a broad API survey before that work continues.
 
 **Coordinator adoption after pull:** the
 [primary disposition](../../tasks/windows11-integration.md#412-primary-development-coordinator-disposition--3-november-2026),
@@ -1378,7 +1395,7 @@ and [provisioning follow-up](../../tasks/windows11-integration.md#418-local-rout
 already record W11-W01–W11-W10 routing. Refresh the applicable scope, owner,
 ready/held/deferred disposition and next action in that task before dependent
 integration; do not request another initial adoption. W11-W01's
-source card is ready when the acquisition owner reaches it. W11-W02–W11-W08 stay
+source card is partially prepared and remains open at its named owner. W11-W02–W11-W08 stay
 planned at their named phases and prerequisites, with actual Windows execution
 held; W11-W07 additionally needs an evidenced eligible hash workload. W11-W09 is
 deferred until its existing UI re-entry gates; W11-W10's MSIX preparation is now

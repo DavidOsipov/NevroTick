@@ -675,6 +675,14 @@ Persist minimized proptest failures and generation seeds/configuration. Random g
 
 The simulator owns independent true UTC, oscillator error, asymmetry and source faults. Production code must not compute its expected answer. Preserve analytic cases and protocol/crypto vectors alongside pinned Chrony trajectory comparison. For example, the architecture's `T1=0, T2=70, T3=80, T4=110` millisecond fixture yields +20 ms offset and 100 ms network delay. Include an asymmetric-delay case demonstrating bias; authentication does not remove that physical limitation.
 
+The [S2.1 controls](../tasks/engine-transport-pilot.md#independent-controls-and-proof-obligations)
+separate that ideal decimal example from exactly encoded Q32/Q33 vectors and
+independently reconstructed real-UDP observations. Changing only the correlation
+token must leave arithmetic unchanged. Fixed sleeps or injected timestamps prove
+no native capture accuracy; inspect actual returned measurements and, at the
+later admitted consumer, actual retained history and fit. Fixture weights remain
+fixture inputs until the statistical owner justifies their production derivation.
+
 Separate recorded-packet replay from first delivery delayed within an outstanding
 authenticated request. Apply [architecture section 7.4](windows-time-architecture.md#74-nts-implementation-contract)
 and the [protocol qualification matrix](../tasks/s0.1-protocol-comparison.md#replay-and-delayed-response-qualification)
@@ -809,6 +817,12 @@ independent tests, fuzzing, per-file coverage/mutation and native/package eviden
 Mandatory algorithm proofs do not adopt a new tool globally or change OD-05
 §7.5's optional release-build provenance.
 
+The [S2.1 bridge inventory](../tasks/engine-transport-pilot.md#independent-controls-and-proof-obligations)
+routes capture/conversion, era/exchange, leap and later uncertainty/Core
+mathematics to those existing owners. Its concrete controls are unexecuted
+expectations, not proof receipts; physical timestamp placement, continuity and
+native completion retain separate evidence requirements.
+
 ### 9.7 Verification of upstream code and stress testing
 
 Chrony and every other upstream codebase, crate, native library, tool, copied/ported implementation and generated component must be treated as potentially containing defects or vulnerabilities. Reputation, prior deployment, upstream tests, signatures and absent advisories do not exempt adopted behavior from independent verification. This is a verification requirement, not a claim that a particular upstream revision has a known defect. Apply [architecture sections 20.1 and 20.3](windows-time-architecture.md#201-independent-numerical-truth) to the exact revision, selected features, supported targets and actual NevroTick integration.
@@ -895,6 +909,12 @@ The [3 November Microsoft-source review](plans/windows11-integration.md) and
 existing owners. Each selected candidate needs a healthy control alongside its
 failure case. These are planned refinements, not native results, new release
 gates or permission to execute paused experiments.
+
+The [S2.1 provenance preparation](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
+is partial W11-W01 source work. Preserve application-call placement, mapping
+uncertainty and socket-level oversize accounting without attributing an error to
+an unreturned peer identity. The selected SDK/backend, finite mapping profile and
+actual native custody controls remain open under the existing checks below.
 
 The [4 November leap policy](plans/leap-second-policy.md#6-windows-contract-and-limits)
 adds a selected S0.4/P4 contract under W11-W02, with pure prerequisites in

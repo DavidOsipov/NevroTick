@@ -135,8 +135,10 @@ the current product priority, experiment pause and UI-M0 deferrals remain.
 
 At its next checkpoint the coordinator also adopts W11-W01–W11-W10 through
 section 8.5, recording owner, ready/held/deferred disposition and next action in
-the existing Windows 11 task. W11-W01's timestamp-provenance card is ready for
-source-only work when the acquisition owner reaches it; other items enter at
+the existing Windows 11 task. W11-W01 has [partial source preparation](tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
+through the [engine integration card](tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026);
+complete its selected capture/mapping contract when the acquisition owner reaches
+it, preserving the proof-first queue. Other items enter at
 their named phase or conditional trigger. Before related Windows integration,
 apply the mapped contracts and controls while retaining the distinction between
 required product behavior and optional API candidates. This handoff lifts no hold.
@@ -154,7 +156,8 @@ At the next coordinator checkpoint reconcile the follow-up's refinements in the
 and [storage task](tasks/windows-protected-storage.md#65-microsoft-learn-follow-up-routing--3-november-2026).
 Carry applicable cases into the existing W11/ST-W assignments before their
 dependent adapters; record owner, disposition and next action in those tasks.
-W11-W01 and ST-W01 remain unexecuted source-only cards, not permission to probe.
+W11-W01 remains partially prepared and ST-W01 remains unexecuted; neither source
+card permits a native probe or lifts the existing holds.
 
 MSIX/Store hardening and delivery: read the [selected plan](docs/plans/windows-msix-store.md),
 [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate)

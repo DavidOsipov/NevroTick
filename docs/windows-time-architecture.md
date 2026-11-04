@@ -711,6 +711,15 @@ without importing upstream spike/step thresholds or a second controller. [S122]
 
 Version 1 sends NTPv4 client-mode requests and accepts server-mode replies for current configured associations. Use ephemeral randomized client ports; do not open an NTP server listener. Associate a response with the saved real transmit timestamp even if the wire token uses anti-spoofing randomization. Validate era interpretation, essential timestamps, LI/scale/segment admission under §10.5, valid time stratum, root properties, local clock continuity and one-response-per-request behavior. LI=3 rejects ordinary time; LI=0 alone never rejects a silent source or proves no leap. A stratum-zero Kiss-o'-Death response is control information, never a time sample. [S16, S19, S125]
 
+The [S2.1 integration card](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
+binds the real acquisition owner to preserved wire metadata, timestamp provenance
+and final current-generation/deadline admission. Its first controlled measurement
+remains unauthenticated and ineligible; later statistical admission requires a
+separately justified reference time, uncertainty/divisor and actual Core consumer.
+The existing exchange-to-Core fixture composition does not supply that runtime
+bridge. Preserve exact phase and signed raw delay through checked transformations;
+diagnostic projection creates no observation, freshness or correction authority.
+
 Before S2.1 socket admission, qualify RFC 9109's recommendation that a randomized
 client port **SHOULD NOT** be shared across associations. Choose per-association
 or per-request randomization explicitly, accounting for path changes and measurement
@@ -1032,6 +1041,15 @@ authorizes release to Windows.
 Where a competing controller may have replaced the rate during an outage, matching an old numeric rate alone is not proof of ownership. Cancellation of a known active product correction occurs before an orderly handover. Once ownership is lost or uncertain, cancel pending internal work but do not blindly issue a global rate reset. Windows exposes no ownership-aware compare-and-swap for this adjustment; administrator/host races remain outside the cooperating-controller guarantee and need an explicit recovery procedure.
 
 Use precise UTC reads paired with high-resolution monotonic readings, accounting for read uncertainty. The broker exposes capabilities, observed adjustment state, applied corrections and generation. It never assumes a requested rate is precisely representable. Conversion, sign, quantization, API success and actual clock trajectory are separate checks. [S22, S23]
+
+For acquisition, the [S2.1 provenance handoff](../tasks/engine-transport-pilot.md#honest-local-timestamps-and-final-admission)
+keeps application send-call brackets and receive-return readings distinct from
+packet egress/ingress. Adjacent software reads and QPC continuity alone establish
+neither a stable UTC mapping nor its uncertainty. Carry the qualified local
+mapping and full possible exchange span to the final consumer; all four
+coordinates need compatible scale, while the remote clock retains its own
+calibration. [W11-W01](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
+is partial source preparation, with mapping/profile and native evidence open.
 
 **Optional packet-timestamp adapter:** compare Winsock software RX/TX timestamps
 with the qualified application-boundary path before considering NIC timestamps.

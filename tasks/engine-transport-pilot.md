@@ -1,5 +1,11 @@
 # Engine transport/runtime pilot
 
+**Current S2.1 preparation, 5 November 2026:** the [integration card](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
+separates the next experimental real-UDP measurement from later uncertainty and
+actual Core admission. W11-W01 is partially prepared; the [S1.1c proof-first
+queue](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+remains first. Historical engine receipts below retain their original candidates.
+
 **Status:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is now the
 sixth main workspace member. The S25 114-input candidate passes the
 configured dependency, complete GNU portable and Windows cross-build lanes,
@@ -1120,3 +1126,324 @@ and source/vendor custody passed. The receipt deliberately retains
 All 178 integrated domain/engine/common Python controls also pass (0.887s),
 alongside portable V6's 22 product lanes. This closes ALIGN-2's named regression
 gap only; S43's historical coverage/mutation scores remain on their old candidate.
+
+## S2.1 preparation — real transport to an admitted time measurement — 5 November 2026
+
+**Disposition:** prepared contract/integration handoff; implementation and qualification remain open. Follow [development §7][s21-development]: the [S1.1c rounding/era continuation][s21-domain-task] remains the first executable task. The selected settled-rate Core checkpoint remains complete within its Linux fixture scope. This card does not authorize another campaign or promote the loopback pilot.
+
+**Source checkpoint and preparation:** upstream `8b8d0142ab1daae50509b6ec2cea800ada033449`; synthetic local baseline `3316356d58480dcf86b08132272bed613f86ca4f` is not an upstream commit. Three completed bounded research lanes—GitHub primary source, standards/web and Microsoft Learn MCP—fed a fourth analyst, then this fifth documentation integration. Initial context-limit launches supplied no usable result; completed bounded retries supplied the research and synthesis. Intermediate reports do not replace the durable source links below. This records source/documentation work, with no product build, test, proof or native execution. At this preparation handoff independent integration review had not run; any later review outcome is recorded separately below.
+
+**Owner and requirements:** engine/protocol owns actual acquisition and final consume-once admission; `time-domain` owns checked mathematical transformations; existing S1.2/S1.3 owners receive observations; S1.4 owns leap/scale policy; W11-W01 owns timestamp provenance and later platform qualification. Reuse REQ-8/BND-1 and applicable CHECK-6/7/8/11/14/25/27, with CHECK-21 resource evidence and later CHECK-10 clock effects at their existing scopes.
+
+### Existing path and bounded objective
+
+`prepare` → `attempt_send`/`complete_send` → `selected_read` → `stage_reply` → `process_reply`/`commit_reply` currently ends in diagnostic `TransportFacts`. The engine manifest has no exchange/domain/Core dependency. Its separate fixture counterpart, `Association::receive`, preserves header metadata and invokes `unfold_ntp`/`exchange_arithmetic`. `FixtureObservation::new` then checks numerical fixture invariants, not native provenance or eligibility. The existing S1.1e `Composition::deliver` consumes a genuine fixture completion, checks binding/generations/mapping, constructs `FixtureObservation` at fixture arrival with divisor `1.0`, and calls `FixtureHistory::try_append`; `Composition::record` reads actual retained rows/statistics. This test-only chain establishes neither a production reference-time rule nor statistical weighting. [Engine][s21-engine], [association][s21-association], [normalization][s21-normalization], [scenario][s21-scenario]
+
+**First bounded implementation candidate:** preserve complete staged evidence and deliver one current controlled-loopback exchange through checked mapping/era/arithmetic into a typed experimental measurement and diagnostic projection. Keep `authentication=none`, `eligible=0`; no statistical vote, correction proposal or clock action. Define the capture convention, explicit experimental date scope and error/unsupported outcomes before its implementation. If mapping evidence is insufficient, retain a diagnosed transport observation instead of inventing coordinates or certainty.
+
+**Dependent full integration:** a genuinely admitted observation must reach the actual history/estimator consumer under a separately frozen reference-time and uncertainty-to-dimensionless-divisor contract. Reaching the first measurement exit does not complete S2.1. DNS lifecycle, reviewed KoD scheduling, endpoint/port policy, remaining resource/native evidence and that consumer contract stay open. No public endpoint, default source, automatic retry or new runtime framework is selected by this preparation.
+
+**Diagnostic exit:** extend the existing `nevrotick-observe` projection to distinguish transport-only observations, successful experimental measurements and later Core insufficient/ready/rejected outcomes. A successful measurement exposes its actual checked phase and signed raw RTT with units and exact representation or explicit rounding residual/error, acquisition/reference age, and capture-placement, mapping-validity and error qualifiers. The first exit retains `authentication=none eligible=0`. Emit bounded allowlisted reasons for unavailable mapping, era/arithmetic failure, stale context/deadline and later statistical refusal. An absent measurement or estimate remains absent, never numeric zero or success. Preserve bounded, redacted diagnostics: no packet dumps or raw error strings. Exact field spelling and the later uncertainty formula remain with their existing owners; this selects no new schema or framework.
+
+### Preserve evidence before interpreting it
+
+The lossless staged envelope must retain the following facts or their equally lossless immutable representation. These are contract obligations, not adopted Rust type names:
+
+| Evidence | Producer/consumer obligation |
+| --- | --- |
+| Complete wire representation | Retain raw LI, version/mode/stratum, poll/precision exponents, root-delay/dispersion bits, reference ID/timestamp and origin/T2/T3 bits; retain any applicable authenticated coverage. Framing does not establish trust. |
+| Exchange identity | Bind logical source, actual destination/receive peer, socket lifetime, request ID, separately saved real T1 and opaque wire token. Numeric handle/address reuse creates no new identity or independent vote. |
+| Local timing | Retain send-before/after, receive-return and processing readings; original units/domain; capture-placement category; mapping/conversion identity and error. Preserve any later selected packet timestamp separately. |
+| Current context | Carry configuration, association and clock-mapping generations, relevant policy/calendar identity, allowed trust/scale profile, independent date/era evidence and full possible exchange span. |
+| Checked result | Preserve exact Q33 phase, signed Q32 raw RTT, conversion residual/error, acquisition identity/reference time and age; do not replace them with formatted CLI text. |
+
+[S1.4 §2][s21-leap-task] already owns LI preservation. This continuation extends that handoff to the whole metadata envelope and actual numerical consumer. The present pilot does not retain LI, precision and root/reference fields through staging/reporting. The bounded follow-up resolves the pinned implementations' behavior: Chrony 4.9 and ntpd-rs decode ordinary root delay **and dispersion as unsigned 16.16**; `0xffff0000` represents +65,535 s. The local fixture's signed-format comment disagrees, but its raw `u32` storage loses no bits and establishes no runtime decoder bug. Carry these observed semantics and high-bit controls into the future converter contract; record any legacy-compatibility decision explicitly, without repeating the survey or changing source in this documentation stage. RFC 5905's format and older RFC 4330 wording retain distinct provenance. [Chrony converter][s21-chrony-conversion] and [header calls][s21-chrony-header], [ntpd-rs converter][s21-ntpdrs-conversion] and [header calls][s21-ntpdrs-header], [RFC 5905 §6][s21-rfc-format], [RFC 4330 §4][s21-rfc4330]
+
+### Honest local timestamps and final admission
+
+`SoftwareClock::capture` reads `Instant` then `SystemTime`; it establishes neither simultaneous sampling nor a stable UTC mapping. The send bracket encloses an application call, not demonstrated wire egress. Receive-return is later than possibly queued ingress; even a before/after receive-call bracket would not enclose earlier queued arrival. Do not infer a wire-time error bound from either syscall duration. W11-W01 may evaluate a bracketing mapping capture, but its uncertainty, valid interval, adjustments and invalidation must be qualified independently. QPC continuity alone proves no unchanged UTC mapping or active-awake delivery. [Engine][s21-engine], [QPC][s21-qpc], [recvfrom][s21-recvfrom], [sendto][s21-sendto]
+
+Keep real local T1 separate from the randomized origin-matching token. Establish compatible UTC scale for all four coordinates and continuity of the local T1/T4 mapping; the remote clock does not share the local calibration. Monotonic clocks own ordering, age and deadlines, not UTC substitution. Optional kernel/NIC timing and a direct-overlapped adapter remain conditional. Supported, configured and actually observed timestamp capabilities are different facts. [Winsock timing][s21-timestamping]
+
+Stage fallible work, then recheck current source/socket/request/endpoint, cancellation/retirement, relevant generations and fresh **processing** time at one exclusive publication point. Preserve `send ≤ arrival ≤ processing < deadline`; arrival before expiry alone is insufficient. No await or callback may intervene between the final current-state guard and commit. Bind delayed TX evidence to its originating request; it cannot attach to a replacement request or rewrite transmitted bytes. [Association][s21-association], [engine][s21-engine]
+
+Malformed/uncorrelated traffic preserves healthy pending state/history; independently reached lifecycle/budget transitions may retire work. Freeze the disposition of a correlated completion that later fails statistical admission: it cannot enable repeated replies until one passes a threshold. Keep stratum-zero controls outside time arithmetic/history and enforce reviewed RATE/DENY/RSTR effects at the actual next-send guard. Reuse the [existing KoD source-to-scheduler ledger](s0.1-protocol-comparison.md#kod-source-to-scheduler-review), including unknown/forged/stale controls and a healthy neighboring peer; select no poll constant here. [P2 contract](../docs/plans/development-plan.md#p2--secure-bounded-ntpnts-communication), [RFC 8633 §5.4][s21-kod]
+
+Bound complete datagrams and retained metadata. The existing Windows 10040 branch can charge socket-level consumption, but its error carries no successfully returned peer identity: do not assign peer blame/freshness or parse a valid-looking truncated prefix. Future ancillary data needs independent length/flag/framing admission. Logical cancellation/close is distinct from actual native completion; retain buffers, identity and permits until terminal settlement. These Microsoft contracts do not establish Tokio's actual backend behavior. [recvfrom][s21-recvfrom], [WSARecvMsg][s21-recvmsg], [CancelIoEx][s21-cancel], [closesocket][s21-close]
+
+### Era, leap and checked Core bridge
+
+Use explicit supported date/era evidence over the full possible exchange span; raw min/max T1–T4 and a damaged host date cannot supply it. `EraWindow` validates numerical bounds, not anchor truth. `unfold_ntp` must retain its zero/one/multiple-candidate classification. Authentication supplies no era number, guaranteed symmetry or source-scale truth. [Era source][s21-era], [RFC 5905 §8][s21-rfc-math]
+
+Reuse S1.4's two distinct questions: LI consistency for the applicable UTC claim day, and exchange-span compatibility outside the current guard. A short event-free exchange can validly announce that day's later midnight event. Event membership is not crossing: `[T,T]` can contain a transition while using one after-event offset. Keep useful unsmeared LI=0 inputs and unknown future coverage under the selected same-segment rules. Contradictory/unknown-scale observations cannot erase healthy peers, extend guards or create fresh quorum. Kernel-only explicit leaps and measured-residual recovery remain unchanged. [S1.4][s21-leap-task], [interpretation][s21-leap-interpretation], [verified EID 4504][s21-li]
+
+Preserve signed raw RTT separately from adjusted delay, root uncertainty, capture error, fit residuals and arithmetic error. No universal negative-RTT clamp/rejection, perfect certainty from zero advertised dispersion, or arbitrary divisor follows. The statistical owner must freeze the physical assumptions, exact units, reference instant, admissible envelope, divisor derivation and checked outputs before genuine estimator integration. Chrony's precision/frequency treatment and midpoint reference are adaptation evidence, not adopted thresholds or a ready-made local contract. [Exchange source][s21-exchange], [Chrony pin][s21-chrony]
+
+Use actual immutable checked outputs through history, normalization and estimation; do not round Q33 phase to nanoseconds and then silently recreate an exact zero-error observation. Preserve original observation/source identity, age and chart/mapping through projection and selection. Re-evaluation never creates freshness. One or two observations remain insufficient for the current regression API. Its fixture bounds, including phase ±1 s and the admitted count/span, are not production limits or the large-recovery policy. Existing `Composition` may demonstrate a clearly labelled fixture consumer with declared fixture divisors; it cannot close this uncertainty/admission contract. [Normalization][s21-normalization], [scenario][s21-scenario]
+
+### Acceptance and status
+
+Use the independent controls and proof inventory below in this existing task. Bind future results to actual source/configuration/tool/fixture identities and distinguish portable arithmetic, real controlled UDP, native Windows and product eligibility. Keep S44 and earlier receipts on their original candidates. [W11-W01 §4.26](windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026) records partial source preparation; its complete provenance card and native qualification remain open.
+
+Full dependent mathematical acceptance requires OD-10 proofs; prepared files, a model alone or historical fixtures do not suffice. Preserve NTS-only baseline/OD-03, held provider/default choices, all applicable native/S134 restrictions and separately admitted Sandbox scope, fuzz/storage holds and UI-M0 deferrals. Complete MSIX remains selected; enhanced release provenance remains optional under OD-05 §7.5. Documentation preparation lifts none of these holds and requires no new policy adoption.
+
+### Independent controls and proof obligations
+
+All controls are **specified, not executed**. Controlled clocks/fixtures and real packet observations are separate evidence layers.
+
+| Control | Independent expected result and useful neighbor |
+| --- | --- |
+| Analytic sign/units | Ideal relative `T1=0,T2=70,T3=80,T4=110 ms`: `θ=((70−0)+(80−110))/2=+20 ms`; `δ=(110−0)−(80−70)=100 ms`. Positive means Windows is behind. Decimal milliseconds are not generally exact Q32 wire values. |
+| Canonical exact dyadic seam | Use nonzero admitted common base `B`, explicit era and `T=(B,B+7/128,B+8/128,B+11/128) s`. Exact `θ=+1/64 s`, signed raw `δ=5/64 s`; Q33 numerator `134217728`, Q32 numerator `335544320`. Changing only the matched wire token changes neither result. Reducing both peer timestamps by `1/32 s` gives `−1/64 s` with unchanged RTT. |
+| Half units and rounding | Preserve offset numerator ±1: these are ±half a Q32 tick, not zero. Ties-even conversion gives 0 ns with residual numerator ±1,000,000,000 over `2^33` in nanoseconds. For Q33 numerator ±`2^23`, ±976562.5 ns rounds to ±976562 ns; residual ±`2^32`. Numerator `3×2^23` instead gives 2929687.5 ns, rounding upward to even 2929688 ns. Use legal operation-produced values, not an unchecked constructor. These are arithmetic-seam controls. |
+| Real UDP | Record independently inspectable actual request/response bytes, socket/request identities and software capture/mapping evidence. Independently calculate rational expected results/error from those admitted observations; compare real returned checked values. Sleeps cannot force the dyadic tuple or demonstrate physical arrival accuracy. Name any injected timestamp seam explicitly. |
+| Diagnostic projection | Drive `nevrotick-observe` with healthy controlled real UDP and a refused neighbor. Independently reconstruct the checked result from captured observations and peer bytes; require emitted phase/RTT, units, exactness/residual and age/provenance qualifiers to match. Refusal emits the expected allowlisted reason and absent result, with no added observation or refreshed history/estimate; the healthy first exit retains `authentication=none eligible=0`. Later Core cases distinguish insufficient/ready/rejected without inventing a fit. Observe output and consumer state; diagnostics never perform the claimed transition. |
+| Physical asymmetry | With true +20 ms source offset, forward/reverse delay 30/70 ms and 10 ms peer processing, the ideal estimate is 0 ms while raw network RTT is 100 ms. Correct arithmetic and authentication do not prove true UTC accuracy. |
+| Lossless metadata/current admission | Distinct LI/precision/root/reference values survive staging, including high-bit raw root fields. Wrong endpoint/socket/token, changed generation, old TX ID, duplicate completion, truncation and cancellation give no new history observation. A fresh current complete reply succeeds once. Processing at the deadline rejects; a current just-before-deadline neighbor succeeds. |
+| Root representation | Pinned unsigned-16.16 decoding gives `0x00010000 → 1 s`, `0x80000000 → 32768 s`, `0xffff0000 → 65535 s`; these are conversion oracles, not admissible-quality thresholds. Keep raw signed exchange RTT separate. Do not copy ntpd-rs's unrelated `to_seconds` helper as an exact Q32 oracle: it divides by `u32::MAX`, while the inspected ordinary-header consumer uses `.into()`. |
+| Era and leap endpoints | With raw `r=1` Q32 tick and era width `E=2^64` ticks, `[r,r]` admits one candidate, `[r,r+E]` is ambiguous, `[r+1,r+E−1]` admits none. At compiled transition `T=3692217600` NTP seconds, `[T,T]` has one event with known after-offset 37; `[T−1 Q32 tick,T]` has varying offsets. Claim-day LI1/2 can be valid during a short `NoEvents` span. Neither calendar result alone proves guard eligibility. |
+| Actual Core consumer | Reuse S1.1e composition with independent declared fixture weights: after 1–2 genuine delivered observations, no fitted estimate; after 3+ legal increasing observations in one context with sufficient span, inspect actual retained rows/reference and actual fit. Current normalization permits 3–64 rows with minimum 62,500,000 ns span; these are existing fixture constraints only. Later real admission must supply the separately justified divisor/reference. Duplicate/report replay adds no row and cannot renew age. |
+| Native continuation | Queued ingress must not become receive-return accuracy; unsupported/missing metadata cannot become zero. Cancellation losing to completion settles once and stale completion changes no model while releasing its actual capacity. A fresh healthy exchange/shutdown succeeds within the same budget. These remain future Windows observations, not source-proof results. |
+
+Mathematical contracts include required success **and** each rejection class, representability, exact units, rounding/error, preserved state and promised bounded work. Reachable healthy/error witnesses, distinct compiled defect controls and restored healthy passes complement independently reviewed full-domain proofs. Do not silently narrow domains or credit always-error behavior. [OD-10][s21-decisions], [formal workflow][s21-proof]
+
+| Existing proof owner | Exact obligation/remaining evidence |
+| --- | --- |
+| S1.1c, CHECK-7/8/25 | Complete/reconcile the already-owned rounding/era schedule first. Public coordinate/window constructors, raw rejection, exchange-produced bounds, four-coordinate arithmetic and clock conversions remain separate obligations. Anchor truth is environmental evidence. |
+| Engine/platform with domain | Any selected counter/epoch conversion, bracket/mapping interval, outward error and full-span transformation needs source correspondence and complete numerical contract. Native placement/continuity/callback behavior remains separate evidence. |
+| S1.4, CHECK-7/8/25 | Checked ledger/date/coverage constructors, calendar arithmetic, whole-interval offset/event interpretation and bounded traversal; compiled-data/import correspondence and current source-scale/guard authority remain separate. |
+| Protocol/statistics bridge | Specify root/precision conversion using the completed pinned-source comparison, with explicit compatibility scope and independent high-bit/unit controls. Negative-delay treatment, reference time and uncertainty/divisor derivation still need their own frozen contract before proof or dependent consumer acceptance. |
+| S1.2/S1.3, CHECK-7/8/25 | Normalization/regression/residuals, uncertainty bounds, history/chart projections and any reached selection/combination mathematics, with actual machine/floating semantics and caller invariants. Selected fixture passes do not establish these proofs or production eligibility. |
+
+### Source references for this continuation
+
+Local links identify inspected owners at the recorded checkpoint; external links
+retain the primary evidence and upstream source pins. Source behavior does not
+establish a product or native execution result.
+
+[s21-engine]: ../crates/nevrotick-engine/src/lib.rs
+[s21-association]: ../crates/ntp-exchange/src/association.rs
+[s21-scenario]: ../crates/ntp-exchange/tests/support/scenario_driver.rs
+[s21-normalization]: ../crates/time-core/src/regression/normalization.rs
+[s21-exchange]: ../crates/time-domain/src/exchange.rs
+[s21-era]: ../crates/time-domain/src/era.rs
+[s21-leap-interpretation]: ../crates/time-domain/src/leap/interpretation.rs
+[s21-domain-task]: s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026
+[s21-leap-task]: s1.4-leap-policy.md#2-protocol-and-discipline-integration
+[s21-development]: ../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent
+[s21-decisions]: ../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs
+[s21-proof]: ../.agents/skills/testing/references/formal-verification.md
+[s21-chrony]: https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_core.c
+[s21-chrony-header]: https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_core.c#L2017-L2023
+[s21-ntpdrs-header]: https://github.com/pendulum-project/ntpd-rs/blob/18a5bd6a87a65033a41c36dc8b4b737c98b5523f/ntp-proto/src/packet/mod.rs#L199-L218
+[s21-chrony-conversion]: https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/util.c#L650-L679
+[s21-ntpdrs-conversion]: https://github.com/pendulum-project/ntpd-rs/blob/18a5bd6a87a65033a41c36dc8b4b737c98b5523f/ntp-proto/src/time_types.rs#L213-L278
+[s21-rfc-format]: https://www.rfc-editor.org/rfc/rfc5905.html#section-6
+[s21-rfc-math]: https://www.rfc-editor.org/rfc/rfc5905.html#section-8
+[s21-rfc4330]: https://www.rfc-editor.org/rfc/rfc4330.html#section-4
+[s21-kod]: https://www.rfc-editor.org/rfc/rfc8633.html#section-5.4
+[s21-li]: https://www.rfc-editor.org/errata/eid4504
+[s21-qpc]: https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps
+[s21-recvfrom]: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-recvfrom
+[s21-sendto]: https://learn.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-sendto
+[s21-timestamping]: https://learn.microsoft.com/en-us/windows/win32/winsock/winsock-timestamping
+[s21-recvmsg]: https://learn.microsoft.com/en-us/windows/win32/api/mswsock/nc-mswsock-lpfn_wsarecvmsg
+[s21-cancel]: https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex
+[s21-close]: https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-closesocket
+
+
+### Independent documentation review and verification — 5 November 2026
+
+**Final documentation disposition: READY; S21-R01 CLOSED.** This records the
+completed review of the eight-file S2.1 preparation and its one bounded correction.
+Implementation, mathematical proof, native Windows and release qualification
+retain the open scopes above. The first executable task remains S1.1c.
+
+Reviewer `/root/s21_review` was created with explicit `fork_turns: none`, without
+the author research/analysis reports, private discussion or memory. Its initial
+launch failed at the context limit and supplied no usable review (`not run`, not
+zero findings). One bounded retry completed the initial review with **REVISE**
+and the stable medium finding S21-R01: define the real diagnostic consumer and
+observable successful/refused output. The integrator added only the diagnostic
+exit paragraph and its paired control. The same independent reviewer then
+verified that correction, closed S21-R01 and returned **READY** for documentation;
+unaffected findings were reused without another full audit.
+
+The initial frozen diff was
+`18fc6c66ca1fc5039e423f7c570e64fc46ddad75a270d1352231c4db59ac3a63`;
+the corrected reviewed diff is
+`c77152a73b0cfe7f86051fc0f256f46698101af51ddb10a9ea1e297d5015adc4`.
+The corrected engine task before this append is 97,293 bytes, SHA-256
+`236e174fdf1fd225e699b4b3a1dce46a8b882db09f4fd717e397dfaed51d49be`.
+The other seven documents retain the initial review hashes below. This receipt
+appends completed evidence to that reviewed body; it changes no integration
+contract. Both raw reviewer reports, including the initial own-word comprehension
+paragraphs, are retained verbatim in the following quotations.
+
+#### Initial independent report — completed, REVISE
+
+> The proposed amendment adds an S2.1 integration handoff to the existing engine task and routes its status through seven related documents. It describes how preserved transport evidence should become a checked experimental measurement, followed separately by justified admission to the existing Core consumer. It also connects the work to timestamp provenance, leap interpretation and mandatory mathematical proofs while leaving the current S1.1c continuation first in the execution order.
+>
+> The current runtime performs bounded exchanges with two explicitly configured loopback peers and returns transport facts; it has no dependency on the exchange, time-domain or Core crates. A separate test composition already consumes genuine fixture exchange completions into history and regression using asserted fixture timing and a fixed divisor. Checked arithmetic and pure leap interpretation exist, but production capture/mapping, uncertainty admission, the runtime-to-Core connection and their Windows qualification remain future work. The amendment preserves that distinction and the existing execution restrictions.
+>
+> # Independent S2.1 documentation review
+>
+> ## Candidate and requested stage
+>
+> **Verdict: REVISE — one bounded documentation correction, S21-R01.** This verdict applies only to the eight-file documentation preparation and handoff. It is not a product-implementation, mathematical-proof, native-Windows or release verdict. The review completed with usable findings; it is not a zero-result launch or a blocked retrieval reported as success.
+>
+> | Identity | Reviewed value |
+> | --- | --- |
+> | Repository | `DavidOsipov/NevroTick` |
+> | Checkout | `/workspace/scratch/68e2481482dd/NevroTick-s21` |
+> | Supplied actual upstream | `8b8d0142ab1daae50509b6ec2cea800ada033449` |
+> | Supplied upstream tree | `70103638b117960a91a259a740a8ed13c8afe8f2` |
+> | Observed local HEAD / synthetic comparison baseline | `3316356d58480dcf86b08132272bed613f86ca4f`; this is not upstream history |
+> | Frozen diff SHA-256 | `18fc6c66ca1fc5039e423f7c570e64fc46ddad75a270d1352231c4db59ac3a63` |
+> | Stage | Documentation preparation for the real-transport → measurement → Core handoff; no implementation or execution |
+>
+> I independently hashed the eight current files, compared their hashes and lengths with the manifest, and compared the actual `git diff` byte-for-byte with the frozen diff. All matched. `git status --short` showed exactly the eight expected modified Markdown paths. Relevant predecessor passages were retrieved with `git show HEAD:path` for every changed path.
+>
+> | Candidate path | SHA-256 |
+> | --- | --- |
+> | `AGENTS.md` | `5bcd3ac709aa2cca2d8932df92d04573afc99493694e9b90cc3daaf7ad43558a` |
+> | `docs/README.md` | `85497713724fedc0c021e205e704ec78ab78677a77635b16fdbc9ce9e9570220` |
+> | `docs/plans/development-plan.md` | `adcccd2fb8ebba7b4da150025263b54c3948c9a27c92a103090d6e0954d17bfd` |
+> | `docs/windows-time-architecture.md` | `bd09572c2ca8c66f6fb2e5b8397597fbc445234c18bdfa0499619e04f93de031` |
+> | `docs/windows-time-development-hardening.md` | `f3ab09724decafbc4d0556d17a498e1084dfd4963cfeebf9fee1a681f63d6269` |
+> | `tasks/engine-transport-pilot.md` | `532231a6757ea60c5b8d2cd162d7e05112ea8c0e4ed4ae37426c6d3f409248af` |
+> | `tasks/s1.4-leap-policy.md` | `9d010b6b31c263098bf4035335f186c4eb9512b0125c817491c6d2998859b723` |
+> | `tasks/windows11-integration.md` | `6cb2b333660f3919ba0accd3d81a28adfea27e961d3a0bf15e2d236f60089fb9` |
+>
+> ## Independence and actual read scope
+>
+> This review used the supplied review request, frozen diff/manifest, candidate text, current repository instructions, relevant source and independently retrieved primary external evidence. I did not read `s21-github.md`, `s21-web.md`, `s21-learn.md`, `s21-analysis.md`, author discussion, memory or private personal context. I created no agents and performed no repository edits, builds, tests, proofs, product execution, installations, native experiments or remote writes. Only this review report was written.
+>
+> The read scope was targeted rather than a full reading of the large documentation bundle:
+>
+> - **Instructions and requirements:** complete root `AGENTS.md`, the testing contract and `qa-independent-review/SKILL.md`; documentation-guide routing and current amendments; OD-05 §7.5, OD-09 and OD-10; development-plan P2, §7 and changed routing passages; architecture §6's domain/construction/guard contracts, §7.3, relevant timestamp passages in §10.1, §10.5, §20.1.1 and the applicable CHECK rows. The S2.1 row and network-integration requirements in the supplied audit were also inspected.
+> - **Changed documentation:** all changed hunks in the eight-file frozen diff, with the engine card and W11-W01/§4.26 read directly in current files, relevant surrounding text and predecessor excerpts. This did not re-review all historical receipts or all unchanged content in those files.
+> - **Source:** engine manifest; `SoftwareClock`, `TransportFacts`, send/receive/staging/final-commit and Windows oversize handling in `crates/nevrotick-engine/src/lib.rs`; the actual `nevrotick-observe::write_report` consumer; `ntp-exchange` association admission, metadata, receipt/timing context and `Composition::deliver`/`record`; complete `time-domain` exchange, era, rounding and leap-interpretation source; the generated 2017 transition; Core observation construction, normalization bounds and history's actual append/statistics path.
+> - **Task status:** engine pilot authority and S44 ending; S1.1c mandatory-proof continuation; S1.1e scope/routing; the final selected four-owner settled-rate receipt in S1.3; S1.4's current continuation and protocol handoff; W11-W01 and the new §4.26. Historical task statements were treated according to their recorded candidate and later continuation, not as current whole-product evidence.
+> - **Primary external evidence:** the pinned Chrony `util.c` root conversion and `ntp_core.c` header/measurement consumers; pinned ntpd-rs `time_types.rs`, `packet/mod.rs` and `source.rs` ordinary consumers; RFC 5905 format/arithmetic, RFC 4330 root-delay wording, RFC 8633 §5.4, and verified erratum 4504; Microsoft QPC, recvfrom, sendto, Winsock timestamping, WSARecvMsg, CancelIoEx and closesocket contracts.
+>
+> The supplied snapshot is a partial materialization, reported by the packet as 723 verified files from a 1,153-blob upstream inventory. I did not independently re-materialize or re-audit that whole inventory. I did not rerun the coordinator's 1,099-link check or its preservation scripts; those remain supplied coordinator results. The independent byte/diff comparison above is my own observation. The research-lane and launch/retry account was not independently audited through author reports, which were expressly excluded.
+>
+> ## Material finding
+>
+> ### S21-R01 — Define the observable diagnostic exit for the new measurement
+>
+> **Severity / disposition:** medium handoff-completeness issue; documentation revision required. No product defect or missing native pass is alleged.
+>
+> **Requirement.** The supplied audit explicitly asks what real diagnostic output counts as success. The existing development-plan P2 contract, lines 428–432, requires a diagnostic consumer to expose actual admitted results and failure reasons. The new card is intended to turn those general requirements into a concrete integration handoff.
+>
+> **Location.** `tasks/engine-transport-pilot.md`, the first bounded implementation candidate at line 1142, the checked-result row at line 1156, acceptance at lines 1182–1186, and the real-UDP/Core controls at lines 1197 and 1202.
+>
+> **Evidence.** The card specifies an experimental measurement and “diagnostic projection,” retained checked values and comparisons against real returned values. It does not specify the minimum observable diagnostic result or tie the existing diagnostic consumer to those values. The present implementation, `crates/nevrotick-engine/src/bin/nevrotick-observe.rs:164–189`, writes slot/status, `authentication=none`, `eligible=0`, send/receive/rejection counts, optional stratum and final elapsed time. It does not expose phase, signed RTT, mapping/error status or a specific rejection reason. The new card's checked-result retention requirement is useful but does not itself require those results to reach the diagnostic output. The actual returned-value checks can pass while the CLI remains at its old transport-only output.
+>
+> **Consequence.** The documentation leaves the externally observable success criterion ambiguous: an implementation can produce correct internal arithmetic and retain the old status-only projection without demonstrating the requested diagnostic measurement. Likewise, an unavailable mapping or rejected numerical admission can remain indistinguishable at the diagnostic surface except through generic transport status/counts. This is a missing handoff requirement now, distinct from correctly deferred uncertainty derivation or native qualification later.
+>
+> **Smallest correction / owner.** The engine/protocol documentation owner should add one compact diagnostic acceptance paragraph or row to this existing card. Name the consumer (`nevrotick-observe` or an explicitly identified replacement), distinguish transport-only, experimental-measurement and later Core readiness outcomes, and require the successful projection to expose the actual checked phase and signed raw RTT with units plus the relevant acquisition/reference-age and capture/mapping/error qualifiers. Specify bounded allowlisted reasons when mapping, era/arithmetic, context/deadline or later statistical admission prevents a result; absent measurements must not become numeric zero or success. Bind a healthy real-UDP output check to the independently reconstructed checked result, and a refused neighbor to the expected reason with no fresh history/estimate. Preserve `authentication=none eligible=0` for the first exit. Exact field spelling and the later production uncertainty formula can remain with their existing owners; no source change, build or native probe is needed to fix this documentation omission.
+>
+> ## Findings checked and not raised
+>
+> The central source description is accurate. The engine manifest contains `ntp-wire`, Tokio and getrandom, with no exchange/domain/Core dependencies. Its staged/runtime facts lose the metadata identified by the card. The fixture association retains LI, precision, root and reference bits, unfolds explicit era windows, uses saved real T1 and performs exact arithmetic. The separate composition consumes a completion once, checks binding/generations/mapping, uses fixture arrival and divisor `1.0`, and actually appends to history. The card correctly refuses to promote that fixture recipe into a production reference-time or uncertainty contract.
+>
+> The numerical examples are internally consistent by independent calculation and source inspection: the dyadic tuple gives phase `1/64 s` and raw RTT `5/64 s`, with the stated Q33/Q32 numerators; the half-unit and ties-to-even examples preserve signed residuals; the asymmetric-delay example has zero estimated phase despite a true positive offset; the three era windows distinguish one, multiple and no candidates. Leap interpretation explicitly uses inclusive event membership but applies the after-event offset at a transition lower endpoint, supporting the `[T,T]` distinction. Core normalization admits sufficient counts from 3 through 64 and uses the stated 62,500,000 ns minimum span. These are reviewed examples and current source behavior, not executed controls or whole-domain proofs.
+>
+> The external representation claim is supported by the actual pinned decoders: [Chrony `UTI_Ntp32ToDouble`](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/util.c#L650-L679) and its [ordinary header calls](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/ntp_core.c#L2017-L2023), together with [ntpd-rs short conversion](https://github.com/pendulum-project/ntpd-rs/blob/18a5bd6a87a65033a41c36dc8b4b737c98b5523f/ntp-proto/src/time_types.rs#L229-L233) and [header decoding](https://github.com/pendulum-project/ntpd-rs/blob/18a5bd6a87a65033a41c36dc8b4b737c98b5523f/ntp-proto/src/packet/mod.rs#L199-L218), treat both ordinary root fields as unsigned. The pinned [ntpd-rs consumer](https://github.com/pendulum-project/ntpd-rs/blob/18a5bd6a87a65033a41c36dc8b4b737c98b5523f/ntp-proto/src/source.rs#L714-L739) does use `.into()`. The candidate accurately retains the distinction from the signed root-delay wording in [RFC 4330 §4](https://www.rfc-editor.org/rfc/rfc4330.html#section-4), and does not claim a runtime decoder defect from the local raw-bit field's comment.
+>
+> The timestamp/native distinctions are also supported. [Microsoft's QPC contract](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps) separates QPC from system time and UTC. [recvfrom](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-recvfrom) can return queued data and discard excess UDP data on WSAEMSGSIZE. The actual Rust error variant has no returned peer address. [CancelIoEx](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex) and [closesocket](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-closesocket) do not make cancellation/close equivalent to completed native I/O. The candidate treats these as API contracts and proposed controls, and expressly leaves Tokio's selected backend and native observations open.
+>
+> The changes preserve the current priority and authority boundaries: S1.1c remains first; OD-10's full-domain mathematical proofs remain mandatory; OD-09's silent-source/leap and Windows ownership decisions remain intact; OD-05 §7.5's enhanced release provenance remains optional. W11-W01 is consistently labelled partial preparation. Historical selected Linux fixture completion does not become P1, S2.1, native or production qualification.
+>
+> ## Intentionally pending work and evidence limits
+>
+> The finite capture convention, mapping validity/error/invalidation profile, supported experimental date scope, selected SDK/backend details and unsupported outcomes must still be frozen before dependent implementation. Later genuine Core admission also needs the reference-time and uncertainty/divisor contract. DNS, scheduling/KoD integration, socket policy, full mathematical proofs, native completion/resource evidence and production eligibility remain with their existing owners. Their absence is correctly disclosed and is not an additional finding against this preparation stage.
+>
+> Initial web opens of the four pinned GitHub files failed with `DisabledError`; the GitHub connector subsequently returned their exact pinned source, resolving that retrieval limitation. Direct erratum 4504 retrieval failed on the RFC Editor redirect; the official RFC Editor search result and its inline verified-errata rendering supplied the verified status and corrected current-day wording. Other required primary claims were retrieved. No product/native observation was inferred from documentation retrieval, and no historical test receipt was reproduced.
+>
+> **One permitted next action:** make the documentation-only correction for S21-R01 in the existing engine card and submit that changed text for a separately assigned bounded correction verification. Keep the other accepted content and the proof-first execution order; this review grants no product execution or publication authority.
+
+#### Targeted correction verification — completed, READY
+
+> # S2.1 — bounded correction verification
+>
+> **Documentation-stage verdict: READY.** **S21-R01 is CLOSED** on the corrected candidate identified below. The two insertions supply the observable diagnostic contract and paired consumer checks missing from the initial handoff. This verification reuses the unaffected findings and limits of the completed independent review; it is not a repeated whole-candidate audit or an implementation, proof, native-Windows or release pass.
+>
+> ## Exact candidate
+>
+> | Identity | Value |
+> | --- | --- |
+> | Repository / checkout | `DavidOsipov/NevroTick`, `/workspace/scratch/68e2481482dd/NevroTick-s21` |
+> | Supplied upstream | `8b8d0142ab1daae50509b6ec2cea800ada033449` |
+> | Supplied upstream tree | `70103638b117960a91a259a740a8ed13c8afe8f2` |
+> | Synthetic comparison baseline | `3316356d58480dcf86b08132272bed613f86ca4f`; not upstream history |
+> | Corrected manifest | `research/s21-corrected-candidate.json` |
+> | Corrected full diff SHA-256 | `c77152a73b0cfe7f86051fc0f256f46698101af51ddb10a9ea1e297d5015adc4` |
+> | Correction-only diff SHA-256 | `6786c17cad2e7bb85c62d91131fd192892edd2989c1a348b51058c3d2f0a73a9` |
+> | Corrected engine-task SHA-256 / length | `236e174fdf1fd225e699b4b3a1dce46a8b882db09f4fd717e397dfaed51d49be` / 97,293 bytes |
+> | Initial engine-task SHA-256 | `532231a6757ea60c5b8d2cd162d7e05112ea8c0e4ed4ae37426c6d3f409248af` |
+> | Immutable initial review | `research/s21-independent-review.md`, SHA-256 `6e9ce14ea3d0d1867f6f42bbd506b357753e4f4adb9f52f4de36258b2e19f110` |
+>
+> I independently checked the current bytes against all eight top-level corrected-manifest entries. All hashes and lengths match. The other seven documents are byte-identical to the initial reviewed candidate. The correction has two nonblank additions and no deletions: one paragraph with its separating blank line and one table row. Removing exactly those additions in memory recovers the initial engine-task hash. The actual `git diff` matches the corrected full-diff hash, and the correction-only diff matches its recorded hash. The initial review report retains its original hash.
+>
+> ## S21-R01 disposition
+>
+> **Original requirement:** the integration card must identify the real diagnostic consumer and define observable successful and refused outcomes, rather than allowing transport status/counts to stand in for the new checked measurement. The initial review located the gap in the new first-measurement/acceptance wording and the actual `nevrotick-observe::write_report` consumer.
+>
+> | Affected guarantee | Corrected text and verification |
+> | --- | --- |
+> | Named consumer and distinct stages | The new **Diagnostic exit** paragraph names `nevrotick-observe` and separates transport-only observations, successful experimental measurements and later Core insufficient/ready/rejected outcomes. |
+> | Actual measurement reaches output | The paragraph requires checked phase and signed raw RTT, explicit units, exact representation or rounding residual/error, acquisition/reference age and capture/mapping/error qualifiers. The new control requires emitted values and qualifiers to match independently reconstructed observations and peer bytes. Internal arithmetic alone can no longer satisfy the stated diagnostic exit. |
+> | Meaningful refusal and honest absence | The paragraph requires bounded allowlisted reasons for unavailable mapping, era/arithmetic failure, stale context/deadline and later statistical refusal. Missing measurement or estimate remains absent. The paired control checks the expected reason, absent result and no added observation or refreshed history/estimate. |
+> | Existing authority and stage limits | Both additions retain `authentication=none eligible=0` for the first exit. Later Core outcomes must not invent a fit. The diagnostic observer must not perform the claimed transition. Raw error strings and packet dumps are excluded from the diagnostic projection; independent captured test evidence remains covered by the separate real-UDP control. |
+>
+> The inspected `write_report` source still emits the existing transport-only fields. The new wording correctly instructs a future extension; it does not claim that the source already emits these measurements. Its surrounding acceptance section continues to label the controls **specified, not executed**. No change to the production uncertainty formula, schema/framework selection, proof-first order or execution permissions is introduced.
+>
+> **Disposition:** the documentation correction fully addresses S21-R01 within its original scope. No further material finding was identified in the two insertions. No product repair or execution result is credited by closing this documentation finding.
+>
+> ## Actual read and check scope
+>
+> This targeted pass read the correction-only diff, the corrected manifest, the initial candidate manifest for identity comparison, the current engine card around the two insertions and acceptance controls, and `crates/nevrotick-engine/src/bin/nevrotick-observe.rs`'s actual `write_report` body. It performed read-only hashing, in-memory reconstruction, `git diff` and `git status` checks. The status remains exactly the eight expected modified Markdown paths.
+>
+> The initial independent review supplies the unchanged requirements, source tracing, numerical/primary-source review and evidence limitations. No author research or analysis reports, private context or memory were read. No external research was repeated because the correction adds no new consequential external factual claim. There were no unavailable required inputs in this targeted pass.
+>
+> The corrected manifest's nested `validation.links.sha256` still carries the initial engine-task hash. I treat that nested validation record as retained initial evidence, not a newly executed check of the corrected engine bytes. The two additions introduce no links, anchors or diagrams; this targeted verification independently checks the actual corrected bytes and does not claim a fresh full link-validation run.
+>
+> Only this correction-verification report was written. The initial report and repository files were left unchanged. No product code, build, test, proof, native operation, installation, agent launch or remote write was executed.
+>
+> ## Remaining limits and next action
+>
+> READY applies to the eight-file **documentation preparation and handoff** after the correction. The finite capture/mapping/date profile, production reference-time and uncertainty/divisor contract, actual diagnostic implementation, runtime-to-Core integration, mathematical proof obligations and native/resource evidence retain their existing owners and remain open as previously recorded. W11-W01 remains partial source preparation; S1.1c remains first in the development queue.
+>
+> The coordinator may record this closure against the exact corrected candidate and continue its already-authorized documentation handoff. This verification adds no execution, publication or release authority.
+
+#### Coordinator checks and evidence boundaries
+
+The corrected eight-file documentation candidate passed `git diff --check` and
+the focused consistency checks. The refreshed link check covered **1,099 local
+links/headings**, with no new or pre-existing failures and no unavailable anchor
+targets. This refreshed run binds the corrected engine bytes; the initial nested
+validation hashes discussed in the targeted report remain historical evidence.
+
+The original engine body from its authority section through S44, W11 historical
+receipts §4.1–§4.25, the proof-first queue prefix, all five architecture Mermaid
+blocks, canonical REQ/BND/DEC/THR/CHECK/OPEN identities and existing architecture
+source entries were preserved. Exactly the eight approved Markdown paths changed;
+product code, dependency and skill-package files did not change.
+
+The first preservation-script run incorrectly included W11's editable current
+§4 evidence table in the historical prefix and reported a failure. The coordinator
+retained that initial result, corrected the check to the actual historical receipt
+boundary at §4.1, and reran it successfully without changing repository bytes to
+satisfy the check. This was a checker-scope correction, not a product or historical
+receipt repair. The full upstream inventory contains no `docs/SHA256SUMS.txt`;
+no exported-bundle integrity claim is made.
+
+The coordinator independently recomputed the dyadic and ideal-decimal examples
+with exact rational arithmetic. That checks the written oracle values, not the
+product implementation or the mandatory whole-domain proofs. No product build,
+test, solver, native Windows, clock/service or public-time-server experiment ran
+for this documentation delivery. The full upstream tree remains the publication
+base; the partial synthetic checkout is never published as repository history.

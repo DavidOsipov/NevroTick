@@ -84,6 +84,14 @@ carry this requirement through planning, Rust/contract implementation and final
 qualification. Missing or invalidated proof evidence keeps dependent mathematical
 acceptance incomplete; choosing a different tool does not waive the obligation.
 
+**S2.1 preparation, 5 November 2026:** the existing [engine integration card](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
+consolidates three research lanes and their analysis into the real acquisition
+producer/consumer handoff. It distinguishes the existing exchange-to-Core fixture
+chain, the first experimental real-UDP measurement and later justified
+uncertainty/Core admission. [W11-W01 §4.26](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
+remains partial source preparation. S1.1c stays first; no implementation, proof,
+native result, new gate or execution permission is established by this addition.
+
 **Independent MSIX removal, 5 November 2026:** the
 [recovery continuation](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
 and [W11 task §4.25](../tasks/windows11-integration.md#425-independent-removal-with-outstanding-recovery--5-november-2026)
