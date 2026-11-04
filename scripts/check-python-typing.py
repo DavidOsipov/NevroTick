@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Admit and isolate a pinned checker for four fixture-verification Python owners.
+"""Admit and isolate a pinned checker for seven fixture-verification Python owners.
 
 This entry point installs nothing. The external receipt freezes every regular
 file in an owned checker environment, the exact wheel pins, policy and source
@@ -34,6 +34,9 @@ HELPERS = {
     "scripts/core-analysis-cohorts.py": "core_analysis_cohorts.py",
     "scripts/core-chart-accounting.py": "core_chart_accounting.py",
     "scripts/core-chart-contracts.py": "core_chart_contracts.py",
+    "scripts/core-chart-combination-accounting.py": "core_chart_combination_accounting.py",
+    "scripts/core-chart-combination-contracts.py": "core_chart_combination_contracts.py",
+    "scripts/core-rate-delivery-accounting.py": "core_rate_delivery_accounting.py",
 }
 FIXTURE_NAMES = (
     "typed_consumer.py", "wrong_field.py", "wrong_value.py",
@@ -82,8 +85,178 @@ CASES = (
     ("lifecycle_partial_as_complete", "lifecycle_partial_as_complete.py", "arg-type", "LifecyclePartialObservation"),
     ("unhandled_status", "unhandled_status.py", "arg-type", "InterruptedObservation"),
     ("unhandled_match", "unhandled_match.py", "exhaustive-match", "interrupted"),
+    ("chart_combination_wrong_recipe_value", "chart_combination_wrong_recipe_value.py", "typeddict-item", "direct_selections"),
+    ("chart_combination_wrong_owner", "chart_combination_wrong_owner.py", "arg-type", "adaptive_work"),
+    ("chart_combination_reservation_as_outcome", "chart_combination_reservation_as_outcome.py", "return-value", "OutcomeSummary"),
+    ("chart_combination_unhandled_status", "chart_combination_unhandled_status.py", "arg-type", "incomplete"),
+    ("incompatible_chart_combination_accounting", "typed_consumer.py", "assignment", "ChartCombinationAccountingInterface"),
+    ("incompatible_chart_combination_contracts", "typed_consumer.py", "assignment", "ChartCombinationContractsInterface"),
+    ("rate_delivery_wrong_field", "rate_delivery_wrong_field.py", "typeddict-item", "rate_source_only_pending"),
+    ("rate_delivery_reservation_as_outcome", "rate_delivery_reservation_as_outcome.py", "return-value", "Observation"),
+    ("rate_delivery_unhandled_status", "rate_delivery_unhandled_status.py", "arg-type", "incomplete"),
+    ("incompatible_rate_delivery_accounting", "typed_consumer.py", "assignment", "RateDeliveryAccountingInterface"),
     ("incompatible_implementation", "typed_consumer.py", "assignment", "CombinationInterface"),
 )
+
+
+# Generated additions preserve the maintained old fixture bytes. These copies
+# are bound by this checker's admitted source hash, inspected under the same
+# closed import/escape policy, and inventoried before each command.
+CHART_COMBINATION_CONSUMER = b'''
+
+import core_chart_combination_accounting as chart_combination
+import core_chart_combination_contracts as chart_combination_contracts
+
+
+class ChartCombinationAccountingInterface(Protocol):
+    def case_recipes(self) -> dict[str, chart_combination.Recipe]: ...
+    def case_ceilings(self) -> dict[str, chart_combination.Recipe]: ...
+    def full_package_reservation(self, owners: chart_combination.WorkOwners, *,
+                                 prior_budget: dict[str, int], include_doctests: bool = True) -> dict[str, int]: ...
+    def external_legal_reservation(self, owners: chart_combination.WorkOwners,
+                                   contracts: chart_combination.ContractOwner, *, prior_budget: dict[str, int]) -> dict[str, int]: ...
+    def mechanism_reservation(self, owners: chart_combination.WorkOwners, recipe: chart_combination.Recipe, *,
+                              prior_budget: dict[str, int], ordinary_outcomes: int) -> dict[str, int]: ...
+    def numeric_work(self, vector: dict[str, int]) -> dict[str, int]: ...
+    def preserve_and_extend(self, prior_budget: dict[str, int], vector: dict[str, int]) -> dict[str, int]: ...
+    def admit_sources(self, source_sha256: dict[str, str]) -> dict[str, str]: ...
+    def source_test_outcomes(self, output: str, *, require_complete: bool = False) -> chart_combination.OutcomeSummary: ...
+
+
+class ChartCombinationContractsInterface(Protocol):
+    def legal_expected(self) -> dict[str, int]: ...
+    def contract_counts(self, output: object) -> dict[str, int]: ...
+    def legal_contract_source(self) -> str: ...
+    def contract_examples(self) -> dict[str, dict[str, object]]: ...
+
+
+chart_combination_accounting: ChartCombinationAccountingInterface = chart_combination
+chart_combination_legal: ChartCombinationContractsInterface = chart_combination_contracts
+
+
+def chart_combination_budget(owners: chart_combination.WorkOwners, prior: dict[str, int]) -> dict[str, int]:
+    delta = chart_combination_accounting.full_package_reservation(owners, prior_budget=prior)
+    return chart_combination_accounting.preserve_and_extend(prior, delta)
+
+
+def chart_combination_legal_budget(owners: chart_combination.WorkOwners, prior: dict[str, int]) -> dict[str, int]:
+    actual = chart_combination.ContractOwner(fields=chart_combination_contracts.FIELDS,
+        expected=chart_combination_legal.legal_expected, source=chart_combination_legal.legal_contract_source)
+    return chart_combination_accounting.external_legal_reservation(owners, actual, prior_budget=prior)
+
+
+def chart_combination_outcomes(output: str) -> chart_combination.OutcomeSummary:
+    return chart_combination_accounting.source_test_outcomes(output, require_complete=True)
+'''
+
+RATE_DELIVERY_CONSUMER = b'''
+
+import core_rate_delivery_accounting as rate_delivery
+
+
+class RateDeliveryAccountingInterface(Protocol):
+    def case_recipes(self) -> dict[str, dict[str, int]]: ...
+    def validate_case_recipes(self, value: object) -> dict[str, dict[str, int]]: ...
+    def package_overlay(self, *, include_doctests: bool = False) -> dict[str, int]: ...
+    def validate_overlay(self, value: object, *, include_doctests: bool = False) -> dict[str, int]: ...
+    def admit_sources(self, actual: dict[str, str]) -> dict[str, str]: ...
+    def profile_observation(self, output: str, *, require_complete: bool = False,
+                            require_doctests: bool = False) -> rate_delivery.Observation: ...
+
+
+rate_delivery_accounting: RateDeliveryAccountingInterface = rate_delivery
+
+
+def rate_delivery_outcomes(output: str) -> rate_delivery.Observation:
+    return rate_delivery_accounting.profile_observation(
+        output, require_complete=True, require_doctests=True)
+
+
+def rate_delivery_reservation(include_doctests: bool) -> dict[str, int]:
+    return rate_delivery_accounting.validate_overlay(
+        rate_delivery_accounting.package_overlay(include_doctests=include_doctests),
+        include_doctests=include_doctests)
+
+
+def rate_delivery_status(record: rate_delivery.Observation) -> str:
+    if record["rate_source_test_observation"] == "complete":
+        return "complete"
+    if record["rate_source_test_observation"] == "incomplete":
+        return "incomplete"
+    assert_never(record["rate_source_test_observation"])
+'''
+
+GENERATED_FIXTURES = {
+    "chart_combination_wrong_recipe_value.py": b'''import core_chart_combination_accounting as chart_combination
+
+def wrong_recipe(recipe: chart_combination.Recipe) -> None:
+    recipe["direct_selections"] = "not-an-integer"
+''',
+    "chart_combination_wrong_owner.py": b'''import core_chart_combination_accounting as chart_combination
+
+def wrong_callback(calls: dict[str, str]) -> dict[str, int]:
+    return {}
+
+def wrong_owner(owners: chart_combination.WorkOwners) -> chart_combination.WorkOwners:
+    return chart_combination.WorkOwners(adaptive_work=wrong_callback,
+        projection_work=owners.projection_work, adapter_work=owners.adapter_work,
+        enclosure_work=owners.enclosure_work, selection_work=owners.selection_work,
+        chart_owner_work=owners.chart_owner_work, tracking_work=owners.tracking_work,
+        chart_roundoff_work=owners.chart_roundoff_work, chart_batch_work=owners.chart_batch_work,
+        legacy_batch_work=owners.legacy_batch_work, descriptor_work=owners.descriptor_work,
+        principal_receiver_work=owners.principal_receiver_work, lifecycle_work=owners.lifecycle_work)
+''',
+    "chart_combination_reservation_as_outcome.py": b'''import core_chart_combination_accounting as chart_combination
+
+def wrong_observation(owners: chart_combination.WorkOwners, prior: dict[str, int]) -> chart_combination.OutcomeSummary:
+    return chart_combination.full_package_reservation(owners, prior_budget=prior)
+''',
+    "chart_combination_unhandled_status.py": b'''from typing import assert_never
+import core_chart_combination_accounting as chart_combination
+
+def missing_incomplete(record: chart_combination.OutcomeSummary) -> str:
+    if record["status"] == "complete":
+        return "complete"
+    assert_never(record["status"])
+''',
+    "rate_delivery_wrong_field.py": b'''import core_rate_delivery_accounting as rate_delivery
+
+def wrong_field(record: rate_delivery.Observation) -> None:
+    record["rate_source_only_pending"] = "not-a-boolean"
+''',
+    "rate_delivery_reservation_as_outcome.py": b'''import core_rate_delivery_accounting as rate_delivery
+
+def wrong_observation() -> rate_delivery.Observation:
+    return rate_delivery.package_overlay()
+''',
+    "rate_delivery_unhandled_status.py": b'''from typing import assert_never
+import core_rate_delivery_accounting as rate_delivery
+
+def missing_incomplete(record: rate_delivery.Observation) -> str:
+    if record["rate_source_test_observation"] == "complete":
+        return "complete"
+    assert_never(record["rate_source_test_observation"])
+''',
+}
+
+IMPLEMENTATION_MUTATIONS = {
+    "incompatible_implementation": (
+        "core_combination_accounting.py",
+        b"def full_package_reservation() -> CombinationReservation:",
+        b"def full_package_reservation(required: str) -> CombinationReservation:"),
+    "incompatible_chart_combination_accounting": (
+        "core_chart_combination_accounting.py",
+        b"def full_package_reservation(owners: WorkOwners, *, prior_budget: dict[str, int],",
+        b"def full_package_reservation(owners: WorkOwners, required: str, *, prior_budget: dict[str, int],"),
+    "incompatible_chart_combination_contracts": (
+        "core_chart_combination_contracts.py",
+        b"def contract_examples() -> dict[str, dict[str, object]]:",
+        b"def contract_examples(required: str) -> dict[str, dict[str, object]]:"),
+    "incompatible_rate_delivery_accounting": (
+        "core_rate_delivery_accounting.py",
+        b"def package_overlay(*, include_doctests: bool = False) -> dict[str, int]:",
+        b"def package_overlay(required: str, *, include_doctests: bool = False) -> dict[str, int]:"),
+}
 
 
 class Incomplete(ValueError):
@@ -238,11 +411,17 @@ def inspect_sources(sources: dict[str, bytes]) -> list[str]:
     """Reject unchecked escape hatches/import expansion in the checked closure."""
     allowed = {"__future__", "typing", "re", "hashlib", "json", "pathlib",
                "core_combination_accounting", "core_analysis_cohorts",
-               "core_chart_accounting", "core_chart_contracts"}
+               "core_chart_accounting", "core_chart_contracts",
+               "core_chart_combination_accounting", "core_chart_combination_contracts",
+               "core_rate_delivery_accounting"}
     imports = set()
     checked = [*HELPERS, *(f"{FIXTURE_DIR}/{name}" for name in FIXTURE_NAMES)]
-    for name in checked:
-        text = sources[name].decode("utf-8")
+    selected = {name: sources[name] for name in checked}
+    selected["generated/typed_consumer_extension.py"] = CHART_COMBINATION_CONSUMER
+    selected["generated/rate_delivery_consumer_extension.py"] = RATE_DELIVERY_CONSUMER
+    selected.update({"generated/" + name: raw for name, raw in GENERATED_FIXTURES.items()})
+    for name, raw in selected.items():
+        text = raw.decode("utf-8")
         if re.search(r"#\s*type:\s*ignore\b|#\s*mypy:", text):
             raise Incomplete(f"Unchecked per-source checker override: {name}")
         tree = ast.parse(text, filename=name)
@@ -363,16 +542,18 @@ def prepare_source(directory: Path, sources: dict[str, bytes], case: tuple | Non
     directory.mkdir()
     for original, normalized in HELPERS.items():
         raw = sources[original]
-        if case and case[0] == "incompatible_implementation" and normalized == "core_combination_accounting.py":
-            before = b"def full_package_reservation() -> CombinationReservation:"
-            after = b"def full_package_reservation(required: str) -> CombinationReservation:"
+        mutation = IMPLEMENTATION_MUTATIONS.get(case[0]) if case else None
+        if mutation and normalized == mutation[0]:
+            _, before, after = mutation
             if raw.count(before) != 1:
                 raise Incomplete("Actual implementation signature mutation no longer has one exact owner.")
             raw = raw.replace(before, after)
         (directory / normalized).write_bytes(raw)
-    (directory / "typed_consumer.py").write_bytes(sources[f"{FIXTURE_DIR}/typed_consumer.py"])
+    (directory / "typed_consumer.py").write_bytes(
+        sources[f"{FIXTURE_DIR}/typed_consumer.py"] + CHART_COMBINATION_CONSUMER + RATE_DELIVERY_CONSUMER)
     if case and case[1] != "typed_consumer.py":
-        (directory / case[1]).write_bytes(sources[f"{FIXTURE_DIR}/{case[1]}"])
+        fixture = GENERATED_FIXTURES.get(case[1])
+        (directory / case[1]).write_bytes(fixture if fixture is not None else sources[f"{FIXTURE_DIR}/{case[1]}"])
 
 
 def execute(root: Path, checker_python: Path, admission: Path, fixtures: bool) -> dict:
@@ -399,7 +580,7 @@ def execute(root: Path, checker_python: Path, admission: Path, fixtures: bool) -
     inspect_environment(checker_root, files, policy)
     checked_imports = inspect_sources(sources)
     admitted_seconds = time.monotonic() - started
-    evidence = {"schema_version": 1, "status": "incomplete", "scope": "four fixture helpers and independent typed consumer",
+    evidence = {"schema_version": 1, "status": "incomplete", "scope": "seven fixture helpers and independent typed consumer",
                 "admission_sha256": digest(receipt_raw), "policy_sha256": digest(policy_raw),
                 "sources": source_hashes, "python_version": policy["python_version"],
                 "mypy_version": policy["mypy_version"], "wheels": policy["wheels"],
@@ -408,6 +589,9 @@ def execute(root: Path, checker_python: Path, admission: Path, fixtures: bool) -
                 "checked_imports": checked_imports,
                 "fixture_controls_requested": fixtures, "fixture_controls_executed": [],
                 "normalization": HELPERS, "exceptions": [], "lanes": [],
+                "generated_source_sha256": {
+                    "typed_consumer.py": digest(sources[f"{FIXTURE_DIR}/typed_consumer.py"] + CHART_COMBINATION_CONSUMER + RATE_DELIVERY_CONSUMER),
+                    **{name: digest(raw) for name, raw in GENERATED_FIXTURES.items()}},
                 "timings_seconds": {"admission": round(admitted_seconds, 3)}}
     def bookend(work: Path, selected: Path, selected_files: dict[str, str]) -> None:
         if (source_snapshot(root)[1] != source_hashes or read_regular(root / POLICY_PATH, MAX_JSON) != policy_raw

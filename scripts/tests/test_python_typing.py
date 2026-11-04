@@ -1,5 +1,6 @@
 """Admission and failure-propagation controls; real mypy fixtures are a separate lane."""
 import importlib.util
+import ast
 import contextlib
 import io
 import json
@@ -18,21 +19,24 @@ TYPING = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TYPING)
 
 
-def result(output="Success: no issues found in 5 source files\n", exit_code=0, failure=None):
+def result(output="Success: no issues found in 8 source files\n", exit_code=0, failure=None):
     return {"command": ["synthetic-checker"], "exit_code": exit_code, "failure": failure, "output": output}
 
 
 class AdmissionTests(unittest.TestCase):
-    def test_four_selected_helpers_have_exact_fifteen_input_source_closure(self):
+    def test_seven_selected_helpers_have_exact_eighteen_input_source_closure(self):
         expected = {
             "scripts/core-combination-accounting.py": "core_combination_accounting.py",
             "scripts/core-analysis-cohorts.py": "core_analysis_cohorts.py",
             "scripts/core-chart-accounting.py": "core_chart_accounting.py",
             "scripts/core-chart-contracts.py": "core_chart_contracts.py",
+            "scripts/core-chart-combination-accounting.py": "core_chart_combination_accounting.py",
+            "scripts/core-chart-combination-contracts.py": "core_chart_combination_contracts.py",
+            "scripts/core-rate-delivery-accounting.py": "core_rate_delivery_accounting.py",
         }
         self.assertEqual(TYPING.HELPERS, expected)
-        self.assertEqual(len(TYPING.SOURCE_PATHS), 15)
-        self.assertEqual(len(set(TYPING.SOURCE_PATHS)), 15)
+        self.assertEqual(len(TYPING.SOURCE_PATHS), 18)
+        self.assertEqual(len(set(TYPING.SOURCE_PATHS)), 18)
         sources, hashes = TYPING.source_snapshot(ROOT)
         self.assertEqual(set(sources), set(TYPING.SOURCE_PATHS))
         self.assertEqual(set(hashes), set(TYPING.SOURCE_PATHS))
@@ -183,6 +187,105 @@ class AdmissionTests(unittest.TestCase):
                           (faulty / "core_combination_accounting.py").read_bytes())
         self.assertEqual(sources, before)
 
+    def test_new_generated_consumer_binds_actual_modules_without_changing_old_fixture(self):
+        sources, _ = TYPING.source_snapshot(ROOT)
+        original = sources[f"{TYPING.FIXTURE_DIR}/typed_consumer.py"]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary) / "healthy"
+            TYPING.prepare_source(directory, sources, None)
+            actual = (directory / "typed_consumer.py").read_bytes()
+        self.assertEqual(actual, original + TYPING.CHART_COMBINATION_CONSUMER + TYPING.RATE_DELIVERY_CONSUMER)
+        self.assertEqual(sources[f"{TYPING.FIXTURE_DIR}/typed_consumer.py"], original)
+        tree = ast.parse(actual.decode())
+        bindings = {node.target.id: ast.unparse(node.annotation) for node in tree.body
+                    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)}
+        self.assertEqual(bindings["chart_combination_accounting"], "ChartCombinationAccountingInterface")
+        self.assertEqual(bindings["chart_combination_legal"], "ChartCombinationContractsInterface")
+        self.assertEqual(bindings["rate_delivery_accounting"], "RateDeliveryAccountingInterface")
+        classes = {node.name: node for node in tree.body if isinstance(node, ast.ClassDef)}
+        self.assertIn("ChartCombinationAccountingInterface", classes)
+        self.assertIn("ChartCombinationContractsInterface", classes)
+        rate_interface = classes["RateDeliveryAccountingInterface"]
+        self.assertEqual({node.name for node in rate_interface.body if isinstance(node, ast.FunctionDef)},
+                         {"case_recipes", "validate_case_recipes", "package_overlay", "validate_overlay",
+                          "admit_sources", "profile_observation"})
+        actual_names = TYPING.inspect_sources(sources)
+        self.assertIn("core_chart_combination_accounting", actual_names)
+        self.assertIn("core_chart_combination_contracts", actual_names)
+        self.assertIn("core_rate_delivery_accounting", actual_names)
+
+    def test_old_nine_and_six_chart_controls_are_preserved_with_four_rate_controls(self):
+        old = (
+            ("wrong_field", "wrong_field.py", "typeddict-item", "unknown_counter"),
+            ("wrong_value", "wrong_value.py", "typeddict-item", "terms"),
+            ("reservation_as_observation", "reservation_as_observation.py", "return-value", "ReservedAttempts"),
+            ("partial_as_complete", "partial_as_complete.py", "arg-type", "PartialObservation"),
+            ("lifecycle_reservation_as_observation", "lifecycle_reservation_as_observation.py", "return-value", "ReservedLifecycleAttempts"),
+            ("lifecycle_partial_as_complete", "lifecycle_partial_as_complete.py", "arg-type", "LifecyclePartialObservation"),
+            ("unhandled_status", "unhandled_status.py", "arg-type", "InterruptedObservation"),
+            ("unhandled_match", "unhandled_match.py", "exhaustive-match", "interrupted"),
+            ("incompatible_implementation", "typed_consumer.py", "assignment", "CombinationInterface"))
+        names = {case[0] for case in old}
+        self.assertEqual(tuple(case for case in TYPING.CASES if case[0] in names), old)
+        self.assertEqual(len(TYPING.CASES), 19)
+        self.assertEqual(len({case[0] for case in TYPING.CASES}), 19)
+        self.assertEqual(len(TYPING.GENERATED_FIXTURES), 7)
+        self.assertEqual(len(TYPING.IMPLEMENTATION_MUTATIONS), 4)
+        rate_cases = (
+            ("rate_delivery_wrong_field", "rate_delivery_wrong_field.py", "typeddict-item", "rate_source_only_pending"),
+            ("rate_delivery_reservation_as_outcome", "rate_delivery_reservation_as_outcome.py", "return-value", "Observation"),
+            ("rate_delivery_unhandled_status", "rate_delivery_unhandled_status.py", "arg-type", "incomplete"),
+            ("incompatible_rate_delivery_accounting", "typed_consumer.py", "assignment", "RateDeliveryAccountingInterface"),
+        )
+        self.assertEqual(tuple(case for case in TYPING.CASES if "rate_delivery" in case[0]), rate_cases)
+
+    def test_each_new_fixture_has_its_exact_frozen_copy_and_only_one_changed_owner(self):
+        sources, _ = TYPING.source_snapshot(ROOT)
+        before = dict(sources)
+        selected = [case for case in TYPING.CASES
+                    if "chart_combination" in case[0] or "rate_delivery" in case[0]]
+        with tempfile.TemporaryDirectory() as temporary:
+            for case in selected:
+                directory = Path(temporary) / case[0]
+                TYPING.prepare_source(directory, sources, case)
+                if case[1] in TYPING.GENERATED_FIXTURES:
+                    self.assertEqual((directory / case[1]).read_bytes(), TYPING.GENERATED_FIXTURES[case[1]])
+                for original, normalized in TYPING.HELPERS.items():
+                    expected = sources[original]
+                    if case[0] in TYPING.IMPLEMENTATION_MUTATIONS:
+                        owner, start, replacement = TYPING.IMPLEMENTATION_MUTATIONS[case[0]]
+                        if normalized == owner:
+                            self.assertEqual(expected.count(start), 1)
+                            expected = expected.replace(start, replacement)
+                    self.assertEqual((directory / normalized).read_bytes(), expected)
+        self.assertEqual(sources, before)
+
+    def test_signature_mutations_reject_missing_and_duplicate_exact_owners(self):
+        sources, _ = TYPING.source_snapshot(ROOT)
+        with tempfile.TemporaryDirectory() as temporary:
+            for name, (normalized, start, _) in TYPING.IMPLEMENTATION_MUTATIONS.items():
+                original = next(path for path, copy in TYPING.HELPERS.items() if copy == normalized)
+                case = next(case for case in TYPING.CASES if case[0] == name)
+                for mode in ("missing", "duplicate"):
+                    raw = sources[original]
+                    altered = raw.replace(start, b"def changed_signature(") if mode == "missing" else raw + b"\n" + start
+                    with self.subTest(name=name, mode=mode), self.assertRaisesRegex(TYPING.Incomplete, "one exact owner"):
+                        TYPING.prepare_source(Path(temporary) / (name + mode), {**sources, original: altered}, case)
+
+    def test_generated_controls_receive_the_same_escape_and_import_admission(self):
+        sources, _ = TYPING.source_snapshot(ROOT)
+        for extra in (b"\nfrom typing import Any\n", b"\nvalue = 1 # type: ignore\n", b"\nimport arbitrary_module\n"):
+            with patch.object(TYPING, "CHART_COMBINATION_CONSUMER", TYPING.CHART_COMBINATION_CONSUMER + extra):
+                with self.assertRaises(TYPING.Incomplete):
+                    TYPING.inspect_sources(sources)
+            with patch.object(TYPING, "RATE_DELIVERY_CONSUMER", TYPING.RATE_DELIVERY_CONSUMER + extra):
+                with self.assertRaises(TYPING.Incomplete):
+                    TYPING.inspect_sources(sources)
+            name, raw = next(iter(TYPING.GENERATED_FIXTURES.items()))
+            with patch.dict(TYPING.GENERATED_FIXTURES, {name: raw + extra}):
+                with self.assertRaises(TYPING.Incomplete):
+                    TYPING.inspect_sources(sources)
+
 
 class IsolationTests(unittest.TestCase):
     def test_missing_sandbox_is_incomplete_without_host_fallback(self):
@@ -240,7 +343,10 @@ class DiagnosticTests(unittest.TestCase):
         for candidate in (result("Success: no issues found in 0 source files\n"),
                           result("Success: no issues found in 3 source files\n"),
                           result("Success: no issues found in 4 source files\n"),
+                          result("Success: no issues found in 5 source files\n"),
                           result("Success: no issues found in 6 source files\n"),
+                          result("Success: no issues found in 7 source files\n"),
+                          result("Success: no issues found in 9 source files\n"),
                           result(exit_code=7), result(failure="wall timeout")):
             with self.subTest(candidate=candidate), self.assertRaises(TYPING.Incomplete):
                 TYPING.require_result(candidate)
@@ -263,6 +369,21 @@ class DiagnosticTests(unittest.TestCase):
                 TYPING.require_result(result(output, 1), case)
         with self.assertRaises(TYPING.Incomplete):
             TYPING.require_result(result(), case)
+
+    def test_every_new_control_requires_its_intended_owner_type_and_diagnostic(self):
+        for case in TYPING.CASES:
+            if "chart_combination" not in case[0] and "rate_delivery" not in case[0]:
+                continue
+            _, filename, code, fragment = case
+            intended = f'/input/{filename}:5:1: error: intended {fragment} diagnostic  [{code}]\n'
+            TYPING.require_result(result(intended, 1), case)
+            for output in (intended.replace(f"[{code}]", "[import-not-found]"),
+                           intended.replace(fragment, "unrelated"),
+                           intended.replace(filename, "other.py")):
+                with self.subTest(case=case[0], output=output), self.assertRaises(TYPING.Incomplete):
+                    TYPING.require_result(result(output, 1), case)
+            with self.assertRaises(TYPING.Incomplete):
+                TYPING.require_result(result(intended, 0), case)
 
 
 class IntegrationCustodyTests(unittest.TestCase):
@@ -301,30 +422,37 @@ class IntegrationCustodyTests(unittest.TestCase):
     def execute(self):
         return TYPING.execute(self.root, self.checker / "bin/python", self.receipt, False)
 
-    def test_healthy_command_selects_all_four_actual_helpers_and_the_consumer(self):
+    def test_healthy_command_selects_all_seven_actual_helpers_and_the_consumer(self):
         version = result(json.dumps({"python": "3.12.3", "mypy": "2.4.1"}))
         with patch.object(TYPING, "run", side_effect=[version, result()]) as invoked:
             evidence = self.execute()
         expected = {
             "/input/core_combination_accounting.py", "/input/core_analysis_cohorts.py",
             "/input/core_chart_accounting.py", "/input/core_chart_contracts.py",
+            "/input/core_chart_combination_accounting.py", "/input/core_chart_combination_contracts.py",
+            "/input/core_rate_delivery_accounting.py",
             "/input/typed_consumer.py",
         }
         command = invoked.call_args_list[1].args[0]
         self.assertEqual({value for value in command if value.startswith("/input/")}, expected)
-        self.assertEqual(len(evidence["sources"]), 15)
-        self.assertEqual(len(evidence["checked_files"]), 5)
-        self.assertEqual(evidence["scope"], "four fixture helpers and independent typed consumer")
+        self.assertEqual(len(evidence["sources"]), 18)
+        self.assertEqual(len(evidence["checked_files"]), 8)
+        self.assertEqual(evidence["scope"], "seven fixture helpers and independent typed consumer")
+        sources, _ = TYPING.source_snapshot(self.root)
+        expected_generated = {"typed_consumer.py": TYPING.digest(sources[f"{TYPING.FIXTURE_DIR}/typed_consumer.py"] + TYPING.CHART_COMBINATION_CONSUMER + TYPING.RATE_DELIVERY_CONSUMER),
+                              **{name: TYPING.digest(raw) for name, raw in TYPING.GENERATED_FIXTURES.items()}}
+        self.assertEqual(evidence["generated_source_sha256"], expected_generated)
 
     def test_stale_source_extra_tool_and_receipt_keys_refuse_before_execution(self):
-        for mode in ("source", "chart_accounting", "chart_contracts", "tool", "key"):
-            with self.subTest(mode=mode), patch.object(TYPING, "run") as invoked:
-                if mode in ("source", "chart_accounting", "chart_contracts"):
-                    target = self.root / {
-                        "source": "scripts/core-analysis-cohorts.py",
-                        "chart_accounting": "scripts/core-chart-accounting.py",
+        source_paths = {"source": "scripts/core-analysis-cohorts.py", "chart_accounting": "scripts/core-chart-accounting.py",
                         "chart_contracts": "scripts/core-chart-contracts.py",
-                    }[mode]
+                        "chart_combination_accounting": "scripts/core-chart-combination-accounting.py",
+                        "chart_combination_contracts": "scripts/core-chart-combination-contracts.py",
+                        "rate_delivery_accounting": "scripts/core-rate-delivery-accounting.py"}
+        for mode in (*source_paths, "tool", "key"):
+            with self.subTest(mode=mode), patch.object(TYPING, "run") as invoked:
+                if mode in source_paths:
+                    target = self.root / source_paths[mode]
                     original = target.read_bytes()
                     target.write_bytes(original + b"\n# drift\n")
                 elif mode == "tool":
@@ -338,12 +466,40 @@ class IntegrationCustodyTests(unittest.TestCase):
                 with self.assertRaises(TYPING.Incomplete):
                     self.execute()
                 invoked.assert_not_called()
-                if mode in ("source", "chart_accounting", "chart_contracts"):
+                if mode in source_paths:
                     target.write_bytes(original)
                 elif mode == "tool":
                     target.unlink()
                 else:
                     self.receipt.write_bytes(original_receipt)
+
+    def test_historical_four_helper_admission_cannot_admit_current_seven(self):
+        receipt = json.loads(self.receipt.read_text())
+        for path in ("scripts/core-chart-combination-accounting.py", "scripts/core-chart-combination-contracts.py",
+                     "scripts/core-rate-delivery-accounting.py"):
+            receipt["sources"].pop(path)
+        self.receipt.write_text(json.dumps(receipt))
+        with patch.object(TYPING, "run") as invoked:
+            with self.assertRaises(TYPING.Incomplete):
+                self.execute()
+        invoked.assert_not_called()
+
+    def test_pre_rate_six_helper_admission_cannot_omit_the_current_rate_owner(self):
+        receipt = json.loads(self.receipt.read_text())
+        receipt["sources"].pop("scripts/core-rate-delivery-accounting.py", None)
+        self.receipt.write_text(json.dumps(receipt))
+        version = result(json.dumps({"python": "3.12.3", "mypy": "2.4.1"}))
+        with patch.object(TYPING, "run", side_effect=[version, result()]) as invoked:
+            with self.assertRaises(TYPING.Incomplete):
+                self.execute()
+        invoked.assert_not_called()
+
+    def test_missing_rate_source_refuses_before_any_checker_process(self):
+        (self.root / "scripts/core-rate-delivery-accounting.py").unlink()
+        with patch.object(TYPING, "run") as invoked:
+            with self.assertRaisesRegex(TYPING.Incomplete, "Cannot read admitted regular file: .*core-rate-delivery-accounting"):
+                self.execute()
+        invoked.assert_not_called()
 
     def test_native_nonzero_exit_and_output_are_preserved_in_failed_evidence(self):
         version = result(json.dumps({"python": "3.12.3", "mypy": "2.4.1"}))

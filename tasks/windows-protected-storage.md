@@ -5,6 +5,22 @@
 **Inspected project baseline:** [`6b28711f5510e3550039d5fcf8bbcf3ccba791a5`](https://github.com/DavidOsipov/NevroTick/tree/6b28711f5510e3550039d5fcf8bbcf3ccba791a5), tree `fbc8b31f827d55f2c2e85426268979b0d1f827eb`. This task was prepared from an API-derived partial snapshot; it establishes no local checkout or dirty/staged state.  
 **Owner request:** integrate the completed deeper GitHub research into repository documentation, the plan and tasks for the development agent.
 
+## Current delivery supersession — 4 November 2026
+
+Amended [OD-05](../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
+selects one complete hardened MSIX. Use the
+[current package adoption](windows11-integration.md#417-primary-coordinator-adoption-of-the-selected-msix-profile--3-november-2026)
+and W11-W05/W11-W10 for service provisioning, account/SID/ACL ownership,
+servicing and removal. MSI-specific cases in the dated §6.5/§6.6 receipts are
+retained source/history for a later owner-selected alternative; they are not
+the current package contract or an automatic fallback. ST-W03 applies the same
+directory/object-authority invariants to the selected MSIX lifecycle, with its
+actual supported mechanisms still requiring qualification.
+
+ST-W01–ST-W07 retain their recorded source-only/phase-gated dispositions. The
+storage pause, separate mandatory-state owner and scoped Windows/fuzz holds
+remain. The [task index](README.md) supplies navigation without reopening work.
+
 ## 1. Authority, scope and reconciliation
 
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),

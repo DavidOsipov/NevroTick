@@ -114,12 +114,60 @@ class Incomplete(ValueError):
 
 MAX_COHORT_VARIANTS = 512
 MAX_LISTING_VARIANTS = 512
-MAX_OWNERS = 1
+MAX_S158_LISTING_VARIANTS = 512 * 9
+MAX_OWNERS = 9
 MAX_INPUTS = 256
 # Preserve all 1508 earlier fields and add 315 disjoint S155 chart-batch fields.
 # This reviewed width binds the batch recipe and separate legal-consumer delta;
 # reservations are not observed operation counters or arbitrary-mutant quotas.
-MAX_BUDGET_FIELDS = 1823
+# S157 preserves the prior1823 fields and adds391 reviewed source-work fields.
+# Per-plan exact namespaces remain independently checked against the bound recipe.
+MAX_BUDGET_FIELDS = 2214
+# S158 preserves2214 fields and adds468 disjoint reviewed chart_combination fields.
+# Each profile still binds its exact supplied package/check/reservation namespace.
+MAX_S158_BUDGET_FIELDS = 2682
+# S1.4a's2700 fields remain valid for this same registered owner. S1.4c
+# retains S1.4b's2740 and adds25 receiver fields. This is only the current
+# resource ceiling: admission still binds every supplied recipe key and value.
+# Other registered owner profiles keep their independent historical ceilings.
+MAX_REFERENCE_INPUT_BUDGET_FIELDS = 2765
+# S1.4b keeps2700 earlier keys and appends40 disjoint composition work fields.
+MAX_CHART_COMPOSITION_BUDGET_FIELDS = 2740
+MAX_CHART_COMPOSITION_LISTING_VARIANTS = 512 * 3
+# Four changed settled-rate owners retain the predecessor widths and add55
+# rate-delivery fields. Discovery allows512 per file; campaigns stay focused.
+MAX_SETTLED_RATE_BUDGET_FIELDS = 2820
+MAX_SETTLED_RATE_LISTING_VARIANTS = 512 * 4
+S157_OWNERS = {
+    "principal": "crates/time-core/src/principal.rs",
+    "chart_principal": "crates/time-core/src/principal/chart.rs",
+    "chart_batch": "crates/time-core/src/chart_batch.rs",
+}
+S158_OWNERS = {
+    "combination": "crates/time-core/src/combination.rs",
+    "combination_admission": "crates/time-core/src/combination/admission.rs",
+    "combination_lifecycle": "crates/time-core/src/combination/lifecycle.rs",
+    "chart": "crates/time-core/src/regression/chart.rs",
+    "chart_roundoff": "crates/time-core/src/regression/chart/roundoff.rs",
+    "chart_combination_roundoff": "crates/time-core/src/combination/chart/roundoff.rs",
+    "chart_combination_receiving": "crates/time-core/src/combination/chart/receiving.rs",
+    "chart_combination_reduction": "crates/time-core/src/combination/chart/reduction.rs",
+    "chart_combination_lifecycle": "crates/time-core/src/combination/lifecycle/chart.rs",
+}
+REFERENCE_INPUT_OWNERS = {
+    "reference_input": "crates/time-core/src/reference_input.rs",
+}
+CHART_COMPOSITION_OWNERS = {
+    "chart": "crates/time-core/src/regression/chart.rs",
+    "chart_roundoff": "crates/time-core/src/regression/chart/roundoff.rs",
+    "chart_batch": "crates/time-core/src/chart_batch.rs",
+}
+SETTLED_RATE_OWNERS = {
+    "reference_input": "crates/time-core/src/reference_input.rs",
+    "rate_delivery": "crates/time-core/src/reference_input/rate_delivery.rs",
+    "chart": "crates/time-core/src/regression/chart.rs",
+    "chart_roundoff": "crates/time-core/src/regression/chart/roundoff.rs",
+}
 
 PLAN_KEYS = frozenset({
     "schema_version", "status", "candidate_sha256", "product_inputs_sha256",
@@ -170,10 +218,10 @@ def _identity(value: object) -> dict[str, str]:
     return result
 
 
-def _budget(value: object) -> dict[str, int]:
+def _budget(value: object, *, maximum: int = MAX_BUDGET_FIELDS) -> dict[str, int]:
     """Require one exact finite nonnegative integer budget vector."""
     record = _object(value)
-    if not 0 < len(record) <= MAX_BUDGET_FIELDS:
+    if not 0 < len(record) <= maximum:
         raise Incomplete("Cohort source-work budget has an invalid field or bound.")
     result: dict[str, int] = {}
     for key, amount in record.items():
@@ -194,7 +242,10 @@ def _integer(value: object, *, minimum: int = 0) -> int:
 def _inventories(value: object) -> dict[str, Inventory]:
     """Admit exact bounded per-owner count/digest pairs."""
     result: dict[str, Inventory] = {}
-    for owner, raw in _object(value).items():
+    rows = _object(value)
+    if not 0 < len(rows) <= MAX_OWNERS:
+        raise Incomplete("Critical-file inventory has an invalid owner count.")
+    for owner, raw in rows.items():
         row = _object(raw)
         if set(row) != {"count", "sha256"}:
             raise Incomplete("One critical-file inventory has unknown or missing fields.")
@@ -203,6 +254,32 @@ def _inventories(value: object) -> dict[str, Inventory]:
             raise Incomplete("One critical-file inventory is empty or exceeds the focused 512 cap.")
         result[owner] = {"count": count, "sha256": _digest(row["sha256"])}
     return result
+
+
+def _registered(names: set[str]) -> dict[str, str]:
+    """Select an exact reviewed owner namespace, never arbitrary singleton owners."""
+    for owners in (S157_OWNERS, S158_OWNERS, REFERENCE_INPUT_OWNERS,
+                   CHART_COMPOSITION_OWNERS, SETTLED_RATE_OWNERS):
+        if names == set(owners):
+            return owners
+    raise Incomplete("Checkpoint must contain exactly three changed critical owners, nine registered S158 owners, one registered reference-input owner, the exact chart-composition trio or the exact settled-rate quartet.")
+
+
+def _field_limit(inventories: dict[str, Inventory]) -> int:
+    """Check a closed namespace/aggregate, then select its independent field cap."""
+    owners = _registered(set(inventories))
+    ceiling = (MAX_SETTLED_RATE_LISTING_VARIANTS if owners == SETTLED_RATE_OWNERS else
+               MAX_CHART_COMPOSITION_LISTING_VARIANTS if owners == CHART_COMPOSITION_OWNERS else
+               MAX_S158_LISTING_VARIANTS if len(owners) == 9 else MAX_LISTING_VARIANTS)
+    if sum(row["count"] for row in inventories.values()) > ceiling:
+        raise Incomplete("Checkpoint inventory exceeds the separate listing ceiling.")
+    if owners == SETTLED_RATE_OWNERS:
+        return MAX_SETTLED_RATE_BUDGET_FIELDS
+    if owners == CHART_COMPOSITION_OWNERS:
+        return MAX_CHART_COMPOSITION_BUDGET_FIELDS
+    if len(owners) == 1:
+        return MAX_REFERENCE_INPUT_BUDGET_FIELDS
+    return MAX_BUDGET_FIELDS if len(owners) == 3 else MAX_S158_BUDGET_FIELDS
 
 
 def historical_s148_remaining_checks(value: object) -> RemainingChecks:
@@ -220,14 +297,14 @@ def historical_s148_remaining_checks(value: object) -> RemainingChecks:
 
 
 def _remaining_checks(value: object) -> RemainingChecks:
-    """Reserve one fresh S154 coverage and contracts lane, with no retry credit."""
+    """Reserve one fresh coverage and contracts lane, with no retry credit."""
     row = _object(value)
     if set(row) != set(CHECKS) or any(type(count) is not int or count != 1 for count in row.values()):
-        raise Incomplete("S154 must reserve exactly one coverage and one contracts invocation.")
+        raise Incomplete("Checkpoint must reserve exactly one coverage and one contracts invocation.")
     return {"coverage": _integer(row["coverage"]), "contracts": _integer(row["contracts"])}
 
 
-def _reservation(value: object) -> SourceReservation:
+def _reservation(value: object, *, maximum: int = MAX_BUDGET_FIELDS) -> SourceReservation:
     """Project the complete source-work reservation, never observed consumption."""
     row = _object(value)
     if set(row) != {"mutation_variants", "mutation_baselines", "mutation_package_invocations", "source_work"}:
@@ -235,7 +312,7 @@ def _reservation(value: object) -> SourceReservation:
     return {"mutation_variants": _integer(row["mutation_variants"]),
             "mutation_baselines": _integer(row["mutation_baselines"]),
             "mutation_package_invocations": _integer(row["mutation_package_invocations"]),
-            "source_work": _budget(row["source_work"])}
+            "source_work": _budget(row["source_work"], maximum=maximum)}
 
 
 def _same(actual: object, expected: object) -> bool:
@@ -257,16 +334,17 @@ def plan_reservation(plan: object, package_budget: object, check_budgets: object
 
     This is a source-derived upper reservation before effects. It is never
     reduced for an eventual unviable variant, failed assertion or partial log.
-    This S155 reservation includes no predecessor result transfer or retry allowance.
+    No profile transfers predecessor results or grants a retry allowance.
     Native time/process limits remain the wrapper's separate obligations.
     """
     admitted = _reservation_inputs(plan)
-    package = _budget(package_budget)
+    maximum = _field_limit(admitted["inventories"])
+    package = _budget(package_budget, maximum=maximum)
     raw_checks = _object(check_budgets)
     if set(raw_checks) != set(CHECKS):
         raise Incomplete("Remaining-check reservations differ from the package budget schema.")
-    checks: CheckBudgets = {"coverage": _budget(raw_checks["coverage"]),
-                           "contracts": _budget(raw_checks["contracts"])}
+    checks: CheckBudgets = {"coverage": _budget(raw_checks["coverage"], maximum=maximum),
+                           "contracts": _budget(raw_checks["contracts"], maximum=maximum)}
     if any(set(row) != set(package) for row in (checks["coverage"], checks["contracts"])):
         raise Incomplete("Remaining-check reservations differ from the package budget schema.")
     packages = sum(row["count"] + 1 for row in admitted["inventories"].values())
@@ -279,10 +357,10 @@ def plan_reservation(plan: object, package_budget: object, check_budgets: object
             "mutation_package_invocations": packages, "source_work": totals}
 
 
-def _cohorts(value: object) -> list[Cohort]:
+def _cohorts(value: object, owners: dict[str, str]) -> list[Cohort]:
     """Project exact named subject/path rows; partition ownership is checked later."""
-    if not is_exact_list(value) or len(value) != MAX_OWNERS:
-        raise Incomplete("Checkpoint partition must contain the single chart-batch owner once.")
+    if not is_exact_list(value) or len(value) != len(owners):
+        raise Incomplete("Checkpoint partition must contain the three retained-chart owners, nine registered S158 owners, one reference-input owner or four settled-rate owners once.")
     result: list[Cohort] = []
     for raw in value:
         row = _object(raw)
@@ -303,62 +381,45 @@ def _plan(value: object) -> CohortPlan:
     if (type(row["schema_version"]) is not int or row["schema_version"] != 11
             or row["status"] != "admitted-exact-source-and-cohorts"):
         raise Incomplete("Coordinator cohort plan awaits final-source/inventory binding.")
+    inventories = _inventories(row["inventories"])
+    owners = _registered(set(inventories))
+    cohorts = _cohorts(row["cohorts"], owners)
+    _partition(cohorts, owners)
+    product = _identity(row["product_inputs_sha256"])
+    if not set(owners.values()) <= set(product):
+        raise Incomplete("Registered owner sources are missing from the complete product binding.")
     return {"schema_version": 11, "status": "admitted-exact-source-and-cohorts",
             "candidate_sha256": _digest(row["candidate_sha256"]),
-            "product_inputs_sha256": _identity(row["product_inputs_sha256"]),
+            "product_inputs_sha256": product,
             "tool_inputs_sha256": _identity(row["tool_inputs_sha256"]),
             "tool_payloads_sha256": _identity(row["tool_payloads_sha256"]),
             "recipe_sha256": _digest(row["recipe_sha256"]),
-            "inventories": _inventories(row["inventories"]), "cohorts": _cohorts(row["cohorts"]),
+            "inventories": inventories, "cohorts": cohorts,
             "remaining_checks": _remaining_checks(row["remaining_checks"]),
             "baseline_tests": _integer(row["baseline_tests"], minimum=1),
-            "cumulative_reservation": _reservation(row["cumulative_reservation"])}
+            "cumulative_reservation": _reservation(row["cumulative_reservation"],
+                                                    maximum=_field_limit(inventories))}
 
 
 def _subjects(value: object) -> dict[str, str]:
-    """Require the single source owner used by this fresh checkpoint."""
+    """Require one closed reviewed name/path registration without rebinding."""
     raw = _object(value)
     result: dict[str, str] = {}
     for name, path in raw.items():
         if type(path) is not str:
             raise Incomplete("Checkpoint source owner paths must be strings.")
         result[name] = path
-    if len(result) != MAX_OWNERS or len(set(result.values())) != MAX_OWNERS:
-        raise Incomplete("Checkpoint scope must contain exactly one changed critical owner.")
+    if result != _registered(set(result)):
+        raise Incomplete("Checkpoint scope must contain exactly three changed critical owners, nine registered S158 owners, one reference-input owner, the chart-composition trio or settled-rate quartet at their exact paths.")
     return result
 
 
-def admit_plan(plan: object, *, subjects: object, product_inputs: object, tool_inputs: object,
-               recipe_sha256: object, inventories: object, baseline_tests: object,
-               package_budget: object, check_budgets: object, global_limits: object) -> PlanAdmission:
-    """Admit a complete disjoint focused partition against current frozen facts.
-
-    Each cohort selects one existing named owner through the wrapper's ordinary
-    --subject switch. A file exceeding 512 cannot be descriptor-partitioned by
-    this schema. Listing discovery has the same separate 512 aggregate ceiling.
-    """
-    admitted = _plan(plan)
-    owners_by_name = _subjects(subjects)
-    current_product = _identity(product_inputs)
-    if (not _same(admitted["product_inputs_sha256"], current_product)
-            or admitted["candidate_sha256"] != canonical_sha256(current_product)):
-        raise Incomplete("Coordinator cohort plan names a different complete product candidate.")
-    if not _same(admitted["tool_inputs_sha256"], _identity(tool_inputs)):
-        raise Incomplete("Coordinator cohort plan names different tool sources.")
-    if admitted["recipe_sha256"] != _digest(recipe_sha256):
-        raise Incomplete("Coordinator cohort plan names different source-call recipes.")
-    if admitted["baseline_tests"] != _integer(baseline_tests, minimum=1):
-        raise Incomplete("Coordinator baseline test count differs from final source discovery.")
-    current_inventories = _inventories(inventories)
-    if (set(current_inventories) != set(owners_by_name)
-            or not _same(admitted["inventories"], current_inventories)):
-        raise Incomplete("Coordinator inventory union is missing, unknown or changed.")
-    if sum(row["count"] for row in current_inventories.values()) > MAX_LISTING_VARIANTS:
-        raise Incomplete("Checkpoint inventory exceeds the separate listing ceiling.")
+def _partition(cohorts: list[Cohort], owners_by_name: dict[str, str]) -> None:
+    """Check a complete disjoint owner/output partition on every plan entrypoint."""
     ids: set[str] = set()
     owners: set[str] = set()
     outputs: set[str] = set()
-    for row in admitted["cohorts"]:
+    for row in cohorts:
         name, owner, output = row["id"], row["subject"], row["output_dir"]
         if (_NAME.fullmatch(name) is None or name in ids
                 or owner not in owners_by_name or owner in owners):
@@ -374,10 +435,48 @@ def admit_plan(plan: object, *, subjects: object, product_inputs: object, tool_i
         outputs.add(output)
     if owners != set(owners_by_name):
         raise Incomplete("Coordinator partition omits a critical owner.")
+
+
+def admit_plan(plan: object, *, subjects: object, product_inputs: object, tool_inputs: object,
+               recipe_sha256: object, inventories: object, baseline_tests: object,
+               package_budget: object, check_budgets: object, global_limits: object) -> PlanAdmission:
+    """Admit a complete disjoint focused partition against current frozen facts.
+
+    Each cohort selects one existing named owner through the wrapper's ordinary
+    --subject switch. A file exceeding 512 cannot be descriptor-partitioned by
+    this schema. Historical profiles retain512/4608/512 aggregate ceilings; the
+    composition trio has1536 and settled-rate quartet2048. No profile widens an
+    individual cohort beyond512.
+    """
+    admitted = _plan(plan)
+    owners_by_name = _subjects(subjects)
+    current_product = _identity(product_inputs)
+    if not set(owners_by_name.values()) <= set(current_product):
+        raise Incomplete("Registered owner sources are missing from the complete product binding.")
+    if (not _same(admitted["product_inputs_sha256"], current_product)
+            or admitted["candidate_sha256"] != canonical_sha256(current_product)):
+        raise Incomplete("Coordinator cohort plan names a different complete product candidate.")
+    if not _same(admitted["tool_inputs_sha256"], _identity(tool_inputs)):
+        raise Incomplete("Coordinator cohort plan names different tool sources.")
+    if admitted["recipe_sha256"] != _digest(recipe_sha256):
+        raise Incomplete("Coordinator cohort plan names different source-call recipes.")
+    if admitted["baseline_tests"] != _integer(baseline_tests, minimum=1):
+        raise Incomplete("Coordinator baseline test count differs from final source discovery.")
+    current_inventories = _inventories(inventories)
+    if (set(current_inventories) != set(owners_by_name)
+            or not _same(admitted["inventories"], current_inventories)):
+        raise Incomplete("Coordinator inventory union is missing, unknown or changed.")
+    ceiling = (MAX_SETTLED_RATE_LISTING_VARIANTS if owners_by_name == SETTLED_RATE_OWNERS else
+               MAX_CHART_COMPOSITION_LISTING_VARIANTS if owners_by_name == CHART_COMPOSITION_OWNERS else
+               MAX_S158_LISTING_VARIANTS if len(owners_by_name) == 9 else MAX_LISTING_VARIANTS)
+    if sum(row["count"] for row in current_inventories.values()) > ceiling:
+        raise Incomplete("Checkpoint inventory exceeds the separate listing ceiling.")
+    if set(admitted["inventories"]) != set(owners_by_name):
+        raise Incomplete("Coordinator partition omits a critical owner.")
     reservation = plan_reservation(admitted, package_budget, check_budgets)
     if not _same(admitted["cumulative_reservation"], reservation):
         raise Incomplete("Coordinator cumulative reservation omits variant, baseline or remaining-check work.")
-    limits = _budget(global_limits)
+    limits = _budget(global_limits, maximum=_field_limit(admitted["inventories"]))
     if (set(limits) != set(reservation["source_work"])
             or any(amount > limits[key] for key, amount in reservation["source_work"].items())):
         raise Incomplete("Complete cohort union exceeds the existing cumulative source-work allowances.")
@@ -405,6 +504,8 @@ def reconcile_receipts(plan: object, receipts: object, *, subjects: object) -> R
     """
     admitted = _plan(plan)
     owners_by_name = _subjects(subjects)
+    if set(admitted["inventories"]) != set(owners_by_name):
+        raise Incomplete("Receipt union names a different registered owner profile.")
     if not is_exact_list(receipts) or len(receipts) != len(admitted["cohorts"]):
         raise Incomplete("Receipt union is missing or duplicates a focused cohort.")
     seen_ids: set[str] = set()
@@ -462,4 +563,12 @@ def reconcile_receipts(plan: object, receipts: object, *, subjects: object) -> R
             "generated_variants": sum(row["count"] for row in admitted["inventories"].values()),
             "baselines": len(receipts), "reservation": admitted["cumulative_reservation"],
             "critical_manifest_complete_selection": False,
-            "scope": "Single chart-batch critical owner mutation receipt; coverage/contracts and native Windows remain separate."}
+            "scope": ("Four settled-rate critical owner mutation receipts; coverage/contracts and native Windows remain separate."
+                      if owners_by_name == SETTLED_RATE_OWNERS else
+                      "Three chart-composition critical owner mutation receipts; coverage/contracts and native Windows remain separate."
+                      if owners_by_name == CHART_COMPOSITION_OWNERS else
+                      "Three retained-chart critical owner mutation receipts; coverage/contracts and native Windows remain separate."
+                      if len(owners_by_name) == 3 else
+                      "One reference-input critical owner mutation receipt; coverage/contracts and native Windows remain separate."
+                      if len(owners_by_name) == 1 else
+                      "Nine chart-combination critical owner mutation receipts; coverage/contracts and native Windows remain separate.")}

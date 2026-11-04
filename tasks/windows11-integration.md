@@ -155,7 +155,8 @@ at their existing phase scopes.
 owned restoration, the [sleep/timer research](../docs/plans/windows11-integration.md#sleep-timers-and-leap-presentation),
 and the selected [leap policy](../docs/plans/leap-second-policy.md#6-windows-contract-and-limits).
 The [S1.4 task](s1.4-leap-policy.md) owns the pure calendar/guard prerequisites;
-S1.3 remains ahead of dependent S1.4 implementation.
+The current Core checkpoint and applicable selection prerequisites remain ahead
+of dependent leap-policy implementation.
 
 **Work:** preserve UTC, QPC and active-awake meanings. Modern Standby may suspend
 services; a sleep-excluding system clock does not measure broker execution.
@@ -1605,7 +1606,7 @@ shutdown outside guards. Release changes preserve consumed clock authority and
 mandatory recovery state.
 
 This is documentation integration, not a new implementation or execution grant.
-Retain S1.3 priority, the scoped Sandbox boundary in section 4.19, the blocked
+Retain the current Core priority, the scoped Sandbox boundary in section 4.19, the blocked
 stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals. Historical
 receipts keep their original candidates; Store submission and broad release
 remain David's separate decisions. The S1.4 task records the coordinated
@@ -1681,7 +1682,7 @@ whole-machine snapshot rollback. These remain explicit THR-15/17 and existing
 OPEN-11/12/14 evidence/risk decisions, not accepted exceptions.
 
 Retain section 4.19's narrow Sandbox scope, the blocked stager/artifact, separate
-fuzz no-retry hold, storage pause, UI-M0 deferrals and current S157/Core priority.
+fuzz no-retry hold, storage pause, UI-M0 deferrals and current Core priority.
 No product test, native drill, account/credential action, Store submission,
 signing, publication or contact with a third party was performed by the five
 research/integration roles. Documentation validation and independent review below
@@ -1740,3 +1741,32 @@ coordinator owns final exact-candidate validation and any authorized repository
 publication. No product/account/Store/native case in release-policy §9 is marked
 executed by these checks. The next product actions remain the bounded owner
 assignments above; documentation acceptance does not lift their prerequisites.
+
+### 4.22 P6 stage and acceptance routing — 4 November 2026
+
+W11-W10 remains the production P6 parent, with W11-W05 supplying service
+provisioning and recovery; no second package task is created. The
+[task index](README.md) maps the stages to the selected complete-MSIX contract.
+Preparation, admitted laboratory execution, David's Store action and actual
+Store-delivered qualification remain distinct. Current execution holds remain.
+
+| Canonical stage | Owner and bounded continuation | Required observation / exit |
+| --- | --- | --- |
+| S6.1 | W11-W10 with platform/security; freeze per-binary mitigation and DLL policy | Effective installed-role protections beside permitted workflows and tamper/load refusals; compiler flags alone are insufficient. |
+| S6.2 | W11-W05/W11-W10 lifecycle; resolve supported provisioning/removal and recovery before the admitted lab card | Install/update/repair/Reset/interruption/removal preserve ownership and restoration; failed recovery is visible and safe. |
+| S6.3 | W11-W10 with service/UI owners; integrate complete one-product behavior | Unelevated launch, old-component refusal, downgrade policy and unattended/last-user removal preserve all required components and mandatory authority. |
+| S6.4 | W11-W10 with release/license owner and independent QA; prepare exact submission then qualify delivered bytes | Reconcile Cargo/native/build/proc-macro grants and notices, generated code, SBOM and every non-Cargo package payload; bind submitted/delivered identities, trust and installed contents. Store signing is not helper authorization. |
+
+The full [P6 exit](../docs/plans/development-plan.md#p6--complete-installation-hardening-and-release-artifacts)
+remains CHECK-13/16/18/20/23, applicable CHECK-5/15/26/27 and AC-15/20 on
+supported clean Windows fixtures, with the applicable operational evidence in
+[release-policy §9](../docs/release-policy.md#9-qualification-matrix-and-remaining-decisions).
+Selected storage adds only its applicable ST-T12/13/17 gates. Store submission
+and exact-candidate public release remain David's actions/approvals. Before broad
+release, release/security consumes the prepared procedures in section 4.21 and
+rehearses the selected profile's renewal, revocation, access-removal and recovery
+under [signing guide §8](../docs/windows-time-signing-guide.md#8-completion-checklist-and-ownership).
+David retains account, Store submission and publication authority; retained MSI
+profiles add no prerequisite. OPEN-11 and CHECK-18/23/24 own this operational exit.
+P7's whole-product reconciliation is the separate
+[final qualification parent](development-backlog.md#p7-final-qualification).

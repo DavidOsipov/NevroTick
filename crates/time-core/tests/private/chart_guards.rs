@@ -3,12 +3,14 @@
 //!
 //! Fixed raw guards: four raw frame cases, six raw domain cases, 13 raw
 //! projection candidates, nine raw tracking candidates, six raw affine candidates,
-//! six operation mappings,
+//! eight operation mappings,
 //! and bounded closed-error formatting/source controls. Raw candidates are not
 //! product state. The literal source ceilings must be reserved separately from
 //! the public fixture profiles before these tests are integrated or run.
-//! The conservative upper is60 validations/162 callbacks/252 predicate visits;
-//! these source reservations are not measured execution counters.
+//! The historical S154 upper was60 validations/162 callbacks/252 predicate visits.
+//! S1.4b adds the two bound fields, ten raw-bound neighbors and21 validation
+//! requests; the coordinator must extend the source reservation before execution.
+//! These declarations are source work, not measured execution counters.
 
 use std::{error::Error, io, num::NonZeroU64};
 
@@ -78,18 +80,26 @@ fn chart_raw_affine_carrier_checks_both_signed_fields() {
         AffineCandidate {
             phase: f64::NAN,
             rate: 0.0,
+            phase_error: 0.0,
+            rate_error: 0.0,
         },
         AffineCandidate {
             phase: 0.0,
             rate: f64::INFINITY,
+            phase_error: 0.0,
+            rate_error: 0.0,
         },
         AffineCandidate {
             phase: f64::from_bits(1),
             rate: 0.0,
+            phase_error: 0.0,
+            rate_error: 0.0,
         },
         AffineCandidate {
             phase: 0.0,
             rate: -f64::from_bits(1),
+            phase_error: 0.0,
+            rate_error: 0.0,
         },
     ] {
         assert!(candidate.validate().is_err());
@@ -98,14 +108,70 @@ fn chart_raw_affine_carrier_checks_both_signed_fields() {
         AffineCandidate {
             phase: -1.0,
             rate: -1.0,
+            phase_error: 0.0,
+            rate_error: 0.0,
         },
         AffineCandidate {
             phase: -0.0,
             rate: 0.0,
+            phase_error: 0.0,
+            rate_error: 0.0,
         },
     ] {
         assert!(candidate.validate().is_ok());
     }
+    affine_bound_neighbors();
+}
+
+/// Check both raw coefficient-bound roles and their typed admission precedence.
+/// # Panics
+/// Reject unsupported raw bounds, a metadata-only Garde rule or lost first cause.
+fn affine_bound_neighbors() {
+    for (phase_error, rate_error, legal) in [
+        (f64::NAN, 0.0, false),
+        (f64::INFINITY, 0.0, false),
+        (f64::from_bits(1), 0.0, false),
+        (-1.0, 0.0, false),
+        (0.0, f64::NAN, false),
+        (0.0, f64::INFINITY, false),
+        (0.0, f64::from_bits(1), false),
+        (0.0, -1.0, false),
+        (1.0, 1.0, true),
+        (-0.0, 0.0, true),
+    ] {
+        let candidate = AffineCandidate {
+            phase: 0.0,
+            rate: 0.0,
+            phase_error,
+            rate_error,
+        };
+        assert_eq!(candidate.validate().is_ok(), legal);
+        let admitted = candidate.admit();
+        assert_eq!(admitted.is_ok(), legal);
+        if !legal {
+            let expected = if phase_error == 0.0 {
+                FixtureChartField::RateCoefficientRoundoff
+            } else {
+                FixtureChartField::PhaseCoefficientRoundoff
+            };
+            assert!(
+                matches!(admitted, Err(FixtureChartError::InvalidScalar { field, .. }) if field == expected)
+            );
+        }
+    }
+    assert!(matches!(
+        AffineCandidate {
+            phase: 0.0,
+            rate: 0.0,
+            phase_error: -1.0,
+            rate_error: f64::NAN
+        }
+        .admit(),
+        Err(FixtureChartError::InvalidScalar {
+            field: FixtureChartField::PhaseCoefficientRoundoff,
+            issue: FixtureChartIssue::Negative
+        })
+    ));
 }
 
 /// Construct a raw candidate with one of the four projection-role inputs.
@@ -251,7 +317,8 @@ fn chart_raw_tracking_candidate_roles_and_precedence() {
 fn chart_steps_preserve_actual_operation_mapping() {
     use ArithmeticOperation::{Add, Divide, Multiply, Subtract};
     use FixtureChartStep::{
-        AnchorCenter, Displacement, Rate, RateTimesElapsed, SecondsDivide, TrackingPhase,
+        AnchorCenter, ComposeDisplacement, ComposeRate, Displacement, Rate, RateTimesElapsed,
+        SecondsDivide, TrackingPhase,
     };
     for (step, operation) in [
         (SecondsDivide, Divide),
@@ -260,6 +327,8 @@ fn chart_steps_preserve_actual_operation_mapping() {
         (AnchorCenter, Subtract),
         (TrackingPhase, Subtract),
         (Rate, Subtract),
+        (ComposeDisplacement, Add),
+        (ComposeRate, Add),
     ] {
         assert_eq!(step.operation(), operation);
     }

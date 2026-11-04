@@ -12,6 +12,7 @@ from types import SimpleNamespace
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 # Use the sibling under test, not an installed module or a process-wide os patch.
 sys.dont_write_bytecode = True
@@ -213,7 +214,7 @@ if "NEVROTICK_LEGACY_READER" in os.environ:
             self.assertEqual(path.resolve(strict=True), path)
             info = path.lstat()
             self.assertTrue(stat.S_ISREG(info.st_mode) and info.st_size <= 1024 * 1024)
-            raw = path.read_bytes()
+            raw = CUSTODY.read_file(path, maximum=1024 * 1024)
             self.assertEqual(hashlib.sha256(raw).hexdigest(), LEGACY_SHA256)
             tree = ast.parse(raw, filename=str(path))
             functions = [node for node in tree.body
@@ -237,3 +238,34 @@ if "NEVROTICK_LEGACY_READER" in os.environ:
             self.assertEqual(self.legacy_read(path, maximum=65535), data)
             self.assertEqual(self.proxy.requests, [65536])
             self.assert_descriptors_closed()
+
+    class LegacyLoaderTests(unittest.TestCase):
+        def test_changed_legacy_source_rejected_before_parsing(self):
+            raw = CUSTODY.read_file(Path(os.environ["NEVROTICK_LEGACY_READER"]),
+                                    maximum=1024 * 1024)
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), LEGACY_SHA256)
+            with tempfile.TemporaryDirectory(prefix="legacy-loader-test-") as folder:
+                source = Path(folder).resolve() / "legacy.py"
+                source.write_bytes(raw)
+                original_lstat = Path.lstat
+                changed = False
+
+                def grow_after_check(path, *args, **kwargs):
+                    nonlocal changed
+                    info = original_lstat(path, *args, **kwargs)
+                    if path == source and not changed:
+                        source.write_bytes(b"x" * (1024 * 1024 + 1))
+                        changed = True
+                    return info
+
+                case = LegacyControls("test_legacy_explicit_65535_limit_healthy")
+                try:
+                    with mock.patch.dict(os.environ, {"NEVROTICK_LEGACY_READER": str(source)}), \
+                            mock.patch.object(Path, "lstat", grow_after_check), \
+                            mock.patch.object(ast, "parse") as parse:
+                        with self.assertRaisesRegex(RuntimeError, "bounded regular file"):
+                            case.setUp()
+                        self.assertTrue(changed, "growth did not reach the loader admission seam")
+                        parse.assert_not_called()
+                finally:
+                    case.doCleanups()

@@ -227,10 +227,11 @@ dependencies or native APIs. Fixture accounting retains its deliberate
 `stderr().write_all` observer. No new analyzer or dependency was installed.
 
 **Bounded Python verification typing, 31 October 2026:**
-`scripts/check-python-typing.py` checks the real combination-accounting and
-cohort-accounting helpers plus an independent consumer. The checker normalizes
-the two existing hyphenated filenames into private read-only input copies and
-checks their actual exported functions against maintained Protocol interfaces.
+`scripts/check-python-typing.py` checks seven selected helpers: combination and
+cohort accounting, chart accounting/contracts, and chart-combination
+accounting/contracts, and settled-rate accounting, plus an independent consumer. The checker normalizes
+their hyphenated filenames into private read-only input copies and checks
+their actual exported functions against maintained Protocol interfaces.
 It does not type-check the complete dynamic orchestration script. Runtime log,
 JSON, exact-integer, range, identity and completeness checks remain required.
 
@@ -242,7 +243,7 @@ binding every installed file, selected source byte and policy byte. It rejects
 stale bindings, ambient checker configuration, unchecked imports/typing escapes
 and writable source aliases; it installs or rewrites nothing.
 
-For a change to either selected helper, run the admitted healthy typing check:
+For a change to a selected helper, run the admitted healthy typing check:
 
 ```sh
 python3 -B scripts/check-python-typing.py \
@@ -251,10 +252,18 @@ python3 -B scripts/check-python-typing.py \
 ```
 
 For checker/configuration/interface changes, also select `--fixtures`: one
-healthy consumer and nine intended static rejections cover wrong fields/value
+healthy consumer and nineteen intended static rejections cover wrong fields/value
 types, reservation/observation confusion, partial/complete confusion, unhandled
 statuses and an incompatible actual implementation. Lifecycle-specific controls
 also reject reserved attempts as observations and partial records as complete.
+The S158 extension includes chart-combination recipe and callback types,
+reservation/outcome separation, incomplete-status handling and actual signature
+compatibility for both new helpers. Its configured check passed seven files and
+all fifteen negative controls on that earlier candidate. The settled-rate
+extension selects eight checked files and adds four controls for the new helper's
+field types, reservation/outcome separation, incomplete-status handling and
+actual signature. Its current executed result belongs to the existing Core task;
+configuration alone does not establish a typing pass.
 Use `--json` with a fresh
 external result path to retain the receipt. Refresh admission only after reviewing
 the changed inputs; source hashes are not a substitute for those checks. A
@@ -1274,6 +1283,13 @@ python3 -B scripts/verify.py
 | `--lane portable` (default) | Format, all-target compiler/Clippy and library rustdoc for the six admitted members; explicit observe CLI build, separate per-package library/integration tests and nonempty doctests, plus configured optimized owner tests with actual discriminating cases. Missing, empty, skipped or wrong-package selections fail; package and aggregate counts are retained. |
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows metadata/feature checks followed by target-specific cargo-deny, using a separately acquired RustSec/index snapshot bound to the lockfile and at most 24 hours old. |
 | `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and observe CLI; exports both executables and matching PDBs to new external output, preserving existing UI receipt keys and adding the engine artifact record. Native execution remains separate. |
+
+Portable wire and Core test builds use six Cargo build jobs to bound concurrent
+LLVM test-binary links within the ordinary 128-task sandbox. Other build rows
+retain their configured concurrency; test execution and mutation-worker limits
+are separate. The [S1.3 task's S158 checkpoint](tasks/s1.3-source-selection-readiness.md#s158-integrated-authoring--portable-pass-qualification-next)
+retains the observed wire-link failures, command controls and successful bounded
+retry.
 
 Rows run with a read-only source snapshot, cleared environment, isolated network
 and owned output inside bubblewrap. The verifier admits pinned tools and source

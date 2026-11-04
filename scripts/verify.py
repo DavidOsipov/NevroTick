@@ -47,7 +47,8 @@ BUILD_SCRIPTS = {"getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107",
                  "quote@1.0.47", "rustversion@1.0.23"}
 # Bound concurrent LLVM test-binary links within the ordinary128-task sandbox.
 # Test execution and ten-worker mutation scheduling have separate policies.
-CORE_TEST_BUILD_JOBS = 6
+TEST_BUILD_JOBS = 6
+BOUNDED_TEST_BUILD_PACKAGES = {"time-core", "ntp-wire"}
 OPTIMIZED_DISCRIMINATORS = {
     "time-domain": "release_build_preserves_checked_admission",
     "ntp-exchange": "release_build_preserves_exchange_admission",
@@ -463,7 +464,7 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
         ] + [
             ("product-tests:" + package, [*cargo, "nextest", "run", "--package", package,
                                          "--frozen", "--build-jobs",
-                                         str(CORE_TEST_BUILD_JOBS) if package == "time-core" else "12",
+                                         str(TEST_BUILD_JOBS) if package in BOUNDED_TEST_BUILD_PACKAGES else "12",
                                          "--lib", "--tests",
                                          "--user-config-file", "none", "--no-tests=fail"])
             for package in PACKAGES
@@ -472,7 +473,7 @@ def commands(lane: str) -> list[tuple[str, list[str]]]:
              for package in PACKAGES] + [
             ("optimized-tests:" + package, [*cargo, "nextest", "run", "--package", package,
                                            "--cargo-profile", "release", "--frozen", "--build-jobs",
-                                           str(CORE_TEST_BUILD_JOBS) if package == "time-core" else "12",
+                                           str(TEST_BUILD_JOBS) if package in BOUNDED_TEST_BUILD_PACKAGES else "12",
                                            "--lib", "--tests",
                                            "--user-config-file", "none", "--no-tests=fail"])
             for package in OPTIMIZED_DISCRIMINATORS]

@@ -44,6 +44,34 @@ CHART_ERROR_SUBJECTS = (
     ("enclosure", "crates/time-core/src/projection_enclosure.rs"),
 )
 CHART_BATCH_SUBJECTS = (("chart_batch", "crates/time-core/src/chart_batch.rs"),)
+CHART_PRINCIPAL_SUBJECTS = (
+    ("principal", "crates/time-core/src/principal.rs"),
+    ("chart_principal", "crates/time-core/src/principal/chart.rs"),
+    ("chart_batch", "crates/time-core/src/chart_batch.rs"),
+)
+CHART_COMBINATION_SUBJECTS = (
+    ("combination", "crates/time-core/src/combination.rs"),
+    ("combination_admission", "crates/time-core/src/combination/admission.rs"),
+    ("combination_lifecycle", "crates/time-core/src/combination/lifecycle.rs"),
+    ("chart", "crates/time-core/src/regression/chart.rs"),
+    ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
+    ("chart_combination_roundoff", "crates/time-core/src/combination/chart/roundoff.rs"),
+    ("chart_combination_receiving", "crates/time-core/src/combination/chart/receiving.rs"),
+    ("chart_combination_reduction", "crates/time-core/src/combination/chart/reduction.rs"),
+    ("chart_combination_lifecycle", "crates/time-core/src/combination/lifecycle/chart.rs"),
+)
+REFERENCE_INPUT_SUBJECTS = (("reference_input", "crates/time-core/src/reference_input.rs"),)
+SETTLED_RATE_SUBJECTS = (
+    ("reference_input", "crates/time-core/src/reference_input.rs"),
+    ("rate_delivery", "crates/time-core/src/reference_input/rate_delivery.rs"),
+    ("chart", "crates/time-core/src/regression/chart.rs"),
+    ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
+)
+CHART_COMPOSITION_SUBJECTS = (
+    ("chart", "crates/time-core/src/regression/chart.rs"),
+    ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
+    ("chart_batch", "crates/time-core/src/chart_batch.rs"),
+)
 
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
@@ -438,21 +466,168 @@ def mutation_message_format(policy: dict) -> str:
     return value
 
 
+def chart_composition_equivalences_valid(entries: object) -> bool:
+    """Recognize only no E or the one complete checked-type-domain proof.
+
+    Actual candidate, source and proof custody remain independently checked by
+    admit_mutation_equivalences. Inventory callers must still require no E.
+    """
+    if type(entries) is list and not entries:
+        return True
+    required = {'id', 'candidate_sha256', 'source_sha256', 'mutant',
+                'requirement', 'rationale', 'proof'}
+    if type(entries) is not list or len(entries) != 1 or type(entries[0]) is not dict:
+        return False
+    entry = entries[0]
+    expected = {
+        'id': 'S14B-R-E-001',
+        'candidate_sha256': '6f5471fe21d35455a0be6b8f85800cb44d2b1e2f8effd8aec3492e840f0bf8c6',
+        'source_sha256': '1aa537417ef06238d85e7614124e399a301f1e8ecd8e6fdf74b6506e58e395bc',
+        'requirement': 'CHECK-7/8/14/25'}
+    proof = {'path': 'tasks/s1.4b-chart-composition-equivalence.md',
+             'sha256': '67a3b6eb23ef5f476d7f7af09ffb803863a470d2c9bafd3735e28f1397046231',
+             'section': 'S14B-R-E-001', 'reviewer': 'root; roundoff_survivor_review',
+             'verdict': 'independently-justified-equivalent'}
+    if (set(entry) != required
+            or any(type(entry.get(key)) is not str or entry[key] != value for key, value in expected.items())
+            or type(entry.get('rationale')) is not str or not entry['rationale'].strip()
+            or len(entry['rationale']) > 4096 or type(entry.get('mutant')) is not dict
+            or type(entry.get('proof')) is not dict or entry['proof'] != proof):
+        return False
+    try:
+        return canonical_sha256(entry['mutant']) == '34d87ebc1eb820b9790f382f344e41534ea2bddaf5ebd3254e691749e97cd2a7'
+    except (TypeError, ValueError, RecursionError):
+        return False
+
+
 def per_subject_mutation_error_args(scope: Scope, filename: str, policy: dict) -> list[str]:
     """Permit one literal error replacement for its exact current chart owner.
 
-    An absent field preserves legacy scopes; S155 requires an explicit empty map.
+    An absent field preserves legacy scopes; current chart/reference roles require explicit empty maps.
     A present field admits no
     arbitrary Rust expression, another package/file, or renamed policy role.
     """
     if not isinstance(policy, dict):
         raise Incomplete("Mutation error policy is not a mapping.")
+    settled_rate_role = (
+        policy.get("admission_status") == "admitted-settled-rate-four-owner-inventory-only"
+        or (type(scope) is Scope and (
+            scope.subjects == SETTLED_RATE_SUBJECTS
+            or scope.policy == "tasks/settled-rate-inventory-admission.json"
+            or (scope.policy == "policy/time-core-analysis.json"
+                and (policy.get("schema_version") == 26
+                     or policy.get("critical_files") == list(dict(SETTLED_RATE_SUBJECTS).values()))))))
     if "mutation_error_values" not in policy:
-        if (type(scope) is Scope and scope.package == "time-core"
-                and scope.subjects == CHART_BATCH_SUBJECTS):
-            raise Incomplete("S155 requires an explicit empty mutation error map.")
+        if (settled_rate_role or policy.get("admission_status") in {
+                    "admitted-retained-chart-three-owner-inventory-only",
+                    "admitted-chart-combination-nine-owner-inventory-only",
+                    "admitted-reference-input-single-owner-inventory-only",
+                    "admitted-achieved-phase-single-owner-inventory-only",
+                    "admitted-settled-rate-four-owner-inventory-only",
+                    "admitted-chart-composition-three-owner-inventory-only"}
+                or (type(scope) is Scope and (
+                    scope.subjects == CHART_PRINCIPAL_SUBJECTS
+                    or scope.subjects == CHART_COMBINATION_SUBJECTS
+                    or scope.subjects == REFERENCE_INPUT_SUBJECTS
+                    or scope.subjects == SETTLED_RATE_SUBJECTS
+                    or scope.subjects == CHART_COMPOSITION_SUBJECTS
+                    or scope.policy == "tasks/s1.3-chart-principal-inventory-admission.json"
+                    or scope.policy == "tasks/s1.3-chart-combination-inventory-admission.json"
+                    or scope.policy == "tasks/s1.4a-reference-input-inventory-admission.json"
+                    or scope.policy == "tasks/s1.4b-chart-composition-inventory-admission.json"
+                    or scope.policy == "tasks/s1.4c-achieved-phase-inventory-admission.json"
+                    or scope.policy == "tasks/settled-rate-inventory-admission.json"
+                    or (scope.package == "time-core" and scope.subjects == CHART_BATCH_SUBJECTS)))):
+            raise Incomplete("S155/S157/S158/S1.4a/S1.4b/S1.4c/settled-rate require an explicit empty mutation error map.")
         return []
     values = policy["mutation_error_values"]
+    if (type(policy) is dict and type(scope) is Scope
+            and type(scope.package) is str and scope.package == "time-core"
+            and type(scope.subjects) is tuple and scope.subjects == SETTLED_RATE_SUBJECTS
+            and type(scope.policy) is str
+            and type(policy.get("admission_status")) is str
+            and type(policy.get("schema_version")) is int
+            and type(policy.get("source_file_count")) is int and policy["source_file_count"] == 158
+            and ((scope.policy == "tasks/settled-rate-inventory-admission.json"
+                  and policy.get("admission_status") == "admitted-settled-rate-four-owner-inventory-only"
+                  and policy["schema_version"] == 17
+                  and type(policy.get("subjects")) is dict and policy["subjects"] == dict(SETTLED_RATE_SUBJECTS))
+                 or (scope.policy == "policy/time-core-analysis.json"
+                     and policy.get("admission_status") == "admitted-final-source"
+                     and policy["schema_version"] == 26
+                     and type(policy.get("critical_files")) is list
+                     and policy["critical_files"] == list(dict(SETTLED_RATE_SUBJECTS).values())))
+            and type(policy.get("package")) is str and policy["package"] == "time-core"
+            and type(policy.get("tool_admission_profile")) is str and policy["tool_admission_profile"] == "stable-core"
+            and type(policy.get("mutation_jobs")) is int and policy["mutation_jobs"] == 10
+            and type(policy.get("mutation_process_limit")) is int and policy["mutation_process_limit"] == 512
+            and type(policy.get("mutation_message_format")) is str and policy["mutation_message_format"] == "json"
+            and type(policy.get("maximum_mutants")) is int and policy["maximum_mutants"] == 512
+            and type(policy.get("mutation_equivalences")) is list and not policy["mutation_equivalences"]
+            and type(filename) is str and filename in dict(SETTLED_RATE_SUBJECTS).values()
+            and type(values) is dict and not values):
+        return []
+    if settled_rate_role:
+        raise Incomplete("Settled-rate error policy requires its exact current four-owner role and empty maps.")
+    if (type(scope) is Scope and type(scope.package) is str and scope.package == "time-core"
+            and type(scope.subjects) is tuple and scope.subjects == CHART_COMPOSITION_SUBJECTS
+            and type(scope.policy) is str
+            and ((scope.policy == "tasks/s1.4b-chart-composition-inventory-admission.json"
+                  and policy.get("admission_status") == "admitted-chart-composition-three-owner-inventory-only"
+                  and type(policy.get("schema_version")) is int and policy["schema_version"] == 15)
+                 or (scope.policy == "policy/time-core-analysis.json"
+                     and policy.get("admission_status") == "admitted-final-source"
+                     and type(policy.get("schema_version")) is int and policy["schema_version"] == 24))
+            and type(policy.get("source_file_count")) is int and policy["source_file_count"] == 156
+            and type(policy.get("package")) is str and policy["package"] == "time-core"
+            and (type(policy.get("mutation_equivalences")) is list and not policy["mutation_equivalences"]
+                 or (scope.policy == "policy/time-core-analysis.json"
+                     and chart_composition_equivalences_valid(policy.get("mutation_equivalences"))))
+            and type(filename) is str and filename in dict(CHART_COMPOSITION_SUBJECTS).values()
+            and type(values) is dict and not values):
+        return []
+    if (type(scope) is Scope and type(scope.package) is str and scope.package == "time-core"
+            and type(scope.subjects) is tuple and scope.subjects == REFERENCE_INPUT_SUBJECTS
+            and type(scope.policy) is str
+            and type(policy.get("schema_version")) is int
+            and type(policy.get("source_file_count")) is int
+            and ((scope.policy == "tasks/s1.4a-reference-input-inventory-admission.json"
+                  and policy.get("admission_status") == "admitted-reference-input-single-owner-inventory-only"
+                  and policy["schema_version"] == 14 and policy["source_file_count"] == 154)
+                 or (scope.policy == "tasks/s1.4c-achieved-phase-inventory-admission.json"
+                     and policy.get("admission_status") == "admitted-achieved-phase-single-owner-inventory-only"
+                     and policy["schema_version"] == 16 and policy["source_file_count"] == 156)
+                 or (scope.policy == "policy/time-core-analysis.json"
+                     and policy.get("admission_status") == "admitted-final-source"
+                     and (policy["schema_version"], policy["source_file_count"]) in {(23, 154), (25, 156)}))
+            and type(policy.get("package")) is str and policy["package"] == "time-core"
+            and type(policy.get("mutation_equivalences")) is list and not policy["mutation_equivalences"]
+            and type(filename) is str and filename == dict(REFERENCE_INPUT_SUBJECTS)["reference_input"]
+            and type(values) is dict and not values):
+        return []
+    if (type(scope) is Scope and type(scope.package) is str and scope.package == "time-core"
+            and type(scope.subjects) is tuple and scope.subjects == CHART_COMBINATION_SUBJECTS
+            and type(scope.policy) is str
+            and ((scope.policy == "tasks/s1.3-chart-combination-inventory-admission.json"
+                  and policy.get("admission_status") == "admitted-chart-combination-nine-owner-inventory-only")
+                 or (scope.policy == "policy/time-core-analysis.json"
+                     and policy.get("admission_status") == "admitted-final-source"))
+            and type(policy.get("package")) is str and policy["package"] == "time-core"
+            and type(policy.get("mutation_equivalences")) is list
+            and (not policy["mutation_equivalences"]
+                 or (scope.policy == "policy/time-core-analysis.json"
+                     and policy.get("admission_status") == "admitted-final-source"))
+            and type(filename) is str and filename in dict(CHART_COMBINATION_SUBJECTS).values()
+            and type(values) is dict and not values):
+        return []
+    if (type(scope) is Scope and scope.package == "time-core"
+            and type(scope.subjects) is tuple and scope.subjects == CHART_PRINCIPAL_SUBJECTS
+            and type(scope.policy) is str and scope.policy in {
+                "policy/time-core-analysis.json", "tasks/s1.3-chart-principal-inventory-admission.json"}
+            and type(policy.get("package")) is str and policy["package"] == "time-core"
+            and type(filename) is str and filename in dict(CHART_PRINCIPAL_SUBJECTS).values()
+            and type(values) is dict and not values):
+        return []
     if (type(scope) is Scope and scope.package == "time-core"
             and type(scope.subjects) is tuple and scope.subjects == CHART_BATCH_SUBJECTS
             and type(scope.policy) is str and scope.policy in {
@@ -637,28 +812,130 @@ def library_artifact(output: str, package: str, manifest: str) -> str:
 
 
 def compiler_cause(result: dict, specimen: dict, source_path: str) -> None:
-    """Require exact error codes and a named cause at the intended source line."""
-    diagnostics = []
-    for line in result.get("output", "").splitlines():
+    """Validate every rustc record and require every error's intended cause.
+
+    The admitted external probes have no macro expansion spans. Owned
+    unused-import/dead-code warnings are informational. Only an exact uncoded
+    abort summary with matching error/warning counts and its exact explain note
+    may accompany the causal errors; neither can establish a compiler cause.
+    Multiple matching errors are legitimate (one existing field-mutation probe
+    emits two). Rendering and error explanations never establish meaning.
+    """
+    if (type(result) is not dict or not {"output", "exit_code", "failure"} <= result.keys()
+            or type(specimen) is not dict):
+        raise Incomplete("External consumer result or intended diagnostic is malformed.")
+    output = result.get("output")
+    if (result.get("failure") is not None or type(result.get("exit_code")) is not int
+            or result["exit_code"] <= 0 or type(output) is not str
+            or not output or len(output) > 4 * 1024 * 1024
+            or type(specimen.get("code")) is not str
+            or re.fullmatch(r"E[0-9]{4}", specimen["code"]) is None
+            or type(specimen.get("line")) is not int or specimen["line"] < 1
+            or type(specimen.get("tokens")) is not list or not specimen["tokens"]
+            or any(type(token) is not str or not token for token in specimen["tokens"])
+            or type(source_path) is not str or not source_path):
+        raise Incomplete("External consumer lacks a bounded intended compiler failure.")
+    fields = {"message", "code", "level", "spans", "children", "rendered"}
+    span_fields = {"file_name", "byte_start", "byte_end", "line_start", "line_end",
+                   "column_start", "column_end", "is_primary", "text", "label",
+                   "suggested_replacement", "suggestion_applicability", "expansion"}
+    infrastructure = re.compile(
+        r"resource temporarily unavailable|os error \d+|permission denied|could not execute process|"
+        r"failed to spawn|no space left|cannot allocate memory|out of memory|"
+        r"failed to run custom build command|linker|linking|internal compiler error|"
+        r"unexpectedly panicked|panicked at|fatal runtime error|terminated by signal|failed to load manifest",
+        re.IGNORECASE)
+    inspected = 0
+
+    def diagnostic_text(item, *, top=False, depth=0):
+        """Validate the pinned diagnostic tree before reading its semantic text."""
+        nonlocal inspected
+        inspected += 1
+        if (depth > 16 or inspected > 256 or type(item) is not dict
+                or set(item) != (fields | {"$message_type"} if top else fields)
+                or (top and item["$message_type"] != "diagnostic")
+                or type(item["message"]) is not str or not item["message"]
+                or type(item["level"]) is not str
+                or item["level"] not in ({"error", "warning", "failure-note"} if top else {"note", "help"})
+                or type(item["children"]) is not list or type(item["spans"]) is not list
+                or (item["rendered"] is not None and type(item["rendered"]) is not str)):
+            raise Incomplete("External compiler diagnostic is malformed or unqualified.")
+        code = item["code"]
+        if code is not None and (not top or type(code) is not dict
+                or set(code) != {"code", "explanation"} or type(code["code"]) is not str
+                or (code["explanation"] is not None and type(code["explanation"]) is not str)):
+            raise Incomplete("External compiler diagnostic code is malformed.")
+        text = item["message"]
+        if len(item["spans"]) > 256:
+            raise Incomplete("External compiler diagnostic span count exceeds its bound.")
+        for span in item["spans"]:
+            if (type(span) is not dict or set(span) != span_fields
+                    or type(span["file_name"]) is not str or not span["file_name"]
+                    or type(span["is_primary"]) is not bool
+                    or any(type(span[key]) is not int or span[key] < minimum for key, minimum in (
+                        ("byte_start", 0), ("byte_end", 0), ("line_start", 1),
+                        ("line_end", 1), ("column_start", 1), ("column_end", 1)))
+                    or span["byte_end"] < span["byte_start"] or span["line_end"] < span["line_start"]
+                    or any(span[key] is not None and type(span[key]) is not str for key in (
+                        "label", "suggested_replacement", "suggestion_applicability"))
+                    or span["expansion"] is not None or type(span["text"]) is not list
+                    or len(span["text"]) > 256):
+                raise Incomplete("External compiler diagnostic span is malformed.")
+            for source_line in span["text"]:
+                if (type(source_line) is not dict or set(source_line) != {"text", "highlight_start", "highlight_end"}
+                        or type(source_line["text"]) is not str
+                        or any(type(source_line[key]) is not int or source_line[key] < 1
+                               for key in ("highlight_start", "highlight_end"))
+                        or source_line["highlight_end"] < source_line["highlight_start"]):
+                    raise Incomplete("External compiler diagnostic source text is malformed.")
+            text += " " + (span["label"] or "")
+        text += " " + " ".join(diagnostic_text(child, depth=depth + 1) for child in item["children"])
+        if infrastructure.search(text):
+            raise Incomplete("External compiler diagnostic contains a tool or infrastructure failure.")
+        return text
+
+    errors = warnings = 0
+    summarized = explained = False
+    records = output.splitlines()
+    if len(records) > 256:
+        raise Incomplete("External compiler diagnostic record count exceeds its bound.")
+    for line in records:
         try:
-            item = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(item, dict) and item.get("level") == "error" and item.get("code"):
-            diagnostics.append(item)
-    if (result.get("failure") or result.get("exit_code") == 0 or not diagnostics
-            or {item.get("code", {}).get("code") for item in diagnostics} != {specimen["code"]}):
+            item = ANALYSIS.decode(line)
+        except (Incomplete, RecursionError) as error:
+            raise Incomplete("External compiler output contains malformed or non-JSON records.") from error
+        text = diagnostic_text(item, top=True)
+        code, level = item["code"], item["level"]
+        if level == "error" and code is not None:
+            primary = [span for span in item["spans"] if span["is_primary"]]
+            if (summarized or explained or code["code"] != specimen["code"]
+                    or not all(token in text for token in specimen["tokens"]) or not primary
+                    or any(span["file_name"] != source_path or span["line_start"] != specimen["line"]
+                           for span in primary)):
+                raise Incomplete("External consumer diagnostic has an unrelated code, cause or primary span.")
+            errors += 1
+        elif level == "warning":
+            if (summarized or explained or code is None or code["code"] not in {"unused_imports", "dead_code"}
+                    or not item["spans"]
+                    or any(span["file_name"] != source_path for span in item["spans"])):
+                raise Incomplete("External compiler warning is outside the admitted fixture lint scope.")
+            warnings += 1
+        elif level == "error" and code is None:
+            expected = f"aborting due to {errors} previous error" + ("s" if errors != 1 else "")
+            if warnings:
+                expected += f"; {warnings} warning" + ("s" if warnings != 1 else "") + " emitted"
+            if (not errors or summarized or explained or item["message"] != expected
+                    or item["spans"] or item["children"]):
+                raise Incomplete("External compiler uncoded error is not its exact counted abort summary.")
+            summarized = True
+        elif level == "failure-note":
+            expected = f"For more information about this error, try `rustc --explain {specimen['code']}`."
+            if (not summarized or explained or code is not None or item["message"] != expected
+                    or item["spans"] or item["children"]):
+                raise Incomplete("External compiler failure-note is not the intended explain summary.")
+            explained = True
+    if not errors:
         raise Incomplete("External consumer failed without its intended compiler code.")
-    def text(item):
-        return (item.get("message", "") + " "
-                + " ".join(span.get("label") or "" for span in item.get("spans", [])) + " "
-                + " ".join(text(child) for child in item.get("children", [])))
-    for item in diagnostics:
-        if (all(token in text(item) for token in specimen["tokens"])
-                and any(span.get("is_primary") and span.get("file_name") == source_path
-                        and span.get("line_start") == specimen["line"] for span in item.get("spans", []))):
-            return
-    raise Incomplete("External consumer diagnostic has an unrelated type, field or primary span.")
 
 
 class MutationEnumeration(NamedTuple):
@@ -824,6 +1101,205 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.policy == "tasks/settled-rate-inventory-admission.json"
+            or policy.get("admission_status") == "admitted-settled-rate-four-owner-inventory-only"):
+        facts = {
+            "schema_version": 17, "admission_status": "admitted-settled-rate-four-owner-inventory-only",
+            "package": "time-core", "source_file_count": 158,
+            "subjects": dict(SETTLED_RATE_SUBJECTS), "mutation_equivalences": [],
+            "mutation_error_values": {}, "native_test_invocations": 0,
+            "campaigns_admitted": False, "tool_admission_profile": "stable-core",
+            "maximum_mutants": 512, "listing_maximum_per_file": 512,
+            "listing_maximum_total": 2048, "inventory_wall_seconds": 600,
+            "listing_process_limit": 128, "mutation_process_limit": 512,
+            "mutation_jobs": 10, "mutation_message_format": "json",
+        }
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str or scope.policy != "tasks/settled-rate-inventory-admission.json"
+                or args.lane != "mutation" or type(scope.subjects) is not tuple
+                or scope.subjects != SETTLED_RATE_SUBJECTS or type(policy) is not dict
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("Settled-rate inventory requires its exact stable-core four-owner listing-only card.")
+        for _, filename in SETTLED_RATE_SUBJECTS:
+            per_subject_mutation_error_args(scope, filename, policy)
+        return profile
+    if (scope.subjects == SETTLED_RATE_SUBJECTS
+            or (scope.policy == "policy/time-core-analysis.json"
+                and (policy.get("critical_files") == list(dict(SETTLED_RATE_SUBJECTS).values())
+                     or policy.get("schema_version") == 26))):
+        facts = {
+            "schema_version": 26, "admission_status": "admitted-final-source",
+            "package": "time-core", "source_file_count": 158,
+            "critical_files": list(dict(SETTLED_RATE_SUBJECTS).values()),
+            "mutation_equivalences": [], "mutation_error_values": {},
+            "tool_admission_profile": "stable-core", "maximum_mutants": 512,
+            "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+        }
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str or scope.policy != "policy/time-core-analysis.json"
+                or type(scope.subjects) is not tuple or scope.subjects != SETTLED_RATE_SUBJECTS
+                or args.lane not in {"contracts", "coverage", "mutation"} or type(policy) is not dict
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("Settled-rate campaigns require their exact stable-core final-source four-owner role.")
+        for _, filename in SETTLED_RATE_SUBJECTS:
+            per_subject_mutation_error_args(scope, filename, policy)
+        return profile
+    if (scope.policy == "tasks/s1.4b-chart-composition-inventory-admission.json"
+            or policy.get("admission_status") == "admitted-chart-composition-three-owner-inventory-only"):
+        facts = {
+            "schema_version": 15,
+            "admission_status": "admitted-chart-composition-three-owner-inventory-only",
+            "package": "time-core", "source_file_count": 156,
+            "subjects": dict(CHART_COMPOSITION_SUBJECTS), "mutation_equivalences": [],
+            "mutation_error_values": {}, "native_test_invocations": 0,
+            "campaigns_admitted": False, "tool_admission_profile": "stable-core",
+            "maximum_mutants": 512, "listing_maximum_per_file": 512,
+            "listing_maximum_total": 1536, "inventory_wall_seconds": 600,
+            "listing_process_limit": 128, "mutation_process_limit": 512,
+            "mutation_jobs": 10, "mutation_message_format": "json",
+        }
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str
+                or scope.policy != "tasks/s1.4b-chart-composition-inventory-admission.json"
+                or args.lane != "mutation" or type(scope.subjects) is not tuple
+                or scope.subjects != CHART_COMPOSITION_SUBJECTS
+                or type(policy) is not dict
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("Chart-composition inventory requires its exact stable-core three-owner listing-only card.")
+        for _, filename in CHART_COMPOSITION_SUBJECTS:
+            per_subject_mutation_error_args(scope, filename, policy)
+        return profile
+    if (scope.subjects == CHART_COMPOSITION_SUBJECTS
+            or (scope.policy == "policy/time-core-analysis.json"
+                and policy.get("critical_files") == list(dict(CHART_COMPOSITION_SUBJECTS).values()))):
+        facts = {
+            "schema_version": 24, "admission_status": "admitted-final-source",
+            "package": "time-core", "source_file_count": 156,
+            "critical_files": list(dict(CHART_COMPOSITION_SUBJECTS).values()),
+            "mutation_error_values": {},
+            "tool_admission_profile": "stable-core", "mutation_jobs": 10,
+            "mutation_process_limit": 512, "mutation_message_format": "json",
+        }
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str or scope.policy != "policy/time-core-analysis.json"
+                or type(scope.subjects) is not tuple or scope.subjects != CHART_COMPOSITION_SUBJECTS
+                or args.lane not in {"contracts", "coverage", "mutation"}
+                or type(policy) is not dict
+                or not chart_composition_equivalences_valid(policy.get("mutation_equivalences"))
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("Chart-composition campaigns require their exact stable-core final-source three-owner role.")
+        for _, filename in CHART_COMPOSITION_SUBJECTS:
+            per_subject_mutation_error_args(scope, filename, policy)
+        return profile
+    if (scope.policy in ("tasks/s1.4a-reference-input-inventory-admission.json",
+                         "tasks/s1.4c-achieved-phase-inventory-admission.json")
+            or policy.get("admission_status") in ("admitted-reference-input-single-owner-inventory-only",
+                                                "admitted-achieved-phase-single-owner-inventory-only")):
+        achieved_phase = scope.policy == "tasks/s1.4c-achieved-phase-inventory-admission.json"
+        facts = {
+            "schema_version": 16 if achieved_phase else 14,
+            "admission_status": ("admitted-achieved-phase-single-owner-inventory-only" if achieved_phase
+                                 else "admitted-reference-input-single-owner-inventory-only"),
+            "package": "time-core", "source_file_count": 156 if achieved_phase else 154,
+            "subjects": dict(REFERENCE_INPUT_SUBJECTS), "mutation_equivalences": [],
+            "mutation_error_values": {}, "native_test_invocations": 0,
+            "campaigns_admitted": False, "tool_admission_profile": "stable-core",
+            "maximum_mutants": 512, "listing_maximum_per_file": 512,
+            "listing_maximum_total": 512, "inventory_wall_seconds": 600,
+            "listing_process_limit": 128, "mutation_process_limit": 512,
+            "mutation_jobs": 10, "mutation_message_format": "json",
+        }
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str
+                or scope.policy not in {"tasks/s1.4a-reference-input-inventory-admission.json",
+                                        "tasks/s1.4c-achieved-phase-inventory-admission.json"}
+                or args.lane != "mutation" or type(scope.subjects) is not tuple
+                or scope.subjects != REFERENCE_INPUT_SUBJECTS
+                or type(policy) is not dict
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("Reference-input inventory requires its exact stable-core singleton listing-only card.")
+        per_subject_mutation_error_args(scope, REFERENCE_INPUT_SUBJECTS[0][1], policy)
+        return profile
+    if (scope.subjects == REFERENCE_INPUT_SUBJECTS
+            or (scope.policy == "policy/time-core-analysis.json"
+                and policy.get("critical_files") == [REFERENCE_INPUT_SUBJECTS[0][1]])):
+        facts = {
+            "admission_status": "admitted-final-source", "package": "time-core",
+            "critical_files": [REFERENCE_INPUT_SUBJECTS[0][1]], "mutation_equivalences": [],
+            "mutation_error_values": {}, "tool_admission_profile": "stable-core",
+        }
+        if policy.get("schema_version") == 25:
+            facts.update(mutation_jobs=10, mutation_process_limit=512, mutation_message_format="json")
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str or scope.policy != "policy/time-core-analysis.json"
+                or type(scope.subjects) is not tuple or scope.subjects != REFERENCE_INPUT_SUBJECTS
+                or args.lane not in {"contracts", "coverage", "mutation"}
+                or type(policy) is not dict
+                or type(policy.get("schema_version")) is not int
+                or type(policy.get("source_file_count")) is not int
+                or (policy["schema_version"], policy["source_file_count"]) not in {(23, 154), (25, 156)}
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("Reference-input campaigns require their exact stable-core final-source singleton role.")
+        per_subject_mutation_error_args(scope, REFERENCE_INPUT_SUBJECTS[0][1], policy)
+        return profile
+    if (scope.policy == "tasks/s1.3-chart-combination-inventory-admission.json"
+            or policy.get("admission_status") == "admitted-chart-combination-nine-owner-inventory-only"):
+        facts = {
+            "schema_version": 13,
+            "admission_status": "admitted-chart-combination-nine-owner-inventory-only",
+            "package": "time-core", "source_file_count": 152,
+            "subjects": dict(CHART_COMBINATION_SUBJECTS), "mutation_equivalences": [],
+            "mutation_error_values": {}, "native_test_invocations": 0,
+            "campaigns_admitted": False, "tool_admission_profile": "stable-core",
+            "maximum_mutants": 512, "listing_maximum_per_file": 512,
+            "listing_maximum_total": 4608, "inventory_wall_seconds": 600,
+            "listing_process_limit": 128, "mutation_process_limit": 512,
+            "mutation_jobs": 10, "mutation_message_format": "json",
+        }
+        if (profile != "stable-core" or type(scope) is not Scope
+                or type(scope.package) is not str or scope.package != "time-core"
+                or type(scope.policy) is not str
+                or scope.policy != "tasks/s1.3-chart-combination-inventory-admission.json"
+                or args.lane != "mutation" or type(scope.subjects) is not tuple
+                or scope.subjects != CHART_COMBINATION_SUBJECTS
+                or type(policy) is not dict
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("S158 inventory requires its exact stable-core nine-owner listing-only card.")
+        for filename in dict(CHART_COMBINATION_SUBJECTS).values():
+            per_subject_mutation_error_args(scope, filename, policy)
+        return profile
+    if (scope.policy == "tasks/s1.3-chart-principal-inventory-admission.json"
+            or policy.get("admission_status") == "admitted-retained-chart-three-owner-inventory-only"):
+        facts = {
+            "schema_version": 12,
+            "admission_status": "admitted-retained-chart-three-owner-inventory-only",
+            "package": "time-core", "source_file_count": 142,
+            "subjects": dict(CHART_PRINCIPAL_SUBJECTS), "mutation_equivalences": [],
+            "mutation_error_values": {}, "native_test_invocations": 0,
+            "campaigns_admitted": False,
+        }
+        if (profile != "stable-core" or type(scope) is not Scope or scope.package != "time-core"
+                or scope.policy != "tasks/s1.3-chart-principal-inventory-admission.json"
+                or args.lane != "mutation" or scope.subjects != CHART_PRINCIPAL_SUBJECTS
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                       for key, value in facts.items())):
+            raise Incomplete("S157 inventory requires its exact stable-core three-owner listing card.")
+        for filename in dict(CHART_PRINCIPAL_SUBJECTS).values():
+            per_subject_mutation_error_args(scope, filename, policy)
+        return profile
     if (scope.policy == "tasks/s1.2-chart-batch-inventory-admission.json"
             or policy.get("admission_status") == "admitted-single-owner-chart-batch-inventory-only"):
         facts = {
@@ -1051,7 +1527,8 @@ class Session:
             return result["output"]
         if (label.startswith("mutation-enumeration:")
                 or label in ("external-legal-execution", "external-adaptive-legal-execution",
-                             "external-chart-legal-execution")):
+                             "external-chart-legal-execution",
+                             "external-chart-combination-legal-execution")):
             # Strict counter/receipt records need the child's actual delimiters.
             # Admission still requires a successful native result before exposure.
             PRODUCT.ENV.require_ok(result)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import copy
 import importlib.util
 import hashlib
 import json
@@ -439,6 +440,319 @@ class EvidenceTests(unittest.TestCase):
         with self.assertRaises(MODULE.Incomplete):
             MODULE.mutation_campaign_command(scope, tools, "chart_batch", wrong,
                                             expected_jobs=10, expected_message_format="json", policy=policy)
+
+    @staticmethod
+    def chart_principal_inventory_control():
+        """Literal three-owner S157 listing role; native admission remains separate."""
+        subjects = (("principal", "crates/time-core/src/principal.rs"),
+                    ("chart_principal", "crates/time-core/src/principal/chart.rs"),
+                    ("chart_batch", "crates/time-core/src/chart_batch.rs"))
+        scope = MODULE.Scope("time-core", subjects, "tasks/s1.3-chart-principal-inventory-admission.json")
+        return scope, {
+            "schema_version": 12, "admission_status": "admitted-retained-chart-three-owner-inventory-only",
+            "package": "time-core", "source_file_count": 142, "subjects": dict(subjects),
+            "mutation_equivalences": [], "mutation_error_values": {},
+            "native_test_invocations": 0, "campaigns_admitted": False,
+            "tool_admission_profile": "stable-core", "mutation_jobs": 10,
+            "mutation_message_format": "json", "maximum_mutants": 512,
+        }
+
+    @staticmethod
+    def chart_combination_inventory_control():
+        """Independent S158 nine-owner noncampaign facts; no native execution."""
+        subjects = (
+            ("combination", "crates/time-core/src/combination.rs"),
+            ("combination_admission", "crates/time-core/src/combination/admission.rs"),
+            ("combination_lifecycle", "crates/time-core/src/combination/lifecycle.rs"),
+            ("chart", "crates/time-core/src/regression/chart.rs"),
+            ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
+            ("chart_combination_roundoff", "crates/time-core/src/combination/chart/roundoff.rs"),
+            ("chart_combination_receiving", "crates/time-core/src/combination/chart/receiving.rs"),
+            ("chart_combination_reduction", "crates/time-core/src/combination/chart/reduction.rs"),
+            ("chart_combination_lifecycle", "crates/time-core/src/combination/lifecycle/chart.rs"),
+        )
+        scope = MODULE.Scope("time-core", subjects, "tasks/s1.3-chart-combination-inventory-admission.json")
+        return scope, {
+            "schema_version": 13, "admission_status": "admitted-chart-combination-nine-owner-inventory-only",
+            "package": "time-core", "source_file_count": 152, "subjects": dict(subjects),
+            "mutation_equivalences": [], "mutation_error_values": {},
+            "native_test_invocations": 0, "campaigns_admitted": False,
+            "tool_admission_profile": "stable-core", "mutation_jobs": 10,
+            "mutation_message_format": "json", "mutation_process_limit": 512,
+            "listing_process_limit": 128, "maximum_mutants": 512,
+            "listing_maximum_per_file": 512, "listing_maximum_total": 4608,
+            "inventory_wall_seconds": 600,
+        }
+
+    @classmethod
+    def chart_combination_campaign_error_control(cls):
+        """Isolate role/list shape; this opaque record has no proof admission."""
+        inventory, _ = cls.chart_combination_inventory_control()
+        return MODULE.Scope(inventory.package, inventory.subjects, 'policy/time-core-analysis.json'), {
+            'package': 'time-core', 'admission_status': 'admitted-final-source',
+            'mutation_error_values': {},
+            'mutation_equivalences': [{'id': 'synthetic-unadmitted-proof'}],
+        }
+
+    def test_chart_combination_listing_admits_exact_nine_owner_noncampaign_role(self):
+        scope, policy = self.chart_combination_inventory_control()
+        self.assertEqual(MODULE.admission_profile(
+            SimpleNamespace(lane="mutation", tool_admission_profile="stable-core"), scope, policy), "stable-core")
+        current = MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json")
+        for filename in dict(scope.subjects).values():
+            with self.subTest(filename=filename):
+                self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+                self.assertEqual(MODULE.per_subject_mutation_error_args(
+                    current, filename, {**policy, 'admission_status': 'admitted-final-source'}), [])
+
+    def test_chart_combination_listing_rejects_scope_lane_profile_and_typed_fact_changes(self):
+        scope, policy = self.chart_combination_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        for wrong in (
+            MODULE.Scope("time-domain", scope.subjects, scope.policy),
+            MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy),
+            MODULE.Scope(scope.package, scope.subjects[:-1], scope.policy),
+            MODULE.Scope(scope.package, (*scope.subjects, ('other', 'src/other.rs')), scope.policy),
+            MODULE.Scope(scope.package, scope.subjects, 'policy/time-core-analysis.json'),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/s1.3-chart-principal-inventory-admission.json'),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed.json'),
+        ):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+        for lane in ('contracts', 'coverage', 'all', 'fuzz', 'inventory', 'cohort-union'):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='full'),
+                                     scope, {**policy, 'tool_admission_profile': 'full'})
+        for key, value in (
+            ('schema_version', 12), ('schema_version', True), ('source_file_count', 150),
+            ('source_file_count', 152.0), ('native_test_invocations', False),
+            ('native_test_invocations', 1), ('campaigns_admitted', 0), ('campaigns_admitted', True),
+            ('subjects', {}), ('package', 'time-domain'), ('mutation_equivalences', [{}]),
+            ('mutation_error_values', None), ('mutation_error_values', []),
+            ('mutation_error_values', {'chart_combination_reduction': ['false']}),
+            ('maximum_mutants', 513), ('listing_maximum_per_file', True),
+            ('listing_maximum_total', 512), ('listing_maximum_total', 4608.0),
+            ('listing_process_limit', 512), ('mutation_process_limit', 128),
+            ('mutation_jobs', 12), ('mutation_jobs', 10.0), ('mutation_message_format', 'human'),
+            ('inventory_wall_seconds', 601),
+            ('admission_status', 'admitted-retained-chart-three-owner-inventory-only'),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_chart_combination_error_maps_require_exact_role_and_explicit_empty_mapping(self):
+        card, card_policy = self.chart_combination_inventory_control()
+        current = MODULE.Scope(card.package, card.subjects, 'policy/time-core-analysis.json')
+        current_policy = {**card_policy, 'admission_status': 'admitted-final-source'}
+        for scope, policy in ((card, card_policy), (current, current_policy)):
+            for filename in dict(card.subjects).values():
+                for value in (None, [], False, {'chart_combination_reduction': []},
+                              {'chart_combination_reduction': ['false']}, {'chart_enclosure': [self.CHART_ERROR]}):
+                    with self.subTest(scope=scope, filename=filename, value=value), self.assertRaises(MODULE.Incomplete):
+                        MODULE.per_subject_mutation_error_args(scope, filename, {**policy, 'mutation_error_values': value})
+                with self.subTest(scope=scope, filename=filename, missing=True), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(
+                        scope, filename, {k: v for k, v in policy.items() if k != 'mutation_error_values'})
+            for filename in ('src/other.rs', 'crates/time-core/src/principal.rs', None):
+                with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename, policy)
+            for field, value in (('admission_status', 'foreign-role'),):
+                with self.subTest(field=field), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, card.subjects[0][1], {**policy, field: value})
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.per_subject_mutation_error_args(
+                card, card.subjects[0][1], {**card_policy, 'mutation_equivalences': [{}]})
+        for wrong in (
+            MODULE.Scope('time-domain', card.subjects, card.policy),
+            MODULE.Scope(card.package, tuple(reversed(card.subjects)), card.policy),
+            MODULE.Scope(card.package, card.subjects[:-1], card.policy),
+            MODULE.Scope(card.package, card.subjects, 'tasks/renamed.json'),
+        ):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(wrong, card.subjects[0][1], card_policy)
+        self.assertEqual(MODULE.per_subject_mutation_error_args(SCOPE, FILES[0][1], {}), [])
+
+    def test_chart_combination_final_source_proof_metadata_adds_no_rust_error_operator(self):
+        scope, policy = self.chart_combination_campaign_error_control()
+        # This helper consumes only the already-selected role and list shape.
+        # Core/Common admission separately rejects this synthetic non-proof.
+        for filename in dict(scope.subjects).values():
+            with self.subTest(filename=filename):
+                self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+                self.assertEqual(MODULE.per_subject_mutation_error_args(
+                    scope, filename, {**policy, 'mutation_equivalences': []}), [])
+        inventory, inventory_policy = self.chart_combination_inventory_control()
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.per_subject_mutation_error_args(inventory, inventory.subjects[0][1],
+                {**inventory_policy, 'mutation_equivalences': policy['mutation_equivalences']})
+
+    def test_chart_combination_nonempty_proof_list_cannot_relax_error_map_or_role(self):
+        scope, policy = self.chart_combination_campaign_error_control()
+        filename = scope.subjects[0][1]
+        for value in (None, [], False, True, 1, '{}', {'chart_combination_receiving': []},
+                      {'chart_combination_receiving': ['false']}, {'chart_enclosure': [self.CHART_ERROR]}):
+            with self.subTest(error_map=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename, {**policy, 'mutation_error_values': value})
+        for value in (None, {}, (), False, True, 0, '[]'):
+            with self.subTest(proof_collection=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename, {**policy, 'mutation_equivalences': value})
+        for field in ('mutation_error_values', 'mutation_equivalences', 'admission_status', 'package'):
+            with self.subTest(missing=field), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename,
+                    {key: value for key, value in policy.items() if key != field})
+        for status in ('foreign-role', 'admitted-chart-combination-nine-owner-inventory-only',
+                       'admitted-retained-chart-three-owner-inventory-only'):
+            with self.subTest(status=status), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename, {**policy, 'admission_status': status})
+        for wrong in (
+            MODULE.Scope('time-domain', scope.subjects, scope.policy),
+            MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy),
+            MODULE.Scope(scope.package, scope.subjects[:-1], scope.policy),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/s1.3-chart-combination-inventory-admission.json'),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed.json'),
+        ):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(wrong, filename, policy)
+        for wrong in ('src/other.rs', 'crates/time-core/src/principal.rs', None):
+            with self.subTest(filename=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, wrong, policy)
+
+    def test_chart_combination_listing_commands_add_no_operator_and_cannot_campaign(self):
+        card, policy = self.chart_combination_inventory_control()
+        calls = []
+        def run(label, command, timeout):
+            self.assertEqual(command[-2:], ['--list', '--json'])
+            self.assertNotIn('--error', command)
+            self.assertNotIn('--baseline', command)
+            calls.append(label)
+            return json.dumps([{'name': label, 'file': command[command.index('--file') + 1],
+                                'package': 'time-core'}])
+        found = MODULE.enumerate_mutation_inventories(
+            card, dict(card.subjects), policy, Path('/sealed/tools'), run, {},
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=512, maximum_total=4608)
+        self.assertEqual(len(calls), 9)
+        self.assertEqual(set(found.inventories), set(dict(card.subjects)))
+        for subject, listing in found.commands.items():
+            command = [*listing, '--baseline', 'run', '--build-timeout', '90', '--timeout', '60',
+                       '--output', '/work/mutation/' + subject]
+            with self.subTest(subject=subject), self.assertRaisesRegex(MODULE.Incomplete, 'listing only'):
+                MODULE.mutation_campaign_command(card, Path('/sealed/tools'), subject, command,
+                    expected_jobs=10, expected_message_format='json', policy=policy)
+
+    def test_chart_principal_listing_admits_exact_card_and_explicit_empty_map(self):
+        scope, policy = self.chart_principal_inventory_control()
+        self.assertEqual(MODULE.admission_profile(
+            SimpleNamespace(lane="mutation", tool_admission_profile="stable-core"), scope, policy), "stable-core")
+        self.assertEqual(MODULE.CHART_PRINCIPAL_SUBJECTS, scope.subjects)
+        for filename in dict(scope.subjects).values():
+            with self.subTest(filename=filename):
+                self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+                current = MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json")
+                self.assertEqual(MODULE.per_subject_mutation_error_args(current, filename, policy), [])
+
+    def test_chart_principal_listing_rejects_scope_lane_and_typed_fact_changes(self):
+        scope, policy = self.chart_principal_inventory_control()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        wrong_scopes = (
+            MODULE.Scope("time-domain", scope.subjects, scope.policy),
+            MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy),
+            MODULE.Scope(scope.package, scope.subjects[:1], scope.policy),
+            MODULE.Scope(scope.package, (*scope.subjects, ("other", "src/other.rs")), scope.policy),
+            MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json"),
+            MODULE.Scope(scope.package, scope.subjects, "tasks/s1.2-chart-batch-inventory-admission.json"),
+            MODULE.Scope(scope.package, scope.subjects, "tasks/renamed-card.json"),
+        )
+        for wrong in wrong_scopes:
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+        for lane in ("contracts", "coverage", "all", "fuzz", "inventory", "cohort-union"):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane="mutation", tool_admission_profile="full"),
+                                     scope, {**policy, "tool_admission_profile": "full"})
+        changes = (("schema_version", 11), ("schema_version", True),
+                   ("source_file_count", 141), ("native_test_invocations", False),
+                   ("campaigns_admitted", 0), ("campaigns_admitted", True),
+                   ("mutation_equivalences", [{}]), ("subjects", {}), ("package", "time-domain"),
+                   ("mutation_error_values", None), ("mutation_error_values", []),
+                   ("mutation_error_values", {"chart_principal": ["false"]}),
+                   ("admission_status", "admitted-single-owner-chart-batch-inventory-only"))
+        for key, value in changes:
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in ("schema_version", "admission_status", "package", "source_file_count", "subjects",
+                    "mutation_equivalences", "mutation_error_values", "native_test_invocations",
+                    "campaigns_admitted", "tool_admission_profile"):
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_chart_principal_error_map_requires_exact_role_owner_and_explicit_empty_mapping(self):
+        card, policy = self.chart_principal_inventory_control()
+        current = MODULE.Scope(card.package, card.subjects, "policy/time-core-analysis.json")
+        for scope in (card, current):
+            for filename in dict(scope.subjects).values():
+                for value in (None, [], False, {"chart_principal": []}, {"chart_principal": ["false"]},
+                              {"chart_enclosure": [self.CHART_ERROR]}):
+                    with self.subTest(scope=scope, filename=filename, value=value), self.assertRaises(MODULE.Incomplete):
+                        MODULE.per_subject_mutation_error_args(scope, filename,
+                                                               {**policy, "mutation_error_values": value})
+                with self.subTest(scope=scope, filename=filename, missing=True), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename,
+                        {k: v for k, v in policy.items() if k != "mutation_error_values"})
+            for filename in ("src/other.rs", "crates/time-core/src/combination.rs", None):
+                with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename, policy)
+        for scope in (
+            MODULE.Scope("time-domain", card.subjects, card.policy),
+            MODULE.Scope(card.package, tuple(reversed(card.subjects)), card.policy),
+            MODULE.Scope(card.package, card.subjects[:1], card.policy),
+            MODULE.Scope(card.package, card.subjects, "tasks/renamed-card.json"),
+        ):
+            with self.subTest(scope=scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, "crates/time-core/src/principal/chart.rs", policy)
+            with self.subTest(scope=scope, missing=True), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, "crates/time-core/src/principal/chart.rs",
+                    {k: v for k, v in policy.items() if k != "mutation_error_values"})
+        self.assertEqual(MODULE.per_subject_mutation_error_args(SCOPE, FILES[0][1], {}), [])
+
+    def test_chart_principal_listing_commands_are_exact_and_card_cannot_start_campaign(self):
+        card, policy = self.chart_principal_inventory_control()
+        current = MODULE.Scope(card.package, card.subjects, "policy/time-core-analysis.json")
+        tools = Path("/sealed/tools")
+        calls = []
+        def run(label, command, timeout):
+            subject = label.removeprefix("mutation-enumeration:")
+            filename = dict(card.subjects)[subject]
+            expected = [str(tools / "cargo-mutants"), "mutants", "--package", "time-core", "--file", filename,
+                        "--test-workspace", "false", "--cap-lints", "false", "--jobs", "10",
+                        "--jobserver", "true", "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
+                        "--list", "--json"]
+            self.assertEqual(command, expected)
+            calls.append(label)
+            return json.dumps([{"name": "one", "file": filename, "package": "time-core"}])
+        found = MODULE.enumerate_mutation_inventories(
+            card, dict(card.subjects), policy, tools, run, {}, deadline=MODULE.time.monotonic() + 60,
+            maximum_per_file=512, maximum_total=1536)
+        self.assertEqual(calls, ["mutation-enumeration:" + name for name, _ in card.subjects])
+        for subject, _ in card.subjects:
+            command = [*found.commands[subject], "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                       "--output", "/work/mutation/" + subject]
+            MODULE.mutation_campaign_command(current, tools, subject, command,
+                expected_jobs=10, expected_message_format="json", policy=policy)
+            with self.subTest(subject=subject), self.assertRaisesRegex(MODULE.Incomplete, "listing only"):
+                MODULE.mutation_campaign_command(card, tools, subject, command,
+                    expected_jobs=10, expected_message_format="json", policy=policy)
+            wrong = command.copy()
+            wrong[wrong.index("--baseline"):wrong.index("--baseline")] = ["--error", "false"]
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(current, tools, subject, wrong,
+                    expected_jobs=10, expected_message_format="json", policy=policy)
 
     @classmethod
     def chart_error_inventory_control(cls):
@@ -979,7 +1293,8 @@ class EvidenceTests(unittest.TestCase):
                 # interprets its own record. This payload is the existing
                 # adaptive owner control, not a chart semantic observation.
                 for index, label in enumerate(("external-adaptive-legal-execution",
-                                               "external-chart-legal-execution"), 1):
+                                               "external-chart-legal-execution",
+                                               "external-chart-combination-legal-execution"), 1):
                     actual = session.run(label, ["fixture"], 1)
                     self.assertEqual(actual, raw)
                     self.assertEqual(contracts.contract_counts(actual), expected)
@@ -987,7 +1302,8 @@ class EvidenceTests(unittest.TestCase):
                     self.assertEqual(session.report["lanes"][-1]["output"], raw)
                     self.assertEqual(json.loads((root / "progress.json").read_text())["lanes"][-1]["output"], raw)
                 for label in ("ordinary-control", "external-adaptive-legal-execution-extra",
-                              "external-chart-legal-execution-extra"):
+                              "external-chart-legal-execution-extra",
+                              "external-chart-combination-legal-execution-extra"):
                     with self.subTest(label=label):
                         self.assertEqual(session.run(label, ["fixture"], 1), raw.strip())
             for exit_code, failure in ((1, None), (0, "deadline")):
@@ -998,6 +1314,8 @@ class EvidenceTests(unittest.TestCase):
                         session.run("external-adaptive-legal-execution", ["fixture"], 1)
                     with self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
                         session.run("external-chart-legal-execution", ["fixture"], 1)
+                    with self.assertRaises(MODULE.PRODUCT.ENV.Incomplete):
+                        session.run("external-chart-combination-legal-execution", ["fixture"], 1)
 
     def test_mutation_listing_admits_only_exact_warning_and_complete_strict_json(self):
         warning = (" WARN --jobs=12 is probably too high and may overload your machine: each job runs a separate "
@@ -1740,13 +2058,11 @@ class EvidenceTests(unittest.TestCase):
     def test_compiler_error_requires_exact_code_primary_span_and_type(self):
         path = "/work/contract-inputs/mixed.rs"
         specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 3}
-        diagnostic = {"$message_type": "diagnostic", "level": "error", "code": {"code": "E0308"},
-                      "message": "expected MonotonicNs, found ActiveAwakeNs", "children": [],
-                      "spans": [{"file_name": path, "line_start": 3, "is_primary": True}]}
+        diagnostic = self._external_diagnostic()
         result = {"exit_code": 1, "failure": None, "output": json.dumps(diagnostic)}
         MODULE.compiler_cause(result, specimen, path)
-        for change in [{"code": {"code": "E0432"}}, {"message": "unrelated expected u8, found u16"},
-                       {"spans": [{"file_name": path, "line_start": 2, "is_primary": True}]}]:
+        for change in [{"code": {"code": "E0432", "explanation": None}}, {"message": "unrelated expected u8, found u16"},
+                       {"spans": self._external_diagnostic(line=2)["spans"]}]:
             bad = {**result, "output": json.dumps({**diagnostic, **change})}
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.compiler_cause(bad, specimen, path)
@@ -1756,10 +2072,127 @@ class EvidenceTests(unittest.TestCase):
     def test_cause_tokens_can_come_from_real_rustc_span_labels(self):
         path = "/work/contract-inputs/mixed.rs"
         specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 4}
-        diagnostic = {"level": "error", "code": {"code": "E0308"}, "message": "mismatched types",
-                      "spans": [{"file_name": path, "line_start": 4, "is_primary": True,
-                                 "label": "expected `MonotonicNs`, found `ActiveAwakeNs`"}]}
+        diagnostic = self._external_diagnostic(message="mismatched types", line=4)
+        diagnostic["spans"][0]["label"] = "expected `MonotonicNs`, found `ActiveAwakeNs`"
         MODULE.compiler_cause({"exit_code": 1, "failure": None, "output": json.dumps(diagnostic)}, specimen, path)
+
+    @staticmethod
+    def _external_diagnostic(*, message="expected MonotonicNs, found ActiveAwakeNs",
+                             code="E0308", level="error", line=3):
+        """Literal rustc JSON envelope; no parser-generated expected values."""
+        spans = [] if line is None else [{
+            "file_name": "/work/contract-inputs/mixed.rs", "byte_start": 20, "byte_end": 21,
+            "line_start": line, "line_end": line, "column_start": 1, "column_end": 2,
+            "is_primary": True, "text": [{"text": "value", "highlight_start": 1, "highlight_end": 2}],
+            "label": None, "suggested_replacement": None, "suggestion_applicability": None,
+            "expansion": None,
+        }]
+        return {"$message_type": "diagnostic", "level": level,
+                "code": None if code is None else {"code": code, "explanation": None},
+                "message": message, "children": [], "spans": spans, "rendered": None}
+
+    def test_compiler_rejects_extra_same_code_error_after_healthy_intended_cause(self):
+        path = "/work/contract-inputs/mixed.rs"
+        specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 3}
+        intended = self._external_diagnostic()
+        healthy = {"exit_code": 1, "failure": None, "output": json.dumps(intended)}
+        MODULE.compiler_cause(healthy, specimen, path)
+        for unrelated in (self._external_diagnostic(message="expected u8, found u16"),
+                          self._external_diagnostic(line=4)):
+            for records in ([intended, unrelated], [unrelated, intended]):
+                with self.subTest(records=records):
+                    with self.assertRaises(MODULE.Incomplete):
+                        MODULE.compiler_cause({**healthy, "output": "\n".join(map(json.dumps, records))}, specimen, path)
+
+    def test_compiler_rejects_unrelated_uncoded_and_nonjson_contamination(self):
+        path = "/work/contract-inputs/mixed.rs"
+        specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 3}
+        intended = json.dumps(self._external_diagnostic())
+        contaminations = (
+            json.dumps(self._external_diagnostic(code=None, message="failed to spawn compiler", line=None)),
+            "error: could not execute process", "{", "[]", "null", "\n", "true",
+            json.dumps({**self._external_diagnostic(), "spans": "invalid"}),
+            json.dumps({**self._external_diagnostic(), "children": None}),
+        )
+        for contamination in contaminations:
+            with self.subTest(contamination=contamination):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.compiler_cause({"exit_code": 1, "failure": None,
+                                           "output": intended + "\n" + contamination}, specimen, path)
+
+    def test_compiler_accepts_counted_native_summaries_and_multiple_matching_causes(self):
+        path = "/work/contract-inputs/mixed.rs"
+        specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 3}
+        intended = self._external_diagnostic()
+        note = self._external_diagnostic(code=None, level="failure-note", line=None,
+            message="For more information about this error, try `rustc --explain E0308`.")
+        for errors, warnings in ((1, 0), (2, 0), (1, 1), (2, 2)):
+            message = f"aborting due to {errors} previous error" + ("s" if errors > 1 else "")
+            if warnings:
+                message += f"; {warnings} warning" + ("s" if warnings > 1 else "") + " emitted"
+            summary = self._external_diagnostic(code=None, line=None, message=message)
+            warning = self._external_diagnostic(code="unused_imports", level="warning", message="unused import", line=1)
+            warning["children"] = [{key: value for key, value in self._external_diagnostic(
+                code=None, level="note", message="on by default", line=None).items() if key != "$message_type"}]
+            records = [intended] * errors + [warning] * warnings + [summary, note]
+            with self.subTest(errors=errors, warnings=warnings):
+                MODULE.compiler_cause({"exit_code": 1, "failure": None,
+                                       "output": "\n".join(map(json.dumps, records)) + "\n"}, specimen, path)
+
+    def test_compiler_rejects_unbound_and_inconsistent_abort_or_explain_summaries(self):
+        path = "/work/contract-inputs/mixed.rs"
+        specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 3}
+        intended = self._external_diagnostic()
+        summary = self._external_diagnostic(code=None, line=None, message="aborting due to 1 previous error")
+        note = self._external_diagnostic(code=None, level="failure-note", line=None,
+            message="For more information about this error, try `rustc --explain E0308`.")
+        bad_rows = (
+            [intended, {**summary, "message": "aborting due to 2 previous errors"}],
+            [intended, {**summary, "message": "aborting due to 1 previous errors"}],
+            [intended, {**summary, "message": "aborting due to 1 previous error; 1 warning emitted"}],
+            [intended, summary, summary], [summary, intended], [intended, note],
+            [intended, summary, {**note, "message": "For more information about this error, try `rustc --explain E0277`."}],
+            [intended, summary, note, note], [intended, {**summary, "spans": intended["spans"]}],
+            [intended, summary, {**note, "code": {"code": "E0308", "explanation": None}}],
+            [intended, summary, intended],
+        )
+        for records in bad_rows:
+            with self.subTest(records=records):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.compiler_cause({"exit_code": 1, "failure": None,
+                                           "output": "\n".join(map(json.dumps, records))}, specimen, path)
+
+    def test_compiler_rejects_illtyped_nested_duplicate_and_tool_diagnostics(self):
+        path = "/work/contract-inputs/mixed.rs"
+        specimen = {"code": "E0308", "tokens": ["MonotonicNs", "ActiveAwakeNs"], "line": 3}
+        intended = self._external_diagnostic()
+        nested = {key: value for key, value in intended.items() if key != "$message_type"}
+        bad_rows = [
+            {**intended, "children": [nested]}, {**intended, "$message_type": "artifact"},
+            {**intended, "rendered": 1}, {**intended, "message": True},
+            {**intended, "code": {"code": "E0308", "explanation": []}},
+            {**intended, "spans": [{**intended["spans"][0], "is_primary": 1}]},
+            {**intended, "spans": [{**intended["spans"][0], "line_start": True}]},
+            {**intended, "spans": [{**intended["spans"][0], "label": []}]},
+            {**intended, "spans": [{**intended["spans"][0], "text": "invalid"}]},
+            {**intended, "message": intended["message"] + "; internal compiler error"},
+            self._external_diagnostic(level="warning", code="unexpected_tool", message="tool failure"),
+            self._external_diagnostic(level="warning", code="unused_imports", message="failed to spawn compiler"),
+        ]
+        raw_rows = [json.dumps(item) for item in bad_rows]
+        raw_rows.extend((json.dumps(intended).replace('"level": "error"', '"level": "warning", "level": "error"'),
+                         json.dumps(intended).replace('"rendered": null', '"rendered": NaN')))
+        for raw in raw_rows:
+            with self.subTest(raw=raw):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.compiler_cause({"exit_code": 1, "failure": None, "output": raw}, specimen, path)
+        for malformed in ({"exit_code": True, "failure": None, "output": json.dumps(intended)},
+                          {"exit_code": 1, "failure": "timeout", "output": json.dumps(intended)},
+                          {"exit_code": 1, "failure": None, "output": b"invalid"},
+                          {"exit_code": 1, "output": json.dumps(intended)}, None, []):
+            with self.subTest(malformed=malformed):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.compiler_cause(malformed, specimen, path)
 
     def test_session_rechecks_new_copied_inputs_config_and_dependency_changes(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -1868,6 +2301,682 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(session.report["lanes"][-1]["output"], raw_listing)
             self.assertEqual(captured["build_jobs"], 1)
             self.assertEqual(captured["environment"]["RUST_TEST_THREADS"], "1")
+
+
+class ReferenceInputAdmissionTests(unittest.TestCase):
+    """The new singleton is an explicit listing/campaign role, never an operator."""
+
+    SUBJECTS = (('reference_input', 'crates/time-core/src/reference_input.rs'),)
+    CARD = 'tasks/s1.4a-reference-input-inventory-admission.json'
+
+    def inventory(self):
+        return MODULE.Scope('time-core', self.SUBJECTS, self.CARD), {
+            'schema_version': 14, 'admission_status': 'admitted-reference-input-single-owner-inventory-only',
+            'package': 'time-core', 'source_file_count': 154, 'subjects': dict(self.SUBJECTS),
+            'tool_admission_profile': 'stable-core', 'maximum_mutants': 512,
+            'listing_maximum_per_file': 512, 'listing_maximum_total': 512,
+            'inventory_wall_seconds': 600, 'listing_process_limit': 128,
+            'mutation_process_limit': 512, 'mutation_jobs': 10, 'mutation_message_format': 'json',
+            'mutation_error_values': {}, 'mutation_equivalences': [],
+            'native_test_invocations': 0, 'campaigns_admitted': False,
+        }
+
+    def campaign(self):
+        return MODULE.Scope('time-core', self.SUBJECTS, 'policy/time-core-analysis.json'), {
+            'schema_version': 23, 'admission_status': 'admitted-final-source', 'package': 'time-core',
+            'source_file_count': 154, 'critical_files': [self.SUBJECTS[0][1]],
+            'tool_admission_profile': 'stable-core', 'mutation_error_values': {},
+            'mutation_equivalences': [],
+        }
+
+    def test_exact_singleton_listing_and_campaign_roles_admit_without_error_operator(self):
+        scope, policy = self.inventory()
+        self.assertEqual(MODULE.admission_profile(
+            SimpleNamespace(lane='mutation', tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+        self.assertEqual(MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], policy), [])
+        scope, policy = self.campaign()
+        for lane in ('contracts', 'coverage', 'mutation'):
+            with self.subTest(lane=lane):
+                self.assertEqual(MODULE.admission_profile(
+                    SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+        self.assertEqual(MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], policy), [])
+
+    def test_singleton_inventory_requires_every_exact_typed_fact(self):
+        scope, policy = self.inventory()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for key, value in (
+            ('schema_version', 13), ('schema_version', True), ('source_file_count', 153),
+            ('source_file_count', 154.0), ('package', 'time-domain'), ('subjects', {}),
+            ('tool_admission_profile', 'full'), ('maximum_mutants', 513),
+            ('listing_maximum_per_file', 513), ('listing_maximum_total', 4608),
+            ('inventory_wall_seconds', 601), ('listing_process_limit', 512),
+            ('mutation_process_limit', 128), ('mutation_jobs', True), ('mutation_jobs', 12),
+            ('mutation_message_format', 'human'), ('mutation_equivalences', [{}]),
+            ('mutation_error_values', None), ('mutation_error_values', []),
+            ('mutation_error_values', {'reference_input': ['false']}),
+            ('native_test_invocations', False), ('native_test_invocations', 1),
+            ('campaigns_admitted', 0), ('campaigns_admitted', True),
+            ('admission_status', 'admitted-final-source'),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_singleton_listing_scope_lane_and_profile_cannot_be_rebound(self):
+        scope, policy = self.inventory()
+        for wrong in (
+            MODULE.Scope('time-domain', scope.subjects, scope.policy),
+            MODULE.Scope(scope.package, (), scope.policy),
+            MODULE.Scope(scope.package, (*scope.subjects, ('other', 'src/other.rs')), scope.policy),
+            MODULE.Scope(scope.package, (('reference_input', 'src/other.rs'),), scope.policy),
+            MODULE.Scope(scope.package, scope.subjects, 'policy/time-core-analysis.json'),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/s1.3-chart-combination-inventory-admission.json'),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed.json'),
+        ):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='stable-core'),
+                                         wrong, policy)
+        for lane in ('contracts', 'coverage', 'all', 'fuzz', 'inventory', 'cohort-union'):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='full'),
+                                     scope, {**policy, 'tool_admission_profile': 'full'})
+
+    def test_singleton_campaign_requires_exact_role_and_empty_proof_error_maps(self):
+        scope, policy = self.campaign()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for key, value in (
+            ('schema_version', 22), ('schema_version', True), ('source_file_count', 152),
+            ('source_file_count', 154.0), ('package', 'time-domain'), ('critical_files', []),
+            ('admission_status', 'foreign-role'), ('mutation_equivalences', None),
+            ('mutation_equivalences', [{}]), ('mutation_error_values', None),
+            ('mutation_error_values', []), ('mutation_error_values', {'reference_input': []}),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+        for lane in ('all', 'fuzz', 'inventory', 'cohort-union'):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
+        for wrong in (
+            MODULE.Scope('time-domain', scope.subjects, scope.policy),
+            MODULE.Scope(scope.package, (), scope.policy),
+            MODULE.Scope(scope.package, (*scope.subjects, ('other', 'src/other.rs')), scope.policy),
+            MODULE.Scope(scope.package, (('reference_input', 'src/other.rs'),), scope.policy),
+            MODULE.Scope(scope.package, MODULE.CHART_COMBINATION_SUBJECTS, scope.policy),
+            MODULE.Scope(scope.package, scope.subjects, self.CARD),
+            MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed.json'),
+        ):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='full'),
+                                     scope, {**policy, 'tool_admission_profile': 'full'})
+
+    def test_singleton_error_maps_and_empty_equivalences_are_mandatory_in_both_roles(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            for key in ('mutation_error_values', 'mutation_equivalences'):
+                for value in (None, False, [], {}, [{}], {'reference_input': []}, {'reference_input': ['false']}):
+                    if value == ([] if key == 'mutation_equivalences' else {}) and type(value) is (list if key == 'mutation_equivalences' else dict):
+                        continue
+                    with self.subTest(role=scope.policy, key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                        MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], {**policy, key: value})
+                with self.subTest(role=scope.policy, missing=key), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], {k: v for k, v in policy.items() if k != key})
+            for filename in ('src/other.rs', 'crates/time-core/src/principal.rs', None):
+                with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename, policy)
+            for wrong in (
+                MODULE.Scope('time-domain', scope.subjects, scope.policy),
+                MODULE.Scope(scope.package, (('reference_input', 'src/other.rs'),), scope.policy),
+                MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed.json'),
+            ):
+                with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(wrong, self.SUBJECTS[0][1], policy)
+
+    def test_singleton_listing_keeps_exact_commands_and_cannot_start_campaign(self):
+        scope, policy = self.inventory()
+        calls = []
+        def run(label, command, timeout):
+            self.assertEqual(command[-2:], ['--list', '--json'])
+            self.assertNotIn('--error', command)
+            self.assertNotIn('--baseline', command)
+            calls.append(label)
+            return json.dumps([{'name': label, 'file': self.SUBJECTS[0][1], 'package': 'time-core'}])
+        found = MODULE.enumerate_mutation_inventories(
+            scope, dict(scope.subjects), policy, Path('/sealed/tools'), run, {},
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=512, maximum_total=512)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(set(found.inventories), {'reference_input'})
+        command = [*found.commands['reference_input'], '--baseline', 'run', '--build-timeout', '90',
+                   '--timeout', '60', '--output', '/work/mutation/reference_input']
+        with self.assertRaisesRegex(MODULE.Incomplete, 'listing only'):
+            MODULE.mutation_campaign_command(scope, Path('/sealed/tools'), 'reference_input', command,
+                expected_jobs=10, expected_message_format='json', policy=policy)
+        current, current_policy = self.campaign()
+        MODULE.mutation_campaign_command(current, Path('/sealed/tools'), 'reference_input', command,
+            expected_jobs=10, expected_message_format='json', policy=current_policy)
+        for extra in ('--error', '--skip-call-defaults', '--timeout=1'):
+            with self.subTest(extra=extra), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(current, Path('/sealed/tools'), 'reference_input', [*command, extra],
+                    expected_jobs=10, expected_message_format='json', policy=current_policy)
+
+
+class AchievedPhaseAdmissionTests(ReferenceInputAdmissionTests):
+    """S1.4c adds an exact role; its prior singleton remains separately bound."""
+
+    CARD = 'tasks/s1.4c-achieved-phase-inventory-admission.json'
+
+    def inventory(self):
+        scope, policy = super().inventory()
+        return scope, {**policy, 'schema_version': 16, 'source_file_count': 156,
+                       'admission_status': 'admitted-achieved-phase-single-owner-inventory-only'}
+
+    def campaign(self):
+        scope, policy = super().campaign()
+        return scope, {**policy, 'schema_version': 25, 'source_file_count': 156,
+                       'mutation_jobs': 10, 'mutation_process_limit': 512,
+                       'mutation_message_format': 'json'}
+
+    def test_current_inventory_error_map_reaches_shared_helper(self):
+        scope, policy = self.inventory()
+        self.assertEqual(MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], policy), [])
+
+    def test_current_campaign_matches_exact_final_source_role(self):
+        scope, policy = self.campaign()
+        for lane in ('contracts', 'coverage', 'mutation'):
+            with self.subTest(lane=lane):
+                self.assertEqual(MODULE.admission_profile(
+                    SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+
+    def test_singleton_generations_remain_typed_and_bound_at_both_entrypoints(self):
+        legacy = ReferenceInputAdmissionTests()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for scope, policy in (self.inventory(), self.campaign(), legacy.inventory(), legacy.campaign()):
+            changes = (
+                ('schema_version', policy['schema_version'] + 1), ('schema_version', True),
+                ('schema_version', float(policy['schema_version'])),
+                ('source_file_count', policy['source_file_count'] + 1), ('source_file_count', True),
+                ('source_file_count', float(policy['source_file_count'])),
+                ('admission_status', 'foreign-role'), ('package', 'time-domain'),
+            )
+            for key, value in changes:
+                for entrypoint in ('profile', 'errors'):
+                    with self.subTest(role=scope.policy, schema=policy['schema_version'],
+                                      key=key, value=value, entrypoint=entrypoint), self.assertRaises(MODULE.Incomplete):
+                        changed = {**policy, key: value}
+                        if entrypoint == 'profile':
+                            MODULE.admission_profile(args, scope, changed)
+                        else:
+                            MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], changed)
+            for key in ('schema_version', 'source_file_count', 'admission_status', 'package'):
+                with self.subTest(role=scope.policy, missing=key), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(
+                        scope, self.SUBJECTS[0][1], {name: value for name, value in policy.items() if name != key})
+
+    def test_current_card_cannot_be_renamed_or_borrow_legacy_role(self):
+        scope, policy = self.inventory()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        legacy = ReferenceInputAdmissionTests()
+        old_scope, old_policy = legacy.inventory()
+        for wrong_scope, wrong_policy in (
+            (old_scope, policy), (scope, old_policy),
+            (MODULE.Scope(scope.package, scope.subjects, 'tasks/s1.4c-renamed.json'), policy),
+            (scope, {**policy, 'admission_status': old_policy['admission_status']}),
+            (old_scope, {**old_policy, 'admission_status': policy['admission_status']}),
+        ):
+            with self.subTest(scope=wrong_scope, status=wrong_policy['admission_status']):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, wrong_scope, wrong_policy)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(wrong_scope, self.SUBJECTS[0][1], wrong_policy)
+
+    def test_current_campaign_cannot_mix_prior_schema_or_source_generation(self):
+        scope, policy = self.campaign()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for changed in ({**policy, 'schema_version': 23}, {**policy, 'source_file_count': 154}):
+            with self.subTest(schema=changed['schema_version'], source_count=changed['source_file_count']):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, scope, changed)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], changed)
+
+    def test_current_campaign_keeps_exact_mutation_budgets_and_message_format(self):
+        scope, policy = self.campaign()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for key, value in (
+            ('mutation_jobs', True), ('mutation_jobs', 10.0), ('mutation_jobs', 12),
+            ('mutation_process_limit', True), ('mutation_process_limit', 512.0),
+            ('mutation_process_limit', 128), ('mutation_process_limit', 513),
+            ('mutation_message_format', 'human'),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+
+
+class ChartCompositionAdmissionTests(unittest.TestCase):
+    """The new three-owner role cannot inherit historical discovery or operators."""
+
+    SUBJECTS = (('chart', 'crates/time-core/src/regression/chart.rs'),
+                ('chart_roundoff', 'crates/time-core/src/regression/chart/roundoff.rs'),
+                ('chart_batch', 'crates/time-core/src/chart_batch.rs'))
+    CARD = 'tasks/s1.4b-chart-composition-inventory-admission.json'
+
+    def reviewed_equivalence(self):
+        """Literal descriptor from the retained V2 native listing, without diff."""
+        return {
+            'id': 'S14B-R-E-001',
+            'candidate_sha256': '6f5471fe21d35455a0be6b8f85800cb44d2b1e2f8effd8aec3492e840f0bf8c6',
+            'source_sha256': '1aa537417ef06238d85e7614124e399a301f1e8ecd8e6fdf74b6506e58e395bc',
+            'mutant': {
+                'name': 'crates/time-core/src/regression/chart/roundoff.rs:350:33: replace || with && in transform',
+                'package': 'time-core', 'file': 'crates/time-core/src/regression/chart/roundoff.rs',
+                'function': {'function_name': 'transform',
+                             'return_type': '-> Result<ChartScalars, FixtureChartError>',
+                             'span': {'start': {'line': 310, 'column': 1},
+                                      'end': {'line': 376, 'column': 2}}},
+                'span': {'start': {'line': 350, 'column': 33},
+                         'end': {'line': 350, 'column': 35}},
+                'replacement': '&&', 'genre': 'BinaryOperator'},
+            'requirement': 'CHECK-7/8/14/25',
+            'rationale': 'Complete checked chart construction gives both zero or both positive coefficient errors.',
+            'proof': {'path': 'tasks/s1.4b-chart-composition-equivalence.md',
+                      'sha256': '67a3b6eb23ef5f476d7f7af09ffb803863a470d2c9bafd3735e28f1397046231',
+                      'section': 'S14B-R-E-001', 'reviewer': 'root; roundoff_survivor_review',
+                      'verdict': 'independently-justified-equivalent'}}
+
+    def test_one_reviewed_composition_equivalence_is_campaign_only(self):
+        scope, policy = self.campaign()
+        policy['mutation_equivalences'] = [self.reviewed_equivalence()]
+        for lane in ('contracts', 'coverage', 'mutation'):
+            with self.subTest(lane=lane):
+                self.assertEqual(MODULE.admission_profile(
+                    SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+        for _, filename in self.SUBJECTS:
+            self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+        listing, card = self.inventory()
+        card['mutation_equivalences'] = copy.deepcopy(policy['mutation_equivalences'])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='stable-core'), listing, card)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.per_subject_mutation_error_args(listing, self.SUBJECTS[0][1], card)
+
+    def test_composition_equivalence_rejects_neighbors_duplicates_and_foreign_bindings(self):
+        scope, policy = self.campaign()
+        entry = self.reviewed_equivalence()
+        bad = [None, {}, [entry, entry], [{}]]
+        for key, value in (('id', 'S158-R-E-001'), ('candidate_sha256', '0' * 64),
+                           ('source_sha256', '0' * 64), ('requirement', 'CHECK-7'),
+                           ('rationale', ''), ('proof', {**entry['proof'], 'sha256': '0' * 64})):
+            bad.append([{**entry, key: value}])
+        for column in (26, 53):
+            neighbor = copy.deepcopy(entry)
+            neighbor['mutant'].update(
+                name='crates/time-core/src/regression/chart/roundoff.rs:350:' + str(column) + ': replace != with == in transform',
+                replacement='==', span={'start': {'line': 350, 'column': column},
+                                        'end': {'line': 350, 'column': column + 2}})
+            bad.append([neighbor])
+        for entries in bad:
+            changed = {**policy, 'mutation_equivalences': entries}
+            with self.subTest(entries=entries), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='stable-core'), scope, changed)
+            with self.subTest(entries=entries), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], changed)
+
+    def test_composition_e_keeps_synthetic_raw_miss_and_native_exit_separate(self):
+        scope, _ = self.campaign()
+        entry = self.reviewed_equivalence()
+        equivalent = entry['mutant']
+        neighbor = copy.deepcopy(equivalent)
+        neighbor.update(name='synthetic-non-equivalent-neighbor', replacement='==')
+        filename = equivalent['file']
+        expected = {row['name']: row for row in (equivalent, neighbor)}
+        outcomes = [{'scenario': 'Baseline', 'summary': 'Success'},
+                    {'scenario': {'Mutant': neighbor}, 'summary': 'CaughtMutant'},
+                    {'scenario': {'Mutant': equivalent}, 'summary': 'MissedMutant'}]
+        def report_for(records):
+            value = complete_report({'cargo_mutants_version': '27.1.0', 'total_mutants': 2, 'outcomes': records})
+            for outcome in value['outcomes']:
+                for phase in outcome['phase_results']:
+                    phase['argv'] = [part.replace('--package=time-domain@0.0.0', '--package=time-core@0.0.0')
+                                     for part in phase['argv']]
+                    phase['argv'].insert(-1, '--message-format=json')
+            return value
+        report = report_for(outcomes)
+        score = MODULE.mutation_counts(scope, report, expected, filename, native_exit_code=2, equivalences=[entry])
+        self.assertEqual((score['killed'], score['survived'], score['unviable'], score['excluded']), (1, 1, 0, 1))
+        self.assertEqual((score['raw_denominator'], score['adjusted_denominator'], score['native_exit_code']), (2, 1, 2))
+        self.assertEqual((score['raw_viable_killed_percent'], score['adjusted_viable_killed_percent']), (50, 100))
+        self.assertTrue(score['gate_passed'])
+        for summary in ('CaughtMutant', 'Unviable', 'Timeout'):
+            changed = copy.deepcopy(outcomes)
+            changed[-1]['summary'] = summary
+            bad = report_for(changed)
+            with self.subTest(summary=summary), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_counts(scope, bad, expected, filename, native_exit_code=0, equivalences=[entry])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_counts(scope, report, expected, filename, native_exit_code=0, equivalences=[entry])
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.mutation_counts(scope, report, expected, filename, native_exit_code=2,
+                                   equivalences=[{**entry, 'mutant': neighbor}])
+
+    def inventory(self):
+        return MODULE.Scope('time-core', self.SUBJECTS, self.CARD), {
+            'schema_version': 15, 'admission_status': 'admitted-chart-composition-three-owner-inventory-only',
+            'package': 'time-core', 'source_file_count': 156, 'subjects': dict(self.SUBJECTS),
+            'tool_admission_profile': 'stable-core', 'maximum_mutants': 512,
+            'listing_maximum_per_file': 512, 'listing_maximum_total': 1536,
+            'inventory_wall_seconds': 600, 'listing_process_limit': 128,
+            'mutation_process_limit': 512, 'mutation_jobs': 10, 'mutation_message_format': 'json',
+            'mutation_error_values': {}, 'mutation_equivalences': [],
+            'native_test_invocations': 0, 'campaigns_admitted': False,
+        }
+
+    def campaign(self):
+        return MODULE.Scope('time-core', self.SUBJECTS, 'policy/time-core-analysis.json'), {
+            'schema_version': 24, 'admission_status': 'admitted-final-source', 'package': 'time-core',
+            'source_file_count': 156, 'critical_files': list(dict(self.SUBJECTS).values()),
+            'tool_admission_profile': 'stable-core', 'mutation_error_values': {},
+            'mutation_equivalences': [], 'mutation_jobs': 10, 'mutation_process_limit': 512,
+            'mutation_message_format': 'json',
+        }
+
+    def test_exact_composition_listing_and_campaign_roles_admit(self):
+        scope, policy = self.inventory()
+        self.assertEqual(MODULE.admission_profile(
+            SimpleNamespace(lane='mutation', tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+        scope, policy = self.campaign()
+        for lane in ('contracts', 'coverage', 'mutation'):
+            with self.subTest(lane=lane):
+                self.assertEqual(MODULE.admission_profile(
+                    SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+        for scope, policy in (self.inventory(), self.campaign()):
+            for _, filename in self.SUBJECTS:
+                self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+
+    def test_composition_roles_require_exact_typed_facts_and_empty_maps(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+            changes = [('schema_version', True), ('schema_version', 23), ('source_file_count', 154),
+                       ('source_file_count', 156.0), ('package', 'time-domain'),
+                       ('mutation_equivalences', [{}]), ('mutation_equivalences', {}),
+                       ('mutation_error_values', {'chart': []}), ('mutation_error_values', []),
+                       ('tool_admission_profile', 'full'), ('mutation_jobs', 12),
+                       ('mutation_process_limit', 128), ('mutation_message_format', 'human')]
+            if scope.policy == self.CARD:
+                changes += [('subjects', {}), ('maximum_mutants', 513), ('listing_maximum_per_file', 513),
+                            ('listing_maximum_total', 512), ('listing_maximum_total', 1537),
+                            ('listing_process_limit', 512), ('inventory_wall_seconds', 601),
+                            ('native_test_invocations', False), ('native_test_invocations', 1),
+                            ('campaigns_admitted', 0), ('campaigns_admitted', True)]
+            else:
+                changes += [('critical_files', list(dict(MODULE.CHART_PRINCIPAL_SUBJECTS).values()))]
+            for key, value in changes:
+                with self.subTest(role=scope.policy, key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, scope, {**policy, key: value})
+            for key in policy:
+                with self.subTest(role=scope.policy, missing=key), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_composition_scope_lane_and_profile_are_closed(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            for wrong in (MODULE.Scope('time-domain', scope.subjects, scope.policy),
+                          MODULE.Scope(scope.package, scope.subjects[:-1], scope.policy),
+                          MODULE.Scope(scope.package, (*scope.subjects, scope.subjects[0]), scope.policy),
+                          MODULE.Scope(scope.package, MODULE.CHART_PRINCIPAL_SUBJECTS, scope.policy),
+                          MODULE.Scope(scope.package, MODULE.REFERENCE_INPUT_SUBJECTS, scope.policy),
+                          MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy),
+                          MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed.json')):
+                with self.subTest(role=scope.policy, scope=wrong), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='stable-core'),
+                                             wrong, policy)
+            lanes = ('contracts', 'coverage', 'all', 'fuzz', 'cohort-union') if scope.policy == self.CARD else ('all', 'fuzz', 'cohort-union')
+            for lane in lanes:
+                with self.subTest(role=scope.policy, lane=lane), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='full'),
+                                         scope, {**policy, 'tool_admission_profile': 'full'})
+
+    def test_composition_error_map_cannot_supply_an_operator_or_omit_empty_fields(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            for key, values in (('mutation_error_values', (None, [], {'chart': []}, {'chart': ['false']})),
+                                ('mutation_equivalences', (None, {}, [{}]))):
+                for value in values:
+                    for _, filename in self.SUBJECTS:
+                        with self.subTest(role=scope.policy, key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                            MODULE.per_subject_mutation_error_args(scope, filename, {**policy, key: value})
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1],
+                                                          {k: v for k, v in policy.items() if k != key})
+            for filename in ('src/foreign.rs', MODULE.REFERENCE_INPUT_SUBJECTS[0][1], None):
+                with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename, policy)
+
+    def test_composition_listing_is_three_commands_and_grants_no_campaign(self):
+        scope, policy = self.inventory()
+        calls = []
+        def run(label, command, timeout):
+            subject = label.removeprefix('mutation-enumeration:')
+            self.assertEqual(command[-2:], ['--list', '--json'])
+            self.assertNotIn('--error', command)
+            self.assertNotIn('--baseline', command)
+            calls.append(subject)
+            return json.dumps([{'name': label, 'file': dict(self.SUBJECTS)[subject], 'package': 'time-core'}])
+        found = MODULE.enumerate_mutation_inventories(
+            scope, dict(scope.subjects), policy, Path('/sealed/tools'), run, {},
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=512, maximum_total=1536)
+        self.assertEqual(calls, [name for name, _ in self.SUBJECTS])
+        self.assertEqual(set(found.inventories), set(dict(self.SUBJECTS)))
+        for subject, _ in self.SUBJECTS:
+            command = [*found.commands[subject], '--baseline', 'run', '--build-timeout', '90',
+                       '--timeout', '60', '--output', '/work/mutation/' + subject]
+            with self.assertRaisesRegex(MODULE.Incomplete, 'listing only'):
+                MODULE.mutation_campaign_command(scope, Path('/sealed/tools'), subject, command,
+                    expected_jobs=10, expected_message_format='json', policy=policy)
+
+
+class SettledRateAdmissionTests(unittest.TestCase):
+    """The four-owner settled role adds no schema/path/equivalence aliases."""
+
+    SUBJECTS = (
+        ('reference_input', 'crates/time-core/src/reference_input.rs'),
+        ('rate_delivery', 'crates/time-core/src/reference_input/rate_delivery.rs'),
+        ('chart', 'crates/time-core/src/regression/chart.rs'),
+        ('chart_roundoff', 'crates/time-core/src/regression/chart/roundoff.rs'),
+    )
+    CARD = 'tasks/settled-rate-inventory-admission.json'
+
+    def inventory(self):
+        """Literal next-role facts; source/tool byte admission remains separate."""
+        return MODULE.Scope('time-core', self.SUBJECTS, self.CARD), {
+            'schema_version': 17, 'admission_status': 'admitted-settled-rate-four-owner-inventory-only',
+            'package': 'time-core', 'source_file_count': 158, 'subjects': dict(self.SUBJECTS),
+            'tool_admission_profile': 'stable-core', 'maximum_mutants': 512,
+            'listing_maximum_per_file': 512, 'listing_maximum_total': 2048,
+            'inventory_wall_seconds': 600, 'listing_process_limit': 128,
+            'mutation_process_limit': 512, 'mutation_jobs': 10, 'mutation_message_format': 'json',
+            'mutation_error_values': {}, 'mutation_equivalences': [],
+            'native_test_invocations': 0, 'campaigns_admitted': False,
+        }
+
+    def campaign(self):
+        """Four exact source owners, with no predecessor proof or error operator."""
+        return MODULE.Scope('time-core', self.SUBJECTS, 'policy/time-core-analysis.json'), {
+            'schema_version': 26, 'admission_status': 'admitted-final-source',
+            'package': 'time-core', 'source_file_count': 158,
+            'critical_files': [filename for _, filename in self.SUBJECTS],
+            'tool_admission_profile': 'stable-core', 'mutation_error_values': {},
+            'mutation_equivalences': [], 'mutation_jobs': 10,
+            'mutation_process_limit': 512, 'mutation_message_format': 'json', 'maximum_mutants': 512,
+        }
+
+    def test_settled_roles_admit_exact_four_owners_without_error_operator(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            lanes = ('mutation',) if scope.policy == self.CARD else ('contracts', 'coverage', 'mutation')
+            for lane in lanes:
+                with self.subTest(role=scope.policy, lane=lane):
+                    self.assertEqual(MODULE.admission_profile(
+                        SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+            for _, filename in self.SUBJECTS:
+                with self.subTest(role=scope.policy, filename=filename):
+                    self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), [])
+
+    def test_settled_inventory_requires_every_exact_typed_fact(self):
+        scope, policy = self.inventory()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for key, value in (
+            ('schema_version', 16), ('schema_version', 18), ('schema_version', True), ('schema_version', 17.0),
+            ('source_file_count', 156), ('source_file_count', 159), ('source_file_count', True),
+            ('source_file_count', 158.0), ('package', 'time-domain'), ('subjects', {}),
+            ('admission_status', 'admitted-achieved-phase-single-owner-inventory-only'),
+            ('maximum_mutants', 513), ('listing_maximum_per_file', 513),
+            ('listing_maximum_total', 512), ('listing_maximum_total', 2048.0),
+            ('inventory_wall_seconds', 601), ('listing_process_limit', 512),
+            ('mutation_process_limit', 128), ('mutation_jobs', True), ('mutation_jobs', 12),
+            ('mutation_message_format', 'human'), ('mutation_equivalences', [{}]),
+            ('mutation_error_values', None), ('mutation_error_values', []),
+            ('native_test_invocations', False), ('native_test_invocations', 1),
+            ('campaigns_admitted', 0), ('campaigns_admitted', True),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_settled_campaign_requires_exact_generation_scope_and_worker_policy(self):
+        scope, policy = self.campaign()
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for key, value in (
+            ('schema_version', 25), ('schema_version', 27), ('schema_version', True), ('schema_version', 26.0),
+            ('source_file_count', 156), ('source_file_count', 159), ('source_file_count', True),
+            ('source_file_count', 158.0), ('package', 'time-domain'), ('critical_files', []),
+            ('critical_files', list(reversed(policy['critical_files']))),
+            ('admission_status', 'foreign-role'), ('mutation_equivalences', [{}]),
+            ('mutation_error_values', None), ('mutation_error_values', []),
+            ('mutation_jobs', True), ('mutation_jobs', 10.0), ('mutation_jobs', 12),
+            ('mutation_process_limit', True), ('mutation_process_limit', 512.0),
+            ('mutation_process_limit', 128), ('mutation_message_format', 'human'),
+            ('maximum_mutants', 511), ('maximum_mutants', True), ('maximum_mutants', 513),
+        ):
+            with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_settled_scope_path_lane_and_profile_cannot_be_rebound(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+            for wrong in (
+                MODULE.Scope('time-domain', scope.subjects, scope.policy),
+                MODULE.Scope(scope.package, (), scope.policy),
+                MODULE.Scope(scope.package, tuple(reversed(scope.subjects)), scope.policy),
+                MODULE.Scope(scope.package, scope.subjects[:-1], scope.policy),
+                MODULE.Scope(scope.package, (*scope.subjects, ('other', 'src/other.rs')), scope.policy),
+                MODULE.Scope(scope.package, MODULE.CHART_COMBINATION_SUBJECTS, scope.policy),
+                MODULE.Scope(scope.package, (('reference_input', 'src/other.rs'), *scope.subjects[1:]), scope.policy),
+                MODULE.Scope(scope.package, scope.subjects, 'tasks/renamed-settled-rate.json'),
+                MODULE.Scope(scope.package, scope.subjects, 'tasks/s1.4c-achieved-phase-inventory-admission.json'),
+            ):
+                with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, wrong, policy)
+                with self.subTest(error_scope=wrong), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(wrong, self.SUBJECTS[0][1], policy)
+            bad_lanes = ('contracts', 'coverage', 'all', 'fuzz', 'inventory', 'cohort-union') if scope.policy == self.CARD else ('all', 'fuzz', 'inventory', 'cohort-union')
+            for lane in bad_lanes:
+                with self.subTest(role=scope.policy, lane=lane), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane='mutation', tool_admission_profile='full'),
+                                         scope, {**policy, 'tool_admission_profile': 'full'})
+
+    def test_settled_error_arguments_require_exact_role_and_empty_operator_fields(self):
+        for scope, policy in (self.inventory(), self.campaign()):
+            for field, bad_values in (
+                ('mutation_error_values', (None, [], False, {'rate_delivery': []}, {'chart_roundoff': ['false']})),
+                ('mutation_equivalences', (None, {}, (), False, [{}])),
+                ('schema_version', (True, float(policy['schema_version']), policy['schema_version'] + 1)),
+                ('source_file_count', (True, 158.0, 156, 159)),
+                ('package', ('time-domain',)), ('admission_status', ('foreign-role',)),
+                ('tool_admission_profile', ('full',)),
+                ('mutation_jobs', (True, 12)), ('mutation_process_limit', (True, 128)),
+                ('maximum_mutants', (True, 511, 513)),
+                ('mutation_message_format', ('human',)),
+            ):
+                for value in bad_values:
+                    for _, filename in self.SUBJECTS:
+                        with self.subTest(role=scope.policy, field=field, value=value, filename=filename), self.assertRaises(MODULE.Incomplete):
+                            MODULE.per_subject_mutation_error_args(scope, filename, {**policy, field: value})
+                with self.subTest(role=scope.policy, missing=field), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1],
+                        {key: value for key, value in policy.items() if key != field})
+            for filename in ('src/other.rs', 'crates/time-core/src/chart_batch.rs', None):
+                with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename, policy)
+            for old_subjects in (MODULE.CHART_COMBINATION_SUBJECTS, CORE_FILES):
+                legacy = MODULE.Scope(scope.package, old_subjects, scope.policy)
+                with self.subTest(legacy_fallthrough=legacy), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(legacy, 'crates/time-core/src/regression/chart.rs', policy)
+                with self.subTest(legacy_missing_map=legacy), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(legacy, 'crates/time-core/src/regression/chart.rs',
+                        {key: value for key, value in policy.items() if key != 'mutation_error_values'})
+            role_field = 'subjects' if scope.policy == self.CARD else 'critical_files'
+            for changed in ({**policy, role_field: {}},
+                            {key: value for key, value in policy.items() if key != role_field}):
+                with self.subTest(role_field=role_field), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1], changed)
+
+    def test_settled_listing_keeps_four_exact_commands_and_never_starts_campaign(self):
+        scope, policy = self.inventory()
+        tools = Path('/sealed/tools')
+        calls = []
+        def run(label, command, timeout):
+            subject = label.removeprefix('mutation-enumeration:')
+            filename = dict(self.SUBJECTS)[subject]
+            self.assertEqual(command, [str(tools / 'cargo-mutants'), 'mutants', '--package', 'time-core',
+                '--file', filename, '--test-workspace', 'false', '--cap-lints', 'false', '--jobs', '10',
+                '--jobserver', 'true', '--jobserver-tasks', '10', '--cargo-arg=--message-format=json', '--list', '--json'])
+            calls.append(subject)
+            return json.dumps([{'name': label, 'file': filename, 'package': 'time-core'}])
+        found = MODULE.enumerate_mutation_inventories(
+            scope, dict(scope.subjects), policy, tools, run, {},
+            deadline=MODULE.time.monotonic() + 60, maximum_per_file=512, maximum_total=2048)
+        self.assertEqual(calls, [name for name, _ in self.SUBJECTS])
+        self.assertEqual(set(found.inventories), set(dict(self.SUBJECTS)))
+        current, campaign = self.campaign()
+        for subject, _ in self.SUBJECTS:
+            command = [*found.commands[subject], '--baseline', 'run', '--build-timeout', '90',
+                       '--timeout', '60', '--output', '/work/mutation/' + subject]
+            with self.assertRaisesRegex(MODULE.Incomplete, 'listing only'):
+                MODULE.mutation_campaign_command(scope, tools, subject, command,
+                    expected_jobs=10, expected_message_format='json', policy=policy)
+            MODULE.mutation_campaign_command(current, tools, subject, command,
+                expected_jobs=10, expected_message_format='json', policy=campaign)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(current, tools, subject, [*command, '--error', 'false'],
+                    expected_jobs=10, expected_message_format='json', policy=campaign)
+
+    def test_settled_role_cannot_transfer_the_historical_roundoff_equivalence(self):
+        previous = ChartCompositionAdmissionTests()
+        old_scope, old_policy = previous.campaign()
+        proof = [previous.reviewed_equivalence()]
+        old_policy['mutation_equivalences'] = proof
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        self.assertEqual(MODULE.admission_profile(args, old_scope, old_policy), 'stable-core')
+        for scope, policy in (self.inventory(), self.campaign()):
+            changed = {**policy, 'mutation_equivalences': proof}
+            with self.subTest(role=scope.policy), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, changed)
+            for _, filename in self.SUBJECTS:
+                with self.subTest(role=scope.policy, filename=filename), self.assertRaises(MODULE.Incomplete):
+                    MODULE.per_subject_mutation_error_args(scope, filename, changed)
 
 
 if __name__ == "__main__":

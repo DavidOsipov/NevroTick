@@ -131,6 +131,10 @@ mod chart_principal_cases;
 #[path = "private/chart_principal_pending.rs"]
 mod chart_principal_pending;
 
+/// Same-reference composition retains numeric error through real chart consumers.
+#[path = "private/chart_composition.rs"]
+mod chart_composition;
+
 /// Capture every real retained row and the owner report, without creating evidence.
 /// # Errors
 /// Reject impossible public counts or a missing required row.

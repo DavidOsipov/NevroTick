@@ -1,16 +1,16 @@
 # NevroTick development and acceptance plan
 
-**Created:** 29 October 2026; **documentation reconciliation:** 3 November 2026
+**Created:** 29 October 2026; **documentation reconciliation:** 4 November 2026
 
 **Status:** P0–P7 remain open; current portable work is in P1
 
 **Original planning baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`
 
-**Reconciled baseline:** `4d8539b` plus the identified staged/unstaged S155 task updates
+**Historical plan reconciliation baseline:** `4d8539b` plus the identified staged/unstaged S155 task updates
 
 **Immediate priority:** finish the current bounded Core chain, then secure, bounded NTP/NTS acquisition
 
-**Current task:** [S157 retained-owner chart receiving](../../tasks/s1.3-source-selection-readiness.md#s157-retained-owner-chart-receiving--authoring-contract) passed its principal authoring checkpoint; current-owner qualification is next, followed by chart-aware combination with explicit arithmetic bounds. [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their completed scopes; full P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
+**Current task:** [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#modeled-settled-active-time-delivery--implementation-contract) has a frozen clock-domain, local cursor and arithmetic-bound contract and ongoing selected qualification; follow the task's latest candidate, failed attempts and next checks. Current changed bytes remain unqualified. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
 The [engine checkpoint](../../tasks/engine-transport-pilot.md#s43-complete-current-engine-mutation-checkpoint)
 records a bounded, unauthenticated two-peer loopback observer, not production
@@ -261,7 +261,7 @@ new numerical constants, crypto graph, full-history persistence or Windows effec
 [architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales)
 select the design; implementation and native qualification remain pending. Use
 the [S1.4 task](../../tasks/s1.4-leap-policy.md) for its bounded contracts and case
-matrix. Preserve the current S1.3 priority and existing execution holds.
+matrix. Preserve section 7's current Core checkpoint and existing execution holds.
 
 | Existing stage / owner | Required handoff and observable exit |
 | --- | --- |
@@ -363,6 +363,12 @@ resource/time limits, cleanup and exact exit. Use the complete canonical
 [CHECK catalog](../windows-time-architecture.md#202-acceptance-catalog) and
 [AC catalog](../windows-time-features.md#8-acceptance-scenarios-and-evidence)
 when expanding a row; these operational criteria do not remove catalog cases.
+
+The [task index](../../tasks/README.md) maps every phase/stage to its existing
+record or a [deferred parent card](../../tasks/development-backlog.md). A future
+parent assigns ownership and activation/exit criteria; it is not an executable
+experiment or a completed phase. Expand only the next ready child in that chain,
+with frozen contracts, scope, candidate, bounds and applicable authorization.
 
 ### P0 — admit sources and prove platform assumptions
 
@@ -534,7 +540,9 @@ the archived React tooling before resolving its recorded dependency findings.
   confirmed/failed/unknown results before real settings/protected commands.
 - **D1/D3 re-entry:** restore theme/contrast/text/DPI and full keyboard/Narrator/UIA
   requirements before general-user preview/release or an earlier corresponding
-  qualification claim. UI ownership and the P5 task track those triggers.
+  qualification claim. UI ownership and the
+  [production UI parent](../../tasks/development-backlog.md#p5-production-ui)
+  track those triggers; UI-M0 retains its separate task and scope.
 
 | Acceptance | Required observation | Mapping |
 | --- | --- | --- |
@@ -654,18 +662,22 @@ host Windows execution follows. The separately held AES fuzz runner must not be
 retried through another invocation or agent. [Storage experiments](#84-protected-optional-storage-design-and-qualification)
 remain paused independently. Independent admitted portable work continues.
 
-**Current P1 checkpoint:** the
-[S155 selected Linux-fixture result](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete)
-records the implemented path: genuine same-chart interval batch → existing
-majority selector → chart-bound result. Its 139-input product passed all 22
-portable rows, with Core 250 ordinary/20 doctests/250 optimized executions.
-The repaired verification candidate then passed 64 contract commands, 96%
-executable-line coverage, all 21 viable mutants out of 36 generated, the actual
-270-test mutation baseline, cohort-union reception and four isolated constructor
-controls/eight commands. Fifteen unviable mutants are not kills; constructor/Garde
-mechanism controls earn no generated-mutant credit. Original incomplete receipts
-remain retained. Only this selected inert owner is closed, not the complete
-18-owner manifest, S1.2/S1.3/P1 or production/native qualification.
+**Retained S157 checkpoint:** the
+[S157 selected three-owner result](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete)
+qualifies retained original-source principal receiving through genuine chart
+batches on its frozen 142-input candidate. All 22 portable rows passed, with
+Core 258 ordinary/23 doctests/258 optimized executions. V3 passed 68 external
+contract commands, per-file 90% executable-line and 95% mutation gates, three
+actual 281-test baselines and the strict 295-variant cohort union. The principal
+floor miss/native exit 2 remains separate from its exact reviewed E and adjusted
+score; unviable builds and constructor/Garde controls are not kills. Mechanism
+reuse retains its original compiled-input identity. Only these three selected
+inert owners within the nineteen-owner manifest are closed, not the full manifest,
+S1.2/S1.3/P1 or Windows/product/release qualification. Original incomplete receipts
+and all spent attempts remain retained in the task.
+
+The [S155 predecessor](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete)
+retains its 139-input same-chart-batch result and historical eighteen-owner scope.
 
 The [S154c predecessor](../../tasks/s1.2-regression-readiness.md#s154c-isolated-mechanism-controls-and-cleanup--complete)
 and earlier S1.3 results retain their own candidates and evidence limits. Reuse
@@ -684,15 +696,68 @@ grants, profiles, toolchain and target flags are unchanged. `panic_in_result_fn`
 remains deferred. This changes no CPU baseline or historical Core mutation score;
 refresh later dependent numerical-analysis bindings for the new candidate.
 
-**Next bounded action — existing S1.3 numerical owner:** the
-[S157 principal authoring checkpoint](../../tasks/s1.3-source-selection-readiness.md#s157-principal-authoring-checkpoint--portable-pass-qualification-next)
-passed 22 portable rows on 142 inputs, with workspace 483 ordinary/130 doctests/
-375 optimized executions. Admit and qualify current `principal.rs`, new
-`principal/chart.rs` and changed `chart_batch.rs` cohorts, including strict
-external contracts and reached validation controls. Preserve S155's historical
-binding and reuse unchanged owners; their scores do not transfer to these bytes.
-Then complete the chart-aware combination child under the same task, freezing
-its explicit arithmetic-bound propagation before implementation.
+**S158 bounded checkpoint complete:** the
+[final chart-aware combination qualification](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners)
+binds 152 product inputs (`5f0a23c1…`). All 22 portable lanes passed, with Core
+282 ordinary/24 doctests/282 optimized tests; strict typing/contracts, nine-file
+coverage, all nine mutation cohorts, exact receipt union and 13 four-carrier
+validation-mechanism observers passed. The mutation census is 881 generated,
+494 caught, 23 exact equivalences, 364 unviable and zero timeouts. This qualifies
+the selected nine of 23 critical owners within the inert host scope. Earlier
+failed/incomplete attempts and full resource charges remain in the task.
+
+**First pure S1.4 consumer qualified within its selected scope:** the
+[reference-input readiness checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner)
+binds 154 inputs (`c4b6df22…`). All 22 portable lanes passed, with Core 286
+ordinary/27 doctests/286 optimized tests. External contracts, strict Python
+controls/typing, 96/96 executable-line coverage, mutation and exact singleton
+union passed. All three viable variants were caught; ten of the 13 generated
+variants were unviable, with no missed/timed-out/equivalent/error outcomes.
+The four independent Garde mechanism observers also passed their prescribed
+outcomes. This qualifies one selected owner of the 24-file critical manifest,
+not the whole Core. The independently reviewed
+[same-reference composition](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners)
+passed all 22 portable V6 lanes on 156 inputs (`6f5471fe…`), including the
+later three-unit cancellation controls: Core 290 ordinary/
+27 doctests/290 optimized tests, including four new mathematical/consumer
+journeys. Coefficient bounds reach actual projections and complete descriptor
+comparisons. Its selected V3 external contracts, per-file coverage, all three
+mutation cohorts and exact 251-variant receipt union passed. The raw roundoff
+miss/native exit 2 remains separate from its one reviewed equivalence; both
+equality faults are now caught by the strengthened bound assertion. All seven
+actual validation-mechanism controls passed their 14 required command outcomes.
+This closes three selected owners of the 24-file manifest, with no full S1.4/P1
+or Windows/product claim. The independently reviewed
+[modeled achieved-phase receiver](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner)
+passed all 22 portable authoring lanes: Core 295 ordinary / 30 doctests /
+295 optimized, including the genuine retained-history consumer. Its 2,765-field
+census funded completed external contracts, 184/185 executable-line coverage,
+singleton mutation and exact union. All 11 viable variants were caught; 16 were
+unviable, with zero survivors/timeouts and E empty. Four actual validation
+controls passed eight commands, and the supplemental public caller passed two
+commands covering all rejection priorities plus a same-owner valid neighbor.
+The final actual-inventory Python suite passed 314 tests, exit 0. First failures,
+partial failed-test counters and all source-work charges remain in the task.
+This qualifies one selected owner of 24, with no instrumented branch, full P1 or
+Windows/product claim. Preserve pre-admission rejection and post-admission
+invalidation. The active-time delivered-rate contract is now frozen in the
+[current Core task](../../tasks/s1.3-source-selection-readiness.md#modeled-settled-active-time-delivery--implementation-contract).
+Its latest addenda own the current test repair, source/recipe bindings and affected
+portable, coverage, mutation/union and mechanism checks; do not restart the
+contract freeze or mark an unobserved mutation kill complete. Preserve separate
+clock domains, actual delivered portions, duplicate/unknown outcomes,
+interval-to-chart meaning and outward arithmetic bounds. Do not send rounded
+integrated phase through the exact-scalar zero-input-error constructor. Broker
+effects, ongoing native rate behavior and controller equations remain later work.
+The existing reference-input owner already binds a complete mathematical chart
+instance and admits genuinely emitted Ready evidence through an owner-borrowed token.
+Keep genuinely emitted observation
+evidence and source identity separate from the explicitly modeled current
+mapping. Confirmed no-effect feedback preserves coordinates; changed or unknown
+effects invalidate old inputs without manufacturing a mapping or new observation.
+The broker owns operation identities, authority reservations, actual effects and
+durable settlement. Quantitative achieved-effect composition and active-time
+slew delivery precede their dependent controller/holdover/leap equations.
 Carry the same actual adaptive report, common-reference descriptor, observation
 identity/ages and separate arithmetic bound through geometry and consumers.
 Repeated evaluation creates no fresh observation credit; auxiliary rows or an
@@ -719,7 +784,7 @@ At each bounded checkpoint:
 
 | Owner / existing workstream | Disposition and next action |
 | --- | --- |
-| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Selected design, implementation pending. Prepare the next bounded pure contract after current S1.3 prerequisites; route protocol admission and native mapping/recovery to their existing owners. This adds no prerequisite to the current S1.3 checkpoint and lifts no execution hold. |
+| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Selected design, implementation pending. Prepare its bounded pure contract after the current Core checkpoint and applicable selection prerequisites; route protocol admission and native mapping/recovery to their existing owners. This adds no prerequisite to the current Core checkpoint and lifts no execution hold. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |
@@ -1040,10 +1105,11 @@ does not isolate every live secret or establish rollback-resistant storage.
 #### Imported hardening work queue
 
 **Local adoption, 3 November 2026:** remote commit `a6c2401` is integrated with
-current dirty/staged development work. The primary development coordinator reads
-this queue at its next checkpoint, carries the applicable assignments into
-[the existing storage task](../../tasks/windows-protected-storage.md), and records
-owner, disposition and next action before dependent implementation. Preserve the
+current dirty/staged development work. The
+[primary coordinator disposition](../../tasks/windows-protected-storage.md#66-primary-development-coordinator-disposition--3-november-2026)
+already records ST-W01–ST-W07 owners, statuses and next actions. Refresh the
+applicable disposition in that existing task before dependent implementation;
+do not repeat initial adoption or the completed source survey. Preserve the
 current Core candidate and execution holds; do not start seven parallel campaigns
 or repeat the completed source inventories. These are work-item dispositions,
 not additional acceptance IDs or evidence that another running agent has read them.
@@ -1203,7 +1269,7 @@ W11-W10's document is prepared; support terms need David's decision and actual
 account/Store/native rehearsals remain open at P6/P7. W11-W05 retains P0/P4/P6
 mandatory-state, maintenance and restoration qualification. A written runbook
 does not close OPEN-3/11/12/14 or choose a provisioning mechanism. Preserve
-section 7's S157/Core priority and the later scoped Sandbox disposition, blocked
+section 7's current Core priority and the later scoped Sandbox disposition, blocked
 stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals.
 
 The [latest provisioning/removal research](windows-msix-store.md#74-service-provisioning-and-independent-removal-research)
@@ -1236,9 +1302,13 @@ this amendment. The next source-only action can prepare
 when the acquisition owner reaches it. It does not displace section 7's current
 portable Core checkpoint or require a broad API survey before that work continues.
 
-**Coordinator adoption after pull:** load W11-W01–W11-W10 at the next checkpoint
-and record applicable scope, owner, ready/held/deferred disposition and next
-action in the existing Windows 11 task before dependent integration. W11-W01's
+**Coordinator adoption after pull:** the
+[primary disposition](../../tasks/windows11-integration.md#412-primary-development-coordinator-disposition--3-november-2026),
+[selected-MSIX adoption](../../tasks/windows11-integration.md#417-primary-coordinator-adoption-of-the-selected-msix-profile--3-november-2026)
+and [provisioning follow-up](../../tasks/windows11-integration.md#418-local-routing-of-provisioning-research-and-sandbox-guidance--3-november-2026)
+already record W11-W01–W11-W10 routing. Refresh the applicable scope, owner,
+ready/held/deferred disposition and next action in that task before dependent
+integration; do not request another initial adoption. W11-W01's
 source card is ready when the acquisition owner reaches it. W11-W02–W11-W08 stay
 planned at their named phases and prerequisites, with actual Windows execution
 held; W11-W07 additionally needs an evidenced eligible hash workload. W11-W09 is
@@ -1519,6 +1589,33 @@ outside-plan editorial gaps remain recorded, not new Core or release-policy gate
 
 <!-- Full skill paths are centralized here to keep the phase map readable. -->
 
+### Task decomposition reconciliation — 4 November 2026
+
+A bounded source review of `dcda544` plus the captured dirty plan and 30 task
+Markdown records found uncovered future parent assignments, stale current/next
+summaries and already-recorded adoption still requested as new work. The
+[task map](../../tasks/README.md) now routes all P0–P7, 33 canonical substages and
+S-0–S-6; the [grouped backlog](../../tasks/development-backlog.md) supplies deferred
+parents without moving current receipts or duplicating the W11-W10 package task.
+QF-02 is acknowledged in its assigned Core task, storage records the selected
+MSIX supersession, and P6 explicitly carries complete-payload provenance/SBOM.
+
+Three bounded read-only mapping reviews completed for P0/P1, P2–P7 and imported
+workstreams. `review_task_map_integration`, delegated with `fork_turns: none`,
+then completed fresh read-only review of all nine changed/new Markdown files.
+Its verdict was **READY for documentary integration**, with no material mapping,
+ownership or acceptance finding. Its comprehension paragraphs were:
+
+> The change gives every canonical development stage a discoverable task owner while keeping the development plan in control of ordering and acceptance. Existing active and historical records remain in place; one grouped backlog supplies missing future parents. Those parents describe prerequisites and independently observable exits without presenting themselves as executable experiments or completed work.
+
+> The current workspace manifest contains six members. Its task records describe bounded protocol/numerical fixtures, a restricted native UI prototype and an unauthenticated loopback engine pilot. Current settled-rate qualification remains incomplete, earlier receipts retain their original candidates, and production acquisition, services, clock integration, complete packaging and release qualification remain open. UI-M0 deferrals and the separate Windows, fuzz and optional-storage holds remain applicable.
+
+The new cards remain deferred; detailed child admission, actual testing skills,
+phase acceptance and execution holds remain required. This reconciliation
+qualifies no implementation, native environment or release. Source/edit hashes,
+review scope and link/custody checks are retained locally under
+`/tmp/nevrotick-task-map-review-xxrfvam2/`; it is not a product evidence receipt.
+
 [dependency-updates]: ../../.agents/skills/environment/dependency-updates/SKILL.md
 [evolve-data-contracts]: ../../.agents/skills/implementation/evolve-data-contracts/SKILL.md
 [implement-native-ui]: ../../.agents/skills/implementation/implement-native-ui/SKILL.md
@@ -1577,4 +1674,3 @@ outside-plan editorial gaps remain recorded, not new Core or release-policy gate
 [security-protocol-inputs]: ../../.agents/skills/security/security-protocol-inputs/SKILL.md
 [security-windows-privileges]: ../../.agents/skills/security/security-windows-privileges/SKILL.md
 [winapp-ui-automation]: ../../.agents/skills/upstream/winapp-ui-automation/SKILL.md
-

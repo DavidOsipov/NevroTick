@@ -835,7 +835,7 @@ I re-read the relevant passages of `docs/windows-time-architecture.md` §§7.4 a
 | Native-operation lifetime | ALLOC-R01 now separates immediate logical request retirement from retention of real operation resources until terminal completion; the independent targeted recheck verified that correction. |
 | Storage mechanisms and boundaries | Q/H/C/U/R are proposed allocations, not selected dependencies, paths, formats or providers. Existing JSON contracts, mandatory stores, NTS/DNS protection/privacy rules and owner-controlled lifecycle remain in force. |
 | Resources and evidence | Numerical examples remain unmeasured and unadopted; existing 16-source/64-sample core caps and the separate diagnostic budget remain distinct. No timing, security-enforcement, native or resource benchmark was executed. |
-| Development and delivery | The current S157/S1.3 priority and Windows/fuzz/storage holds are retained. The selected MSIX preparation direction and owner Store attempt gain no new approval or qualification from this draft. |
+| Development and delivery | The current bounded Core priority and Windows/fuzz/storage holds are retained. The selected MSIX preparation direction and owner Store attempt gain no new approval or qualification from this draft. |
 
 The coordinator verified the frozen stage hashes, the stage-2 inventory's
 preservation through allocation, exactly one allocation row for each of the 24

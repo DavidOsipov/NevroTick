@@ -133,7 +133,7 @@ class ProductAdmissionTests(unittest.TestCase):
     def write_policy(self):
         (self.root / "policy/ui-m0-dependencies.json").write_text(json.dumps(self.policy))
 
-    def test_build_rows_keep_twelve_jobs_except_bounded_core_test_linking(self):
+    def test_build_rows_keep_twelve_jobs_except_bounded_test_linking(self):
         for lane in ("portable", "windows"):
             for label, command in VERIFY.commands(lane):
                 if label == "format":
@@ -141,7 +141,8 @@ class ProductAdmissionTests(unittest.TestCase):
                 with self.subTest(lane=lane, row=label):
                     flag = "--build-jobs" if "nextest" in command else "--jobs"
                     expected = ("6" if lane == "portable" and label in (
-                        "product-tests:time-core", "optimized-tests:time-core") else "12")
+                        "product-tests:time-core", "optimized-tests:time-core",
+                        "product-tests:ntp-wire") else "12")
                     self.assertEqual(command[command.index(flag) + 1], expected)
 
     def test_prior_single_member_graph_no_longer_hides_missing_protocol_member(self):

@@ -48,7 +48,7 @@ selects release-bundled history and effective UTC rules, usable silent-LI source
 bounded event protection and Windows as the sole explicit leap-event executor.
 Section 10.5 owns the contract; [S1.4's task](../tasks/s1.4-leap-policy.md) owns
 implementation and evidence. This is a design selection under OD-09, not a native
-pass or a change to current S1.3 priority, correction authority or execution holds.
+pass or a change to the current Core checkpoint, correction authority or execution holds.
 
 **Owner delivery decision, 3 November 2026:** prepare **one complete hardened MSIX for a Microsoft Store submission attempt**, including the services. The product contains a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker and the administration helper. One product owns installation, updates, repair, removal and reversible Windows Time Service handover. Sections 19.4–19.5 and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) distinguish this selected direction from unresolved provisioning, Store acceptance and actual artifact qualification. Prior Store approval is not a prerequisite for preparing the submission candidate. Retain the MSI design and signing profiles as fallback/reference material for David to reconsider after a Store rejection or concrete technical evidence; they are not a parallel deliverable or an MSIX prerequisite. This decision does not change the current Core priority, Windows execution stop, separate fuzz hold, storage pause or UI-M0 deferrals.
 

@@ -36,6 +36,10 @@ fn raw_chart_batch_header_checks_inclusive_domain() -> Result<(), Box<dyn Error>
         domain: chart.domain(),
         phase_bits: chart.phase_at_reference_seconds().to_bits(),
         rate_bits: chart.rate_seconds_per_second().to_bits(),
+        phase_error_bits: chart.phase_coefficient_roundoff_seconds().to_bits(),
+        rate_error_bits: chart
+            .rate_coefficient_roundoff_seconds_per_second()
+            .to_bits(),
         at: MonotonicNs::new(at),
     };
     let raw = ChartBatchCandidate { values: &[] };

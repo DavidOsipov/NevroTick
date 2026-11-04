@@ -8,7 +8,7 @@ Prepared: six minimum logical record families, separate catalogue/Q/H comparison
 
 The original continuation baseline was commit `d6bb2bdcd2145950586407698490b61d9e12ced9`, actual tree `3635c70a72cd32ca0a7f66cc545719c1aae46ece`. Its 28 locally used documentation files were matched to Git blobs; this was not a full source checkout or target-code audit. That checkpoint preserved draft §§1–9; the later binary refinement updates current catalogue passages while preserving the historical raw reports and their candidate scope. The completed continuation review is retained below and does not review the later refinement.
 
-[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent) retains S157/S1.3 Core priority. The protected-storage pause and Windows/fuzz holds retain their stated scope; they do not create a blanket prohibition on separately admitted portable work. Section 8's bounded Python host-fixture route supplies no target/native qualification. Ordinary NTP/NTS catalogue and quality data are in scope independently of RGT-0; requiring Roughtime schema fields now does not alter RGT-0 → CHR-0.
+[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent) retains the current bounded Core checkpoint and priority. The protected-storage pause and Windows/fuzz holds retain their stated scope; they do not create a blanket prohibition on separately admitted portable work. Section 8's bounded Python host-fixture route supplies no target/native qualification. Ordinary NTP/NTS catalogue and quality data are in scope independently of RGT-0; requiring Roughtime schema fields now does not alter RGT-0 → CHR-0.
 
 ## 2. Ownership and authority
 
@@ -1516,7 +1516,7 @@ schema/limits, trust/replay lifecycle and actual Rust admission or generated-dat
 contract. No production default, preset, automatic replacement or weaker quorum
 is selected here.
 
-The separate Q0/Q-J pilot, current S157/S1.3 priority, RGT-0 → CHR-0 order,
+The separate Q0/Q-J pilot, current bounded Core priority, RGT-0 → CHR-0 order,
 NV-LP-001/S1.4 authority and existing Windows/storage/fuzz dispositions remain.
 No dependency was installed; no Core typing policy, Cargo graph, application
 runtime or Windows state changed. The scope supplies no native Windows/package,
@@ -1530,3 +1530,46 @@ recovery. OMI-R03/OMI-R08 and OPEN-CAT-03 retain actual installed-adoption,
 freshness and surviving-recovery evidence. The policy introduces no runtime
 catalogue update mechanism and does not requalify the collector or the frozen
 review/execution receipts above.
+
+### 8.6 Local pull and current-task reconciliation — 4 November 2026
+
+Reviewed and fast-forwarded `7550f83..dcda544` (three commits). GitHub MCP
+confirmed the commit comparison; focused reviews used Context7, Microsoft Learn
+MCP and primary BIPM/IERS/IANA/RFC/upstream sources for consequential claims.
+No material technical defect was confirmed in the selected documentary policy
+or offline R utility. This is bounded review evidence, not whole-product proof.
+
+Three focused reviewers used shared parent context. A fourth reviewer,
+`review_integrated_handoff`, used a fresh conversation and completed read-only
+review of the integrated development/Core/leap/catalogue routing. Its retained
+comprehension paragraphs were:
+
+> The revision replaces stale S157/S1.3 priority references with the current bounded Core checkpoint and adds the leap/catalogue import to the existing active-task handoff. It preserves separate owners and prerequisites without transferring historical qualification to changed bytes.
+
+> The current task has advanced to modeled settled active-time delivery, with selected qualification still pending. Leap policy is selected but unimplemented; catalogue R covers offline candidates and semantic diff. Operator approval, production C, native Windows and release qualification remain future work.
+
+The fresh verdict was **READY for documentary integration and task routing**,
+with no material finding; it performed no product test or native requalification.
+Present-tense S157/S1.3 handoffs were corrected to follow development §7, while
+historical raw reports and qualification candidates were preserved. The existing
+active Core task now records the LP-C01–LP-C18 and DATA-01/DATA-24 handoff, its
+future owners and unchanged holds. Section 8.5 remains the catalogue next action.
+
+The collector reviewer ran `python3 -I -B -S -X dev -W error test_build_catalogue.py`
+from the frozen incoming tool directory: Python 3.12.3, 38 tests, no skips, exit 0,
+16.299 seconds. This does not repeat the upstream supervised 3.12.14 receipt.
+A separate inline probe refused 11 malformed root values at each of three shape
+gates (33 direct calls, no unexpected exceptions); these are not 33 end-to-end
+cases. Its output and the suite output remain in the tool transcript.
+
+Integration checks passed: 63-skill package checker; 1,402 rendered local links
+across 40 Markdown files; all 63 design-bundle manifest entries; staged and
+unstaged whitespace checks. Fenced historical reports and inline-code examples
+were excluded from rendered-link checks. The two overlapping documents were
+merged separately for index and working-tree content; staged intent and unrelated
+local files were byte-verified. Reconciliation edits remain unstaged. No product
+Rust campaign, Windows operation, public-server probe, signing or release occurred.
+
+Local frozen inputs, merge/custody records, edit hashes and review results are
+retained under `/tmp/nevrotick-remote-review-k4ykd04d/`. The final evidence appendix
+does not change the reviewed routing or turn planned/native gates into passes.

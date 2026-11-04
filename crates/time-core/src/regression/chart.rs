@@ -52,8 +52,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 //! domain. A view borrows that descriptor and the whole history; its two real
 //! projection paths produce original source values before applying the same
 //! saved displacement to anchor and fitted centers. Separate numerical bounds
-//! cover only the newly evaluated binary64 operations. No value grants an
-//! achieved-correction claim, current publication authority or physical UTC
+//! cover the newly evaluated binary64 operations and retained coefficient
+//! composition error. No value grants an achieved-correction claim, current
+//! publication authority or physical UTC
 //! enclosure. No append, refit, allocation of history storage or external effect
 //! occurs. Preparation scans at most 64 rows twice for mandatory Garde and typed
 //! admission; projection uses constant scalar scratch and retains one descriptor
@@ -62,7 +63,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 use std::{fmt, num::NonZeroU64};
 
 use garde::Validate;
-use time_domain::{DomainError, MonotonicNs};
+use time_domain::{ActiveAwakeDurationNs, DomainError, MonotonicNs};
 
 use super::{
     ArithmeticOperation, FitError, FixtureAdaptiveHistory, FixtureAnchorProjection, FixtureContext,
@@ -94,6 +95,10 @@ pub enum FixtureChartField {
     RateRoundoff,
     /// Nonnegative new-arithmetic error bound for the fitted phase.
     TrackingRoundoff,
+    /// Nonnegative displacement-coefficient error in seconds at the reference.
+    PhaseCoefficientRoundoff,
+    /// Nonnegative rate-coefficient error in seconds per second.
+    RateCoefficientRoundoff,
 }
 
 /// First unsupported scalar property; signed zero is always supported.
@@ -122,6 +127,10 @@ pub enum FixtureChartStep {
     TrackingPhase,
     /// Subtract descriptor rate from the original fitted rate.
     Rate,
+    /// Add the two displacement coefficients at the identical common reference.
+    ComposeDisplacement,
+    /// Add the two rate coefficients over the unchanged monotonic time axis.
+    ComposeRate,
 }
 
 impl FixtureChartStep {
@@ -130,7 +139,9 @@ impl FixtureChartStep {
         match self {
             Self::SecondsDivide => ArithmeticOperation::Divide,
             Self::RateTimesElapsed => ArithmeticOperation::Multiply,
-            Self::Displacement => ArithmeticOperation::Add,
+            Self::Displacement | Self::ComposeDisplacement | Self::ComposeRate => {
+                ArithmeticOperation::Add
+            }
             Self::AnchorCenter | Self::TrackingPhase | Self::Rate => ArithmeticOperation::Subtract,
         }
     }
@@ -145,6 +156,18 @@ pub enum FixtureChartBoundOperation {
     Multiply,
     /// Outward division by a strictly positive denominator.
     Divide,
+}
+
+impl FixtureChartBoundOperation {
+    /// Evaluate this nonnegative primitive through the sole outward-bound owner.
+    ///
+    /// This crate-private bridge shares arithmetic without exposing a raw chart
+    /// constructor or changing coordinate values. Work is fixed and effect-free.
+    /// # Errors
+    /// Preserve invalid operands/divisors and exhausted finite-upper causes.
+    pub(crate) fn evaluate_up(self, left: f64, right: f64) -> Result<f64, FixtureChartError> {
+        roundoff::bound_arithmetic(left, right, self)
+    }
 }
 
 /// Bounded cause from the outward-bound owner; contains no numeric input.
@@ -169,6 +192,10 @@ pub enum FixtureChartError {
     ContextMismatch,
     /// Descriptor source frame/generation differs from the raw history context.
     SourceMappingMismatch,
+    /// The first chart's target frame or generation differs from the next source.
+    CompositionMappingMismatch,
+    /// The two complete composition domains or common references differ.
+    CompositionDomainMismatch,
     /// The genuine history has no sufficient fitted report.
     MissingReport,
     /// A chronological combined auxiliary/fitted row lies outside the domain.
@@ -242,6 +269,12 @@ impl fmt::Display for FixtureChartError {
             Self::InvalidDomain => formatter.write_str("chart domain relationship"),
             Self::ContextMismatch => formatter.write_str("chart context mismatch"),
             Self::SourceMappingMismatch => formatter.write_str("chart source mapping mismatch"),
+            Self::CompositionMappingMismatch => {
+                formatter.write_str("chart composition mapping mismatch")
+            }
+            Self::CompositionDomainMismatch => {
+                formatter.write_str("chart composition domain mismatch")
+            }
             Self::MissingReport => formatter.write_str("chart missing fitted report"),
             Self::HistoryOutsideDomain { index } => {
                 write!(formatter, "chart history domain index {index}")
@@ -281,6 +314,8 @@ impl std::error::Error for FixtureChartError {
             | Self::InvalidDomain
             | Self::ContextMismatch
             | Self::SourceMappingMismatch
+            | Self::CompositionMappingMismatch
+            | Self::CompositionDomainMismatch
             | Self::MissingReport
             | Self::HistoryOutsideDomain { .. }
             | Self::ReferenceOutsideDomain
@@ -513,6 +548,8 @@ fn scalar_issue(value: f64, field: FixtureChartField) -> Option<FixtureChartIssu
             FixtureChartField::CenterRoundoff
                 | FixtureChartField::RateRoundoff
                 | FixtureChartField::TrackingRoundoff
+                | FixtureChartField::PhaseCoefficientRoundoff
+                | FixtureChartField::RateCoefficientRoundoff
         )
     {
         Some(FixtureChartIssue::Negative)
@@ -551,7 +588,7 @@ fn bound_rule(value: &f64, (): &()) -> garde::Result {
     }
 }
 
-/// Two untrusted descriptor scalars; checked frame/domain values are not raw fields.
+/// Descriptor point/error scalars; checked frame/domain groups retain their owners.
 #[derive(Validate)]
 struct AffineCandidate {
     /// Signed seconds at the one common reference.
@@ -560,6 +597,75 @@ struct AffineCandidate {
     /// Signed seconds per second; no clock-policy range is inferred.
     #[garde(custom(signed_rule))]
     rate: f64,
+    /// Nonnegative displacement-coefficient error, separate from physical error.
+    #[garde(custom(bound_rule))]
+    phase_error: f64,
+    /// Nonnegative rate-coefficient error, separate from statistical deviation.
+    #[garde(custom(bound_rule))]
+    rate_error: f64,
+}
+
+impl AffineCandidate {
+    /// Consume mandatory validation and preserve the first ordered scalar failure.
+    /// # Errors
+    /// Reject phase, rate, their respective bounds or validation disagreement.
+    fn admit(&self) -> Result<(), FixtureChartError> {
+        let validated = self.validate();
+        for (value, field) in [
+            (self.phase, FixtureChartField::Displacement),
+            (self.rate, FixtureChartField::Rate),
+            (
+                self.phase_error,
+                FixtureChartField::PhaseCoefficientRoundoff,
+            ),
+            (self.rate_error, FixtureChartField::RateCoefficientRoundoff),
+        ] {
+            if let Some(issue) = scalar_issue(value, field) {
+                return Err(FixtureChartError::InvalidScalar { field, issue });
+            }
+        }
+        validated.map_err(|_| FixtureChartError::ValidationInvariant)
+    }
+}
+
+/// Check the unchanged time axis and the complete intermediate/end-point chain.
+///
+/// Mapping mismatch precedes domain mismatch, then the existing frame rules
+/// reject an endpoint frame or generation cycle. Neither input is modified.
+fn composition_error(
+    first: &FixtureAffineChart,
+    next: &FixtureAffineChart,
+) -> Option<FixtureChartError> {
+    if first.frames.target_frame != next.frames.source_frame
+        || first.frames.target_generation != next.frames.source_generation
+    {
+        Some(FixtureChartError::CompositionMappingMismatch)
+    } else if first.domain != next.domain {
+        Some(FixtureChartError::CompositionDomainMismatch)
+    } else if !frames_valid(&(
+        first.frames.source_frame,
+        first.frames.source_generation,
+        next.frames.target_frame,
+        next.frames.target_generation,
+    )) {
+        Some(FixtureChartError::InvalidFrames)
+    } else {
+        None
+    }
+}
+
+/// One mandatory whole relationship over the actual immutable composition inputs.
+#[derive(Validate)]
+struct CompositionCandidate<'chart> {
+    /// Checked descriptors own scalar invariants; this rule owns their association.
+    #[garde(custom(|charts: &(&FixtureAffineChart, &FixtureAffineChart), (): &()| {
+        if composition_error(charts.0, charts.1).is_none() {
+            Ok(())
+        } else {
+            Err(garde::Error::new("invalid chart composition relationship"))
+        }
+    }))]
+    charts: (&'chart FixtureAffineChart, &'chart FixtureAffineChart),
 }
 
 /// Immutable mathematical displacement descriptor; no achieved-effect authority.
@@ -594,6 +700,10 @@ pub struct FixtureAffineChart {
     phase: f64,
     /// Admitted signed displacement rate in seconds per second.
     rate: f64,
+    /// Absolute numerical error of the displacement coefficient at the reference.
+    phase_error: f64,
+    /// Absolute numerical error of the rate coefficient over the unchanged axis.
+    rate_error: f64,
 }
 
 impl fmt::Debug for FixtureAffineChart {
@@ -604,7 +714,52 @@ impl fmt::Debug for FixtureAffineChart {
 }
 
 impl FixtureAffineChart {
-    /// Admit signed displacement/rate while retaining immutable checked groups.
+    /// Check the shared raw rate envelope without asserting delivery or policy.
+    ///
+    /// Signed zeros and every finite normal magnitude are admitted unchanged.
+    /// This bridge owns no current-event, clock, lifecycle or authority decision.
+    /// # Errors
+    /// Reject nonfinite then subnormal rates through the existing scalar rule.
+    pub(crate) fn check_delivery_rate(rate: f64) -> Result<(), FixtureChartError> {
+        if let Some(issue) = scalar_issue(rate, FixtureChartField::Rate) {
+            return Err(FixtureChartError::InvalidScalar {
+                field: FixtureChartField::Rate,
+                issue,
+            });
+        }
+        Ok(())
+    }
+
+    /// Build one checked zero-rate effect from delivered rate and exact awake time.
+    ///
+    /// The supplied duration retains its active-awake owner; no monotonic instant
+    /// is fabricated or changed. The sole roundoff owner supplies the separately
+    /// rounded phase and its error against exact stored rate bits times exact
+    /// nanoseconds. Mandatory private admission retains both before publication.
+    /// This numerical descriptor grants no delivery, readiness or clock authority.
+    /// # Errors
+    /// Reject raw rate support first, then exact duration/point/bound arithmetic
+    /// and final scalar admission; no descriptor or input is changed on failure.
+    pub(crate) fn settled_rate_effect(
+        frames: FixtureChartFrames,
+        domain: FixtureChartDomain,
+        rate: f64,
+        elapsed: ActiveAwakeDurationNs,
+    ) -> Result<Self, FixtureChartError> {
+        Self::check_delivery_rate(rate)?;
+        let coefficients = roundoff::settled_rate_coefficients(rate, elapsed)?;
+        coefficients.admit()?;
+        Ok(Self {
+            frames,
+            domain,
+            phase: coefficients.phase,
+            rate: coefficients.rate,
+            phase_error: coefficients.phase_error,
+            rate_error: coefficients.rate_error,
+        })
+    }
+
+    /// Admit exact stored-bit coefficients with zero coefficient-error bounds.
     /// # Errors
     /// Reject displacement before rate, or mandatory Garde disagreement; no effects.
     pub fn new(
@@ -616,22 +771,54 @@ impl FixtureAffineChart {
         let raw = AffineCandidate {
             phase: phase_at_reference_seconds,
             rate: rate_seconds_per_second,
+            phase_error: 0.0,
+            rate_error: 0.0,
         };
-        let validated = raw.validate();
-        for (value, field) in [
-            (raw.phase, FixtureChartField::Displacement),
-            (raw.rate, FixtureChartField::Rate),
-        ] {
-            if let Some(issue) = scalar_issue(value, field) {
-                return Err(FixtureChartError::InvalidScalar { field, issue });
-            }
-        }
-        validated.map_err(|_| FixtureChartError::ValidationInvariant)?;
+        raw.admit()?;
         Ok(Self {
             frames,
             domain,
             phase: raw.phase,
             rate: raw.rate,
+            phase_error: raw.phase_error,
+            rate_error: raw.rate_error,
+        })
+    }
+
+    /// Compose A-to-B with B-to-C over one identical complete monotonic domain.
+    ///
+    /// The result subtracts the sum of both displacements, retaining A-to-C
+    /// provenance and inherited errors from both operands. Point sums are
+    /// separately rounded before either coefficient bound is constructed.
+    /// Work/storage are constant; neither descriptor nor any history is mutated.
+    /// This mathematical result acknowledges no clock effect or readiness change.
+    /// # Errors
+    /// Reject mapping, domain and endpoint cycles before arithmetic; preserve
+    /// phase/rate point failures, phase/rate bound failures and final validation.
+    pub fn compose(&self, next: &Self) -> Result<Self, FixtureChartError> {
+        let raw = CompositionCandidate {
+            charts: (self, next),
+        };
+        let validated = raw.validate();
+        if let Some(error) = composition_error(raw.charts.0, raw.charts.1) {
+            return Err(error);
+        }
+        validated.map_err(|_| FixtureChartError::ValidationInvariant)?;
+        let frames = FixtureChartFrames::new(
+            self.frames.source_frame,
+            self.frames.source_generation,
+            next.frames.target_frame,
+            next.frames.target_generation,
+        )?;
+        let coefficients = roundoff::compose_coefficients(self, next)?;
+        coefficients.admit()?;
+        Ok(Self {
+            frames,
+            domain: self.domain,
+            phase: coefficients.phase,
+            rate: coefficients.rate,
+            phase_error: coefficients.phase_error,
+            rate_error: coefficients.rate_error,
         })
     }
 
@@ -657,6 +844,24 @@ impl FixtureAffineChart {
     #[must_use]
     pub const fn rate_seconds_per_second(&self) -> f64 {
         self.rate
+    }
+
+    /// Return only displacement-coefficient arithmetic error at the reference.
+    ///
+    /// This bounds composition over exact stored input bits, not physical error,
+    /// source-fit uncertainty or the later projection's own evaluation error.
+    #[must_use]
+    pub const fn phase_coefficient_roundoff_seconds(&self) -> f64 {
+        self.phase_error
+    }
+
+    /// Return only rate-coefficient arithmetic error in seconds per second.
+    ///
+    /// Direct descriptors return zero; composition preserves both input bounds.
+    /// No statistical uncertainty, current mapping or achieved effect is implied.
+    #[must_use]
+    pub const fn rate_coefficient_roundoff_seconds_per_second(&self) -> f64 {
+        self.rate_error
     }
 }
 

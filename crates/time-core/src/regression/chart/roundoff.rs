@@ -10,13 +10,13 @@
 //! values are never clamped. All work uses scalar scratch and fixed four-value
 //! sums, without allocation, mutation, logging or ambient reads.
 
-use time_domain::MonotonicNs;
+use time_domain::{ActiveAwakeDurationNs, MonotonicNs};
 
 use super::super::normalization::integer_to_f64;
 use super::super::projection::FixtureAnchorProjection;
 use super::super::{ArithmeticStage, NormalizationComponent, arithmetic};
 use super::{
-    ChartPhase, ChartScalars, FixtureAffineChart, FixtureChartBoundIssue,
+    AffineCandidate, ChartPhase, ChartScalars, FixtureAffineChart, FixtureChartBoundIssue,
     FixtureChartBoundOperation, FixtureChartError, FixtureChartStep,
 };
 
@@ -69,18 +69,27 @@ fn value_arithmetic(
 /// Preserve exact integer-conversion or response-stage seconds-division causes.
 fn elapsed(query: MonotonicNs, reference: MonotonicNs) -> Result<Elapsed, FixtureChartError> {
     let magnitude = query.nanoseconds().abs_diff(reference.nanoseconds());
+    let mut result = nonnegative_elapsed(magnitude)?;
+    if query < reference {
+        result.seconds = -result.seconds;
+    }
+    Ok(result)
+}
+
+/// Convert one exact nonnegative nanosecond magnitude through the shared owner.
+///
+/// Callers retain their monotonic or active-awake domain; this numeric helper
+/// neither converts clock identities nor inspects an absolute reading.
+/// # Errors
+/// Preserve the inclusive integer-range guard before checked seconds division.
+fn nonnegative_elapsed(magnitude: u64) -> Result<Elapsed, FixtureChartError> {
     let nanoseconds = integer_to_f64(magnitude, NormalizationComponent::Time)
         .map_err(|source| FixtureChartError::Normalization { source })?;
-    let positive = value_arithmetic(
+    let seconds = value_arithmetic(
         nanoseconds,
         NANOSECONDS_PER_SECOND,
         FixtureChartStep::SecondsDivide,
     )?;
-    let seconds = if query < reference {
-        -positive
-    } else {
-        positive
-    };
     Ok(Elapsed {
         nanoseconds,
         seconds,
@@ -98,7 +107,7 @@ fn elapsed(query: MonotonicNs, reference: MonotonicNs) -> Result<Elapsed, Fixtur
 /// # Errors
 /// Reject nonfinite/negative operands first, nonpositive divisors second, then
 /// nonfinite results or a result without a finite outward successor.
-fn bound_arithmetic(
+pub(super) fn bound_arithmetic(
     left: f64,
     right: f64,
     operation: FixtureChartBoundOperation,
@@ -144,21 +153,21 @@ fn bound_arithmetic(
 /// # Errors
 /// Preserve the bound owner's operand or finite-successor rejection for Add.
 pub(super) fn add_up(left: f64, right: f64) -> Result<f64, FixtureChartError> {
-    bound_arithmetic(left, right, FixtureChartBoundOperation::Add)
+    FixtureChartBoundOperation::Add.evaluate_up(left, right)
 }
 
 /// Multiply two nonnegative bound operands with the same outward/error contract.
 /// # Errors
 /// Preserve the bound owner's exact Multiply cause without a partial result.
 fn multiply_up(left: f64, right: f64) -> Result<f64, FixtureChartError> {
-    bound_arithmetic(left, right, FixtureChartBoundOperation::Multiply)
+    FixtureChartBoundOperation::Multiply.evaluate_up(left, right)
 }
 
 /// Divide stored nonnegative bound operands by a finite positive divisor.
 /// # Errors
 /// Preserve the bound owner's exact Divide cause without a partial result.
 fn divide_up(left: f64, right: f64) -> Result<f64, FixtureChartError> {
-    bound_arithmetic(left, right, FixtureChartBoundOperation::Divide)
+    FixtureChartBoundOperation::Divide.evaluate_up(left, right)
 }
 
 /// Sum two nonnegative bounds using the reference's outward `0 + a + b` order.
@@ -178,6 +187,73 @@ fn sum_four_up(first: f64, second: f64, third: f64, fourth: f64) -> Result<f64, 
         total = add_up(total, value)?;
     }
     Ok(total)
+}
+
+/// Bound a point addition relative to both operands' exact coefficient meanings.
+///
+/// The inherited errors add linearly. The new rounding term is bounded by
+/// `u * (abs(left) + abs(right)) + eta`, evaluated entirely outward. Magnitudes
+/// precede scaling, so an exhausted magnitude upper rejects even cancellation.
+/// # Errors
+/// Preserve the first failed positive addition or multiplication; no effects.
+fn coefficient_addition_error(
+    left: f64,
+    left_error: f64,
+    right: f64,
+    right_error: f64,
+) -> Result<f64, FixtureChartError> {
+    let magnitude = sum_two_up(left.abs(), right.abs())?;
+    sum_four_up(
+        left_error,
+        right_error,
+        multiply_up(UNIT_ROUNDOFF, magnitude)?,
+        ETA_UPPER,
+    )
+}
+
+/// Stage separately rounded coefficient sums with errors from both whole charts.
+///
+/// The parent owns exact chain/domain compatibility. Both phase and rate point
+/// additions precede either coefficient bound; the parent must mandatorily admit
+/// the returned raw scalar carrier before publishing a chart. Work is constant.
+/// # Errors
+/// Preserve phase-point, rate-point, phase-bound then rate-bound failure order.
+pub(super) fn compose_coefficients(
+    first: &FixtureAffineChart,
+    next: &FixtureAffineChart,
+) -> Result<AffineCandidate, FixtureChartError> {
+    let phase = value_arithmetic(
+        first.phase,
+        next.phase,
+        FixtureChartStep::ComposeDisplacement,
+    )?;
+    let rate = value_arithmetic(first.rate, next.rate, FixtureChartStep::ComposeRate)?;
+    let phase_error =
+        coefficient_addition_error(first.phase, first.phase_error, next.phase, next.phase_error)?;
+    let rate_error =
+        coefficient_addition_error(first.rate, first.rate_error, next.rate, next.rate_error)?;
+    Ok(AffineCandidate {
+        phase,
+        rate,
+        phase_error,
+        rate_error,
+    })
+}
+
+/// Bound inherited displacement-coefficient error at the exact query instant.
+///
+/// The exact time magnitude is at most the outward quotient of its exact integer
+/// nanoseconds. Thus `E_phase + abs(q_true) * E_rate` includes both coefficient
+/// errors without substituting the rounded elapsed-seconds point. It includes
+/// no physical, statistical or actuator error and changes no input.
+/// # Errors
+/// Preserve division, product then sum upper failures without partial output.
+fn coefficient_displacement_error(
+    elapsed: &Elapsed,
+    chart: &FixtureAffineChart,
+) -> Result<f64, FixtureChartError> {
+    let magnitude = divide_up(elapsed.nanoseconds, NANOSECONDS_PER_SECOND)?;
+    sum_two_up(chart.phase_error, multiply_up(magnitude, chart.rate_error)?)
 }
 
 /// Bound the one saved affine displacement relative to exact stored coefficients.
@@ -215,10 +291,38 @@ fn displacement_bounds(
     Ok(DisplacementBounds { magnitude, error })
 }
 
+/// Integrate stored rate bits over an exact active-awake duration, without effects.
+///
+/// The point uses separate checked `RN(N / 10^9)` and `RN(rate * seconds)`.
+/// The existing displacement owner with exact zero phase bounds its distance
+/// from the exact real `rate * N / 10^9`; its additional zero-addition terms are
+/// conservative. The returned private candidate retains that nonzero arithmetic
+/// error instead of passing a rounded point through the exact-scalar factory.
+/// Its rate is negative zero so composing a settled effect preserves even a
+/// predecessor's negative-zero rate. The parent must consume mandatory admission.
+/// # Errors
+/// Preserve integer conversion, seconds division, point product, then outward
+/// bound failure order. No partial candidate, duration or state change escapes.
+pub(super) fn settled_rate_coefficients(
+    rate: f64,
+    duration: ActiveAwakeDurationNs,
+) -> Result<AffineCandidate, FixtureChartError> {
+    let elapsed = nonnegative_elapsed(duration.nanoseconds())?;
+    let phase = value_arithmetic(rate, elapsed.seconds, FixtureChartStep::RateTimesElapsed)?;
+    let bound = displacement_bounds(&elapsed, 0.0, rate)?;
+    Ok(AffineCandidate {
+        phase,
+        rate: -0.0,
+        phase_error: bound.error,
+        rate_error: 0.0,
+    })
+}
+
 /// Bound one center subtraction using its original stored value and shared delta.
 ///
 /// Triangle magnitudes conservatively replace exact cancellation. The result
-/// covers new arithmetic only, excluding old-fit, composition and physical error.
+/// covers the supplied evaluation/coefficient errors, excluding old-fit and
+/// physical error. With zero coefficient errors the original path is unchanged.
 /// # Errors
 /// Preserve the first failed outward operation without publishing a center.
 fn phase_error(original: f64, delta: &DisplacementBounds) -> Result<f64, FixtureChartError> {
@@ -245,7 +349,8 @@ fn rate_error(original: f64, adjustment: f64) -> Result<f64, FixtureChartError> 
 /// descriptor provenance before this purely numerical helper. This helper still
 /// rejects a query outside the descriptor domain. One saved delta is reused for
 /// the original anchor center and optional original fitted phase; all coordinate
-/// primitives precede bound construction. No old statistic, uncertainty, instant,
+/// primitives precede bound construction. Retained coefficient errors widen only
+/// the separate numerical bounds. No old statistic, uncertainty, instant,
 /// history, metadata or lifecycle state is changed. Only complete scalar scratch
 /// escapes, for the parent's mandatory final mapped-value admission.
 /// # Errors
@@ -277,7 +382,13 @@ pub(super) fn transform(
         None
     };
     let rate = value_arithmetic(original_rate, chart.rate, FixtureChartStep::Rate)?;
-    let delta_bounds = displacement_bounds(&elapsed, chart.phase, chart.rate)?;
+    let mut delta_bounds = displacement_bounds(&elapsed, chart.phase, chart.rate)?;
+    if chart.phase_error != 0.0 || chart.rate_error != 0.0 {
+        delta_bounds.error = sum_two_up(
+            delta_bounds.error,
+            coefficient_displacement_error(&elapsed, chart)?,
+        )?;
+    }
     let center_error = phase_error(original_center, &delta_bounds)?;
     let tracking = if let Some((source, value)) = tracking_values {
         Some(ChartPhase {
@@ -287,7 +398,10 @@ pub(super) fn transform(
     } else {
         None
     };
-    let rate_error = rate_error(original_rate, chart.rate)?;
+    let mut rate_error = rate_error(original_rate, chart.rate)?;
+    if chart.rate_error != 0.0 {
+        rate_error = sum_two_up(rate_error, chart.rate_error)?;
+    }
     Ok(ChartScalars {
         center,
         rate,

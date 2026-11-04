@@ -94,7 +94,7 @@ def caught_raw_event_zero_prefix(output: object) -> CaughtRawEventZeroPrefix | N
     header = "---- " + _RAW_EVENT_TEST + " stdout ----"
     failures = re.findall(
         r"(?m)^" + re.escape(header)
-        + r"\r?\nError: FixtureCombinationLifecycleError \{ \.\. \}\r?\n\r?\n(?:\r?\n)?(?=---- |failures:)",
+        + r"\r?\nError: (?:FixtureCombinationLifecycleError|FixturePrincipalError) \{ \.\. \}\r?\n\r?\n(?:\r?\n)?(?=---- |failures:)",
         output,
     )
     footers = re.findall(

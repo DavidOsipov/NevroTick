@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! S157 retained raw-source principal receiving through genuine chart batches.
 //!
-//! These finite fixtures use two histories of at most four rows per setup.
-//! Original root distances are equal and ample: roster-first source 11 is the
-//! independent principal. A common affine view changes neither observation
-//! identity nor credit. All descriptors, raw phases and transitions are literal;
+//! Existing finite fixtures use two histories of at most four rows per setup.
+//! Original root distances are equal and ample: roster-first source 11 (source 1
+//! in the capacity fixture) is the independent principal. A common affine view
+//! changes neither observation identity nor credit. All descriptors, raw phases
+//! and transitions are literal;
 //! no transformed legacy wrapper or detached selection is fabricated.
+//! The separate exact-capacity fixture owns16 three-row histories/48 appends,
+//! 16 prepares/tracking projections/chart intervals and16 raw enclosures. It uses
+//! one chart/terms/chart batch/legacy batch/seed,16 checked strata plus one copied
+//! overflow entry, three chart advances and two full-state clones. These counts
+//! are source reservations, not measured calls or physical synchronization.
 
 use super::{SECOND, Source, TestResult, chart, label, snapshot, terms};
 use std::{io, ptr};
@@ -140,6 +146,10 @@ fn retained_owner_preserves_credit_and_actual_chart_provenance() -> TestResult {
     );
     assert_eq!(retained.updated_source(), None);
     assert!(!retained.reference_ready());
+    assert_eq!(
+        format!("{retained:?}"),
+        "FixtureChartPrincipalDecision { .. }"
+    );
     assert_eq!(retained.selection().minimum(), 2);
     assert_eq!(retained.principal_label(), Some(label(11)?));
     assert!(ptr::eq(retained.batch(), ptr::from_ref(&batch)));
@@ -211,6 +221,20 @@ fn genuine_new_observation_survives_chart_receiving_once() -> TestResult {
     let map = chart(0, 2, 6, 4.0 / 1024.0, 1.0 / 1024.0)?;
     let original = entries(&owners, [&map, &map], 4)?;
     let mut state = legacy_ready(&original, 4)?;
+    let empty = FixtureChartBatch::new(&map, MonotonicNs::new(4 * SECOND), &[])?;
+    let unavailable = state.advance_chart(&map, &empty, &[])?;
+    assert_eq!(unavailable.kind(), FixturePrincipalOutcomeKind::Unavailable);
+    assert_eq!(unavailable.updated_source(), None);
+    assert!(unavailable.principal_entry().is_none());
+    let repeated = FixtureChartBatch::new(&map, MonotonicNs::new(4 * SECOND), &original)?;
+    let waiting = state.advance_chart(&map, &repeated, &strata()?)?;
+    assert_eq!(
+        waiting.kind(),
+        FixturePrincipalOutcomeKind::WaitingForUpdate
+    );
+    assert_eq!(waiting.updated_source(), None);
+    assert!(!waiting.reference_ready());
+    assert!(waiting.principal_entry().is_none());
     owners[0].append(3, 14, 22, 1.0)?;
     let fresh = entries(&owners, [&map, &map], 5)?;
     let batch = FixtureChartBatch::new(&map, MonotonicNs::new(5 * SECOND), &fresh)?;
@@ -272,9 +296,16 @@ fn unexpected_chart_rejects_atomically_and_equal_neighbor_recovers() -> TestResu
         ),
     ];
     for (expected, kind) in &cases {
+        let error = state
+            .advance_chart(expected, &batch, &strata()?)
+            .err()
+            .ok_or_else(|| io::Error::other("unexpected descriptor acceptance"))?;
         assert!(
-            matches!(state.advance_chart(expected, &batch, &strata()?), Err(FixtureChartPrincipalError::ChartMismatch {kind: actual}) if actual==*kind)
+            matches!(error, FixtureChartPrincipalError::ChartMismatch {kind: actual} if actual==*kind)
         );
+        assert_eq!(format!("{error:?}"), "FixtureChartPrincipalError { .. }");
+        assert_eq!(error.to_string(), "fixture chart principal: chart mismatch");
+        assert!(std::error::Error::source(&error).is_none());
         assert_eq!(state, prior);
     }
     let mut control = prior.clone();
@@ -329,9 +360,19 @@ fn source_origin_and_evaluation_guards_remain_unavoidable() -> TestResult {
         )?;
         let wrong_entries = entries(&wrong_owners, [&wrong, &wrong], 4)?;
         let batch = FixtureChartBatch::new(&wrong, MonotonicNs::new(4 * SECOND), &wrong_entries)?;
+        let error = state
+            .advance_chart(&wrong, &batch, &strata()?)
+            .err()
+            .ok_or_else(|| io::Error::other("unexpected raw origin acceptance"))?;
         assert!(
-            matches!(state.advance_chart(&wrong,&batch,&strata()?),Err(FixtureChartPrincipalError::Principal{source:FixturePrincipalError::ContextMismatch{field:actual}}) if actual==field)
+            matches!(error, FixtureChartPrincipalError::Principal{source:FixturePrincipalError::ContextMismatch{field:actual}} if actual==field)
         );
+        assert_eq!(format!("{error:?}"), "FixtureChartPrincipalError { .. }");
+        assert_eq!(
+            error.to_string(),
+            "fixture chart principal: principal rejected"
+        );
+        assert!(std::error::Error::source(&error).is_some());
         assert_eq!(state, prior);
     }
     let earlier = entries(&owners, [&map, &map], 3)?;
@@ -453,5 +494,128 @@ fn chart_event_rejections_preserve_credit_for_valid_retry() -> TestResult {
         })
     ));
     assert_eq!(state, control);
+    Ok(())
+}
+
+/// Derive sixteen actual intervals from the fixed three-row capacity owners.
+///
+/// The checked tracking path binds row2 and its genuine2-second watermark to
+/// the common4-second query. Immutable checked terms are shared across sources.
+/// # Errors
+/// Reject another population or preserve real preparation/projection/enclosure
+/// failures. No owner, descriptor, metadata or principal state is mutated.
+fn exact_capacity_entries<'chart>(
+    owners: &[Source],
+    map: &'chart FixtureAffineChart,
+) -> TestResult<Vec<FixtureChartInterval<'chart>>> {
+    if owners.len() != 16 {
+        return Err(io::Error::other("exact capacity fixture requires sixteen owners").into());
+    }
+    let limits = terms()?;
+    let reference = MonotonicNs::new(2 * SECOND);
+    let query = MonotonicNs::new(4 * SECOND);
+    owners
+        .iter()
+        .map(|owner| {
+            let view = owner
+                .history
+                .prepare_chart(owner.context, FixtureChartOutcome::Known(map))?
+                .ok_or_else(|| io::Error::other("missing exact capacity chart view"))?;
+            let projected =
+                view.project_tracking(view.context(), 2, reference, query, limits, 0.125)?;
+            Ok(enclose_fixture_chart_projection(&projected)?)
+        })
+        .collect()
+}
+
+/// Exact sixteen metadata accepts after a seventeen-entry rejection, once only.
+/// # Errors
+/// Preserve genuine histories, intervals, batches, metadata and state failures.
+/// # Panics
+/// Reject an exclusive capacity bound, partial commit, detached decision or
+/// manufactured observation credit on replay of the unchanged original rows.
+#[test]
+fn chart_principal_exact_metadata_capacity_and_overflow_rollback() -> TestResult {
+    let roster = (1..=16).map(label).collect::<TestResult<Vec<_>>>()?;
+    let frame = label(17)?;
+    let generation = label(23)?;
+    let owners = roster
+        .iter()
+        .map(|&id| {
+            Source::with_context(
+                FixtureContext::new(id, frame, generation),
+                0,
+                &[8, 10, 12],
+                22,
+                &[1.0; 3],
+                3,
+            )
+        })
+        .collect::<TestResult<Vec<_>>>()?;
+    let map = chart(0, 2, 6, 4.0 / 1024.0, 1.0 / 1024.0)?;
+    let current = exact_capacity_entries(&owners, &map)?;
+    let raw = current
+        .iter()
+        .map(|entry| {
+            Ok(enclose_fixture_projection(
+                entry.projection().source_projection(),
+            )?)
+        })
+        .collect::<TestResult<Vec<_>>>()?;
+    let at = MonotonicNs::new(4 * SECOND);
+    let legacy = FixtureProjectedBatch::new(frame, generation, at, &raw)?;
+    let metadata = roster
+        .iter()
+        .map(|&id| Ok(FixturePrincipalStratum::new(id, 2)?))
+        .collect::<TestResult<Vec<_>>>()?;
+    let mut state = FixturePrincipalState::seed(
+        &roster,
+        FixturePrincipalParameters::new(0.25, 0.0)?,
+        FixtureMinimum::new(16)?,
+        &legacy,
+        &metadata,
+    )?;
+    let before = state.clone();
+    let batch = FixtureChartBatch::new(&map, at, &current)?;
+    let mut overflow = metadata.clone();
+    overflow.push(metadata[0]);
+    let error = state
+        .advance_chart(&map, &batch, &overflow)
+        .err()
+        .ok_or_else(|| io::Error::other("seventeen metadata entries accepted"))?;
+    let expected_error = FixtureChartPrincipalError::Principal {
+        source: FixturePrincipalError::MetadataCapacityExceeded,
+    };
+    assert_eq!(error, expected_error);
+    assert_eq!(state, before);
+    let ready = state.advance_chart(&map, &batch, &metadata)?;
+    assert_eq!(ready.kind(), FixturePrincipalOutcomeKind::ReferenceReady);
+    assert!(ready.reference_ready());
+    assert_eq!(ready.updated_source(), None);
+    assert_eq!(ready.principal_label(), Some(roster[0]));
+    assert_eq!(ready.selection().minimum(), 16);
+    assert_eq!(ready.selection().population(), 16);
+    assert_eq!(ready.selection().maximum_depth(), 16);
+    assert!(ptr::eq(ready.batch(), ptr::from_ref(&batch)));
+    assert!(ptr::eq(
+        ready.chart_selection().batch(),
+        ptr::from_ref(&batch)
+    ));
+    assert!(ptr::eq(ready.entries(), current.as_slice()));
+    assert!(ptr::eq(
+        ready
+            .principal_entry()
+            .ok_or_else(|| io::Error::other("missing exact capacity principal"))?,
+        ptr::from_ref(&current[0])
+    ));
+    let committed = state.clone();
+    let replay = state.advance_chart(&map, &batch, &metadata)?;
+    assert_eq!(
+        replay.kind(),
+        FixturePrincipalOutcomeKind::RetainedWithoutNewEstimate
+    );
+    assert_eq!(replay.updated_source(), None);
+    assert!(!replay.reference_ready());
+    assert_eq!(state, committed);
     Ok(())
 }

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Protocol, TypeGuard
+from typing import Callable, NamedTuple, Protocol, TypeGuard
 
 
 class Incomplete(ValueError):
@@ -72,21 +72,21 @@ HISTORICAL_LEGAL_FIELDS = (
 HISTORICAL_LEGAL_EXPECTED = (5, 2, 4, 1, 1, 3, 1, 3, 1, 1, 1, 4, 1, 1, 1, 22)
 HISTORICAL_LEGAL_SOURCE_SHA256 = "1ec1bb10009df768bc670384db93e23cbf0e7da83f6feb9d8b2499d9c2a3ef5d"
 # Current legal metadata is bound only after the independent consumer freezes.
-LEGAL_FIELDS = (*HISTORICAL_LEGAL_FIELDS, "batches", "minima", "selections", "batch_getters")
-LEGAL_EXPECTED = (*HISTORICAL_LEGAL_EXPECTED, 1, 1, 1, 22)
-LEGAL_SOURCE_SHA256 = "6f1d16eeaa436ef04e6d513ecb1de1f95e69d75ed66151228d8ddc24196d1bce"
-SOURCE_SHA256 = {
-    "crates/time-core/tests/private/chart_guards.rs": "6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf",
-    "crates/time-core/src/regression/chart.rs": "77fccbecf2b0e020c92b636b2db1478f8bc434526a1cbe85eaa2d9e229798bf8",
-    "crates/time-core/src/regression/chart/roundoff.rs": "c79fc05485c0b1f32f3ff80992f45ef8a13c632dc1971c3b60aa96b4f721426f",
-    "crates/time-core/src/chart_enclosure.rs": "6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2",
-    "crates/time-core/src/projection_enclosure.rs": "6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023",
-    "crates/time-core/tests/chart.rs": "aebcdb16afd6c67184ca8b07e0f59c9feb819713d40f0b0c3cb6a57ab5aa171c",
-    "crates/time-core/tests/private/chart_roundoff.rs": "cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e",
-    "scripts/core-adaptive-accounting.py": "87f135190282b252ebb0059cb67cdc4affa0016b10ab72c3821744bf36fb3c49",
-    "scripts/core-projection-accounting.py": "8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300",
-    "scripts/core-enclosure-accounting.py": "6727ce5b193bb6d2e951221a73cfe393f26a921519841586d461175dc60491ad",
-}
+LEGAL_FIELDS = (*HISTORICAL_LEGAL_FIELDS, "batches", "minima", "selections", "batch_getters",
+                "raw_enclosures", "raw_batches", "principal_parameters", "principal_strata",
+                "principal_seeds", "principal_advances", "chart_principal_advances", "principal_getters")
+LEGAL_EXPECTED: tuple[int, ...] = (*HISTORICAL_LEGAL_EXPECTED, 1, 1, 1, 22, 1, 1, 1, 1, 1, 1, 1, 27)
+LEGAL_SOURCE_SHA256 = "707d00d4716fb8651975b2cbe12bf49917d2854cea97f1e2aba6b24a79dabb02"
+SOURCE_SHA256 = {'crates/time-core/src/chart_enclosure.rs': '6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2',
+ 'crates/time-core/src/projection_enclosure.rs': '6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023',
+ 'crates/time-core/src/regression/chart.rs': 'ed2c7d54b7a9a346327199b3b4d3b32fc8ed14f8d7c5a6bb61b867b820f9aed0',
+ 'crates/time-core/src/regression/chart/roundoff.rs': '99bb94b460a66401ea683440b3991ae75a11f3ca1de75dc4fceb71f7109e9169',
+ 'crates/time-core/tests/chart.rs': '838a8b05014564eb7dff44ede2d1d8e63cfea2b3c0c3be10a56d0e023f171228',
+ 'crates/time-core/tests/private/chart_guards.rs': '6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf',
+ 'crates/time-core/tests/private/chart_roundoff.rs': 'cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e',
+ 'scripts/core-adaptive-accounting.py': '5fb1e2b444a41574872d609da5c20663090abc112e50e6193b69317ab5815591',
+ 'scripts/core-enclosure-accounting.py': '6727ce5b193bb6d2e951221a73cfe393f26a921519841586d461175dc60491ad',
+ 'scripts/core-projection-accounting.py': '8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300'}
 PUBLIC_TESTS = (
     "s144_chart_reexpresses_without_mutating_genuine_history",
     "weighted_tracking_uses_one_common_chart_reference_and_genuine_owner",
@@ -689,22 +689,20 @@ BATCH_SOURCE_INPUTS = (
     "crates/time-core/tests/private/chart_batch_guards.rs",
     "scripts/core-selection-accounting.py",
 )
-BATCH_SOURCE_SHA256: dict[str, str] = {
-    "crates/time-core/tests/private/chart_guards.rs": "6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf",
-    "crates/time-core/src/regression/chart.rs": "77fccbecf2b0e020c92b636b2db1478f8bc434526a1cbe85eaa2d9e229798bf8",
-    "crates/time-core/src/regression/chart/roundoff.rs": "c79fc05485c0b1f32f3ff80992f45ef8a13c632dc1971c3b60aa96b4f721426f",
-    "crates/time-core/src/chart_enclosure.rs": "6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2",
-    "crates/time-core/src/projection_enclosure.rs": "6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023",
-    "crates/time-core/tests/chart.rs": "aebcdb16afd6c67184ca8b07e0f59c9feb819713d40f0b0c3cb6a57ab5aa171c",
-    "crates/time-core/tests/private/chart_roundoff.rs": "cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e",
-    "scripts/core-adaptive-accounting.py": "87f135190282b252ebb0059cb67cdc4affa0016b10ab72c3821744bf36fb3c49",
-    "scripts/core-projection-accounting.py": "8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300",
-    "scripts/core-enclosure-accounting.py": "6727ce5b193bb6d2e951221a73cfe393f26a921519841586d461175dc60491ad",
-    "crates/time-core/src/chart_batch.rs": "ee6d9d5d63c87573cb1f8b55169f59dd92ac67438a26a3b565580e7c22160873",
-    "crates/time-core/tests/private/chart_batch_cases.rs": "6d7638728ee09df57522771ec76465603a9a2bb46f44d754ba35f6f0d4c905d1",
-    "crates/time-core/tests/private/chart_batch_guards.rs": "8c16f05d4155a2653100f6cc9392ff78bc0f931fe2eb12d6710cbd9ff4e1591f",
-    "scripts/core-selection-accounting.py": "d9cba324bcc60102e93ade48fdba0a2810e5f3bfd8cda034159a3debe7b2fa83"
-}
+BATCH_SOURCE_SHA256: dict[str, str] = {'crates/time-core/src/chart_batch.rs': '32269a5ce0cddc9db1c43382d142beaf80cdabe636ad2e3d7e4c1f2f49ec947c',
+ 'crates/time-core/src/chart_enclosure.rs': '6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2',
+ 'crates/time-core/src/projection_enclosure.rs': '6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023',
+ 'crates/time-core/src/regression/chart.rs': 'ed2c7d54b7a9a346327199b3b4d3b32fc8ed14f8d7c5a6bb61b867b820f9aed0',
+ 'crates/time-core/src/regression/chart/roundoff.rs': '99bb94b460a66401ea683440b3991ae75a11f3ca1de75dc4fceb71f7109e9169',
+ 'crates/time-core/tests/chart.rs': '838a8b05014564eb7dff44ede2d1d8e63cfea2b3c0c3be10a56d0e023f171228',
+ 'crates/time-core/tests/private/chart_batch_cases.rs': '6d7638728ee09df57522771ec76465603a9a2bb46f44d754ba35f6f0d4c905d1',
+ 'crates/time-core/tests/private/chart_batch_guards.rs': '8c16f05d4155a2653100f6cc9392ff78bc0f931fe2eb12d6710cbd9ff4e1591f',
+ 'crates/time-core/tests/private/chart_guards.rs': '6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf',
+ 'crates/time-core/tests/private/chart_roundoff.rs': 'cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e',
+ 'scripts/core-adaptive-accounting.py': '5fb1e2b444a41574872d609da5c20663090abc112e50e6193b69317ab5815591',
+ 'scripts/core-enclosure-accounting.py': '6727ce5b193bb6d2e951221a73cfe393f26a921519841586d461175dc60491ad',
+ 'scripts/core-projection-accounting.py': '8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300',
+ 'scripts/core-selection-accounting.py': 'd9cba324bcc60102e93ade48fdba0a2810e5f3bfd8cda034159a3debe7b2fa83'}
 BATCH_PUBLIC_TESTS = tuple("chart_batch_cases::" + name for name in (
     "chart_batch_selects_genuine_majority_at_common_time",
     "chart_batch_source_loss_does_not_lower_minimum",
@@ -849,7 +847,7 @@ def _batch_observer_work(external_legal: bool) -> dict[str, int]:
     The legal branch charges only extensions to the preserved52-call consumer.
     """
     if external_legal:
-        getters = LEGAL_EXPECTED[-1]
+        getters = LEGAL_EXPECTED[LEGAL_FIELDS.index("batch_getters")]
         additions = 3 + getters
         return {
             "error_source_requests_upper": 0, "typed_downcasts_upper": 0,
@@ -897,7 +895,7 @@ def chart_batch_budget_vector(adaptive: AdaptiveOwner, projection: ProjectionOwn
     if external_legal:
         # The marker's22 requests contain20 product getters and two iterator
         # next calls; the latter are funded only by the observer group.
-        fixture["other_getters_upper"] = LEGAL_EXPECTED[-1] - 2
+        fixture["other_getters_upper"] = LEGAL_EXPECTED[LEGAL_FIELDS.index("batch_getters")] - 2
     adaptive_calls = dict.fromkeys(ADAPTIVE_FIELDS, 0)
     adaptive_calls.update(adaptive_histories=fixture["histories"],
                           adaptive_observations=fixture["observations"],
@@ -1050,3 +1048,789 @@ def _checked_batch_vector(values: object) -> dict[str, int]:
             or set(checked) != set(BATCH_BUDGET_KEYS)):
         raise Incomplete("Chart-batch vector differs from its complete closed namespace.")
     return checked
+
+
+# S157 is an additive reservation. Previous chart/chart_batch fields retain
+# their source effects; the whole coordinator recipe starts with1823 fields.
+PRINCIPAL_STATUS = "prepared-source-recipe-cohort-not-admitted"
+PRINCIPAL_EXPECTED_NUMERIC_WORK = {"charged_fit_work_upper": 7564, "point_admissions_upper": 261202}
+PRINCIPAL_ORDINARY_TESTS = tuple("chart_principal_cases::" + name for name in (
+    "retained_owner_preserves_credit_and_actual_chart_provenance",
+    "genuine_new_observation_survives_chart_receiving_once",
+    "unexpected_chart_rejects_atomically_and_equal_neighbor_recovers",
+    "source_origin_and_evaluation_guards_remain_unavoidable",
+    "expected_frame_bits_and_metadata_capacity_reject_before_commit",
+    "chart_event_rejections_preserve_credit_for_valid_retry",
+    "chart_principal_exact_metadata_capacity_and_overflow_rollback",
+)) + ("chart_principal_pending::chart_replacement_consumes_preexisting_pending_credit_once",)
+PRINCIPAL_DOCTEST_LINES = (123, 138, 150)
+PRINCIPAL_SOURCE_INPUTS = (*BATCH_SOURCE_INPUTS,
+    "crates/time-core/src/principal.rs", "crates/time-core/src/principal/chart.rs",
+    "crates/time-core/tests/private/chart_principal_cases.rs",
+    "crates/time-core/tests/private/chart_principal_pending.rs")
+PRINCIPAL_SOURCE_SHA256: dict[str, str] = {'crates/time-core/src/chart_batch.rs': '32269a5ce0cddc9db1c43382d142beaf80cdabe636ad2e3d7e4c1f2f49ec947c',
+ 'crates/time-core/src/chart_enclosure.rs': '6785e1caa3274d9f2561735ad611128f1ceded20c739337dd8f70de4e863c0c2',
+ 'crates/time-core/src/principal.rs': 'cf4962c8d3536a528b7c783543379bdaeaf2e4070355fbeb7921fb5329b63d1d',
+ 'crates/time-core/src/principal/chart.rs': '397e5138ded2186527cc5a6f9dcb8526aaab3211da1e1d805ba2b4980fdd9f9c',
+ 'crates/time-core/src/projection_enclosure.rs': '6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023',
+ 'crates/time-core/src/regression/chart.rs': 'ed2c7d54b7a9a346327199b3b4d3b32fc8ed14f8d7c5a6bb61b867b820f9aed0',
+ 'crates/time-core/src/regression/chart/roundoff.rs': '99bb94b460a66401ea683440b3991ae75a11f3ca1de75dc4fceb71f7109e9169',
+ 'crates/time-core/tests/chart.rs': '838a8b05014564eb7dff44ede2d1d8e63cfea2b3c0c3be10a56d0e023f171228',
+ 'crates/time-core/tests/private/chart_batch_cases.rs': '6d7638728ee09df57522771ec76465603a9a2bb46f44d754ba35f6f0d4c905d1',
+ 'crates/time-core/tests/private/chart_batch_guards.rs': '8c16f05d4155a2653100f6cc9392ff78bc0f931fe2eb12d6710cbd9ff4e1591f',
+ 'crates/time-core/tests/private/chart_guards.rs': '6b04885fd9b96baeb7516581d04919cad828fe5d3e429cff364fbddd023034cf',
+ 'crates/time-core/tests/private/chart_principal_cases.rs': 'e3a5f2a52a6e98ec21d02342a4333d6581ec00fa227500c2de1c481cb396d5f1',
+ 'crates/time-core/tests/private/chart_principal_pending.rs': '61b67722a25f79b128b737eec8fade441bf224a6ed502e7d42d2030b440ae1ad',
+ 'crates/time-core/tests/private/chart_roundoff.rs': 'cc2e0cd8a5003fd1d65cb0156f7c26bea33ebc8e182bac00d44e8c65b83de68e',
+ 'scripts/core-adaptive-accounting.py': '5fb1e2b444a41574872d609da5c20663090abc112e50e6193b69317ab5815591',
+ 'scripts/core-enclosure-accounting.py': '6727ce5b193bb6d2e951221a73cfe393f26a921519841586d461175dc60491ad',
+ 'scripts/core-projection-accounting.py': '8edac190cc28913f4dbadefd80ac31af1a762537ef38d084fd69bb6ac7d17300',
+ 'scripts/core-selection-accounting.py': 'd9cba324bcc60102e93ade48fdba0a2810e5f3bfd8cda034159a3debe7b2fa83'}
+
+# Exact producer census plus conservative direct fixture/observer ceilings.
+# Sources::with_context/append own39 histories/122 rows. The original disjoint
+# blocks (12 histories,37 rows)+(11 histories,37 rows) and the new16-owner
+# capacity fixture split into two(8 histories,24 rows) blocks fit the existing
+# helper's per-call envelope unchanged. All52 projections take tracking;34
+# extra enclosures retain genuine raw projections, not transformed wrappers.
+# Four history snapshots inspect three rows each:4*(7*3+10)=124 getters.
+# Direct labels/clock/getter/control allowances cover all eight finite cases,
+# including the four17-element metadata arrays (one constructor then copies).
+# The earlier83 checked strata gain16 capacity-fixture constructors; its17th
+# value is copied. Eight seeds plus the equality neighbor use9 parameters.
+# Eleven explicit clones,29 state equalities, one parameter and one typed-error
+# equality remain
+# separate from unpublished transition clones. The new capacity case reuses
+# one immutable terms value across all16 genuine projections.
+PRINCIPAL_FIXTURE_CALLS = {
+    "histories": 39, "observations": 122, "appends": 122,
+    "contexts_upper": 160, "labels_upper": 768, "monotonic_upper": 768,
+    "coordinates": 244, "exchanges": 122, "frames_upper": 24,
+    "domains_upper": 24, "charts": 24, "prepares": 52,
+    "known_prepares_upper": 52, "terms": 37,
+    "anchor_projections": 0, "tracking_projections": 52,
+    "enclosures": 52, "snapshots": 4, "snapshot_rows_upper": 12,
+    "snapshot_getters_upper": 124, "other_getters_upper": 6144,
+    "exact_units_calls": 0, "subtraction_oracle_calls": 0,
+    "nanosecond_oracle_calls": 0, "near_comparisons": 0,
+    "debug_format_requests_upper": 64,
+    "raw_enclosures": 34, "chart_batches": 16, "legacy_batches": 9,
+    "minima": 8, "principal_parameters": 9, "principal_strata": 99,
+    "principal_seeds": 8, "legacy_advances": 8, "chart_advances": 36,
+    "state_clones": 11, "value_equalities": 31,
+}
+
+
+def admit_chart_principal_source_identity(actual: object) -> dict[str, str]:
+    """Require the complete reviewed S157 source map, including both receivers."""
+    if (set(PRINCIPAL_SOURCE_SHA256) != set(PRINCIPAL_SOURCE_INPUTS)
+            or not _is_exact_dict(actual) or set(actual) != set(PRINCIPAL_SOURCE_INPUTS)):
+        raise Incomplete("Chart-principal source binding is pending or incomplete.")
+    result: dict[str, str] = {}
+    for name, digest in actual.items():
+        if (type(name) is not str or type(digest) is not str
+                or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                or digest != PRINCIPAL_SOURCE_SHA256[name]):
+            raise Incomplete("Chart-principal source identity differs from the reviewed bytes.")
+        result[name] = digest
+    return result
+
+
+def _principal_legacy_batch_work(batches: int) -> dict[str, int]:
+    """Fund direct raw batches once, in the existing projected-batch source units.
+
+    These57 authored entries/48 reads/176 getters/31 scratch copies reproduce
+    that unchanged owner's capacity16 ceiling. Chart batches' internal raw batch
+    work remains in _batch_work; selector batch copies live only in selection_work.
+    """
+    return {key: factor * batches for key, factor in {
+        "constructor_attempts_upper": 1, "authored_helper_entries_upper": 57,
+        "garde_validations_upper": 1, "garde_callbacks_upper": 1,
+        "entry_read_attempts_upper": 48, "product_getters_upper": 176,
+        "scratch_copy_assignments_upper": 31,
+    }.items()}
+
+
+def _principal_descriptor_work(advances: int) -> dict[str, int]:
+    """Fund mandatory chart admission plus its separately repeated diagnostic pass.
+
+    Each pass inspects both descriptors' four frame labels, three exact domain
+    instants, two scalar bits and eight accessor requests. No point transforms,
+    history work or native authority follow from this checked value comparison.
+    """
+    passes = 2 * advances
+    return {
+        "initial_metadata_capacity_checks_upper": advances,
+        "candidate_constructions_upper": advances,
+        "garde_validations_upper": advances, "garde_callbacks_upper": advances,
+        "relationship_passes_upper": passes,
+        "descriptor_getters_upper": 8 * passes,
+        "frame_label_comparisons_upper": 4 * passes,
+        "domain_instant_comparisons_upper": 3 * passes,
+        "scalar_bit_queries_upper": 4 * passes,
+        "scalar_bit_comparisons_upper": 2 * passes,
+        "batch_header_and_source_frame_getters_upper": 8 * advances,
+    }
+
+
+def _principal_receiver_work(fixture: dict[str, int]) -> dict[str, int]:
+    """Fund shared original-source receiving, staging and score/credit transition.
+
+    At capacity16, the two metadata/event passes, staging, roster lookup and
+    selection association fit the retained4096 label-comparison ceiling per
+    seed/advance. A separate128 original-projection visits per operation covers
+    both receiver passes, staging and completion. Chart visits add two wrapper
+    getters; legacy visits add one. Original metadata gets six getter requests
+    per visit. Shared selection's algorithm work is separately injected.
+
+    The existing82 checked primitives per advance cover16 candidates*5 plus
+    the retained principal's2; no skip of ranking or pending credit is assumed.
+    Fixed-slot initialization, writes and actual clone cells are reserved even
+    on failed prefixes. These are source upper bounds, never runtime counters.
+    """
+    seeds, legacy, charts = (fixture[key] for key in (
+        "principal_seeds", "legacy_advances", "chart_advances"))
+    advances, operations = legacy + charts, seeds + legacy + charts
+    parameters, strata = (fixture[key] for key in ("principal_parameters", "principal_strata"))
+    visits = 128 * operations
+    return {
+        "parameter_constructor_attempts_upper": parameters,
+        "parameter_garde_validations_upper": parameters,
+        "parameter_garde_callbacks_upper": 2 * parameters,
+        "parameter_scalar_rule_calls_upper": 4 * parameters,
+        "parameter_scalar_predicates_upper": 16 * parameters,
+        "stratum_constructor_attempts_upper": strata,
+        "stratum_garde_validations_upper": strata,
+        "stratum_garde_callbacks_upper": strata,
+        "stratum_range_predicates_upper": 2 * strata,
+        "roster_garde_validations_upper": seeds,
+        "roster_garde_callbacks_upper": seeds,
+        "roster_relationship_passes_upper": 2 * seeds,
+        "roster_duplicate_comparisons_upper": 240 * seeds,
+        "seed_slot_initializations_upper": 16 * seeds,
+        "seed_source_record_writes_upper": 16 * seeds,
+        "receiver_garde_validations_upper": operations,
+        "receiver_garde_callbacks_upper": operations,
+        "receiver_relationship_passes_upper": 2 * operations,
+        "receiver_key_comparisons_upper": 4096 * operations,
+        "receiver_control_predicates_upper": 1024 * operations,
+        "receiver_original_projection_visits_upper": visits,
+        "legacy_projection_adapter_getters_upper": 128 * (seeds + legacy),
+        "chart_projection_adapter_getters_upper": 256 * charts,
+        "receiver_original_product_getters_upper": 6 * visits,
+        "source_lookup_slot_visits_upper": 4096 * operations,
+        "stratum_lookup_slot_visits_upper": 1024 * operations,
+        "staged_source_field_writes_upper": 256 * operations,
+        "staged_state_clone_cells_upper": 16 * advances,
+        "staged_source_fields_copied_upper": 96 * advances,
+        "staged_fixed_fields_copied_upper": 16 * advances,
+        "witness_slot_initializations_upper": 16 * advances,
+        "witness_membership_visits_upper": 16 * advances,
+        "ranking_slot_visits_upper": 16 * advances,
+        "checked_scalar_primitives_upper": 82 * advances,
+        "scalar_supported_predicates_upper": 6 * 82 * advances,
+        "credit_slot_visits_upper": 32 * advances,
+        "legacy_selection_dispatches_upper": legacy,
+        "selection_association_entry_visits_upper": 16 * advances,
+        "selection_association_supporter_probes_upper": 16 * advances,
+        "decision_assemblies_upper": advances,
+        "completed_state_commit_attempts_upper": advances,
+    }
+
+
+def _principal_observer_work(fixture: dict[str, int], *, external_legal: bool) -> dict[str, int]:
+    """Keep fixture/state/getter/equality/format/counter work outside product work.
+
+    Public getter requests may scan16 roster slots;128 covers their nested
+    wrappers/bit accessors. Snapshot and source-fact observers own no transition.
+    Legal counters append exactly eight fields/34 charges to the previous77.
+    The first20 fields and their earlier52/25 observer charges remain unchanged.
+    """
+    getters = fixture["other_getters_upper"]
+    charges = sum(LEGAL_EXPECTED[20:]) if external_legal else 0
+    equalities, clones = fixture["value_equalities"], fixture["state_clones"]
+    return {
+        "direct_product_getters_upper": getters,
+        "getter_nested_product_requests_upper": 128 * getters,
+        "getter_roster_slot_visits_upper": 16 * getters,
+        "snapshot_row_visits_upper": fixture["snapshot_rows_upper"],
+        "snapshot_getter_requests_upper": fixture["snapshot_getters_upper"],
+        "state_clone_cells_upper": 16 * clones,
+        "state_clone_source_fields_upper": 96 * clones,
+        "state_clone_fixed_fields_upper": 16 * clones,
+        "value_equality_slot_visits_upper": 16 * equalities,
+        "value_equality_source_fields_upper": 96 * equalities,
+        "value_equality_fixed_fields_upper": 16 * equalities,
+        "value_equality_float_bit_queries_upper": 68 * equalities,
+        "fixture_array_copy_slots_upper": 768 if not external_legal else 16,
+        "source_fact_records_upper": 96 if not external_legal else 0,
+        "source_fact_getter_requests_upper": 576 if not external_legal else 0,
+        "pointer_comparisons_upper": 64 if not external_legal else 16,
+        "assertion_predicates_upper": 4096 if not external_legal else 128,
+        "debug_format_requests_upper": fixture["debug_format_requests_upper"],
+        "error_source_requests_upper": 64 if not external_legal else 0,
+        "error_typed_downcasts_upper": 64 if not external_legal else 0,
+        "counter_charge_attempts": charges,
+        "indexed_counter_accesses_upper": 2 * charges,
+        "checked_additions_upper": charges, "cap_comparisons_upper": charges,
+        "counter_slot_writes_upper": charges,
+        "finish_equality_elements_upper": 8 if external_legal else 0,
+        "record_integer_fields": 8 if external_legal else 0, "record_rows": 0,
+    }
+
+
+def _principal_prior_adapter_work(*, external_legal: bool) -> dict[str, int]:
+    """Fund new shared adapters reached by unchanged older source recipes.
+
+    The reviewed package census is 100 seeds and 304 advances: principal,
+    combination, lifecycle public/guard/bridge, tracking, and the empty raw-event
+    seed. Seven direct private completions are additional. Old legal consumers
+    add two seeds and two advances. None are the new S157 fixture/consumer calls
+    already funded by receiver_work, and none add a producer or measured count.
+
+    Capacity sixteen gives at most48 original-projection visits per seed and96
+    per advance. Reserving128 per operation also covers early rejection neighbors.
+    Each visit reserves its dispatch, slice read and delegated projection getter;
+    32 len dispatches per operation dominates the8/11 source upper. Each advance
+    enters at most three new shared helpers; each direct completion adds one.
+    """
+    if type(external_legal) is not bool:
+        raise Incomplete("Prior receiver-adapter scope must be Boolean.")
+    seeds, advances, completions = (2, 2, 0) if external_legal else (100, 304, 7)
+    operations = seeds + advances
+    visits = 128 * operations + 16 * completions
+    return {
+        "seeds_source_upper": seeds, "advances_source_upper": advances,
+        "direct_completions_source_upper": completions,
+        "get_original_dispatches_upper": visits, "indexed_slice_reads_upper": visits,
+        "projection_getter_requests_upper": visits,
+        "len_dispatches_upper": 32 * operations + completions,
+        "shared_helper_entries_upper": 3 * advances + completions,
+        "variant_constructions_upper": seeds + 2 * advances + completions,
+    }
+
+
+def chart_principal_budget_vector(adaptive: AdaptiveOwner, projection: ProjectionOwner,
+                                  enclosure: EnclosureOwner, selection: SelectionOwner, *,
+                                  external_legal: bool = False,
+                                  include_doctests: bool = True) -> dict[str, int]:
+    """Reserve the S157 source delta once without changing earlier recipes.
+
+    The legal child reuses the existing checked interval/chart/batch setup;
+    its only producer addition is one raw enclosure. Source identity, observed
+    names and campaign allowance admission remain independent requirements.
+    """
+    if any(type(flag) is not bool for flag in (external_legal, include_doctests)):
+        raise Incomplete("Chart-principal recipe requires exact Boolean selectors.")
+    _owner_fields(adaptive, ADAPTIVE_FIELDS)
+    _owner_fields(projection, PROJECTION_FIELDS)
+    _owner_fields(enclosure, ENCLOSURE_FIELDS)
+    fixture = {key: 0 if external_legal else value for key, value in PRINCIPAL_FIXTURE_CALLS.items()}
+    if external_legal:
+        legal = admit_legal_metadata(LEGAL_FIELDS, dict(zip(LEGAL_FIELDS, LEGAL_EXPECTED, strict=True)),
+                                     LEGAL_SOURCE_SHA256)
+        fixture.update(raw_enclosures=legal["raw_enclosures"], legacy_batches=legal["raw_batches"],
+                       principal_parameters=legal["principal_parameters"],
+                       principal_strata=legal["principal_strata"], principal_seeds=legal["principal_seeds"],
+                       legacy_advances=legal["principal_advances"], chart_advances=legal["chart_principal_advances"],
+                       other_getters_upper=legal["principal_getters"])
+    adaptive_calls = dict.fromkeys(ADAPTIVE_FIELDS, 0)
+    adaptive_calls.update(adaptive_histories=fixture["histories"],
+                          adaptive_observations=fixture["observations"], adaptive_appends=fixture["appends"])
+    partitions = ((0, 0, 0),) if external_legal else (
+        (12, 37, 37), (11, 37, 37), (8, 24, 24), (8, 24, 24))
+    summed_calls = dict.fromkeys(ADAPTIVE_FIELDS, 0)
+    adaptive_work = dict.fromkeys(ADAPTIVE_WORK_FIELDS, 0)
+    for histories, observations, appends in partitions:
+        part_calls = dict.fromkeys(ADAPTIVE_FIELDS, 0)
+        part_calls.update(adaptive_histories=histories, adaptive_observations=observations,
+                          adaptive_appends=appends)
+        part = _work(adaptive.source_work(part_calls, include_raw_minimum=False,
+                                         event_fixture_reached=False), ADAPTIVE_WORK_FIELDS)
+        for key, amount in part_calls.items():
+            summed_calls[key] += amount
+        for key, amount in part.items():
+            adaptive_work[key] += amount
+    if summed_calls != adaptive_calls:
+        raise Incomplete("Chart-principal adaptive partition changed its source census.")
+    adaptive_work = _work(adaptive_work, ADAPTIVE_WORK_FIELDS)
+    expected = {key: 0 if external_legal else value for key, value in PRINCIPAL_EXPECTED_NUMERIC_WORK.items()}
+    if {key: adaptive_work[key] for key in expected} != expected:
+        raise Incomplete("Chart-principal adaptive recurrence differs from its source upper.")
+    projection_calls = dict.fromkeys(PROJECTION_FIELDS, 0)
+    projection_calls.update(terms=fixture["terms"], projections=fixture["tracking_projections"])
+    projection_work = _work(projection.source_work_uppers(projection_calls), PROJECTION_WORK_FIELDS)
+    enclosure_calls = dict.fromkeys(ENCLOSURE_FIELDS, 0)
+    enclosure_calls.update(enclosures=fixture["enclosures"] + fixture["raw_enclosures"])
+    enclosure_work = _work(enclosure.source_work_uppers(enclosure_calls), ENCLOSURE_WORK_FIELDS)
+    if any(work[key] for work in (projection_work, enclosure_work) for key in expected):
+        raise Incomplete("Chart-principal delegated source work double-funds adaptive setup.")
+    adapter = _work(projection.projection_adapter_work(0, projection_calls["projections"]), (
+        "projection_capsule_and_kernel_entries_upper", "projection_adaptive_extra_internal_getters_upper"))
+    chart_work = _batch_work(fixture["chart_batches"], fixture["chart_advances"],
+                             fixture["minima"], raw_header=False)
+    try:
+        selected = selection.source_work_uppers(
+            fixture["legacy_advances"] + fixture["chart_advances"],
+            fixture["legacy_batches"] + chart_work["legacy_batch_attempts_upper"])
+    except AttributeError as error:
+        raise Incomplete("Chart-principal selection accounting interface is missing.") from error
+    selection_work = _work(selected, BATCH_SELECTION_WORK_FIELDS)
+    docs = int(include_doctests and not external_legal)
+    groups = (
+        ("fixture.", fixture), ("adaptive_call.", adaptive_calls), ("adaptive_work.", adaptive_work),
+        ("projection_call.", projection_calls), ("projection_work.", projection_work),
+        ("adapter_work.", adapter), ("enclosure_call.", enclosure_calls), ("enclosure_work.", enclosure_work),
+        ("owner_work.", _owner_work(fixture)), ("tracking_work.", _tracking_work(fixture["tracking_projections"])),
+        ("roundoff_work.", _roundoff_work(fixture)), ("chart_batch_work.", chart_work),
+        ("legacy_batch_work.", _principal_legacy_batch_work(fixture["legacy_batches"])),
+        ("selection_work.", selection_work), ("descriptor_work.", _principal_descriptor_work(fixture["chart_advances"])),
+        ("receiver_work.", _principal_receiver_work(fixture)),
+        ("prior_adapter.", _principal_prior_adapter_work(external_legal=external_legal)),
+        ("observer.", _principal_observer_work(fixture, external_legal=external_legal)),
+        ("doctest.", {"compilation_cases": 3 * docs, "compile_fail_cases": 2 * docs,
+                      "uncalled_legal_helpers": docs, "executed_producers": 0}),
+    )
+    result: dict[str, int] = {}
+    for prefix, values in groups:
+        for key, amount in _checked(values, len(values)).items():
+            name = "chart_principal." + prefix + key
+            if name in result:
+                raise Incomplete("Chart-principal source namespaces overlap.")
+            result[name] = amount
+    return _checked_principal_vector(result)
+
+
+def chart_principal_numeric_work(vector: dict[str, int]) -> dict[str, int]:
+    """Extract the separately funded adaptive fit/point contribution only."""
+    checked = _checked_principal_vector(vector)
+    return {key: checked["chart_principal.adaptive_work." + key]
+            for key in PRINCIPAL_EXPECTED_NUMERIC_WORK}
+
+
+def preserve_chart_principal_extension(old: dict[str, int], principal: dict[str, int]) -> dict[str, int]:
+    """Preserve1823 fields and add the S157 numeric/Geometry contribution once."""
+    _checked(old, 1823)
+    _checked_principal_vector(principal)
+    aggregate = (*PRINCIPAL_EXPECTED_NUMERIC_WORK, "standard_errors.geometry.report_copies_upper",
+                 "standard_errors.geometry.logical_bytes_upper")
+    if set(old) & set(principal) or any(key not in old for key in aggregate):
+        raise Incomplete("Chart-principal extension requires the unchanged1823-field namespace.")
+    result = {**old, **principal}
+    extra = chart_principal_numeric_work(principal)
+    for key, amount in extra.items():
+        result[key] += amount
+    result["standard_errors.geometry.report_copies_upper"] += extra["charged_fit_work_upper"]
+    result["standard_errors.geometry.logical_bytes_upper"] += 32 * extra["charged_fit_work_upper"]
+    return _checked(result, 1823 + PRINCIPAL_BUDGET_FIELDS)
+
+
+def chart_principal_test_observation(output: str, *, require_complete: bool = False) -> dict[str, object]:
+    """Require eight exact standalone native outcomes, without measured counters."""
+    if type(output) is not str or len(output) > 16 * 1024 * 1024 or type(require_complete) is not bool:
+        raise Incomplete("Chart-principal observation has an invalid type or output bound.")
+    observations: dict[str, list[str]] = {name: [] for name in PRINCIPAL_ORDINARY_TESTS}
+    for line in output.splitlines(keepends=True):
+        if not line.startswith("test "):
+            continue
+        for name in PRINCIPAL_ORDINARY_TESTS:
+            if name in line:
+                matched = re.fullmatch(r"test (?:chart::)?" + re.escape(name) + r" \.\.\. (ok|FAILED|ignored)\r?\n", line)
+                observations[name].append(matched.group(1) if matched else "malformed")
+    if any(len(values) > 1 for values in observations.values()):
+        raise Incomplete("Chart-principal named outcome is duplicated or replayed.")
+    statuses = {name: values[0] if values else "missing" for name, values in observations.items()}
+    complete = all(value == "ok" for value in statuses.values())
+    if require_complete and not complete:
+        raise Incomplete("Complete package lacks all source-bound chart-principal outcomes.")
+    return {"chart_principal_test_statuses": statuses, "chart_principal_source_only_pending": not complete,
+            "chart_principal_recorded_source_work_upper": dict(PRINCIPAL_EXPECTED_NUMERIC_WORK) if complete else None,
+            "chart_principal_observed_operation_counts": None}
+
+
+PRINCIPAL_GROUP_FIELDS: dict[str, tuple[str, ...]] = {
+    "fixture.": tuple(PRINCIPAL_FIXTURE_CALLS),
+    "adaptive_call.": ADAPTIVE_FIELDS, "adaptive_work.": ADAPTIVE_WORK_FIELDS,
+    "projection_call.": PROJECTION_FIELDS, "projection_work.": PROJECTION_WORK_FIELDS,
+    "adapter_work.": ("projection_capsule_and_kernel_entries_upper", "projection_adaptive_extra_internal_getters_upper"),
+    "enclosure_call.": ENCLOSURE_FIELDS, "enclosure_work.": ENCLOSURE_WORK_FIELDS,
+    "owner_work.": tuple(_owner_work(PRINCIPAL_FIXTURE_CALLS)),
+    "tracking_work.": tuple(_tracking_work(0)), "roundoff_work.": tuple(_roundoff_work(PRINCIPAL_FIXTURE_CALLS)),
+    "chart_batch_work.": tuple(_batch_work(0, 0, 0, raw_header=False)),
+    "legacy_batch_work.": tuple(_principal_legacy_batch_work(0)),
+    "selection_work.": BATCH_SELECTION_WORK_FIELDS,
+    "descriptor_work.": tuple(_principal_descriptor_work(0)),
+    "receiver_work.": tuple(_principal_receiver_work(PRINCIPAL_FIXTURE_CALLS)),
+    "prior_adapter.": tuple(_principal_prior_adapter_work(external_legal=False)),
+    "observer.": tuple(_principal_observer_work(PRINCIPAL_FIXTURE_CALLS, external_legal=False)),
+    "doctest.": ("compilation_cases", "compile_fail_cases", "uncalled_legal_helpers", "executed_producers"),
+}
+PRINCIPAL_BUDGET_KEYS = tuple("chart_principal." + prefix + field
+                              for prefix, fields in PRINCIPAL_GROUP_FIELDS.items() for field in fields)
+PRINCIPAL_BUDGET_FIELDS = 391
+
+
+def _checked_principal_vector(values: object) -> dict[str, int]:
+    """Require all disjoint S157 fields, exact integers and finite source units."""
+    checked = _checked(values, PRINCIPAL_BUDGET_FIELDS)
+    if (len(PRINCIPAL_BUDGET_KEYS) != PRINCIPAL_BUDGET_FIELDS
+            or len(set(PRINCIPAL_BUDGET_KEYS)) != PRINCIPAL_BUDGET_FIELDS
+            or set(checked) != set(PRINCIPAL_BUDGET_KEYS)):
+        raise Incomplete("Chart-principal vector differs from its complete closed namespace.")
+    return checked
+
+
+# Composition is a new source profile. The historical296/315/391-field
+# recurrences above describe their frozen sources and remain unchanged.
+COMPOSITION_PREFIX = "chart_composition."
+COMPOSITION_BUDGET_FIELDS = 40
+COMPOSITION_FULL_BUDGET_FIELDS = 2740
+COMPOSITION_CURRENT_ORDINARY_TESTS = (
+    "chart_composition::composition_preserves_dyadic_values_and_rounding_provenance",
+    "chart_composition::composition_retains_both_operand_errors_through_signed_elapsed",
+    "chart_composition::composition_rejects_relationships_and_ordered_arithmetic_failures",
+    "chart_composition_lifecycle::coefficient_error_identity_precedes_batch_principal_and_combination_updates",
+)
+COMPOSITION_CALL_FIELDS = ("attempts", "raw_validations", "raw_admissions", "inherited_projections",
+                           "private_step_additions", "observer_reads")
+COMPOSITION_CALLS = dict(zip(COMPOSITION_CALL_FIELDS, (38, 21, 11, 17, 2, 32768), strict=True))
+_COMPOSITION_NAMES = (
+    "composition_attempts", "raw_affine_validations", "raw_affine_admissions", "inherited_projection_attempts",
+    "composition_garde_validations", "composition_garde_callbacks", "composition_relationship_passes",
+    "composition_chain_comparisons", "composition_domain_comparisons", "composition_frame_predicates",
+    "composition_result_frame_validations", "composition_result_frame_callbacks", "composition_result_frame_predicates",
+    "composition_point_additions", "composition_step_mappings", "composition_outward_requests",
+    "composition_outward_next_up_requests", "composition_outward_scalar_predicates",
+    "composition_result_affine_validations", "composition_result_affine_callbacks", "composition_result_affine_scalar_predicates",
+    "raw_affine_garde_callbacks", "raw_affine_scalar_predicates", "old_affine_additional_callbacks",
+    "old_affine_additional_scalar_predicates", "inherited_projection_condition_checks",
+    "inherited_projection_outward_requests", "inherited_projection_next_up_requests",
+    "inherited_projection_scalar_predicates", "inherited_projection_bound_reads",
+    "batch_expected_additional_getters", "batch_expected_additional_bit_queries",
+    "batch_entries_additional_getters", "batch_entries_additional_bit_queries", "batch_entries_additional_scalar_comparisons",
+    "receiver_additional_getters", "receiver_additional_bit_queries", "receiver_additional_scalar_comparisons",
+    "private_step_role_additions", "observer_getters_upper",
+)
+COMPOSITION_FIELDS = tuple(COMPOSITION_PREFIX + name for name in _COMPOSITION_NAMES)
+COMPOSITION_SOURCE_SHA256 = {
+    **SOURCE_SHA256, **BATCH_SOURCE_SHA256, **PRINCIPAL_SOURCE_SHA256,
+    'crates/time-core/src/regression/chart.rs': '8c1eaae20f287b96f0859b79a4522cf3176ead59f5f46a35c5cfa797aded2221',
+    'crates/time-core/src/regression/chart/roundoff.rs': '1aa537417ef06238d85e7614124e399a301f1e8ecd8e6fdf74b6506e58e395bc',
+    'crates/time-core/src/chart_batch.rs': 'b25ac73756f94bd2be9692130d8dee201bd8c2b0a9c0adf63c7eba929740c79c',
+    'crates/time-core/tests/chart.rs': '6c556bdd92917803389b5867af2190fbd7055eb20120ac4c4dc14d1decc9aaac',
+    'crates/time-core/tests/private/chart_guards.rs': 'af9fb05f3b179956da0b33874b8db8369fe68f9b22364985dc1eb78907b9b82f',
+    'crates/time-core/tests/private/chart_batch_guards.rs': 'c49c1c4d433a2b02b3d099450a1c61d6dc828a44f64823c103123cd5d3263580',
+    'crates/time-core/tests/chart_combination_lifecycle.rs': '3d0f1e5864787fd5f437fec5b4237e0bedcc43efedfa92a7defc99d0e32a0398',
+    'crates/time-core/tests/private/chart_composition.rs': '1d52638ab10f66c37b55bae2edac3e3b23898479531bb641b16d741181e4ba1a',
+    'crates/time-core/tests/private/chart_composition_lifecycle.rs': 'da7b4f2f627ae92c1b3d829d7b2aeb25e41b8dde1cc43ddc4b07f221775fa84d',
+}
+COMPOSITION_LEGAL_FIELDS = ("labels", "monotonic", "frames", "domains", "charts", "compositions", "getters")
+COMPOSITION_LEGAL_EXPECTED = (10, 3, 5, 1, 5, 3, 28)
+COMPOSITION_LEGAL_SOURCE_SHA256 = "395218b250d35c76f54238f7cb6efbc8172b7da4a38aa5b49d985fd719e7e5fd"
+
+
+class CompositionContractOwner(NamedTuple):
+    """Source-admitted legal provider, without executing any consumer here."""
+    fields: tuple[str, ...]
+    expected: Callable[[], dict[str, int]]
+    source: Callable[[], str]
+
+
+def admit_composition_sources(actual: object) -> dict[str, str]:
+    """Admit the current union of chart/batch/principal pins explicitly."""
+    if type(actual) is not dict or actual != COMPOSITION_SOURCE_SHA256:
+        raise Incomplete("Composition source identities differ from their explicit current profile.")
+    return dict(COMPOSITION_SOURCE_SHA256)
+
+
+def _composition_add(*values: int) -> int:
+    """Add nonnegative source units under the unchanged finite integer ceiling."""
+    return _checked({"value": sum(values)}, 1)["value"]
+
+
+def _composition_basis(prior_budget: object, fixture_delta: object) -> tuple[dict[str, int], dict[str, int]]:
+    """Receive a caller-admitted2700-field vector and its exact486-field delta.
+
+    The coordinator owns prior-profile construction/custody. This boundary
+    independently requires the existing family namespace, finite exact units,
+    no composition fields and no extra/missing delta key. It is not a parser
+    for an arbitrary historical profile or a way to project older source bytes.
+    """
+    prior = _checked(prior_budget, 2700)
+    delta = _checked(fixture_delta, 486)
+    fields = {key for key in prior if key.startswith("chart_combination.")}
+    if len(fields) != 486 or set(delta) != fields or any(key.startswith(COMPOSITION_PREFIX) for key in prior):
+        raise Incomplete("Composition requires the exact prior and fixture-delta namespaces.")
+    required = ("charged_fit_work_upper", "point_admissions_upper",
+                "standard_errors.geometry.report_copies_upper", "standard_errors.geometry.logical_bytes_upper")
+    if any(key not in prior for key in required):
+        raise Incomplete("Composition prior omits a numerical aggregate owner.")
+    merged = dict(prior)
+    for key, value in delta.items():
+        merged[key] = _composition_add(merged[key], value)
+    return prior, merged
+
+
+def _composition_work(prior_budget: object, fixture_delta: object, calls: object) -> dict[str, int]:
+    """Fund changed primitives and every inherited adapter without a second base.
+
+    A coefficient needs one2-term magnitude sum, one product and one4-term
+    sum: seven outward primitives, fourteen per composition. Each point sum
+    is a complete checked primitive. Each potentially inherited transform
+    reserves eight additional outward primitives and their twelve-predicate
+    envelopes. All old transforms are included: mutation can turn an exact
+    direct coefficient error into a positive value before a test rejects.
+    Descriptor comparison adds two bounds, on both descriptors for receivers
+    and on the actual descriptor for saved batch expectations. Six old raw
+    affine literals gain two callbacks; their21 new validations/11typed passes
+    are separate. The private step matrix adds two real operation roles.
+    """
+    _, merged = _composition_basis(prior_budget, fixture_delta)
+    c = _checked(calls, len(COMPOSITION_CALL_FIELDS))
+    if set(c) != set(COMPOSITION_CALL_FIELDS):
+        raise Incomplete("Composition calls omit or add a reviewed source axis.")
+    def total(suffix: str, prefixes: tuple[str, ...]) -> int:
+        return _composition_add(*(merged.get(prefix + suffix, 0) for prefix in prefixes))
+    chart_prefixes = ("chart.owner_work.", "chart_batch.owner_work.", "chart_principal.owner_work.",
+                      "chart_combination.chart_owner_work.")
+    direct_charts = total("affine_garde_validations_upper", chart_prefixes)
+    raw_header = int(merged.get("chart_batch.raw_header.descriptor_garde_validations_upper", 0) > 0)
+    direct_charts = _composition_add(direct_charts, merged.get("chart.doctest.charts", 0), raw_header)
+    old_raw = merged.get("chart.guard_private.affine_candidates", 0)
+    projection_prefixes = ("chart.roundoff_work.", "chart_batch.roundoff_work.", "chart_principal.roundoff_work.",
+                           "chart_combination.chart_roundoff_work.")
+    projections = max(c["inherited_projections"], total("transform_requests_upper", projection_prefixes))
+    batch_prefixes = ("chart_batch.batch_work.", "chart_principal.chart_batch_work.", "chart_combination.chart_batch_work.")
+    # Five raw-header expected(at) constructions also read both coefficient
+    # bounds. Their old20getter/10bit units remain in the historical recipe.
+    headers = _composition_add(total("constructor_attempts_upper", batch_prefixes),
+                               merged.get("chart_batch.raw_header.raw_array_visits", 0))
+    entries = total("entry_visits_upper", batch_prefixes)
+    receivers = _composition_add(
+        total("relationship_passes_upper", ("chart_principal.descriptor_work.", "chart_combination.descriptor_work.")),
+        merged.get("chart_combination.output_work.descriptor_comparisons_upper", 0))
+    attempts = c["attempts"]
+    outward, inherited = 14 * attempts, 8 * projections
+    values = (
+        attempts, c["raw_validations"], c["raw_admissions"], projections,
+        attempts, attempts, 2 * attempts, 4 * attempts, 6 * attempts, 2 * attempts,
+        attempts, attempts, 2 * attempts, 2 * attempts, 2 * attempts,
+        outward, outward, 12 * outward, attempts, 4 * attempts, 8 * attempts,
+        4 * c["raw_validations"], 4 * _composition_add(c["raw_validations"], c["raw_admissions"]),
+        2 * _composition_add(direct_charts, old_raw), 4 * direct_charts + 2 * old_raw,
+        3 * projections, inherited, inherited, 12 * inherited, 8 * projections,
+        2 * headers, 2 * headers, 2 * entries, 2 * entries, 2 * entries,
+        4 * receivers, 4 * receivers, 2 * receivers, c["private_step_additions"], c["observer_reads"],
+    )
+    return _checked(dict(zip(COMPOSITION_FIELDS, values, strict=True)), COMPOSITION_BUDGET_FIELDS)
+
+
+def composition_package_reservation(prior_budget: object, fixture_delta: object) -> dict[str, int]:
+    """Reserve only the new forty-unit family, not an executed observation."""
+    return _composition_work(prior_budget, fixture_delta, COMPOSITION_CALLS)
+
+
+def composition_external_reservation(prior_budget: object, fixture_delta: object,
+                                     contracts: CompositionContractOwner) -> dict[str, int]:
+    """Bind the descriptor-only legal source and reserve its complete finite work."""
+    if not callable(contracts.expected) or not callable(contracts.source):
+        raise Incomplete("Composition legal provider callbacks are absent.")
+    expected = dict(zip(COMPOSITION_LEGAL_FIELDS, COMPOSITION_LEGAL_EXPECTED, strict=True))
+    actual, source = contracts.expected(), contracts.source()
+    if contracts.fields != COMPOSITION_LEGAL_FIELDS or type(actual) is not dict or actual != expected:
+        raise Incomplete("Composition legal metadata differs from its frozen direct-call census.")
+    _checked(actual, len(COMPOSITION_LEGAL_FIELDS))
+    if type(source) is not str or hashlib.sha256(source.encode()).hexdigest() != COMPOSITION_LEGAL_SOURCE_SHA256:
+        raise Incomplete("Composition legal source differs from its reviewed bytes.")
+    return _composition_work(prior_budget, fixture_delta, dict(zip(COMPOSITION_CALL_FIELDS,
+        (actual["compositions"], 0, 0, 0, 0, actual["getters"]), strict=True)))
+
+
+def composition_mechanism_reservation(prior_budget: object, fixture_delta: object,
+                                      calls: object) -> dict[str, int]:
+    """Project a separately admitted observer recipe; no launch or proof occurs here."""
+    return _composition_work(prior_budget, fixture_delta, calls)
+
+
+def preserve_composition_extension(prior_budget: object, fixture_delta: object,
+                                    supplement: object) -> dict[str, int]:
+    """Add only new fixture work, four existing aggregates and forty disjoint fields."""
+    prior, result = _composition_basis(prior_budget, fixture_delta)
+    values = _checked(supplement, COMPOSITION_BUDGET_FIELDS)
+    if set(values) != set(COMPOSITION_FIELDS):
+        raise Incomplete("Composition supplement changes its closed forty-field namespace.")
+    # The actual486-field owner separately admits the delta; these exact keys
+    # are the numerical outputs of its adopted adaptive recurrence.
+    delta = _checked(fixture_delta, 486)
+    fits = delta["chart_combination.adaptive_work.charged_fit_work_upper"]
+    points = delta["chart_combination.adaptive_work.point_admissions_upper"]
+    for key, amount in (("charged_fit_work_upper", fits), ("point_admissions_upper", points),
+                        ("standard_errors.geometry.report_copies_upper", fits),
+                        ("standard_errors.geometry.logical_bytes_upper", 32 * fits)):
+        result[key] = _composition_add(prior[key], amount)
+    result.update(values)
+    return _checked(result, COMPOSITION_FULL_BUDGET_FIELDS)
+
+
+def composition_test_observation(output: str, *, require_complete: bool = False) -> dict[str, object]:
+    """Receive only four named outcomes; retain missing/failed/ignored as incomplete."""
+    if type(output) is not str or len(output) > 16 * 1024 * 1024 or type(require_complete) is not bool:
+        raise Incomplete("Composition outcome text or selector is not bounded.")
+    if "CORE_CHART_COMPOSITION_CONTRACT_PROFILE" in output or "legal-chart-composition-contract" in output:
+        raise Incomplete("A standalone composition legal stream is not a package outcome stream.")
+    outcomes: dict[str, str] = {}
+    for raw in output.splitlines(keepends=True):
+        line = raw[:-2] if raw.endswith("\r\n") else raw[:-1] if raw.endswith("\n") else raw
+        if not line.startswith("test "):
+            continue
+        name = line[5:].split(" ", 1)[0]
+        if not name.startswith(("chart_composition::", "chart_composition_lifecycle::")):
+            continue
+        if not raw.endswith("\n"):
+            raise Incomplete("A composition outcome lacks its complete line delimiter.")
+        match = re.fullmatch(r"test ([A-Za-z0-9_:]+) \.\.\. (ok|FAILED|ignored)", line)
+        if match is None or name not in COMPOSITION_CURRENT_ORDINARY_TESTS or name in outcomes:
+            raise Incomplete("A composition outcome is malformed, duplicated or unknown.")
+        outcomes[name] = match.group(2)
+    missing = [name for name in COMPOSITION_CURRENT_ORDINARY_TESTS if name not in outcomes]
+    failed = [name for name in COMPOSITION_CURRENT_ORDINARY_TESTS if name in outcomes and outcomes[name] != "ok"]
+    complete = not missing and not failed
+    if require_complete and not complete:
+        raise Incomplete("The four actual composition outcomes remain incomplete.")
+    return {"status": "complete" if complete else "incomplete", "complete": complete,
+            "outcomes": outcomes, "missing": missing, "failed": failed, "expected": 4,
+            "scope": "Source outcomes only; no operation counters or native admission."}
+
+
+# The modeled achieved receiver extends the qualified S1.4b recipe. Its old
+# forty composition fields and all earlier recipes remain separately frozen.
+ACHIEVED_PHASE_PREFIX = "achieved_phase."
+ACHIEVED_PHASE_CALL_FIELDS = (
+    "receiver_attempts", "replacement_reads", "replacement_moves", "completion_debug",
+    "error_source_reads", "error_displays", "error_debug", "observer_reads",
+)
+ACHIEVED_PHASE_CALLS = dict(zip(ACHIEVED_PHASE_CALL_FIELDS,
+    (38, 1, 21, 1, 2, 1, 1, 40960), strict=True))
+_ACHIEVED_PHASE_NAMES = (
+    "receiver_attempts", "garde_validations", "garde_callbacks", "relationship_passes",
+    "readiness_checks", "chart_identity_checks", "mapping_label_comparisons",
+    "domain_field_comparisons", "internal_product_getter_requests_upper",
+    "effect_chart_constructions_upper", "endpoint_frame_constructions_upper",
+    "coordinate_changed_commits_upper", "composition_attempts_upper", "completion_constructions_upper",
+    "replacement_reads", "replacement_moves", "completion_debug", "error_source_reads",
+    "error_displays", "error_debug", "observer_reads_upper", "additional_doctest_compilations",
+    "additional_doctest_compile_fail_cases", "additional_uncalled_legal_helpers",
+    "doctest_executed_examples",
+)
+ACHIEVED_PHASE_FIELDS = tuple(ACHIEVED_PHASE_PREFIX + name for name in _ACHIEVED_PHASE_NAMES)
+ACHIEVED_PHASE_BUDGET_FIELDS = 25
+ACHIEVED_PHASE_FULL_BUDGET_FIELDS = 2765
+
+
+def achieved_phase_mechanism_reservation(calls: object, *, include_doctests: bool = False) -> dict[str, int]:
+    """Reserve the full possible receiving prefix, including rejected attempts.
+
+    One raw Garde callback and the typed path each run the same relationship
+    helper. A full helper attempts one effect chart and one endpoint frame,
+    with at most ten getters, one pointer, two mapping-label comparisons and
+    three domain-field comparisons. Every receiver attempt funds the possible
+    commit, composition and completion even when canonical admission rejects.
+    Actual failures before scalar admission construct no chart; invalid scalar
+    admission attempts both chart constructors but never composes. These are
+    conservative source bounds, not observations or arbitrary-mutant budgets.
+    The existing delegated chart owner funds the constructor internals; the
+    composition supplement funds composition internals. Those units overlap
+    these entry counts and must not be added again as numerical producers.
+    """
+    if type(include_doctests) is not bool:
+        raise Incomplete("Achieved-phase doctest selection must be Boolean.")
+    c = _checked(calls, len(ACHIEVED_PHASE_CALL_FIELDS))
+    if set(c) != set(ACHIEVED_PHASE_CALL_FIELDS):
+        raise Incomplete("Achieved-phase calls have a missing or extra source axis.")
+    attempts, docs = c["receiver_attempts"], int(include_doctests)
+    values = (
+        attempts, attempts, attempts, 2 * attempts, 2 * attempts, 2 * attempts,
+        4 * attempts, 6 * attempts, 20 * attempts, 2 * attempts, 2 * attempts,
+        attempts, attempts, attempts, c["replacement_reads"], c["replacement_moves"],
+        c["completion_debug"], c["error_source_reads"], c["error_displays"], c["error_debug"],
+        c["observer_reads"], 3 * docs, 2 * docs, docs, 0,
+    )
+    return _checked(dict(zip(ACHIEVED_PHASE_FIELDS, values, strict=True)), ACHIEVED_PHASE_BUDGET_FIELDS)
+
+
+def achieved_phase_package_reservation(*, include_doctests: bool = False) -> dict[str, int]:
+    """Project the five source-bound cases; additional docs are uninvoked functions."""
+    return achieved_phase_mechanism_reservation(ACHIEVED_PHASE_CALLS, include_doctests=include_doctests)
+
+
+def admit_achieved_phase_allowances(values: object, *, include_doctests: bool = False) -> dict[str, int]:
+    """Reject incomplete, malformed or discounted package receiving allowances."""
+    checked = _checked(values, ACHIEVED_PHASE_BUDGET_FIELDS)
+    expected = achieved_phase_package_reservation(include_doctests=include_doctests)
+    if set(checked) != set(expected) or any(checked[key] < expected[key] for key in expected):
+        raise Incomplete("Achieved-phase source allowances omit or discount the complete package recipe.")
+    return checked
+
+
+def achieved_phase_composition_reservation(prior_budget: object, fixture_delta: object,
+                                         calls: object = None) -> dict[str, int]:
+    """Add only new composition/constructor/adapter work to the existing forty fields.
+
+    The caller admits the complete current S1.4b vector. Reconstruct its exact
+    forty-field projection before extending it, so a discounted old supplement
+    cannot become a favorable new baseline. All attempted receiver suffixes are
+    funded; failed admission does not refund a reserved composition. New fixture
+    charts include two possible effect constructors per attempt, but not the
+    result chart/frame already owned by the composition recurrence.
+    """
+    prior = _checked(prior_budget, COMPOSITION_FULL_BUDGET_FIELDS)
+    if not set(COMPOSITION_FIELDS) <= set(prior):
+        raise Incomplete("Achieved-phase composition requires the complete qualified composition family.")
+    base = {key: value for key, value in prior.items() if key not in COMPOSITION_FIELDS}
+    delta = _checked(fixture_delta, 486)
+    source_calls = ACHIEVED_PHASE_CALLS if calls is None else calls
+    c = _checked(source_calls, len(ACHIEVED_PHASE_CALL_FIELDS))
+    if set(c) != set(ACHIEVED_PHASE_CALL_FIELDS):
+        raise Incomplete("Achieved-phase composition source axes differ.")
+    original = _composition_work(base, dict.fromkeys(delta, 0), COMPOSITION_CALLS)
+    if any(prior[key] != original[key] for key in COMPOSITION_FIELDS):
+        raise Incomplete("The prior composition family differs from its source-owned complete projection.")
+    extended_calls = dict(COMPOSITION_CALLS)
+    extended_calls["attempts"] = _composition_add(extended_calls["attempts"], c["receiver_attempts"])
+    extended_calls["observer_reads"] = _composition_add(extended_calls["observer_reads"], c["observer_reads"])
+    extended = _composition_work(base, delta, extended_calls)
+    if any(extended[key] < prior[key] for key in COMPOSITION_FIELDS):
+        raise Incomplete("Achieved-phase composition cannot refund earlier source work.")
+    return _checked({key: extended[key] - prior[key] for key in COMPOSITION_FIELDS}, COMPOSITION_BUDGET_FIELDS)
+
+
+def preserve_achieved_phase_extension(prior_budget: object, fixture_delta: object,
+                                     composition_delta: object, receiver: object) -> dict[str, int]:
+    """Keep all2740 previous units and add one fixture/receiver/composition delta."""
+    prior = _checked(prior_budget, COMPOSITION_FULL_BUDGET_FIELDS)
+    if any(key.startswith(ACHIEVED_PHASE_PREFIX) for key in prior):
+        raise Incomplete("An achieved-phase extension cannot be applied twice.")
+    base = {key: value for key, value in prior.items() if key not in COMPOSITION_FIELDS}
+    _, merged = _composition_basis(base, fixture_delta)
+    delta = _checked(fixture_delta, 486)
+    scalar = _checked(composition_delta, COMPOSITION_BUDGET_FIELDS)
+    expected_scalar = achieved_phase_composition_reservation(prior, delta)
+    if set(scalar) != set(COMPOSITION_FIELDS) or scalar != expected_scalar:
+        raise Incomplete("Achieved-phase composition delta differs from the complete source projection.")
+    receiving = _checked(receiver, ACHIEVED_PHASE_BUDGET_FIELDS)
+    if set(receiving) != set(ACHIEVED_PHASE_FIELDS):
+        raise Incomplete("Achieved-phase receiving fields are incomplete.")
+    # The same frozen recipe has exactly two possible doc forms. Inner operation
+    # bounds and outcome observations remain separate in either form.
+    if receiving not in (achieved_phase_package_reservation(),
+                         achieved_phase_package_reservation(include_doctests=True)):
+        raise Incomplete("Achieved-phase receiving recipe is discounted or foreign.")
+    fits = delta["chart_combination.adaptive_work.charged_fit_work_upper"]
+    points = delta["chart_combination.adaptive_work.point_admissions_upper"]
+    for key, amount in (("charged_fit_work_upper", fits), ("point_admissions_upper", points),
+                        ("standard_errors.geometry.report_copies_upper", fits),
+                        ("standard_errors.geometry.logical_bytes_upper", 32 * fits)):
+        merged[key] = _composition_add(prior[key], amount)
+    merged.update({key: _composition_add(prior[key], scalar[key]) for key in COMPOSITION_FIELDS})
+    merged.update(receiving)
+    return _checked(merged, ACHIEVED_PHASE_FULL_BUDGET_FIELDS)

@@ -955,6 +955,42 @@ struct Quantities {
     tracking_skew_seconds_per_second: f64,
 }
 
+/// Scalar values derived together from one admitted actual supporter.
+///
+/// The private caller retains the entry and owns the association between these
+/// values; this transient view cannot construct a supporter or admit a witness.
+#[derive(Clone, Copy)]
+struct SupporterValues {
+    /// Original source root distance at the shared projection instant.
+    distance: f64,
+    /// Admitted fitted or original phase for this reduction.
+    phase: f64,
+    /// Admitted fitted rate for this reduction.
+    rate: f64,
+    /// Same-owner statistical phase standard deviation.
+    phase_sd: f64,
+    /// Same-owner statistical rate standard deviation.
+    rate_sd: f64,
+    /// Same-owner tracking skew for compatibility and reduction.
+    tracking_skew: f64,
+}
+
+impl SupporterValues {
+    /// Copy the original metadata and source-owned phase from one admitted view.
+    fn from_record(view: RecordView<'_, '_>) -> Self {
+        let record = view.uncertainty;
+        let projection = record.entry.projection();
+        Self {
+            distance: projection.distance_seconds(),
+            phase: view.phase,
+            rate: projection.phase_rate_seconds_per_second(),
+            phase_sd: record.phase_standard_deviation_seconds,
+            rate_sd: record.rate_standard_deviation_seconds_per_second,
+            tracking_skew: record.tracking_skew_seconds_per_second,
+        }
+    }
+}
+
 /// Six supported local accumulators, never exposed before complete reduction.
 struct Sums {
     /// Ascending-label sum of reciprocal root-distance phase weights.
@@ -1000,17 +1036,29 @@ impl Sums {
         principal_phase: f64,
         index: usize,
     ) -> Result<Self, FixtureCombinationError> {
+        self.with_values(SupporterValues::from_record(view), principal_phase, index)
+    }
+
+    /// Stage the separately owned scalars from one already admitted supporter.
+    /// # Errors
+    /// Preserve the first denominator or arithmetic failure without updating sums.
+    fn with_values(
+        &self,
+        values: SupporterValues,
+        principal_phase: f64,
+        index: usize,
+    ) -> Result<Self, FixtureCombinationError> {
         use ArithmeticOperation::{Add, Divide, Multiply, Subtract};
         use FixtureCombinationStep as Step;
 
-        let record = view.uncertainty;
-        let projection = record.entry.projection();
-        let distance = projection.distance_seconds();
-        let phase = view.phase;
-        let rate = projection.phase_rate_seconds_per_second();
-        let phase_sd = record.phase_standard_deviation_seconds;
-        let rate_sd = record.rate_standard_deviation_seconds_per_second;
-        let tracking_skew = record.tracking_skew_seconds_per_second;
+        let SupporterValues {
+            distance,
+            phase,
+            rate,
+            phase_sd,
+            rate_sd,
+            tracking_skew,
+        } = values;
         for (value, field) in [
             (distance, FixtureCombinationDenominatorField::RootDistance),
             (
@@ -1307,11 +1355,14 @@ pub fn combine_fixture_tracking_supporters(
         .map_err(|source| FixtureTrackingCombinationError::Combination { source })
 }
 
+/// Checked arithmetic used by the genuine chart lifecycle consumer.
+mod chart;
+
 /// Complete original admission and checked contributor-subset reduction.
 mod admission;
 
 use admission::{
-    AdmittedFixtureSupporters, admit_lifecycle_source, admit_lifecycle_supporters,
+    AdmittedOriginals, admit_lifecycle_source, admit_lifecycle_supporters,
     combine_lifecycle_supporters,
 };
 
@@ -1319,6 +1370,7 @@ use admission::{
 mod lifecycle;
 
 pub use lifecycle::{
+    FixtureChartCombinationError, FixtureChartCombinationOutcome, FixtureChartCombinedEstimate,
     FixtureCombinationLifecycleError, FixtureCombinationLifecycleStep, FixtureCombinationOutcome,
     FixtureCombinationParameterField, FixtureCombinationParameterIssue,
     FixtureCombinationParameters, FixtureCombinationSourceState, FixtureCombinationSourceStatus,

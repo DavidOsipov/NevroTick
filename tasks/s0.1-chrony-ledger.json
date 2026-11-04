@@ -1564,7 +1564,14 @@
           "old_linux_executables_losslessly_archived": 37,
           "archive": "/home/david_osipov/.local/share/nevrotick/wsl-cleanup-20261103-evidence-final-ie84uyon/historical-linux-replay-binaries.tar.gz",
           "archive_sha256": "e7885d27d7500217084fa474a129425b29501562db700bf0ae82b8354d40edbe",
-          "retention": "Current sealed executables, source, raw receipts/logs/corpora, Windows and held AES artifacts retained. Restore old ELFs from archive for direct replay; removed caches/intermediates require rebuild/reacquisition, with no bit-identical rebuild claim.",
+          "retention": "At this historical cleanup, current sealed executables, source, raw receipts/logs/corpora, Windows and held AES artifacts were retained. Removed caches/intermediates require rebuild/reacquisition, with no bit-identical rebuild claim.",
+          "archive_retirement": {
+            "status": "That exact temporary archive was later deleted at the owner's request during deletion-only cleanup; no compression or replacement archive was created",
+            "exact_binary_replay": "The historical executable bytes are no longer retained in this archive",
+            "retained": "Seven originating source/receipt/log trees; current and held artifacts excluded from retirement",
+            "receipt": "/home/david_osipov/.local/share/nevrotick/s12e-composition-20261030T082648Z/s1.4b-owner-retired-obsolete-core-evidence-cleanup-v1.json",
+            "receipt_sha256": "f472c891a457b1414a7333a82988ba70b2bd9e408087b9cd7eb2cd1bbb3d5549"
+          },
           "custody": "HEAD/index/staging and215 qualification inputs unchanged; concurrent unstaged task-document edit retained. Live Qdrant identity/counts unchanged."
         },
         "next_bounded_source_gap": {

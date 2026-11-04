@@ -23,6 +23,7 @@ to own requirements, and task records own executed evidence.
 | Question | Source of truth |
 | --- | --- |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
+| Which task owns each phase, integrated slice and deferred continuation? | [Task index](../tasks/README.md) maps existing implementation and evidence records; the [grouped deferred backlog](../tasks/development-backlog.md) supplies uncovered phase parents and activation criteria. The development plan still controls order and acceptance; task presence proves no readiness or completion. |
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
 | How should Roughtime work with NTS and Khronos/Ananke? | [Time-assurance coordination design](plans/time-assurance-integration.md) and [shared future task](../tasks/time-assurance-integration.md): preferred Roughtime cold bootstrap, conditional Khronos/Ananke provisional-date reserve, then full NTS; dated server census, provenance, failure classification, epochs, conflict/resource rules and Windows gates. KHR-C01 and RGT-C01 remain separate future exits, with no new current Core prerequisite. |
 | What data should the default-source catalogue and source-quality history retain, and where might it live? | [Server catalogue and statistics draft](plans/server-catalogue-and-statistics-draft.md): data inventory, authority and provenance, proposed RAM/SQLite/compressed-history allocation, catalogue verification, database protection and optional NTS pinning. [Storage and format tables](plans/server-catalogue-storage-tables.md) provide the companion data/location/encoding/rationale/capacity/security matrices. Exact client representations, budgets, cryptographic providers and runtime implementation remain unselected or unqualified as stated there; the later shipped-catalogue direction and separate publisher input stage are recorded below. |
@@ -79,7 +80,8 @@ provenance, retains useful tracking when future coverage is unknown, and leaves
 explicit leap execution to Windows. Bounded event guards lead to fresh-quorum
 measured-residual recovery without synthetic seconds. [NV-LP-001](plans/leap-second-policy.md)
 and its task distinguish this decision from absent implementation and OPEN-7
-native evidence; current S1.3 priority, execution holds and UI-M0 remain intact.
+native evidence; the current Core checkpoint in the development plan, execution
+holds and UI-M0 remain intact.
 Affected maintained plans/skills are reconciled; archived source copies and
 historical qualification receipts retain their original scope.
 

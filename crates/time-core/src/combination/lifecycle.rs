@@ -43,16 +43,24 @@ use std::{fmt, num::NonZeroU64};
 use garde::Validate;
 
 use crate::{
-    ArithmeticOperation, ArithmeticStage, FitError, FixtureMinimum, FixturePrincipalDecision,
-    FixturePrincipalError, FixturePrincipalOutcomeKind, FixturePrincipalParameters,
-    FixturePrincipalState, FixturePrincipalStratum, FixtureProjectedBatch, regression::arithmetic,
+    ArithmeticOperation, ArithmeticStage, FitError, FixtureAnchorProjection,
+    FixtureChartPrincipalDecision, FixtureMinimum, FixturePrincipalDecision, FixturePrincipalError,
+    FixturePrincipalOutcomeKind, FixturePrincipalParameters, FixturePrincipalState,
+    FixturePrincipalStratum, FixtureProjectedBatch, FixtureSelection, regression::arithmetic,
 };
 
 use super::{
-    AdmittedFixtureSupporters, FixtureCombinationError, FixtureCombinationScalarIssue,
+    AdmittedOriginals, FixtureCombinationError, FixtureCombinationScalarIssue,
     FixtureCombinedEstimate, FixtureSupporterUncertainty, FixtureTrackingCombinationError,
     MAX_SUPPORTERS, RecordSource, TrackingSupporters, admit_lifecycle_source,
     admit_lifecycle_supporters, combine_lifecycle_supporters, uncertainty_issue,
+};
+
+/// Chart-bound outputs and transition through this same staged owner.
+mod chart;
+
+pub use chart::{
+    FixtureChartCombinationError, FixtureChartCombinationOutcome, FixtureChartCombinedEstimate,
 };
 
 /// Chrony reachability-history width used only for fixture maturity.
@@ -799,11 +807,11 @@ fn binary(
 /// # Errors
 /// Preserve either reached checked add/multiply failure without a partial limit.
 fn distance_limit(
-    admitted: &AdmittedFixtureSupporters<'_, '_>,
+    admitted: &AdmittedOriginals<'_, '_>,
     inner: &Inner,
 ) -> Result<f64, FixtureCombinationLifecycleError> {
     let distance = binary(
-        admitted.principal().projection().distance_seconds(),
+        admitted.principal_original().distance_seconds(),
         inner.principal.parameters().reselect_distance_seconds(),
         ArithmeticOperation::Add,
         FixtureCombinationLifecycleStep::SelectedDistance,
@@ -820,7 +828,7 @@ fn distance_limit(
 /// # Errors
 /// Preserve every reached checked primitive; do not evaluate rate after distance exclusion.
 fn incompatibility(
-    admitted: &AdmittedFixtureSupporters<'_, '_>,
+    admitted: &AdmittedOriginals<'_, '_>,
     label: NonZeroU64,
     limit: f64,
     parameters: FixtureCombinationParameters,
@@ -828,19 +836,16 @@ fn incompatibility(
     let record = admitted
         .record(label)
         .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
-    if record.entry().projection().distance_seconds() > limit {
+    if record.original().distance_seconds() > limit {
         return Ok(Some(FixtureCombinationSourceStatus::DistanceExcluded));
     }
-    let principal_label = admitted.principal().projection().context().source_id();
+    let principal_label = admitted.principal_original().context().source_id();
     let principal = admitted
         .record(principal_label)
         .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
     let difference = binary(
-        principal
-            .entry()
-            .projection()
-            .phase_rate_seconds_per_second(),
-        record.entry().projection().phase_rate_seconds_per_second(),
+        principal.original().phase_rate_seconds_per_second(),
+        record.original().phase_rate_seconds_per_second(),
         ArithmeticOperation::Subtract,
         FixtureCombinationLifecycleStep::RateDifference,
     )?;
@@ -872,13 +877,12 @@ fn incompatibility(
 /// Reject a private slot or checked counter inconsistency on unpublished state.
 fn prepare_scoring(
     inner: &mut Inner,
-    decision: &FixturePrincipalDecision<'_>,
+    selection: &FixtureSelection,
 ) -> Result<[Option<SourceOutcome>; MAX_SUPPORTERS], FixtureCombinationLifecycleError> {
     let mut statuses = [None; MAX_SUPPORTERS];
     for index in 0..inner.len {
         let source = source_at(inner, index)?;
-        let outside = decision
-            .selection()
+        let outside = selection
             .witnessed()
             .is_some_and(|witness| !witness.supporters().any(|label| label == source.source_id));
         let status = if outside {
@@ -897,6 +901,94 @@ fn prepare_scoring(
     Ok(statuses)
 }
 
+/// Borrowed facts obtained together from one genuine principal decision.
+#[derive(Clone, Copy)]
+struct DecisionFacts<'decision> {
+    /// The actual owned selection, retaining its canonical witness.
+    selection: &'decision FixtureSelection,
+    /// Actual outcome kind, without manufacturing ready credit.
+    kind: FixturePrincipalOutcomeKind,
+    /// Actual selected original source label, if one exists.
+    principal_label: Option<NonZeroU64>,
+    /// Original source projection before any chart coordinate transformation.
+    principal: Option<&'decision FixtureAnchorProjection>,
+}
+
+impl<'decision> DecisionFacts<'decision> {
+    /// Borrow the complete original facts from a genuine legacy decision.
+    fn legacy(decision: &'decision FixturePrincipalDecision<'_>) -> Self {
+        Self {
+            selection: decision.selection(),
+            kind: decision.kind(),
+            principal_label: decision.principal_label(),
+            principal: decision
+                .principal_entry()
+                .map(crate::FixtureProjectedInterval::projection),
+        }
+    }
+
+    /// Borrow original source facts while retaining the genuine chart selection.
+    fn chart(decision: &'decision FixtureChartPrincipalDecision<'_, '_, '_>) -> Self {
+        Self {
+            selection: decision.selection(),
+            kind: decision.kind(),
+            principal_label: decision.principal_label(),
+            principal: decision
+                .principal_entry()
+                .map(|entry| entry.projection().source_projection()),
+        }
+    }
+}
+
+/// Unpublished statuses and optional ready-only contributor mask.
+struct PreparedRound {
+    /// Complete roster statuses after the shared scoring/filtering rules.
+    statuses: [Option<SourceOutcome>; MAX_SUPPORTERS],
+    /// Present only for a genuine reference-ready decision.
+    mask: Option<[bool; MAX_SUPPORTERS]>,
+}
+
+/// Prepare the shared ready/retained state changes from actual decision facts.
+///
+/// Complete original metadata has already been admitted. Outside-witness resets
+/// apply on every witnessed outcome; replacement resets and compatibility apply
+/// only on ready outcomes. No estimate, emission or live-state commit occurs.
+/// # Errors
+/// Preserve the first actual scoring, metadata or compatibility failure.
+fn prepare_contributors(
+    inner: &mut Inner,
+    decision: DecisionFacts<'_>,
+    previous_principal: Option<NonZeroU64>,
+    admitted: Option<&AdmittedOriginals<'_, '_>>,
+) -> Result<PreparedRound, FixtureCombinationLifecycleError> {
+    let mut statuses = prepare_scoring(inner, decision.selection)?;
+    let mask = if decision.kind == FixturePrincipalOutcomeKind::ReferenceReady {
+        if decision.principal_label != previous_principal {
+            clear_penalties(inner)?;
+        }
+        let originals = admitted.ok_or(FixtureCombinationLifecycleError::Invariant)?;
+        Some(contributor_mask(inner, originals, &mut statuses)?)
+    } else {
+        None
+    };
+    Ok(PreparedRound { statuses, mask })
+}
+
+/// Issue a next emission only after a genuine ready round's reduction succeeds.
+/// # Errors
+/// Reject a nonready round or exhausted counter without changing the counter.
+fn emit_round(
+    inner: &mut Inner,
+    prepared: &PreparedRound,
+) -> Result<NonZeroU64, FixtureCombinationLifecycleError> {
+    if prepared.mask.is_none() {
+        return Err(FixtureCombinationLifecycleError::Invariant);
+    }
+    let round = checked_next(inner.emitted_rounds)?;
+    inner.emitted_rounds = round.get();
+    Ok(round)
+}
+
 /// Clear all source penalties after an actual ready principal replacement.
 /// # Errors
 /// Retain private source-construction/slot errors; the live owner is untouched.
@@ -913,11 +1005,11 @@ fn clear_penalties(inner: &mut Inner) -> Result<(), FixtureCombinationLifecycleE
 /// Preserve reached compatibility errors and reject slot/principal inconsistencies.
 fn contributor_mask(
     inner: &mut Inner,
-    admitted: &AdmittedFixtureSupporters<'_, '_>,
+    admitted: &AdmittedOriginals<'_, '_>,
     statuses: &mut [Option<SourceOutcome>; MAX_SUPPORTERS],
 ) -> Result<[bool; MAX_SUPPORTERS], FixtureCombinationLifecycleError> {
     let mut included = [false; MAX_SUPPORTERS];
-    let principal_label = admitted.principal().projection().context().source_id();
+    let principal_label = admitted.principal_original().context().source_id();
     let singleton = admitted.count() == 1;
     let limit = if singleton {
         None
@@ -976,7 +1068,59 @@ fn contributor_mask(
     Ok(included)
 }
 
-/// Borrowed complete output relationship, validated before committing live state.
+/// A completed estimate's narrow original-source and contributor relationships.
+///
+/// Implementations belong only to checked output owners. No caller-supplied
+/// subset or raw numerical value can implement this private view externally.
+trait CheckedEstimateView {
+    /// Return the completed contributing population, not original agreement size.
+    fn supporter_count(&self) -> usize;
+    /// Check membership in the completed canonical contributor prefix.
+    fn contains_source(&self, label: NonZeroU64) -> bool;
+    /// Check complete original principal context and observation provenance.
+    fn matches_principal(&self, projection: &FixtureAnchorProjection) -> bool;
+}
+
+impl CheckedEstimateView for FixtureCombinedEstimate {
+    /// Use the completed legacy contributor count unchanged.
+    fn supporter_count(&self) -> usize {
+        FixtureCombinedEstimate::supporter_count(self)
+    }
+
+    /// Inspect only the completed canonical contributor prefix.
+    fn contains_source(&self, label: NonZeroU64) -> bool {
+        self.supporters().any(|actual| actual == label)
+    }
+
+    /// Retain every original context and observation-time comparison.
+    fn matches_principal(&self, projection: &FixtureAnchorProjection) -> bool {
+        self.principal_label() == projection.context().source_id()
+            && self.frame() == projection.context().frame()
+            && self.mapping_generation() == projection.context().generation()
+            && self.anchor_observed_at() == projection.anchor_observed_at()
+            && self.latest_observed_at() == projection.latest_observed_at()
+            && self.fit_reference() == projection.fit_reference()
+            && self.projected_at() == projection.projected_at()
+    }
+}
+
+/// Shared unpublished lifecycle relationships for either checked estimate owner.
+struct SharedOutcomeInput<'value, E> {
+    /// Facts borrowed together from the actual legacy or chart decision.
+    principal: DecisionFacts<'value>,
+    /// Complete checked numerical view only for a ready emission.
+    combined: Option<&'value E>,
+    /// Next per-instance emission identity, absent for retained outcomes.
+    round: Option<NonZeroU64>,
+    /// Complete prepared roster statuses.
+    statuses: &'value [Option<SourceOutcome>; MAX_SUPPORTERS],
+    /// Unpublished next owner state.
+    inner: &'value Inner,
+    /// Committed entry-state emission count.
+    previous_rounds: u64,
+}
+
+/// Borrowed complete legacy output relationship, retaining existing raw controls.
 struct OutcomeInput<'value, 'batch> {
     /// Genuine result returned by the privately staged principal owner.
     principal: &'value FixturePrincipalDecision<'batch>,
@@ -994,12 +1138,24 @@ struct OutcomeInput<'value, 'batch> {
 
 /// Check all output relationships before any live state replacement.
 fn outcome_valid(value: &OutcomeInput<'_, '_>) -> bool {
-    let ready = value.principal.kind() == FixturePrincipalOutcomeKind::ReferenceReady;
+    shared_outcome_valid(&SharedOutcomeInput {
+        principal: DecisionFacts::legacy(value.principal),
+        combined: value.combined,
+        round: value.round,
+        statuses: value.statuses,
+        inner: value.inner,
+        previous_rounds: value.previous_rounds,
+    })
+}
+
+/// Check roster, witness, status and emission relationships under one owner.
+fn shared_outcome_valid<E: CheckedEstimateView>(value: &SharedOutcomeInput<'_, E>) -> bool {
+    let ready = value.principal.kind == FixturePrincipalOutcomeKind::ReferenceReady;
     let inner = value.inner;
     if inner.len > MAX_SUPPORTERS
         || inner.len != inner.principal.roster_len()
-        || value.principal.principal_label() != inner.principal.principal()
-        || value.principal.selection().minimum() != inner.principal.minimum().get()
+        || value.principal.principal_label != inner.principal.principal()
+        || value.principal.selection.minimum() != inner.principal.minimum().get()
         || ready != value.combined.is_some()
         || ready != value.round.is_some()
     {
@@ -1036,7 +1192,7 @@ fn outcome_valid(value: &OutcomeInput<'_, '_>) -> bool {
         }
         let witnessed = value
             .principal
-            .selection()
+            .selection
             .witnessed()
             .is_some_and(|witness| witness.supporters().any(|label| label == source.source_id));
         let contributes = matches!(
@@ -1044,7 +1200,7 @@ fn outcome_valid(value: &OutcomeInput<'_, '_>) -> bool {
             FixtureCombinationSourceStatus::Principal | FixtureCombinationSourceStatus::Contributor
         );
         if !ready {
-            let expected = if value.principal.selection().witnessed().is_some() && !witnessed {
+            let expected = if value.principal.selection.witnessed().is_some() && !witnessed {
                 FixtureCombinationSourceStatus::OutsideWitness
             } else {
                 FixtureCombinationSourceStatus::NotEvaluated
@@ -1063,16 +1219,16 @@ fn outcome_valid(value: &OutcomeInput<'_, '_>) -> bool {
         }
         if status.status == FixtureCombinationSourceStatus::Principal {
             principals += 1;
-            if Some(source.source_id) != value.principal.principal_label() || source.penalty != 0 {
+            if Some(source.source_id) != value.principal.principal_label || source.penalty != 0 {
                 return false;
             }
         }
         if contributes {
             contributors += 1;
             if source.penalty != 0
-                || !value.combined.is_some_and(|estimate| {
-                    estimate.supporters().any(|label| label == source.source_id)
-                })
+                || !value
+                    .combined
+                    .is_some_and(|estimate| estimate.contains_source(source.source_id))
             {
                 return false;
             }
@@ -1080,7 +1236,7 @@ fn outcome_valid(value: &OutcomeInput<'_, '_>) -> bool {
             return false;
         }
     }
-    estimate_relation_valid(value, contributors, principals)
+    shared_estimate_relation_valid(value, contributors, principals)
 }
 
 /// Check only estimate cardinality and original-principal provenance.
@@ -1089,26 +1245,40 @@ fn outcome_valid(value: &OutcomeInput<'_, '_>) -> bool {
 /// source/status and emission consistency remain in `outcome_valid`. Arbitrary
 /// counts cannot bypass this helper's required cardinality/provenance relations.
 /// This adds no scan, mutation, arithmetic or report allocation.
+#[cfg(test)]
 fn estimate_relation_valid(
     value: &OutcomeInput<'_, '_>,
     contributors: usize,
     principals: usize,
 ) -> bool {
+    shared_estimate_relation_valid(
+        &SharedOutcomeInput {
+            principal: DecisionFacts::legacy(value.principal),
+            combined: value.combined,
+            round: value.round,
+            statuses: value.statuses,
+            inner: value.inner,
+            previous_rounds: value.previous_rounds,
+        },
+        contributors,
+        principals,
+    )
+}
+
+/// Check cardinality and unchanged raw provenance for either checked estimate.
+fn shared_estimate_relation_valid<E: CheckedEstimateView>(
+    value: &SharedOutcomeInput<'_, E>,
+    contributors: usize,
+    principals: usize,
+) -> bool {
     if let Some(estimate) = value.combined {
-        let Some(principal) = value.principal.principal_entry() else {
+        let Some(projection) = value.principal.principal else {
             return false;
         };
-        let projection = principal.projection();
         if principals != 1
             || contributors != estimate.supporter_count()
             || contributors == 0
-            || estimate.principal_label() != projection.context().source_id()
-            || estimate.frame() != projection.context().frame()
-            || estimate.mapping_generation() != projection.context().generation()
-            || estimate.anchor_observed_at() != projection.anchor_observed_at()
-            || estimate.latest_observed_at() != projection.latest_observed_at()
-            || estimate.fit_reference() != projection.fit_reference()
-            || estimate.projected_at() != projection.projected_at()
+            || !estimate.matches_principal(projection)
         {
             return false;
         }
@@ -1137,6 +1307,32 @@ struct RawOutcome<'value, 'batch> {
     value: OutcomeInput<'value, 'batch>,
 }
 
+/// A complete output whose receiver has checked every state/output relationship.
+///
+/// Only completion owners construct this wrapper after mandatory validation.
+/// The transaction owner cannot commit an arbitrary unvalidated output value.
+struct CompletedOutcome<T> {
+    /// Genuine completed output, retaining its supplied input lifetimes.
+    output: T,
+}
+
+/// Own one clone, validated preparation and final whole-state replacement.
+///
+/// The callback operates only on unpublished state and returns the completion
+/// owner's checked token. Every error discards the complete staged state. No
+/// output may borrow that temporary state; input-borrowed outcomes remain valid.
+/// # Errors
+/// Preserve the actual preparation/completion error without any live commit.
+fn with_staged<T, E>(
+    inner: &mut Inner,
+    prepare: impl FnOnce(&mut Inner) -> Result<CompletedOutcome<T>, E>,
+) -> Result<T, E> {
+    let mut staged = inner.clone();
+    let completed = prepare(&mut staged)?;
+    *inner = staged;
+    Ok(completed.output)
+}
+
 /// Validate the complete borrowed output, then move its genuine checked values.
 /// # Errors
 /// Reject any relationship or validation disagreement before moving or committing.
@@ -1147,7 +1343,7 @@ fn complete_outcome<'batch>(
     statuses: [Option<SourceOutcome>; MAX_SUPPORTERS],
     inner: &Inner,
     previous_rounds: u64,
-) -> Result<FixtureCombinationOutcome<'batch>, FixtureCombinationLifecycleError> {
+) -> Result<CompletedOutcome<FixtureCombinationOutcome<'batch>>, FixtureCombinationLifecycleError> {
     let value = OutcomeInput {
         principal: &principal,
         combined: combined.as_ref(),
@@ -1162,12 +1358,14 @@ fn complete_outcome<'batch>(
         return Err(FixtureCombinationLifecycleError::Invariant);
     }
     validation.map_err(|_| FixtureCombinationLifecycleError::ValidationInvariant)?;
-    Ok(FixtureCombinationOutcome {
-        principal,
-        combined,
-        emitted_round: round,
-        sources: statuses,
-        len: inner.len,
+    Ok(CompletedOutcome {
+        output: FixtureCombinationOutcome {
+            principal,
+            combined,
+            emitted_round: round,
+            sources: statuses,
+            len: inner.len,
+        },
     })
 }
 
@@ -1297,58 +1495,57 @@ impl FixtureCombinationState {
         {
             return Err(FixtureCombinationLifecycleError::CapacityExceeded.into());
         }
-        let previous_principal = self.inner.principal.principal();
-        let previous_rounds = self.inner.emitted_rounds;
-        let mut staged = self.inner.clone();
-        let decision = staged
-            .principal
-            .advance(batch, strata)
-            .map_err(|source| FixtureCombinationLifecycleError::Principal { source })?;
-        let (combined, round, statuses) = {
-            let tracking = match mode {
-                SupporterMode::Legacy(_) => None,
-                SupporterMode::Tracking => Some(TrackingSupporters::from_decision(&decision)?),
-            };
-            let admitted = match mode {
-                SupporterMode::Legacy(records) => admit_lifecycle_supporters(&decision, records),
-                SupporterMode::Tracking => admit_lifecycle_source(
-                    &decision,
-                    RecordSource::Tracking(
-                        tracking
-                            .as_ref()
-                            .ok_or(FixtureCombinationLifecycleError::Invariant)?,
+        with_staged(&mut self.inner, |staged| {
+            let previous_principal = staged.principal.principal();
+            let previous_rounds = staged.emitted_rounds;
+            let decision = staged
+                .principal
+                .advance(batch, strata)
+                .map_err(|source| FixtureCombinationLifecycleError::Principal { source })?;
+            let (combined, round, statuses) = {
+                let tracking = match mode {
+                    SupporterMode::Legacy(_) => None,
+                    SupporterMode::Tracking => Some(TrackingSupporters::from_decision(&decision)?),
+                };
+                let admitted = match mode {
+                    SupporterMode::Legacy(records) => {
+                        admit_lifecycle_supporters(&decision, records)
+                    }
+                    SupporterMode::Tracking => admit_lifecycle_source(
+                        &decision,
+                        RecordSource::Tracking(
+                            tracking
+                                .as_ref()
+                                .ok_or(FixtureCombinationLifecycleError::Invariant)?,
+                        ),
                     ),
-                ),
-            }
-            .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
-            let mut statuses = prepare_scoring(&mut staged, &decision)?;
-            if decision.kind() == FixturePrincipalOutcomeKind::ReferenceReady {
-                if decision.principal_label() != previous_principal {
-                    clear_penalties(&mut staged)?;
                 }
-                let admitted = admitted
-                    .as_ref()
-                    .ok_or(FixtureCombinationLifecycleError::Invariant)?;
-                let mask = contributor_mask(&mut staged, admitted, &mut statuses)?;
-                let estimate = combine_lifecycle_supporters(admitted, mask)
-                    .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
-                let round = checked_next(staged.emitted_rounds)?;
-                staged.emitted_rounds = round.get();
-                (Some(estimate), Some(round), statuses)
-            } else {
-                (None, None, statuses)
-            }
-        };
-        let outcome = complete_outcome(
-            decision,
-            combined,
-            round,
-            statuses,
-            &staged,
-            previous_rounds,
-        )?;
-        self.inner = staged;
-        Ok(outcome)
+                .map_err(|source| FixtureCombinationLifecycleError::Combination { source })?;
+                let prepared = prepare_contributors(
+                    staged,
+                    DecisionFacts::legacy(&decision),
+                    previous_principal,
+                    admitted
+                        .as_ref()
+                        .map(super::admission::AdmittedFixtureSupporters::originals),
+                )?;
+                if let Some(mask) = prepared.mask {
+                    let admitted = admitted
+                        .as_ref()
+                        .ok_or(FixtureCombinationLifecycleError::Invariant)?;
+                    let estimate =
+                        combine_lifecycle_supporters(admitted, mask).map_err(|source| {
+                            FixtureCombinationLifecycleError::Combination { source }
+                        })?;
+                    let round = emit_round(staged, &prepared)?;
+                    (Some(estimate), Some(round), prepared.statuses)
+                } else {
+                    (None, None, prepared.statuses)
+                }
+            };
+            complete_outcome(decision, combined, round, statuses, staged, previous_rounds)
+                .map_err(FixtureTrackingLifecycleError::from)
+        })
     }
 
     /// Advance using tracking derived only from the genuine batch's actual entries.

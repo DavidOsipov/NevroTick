@@ -48,7 +48,8 @@ above. It retains positive/negative modeling and the one-owner requirement,
 adds independently sourced leap knowledge and ambiguity handling, and explicitly
 does not adopt Chrony/NTPsec's dynamic LI-vote event authority. OPEN-7 remains
 open for native mapping, event-window limits and the finite-slew failure envelope.
-S1.3 remains ahead of dependent S1.4 implementation.
+The current Core checkpoint and applicable selection prerequisites remain ahead
+of dependent leap-policy implementation.
 
 ## 2. Verified evidence and what it establishes
 

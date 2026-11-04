@@ -62,6 +62,7 @@ pub use combination::{
 };
 
 pub use combination::{
+    FixtureChartCombinationError, FixtureChartCombinationOutcome, FixtureChartCombinedEstimate,
     FixtureCombinationLifecycleError, FixtureCombinationLifecycleStep, FixtureCombinationOutcome,
     FixtureCombinationParameterField, FixtureCombinationParameterIssue,
     FixtureCombinationParameters, FixtureCombinationSourceState, FixtureCombinationSourceStatus,
@@ -119,4 +120,15 @@ pub use selection::{
     BatchError, FixtureBatch, FixtureInterval, FixtureMinimum, FixtureOutcomeKind,
     FixtureSelection, FixtureWitness, IntervalError, MinimumError, SelectionError,
     SelectionInvariantStage, select_fixture,
+};
+
+/// Borrowed fixture input, monotone readiness and exclusive modeled phase feedback.
+mod reference_input;
+
+pub use reference_input::{
+    FixtureAchievedPhaseCompletion, FixtureCorrectionFeedback, FixtureRateClock,
+    FixtureRateClockContext, FixtureRateCursorStatus, FixtureRateDeliveryError,
+    FixtureRateSettlement, FixtureRateSettlementCompletion, FixtureRateSettlementCursor,
+    FixtureRateSettlementKind, FixtureRateSpan, FixtureReferenceInput, FixtureReferenceInputError,
+    FixtureReferenceInputState, FixtureReferenceReadiness, FixtureSettledRateInterval,
 };

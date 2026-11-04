@@ -470,7 +470,7 @@ Source inspection establishes documented mechanisms; it does not establish their
 behavior in NevroTick on a supported Windows build. Exact UTC during a leap needs
 native event-knowledge/behavior evidence; otherwise the selected contract is
 visible uncertainty and qualified later convergence. OPEN-7 remains open for
-that evidence and finite bounds. Current S1.3 priority and Windows/fuzz/storage
+that evidence and finite bounds. The current Core priority and Windows/fuzz/storage
 holds, UI-M0 deferrals, source minima and ordinary broker authority remain.
 
 The [S1.4 task](../tasks/s1.4-leap-policy.md) records implementation owners,

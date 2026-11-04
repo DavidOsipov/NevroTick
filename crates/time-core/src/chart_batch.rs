@@ -2,8 +2,9 @@
 //! Bounded common-chart admission and provenance-retaining numerical selection.
 //!
 //! Compatibility means identical checked frame/domain values and displacement/
-//! rate bits, plus one exact evaluation instant. Independently constructed equal
-//! descriptors are compatible; every original descriptor borrow is retained.
+//! rate and coefficient-error bits, plus one exact evaluation instant.
+//! Independently constructed equal descriptors are compatible; every original
+//! descriptor borrow is retained.
 //! Selection delegates to the existing interval owner without refitting histories,
 //! changing observations or granting freshness, eligibility or clock authority.
 
@@ -31,6 +32,10 @@ pub enum FixtureChartMismatchKind {
     Displacement,
     /// Rate bits differ, including distinct signed-zero encodings.
     Rate,
+    /// Displacement-coefficient roundoff bits differ.
+    PhaseCoefficientRoundoff,
+    /// Rate-coefficient roundoff bits differ.
+    RateCoefficientRoundoff,
     /// The original projection was evaluated at another exact monotonic instant.
     EvaluationTime,
 }
@@ -92,6 +97,10 @@ struct ChartExpectation {
     phase_bits: u64,
     /// Exact admitted rate representation, without normalization.
     rate_bits: u64,
+    /// Exact admitted displacement-coefficient bound, without normalization.
+    phase_error_bits: u64,
+    /// Exact admitted rate-coefficient bound, without normalization.
+    rate_error_bits: u64,
     /// Declared query; its relationship to the domain is checked at admission.
     at: MonotonicNs,
 }
@@ -114,6 +123,8 @@ fn descriptor_mismatch(
     domain: FixtureChartDomain,
     phase_bits: u64,
     rate_bits: u64,
+    phase_error_bits: u64,
+    rate_error_bits: u64,
     actual: &FixtureAffineChart,
 ) -> Option<FixtureChartMismatchKind> {
     if actual.frames() != frames {
@@ -124,6 +135,14 @@ fn descriptor_mismatch(
         Some(FixtureChartMismatchKind::Displacement)
     } else if actual.rate_seconds_per_second().to_bits() != rate_bits {
         Some(FixtureChartMismatchKind::Rate)
+    } else if actual.phase_coefficient_roundoff_seconds().to_bits() != phase_error_bits {
+        Some(FixtureChartMismatchKind::PhaseCoefficientRoundoff)
+    } else if actual
+        .rate_coefficient_roundoff_seconds_per_second()
+        .to_bits()
+        != rate_error_bits
+    {
+        Some(FixtureChartMismatchKind::RateCoefficientRoundoff)
     } else {
         None
     }
@@ -142,6 +161,10 @@ pub(crate) fn chart_descriptor_mismatch(
         expected.domain(),
         expected.phase_at_reference_seconds().to_bits(),
         expected.rate_seconds_per_second().to_bits(),
+        expected.phase_coefficient_roundoff_seconds().to_bits(),
+        expected
+            .rate_coefficient_roundoff_seconds_per_second()
+            .to_bits(),
         actual,
     )
 }
@@ -149,7 +172,8 @@ pub(crate) fn chart_descriptor_mismatch(
 /// Return the first bounded admission failure, without modifying any input.
 ///
 /// Capacity precedes header-domain admission, then indices ascend with frames,
-/// domain, displacement bits, rate bits and evaluation time in that order.
+/// domain, displacement/rate bits, their coefficient-error bits and evaluation
+/// time in that order.
 /// Checked interval geometry remains owned by each original interval.
 fn first_issue(
     values: &[FixtureChartInterval<'_>],
@@ -168,6 +192,8 @@ fn first_issue(
             expected.domain,
             expected.phase_bits,
             expected.rate_bits,
+            expected.phase_error_bits,
+            expected.rate_error_bits,
             projection.chart(),
         )
         .or_else(|| {
@@ -285,6 +311,12 @@ impl<'entries, 'chart> FixtureChartBatch<'entries, 'chart> {
             domain: expected_chart.domain(),
             phase_bits: expected_chart.phase_at_reference_seconds().to_bits(),
             rate_bits: expected_chart.rate_seconds_per_second().to_bits(),
+            phase_error_bits: expected_chart
+                .phase_coefficient_roundoff_seconds()
+                .to_bits(),
+            rate_error_bits: expected_chart
+                .rate_coefficient_roundoff_seconds_per_second()
+                .to_bits(),
             at: expected_at,
         };
         let raw = ChartBatchCandidate { values };
