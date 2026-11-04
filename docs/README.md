@@ -64,6 +64,18 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
+**Pre-start MSIX provisioning, 5 November 2026:** the
+[focused continuation](plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+and [W11 task §4.24](../tasks/windows11-integration.md#424-pre-start-service-provisioning-refinement--5-november-2026)
+separate actual service-object rights from supported no-UI invocation/reentry.
+The first future provisioning probe only inspects state and opens/closes required
+handles; later controlled management start precedes fresh-process admission and
+normal work, with creation-time object protection already required. The complete
+MSIX remains selected and the three provisioning candidates remain unselected.
+No supported production bridge or native result is established. The independent
+removal pair, Core priority, scoped Sandbox disposition, blocked artifacts,
+fuzz/storage holds, UI-M0 deferrals and optional enhanced provenance remain.
+
 **Public status, 4 November 2026:** the [current implementation summary](windows-time-architecture.md#1-current-state-capsule)
 now distinguishes the six-member bounded workspace from the original
 documentation-only architecture review and later UI-only milestone. README and

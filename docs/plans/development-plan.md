@@ -1306,6 +1306,17 @@ one update/repair; an external administrative harness is not the production
 provisioning owner. Keep existing W11-W05/W11-W10 CHECK ownership. Sandbox
 availability changes none of these holds or product recovery obligations.
 
+**Pre-start provisioning refinement, 5 November 2026:**
+[MSIX plan §7.5](windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+and [task §4.24](../../tasks/windows11-integration.md#424-pre-start-service-provisioning-refinement--5-november-2026)
+put a handle-only actual-object-rights probe before that provisioning setter
+sequence. Supported no-UI invocation and servicing reentry remain independent
+unresolved prerequisites. Later controlled SCM management start allows fresh
+process verification before normal work; creation-time protection must already
+hold. The source synthesis selects none of the three candidates, closes no
+OPEN-3/12/14 gate and grants no native execution. The separate removal pair,
+current Core order, scoped Sandbox disposition and all other holds remain.
+
 **Status:** research recorded; the
 [original task receipt](../../tasks/windows11-integration.md#41-integration-review-and-documentation-validation-receipt)
 retains its reviewed candidate, with later adoption/integration evidence recorded

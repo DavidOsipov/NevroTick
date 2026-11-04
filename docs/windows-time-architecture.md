@@ -367,6 +367,18 @@ Use a second LocalService service to challenge owner-mediated access after creat
 and replacement, alongside intended-service positive controls. Do not assume every
 restricted token can exploit this, or that DPAPI cures shared-account access. [S115]
 
+TokenOwner/defaults for later object creation are distinct from the security of
+the token object itself and from the initial process/thread descriptors. If a
+per-service default owner is selected, its SID must be eligible in the actual
+creation token; primary and impersonating paths need separate accounting.
+A ServiceMain fixup cannot prove
+protection before it ran. The selected launch path must establish creation-time
+isolation before even a controlled management start, then qualify later runtime
+creation/replacement under the existing object matrix. The
+[pre-start provisioning refinement](plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+retains the source basis and native proof obligations; it selects no account,
+topology, TokenOwner mechanism or new authentication protocol.
+
 ### 4.2 Operation authorization
 
 | Operation | Default authority | Required protection |
@@ -2895,6 +2907,18 @@ must remove engine privileges and establish object/process isolation before
 normal work, preserve them through repair/update and tolerate managed-policy
 differences. Manifest validity alone establishes none of this; a mandatory first
 UI launch or a wider LocalSystem broker does not close the gap.
+
+Before setters or orchestration, establish the proposed actor's exact required
+rights on the actual deployment-created service objects. Generic default DACLs,
+elevation and account names cannot substitute. Separately establish supported
+invocation before first functional work without UI launch and reentry for each
+claimed servicing path. Apply [plan §7.5](plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026):
+disabled/quiescent configuration and activation prerequisites precede a controlled
+SCM start into bounded authenticated management/admission behavior; fresh process
+identity, token/object and mitigation checks precede normal functional exposure.
+SCM launch/Running is not that admission, and prior markers cannot admit a new
+process. Creation-time protection already applies; safe refusal must preserve
+the separately authorized recovery path for an earlier takeover.
 
 Public delivery of the selected MSIX requires **every** applicable gate below for the actual distribution route. These are qualification/release conditions, not prerequisites for source work or preparing an honestly labelled submission candidate:
 

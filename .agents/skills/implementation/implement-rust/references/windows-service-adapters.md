@@ -53,6 +53,14 @@ Separate candidate/hold decisions from adopted manifest/lockfile. Record API
 mismatch, experiment result and narrow alternative. Unexecuted prototypes prove
 no adopted/qualified production graph.
 
+Preserve raw `dwServiceType`, including unknown bits, beside the wrapper's
+interpreted type. The pinned `windows-service` conversion uses
+`from_bits_truncate` and its enum omits the packaged-service `0x200` bit; a
+wrapper-only receipt can discard that distinction. Use the
+[source basis in MSIX plan §7.5](../../../../../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+and the selected bindings to interpret raw evidence; this observation selects no
+different wrapper or dispatcher and proves no actual installed type.
+
 ## Identify one lifecycle owner per own-process service
 
 Draw the actual path: process entry → dispatcher → ServiceMain → registered
@@ -79,6 +87,17 @@ and handle admitted controls; they do not grant themselves service configuration
 rights. Keep one reviewed configuration record **per service**, bound to the
 product generation and executable identity. Populate this matrix before native
 qualification; unresolved counts/durations/flag choices remain P0 decisions.
+
+For MSIX, first establish actual per-operation rights on the deployment-created
+objects under the proposed provisioning actor. Generic CreateService defaults,
+elevation or LocalSystem identity prove no such grant. Follow
+[plan §7.5's handle-only first probe](../../../../../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+before setters; request descriptor rights only when the operation needs them,
+and make no start/stop call during that probe. Supported no-UI invocation and
+servicing reentry are separate prerequisites. Later disabled/quiescent
+configuration and activation precede controlled authenticated management start,
+then fresh process admission before normal work. Creation-time protection already
+applies, and existing recovery authority must survive a normal-admission refusal.
 
 | Configuration or outcome | Engine record | Broker record |
 | --- | --- | --- |
@@ -208,6 +227,15 @@ list alone therefore does not qualify separation from another service sharing
 LocalService. Inspect the actual primary/impersonation token and restricted SID
 access semantics; do not claim every LocalService token can bypass every DACL.
 [Owner/default-owner contract](https://learn.microsoft.com/en-us/windows/win32/secauthz/owner-of-a-new-object).
+
+TokenOwner/defaults govern relevant later creation; they do not secure the token
+object itself or retrospectively protect the initial process/thread and earlier
+startup objects. Verify eligible SIDs and the actual primary/impersonation token
+for each creation path. Keep creation-time isolation and later runtime/default-
+owner policy as separate native obligations: late safe readback cannot exclude
+an earlier dangerous handle. The [MSIX refinement](../../../../../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+owns that distinction and its evidence limits; no TokenOwner implementation or
+new authority is selected here.
 
 Before freezing storage/process security, qualify a concrete owner-isolation
 mechanism: a valid per-service default owner, an appropriate `OWNER RIGHTS` ACE

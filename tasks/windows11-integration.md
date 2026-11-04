@@ -340,6 +340,16 @@ first-UI setup do not substitute for those observations. Prepare the design now;
 native execution retains its hold. Do not use MSI actions/properties as assumed
 MSIX hooks, or require an MSI prerequisite to obtain the intended isolation.
 
+The [5 November continuation](#424-pre-start-service-provisioning-refinement--5-november-2026)
+and [MSIX plan §7.5](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+put the first provisioning discriminator before setters: inspect actual
+deployment-created service objects and request/close each necessary handle right
+under the proposed actor. Authority, supported no-UI invocation and servicing
+reentry are separate unresolved conditions. Later controlled SCM management start
+precedes fresh-process admission and normal work; creation-time protection must
+already hold. This source refinement neither selects a candidate nor admits the
+probe. The independent-removal pair and all current execution dispositions remain.
+
 For bad-release recovery, apply [release-policy §6](../docs/release-policy.md#6-mandatory-state-compatibility-and-owned-recovery)
 to the affected version's actual mandatory state, partial migrations and uncertain
 effects. A compatible code fallback cannot restore an obsolete authority ledger;
@@ -502,6 +512,9 @@ and the [release policy](../docs/release-policy.md). W11-W10 retains support and
 publication/incident readiness; W11-W05 retains mandatory-state and lifecycle
 recovery. Source preparation is recorded, while owner choices and actual
 rehearsals remain open at their existing phase gates.
+The [current provisioning refinement](#424-pre-start-service-provisioning-refinement--5-november-2026)
+supplies W11-W05/W11-W10's next bounded source/evidence routing without changing
+the selected complete-package direction or those phase gates.
 
 Protected Process Light is excluded as a normal utility-service option; ordinary
 publisher signing supplies no protected-service eligibility. No reserve selects
@@ -1805,3 +1818,134 @@ completed fresh-context review, **READY for documentary integration**. Its
 [candidate identity, verbatim comprehension, limitations and documentation checks](s1.4-leap-policy.md#entry-reconciliation-and-independent-review--4-november-2026)
 are retained in the shared entry-reconciliation record. This evidence adds no
 release qualification or obligation to execute the optional provenance experiment.
+
+### 4.24 Pre-start service provisioning refinement — 5 November 2026
+
+**Request and baseline:** continue the audit gap for service provisioning before
+first functional start inside one complete hardened MSIX. The integration basis
+is upstream `64944208a8174c57f38f05abec72d7145dd37dca`; the coordinator verified
+the clean 585-file snapshot against that tree. The three GitHub, web and Microsoft
+Learn research lanes and their synthesis supply source findings, not native
+results or independent remote-tree verification by every researcher.
+
+**Completed source integration:** [MSIX plan §7.5](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+owns the evidence classes, conditional sequence and first provisioning probe.
+It retains S01–S87 and appends S88–S102. The current architecture, development
+workstream, hardening guidance and service-adapter reference route the same
+obligations. Sections 4.15/4.18/4.19/4.23 and their candidate-specific receipts
+retain their historical scope; final integrated-candidate review and checks are
+recorded separately after execution.
+
+The material result is two unresolved prerequisites: **actual per-operation
+authority on deployment-created service objects**, and **supported no-UI
+invocation plus servicing reentry**. Generic CreateService defaults, elevation
+or a LocalSystem account do not prove the first; automatic startup, bundling or
+an external laboratory launcher do not prove the second. The public DACL report
+is a reproduction lead with no owner field, not a universal MSIX/AppXSvc rule.
+The pinned WSL example invokes MSI and supplies no complete-MSIX-only recipe.
+
+| Existing owner / checks | Current disposition | Next dependent action |
+| --- | --- | --- |
+| W11-W05 provisioning; CHECK-1/2/15/16; OPEN-3/12/14 | Source contract refined; actual rights, supported setters and production invocation unresolved | Prepare the existing S0.6/disposable-environment card for a handle-only probe on untouched deployment-created objects. Query/status/read-security and necessary configuration rights are separate; WRITE_DAC/WRITE_OWNER apply only if the operation needs them. No setter/start/stop call in this first probe. |
+| W11-W05/W11-W10 activation and identity; CHECK-1/2/16/23/26/27 | Configured state and runtime admission remain distinct | Once prerequisites and execution are admitted, preserve disabled/quiescent configuration, activation requirements, controlled SCM start into bounded authenticated management, then fresh lifetime-bound admission before normal work. Creation-time process/thread/token protection must already hold; START_PENDING PID or prior success is insufficient. |
+| W11-W05 object security; CHECK-1/2/15/16 | Same-account isolation remains unqualified | Separate TokenOwner/defaults for later objects from initial process/thread/token descriptors and the token object's own security. Qualify earliest access, actual primary/impersonation paths and later replacements with intended allowed controls. Preserve raw dwServiceType and unknown bits beside wrapper interpretation. |
+| W11-W05 servicing/lifecycle; CHECK-5/12/13/23/27 | Reentry, persistence and safe refusal/recovery remain unresolved | After the earlier boundaries, distinguish interrupted configuration, version update, same-version repair/re-registration, Reset and profile migration. A new version refusing admission must retain the already-owned recovery path; no stale marker or configuration replay over a successor. |
+| W11-W10 packaging/release; CHECK-18/23/24 | Complete hardened MSIX remains selected; all three provisioning candidates remain unselected | Retain the fixed elevated helper, temporary automatic bootstrap and restricted-child alternatives with their unresolved costs. Use NV-DEC-001 before a dependent topology choice; no external/embedded MSI workaround, mandatory first UI or broader LocalSystem broker follows. |
+
+**First future provisioning exit:** identify whether the exact proposed actor
+can acquire each required right on the untouched targets, with a permitted query
+and an available standard-user/UI mutation-denial control. Stop at a required
+authority failure; do not take ownership or bypass deployment security. A
+successful handle-only probe proves neither setter behavior nor production
+invocation. Actual engine/broker actor controls wait for their later management
+start; a synthetic same-account actor must be labelled. Installation setup and
+the probe need their own bounded admission; the source card grants neither.
+
+**Separate unresolved lifecycle item:** independent removal/Reset still needs a
+supported recovery owner surviving until its work is durably complete. Section
+7.3's inert-journal running-versus-already-stopped/crashed removal pair remains
+the first removal/recovery discriminator. This provisioning refinement does not
+replace it or close OPEN-3/12/14.
+
+**Unchanged authority and holds:** current Core priority remains. Section 4.19's
+scoped Sandbox readiness/management permission does not authorize this product
+probe; the blocked S134 stager/artifact and general native restrictions, separate
+fuzz no-retry hold, storage pause and UI-M0 D1–D3 deferrals remain. Enhanced
+attestations, independent reproducible builds and a public proof bundle remain
+optional under OD-05 §7.5; required artifact custody, SBOM/licence, package trust,
+installed identity and native/lifecycle evidence retain their existing owners.
+No code, manifest, dependency, package build, Windows execution, clock/service
+mutation, signing, Store submission or release qualification is performed by
+this amendment. The next permitted action is review of the integrated documents
+and continued bounded source/design work under the existing owners.
+
+#### Independent review and documentation verification
+
+**Reviewed candidate:** upstream
+`64944208a8174c57f38f05abec72d7145dd37dca` plus the seven-file documentary
+diff with SHA-256
+`65540c0dc425e24f9a8027fa4da1be706fed33879c1a6527433c8ba46f1ea9d8`.
+The review checked every changed file against its frozen digest; the local
+synthetic baseline was not presented as an upstream commit. This receipt is the
+coordinator's subsequent append; it changes no reviewed requirement or source
+interpretation.
+
+**Review accounting:** `msix_provisioning_review` was launched with
+`fork_turns: "none"`, read-only scope and the actual request, candidate,
+canonical requirements and selected source evidence. Its initial launch failed
+with a context-window error before producing usable review and is **not run**.
+One bounded retry **completed** the requested review. It did not consult the
+private synthesis, parent discussion, memory or authors' expected verdict.
+The earlier three research lanes and fourth-agent synthesis supplied the fifth
+agent's integration; they were not counted as this fresh review.
+
+The reviewer inspected the full diff and actual integrated sections, applicable
+AGENTS/planning/security/implementation/testing contracts, OD-05, architecture
+and lifecycle/IPC context, current Core and Sandbox dispositions, and W11
+assignment. It independently checked the decisive S88–S102 sources and existing
+SCM/activation contracts. No necessary review input was missing. Full remote-tree
+verification and the skill checker remained coordinator evidence, not work
+attributed to this reviewer.
+
+**Reviewer comprehension, preserved verbatim:**
+
+> The change turns the open MSIX service-provisioning question into an ordered research and qualification path. It first asks whether the proposed actor can obtain the necessary rights on the services Windows actually deployed, separately asks what supported event invokes that actor without a first UI launch, and then orders configuration, activation, a controlled management start, fresh-process checks and normal work. It adds source limitations and future positive/negative cases without choosing a provisioner or claiming that the production mechanism exists.
+
+> The current repository describes a six-member workspace with a fixture-only native UI, inert protocol and numerical components, modeled Core behavior and a bounded unauthenticated loopback observer. Those parts do not yet form the production synchronization pipeline. The two-service authority design, privileged lifecycle work and complete hardened MSIX remain planned and unqualified. The current Core continuation still takes priority; scoped Sandbox management does not admit this product experiment, and the blocked artifact, fuzz/storage holds and UI-M0 D1–D3 deferrals remain in force.
+
+**Raw verdict:** “READY for documentary integration. Review completed. No
+material documentation-stage findings.” No MSIX-R finding was raised.
+The raw report's SHA-256 is
+`1bb9d623c6cc0af9993309e5b3df6c0ecde5ffec693a5e1b46971c5a071a8f9b`.
+This disposition applies to the documentary candidate and bounded source/design
+continuation, not to a selected topology, native experiment or release.
+
+**Documentation verification:**
+
+- `git diff --check`: passed. The focused changed-document check covered
+  **927 local links**, with no new or preexisting target/heading failures.
+- All seven changed paths are the intended Markdown surfaces. Five architecture
+  Mermaid blocks, the canonical ID set, historical task §4 content/receipts and
+  the original running-versus-already-stopped removal experiment are preserved.
+  Prior S01–S87 entries are byte-identical; all **102** source IDs are unique,
+  contiguous and defined where cited. Fences remain balanced.
+- The unchanged package checker initially returned 1 for 15 missing-link
+  occurrences pointing to 13 files omitted from the partial local snapshot.
+  Each target exists upstream. The coordinator populated a separate validation
+  mirror with those exact upstream blobs, verified their Git identities and all
+  seven frozen candidate file hashes, then reran
+  `python3 -B .agents/skills/scripts/check_skills.py --root <verified-mirror>/.agents/skills`:
+  **PASS, 63 skills**. No policy, inventory or product file was changed to obtain
+  that result.
+- The README-required
+  `python3 -B .agents/skills/scripts/test_check_skills.py -v` completed with
+  **25 tests passed**. These are skill-checker controls, not application,
+  service, package or Windows qualification.
+
+**Current exit and next action:** source synthesis and documentary integration
+are complete. W11-W05/W11-W10 retain the supported production-owner, invocation,
+creation-time isolation and native servicing gaps described above. Continue
+bounded source/design preparation under those owners; any actual probe still
+needs its exact fixture, actor/context, Windows/channel row, finite operations
+and existing environment admission. Current Core priority, all stated holds,
+the separate removal gap and optional enhanced-provenance policy remain.

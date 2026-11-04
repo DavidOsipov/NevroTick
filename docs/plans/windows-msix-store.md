@@ -418,10 +418,21 @@ schema validation or an observed deployment. [S16, S17, S63, S64]
 The Win32 setters exist: `ChangeServiceConfig2W` accepts
 `SERVICE_CONFIG_REQUIRED_PRIVILEGES_INFO` and `SERVICE_CONFIG_SERVICE_SID_INFO`,
 and `QueryServiceConfig2W` reads the configured values. The configuration handle
-requires `SERVICE_CHANGE_CONFIG`. The documented default service-object access
-for LocalService/NetworkService does not grant that right. A service cannot be
-assumed to bootstrap its own privilege restrictions, SID policy or sibling
-isolation merely because it can report status to SCM. [S54, S55]
+requires `SERVICE_CHANGE_CONFIG`. The generic `CreateService` default-DACL
+example does not grant that right to LocalService/NetworkService; it does not
+specify the descriptor MSIX creates. Establish each required right on the actual
+deployment-created objects under the proposed actor before attempting setters.
+Elevation or LocalSystem identity alone is no proof of that grant. A service
+cannot bootstrap its own restrictions or sibling isolation merely because it
+can report status to SCM. [S54, S55]
+
+The [5 November refinement](#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+separates actual object authority from supported no-UI invocation and servicing
+reentry. Preserve raw `dwServiceType`, including unknown bits, alongside the
+interpreted type: the inspected wrapper can discard the packaged-service bit.
+Neither a normalized wrapper result nor a successful rights probe establishes
+supported mutation, a production provisioner or effective runtime admission.
+[S92, S93]
 
 The missing link is an **authorized installation/maintenance owner and ordering**
 that applies and verifies the settings before automatic or manual service
@@ -739,7 +750,7 @@ than a deployable or release-qualified package:
 
 | Existing owner / checks | Exact remaining condition | Next useful evidence |
 | --- | --- | --- |
-| W11-W05 platform/security; CHECK-1/2/15/16 | Manifest-supported account topology plus a trusted, supported pre-exposure provisioning owner that survives repair/update | Resolve the section 4 account/ordering bridge against the selected SDK and applicable custom-capability contract. Do not promote two LocalService services to a chosen topology without the same-account isolation proof. |
+| W11-W05 platform/security; CHECK-1/2/15/16 | Manifest-supported account topology, actual per-operation rights and supported no-UI provisioning/reentry before functional exposure | Begin with section 7.5's handle-only rights discriminator; separately resolve invocation and the section 4 account/ordering bridge. Do not promote two LocalService services to a chosen topology without the same-account isolation proof. |
 | W11-W05 lifecycle/storage; CHECK-5/12/13/23/27 | Recovery owner remains invocable until durable restoration, including independent removal/Reset when the service is already stopped | Identify the removal bridge, then challenge running versus stopped-service removal before expanding the package matrix. A record without executing code cannot restore the system. |
 | W11-W10 platform/build; CHECK-16/18/20/26/27 | Concrete launch path and module graph satisfy required CIG and other policies; Trusted Launch supported on the selected OS row | Inspect real emitted/loaded images and runtime admission once actual roles exist. Preserve the pre-entry loader gap and the documented signer-class distinction. |
 | Release/packaging; CHECK-18/23/24 | Real identity, production payloads, qualified local mechanics and candid capability/reviewer notes | Build the complete submission candidate through P3/P4/P6 when those prerequisites permit. David's Store attempt precedes genuine Store-byte trust tests; prior certification remains no preparation prerequisite. |
@@ -762,13 +773,15 @@ to Reset, update, reboot/interruption and multiuser cases. GDK-dependent action
 execution needs its documented Store pipeline and cannot be qualified by local
 registration. Existing Windows STOP and package/environment prerequisites remain.
 
-The provisioning owner can separately test two inert initially disabled services
-with an explicitly administrative laboratory harness: apply the exact SCM
-settings, observe new effective tokens/objects and valid/denied operations,
-then update to a second version and re-observe before exposure. Its scope is
-the Windows building blocks and servicing behavior. Success with that external
-harness does not supply a production installation owner; the complete-package
-bootstrap must later demonstrate its own supported pre-exposure sequence.
+The provisioning owner first uses [section 7.5's handle-only discriminator](#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+on two inert initially disabled services. An explicitly administrative laboratory
+harness must establish its required rights on the untouched deployment-created
+objects before any setter campaign. Only after that boundary and the relevant
+execution scope are admitted may later cases apply fixed SCM settings, perform
+a controlled management start, verify fresh effective tokens/objects and test
+update/repair before functional exposure. External harness authority proves only
+its Windows building blocks; the complete package still needs its own supported
+provisioner, no-UI invocation and servicing reentry.
 
 Certification preparation can proceed from section 7.1's role/capability table.
 The release owner fills it with actual executable/service names, effective
@@ -798,7 +811,7 @@ object isolation of an already running process. [S54, S55, S69–S71]
 
 | Unselected candidate | Useful property | Remaining cost or evidence |
 | --- | --- | --- |
-| Initially disabled services plus an explicitly elevated enable/configure operation | Supplies a narrow configuration owner without a permanent LocalSystem runtime role | Changes activation UX if it requires an initial user action; helper elevation/Store eligibility, exact package identity and servicing behavior remain unqualified. Do not silently add mandatory first UI launch. |
+| Initially disabled services plus an explicitly elevated enable/configure operation | Could supply a narrow configuration owner without a permanent LocalSystem runtime role, conditional on actual required object rights and supported invocation | Changes activation UX if it requires an initial user action; helper elevation/Store eligibility, exact package identity and servicing behavior remain unqualified. Section 7.5 separates authority from no-UI invocation/reentry. Do not silently add mandatory first UI launch. |
 | Short-lived automatic LocalSystem bootstrap service, with functional services initially disabled | A manifest-supported account/start mode could provide configuration without depending on UI launch | Adds a privileged service registration and `localSystemServices`; process exit does not remove that registration. First-start ordering, protected re-entry, interruption, idempotence and repair/update/SID activation remain unqualified. This is not a broader LocalSystem clock broker or an adopted exception. |
 | One SCM broker creating a restricted engine child | Can establish the engine's token restrictions and creation-time mitigations before engine entry | Changes topology and supervision. It does not itself supply all broker/service configuration authority, outbound-network confinement or independent-uninstall recovery. |
 
@@ -814,11 +827,15 @@ For an explicit enable operation, keep service names, executable ownership,
 permitted operations and expected package identities product-controlled. The
 helper must not accept arbitrary executable paths, service names, command lines,
 accounts or security descriptors from UI/IPC. Configure while functional services
-remain disabled, verify each transition, then obtain admission evidence from
-the actual fresh processes before allowing networking/IPC/clock ownership.
-Interrupted provisioning must remain nonfunctional and recoverable. Reconcile
-the selected lifecycle with the existing owner-decision procedure before its
-dependent implementation.
+remain disabled and quiescent, subject to section 7.5's actual-object authority
+precondition. After configuration and activation prerequisites hold, permit a
+controlled SCM start into bounded authenticated management/admission behavior;
+creation-time object protection must already hold. Obtain fresh-process evidence
+there before normal workers, external networking, sensitive functional IPC or
+new clock takeover. This preserves the management path needed for admission
+without adding a general command surface. Interrupted provisioning must remain
+nonfunctional and recoverable. Reconcile the selected lifecycle with the existing
+owner-decision procedure before its dependent implementation.
 
 #### SCM facts that change the implementation design
 
@@ -966,10 +983,11 @@ completion, service deletion and payload/data lifetime; it must not perform the
 claimed recovery. Only a credible mechanism surviving that pair justifies the
 larger Reset/update/reboot/multiuser matrix.
 
-For provisioning, the next inert package experiment compares disabled initial
-services, refused premature start, interruption between configuration steps,
-fresh effective tokens and one update/repair. An external administrative harness
-can establish API behavior but cannot supply the production provisioning owner.
+For provisioning, section 7.5 first separates actual object rights and supported
+invocation. Conditional later inert cases compare disabled initial services,
+refused premature start, interrupted configuration, fresh effective tokens after
+controlled management start and one update/repair. An external administrative
+harness can establish API behavior but cannot supply the production owner.
 If the restricted-child alternative is selected for investigation, separately
 observe child identity/privilege absence, permitted IPC, denied broker access,
 restart after privilege removal and child lifetime after broker failure.
@@ -984,10 +1002,155 @@ records disposition. Current Core priority and all Windows/fuzz/storage/UI holds
 remain. Researching a safer Windows laboratory is not permission to run these
 experiments on the developer's host or to retry the Defender-triggering fixture.
 
+### 7.5 Pre-start provisioning authority and admission — 5 November 2026
+
+**Source synthesis; supported production bridge still unresolved.** The GitHub,
+web and Microsoft Learn investigations refine the existing W11-W05/W11-W10
+assignment. They establish neither a deployable provisioner nor a native pass.
+Two independent prerequisites remain: the intended actor obtains each necessary
+right on the actual deployment-created service objects, and a supported event
+invokes that actor before functional work and whenever servicing requires
+reconciliation. Configuration readback, fresh-process admission and recovery
+remain separate subsequent obligations. OPEN-3/12/14 stay open.
+
+#### What the evidence supports
+
+| Evidence and source class | Supported conclusion and limit |
+| --- | --- |
+| Microsoft SCM access/API contracts [S54, S55, S69–S71] | Manager, query, configuration, descriptor and control rights are distinct. The generic `CreateService` default descriptor is not a documented MSIX descriptor. Inspect actual objects and request only rights needed by the selected operation; an `ALL_ACCESS` denial does not locate the missing right. |
+| Reporter-supplied packaged-service DACL and access errors [S88] | A concrete reproduction lead challenges the assumption that an elevated helper or LocalSystem service can configure every packaged-service object. The reported DACL grants mutation rights to a SID identified as AppXSvc, but its `D:` string has no owner field. This mutable third-party report is not independent native evidence, proof of ownership, a universal AppXSvc rule or a guarantee that updates reset descriptors. |
+| Pinned Microsoft WSL manifest and implementation [S89, S90] | WSL declares an automatic LocalSystem installer service and can invoke installation logic from startup. Its worker uses packaged `wsl.msi`/`UpgradeViaMsi`, its wait can be infinite and its lock/context is process-local. This supplies a building-block example, not a complete-MSIX-only recipe, bounded durable recovery, sibling-service rights, unattended reentry or third-party Store eligibility. |
+| Historical Microsoft-ranked employee reply, 23 June 2022 [S91]; automatic-service documentation [S99] | The converted-package report is contrary evidence to assuming service execution immediately follows installation. It is not a universal current Windows 11/Store rule. Observe deployment completion, registration, process creation, reboot and application activation separately; automatic startup alone does not establish the required installation event. |
+| Pinned `windows-service` source and Microsoft constant [S92, S93] | The inspected `ServiceType` omits `SERVICE_PKG_SERVICE` (`0x200`), while `ServiceConfig::from_raw` uses `from_bits_truncate`. Preserve raw `dwServiceType` with interpreted flags and unknown bits; wrapper-only evidence can lose the packaged distinction. This selects no new wrapper or dispatcher. |
+| Microsoft object/default-owner and status contracts [S20, S75, S94–S98] | Token defaults for later creation, the token object's own security and the initial process/thread descriptors are separate. A START_PENDING SCM PID may be invalid. These contracts require actual creation-time and lifetime-bound proof; late readback alone cannot supply it. |
+
+The inspected UpdateTask, preinstall-task and Package Support Framework script
+contracts have different application models and invocation/failure scopes. None
+of the reviewed evidence supplies the required privileged initial-install and
+servicing transaction. Retain that bounded conclusion, rather than a claim that
+all Windows mechanisms are impossible. Service dependencies and delayed startup
+likewise do not supply authority or the protected transaction. No framework,
+script surface or additional provisioning candidate is adopted. [S69, S100–S102]
+
+All three section 7.4 candidates remain **unselected**. The elevated-helper and
+automatic-bootstrap candidates both need actual object rights, supported no-UI
+invocation, finite work and servicing reentry. Exiting a bootstrap process does
+not remove its privileged registration. The restricted-child candidate can
+control child creation but still requires a topology decision, broker
+provisioning/protection, child identity, network confinement and bounded lifetime.
+Failure of another candidate selects none of these. No external or embedded MSI,
+mandatory first-UI setup, wider LocalSystem clock broker or engine clock privilege
+is admitted by the WSL analogy or this research.
+
+#### Separate creation-time protection from later object defaults
+
+`TokenOwner` selects an eligible existing user/group SID for later default-owner
+use; a service SID's presence does not automatically select it. Eligibility and
+the actual primary or impersonation token used by each creation path matter.
+`TOKEN_ADJUST_DEFAULT` concerns token defaults, not authority to change the token
+object's own descriptor. Explicit creation descriptors and eligible per-service
+defaults remain mechanisms to qualify, with `OWNER RIGHTS` evaluated on the
+actual resulting objects and replacements. [S20, S76, S94–S97]
+
+**Design inference:** setting defaults in ServiceMain cannot retroactively
+protect the already-created process, initial thread, token or earlier startup
+objects. Before admitting a management start, the chosen launch path needs a
+supported creation-time protection argument and native qualification against an
+already-running hostile same-account actor. A later safe descriptor or denied
+handle request cannot exclude an earlier dangerous handle. This is an unresolved
+proof obligation, not an observed Windows vulnerability. Runtime creation,
+staging/replacement and impersonating paths retain their separate positive and
+denied-access controls. [S73, S75, S94–S97]
+
+#### Conditional ordering under the existing lifecycle owner
+
+Reuse the protected durable lifecycle transaction and per-service configuration
+records; the following labels describe obligations, not new runtime states,
+wire fields or a parallel journal. Keep durable provisioning progress separate
+from each fresh process-lifetime admission result.
+
+| Boundary | Required transition and failure behavior |
+| --- | --- |
+| Deployment identity, authority and invocation | Bind the actual package/version/payload, fixed services, raw types, proposed actor and supported invocation route. Establish the necessary rights on actual objects. Missing registration, unreadable security, wrong identity and denied rights are distinct blocked outcomes. No ownership takeover, AppXSvc impersonation, registry bypass or service recreation outside deployment. |
+| Inhibited, quiescent configuration | Keep the protected maintenance/provisioning barrier current; functional services remain disabled and their actual processes quiescent. Disabled configuration alone does not stop an old process. Preserve queued-restart inhibition and existing ownership/recovery rules. |
+| Fixed changes and readback | The supported owner applies only fixed product-controlled changes, preserves unrelated fields and records each fallible outcome and recoverable partial state. Read back required configuration/security. Partial success cannot produce completion; no fictitious SCM multi-service transaction or stale whole-record replay. |
+| Activation prerequisites | Track configured state, documented service-start/system-start activation, pending restart/reboot and actual effective state separately. Reenter the supported owner after required activation; pending state cannot admit functional work. [S19, S20] |
+| Controlled SCM management start | Once static configuration and launch prerequisites hold, the authorized owner changes the intended start setting and starts a fresh process into bounded management/admission behavior. Creation-time protection must already hold. StartService success or SCM Running establishes no functional readiness. [S66, S77] |
+| Fresh process admission | Runtime checks and trusted verification bind actual package/profile/generation, stable process lifetime and token/object/mitigation evidence through existing identity/IPC contracts. A specifically admitted authenticated management path may report this result or Blocked status. An invalid START_PENDING PID, saved PID, package-family match or old success marker cannot admit the process. [S98] |
+| Normal work and later reentry | Only the current admitted generation opens normal workers, external networking and sensitive functional endpoints; broker clock ownership/recovery checks remain additional prerequisites. Update, repair, Reset, re-registration, reboot or interruption must reconcile affected assumptions and freshly admit affected processes. Missing invocation or rights fails that lifecycle row without weaker retry or privilege expansion. |
+
+The self-check/verifier division remains an implementation question under the
+existing IPC and lifecycle owners; this refinement adopts no authentication
+protocol, token-statistics inventory or numeric timeout. A runtime report has a
+stated trust basis, not an attestation guarantee. Existing authorized recovery
+for a prior takeover must remain usable when normal admission fails; refusing
+version B does not itself restore the state left by version A.
+
+#### First provisioning discriminator: inspect and open handles only
+
+**Held and unexecuted.** W11-W05/S0.6 owns this bounded question; W11-W10 supplies
+the exact complete inert package and OS/channel row. The existing disposable
+environment card must admit fixture bytes, installation setup, one owned
+machine/session, allowed operations, finite resources/time/output, cleanup and
+evidence custody. Scoped Sandbox readiness is not admission for this experiment.
+The probe after setup is nonmutating; it performs no setter, StartService or
+ControlService call, clock/W32Time work, production networking or first-UI setup.
+
+1. Use initially disabled inert functional-service fixtures. Observe whether
+   deployment registers them without UI launch; keep absent registration separate
+   from denied access, and record unexpected execution rather than concealing it
+   by launching the UI.
+2. Query installed identity/configuration, raw `dwServiceType`, owner and DACL
+   through permitted paths; resolve relevant SIDs independently. Preserve
+   unreadable/error/unsupported results instead of synthesizing an empty safe
+   descriptor.
+3. From the actual proposed provisioning context, request and close narrow
+   handles for query/status/read-security and the required configuration rights.
+   Probe `WRITE_DAC`/`WRITE_OWNER` only when the proposed operation needs them;
+   test required start/stop rights separately without exercising them. Retain
+   caller/token context, target, requested mask, result and raw error. [S55, S71]
+4. Pair an intended permitted query with an available standard-user/UI mutation
+   denial. Engine/broker actor controls wait for the later management-start
+   phase; do not start a disabled role just to obtain its token in this probe.
+   Label any synthetic same-account actor explicitly.
+5. Stop at the first required authority failure and report its exact operation
+   and context to the existing owner for a supported-mechanism question or
+   NV-DEC-001 card. Do not expand into a setter/lifecycle campaign or repair the
+   denial through ownership, privilege or DACL bypass.
+
+**Narrow exit:** the named actor could or could not acquire each necessary right
+on the untouched deployment-created targets. A positive result proves neither
+supported setter behavior nor correct invocation. Manually invoking an external
+laboratory helper proves only that context's access; it cannot be credited as
+the in-package production provisioner or its no-UI/reentry mechanism.
+
+After those prerequisites become credible and execution is separately admitted,
+extend only to the necessary distinguishing cases: no-UI invocation and required
+reboot; interrupted fixed configuration; activation and controlled management
+start; earliest process/thread/token protection and later replacements;
+exit/restart during verification and stale-result rejection; version A→B update
+and a distinct same-version repair/re-registration. Observe every affected field
+and earliest execution again. Challenge premature execution during update as a
+fault hypothesis; neither unchanged manifest nor retained data proves persistence.
+Keep Reset and security-profile migration as separate later lifecycle claims.
+
+These cases retain W11-W05 provisioning CHECK-1/2/15/16 and maintenance
+CHECK-12/13/23/27, W11-W10 package/activation CHECK-16/18/23/26/27, and existing
+clock/lifecycle CHECK-5/12/13/23/27. The independent-removal/Reset gap is separate:
+section 7.3's running-versus-already-stopped/crashed pair remains the first
+removal/recovery experiment. No source result closes OPEN-3/12/14, selects a
+topology or changes Core priority, scoped Sandbox authorization, the S134/general
+native restrictions, fuzz/storage holds or UI-M0 D1–D3 deferrals. Optional enhanced
+provenance remains optional; required artifact and lifecycle evidence remains.
+The [current task continuation](../../tasks/windows11-integration.md#424-pre-start-service-provisioning-refinement--5-november-2026)
+owns disposition and subsequent candidate-specific receipts.
+
 ## 8. Primary source register
 
 Sources are dated retrieval evidence, not frozen platform guarantees. The
 documentation does not establish actual project eligibility or native behavior.
+S88 is explicitly reporter-supplied evidence; S91 is a historical Microsoft-ranked
+employee reply. Their limited evidentiary scope is stated in section 7.5.
 
 - **S01:** [Code-signing options](https://learn.microsoft.com/windows/apps/package-and-deploy/code-signing-options).
 - **S02:** [Store MSIX package requirements, identity and version rollback](https://learn.microsoft.com/windows/apps/publish/publish-your-app/msix/app-package-requirements).
@@ -1076,3 +1239,18 @@ documentation does not establish actual project eligibility or native behavior.
 - **S85:** [Task registration, execution identity and security](https://learn.microsoft.com/windows/win32/taskschd/security-contexts-for-running-tasks).
 - **S86:** [Calendar-based trigger StartBoundary](https://learn.microsoft.com/windows/win32/taskschd/trigger-startboundary).
 - **S87:** [Package-extension uninstall event arguments](https://learn.microsoft.com/uwp/api/windows.applicationmodel.packageextensions.packageextensionpackageuninstallingeventargs).
+- **S88:** [Reported packaged-service DACL and access failures, issue #89711 comment](https://github.com/anthropics/claude-code/issues/89711#issuecomment-5473112111). Mutable third-party reproduction lead; the DACL string supplies no owner field or universal platform rule.
+- **S89:** [Pinned WSL installer-service manifest](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/msixinstaller/AppxManifest.in). Microsoft source example, not a NevroTick provisioning or Store-eligibility result.
+- **S90:** [Pinned WSL service startup](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/src/windows/wslinstaller/exe/ServiceMain.cpp) and [MSI worker/reentry implementation](https://github.com/microsoft/WSL/blob/8a5e5418f75e70370314976da7fb2dc3fa0a5e06/src/windows/wslinstaller/exe/WslInstaller.cpp). The MSI operation, infinite wait and process-local synchronization limit the analogy.
+- **S91:** [Converted MSIX service activation discussion](https://techcommunity.microsoft.com/discussions/msix-discussions/msix-package-with-service-fails-to-immediately-install-the-service-/3497693), Microsoft-ranked employee reply of 23 June 2022. Historical product/channel observation, not a current universal startup contract.
+- **S92:** [Pinned windows-service ServiceType and raw configuration conversion](https://github.com/mullvad/windows-service-rs/blob/aab40570b50c05b8e6f3c375171727e666ee42a0/src/service.rs), including `from_bits_truncate`.
+- **S93:** [Pinned Microsoft SERVICE_PKG_SERVICE constant](https://github.com/microsoft/windows-docs-rs/blob/c882d801b7cefbb3e02d8b3c265341441a2207c0/docs/doc/windows/Win32/System/SystemServices/constant.SERVICE_PKG_SERVICE.html).
+- **S94:** [Owner of a new object and token default owner](https://learn.microsoft.com/windows/win32/secauthz/owner-of-a-new-object).
+- **S95:** [TOKEN_OWNER owner-eligible SID conditions](https://learn.microsoft.com/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_token_owner). DDI description supplies the eligibility condition; no kernel API is selected.
+- **S96:** [Access-token object rights and TOKEN_ADJUST_DEFAULT](https://learn.microsoft.com/windows/win32/secauthz/access-rights-for-access-token-objects).
+- **S97:** [Thread security and access rights](https://learn.microsoft.com/windows/win32/procthread/thread-security-and-access-rights).
+- **S98:** [QueryServiceStatusEx status and PID validity](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-queryservicestatusex).
+- **S99:** [Automatically starting services](https://learn.microsoft.com/windows/win32/services/automatically-starting-services).
+- **S100:** [UWP UpdateTask invocation](https://learn.microsoft.com/windows/uwp/launch-resume/run-a-background-task-during-updatetask).
+- **S101:** [Preinstall task context, execution and retry limits](https://learn.microsoft.com/windows-hardware/customize/preinstall/preinstall-tasks).
+- **S102:** [Package Support Framework script invocation](https://learn.microsoft.com/windows/msix/psf/run-scripts-with-package-support-framework).

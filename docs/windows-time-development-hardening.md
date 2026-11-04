@@ -921,6 +921,19 @@ qualification follows signing and precedes broad release.
 | Compiled leap knowledge; CHECK-18/23/26 | Reproduce normalized calendar/policy generation from reviewed pinned inputs and bind its revision/digest and generator identity to the complete authenticated release. A mismatched or corrupt replacement cannot erase the previous admitted release or protected correction continuity. A valid bundle with unknown future coverage remains distinct from an integrity failure; no mutable runtime file, network build fetch, downloader or new trust root is introduced. |
 | Activation/trust; CHECK-9/18/23 | Apply [signing section 5.1](windows-time-signing-guide.md#51-wrong-clock-and-offline-activation-matrix) to initial installation, installed startup, helper activation, maintenance and recovery, with bounded retrieval and absent/stale caches. Valid offline/wrong-clock recovery must coexist with rejection of unverified code; no weakened verifier or unconditional trust. |
 
+The [5 November provisioning refinement](plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+orders the service/provisioning observations above. Before setters, query actual
+deployment-created identity, raw service type and security, then open/close only
+the proposed actor's required handles; descriptor rights are conditional on its
+actual operations. No start/stop call belongs to that first probe. Separately
+prove supported no-UI invocation/reentry. Later controlled management start needs
+creation-time process/thread/token protection already established, then fresh
+lifetime-bound admission before normal work. Qualify runtime owner/defaults and
+replacement objects separately, reject stale process evidence, and distinguish
+update from same-version repair/re-registration. W11-W05/W11-W10 and their
+existing CHECK owners retain these planned cases; the separate removal pair,
+current execution holds and optional enhanced-provenance policy are unchanged.
+
 The [plan's threat matrix](plans/windows-msix-store.md#34-threats-and-independent-controls)
 owns the detailed cases. Failed required protection blocks affected authority;
 it does not authorize weaker loading, privilege expansion or automatic MSI
