@@ -20,6 +20,15 @@ expanding the existing sixteen-package external dependency cohort.
 The additional analysis tools below were installed separately on 29 October;
 their compiler experiments do not change the repository's shipping Rust pin.
 
+Those dated bootstrap and first-crate records are historical. The current
+[workspace manifest](Cargo.toml) and [lockfile](Cargo.lock) cover six members;
+the [implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
+routes each member to its task evidence. Use the
+[development plan's current task](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+for execution order and applicable holds. Later source changes require the
+candidate-specific evidence described in those tasks, not automatic reuse of
+the original bootstrap results.
+
 ## Installed toolchain and tools
 
 [rust-toolchain.toml](rust-toolchain.toml) selects the compiler, minimal profile,

@@ -55,8 +55,10 @@ fixtures and a bounded, unauthenticated two-peer loopback observer. Its
 observations are ineligible for clock control. Production NTP/NTS acquisition,
 installed services, clock changes, Android, DoQ, pinning and the complete
 installer remain future work.
-See the [development plan](docs/plans/development-plan.md) and
-[UI-M0 task](tasks/ui-m0.md) for current results and qualification gaps.
+See the [current implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
+and [task index](tasks/README.md) for component evidence and qualification gaps.
+The [development plan](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+owns the next bounded task.
 No production-supported stable release is declared. The
 [release policy](docs/release-policy.md) records current support status, the
 proposed first-stable baseline and the preparation required for bad-release recovery.
@@ -66,10 +68,10 @@ proposed first-stable baseline and the preparation required for bad-release reco
 | Crate | Purpose |
 | --- | --- |
 | [nevrotick-ui](crates/nevrotick-ui/) | Sample-data model and native Windows UI prototype. |
-| [ntp-wire](crates/ntp-wire/) | Bounded NTP headers and packet framing. |
+| [ntp-wire](crates/ntp-wire/) | Bounded NTP decoding/framing and inert NTS-KE negotiation/encoding and NTS envelope/plaintext readers. |
 | [time-domain](crates/time-domain/) | Checked timestamp, era, offset and elapsed-time arithmetic. |
 | [ntp-exchange](crates/ntp-exchange/) | Unauthenticated fixture association and deterministic scenarios. |
-| [time-core](crates/time-core/) | Regression, residuals, normalization, bounded history and fixture selection. |
+| [time-core](crates/time-core/) | Pure time-estimation, source-selection/combination and modeled correction fixtures. |
 | [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated loopback observation pilot; no production service or clock authority. |
 
 ## Getting started with development

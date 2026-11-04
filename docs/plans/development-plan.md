@@ -1601,6 +1601,13 @@ loopback observer; the documentation maintainer should reconcile that scope at
 the next public-summary update without claiming production acquisition. These
 outside-plan editorial gaps remain recorded, not new Core or release-policy gates.
 
+**4 November status of that public-summary observation:** README and SECURITY
+now both describe the bounded unauthenticated loopback observer and its
+ineligibility for clock control. That omission is resolved. The separate
+archived-design link issue remains recorded; this status correction does not
+claim its repair. The [reconciliation below](#public-project-status-reconciliation--4-november-2026)
+addresses the remaining current-versus-historical wording.
+
 <!-- Full skill paths are centralized here to keep the phase map readable. -->
 
 ### Task decomposition reconciliation — 4 November 2026
@@ -1629,6 +1636,44 @@ phase acceptance and execution holds remain required. This reconciliation
 qualifies no implementation, native environment or release. Source/edit hashes,
 review scope and link/custody checks are retained locally under
 `/tmp/nevrotick-task-map-review-xxrfvam2/`; it is not a product evidence receipt.
+
+### Public project-status reconciliation — 4 November 2026
+
+This closes the remaining current-versus-historical documentation issue in
+§2.3 of the owner's original audit. The inspected predecessor is
+[`889d534`](https://github.com/DavidOsipov/NevroTick/commit/889d534252d145e05f9442d6bbf66272d8e9f65f).
+Its workspace manifest, component manifests/source and existing task records
+support the [current implementation summary](../windows-time-architecture.md#1-current-state-capsule):
+six bounded components, including the unauthenticated loopback observer and
+pure Core/protocol work beyond the original fixture headers/regression stage.
+The engine, estimator and UI do not form a production synchronization pipeline.
+
+README and SECURITY already described the observer at this predecessor; that
+part of the original audit required no new implementation or SECURITY edit.
+Architecture and hardening no longer deny the existing workspace/lockfile.
+The old architecture capsule, dependency-refresh state and P0/S1.1 handoff are
+explicitly historical; present execution continues through [section 7](#7-next-executable-task-for-a-development-agent).
+README, AGENTS, TOOLING and the documentation guide route readers to current
+component ownership and candidate-specific evidence. Current settled active-time
+delivery qualification remains incomplete; earlier selected results retain
+their exact candidates.
+
+The original review quotations, task receipts, ASVS dispositions, canonical IDs,
+diagrams and archived design copies retain their evidence scope. This amendment
+changes no source, dependency, runtime policy, execution permission, Core order,
+UI-M0 deferral, support commitment or release gate. Optional enhanced provenance
+retains the accepted OD-05 §7.5 disposition.
+
+Two complementary source/history reviewers rechecked the seven-file Markdown
+diff and found no material factual error or scope regression. Both retained
+prior context; this was a bounded continued review, not a fresh full-plan or
+product qualification. Documentation checks passed for 1,021 local links and
+anchors, changed whitespace and balanced fences. The original architecture
+capsule/handoff, review receipts, canonical definition IDs and five Mermaid
+blocks were preserved; every original line of this plan remains in order.
+The 585 materialized baseline files matched the inspected upstream Git blobs.
+No product build, test campaign or native execution was needed or performed for
+this documentation-only change.
 
 [dependency-updates]: ../../.agents/skills/environment/dependency-updates/SKILL.md
 [evolve-data-contracts]: ../../.agents/skills/implementation/evolve-data-contracts/SKILL.md

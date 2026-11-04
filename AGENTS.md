@@ -182,16 +182,23 @@ Windows UI-M0 adapter, and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure iner
 wire owner under [S1.1a qualification](tasks/s1.1-header.md) and
 [S1.1b framing qualification](tasks/s1.1-framing.md). It provides structural
 framing without exchange, era, authentication or sample admission.
+The [protocol task](tasks/s0.1-protocol-comparison.md) also records its inert
+NTS-KE record processing, negotiation/request encoding and NTS envelope/plaintext
+readers; these confer no TLS, AEAD or authenticated-source authority.
 [time-domain](crates/time-domain/Cargo.toml) is the third member under
-[S1.1c](tasks/s1.1-time-domain.md): checked numerical/era/clock-domain work in
-progress, with no network, clock or authentication effects.
+[S1.1c](tasks/s1.1-time-domain.md): checked numerical/era/clock-domain arithmetic,
+with qualification evidence limited to the linked bounded scope and no network,
+clock or authentication effects.
 [ntp-exchange](crates/ntp-exchange/Cargo.toml) owns a single-slot, unauthenticated
 fixture association under [S1.1d](tasks/s1.1-exchange-association.md) and the
 [S1.1e scenario harness](tasks/s1.1-deterministic-harness.md).
-[time-core](crates/time-core/Cargo.toml) owns the pure regression, residual,
-normalization and fixed-capacity fixture-history code described by
-[S1.2](tasks/s1.2-regression-readiness.md). Its checked fixture results do not
-establish production sample eligibility, selection, clock authority or P1.
+[time-core](crates/time-core/Cargo.toml) owns pure regression/history,
+selection/principal/supporter combination, reference readiness and modeled
+correction accounting. [S1.2](tasks/s1.2-regression-readiness.md) and the
+[current Core task](tasks/s1.3-source-selection-readiness.md) retain the exact
+implementation and qualification scopes. Current settled active-time delivery
+qualification remains incomplete; selected fixture results do not establish
+production sample eligibility, an integrated controller, clock authority or P1.
 [nevrotick-engine](crates/nevrotick-engine/Cargo.toml) owns the engine-only
 [bounded transport pilot](tasks/engine-transport-pilot.md): two explicit loopback
 peers, a private current-thread runtime and the unauthenticated, ineligible

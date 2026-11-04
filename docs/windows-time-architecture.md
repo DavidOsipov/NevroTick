@@ -41,7 +41,7 @@ to those same owners. Conditional APIs remain unselected; the current portable
 Core work and Windows/fuzz/storage execution holds remain under the
 [next-task plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
-This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
+This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. Words such as **must** state product requirements; the linked tasks track their implementation and qualification. The original planning revision supplied no application execution evidence. Section 1 distinguishes the current workspace from that historical review baseline.
 
 **4 November leap-policy amendment:** [NV-LP-001](plans/leap-second-policy.md)
 selects release-bundled history and effective UTC rules, usable silent-LI sources,
@@ -52,7 +52,7 @@ pass or a change to the current Core checkpoint, correction authority or executi
 
 **Owner delivery decision, 3 November 2026:** prepare **one complete hardened MSIX for a Microsoft Store submission attempt**, including the services. The product contains a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker and the administration helper. One product owns installation, updates, repair, removal and reversible Windows Time Service handover. Sections 19.4–19.5 and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) distinguish this selected direction from unresolved provisioning, Store acceptance and actual artifact qualification. Prior Store approval is not a prerequisite for preparing the submission candidate. Retain the MSI design and signing profiles as fallback/reference material for David to reconsider after a Store rejection or concrete technical evidence; they are not a parallel deliverable or an MSIX prerequisite. This decision does not change the current Core priority, Windows execution stop, separate fuzz hold, storage pause or UI-M0 deferrals.
 
-**Revision 1.4 changes:** reconciles a fresh independent review of all maintained Markdown documents and all 345 ASVS clauses. It corrects 16 worksheet records, including seven draft classification changes; makes conditional native HTTP retrieval and legacy NTP entropy decisions explicit; aligns JSON/status wording; and adds a source-derived extreme-date verifier qualification case. Original verification text and prior additions remain traceable. All controls remain unimplemented/unexecuted. See the [full review report](windows-time-review.md).
+**Revision 1.4 changes:** reconciles a fresh independent review of all maintained Markdown documents and all 345 ASVS clauses. It corrects 16 worksheet records, including seven draft classification changes; makes conditional native HTTP retrieval and legacy NTP entropy decisions explicit; aligns JSON/status wording; and adds a source-derived extreme-date verifier qualification case. Original verification text and prior additions remain traceable. At that planning review, all controls remained unimplemented/unexecuted. See the [full review report](windows-time-review.md).
 
 **Prior revision 1.3 changes:** adds a component-owned dependency register, a concrete TLS-provider license gate and Windows certificate-policy qualification, bounded native-work lifetime rules, Windows security/diagnostic integration, development tools and exact-graph release evidence. It adds DEC-19, THR-26 and CHECK-26/27, and extends planned ASVS verification. Revision 1.2's strict Serde/domain contract and revision 1.1's complete single-package distribution remain the baseline. No crate was installed, dependency graph resolved or application tested for this revision. The maintained deliverables are Markdown.
 
@@ -77,6 +77,45 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 ---
 
 ## 1. Current-state capsule
+
+**Implementation status, 4 November 2026:** this summary was checked against
+[main at `889d534`](https://github.com/DavidOsipov/NevroTick/commit/889d534252d145e05f9442d6bbf66272d8e9f65f).
+The [workspace manifest](../Cargo.toml), [lockfile](../Cargo.lock) and current
+source contain six members. Source presence and task qualification are separate:
+the linked tasks retain the exact candidates, environments, completed checks and
+remaining work.
+
+| Component | Present implementation | Evidence owner and boundary |
+| --- | --- | --- |
+| [nevrotick-ui](../crates/nevrotick-ui/Cargo.toml) | Portable sample-data model and restricted native Windows UI | [UI-M0](../tasks/ui-m0.md); no engine/Core integration, with D1–D3 still deferred |
+| [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing and NTS envelope/plaintext readers | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; no TLS/AEAD, authenticated acquisition or sample authority |
+| [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding and distinct clock domains | [S1.1c](../tasks/s1.1-time-domain.md); pure arithmetic does not establish trusted time or clock effects |
+| [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
+| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); selected inert scopes, with current settled active-time delivery qualification incomplete |
+| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer and `nevrotick-observe` CLI | [Transport pilot](../tasks/engine-transport-pilot.md); unauthenticated observations remain ineligible for clock control |
+
+The engine depends on `ntp-wire`, Tokio and `getrandom`; it is not connected to
+`ntp-exchange`, `time-domain` or `time-core`. The UI has no engine/Core dependency.
+These components therefore do not yet form a production synchronization pipeline.
+Task records contain scoped host checks and native UI/engine observations for
+named candidates. Historical results do not automatically qualify later source
+or complete native teardown, memory, service, clock-control or package behavior.
+Production NTP/NTS acquisition, complete discipline/holdover/leap integration,
+services/IPC, real clock control, complete MSIX delivery and release qualification
+remain open. No production-supported stable release is declared; the
+[release policy](release-policy.md) owns support status.
+
+**Current next action:** follow the
+[development plan §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and the latest addenda in its assigned task. The current Core continuation is
+settled active-time delivery qualification. This status correction changes no
+task ordering, scoped Sandbox permission, blocked Windows artifact, separate
+fuzz/storage hold, UI-M0 deferral or release requirement.
+
+**Historical architecture-review capsule — 28 October 2026.** The table below
+and the subsequent 29 October update preserve the original inspected state and
+handoff. Their absent-workspace, evidence and next-work entries describe those
+dated checkpoints, not the current repository.
 
 | Field | Baseline |
 | --- | --- |
@@ -464,7 +503,7 @@ Configuration changes and lifecycle discontinuities create generations. Replies 
 
 Preserve the representation needed to detect malformed input, bound reads/work before allocation or expensive processing, and route accepted values through the protocol decoder or strict DTO path and checked domain construction. Keep data separate from format strings, executable commands, action identifiers and filesystem/destination authority. Reject invalid or unauthorized input without partial protected state changes, with bounded redacted diagnostics and cleanup. Test direct handler calls that bypass UI checks, well-formed but unauthorized/stale requests, and repeated individually bounded inputs that exceed aggregate budgets; valid neighboring inputs must still work. Immutable internal values whose enforced invariants remain unchanged retain the guarantees described in section 6.3.1.
 
-**Selected approach:** `serde` plus `serde_json` for fixed JSON boundaries; `garde` for shared pure DTO/settings validation, invoked obligatorily by private fallible domain construction; explicit trusted-service checks for current authority and state. Every function and module has an enforced contract as specified in section 6.3.1. The owner adopted this baseline on 29 October 2026; no application Cargo workspace, locked dependency graph or completed product qualification exists yet. A small diagnostic adapter, `serde_path_to_error`, remains a gated convenience. No Zod-related crate or second annotation validator is selected. Section 18.5 pins garde and retains exact-graph admission. Rust's type checks and a successful garde validation do not establish source truth or current permission. [S62, S64–S66]
+**Selected approach:** `serde` plus `serde_json` for fixed JSON boundaries; `garde` for shared pure DTO/settings validation, invoked obligatorily by private fallible domain construction; explicit trusted-service checks for current authority and state. Every function and module has an enforced contract as specified in section 6.3.1. The owner adopted this baseline on 29 October 2026. The current [Cargo workspace](../Cargo.toml) and [locked graph](../Cargo.lock) include garde-backed bounded components; [section 1](#1-current-state-capsule) routes their source and task evidence. The complete production boundary/authority path and product qualification remain open. A small diagnostic adapter, `serde_path_to_error`, remains a gated convenience. No Zod-related crate or second annotation validator is selected. Section 18.5 pins garde and retains exact-graph admission. Rust's type checks and a successful garde validation do not establish source truth or current permission. [S62, S64–S66]
 
 The decoder produces inert wire records with no network, filesystem, clock, service-control or logging side effects. `ipc-contract` owns versioned wire types and decoding; `time-domain` owns private invariants and pure checked conversions; each receiving service owns operation authorization and current state. Keep JSON and UI dependencies out of `time-core`. These may begin as modules rather than separate crates.
 
@@ -2547,7 +2586,7 @@ Review every transitive license and selected alternative. MIT/Apache dual-licens
 
 Keep a port ledger mapping each translated file/algorithm to exact upstream source, original notices, intentional behavior changes and validation cases. Maintain a narrow upstream-monitoring process for chrony fixes affecting retained behavior. Never label source-by-source translation “clean room.” If a permissive-only implementation is later required, revisit the implementation strategy before porting.
 
-This document does not grant a new software license or legally clear an as-yet unwritten dependency graph. The future repository's licensing and signing-provider eligibility are P0/release decisions with specific evidence requirements.
+This document does not grant a new software license or legally clear a dependency graph. The existing [workspace manifest](../Cargo.toml) declares `GPL-2.0-only`; component provenance and the actual locked graph have their own admission records. Licensing of the complete delivered graph and signing-provider eligibility retain their P0/release evidence requirements.
 
 ### 18.4 Inherited coverage and mutation gates
 
@@ -2601,7 +2640,7 @@ The owner has reopened DEC-18 and adopted garde-backed construction to make agen
 
 This register records research observed on 28 October 2026, not a Cargo.lock or permission to enable a package's defaults. **Prototype** means the preferred bounded experiment; **held** means a specific unresolved gate prevents adoption; **optional** means add only for a demonstrated need. All production candidates still require CHECK-26. Package versions, repository main and associated VCS revisions are different evidence: a source commit is not a registry archive checksum.
 
-**29 October dependency refresh:** the selected Serde, Windows, runtime, error, entropy and diagnostic versions below remain current stable registry candidates. Keep `windows-core` 0.62.2 with `windows` 0.62.2: the latter requires `^0.62.2`, so independently upgrading the projection core to the newer 0.100.0 family would change the generation contract. The held AWS-LC and Schannel references in section 18.7 are refreshed below. No application Cargo manifest/lockfile exists yet; this refresh installs no crates, selects no additional defaults and clears no CHECK-26 gate. [S94]
+**Historical dependency refresh, 29 October 2026:** the selected Serde, Windows, runtime, error, entropy and diagnostic versions below were the stable registry candidates observed for that refresh. Keep `windows-core` 0.62.2 with `windows` 0.62.2: the latter requires `^0.62.2`, so independently upgrading the projection core to the newer 0.100.0 family would change the generation contract. The held AWS-LC and Schannel references in section 18.7 were refreshed below. No application Cargo manifest/lockfile existed in that research snapshot; the refresh installed no crates, selected no additional defaults and cleared no CHECK-26 gate. The later workspace and its task evidence are summarized in [section 1](#1-current-state-capsule); this historical table is not the current dependency inventory. [S94]
 
 | Candidate and observed version | Owner and intended benefit | Decision, features and limits |
 | --- | --- | --- |
@@ -3272,6 +3311,15 @@ Revision 1.4 retains **15 requirements, 19 decisions, 8 trust boundaries, 26 thr
 The **five Mermaid source blocks** remain the same architecture views, with exact companion parity required. Independent reviewers assess their semantics; GFM table/navigation, fence, relative-file-link, identifier and split-package checks are recorded for the final documents in the review report. A native Mermaid rendering engine was not run, and these checks do not validate Windows behavior or application controls. No updated PDF is part of this revision.
 
 ### 24.3 Next action
+
+**Current routing, 4 November 2026:** use
+[development plan §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and the latest assigned-task addenda. The six-member workspace and current Core
+continuation are summarized in [section 1](#1-current-state-capsule). The original
+handoff below does not supersede later owner decisions, task order or execution
+holds.
+
+**Historical revision 1.4 handoff:**
 
 The next development action, when requested, is to use the existing repository and execute the bounded S0.1-S0.3 investigations with a minimal Windows harness. S0.1 now prioritizes the actual compatible TLS/provider/native graph alongside Serde and the other selected candidates. S0.2/S0.3 establish effective service privileges, safe lifecycle ownership and authenticated local control; the limited positive clock probe follows its P0 experiment card. S0.7 must resolve the verifier/bootstrap/egress and bounded handshake execution policy before P2 depends on it. S1.1 implements the bounded decoder/domain contract before connecting inputs to effects. Numerical porting and production clock actuation retain their separate gates.
 

@@ -1,10 +1,11 @@
 # NevroTick — documentation guide
 
 **Prepared for:** David Osipov  
-**Snapshot date:** 29 October 2026  
+**Initial snapshot date:** 29 October 2026; later amendments are dated below
+
 **Canonical architecture:** RWTC-ARCH-001, revision 1.4
 
-The maintained set contains eleven principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report, a critical architecture-contract assessment, a state-guided fuzzing experiment report and a Verus assessment. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. The release policy adds operational preparation with proposed support terms. Proposed behavior and planned checks are not implementation evidence.
+The earlier guide inventory recorded eleven principal Markdown documents, seven supporting independent reviews, a UI toolkit comparison report, an x64 runtime-optimization research report, a critical architecture-contract assessment, a state-guided fuzzing experiment report and a Verus assessment; use the routing below for maintained additions. The owner-decision/research addition is a scoped amendment, not a repeated full-product qualification. The feature plan translates the architecture into basic user capabilities, screens, defaults, acceptance cases and delivery slices. The architecture and development-hardening guide include 29 October 2026 amendments making upstream-code verification and stress testing explicit, adopting garde-backed construction plus explicit function/module contracts, and integrating installed native memory diagnostics into agent workflows. The release policy adds operational preparation with proposed support terms. Proposed behavior and planned checks are not implementation evidence.
 
 ## Plans, acceptance and execution evidence
 
@@ -22,6 +23,7 @@ to own requirements, and task records own executed evidence.
 
 | Question | Source of truth |
 | --- | --- |
+| What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
 | Which task owns each phase, integrated slice and deferred continuation? | [Task index](../tasks/README.md) maps existing implementation and evidence records; the [grouped deferred backlog](../tasks/development-backlog.md) supplies uncovered phase parents and activation criteria. The development plan still controls order and acceptance; task presence proves no readiness or completion. |
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
@@ -61,6 +63,14 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Public status, 4 November 2026:** the [current implementation summary](windows-time-architecture.md#1-current-state-capsule)
+now distinguishes the six-member bounded workspace from the original
+documentation-only architecture review and later UI-only milestone. README and
+SECURITY already included the unauthenticated loopback observer; the remaining
+workspace, Core/protocol inventory and next-action wording is reconciled in the
+[existing plan record](plans/development-plan.md#public-project-status-reconciliation--4-november-2026).
+This changes documentation status, with no new product qualification or gate.
 
 **Optional provenance, later on 4 November 2026:** David asked to retain the
 [source-to-Store research](plans/release-provenance.md) without making its
