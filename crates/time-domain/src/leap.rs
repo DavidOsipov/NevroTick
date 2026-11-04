@@ -71,7 +71,9 @@ struct LeapSecond {
 }
 
 impl LeapSecond {
-    /// Check the scalar once and publish it without allocation or effects.
+    /// Check the scalar once; successful construction allocates no heap memory.
+    /// Rejection may temporarily allocate one single-field garde error report,
+    /// discarded before returning. This operation has no external effects.
     ///
     /// # Errors
     /// Returns `InvalidMetadata` for a value above `i64::MAX`.
@@ -437,8 +439,12 @@ pub struct LeapKnowledge<'records> {
 impl<'records> LeapKnowledge<'records> {
     /// Validate one bounded complete ledger before publishing an immutable view.
     ///
-    /// At most 128 raw tuples are inspected; no sorting, allocation, I/O or
-    /// mutation occurs. The borrow prevents safe mutation of retained records.
+    /// At most 128 raw tuples are inspected, without sorting, I/O or mutation.
+    /// Successful construction allocates no heap memory. Rejection may allocate
+    /// one temporary garde report containing at most one fixed-message error at
+    /// one field path; it is discarded before returning `InvalidRecords`.
+    /// Rejection storage does not grow with the record count. The borrow prevents
+    /// safe mutation of retained records.
     ///
     /// # Errors
     /// Rejects invalid baseline/count, timestamps, order, signed changes,

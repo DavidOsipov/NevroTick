@@ -2790,7 +2790,7 @@ These tools run in development/CI and are excluded from the installed runtime. T
 | Miri | Find undefined behavior in supported portable unsafe-adjacent harnesses and internal ownership abstractions | Selected targeted lane where supported; cannot certify Windows kernel/API contracts or unrestricted native FFI [S85] |
 | Application Verifier, GFlags/PageHeap and CDB | Observe reached Windows heap/API misuse and capture faults on owned native candidates | Adopted development tools with healthy/heap-overrun/invalid-handle bootstrap controls; see [native memory workflow](windows-time-development-hardening.md#951-adopted-native-memory-workflow). Per-image configuration and cleanup are required; installation and crash-free execution establish no application, allocator-wide, leak or soak qualification |
 | Loom 0.7.2 **or** Shuttle 0.9.8 | Model a concrete shared-state protocol such as admission ownership, stop handoff or stale generation delivery | Optional after a real concurrency problem exists. Loom explores instrumented models; Shuttle supplies reproducible randomized schedules. Neither automatically explores the entire Tokio/SCM/Windows system [S86] |
-| Kani | Bounded proofs for small checked arithmetic or authority-state invariants when ordinary tests leave a material risk | Optional; toolchain/platform setup and proof bounds are explicit. No proof claim for unmodeled Win32 behavior [S86] |
+| Kani | Actual-source finite arithmetic proofs, or selected authority-state invariants | Mathematical proof is mandatory under §20.1.1; Kani is one verifier choice, with admitted toolchain, complete domain and explicit bounds/assumptions. Unmodeled Win32 behavior remains outside its claim [S86] |
 | `cargo-llvm-cov` 0.9.1 | Produce the actual executable coverage evidence required by section 18.4 | Prototype x64 MSVC lane; tool binary support is not equivalent to instrumentation support. ARM64 Windows has a separate toolchain/instrumentation gate [S87] |
 | `cargo-mutants` 27.1.0 | Challenge tests of every named critical source file and enforce the inherited per-file gate | Prototype; report excluded/equivalent/unviable/time-out cases honestly. Qualify Windows-critical code rather than deleting it from scope [S87] |
 | `cargo-nextest`, exact version to pin | Faster feedback, process isolation and explicit test groups if measured suite complexity warrants it | Optional. Clock/service mutation needs an external exclusive VM lease; a runner-local serial group is not a machine-wide lock. Never add Defender exclusions to improve benchmark or test throughput [S87] |
@@ -3082,6 +3082,45 @@ tuple, review seed rights/framing and qualify forwarding/reset before adapting
 cases to existing Rust targets. Keep independent numerical and real-provider
 crypto expectations, the admitted libFuzzer lanes and existing CHECK scopes.
 Neither project is installed or executed by this research amendment. [S121]
+
+#### 20.1.1 Mandatory mathematical proofs — 5 November 2026
+
+[OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+requires machine-checked proofs for NevroTick's mathematical algorithms. This supersedes earlier optional-proof
+wording. Each existing and future product numerical algorithm needs an
+independently specified contract and completed proof covering its full admitted
+input domain, required successful results, error classification, invariant
+preservation, machine ranges and rounding/error semantics, and promised
+termination/work bounds. A proof over mathematical reals alone does not establish
+binary floating-point behavior. Preserve exact units and distinguish helper raw
+ranges from caller-reachable ranges.
+
+Keep the proof-obligation inventory in each algorithm's existing task, with its
+source owner and applicable CHECK IDs. CHECK-7/8 own the numerical/selection
+properties, CHECK-25 owns checked representation/construction and transformation
+properties, and CHECK-10 retains correction-accounting properties where relevant.
+Do not claim the dependent mathematical acceptance or phase complete with an
+unproved required obligation. Historical fixture checkpoints keep their original
+scope; the stronger requirement is outstanding for their unproved mathematics.
+
+Qualify nonempty actual-source proofs with independent specification review,
+reachable healthy/error witnesses, meaningful compiled defect controls and
+restored healthy results. Retain source/configuration/dependency and
+verifier/compiler/solver identities, assumptions, trusted components, complete
+outcomes and source correspondence. Explicitly account for unproved constructors,
+callees and callers. Subset bounds, unsupported operations, timeouts or a proof of
+a separate model leave the omitted implementation obligations open. Reuse proof
+evidence only while all relevant inputs remain unchanged.
+
+Tool choice remains conditional on capability and admission; no particular new
+verifier or installation is selected by this instruction. The existing
+[rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
+is the first bounded continuation. It does not qualify other domain arithmetic,
+leap interpretation, exchange mathematics or Core regression/selection/correction.
+The [hardening workflow](windows-time-development-hardening.md#961-mandatory-product-mathematical-proof-gate--5-november-2026)
+owns proof execution discipline. Runtime validation, tests, fuzzing,
+coverage/mutation, native Windows and package qualification remain required.
+OD-05 §7.5's enhanced release-build provenance remains separately optional.
 
 ### 20.2 Acceptance catalog
 
@@ -3484,7 +3523,7 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S83 - Entropy and secret handling.** [getrandom 0.4.3](https://docs.rs/getrandom/0.4.3/getrandom/), [tagged manifest](https://github.com/rust-random/getrandom/blob/v0.4.3/Cargo.toml), [zeroize 1.9.1](https://docs.rs/zeroize/1.9.1/zeroize/), [secrecy 0.10.3](https://docs.rs/secrecy/0.10.3/secrecy/), [secrecy associated manifest](https://github.com/iqlusioninc/crates/blob/70eaa76ea3f4bacd67f3027c4a52948485a67d32/secrecy/Cargo.toml). Zeroing/redacted wrappers do not guarantee protected memory or eliminate every copy.
 - **S84 - ntpd-rs reference scope.** [Stable 1.9.0 workspace](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/Cargo.toml), [ntp-proto manifest](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/Cargo.toml), [API stability warning](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/lib.rs). Reference/interoperability value does not establish Windows or whole-graph suitability.
 - **S85 - Property, fuzz and interpreter tools.** [proptest 1.12.0](https://docs.rs/proptest/1.12.0/proptest/), [cargo-fuzz 0.13.2](https://docs.rs/crate/cargo-fuzz/0.13.2), [official Windows fuzzing guide](https://rust-fuzz.github.io/book/cargo-fuzz/windows.html), [Windows setup](https://rust-fuzz.github.io/book/cargo-fuzz/windows/setup.html), [Miri limitations](https://github.com/rust-lang/miri/blob/master/README.md), [trybuild 1.0.122](https://docs.rs/trybuild/1.0.122/trybuild/).
-- **S86 - Optional model/proof tools.** [Loom 0.7.2](https://docs.rs/loom/0.7.2/loom/), [Shuttle 0.9.8](https://docs.rs/shuttle/0.9.8/shuttle/), [Kani setup](https://github.com/model-checking/kani/blob/main/docs/src/install-guide.md), [bounded loop reasoning](https://model-checking.github.io/kani/tutorial-loop-unwinding.html). Scope and instrumented/model assumptions must accompany results.
+- **S86 - Conditional model/proof tool selection.** [Loom 0.7.2](https://docs.rs/loom/0.7.2/loom/), [Shuttle 0.9.8](https://docs.rs/shuttle/0.9.8/shuttle/), [Kani setup](https://github.com/model-checking/kani/blob/main/docs/src/install-guide.md), [bounded loop reasoning](https://model-checking.github.io/kani/tutorial-loop-unwinding.html). Scope and instrumented/model assumptions must accompany results; mathematical proof acceptance is mandatory under §20.1.1.
 - **S87 - Coverage, mutation and test execution.** [cargo-llvm-cov support matrix](https://github.com/taiki-e/cargo-llvm-cov), [0.9.1 package](https://docs.rs/cargo-llvm-cov/0.9.1/cargo_llvm_cov/), [cargo-mutants 27.1.0](https://docs.rs/crate/cargo-mutants/27.1.0), [mutation changelog](https://mutants.rs/changelog.html), [nextest Windows guidance](https://nexte.st/docs/installation/windows/), [test groups](https://github.com/nextest-rs/nextest/blob/main/site/src/docs/configuration/test-groups.md). No Defender-exclusion workaround is adopted.
 - **S88 - Dependency review and binary inventory.** [cargo-deny 0.20.2](https://docs.rs/cargo-deny/0.20.2/cargo_deny/), [policy documentation](https://embarkstudios.github.io/cargo-deny/), [cargo-vet book](https://mozilla.github.io/cargo-vet/), [cargo-auditable](https://github.com/rust-secure-code/cargo-auditable), [0.7.7 release history](https://github.com/rust-secure-code/cargo-auditable/releases). Embedded Rust metadata is not a complete native/build inventory.
 - **S89 - Native service and secret facilities.** [Service security/access rights](https://learn.microsoft.com/en-us/windows/win32/services/service-security-and-access-rights), [service SID](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_sid_info), [CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata), [DPAPI-NG descriptor](https://learn.microsoft.com/en-us/windows/win32/api/ncryptprotect/nf-ncryptprotect-ncryptcreateprotectiondescriptor), [BCryptGenRandom](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgenrandom).

@@ -1078,3 +1078,45 @@ acquisition/TLS/service/clock/package qualification remain open. Continue the
 existing S0.1/R-01 TLS feasibility chain by restoring the same frozen proposal's
 missing transitive source cohort, then completing its declared admission gates;
 this engine result adopts no provider or trust policy.
+
+## S44 external checked-constructor regression — qualified
+
+**5 November 2026; ALIGN-2.** The owner-supplied Rust-skill audit correctly found
+that `Config` and `ControlSchedule` have private checked representations but the
+engine verification chain observes only positive construction examples. Current
+privacy is intact; missing external negative consumers are a regression gap.
+The bounded repair adds direct construction and each-field mutation, absent
+Default/unchecked From and raw-value checked-API probes, plus an inert legal
+consumer with admitted and rejected constructor neighbors. Expected compiler
+causes must occur at the actual attempted bypass; setup errors do not qualify.
+
+The existing policy receives a closed `external_contracts` child for current
+constructor evidence only. It uses the admitted stable payload, lib-only scope,
+166 current product inputs, six build jobs and a 300-second bound. Runtime,
+preparation, sockets, timers, network and Windows operations are not executed by
+its legal consumer. Parent S40–S43 source/candidate/inventory bindings remain
+historical and unchanged; this child does not qualify current engine coverage,
+mutation, resource/lifecycle or production behavior.
+
+Actual GNU-host compiler qualification passed on the current 166-input product,
+canonical product-map SHA256
+`2234690e73ef709e2548655117fb00896ef8ca506e8d588f71a033a9b615500f`.
+The configured `--lane contracts --subject library --tool-admission-profile
+stable-core` invocation ran 15 commands: one real library build, 13 external
+consumer compilations and one inert legal execution. Both whole-struct privacy
+cases require both private field names; four field mutations, two absent Default,
+two absent From and two raw-API misuses produced their intended E0451/E0616/
+E0277/E0308 causes at the attempted source line. The legal consumer observed
+valid timeout/schedule limits and invalid neighboring constructors without
+starting a runtime or creating a socket. No setup or unrelated compiler error
+was credited.
+
+Receipt `engine-privacy-contracts-v1/verification.json` under the existing S12e
+evidence root has SHA256
+`2d74ee084b9dd21eb084ec212f0b29b89148e31ce98cee8f85c3535f0fa9bb4c`.
+All 174 bound source/policy/tool inputs match current bytes; final stable payload
+and source/vendor custody passed. The receipt deliberately retains
+`qualification_passed=false` and `contracts_qualification_passed=true`.
+All 178 integrated domain/engine/common Python controls also pass (0.887s),
+alongside portable V6's 22 product lanes. This closes ALIGN-2's named regression
+gap only; S43's historical coverage/mutation scores remain on their old candidate.

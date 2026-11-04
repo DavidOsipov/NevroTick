@@ -43,9 +43,17 @@ rejection, including non-finite in-memory values and changed context after an
 await. Verify bounded error generation on maximum admitted inputs, not only final
 error truncation. Every failure case needs an independently expected valid neighbor.
 
-Use bounded cargo-fuzz for a real raw-admission/conversion target, or Kani for a
-small checked-domain/arithmetic property, only when that evidence gap warrants
-it; select their [guarded lanes](../references/configured-tooling.md#additional-rust-analysis)
+For existing or new product mathematical algorithms, apply OD-10's
+[mandatory proof workflow](../references/formal-verification.md): reconcile
+actual-source proof coverage with the full admitted domain, required success/error
+outcomes, machine/rounding semantics and invariants, including constructor/caller
+obligations. New mathematics, changed semantics or invalidated proof inputs
+require affected proofs; reuse valid unchanged evidence. Behavioral controls
+complement proofs; missing proofs leave the owning CHECK acceptance incomplete.
+
+Use bounded cargo-fuzz for a real raw-admission/conversion gap. Kani is one tool
+option for checked-domain/arithmetic proofs; select the admitted
+[guarded lanes](../references/configured-tooling.md#additional-rust-analysis)
 and qualify actual harness reachability. For uncertain constructor/guard bypass
 paths use [CodeQL data-flow analysis](../references/codeql-data-flow.md), then
 confirm the path through real bytes, consumers and protected-effect observations.

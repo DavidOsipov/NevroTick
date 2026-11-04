@@ -109,9 +109,9 @@ class EngineAnalysisTests(unittest.TestCase):
         with patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)):
             return MODULE.read_policy(root)
 
-    def test_new_analysis_files_are_outside_the_frozen_product_census(self):
+    def test_new_analysis_files_are_outside_the_current_product_census(self):
         _, identity = MODULE.PRODUCT.admit_product(ROOT)
-        self.assertEqual(len(identity), 119)
+        self.assertEqual(len(identity), 166)
         for name in ["scripts/verify-engine-analysis.py", "scripts/tests/test_verify_engine_analysis.py",
                      "policy/engine-analysis.json"]:
             self.assertNotIn(name, identity)
@@ -456,6 +456,161 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
         self.assertEqual(status, 0)
         self.assertEqual(observed[0]["status"], "enumerated")
         self.assertFalse(observed[0]["qualification_passed"])
+
+
+class EngineExternalContractTests(unittest.TestCase):
+    """Current inert external contracts never inherit the historical campaigns."""
+
+    def fixture(self, root):
+        for name in (MODULE.POLICY,"policy/verification-manifest.toml"):
+            target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copyfile(ROOT/name,target)
+        return json.loads((root/MODULE.POLICY).read_text())
+
+    def test_configured_contract_cli_has_a_distinct_scoped_result(self):
+        reports=[]
+        def completed(args, report):
+            self.assertEqual(args.tool_admission_profile,"stable-core")
+            reports.append(report)
+            report.update(contracts_qualification_passed=True,qualification_passed=False)
+        with patch.object(MODULE,"execute",side_effect=completed),patch("sys.stdout",new_callable=io.StringIO):
+            status=MODULE.main(["--lane","contracts","--tool-admission-profile","stable-core",
+                                "--vendor-dir","/admitted/vendor","--output-dir","/new/owned/output"])
+        self.assertEqual(status,0)
+        self.assertEqual(reports[0]["status"],"passed")
+        self.assertFalse(reports[0]["qualification_passed"])
+        self.assertTrue(reports[0]["contracts_qualification_passed"])
+
+    def test_current_contract_role_is_independent_of_stale_historical_candidate(self):
+        policy=MODULE.read_contract_policy(ROOT)
+        parent=MODULE.read_json(ROOT/MODULE.POLICY)
+        self.assertEqual(parent["candidate_sha256"],
+                         "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1")
+        self.assertEqual(policy["source_file_count"],166)
+        self.assertEqual(policy["critical_files"],["crates/nevrotick-engine/src/lib.rs"])
+        self.assertEqual(policy["jobs"],6)
+        self.assertEqual(policy["test_threads"],1)
+        self.assertEqual(policy["tool_admission_profile"],"stable-core")
+        self.assertEqual(MODULE.CONTRACT_SCOPE.subjects,
+                         (("library","crates/nevrotick-engine/src/lib.rs"),))
+        self.assertEqual(MODULE.COMMON.admission_profile(
+            SimpleNamespace(lane="contracts",tool_admission_profile="stable-core"),
+            MODULE.CONTRACT_SCOPE,policy),"stable-core")
+        with self.assertRaisesRegex(MODULE.Incomplete,"complete current product"):
+            MODULE.read_policy(ROOT)
+
+    def test_child_role_rejects_poison_fields_without_rebinding_parent(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);parent=self.fixture(root)
+            historical={key:copy.deepcopy(value) for key,value in parent.items() if key!="external_contracts"}
+            healthy=MODULE.read_contract_policy(root)
+            for key,value in (("schema_version",2),("admission_status","passed"),
+                              ("source_file_count",True),("jobs",12),("test_threads",12),
+                              ("tool_admission_profile","full"),("critical_files",list(MODULE.SUBJECTS.values())),
+                              ("mutation_equivalences",[{}]),("mutation_error_values",{"library":["panic!()"]}),
+                              ("contracts_wall_seconds",0),("unexpected",1)):
+                bad=copy.deepcopy(parent);bad["external_contracts"][key]=value
+                (root/MODULE.POLICY).write_text(json.dumps(bad))
+                with self.subTest(key=key),self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_contract_policy(root)
+            (root/MODULE.POLICY).write_text(json.dumps(parent))
+            self.assertEqual(MODULE.read_contract_policy(root),healthy)
+            self.assertEqual({key:value for key,value in MODULE.read_json(root/MODULE.POLICY).items()
+                              if key!="external_contracts"},historical)
+
+    def test_privacy_trait_and_raw_api_fixtures_have_owned_causal_lines(self):
+        cases=MODULE.contract_examples()
+        self.assertEqual(len(cases),13)
+        self.assertIsNone(cases["legal"]["code"])
+        expected={
+            "config_construction":"E0451","schedule_construction":"E0451",
+            "config_peers_mutation":"E0616","config_timeout_mutation":"E0616",
+            "schedule_stop_mutation":"E0616","schedule_invalidate_mutation":"E0616",
+            "config_default":"E0277","schedule_default":"E0277",
+            "config_from":"E0277","schedule_from":"E0277",
+            "raw_config_prepare":"E0308","raw_schedule_execute":"E0308"}
+        for name,code in expected.items():
+            case=cases[name]
+            with self.subTest(case=name):
+                self.assertEqual(case["code"],code)
+                self.assertEqual(case["line"],4)
+                self.assertEqual(len(case["source"].splitlines()),6)
+                self.assertNotIn("\\\\n",case["source"])
+                self.assertTrue(case["tokens"])
+        legal=cases["legal"]["source"]
+        self.assertIn("Config::new",legal)
+        self.assertIn("ControlSchedule::new",legal)
+        self.assertIn("PilotError::DuplicatePeer",legal)
+        self.assertIn("PilotError::InvalidTimeout",legal)
+        self.assertNotIn("prepare(",legal)
+        self.assertNotIn("execute(",legal)
+        self.assertNotIn("Runtime",legal)
+        self.assertIn("fn rejected(pilot: PreparedPilot)",cases["raw_schedule_execute"]["source"])
+        self.assertTrue({"peers","timeout"} <= set(cases["config_construction"]["tokens"]))
+        self.assertTrue({"stop_after","invalidate_after"} <= set(cases["schedule_construction"]["tokens"]))
+        self.assertTrue(all("let _ = &value;" in cases[name]["source"].splitlines()[3]
+                            for name in expected if name.endswith("_mutation")))
+
+    def test_contract_library_copy_and_command_dispatch_preserve_real_artifact(self):
+        cases=MODULE.contract_examples()
+        with tempfile.TemporaryDirectory() as temporary:
+            work=Path(temporary);deps=work/"target/debug/deps";deps.mkdir(parents=True)
+            artifact=work/"target/debug/libnevrotick_engine.rlib";artifact.write_bytes(b"actual emitted library")
+            (deps/"libtokio.rlib").write_bytes(b"actual dependency")
+            calls=[]
+            def run(label,command,timeout,**kwargs):
+                calls.append((label,command,kwargs.get("specimen")))
+                if label=="contract-library":
+                    self.assertEqual(command[command.index("--jobs")+1],"6")
+                if label=="external-legal-execution":
+                    return cases["legal"]["success_marker"]
+                return ""
+            session=SimpleNamespace(work=work,stable=work/"stable",run=run,protect=lambda _:None)
+            report={}
+            with patch.object(MODULE.COMMON,"library_artifact",
+                              return_value="/work/target/debug/libnevrotick_engine.rlib"):
+                MODULE.contracts(session,MODULE.read_contract_policy(ROOT),report)
+            self.assertEqual(report["contracts"]["legal_consumers_compiled_and_executed"],1)
+            self.assertEqual(len([case for _,_,case in calls if case is not None]),12)
+            copied=work/"contract-deps/libnevrotick_engine.rlib"
+            self.assertEqual(copied.read_bytes(),artifact.read_bytes())
+            self.assertNotEqual(copied.stat().st_ino,artifact.stat().st_ino)
+            self.assertEqual(copied.stat().st_mode&0o777,0o400)
+            self.assertTrue(all("--error-format=json" in command for label,command,_ in calls
+                                if label.startswith("external-consumer-")))
+        with tempfile.TemporaryDirectory() as temporary:
+            work=Path(temporary);(work/"target/debug/deps").mkdir(parents=True)
+            (work/"target/debug/libnevrotick_engine.rlib").write_bytes(b"emitted library")
+            def missing_marker(label,command,timeout,**kwargs):
+                return "not the expected actual consumer marker" if label=="external-legal-execution" else ""
+            session=SimpleNamespace(work=work,stable=work/"stable",run=missing_marker,protect=lambda _:None)
+            report={}
+            with patch.object(MODULE.COMMON,"library_artifact",
+                              return_value="/work/target/debug/libnevrotick_engine.rlib"):
+                with self.assertRaisesRegex(MODULE.Incomplete,"Legal engine consumer"):
+                    MODULE.contracts(session,MODULE.read_contract_policy(ROOT),report)
+            self.assertNotIn("contracts",report)
+
+    def test_contracts_reject_wrong_profile_or_subject_before_session(self):
+        for lane,subject,profile in (("contracts","all","full"),("contracts","cli","stable-core")):
+            with self.subTest(subject=subject,profile=profile),patch.object(MODULE.COMMON,"Session") as session:
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.execute(SimpleNamespace(lane=lane,subject=subject,tool_admission_profile=profile),{})
+                session.assert_not_called()
+
+    def test_failed_current_custody_never_publishes_contract_qualification(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source=Path(temporary);self.fixture(source)
+            fake=SimpleNamespace(source=source,product_identity={"fixture.rs":"a"*64},
+                                 finish=lambda:(_ for _ in ()).throw(MODULE.Incomplete("final custody failure")))
+            report={}
+            with patch.object(MODULE.COMMON,"Session",return_value=fake), \
+                 patch.object(MODULE,"contracts"):
+                with self.assertRaisesRegex(MODULE.Incomplete,"final custody failure"):
+                    MODULE.execute(SimpleNamespace(lane="contracts",subject="all",
+                                   tool_admission_profile="stable-core"),report)
+            self.assertFalse(report["qualification_passed"])
+            self.assertFalse(report["contracts_qualification_passed"])
 
 
 if __name__ == "__main__":

@@ -93,6 +93,13 @@ healthy/defect controls. `--tool all`
 selects the six lanes, not a required per-edit campaign. These commands do not
 test an application or create a product workspace.
 
+For product mathematical algorithms, the
+[mandatory proof workflow](formal-verification.md) under OD-10 applies regardless
+of the tool chosen. The Kani row is an admitted execution option; its fixtures
+are not product proofs. Use the [rounding/era driver](../../../../tools/formal/README.md)
+only for its named obligations and keep the remaining algorithm inventory open
+until actual-source proofs cover the full admitted contracts.
+
 | Changed guarantee | Select only the useful lane |
 | --- | --- |
 | Portable Rust undefined behavior — Miri | `--tool miri --fixtures`, then qualify real selected core tests on the admitted Miri toolchain. Native Win32/FFI execution remains separate. |

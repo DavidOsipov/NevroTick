@@ -2979,5 +2979,236 @@ class SettledRateAdmissionTests(unittest.TestCase):
                     MODULE.per_subject_mutation_error_args(scope, filename, changed)
 
 
+class DomainLeapAdmissionTests(unittest.TestCase):
+    """The new domain role cannot borrow unrelated or nightly tool custody."""
+
+    SUBJECTS = (
+        ("coordinate", "crates/time-domain/src/coordinate.rs"),
+        ("era", "crates/time-domain/src/era.rs"),
+        ("exchange", "crates/time-domain/src/exchange.rs"),
+        ("clock", "crates/time-domain/src/clock.rs"),
+        ("rounding", "crates/time-domain/src/rounding.rs"),
+        ("leap", "crates/time-domain/src/leap.rs"),
+        ("leap_validation", "crates/time-domain/src/leap/validation.rs"),
+        ("leap_interpretation", "crates/time-domain/src/leap/interpretation.rs"),
+        ("leap_bundled", "crates/time-domain/src/leap/bundled.rs"),
+    )
+
+    def fixture(self):
+        """Independent literal role facts, without reading current policy."""
+        return MODULE.Scope("time-domain", self.SUBJECTS, "policy/time-domain-analysis.json"), {
+            "schema_version": 4, "package": "time-domain", "source_file_count": 166,
+            "critical_files": [filename for _, filename in self.SUBJECTS],
+            "tool_admission_profile": "stable-core", "mutation_equivalences": [],
+            "mutation_error_values": {
+                "leap_bundled": [
+                    "{ let _ = (CONTINUOUS_FROM, DATA_REVISION, FINITE_FUTURE_BEFORE, HISTORY_COMPLETE_BEFORE, "
+                    "LEAP_RECORDS, PROVENANCE_SHA256, RAW_SHA256, LeapContinuousFrom::new, LeapDataIdentity::new, "
+                    "LeapFutureExpiry::new, LeapHistoryBefore::new); LeapError::InvalidRecords }"],
+            }, "maximum_mutants": 512,
+            "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+            "coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
+            "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+            "contracts_wall_seconds": 300, "jobs": 6, "test_threads": 12,
+            "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+        }
+
+    def test_exact_domain_leap_role_uses_existing_stable_custody(self):
+        scope, policy = self.fixture()
+        for lane in ("contracts", "coverage", "mutation"):
+            with self.subTest(lane=lane):
+                args = SimpleNamespace(lane=lane, tool_admission_profile="stable-core")
+                self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+
+    def test_each_domain_role_field_is_required_with_exact_types(self):
+        scope, policy = self.fixture()
+        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        for key, value in policy.items():
+            alternatives = [None, True] if type(value) is not bool else [None, 1]
+            if type(value) is int:
+                alternatives.extend([float(value), value - 1, value + 1])
+            elif type(value) is list:
+                alternatives.append(["foreign.rs"])
+            elif type(value) is dict:
+                alternatives.append({"foreign.rs": "Ok(())"})
+            else:
+                alternatives.append("foreign")
+            for changed in alternatives:
+                with self.subTest(key=key, changed=changed), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, scope, {**policy, key: changed})
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+
+    def test_domain_role_rejects_altered_scope_and_unsupported_lanes(self):
+        scope, policy = self.fixture()
+        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        for changed in (
+                MODULE.Scope("time-core", self.SUBJECTS, scope.policy),
+                MODULE.Scope(scope.package, self.SUBJECTS, "policy/foreign.json"),
+                MODULE.Scope(scope.package, tuple(reversed(self.SUBJECTS)), scope.policy),
+                MODULE.Scope(scope.package, self.SUBJECTS[:-1], scope.policy),
+                MODULE.Scope(scope.package, (*self.SUBJECTS, ("generated", "crates/time-domain/src/leap/generated.rs")), scope.policy),
+                MODULE.Scope(scope.package, list(self.SUBJECTS), scope.policy)):
+            with self.subTest(scope=changed), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, changed, policy)
+        for lane in ("fuzz", "all", "inventory", "cohort-union", "unknown", None):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+
+    def test_new_domain_role_has_no_full_profile_fallback(self):
+        scope, policy = self.fixture()
+        for lane in ("contracts", "coverage", "mutation", "fuzz", "all"):
+            for profile in (None, "full", "stable-domain-leap"):
+                with self.subTest(lane=lane, profile=profile), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile=profile),
+                                             scope, {**policy, "tool_admission_profile": profile})
+        self.assertEqual(MODULE.admission_profile(SimpleNamespace(lane="fuzz"), SCOPE, {}), "full")
+
+    def test_domain_session_checks_actual_product_count_before_tools_or_output(self):
+        scope, policy = self.fixture()
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary).resolve()
+            root = parent / "checkout"
+            root.mkdir()
+            args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core",
+                                   output_dir=parent / "output")
+            for count in (165, 166, 167):
+                identity = {f"source/{index}.rs": "a" * 64 for index in range(count)}
+                expected = ("healthy product reached proof admission" if count == 166
+                            else "product input count")
+                with (self.subTest(count=count),
+                      patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+                      patch.object(MODULE, "admit_mutation_equivalences",
+                                   side_effect=MODULE.Incomplete("healthy product reached proof admission")) as proofs,
+                      patch.object(MODULE.ANALYSIS, "admit") as tools,
+                      self.assertRaisesRegex(MODULE.Incomplete, expected)):
+                    MODULE.Session(root, args, {}, scope, policy, ())
+                self.assertEqual(proofs.call_count, int(count == 166))
+                tools.assert_not_called()
+                self.assertFalse(args.output_dir.exists())
+
+    def test_domain_mutation_error_policy_accepts_only_exact_role_and_literal_map(self):
+        scope, policy = self.fixture()
+        for name, filename in self.SUBJECTS:
+            with self.subTest(filename=filename):
+                expected = (["--error", policy["mutation_error_values"]["leap_bundled"][0]]
+                            if name == "leap_bundled" else [])
+                self.assertEqual(MODULE.per_subject_mutation_error_args(scope, filename, policy), expected)
+        for filename in (None, "src/foreign.rs", "crates/time-domain/src/leap/generated.rs"):
+            with self.subTest(filename=filename), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, filename, policy)
+        for key, value in policy.items():
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1],
+                                                       {k: v for k, v in policy.items() if k != key})
+        for mapping in (None, {}, [], {"crates/time-domain/src/leap.rs": "Ok(Default::default())"}):
+            with self.subTest(mapping=mapping), self.assertRaises(MODULE.Incomplete):
+                MODULE.per_subject_mutation_error_args(scope, self.SUBJECTS[0][1],
+                                                       {**policy, "mutation_error_values": mapping})
+
+    def test_domain_campaign_preserves_the_exact_bounded_native_command(self):
+        scope, policy = self.fixture()
+        tools = Path("/owned/tools")
+        command = [str(tools / "cargo-mutants"), "mutants", "--package", "time-domain",
+                   "--file", "crates/time-domain/src/leap/bundled.rs", "--test-workspace", "false",
+                   "--cap-lints", "false", "--jobs", "10", "--jobserver", "true",
+                   "--jobserver-tasks", "10", "--cargo-arg=--message-format=json",
+                   "--error", policy["mutation_error_values"]["leap_bundled"][0],
+                   "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+                   "--output", "/work/mutation/leap_bundled"]
+        MODULE.mutation_campaign_command(scope, tools, "leap_bundled", command,
+                                        expected_jobs=10, expected_message_format="json", policy=policy)
+        for flag, changed in [("--cap-lints", "true"), ("--jobs", "12"),
+                              ("--baseline", "skip"), ("--timeout", "600"),
+                              ("--error", "std::process::exit(0)"),
+                              ("--file", "crates/time-domain/src/leap/generated.rs"),
+                              ("--output", "/work/foreign")]:
+            invalid = list(command)
+            invalid[invalid.index(flag) + 1] = changed
+            with self.subTest(flag=flag), self.assertRaises(MODULE.Incomplete):
+                MODULE.mutation_campaign_command(scope, tools, "leap_bundled", invalid,
+                                                expected_jobs=10, expected_message_format="json", policy=policy)
+
+
+class EngineContractAdmissionTests(unittest.TestCase):
+    """Constructor evidence cannot borrow engine runtime or historical gates."""
+
+    def fixture(self):
+        scope = MODULE.Scope("nevrotick-engine", (("library", "crates/nevrotick-engine/src/lib.rs"),),
+                             "policy/engine-analysis.json")
+        policy = {
+            "schema_version": 1, "admission_status": "admitted-engine-external-contracts-only",
+            "package": "nevrotick-engine", "source_file_count": 166,
+            "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
+            "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
+            "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},
+        }
+        return scope, policy
+
+    def test_engine_inert_contract_role_is_explicit_and_library_only(self):
+        scope, policy = self.fixture()
+        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        self.assertEqual(MODULE.admission_profile(args, scope, policy), "stable-core")
+        for lane in ("coverage", "mutation", "enumerate", "fuzz", "all", None):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+        for changed in (
+                MODULE.Scope("time-domain", scope.subjects, scope.policy),
+                MODULE.Scope(scope.package, scope.subjects, "policy/other.json"),
+                MODULE.Scope(scope.package, (*scope.subjects, ("cli", "crates/nevrotick-engine/src/bin/nevrotick-observe.rs")), scope.policy),
+                MODULE.Scope(scope.package, list(scope.subjects), scope.policy)):
+            with self.subTest(scope=changed), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, changed, policy)
+
+    def test_engine_role_rejects_every_changed_missing_extra_or_aliased_field(self):
+        scope, policy = self.fixture()
+        args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core")
+        for key, value in policy.items():
+            choices = [None, True]
+            if type(value) is int:
+                choices.extend([float(value), value + 1])
+            elif type(value) is list:
+                choices.append(["foreign"])
+            elif type(value) is dict:
+                choices.append({"library": ["std::process::exit(0)"]})
+            else:
+                choices.append("foreign")
+            for changed in choices:
+                with self.subTest(key=key, changed=changed), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, scope, {**policy, key: changed})
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {k: v for k, v in policy.items() if k != key})
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(args, scope, {**policy, "runtime_execution": True})
+
+    def test_engine_contract_role_has_no_full_profile_fallback(self):
+        scope, policy = self.fixture()
+        for profile in (None, "full", "stable-engine", ""):
+            with self.subTest(profile=profile), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane="contracts", tool_admission_profile=profile),
+                                         scope, {**policy, "tool_admission_profile": profile})
+
+    def test_engine_session_checks_actual_product_count_before_tools(self):
+        scope, policy = self.fixture()
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary).resolve()
+            root = parent / "checkout"
+            root.mkdir()
+            args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
+            for count in (165, 166, 167):
+                identity = {f"source/{index}.rs": "a" * 64 for index in range(count)}
+                expected = "healthy engine reached proofs" if count == 166 else "product input count"
+                with (self.subTest(count=count),
+                      patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
+                      patch.object(MODULE, "admit_mutation_equivalences",
+                                   side_effect=MODULE.Incomplete("healthy engine reached proofs")) as proofs,
+                      patch.object(MODULE.ANALYSIS, "admit") as tools,
+                      self.assertRaisesRegex(MODULE.Incomplete, expected)):
+                    MODULE.Session(root, args, {}, scope, policy, ())
+                self.assertEqual(proofs.call_count, int(count == 166))
+                tools.assert_not_called()
+                self.assertFalse(args.output_dir.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

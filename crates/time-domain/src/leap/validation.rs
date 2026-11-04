@@ -1,8 +1,8 @@
 //! Shared bounded ledger and scope rules, always reached through construction.
 
 use super::{
-    EraWindow, LEAP_BASELINE_NTP_SECONDS, LedgerValue, MAX_LEAP_NTP_SECONDS, MAX_LEAP_RECORDS,
-    baseline_ticks, coordinate_ticks,
+    EraWindow, LEAP_BASELINE_NTP_SECONDS, LedgerValue, MAX_LEAP_RECORDS, baseline_ticks,
+    coordinate_ticks,
 };
 
 /// Check the full caller scope against the model baseline, without ambient time.
@@ -22,8 +22,9 @@ pub(super) fn scope_rule(dates: &EraWindow, (): &()) -> garde::Result {
 
 /// Check every raw tuple and metadata relationship before a ledger can escape.
 ///
-/// The count is bounded before iteration. There is no allocation, sorting or
-/// mutation; failures expose no rejected value or partial checked ledger.
+/// The count is bounded before iteration. The record scan allocates no memory,
+/// sorts nothing and mutates nothing; failures expose only a fixed error. The
+/// deriving caller owns any temporary report allocation on rejection.
 ///
 /// # Errors
 /// Returns one fixed garde error for an invalid ledger or cross-field relation.
@@ -55,7 +56,9 @@ fn valid_ledger(value: &LedgerValue<'_>) -> bool {
     });
     let mut previous = (LEAP_BASELINE_NTP_SECONDS, 10_i32);
     for &(seconds, offset) in value.records.iter().skip(1) {
-        if seconds > MAX_LEAP_NTP_SECONDS || seconds <= previous.0 || seconds >= known_before {
+        // Both checked metadata endpoints are at most i64::MAX. Requiring each
+        // record before their coverage bound also enforces its numeric envelope.
+        if seconds <= previous.0 || seconds >= known_before {
             return false;
         }
         if !matches!(offset.checked_sub(previous.1), Some(-1 | 1)) || !is_month_start(seconds) {

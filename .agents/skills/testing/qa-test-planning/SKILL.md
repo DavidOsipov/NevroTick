@@ -17,6 +17,14 @@ output checks through [contract QA](../qa-contract-tests/SKILL.md), including a
 compiling external control for claimed privacy/type restrictions. Garde field
 annotations and wrapper names alone cannot discharge the obligation.
 
+For existing or future mathematical algorithms, plan the mandatory
+[source-bound proofs](../references/formal-verification.md) under OD-10, including
+full admitted domain and success/error contracts, machine/rounding semantics,
+invariants, promised work bounds, independent review and healthy/defect controls.
+Assign each obligation and receipt to its existing source task/CHECK owner.
+Missing or invalidated proof evidence blocks dependent mathematical acceptance;
+tool evaluation and behavioral tests cannot close it.
+
 Use [case design](../references/case-design.md) for potentially hidden optional/default/state/interacting-rule cases. Record feasible combinations/independent decision-table outcomes; directly cover known higher-order interactions. Pairwise/count-based coverage proves no completeness.
 
 Separate test discovery/compiler/static proof/simulated behavior/real Windows protected effects. Plan reproducible fixtures/fault seams early; identify assertions needing application-action observation before harness cleanup. Bound cases/generated sequences/time/concurrency/retries/writable resources.

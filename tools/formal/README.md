@@ -1,5 +1,14 @@
 # Bounded arithmetic proofs
 
+[OD-10](../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+and [architecture §20.1.1](../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
+require source-bound mathematical proofs. This driver covers only its named
+rounding/era obligations; its twelve jobs do not cover every product algorithm.
+Track actual completion and remaining constructor/caller and other mathematical
+obligations in the [existing S1.1c task](../../tasks/s1.1-time-domain.md).
+Use the [proof workflow](../../.agents/skills/testing/references/formal-verification.md)
+for acceptance; preparing this runner does not establish a completed campaign.
+
 Run from the checkout with the already installed, admitted Kani 0.68.0 payload:
 
 ```sh

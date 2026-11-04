@@ -483,6 +483,15 @@ analysis payloads. Use [the guarded checker](scripts/check-analysis.py), which
 admits their bytes before execution; do not substitute floating nightly installs
 or change the global PATH/default toolchain.
 
+[OD-10](docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+requires actual-source mathematical proofs under
+[architecture §20.1.1](docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
+Follow the [proof workflow](.agents/skills/testing/references/formal-verification.md);
+the [rounding/era driver](tools/formal/README.md) is the first bounded campaign,
+not a workspace-wide proof gate. Tool admission or its bootstrap controls alone
+cannot close the per-algorithm obligations. Missing proofs remain open in the
+existing source-owner task before dependent acceptance.
+
 | Tool | Installed pin | Qualification and intended use |
 | --- | --- | --- |
 | cargo-fuzz / libfuzzer-sys | 0.13.2 / 0.4.13 | One-off GNU-target ASan controls observed: 256 healthy runs and the intended signed-byte defect. Product targets still need accepted seeds, independent invariants and target/sanitizer qualification. |

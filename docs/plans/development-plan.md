@@ -650,6 +650,31 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Mandatory mathematical proofs — 5 November 2026.**
+[OD-10](../nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+requires machine-checked product mathematical proofs under
+[architecture §20.1.1](../windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
+and [hardening §9.6.1](../windows-time-development-hardening.md#961-mandatory-product-mathematical-proof-gate--5-november-2026).
+First continue the existing
+[S1.1c rounding/era handoff](../../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026):
+review the source-bound specifications and driver, finish the era defect controls
+and final twelve-job campaign within its retained attempt/resource budget.
+Use completed exact-input proof evidence, not the prepared runner or tool
+bootstrap, to close those named obligations. The coordinator reconciles the
+integrated candidate after the remote sync.
+
+Carry a per-algorithm remaining-proof inventory into the existing domain,
+exchange, Core and [leap task](../../tasks/s1.4-leap-policy.md#rust-contract-audit-follow-up--5-november-2026)
+before dependent mathematical acceptance, under CHECK-7/8/25 and correction
+CHECK-10 where applicable. Cover the full admitted domain, success/error
+completeness, machine/rounding semantics, invariants and promised work/termination
+bounds. Existing fixture/coverage/mutation passes remain scoped historical
+evidence; the rounding/era proofs do not close all P1 mathematics. Proof-tool
+selection remains conditional, while deferring a tool leaves its required
+property open. Continue independent authorized work without claiming the affected
+phase complete. Runtime, behavioral, native and release gates, all execution
+holds, and optional enhanced release provenance retain their separate status.
+
 **Execution holds and later Sandbox scope.** The [Defender incident record](../../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped)
 retains the blocked S134 stager/artifact. David's later [owner-ready Sandbox
 disposition and actual readiness result](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
@@ -773,9 +798,11 @@ a mathematical chart grants no acknowledgement or clock authority. The
 distinguishes completed S157/S158 predecessors, scoped S1.4a–c evidence,
 the completed selected rate-delivery checkpoint and the leap child's finite
 date/data/import freeze. The later [pure contract preparation](../../tasks/s1.4-leap-policy.md#14-pure-knowledge-contract-preparation--4-november-2026)
-records current selected bounds and pinned inputs; implementation admission remains
-pending. The first pure S1.4 consumer already exists; the
-first leap-knowledge child is still pending. Calendar construction does not
+records current selected bounds and pinned inputs. Its subsequent
+[implementation continuation](../../tasks/s1.4-leap-policy.md#15-pure-implementation-authoring--5-november-2026)
+now has real checked history/interpretation, deterministic offline generation
+and an initial 22-lane portable pass. New-owner external contracts, coverage and
+mutation qualification remain in progress. Calendar construction does not
 consume broker acknowledgements or production freshness/defaults, whereas
 dependent controller/guard equations retain their actual numerical and runtime
 prerequisites. This clarification does not move the current Core queue.
@@ -796,7 +823,7 @@ At each bounded checkpoint:
 
 | Owner / existing workstream | Disposition and next action |
 | --- | --- |
-| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Selected design, leap implementation pending. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) govern activation after the current Core checkpoint; source-only preparation can proceed now. Preserve completed predecessor scopes, route protocol admission and native mapping/recovery to their later owners, and do not require all production S1.3/Windows work for static calendar construction. This adds no prerequisite to the current Core checkpoint and lifts no execution hold. |
+| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Pure checked knowledge/interpretation and offline generation are implemented with an initial portable pass; complete the current new-owner qualification. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) preserve completed predecessor scopes. Route protocol admission and native mapping/recovery to their later owners; do not require all production S1.3/Windows work for static calendar construction. No execution hold is lifted. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |
@@ -1657,7 +1684,7 @@ ownership or acceptance finding. Its comprehension paragraphs were:
 
 > The change gives every canonical development stage a discoverable task owner while keeping the development plan in control of ordering and acceptance. Existing active and historical records remain in place; one grouped backlog supplies missing future parents. Those parents describe prerequisites and independently observable exits without presenting themselves as executable experiments or completed work.
 
-> The current workspace manifest contains six members. Its task records describe bounded protocol/numerical fixtures, a restricted native UI prototype and an unauthenticated loopback engine pilot. Current settled-rate qualification remains incomplete, earlier receipts retain their original candidates, and production acquisition, services, clock integration, complete packaging and release qualification remain open. UI-M0 deferrals and the separate Windows, fuzz and optional-storage holds remain applicable.
+> The current workspace manifest contains six members. Its task records describe bounded protocol/numerical fixtures, a restricted native UI prototype and an unauthenticated loopback engine pilot. The selected settled-rate checkpoint passed its four-owner gates; earlier receipts retain their original candidates, and production acquisition, services, clock integration, complete packaging and release qualification remain open. UI-M0 deferrals and the separate Windows, fuzz and optional-storage holds remain applicable.
 
 The new cards remain deferred; detailed child admission, actual testing skills,
 phase acceptance and execution holds remain required. This reconciliation

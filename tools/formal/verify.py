@@ -29,6 +29,11 @@ ROUNDING_COVERS = {
     "positive destination neighbor is rejected", "raw signed minimum is covered",
 }
 ERA_COVERS = {"unique point witness", "absent witness", "multiple-era witness"}
+ROUNDING_ASSERTIONS = {
+    "scale classification", "destination classification", "exact residual units",
+    "exact signed reconstruction", "nearest integer", "even ties",
+}
+ERA_ASSERTIONS = {"absence classification", "ambiguity classification", "exact unique result"}
 
 
 class Incomplete(RuntimeError):
@@ -158,6 +163,18 @@ def jobs(subject: str) -> list[dict]:
     return result
 
 
+def selected_jobs(subject: str, start_at: int) -> list[tuple[int, dict]]:
+    """Select a nonempty schedule suffix without claiming omitted jobs ran.
+
+    This is explicit partial execution, not automatic receipt reuse or campaign
+    resumption. The coordinator must separately reconcile any earlier evidence.
+    """
+    schedule = jobs(subject)
+    if type(start_at) is not int or not 1 <= start_at <= len(schedule):
+        raise Incomplete("Start index must select a nonempty fixed-schedule suffix")
+    return list(enumerate(schedule, 1))[start_at - 1:]
+
+
 def prepare_rounding(source: Path, inputs: Path, case: str) -> dict:
     """Copy the actual rounding body and enum; alter only a documented defect."""
     subject_name = "crates/time-domain/src/rounding.rs"
@@ -211,7 +228,8 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
     """Fail closed on empty, partial, mismatched or unintended Kani outcomes."""
     if not isinstance(report, dict) or not isinstance(native, dict):
         raise Incomplete("Native and Kani results must be objects")
-    if native.get("failure") is not None or type(native.get("exit_code")) is not int:
+    if (native.get("failure") is not None or type(native.get("exit_code")) is not int
+            or native["exit_code"] < 0):
         raise Incomplete("Native execution failed or has no real exit status")
     verification = report.get("verification_results", {})
     if not isinstance(verification, dict):
@@ -232,6 +250,9 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
                    or not isinstance(item.get("category"), str)
                    or not isinstance(item.get("description"), str) for item in checks)):
         raise Incomplete("Kani checks are missing or have an unknown outcome")
+    if any(item["category"] != "cover" and item["status"] not in
+           {"Success", "Failure", "Unreachable"} for item in checks):
+        raise Incomplete("Non-cover obligations must have ordinary proof outcomes")
     failures = [item for item in checks if item["status"] == "Failure"]
     covers = [item for item in checks if item["category"] == "cover"]
     counts = Counter(item["status"] for item in checks)
@@ -252,31 +273,46 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
             or metadata.get("target") != "x86_64-unknown-linux-gnu"
             or not isinstance(tools, dict) or tools.get("kani") != "0.68.0"
             or not isinstance(tools.get("solvers"), list) or len(tools["solvers"]) != 1
+            or not isinstance(tools["solvers"][0], dict)
             or tools["solvers"][0].get("name") != "cadical"):
         raise Incomplete("JSON tool/target/solver identity differs from the admitted profile")
     harnesses = report.get("harness_metadata")
     if (not isinstance(harnesses, list) or len(harnesses) != 1
             or not isinstance(harnesses[0], dict) or harnesses[0].get("pretty_name") != job["harness"]
             or harnesses[0].get("has_loop_contracts") is not False
+            or not isinstance(harnesses[0].get("attributes"), dict)
             or harnesses[0].get("attributes", {}).get("kind") != "Proof"
             or harnesses[0].get("attributes", {}).get("should_panic") is not False
-            or (entrypoint is not None and harnesses[0].get("source", {}).get("file") != entrypoint)):
+            or (entrypoint is not None and
+                (not isinstance(harnesses[0].get("source"), dict)
+                 or harnesses[0]["source"].get("file") != entrypoint))):
         raise Incomplete("Harness metadata differs from the selected ordinary proof")
     cbmc = one_record(report, "cbmc", job["harness"])
-    if cbmc.get("configuration", {}).get("solver") != "cadical":
+    if (not isinstance(cbmc.get("configuration"), dict)
+            or cbmc["configuration"].get("solver") != "cadical"):
         raise Incomplete("CBMC did not use the selected solver")
-    solver_seconds = cbmc.get("cbmc_stats", {}).get("runtime_solver_s")
+    if not isinstance(cbmc.get("cbmc_stats"), dict):
+        raise Incomplete("Missing finite solver timing")
+    solver_seconds = cbmc["cbmc_stats"].get("runtime_solver_s")
     if (isinstance(solver_seconds, bool) or not isinstance(solver_seconds, (int, float))
             or not math.isfinite(solver_seconds) or solver_seconds < 0):
         raise Incomplete("Missing finite solver timing")
     if job["case"] == "healthy":
         expected_covers = ROUNDING_COVERS if job["subject"] == "rounding" else ERA_COVERS
+        expected_assertions = ROUNDING_ASSERTIONS if job["subject"] == "rounding" else ERA_ASSERTIONS
+        successful_assertions = {
+            item["description"].strip('"') for item in checks
+            if item["category"] == "assertion" and item["status"] == "Success"
+            and (entrypoint is None or isinstance(item.get("location"), dict)
+                 and item["location"].get("file") == entrypoint)
+        }
         if (native["exit_code"] != 0 or results[0].get("status") != "Success"
                 or summary["successful"] != 1 or summary["failed"] != 0 or failures
                 or errors.get("has_errors") is not False
                 or len(covers) != len(expected_covers)
                 or {item["description"].strip('"') for item in covers} != expected_covers
                 or any(item["status"] != "Satisfied" for item in covers)
+                or not expected_assertions.issubset(successful_assertions)
                 or any(item["status"] == "Unsatisfiable" for item in checks)):
             raise Incomplete("Healthy proof, required covers or sanity obligations failed")
     else:
@@ -288,7 +324,9 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
                 or errors.get("exit_status") != "properties_failed"
                 or any(item["category"] != "assertion"
                        or item["description"].strip('"') != intended
-                       or (entrypoint is not None and item.get("location", {}).get("file") != entrypoint)
+                       or (entrypoint is not None and
+                           (not isinstance(item.get("location"), dict)
+                            or item["location"].get("file") != entrypoint))
                        for item in failures)):
             raise Incomplete("Defect did not fail exclusively at its intended assertion")
     return {"verification_summary": summary, "checks": len(checks), "status_counts": dict(counts),
@@ -405,6 +443,8 @@ def main(argv=None) -> int:
     parser.add_argument("--output-dir", required=True,
                         help="fresh canonical absolute private directory outside this checkout")
     parser.add_argument("--subject", choices=("rounding", "era", "all"), default="all")
+    parser.add_argument("--start-at", type=int, default=1,
+                        help="execute only this fixed-schedule suffix; omitted jobs are not qualified")
     args = parser.parse_args(argv)
     os.umask(0o077)
     work = fresh_output(args.output_dir)
@@ -421,10 +461,15 @@ def main(argv=None) -> int:
         require_sources(check, source, records, args.subject)
         write_json(work / "source-manifest.json", {"source_original_manifest": records,
                    "runner_sha256": records["tools/formal/verify.py"]["sha256"]})
-        schedule = jobs(args.subject)
-        summary["planned_jobs"] = schedule
-        print(json.dumps({"status": "prepared", "jobs": len(schedule), "output": str(work)}), flush=True)
-        for index, job in enumerate(schedule, 1):
+        selection = selected_jobs(args.subject, args.start_at)
+        summary.update(planned_jobs=[job for _, job in selection],
+                       selection_start_at=args.start_at,
+                       complete_schedule=args.start_at == 1,
+                       fixed_schedule_jobs=len(jobs(args.subject)),
+                       scope="selected proof commands only; omitted jobs require separate evidence")
+        print(json.dumps({"status": "prepared", "jobs": len(selection),
+                          "complete_schedule": summary["complete_schedule"], "output": str(work)}), flush=True)
+        for index, job in selection:
             result = execute_job(check, work, source, records, args.subject, job, index)
             compact = {"index": index, "subject": job["subject"], "case": job["case"],
                        "harness": job["harness"], "output": result["output"],

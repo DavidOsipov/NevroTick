@@ -81,6 +81,13 @@ source-to-sink propagation, use the data-flow skill and its local CodeQL MCP
 profile. Installed tools and fixture controls establish no product qualification;
 hosted CodeQL scanning remains deferred.
 
+Product mathematical algorithms require machine-checked proofs under
+[OD-10](../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs).
+Use the [proof workflow](testing/references/formal-verification.md) during planning,
+implementation and qualification. Preserve the full admitted success/error and
+machine-arithmetic contract; missing or invalidated proofs block dependent
+mathematical acceptance. Tool choice and other analysis lanes remain scoped.
+
 ## Adaptation and research
 
 [ADAPTATION.json](ADAPTATION.json) maps every original website skill to target and

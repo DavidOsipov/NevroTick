@@ -18,6 +18,14 @@ the user requests it or the selected guarantee needs it. Preserve focused
 RED→GREEN and plan formatting before final candidate freeze; reuse existing
 recipes instead of adding process layers without a concrete enforcement need.
 
+For mathematical algorithms, inventory required source-bound proofs under
+[OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+using the [proof workflow](../../testing/references/formal-verification.md).
+Name the independent full-domain contract, source owner/CHECK IDs, proof or
+remaining gap, invalidating changes and dependent acceptance checkpoint in the
+existing task. Schedule missing existing proofs and new/affected proofs before
+that acceptance; unavailable tooling leaves the obligation incomplete.
+
 For multiple stages, uncertain impact, security-sensitive work or migration:
 
 1. Reuse existing plan; otherwise use [the template](../templates/change-plan.md). Record request, non-goals, authorization, source/dirty identity, next question. Preserve unknowns.

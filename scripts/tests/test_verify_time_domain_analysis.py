@@ -317,7 +317,7 @@ class DomainAnalysisTests(unittest.TestCase):
 
     def test_policy_rejects_lowered_threshold_missing_owner_and_changed_source(self):
         healthy = MODULE.read_policy(ROOT)
-        self.assertEqual(len(healthy["critical_files"]), 5)
+        self.assertEqual(len(healthy["critical_files"]), 9)
         # This minimal graph/threshold fixture has no product checkout. Exact E
         # source/candidate/proof admission is tested separately on real owners.
         fixture_policy = json.loads(json.dumps(healthy))
@@ -351,6 +351,231 @@ class DomainAnalysisTests(unittest.TestCase):
                 MODULE.read_policy(ROOT)
             self.assertEqual(admission.call_count, 1)
             self.assertEqual(admission.call_args.args[:2], (ROOT, MODULE.SCOPE))
+
+
+class DomainLeapAnalysisTests(unittest.TestCase):
+    """Independent executable-owner and causal-consumer runner controls."""
+
+    BUNDLED_ERROR = (
+        "{ let _ = (CONTINUOUS_FROM, DATA_REVISION, FINITE_FUTURE_BEFORE, "
+        "HISTORY_COMPLETE_BEFORE, LEAP_RECORDS, PROVENANCE_SHA256, RAW_SHA256, "
+        "LeapContinuousFrom::new, LeapDataIdentity::new, LeapFutureExpiry::new, "
+        "LeapHistoryBefore::new); LeapError::InvalidRecords }"
+    )
+
+    EXPECTED = {
+        "coordinate": "crates/time-domain/src/coordinate.rs",
+        "era": "crates/time-domain/src/era.rs",
+        "exchange": "crates/time-domain/src/exchange.rs",
+        "clock": "crates/time-domain/src/clock.rs",
+        "rounding": "crates/time-domain/src/rounding.rs",
+        "leap": "crates/time-domain/src/leap.rs",
+        "leap_validation": "crates/time-domain/src/leap/validation.rs",
+        "leap_interpretation": "crates/time-domain/src/leap/interpretation.rs",
+        "leap_bundled": "crates/time-domain/src/leap/bundled.rs",
+    }
+
+    def policy_fixture(self):
+        temporary=tempfile.TemporaryDirectory(prefix="leap-analysis-policy-")
+        self.addCleanup(temporary.cleanup)
+        root=Path(temporary.name)
+        policy=MODULE.read_policy(ROOT)
+        for name in (MODULE.POLICY,"policy/verification-manifest.toml",
+                     *policy["coverage_guided_fuzzing"]["inputs_sha256"]):
+            target=root/name;target.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copyfile(ROOT/name,target)
+        return root,policy
+
+    def test_nine_exact_executable_owners_each_require_nonempty_coverage(self):
+        self.assertEqual(MODULE.SCOPE.select("all"),self.EXPECTED)
+        manifest=tomllib.loads((ROOT/"policy/verification-manifest.toml").read_text())
+        for name,filename in self.EXPECTED.items():
+            with self.subTest(owner=name):
+                self.assertEqual(manifest["critical_files"].count(filename),1)
+                self.assertEqual(sum(filename in row["files"] for row in manifest["security_modules"]),1)
+                mutant={"package":"time-domain","file":filename,"name":filename+":literal-control"}
+                self.assertEqual(MODULE.COMMON.mutation_inventory(MODULE.SCOPE,[mutant],512,filename),
+                                 {mutant["name"]:mutant})
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.COMMON.mutation_inventory(MODULE.SCOPE,[],512,filename)
+                wrong={**mutant,"package":"foreign-package"}
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.COMMON.mutation_inventory(MODULE.SCOPE,[wrong],512,filename)
+                result={"data":[{"files":[{"filename":"/work/source/"+filename,
+                        "summary":{"lines":{"count":10,"covered":9}}}]}]}
+                self.assertEqual(MODULE.COMMON.coverage_counts(MODULE.SCOPE,result,
+                                 "/work/source/"+filename)["line_percent"],90)
+                result["data"][0]["files"][0]["summary"]["lines"]["covered"]=8
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.COMMON.coverage_counts(MODULE.SCOPE,result,"/work/source/"+filename)
+                result["data"][0]["files"][0]["summary"]["lines"]={"count":0,"covered":0}
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.COMMON.coverage_counts(MODULE.SCOPE,result,"/work/source/"+filename)
+        generated="crates/time-domain/src/leap/generated.rs"
+        self.assertNotIn(generated,manifest["critical_files"])
+        self.assertFalse(any(generated in row["files"] for row in manifest["security_modules"]))
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.SCOPE.selected_file(generated)
+
+    def test_old_contracts_preserved_and_leap_private_traits_and_borrow_are_selected(self):
+        cases=MODULE.contract_examples()
+        for old in ("legal","coordinate_construction","window_default","rounded_rtt_mutation",
+                    "coordinate_from","monotonic_awake","raw_exchange"):
+            self.assertIn(old,cases)
+        expected={"leap_legal","leap_records_borrow_mutation","leap_metadata_units"}
+        for prefix in ("leap_history","leap_expiry","leap_continuous","leap_identity",
+                       "leap_scope","leap_knowledge","leap_answer"):
+            expected.update(prefix+"_"+suffix for suffix in ("construction","mutation","default","from"))
+        self.assertTrue(expected <= set(cases),expected-set(cases))
+        self.assertIsNone(cases["leap_legal"]["code"])
+        for name in expected-{"leap_legal"}:
+            case=cases[name]
+            self.assertTrue(case["tokens"])
+            self.assertIn("Box<dyn std::error::Error>",case["source"])
+            self.assertEqual(case["line"],4)
+            self.assertTrue(case["source"].splitlines()[3].strip())
+            self.assertEqual(len(case["source"].splitlines()),6)
+            self.assertNotIn("\\\\n",case["source"])
+        self.assertEqual(cases["leap_records_borrow_mutation"]["code"],"E0506")
+        self.assertEqual(cases["leap_metadata_units"]["code"],"E0308")
+        self.assertIn("records[0].1",cases["leap_records_borrow_mutation"]["source"].splitlines()[3])
+        self.assertIn("knowledge.records()",cases["leap_records_borrow_mutation"]["source"].splitlines()[3])
+        self.assertIn("bundled_leap_knowledge()",cases["leap_legal"]["source"])
+
+    def test_schema_four_profile_caps_and_legacy_fuzz_scope_are_closed(self):
+        root,healthy=self.policy_fixture()
+        self.assertEqual(healthy["schema_version"],4)
+        self.assertEqual(healthy["source_file_count"],166)
+        self.assertEqual(healthy["tool_admission_profile"],"stable-core")
+        self.assertEqual(healthy["jobs"],6)
+        self.assertEqual(healthy["test_threads"],12)
+        self.assertEqual(healthy["mutation_jobs"],10)
+        self.assertEqual(healthy["mutation_process_limit"],512)
+        self.assertEqual(healthy["mutation_message_format"],"json")
+        self.assertEqual(healthy["mutation_equivalences"],[])
+        self.assertEqual(healthy["mutation_error_values"],{"leap_bundled":[self.BUNDLED_ERROR]})
+        self.assertEqual(healthy["coverage_guided_fuzzing"]["subjects"],
+                         dict(list(self.EXPECTED.items())[:5]))
+        variants=[]
+        for field,value in (("schema_version",1),("schema_version",2),("schema_version",3),("source_file_count",True),("maximum_mutants",513),
+                            ("jobs",12),("jobs",True),("test_threads",6),
+                            ("mutation_jobs",12),("mutation_process_limit",513),
+                            ("mutation_message_format","human"),("coverage_minimum_line_percent",89),
+                            ("mutation_minimum_viable_killed_percent",94),("tool_admission_profile","full"),
+                            ("mutation_error_values",{"leap":["InvalidRecords"]}),
+                            ("mutation_equivalences",[{}]),("unexpected",1)):
+            bad=json.loads(json.dumps(healthy));bad[field]=value;variants.append(bad)
+        for value in ({},None,{"leap":["InvalidRecords"]},
+                      {"leap_bundled":["LeapError::InvalidRecords"]},
+                      {"leap_bundled":[self.BUNDLED_ERROR.replace("LeapHistoryBefore::new","LeapHistoryBefore::new(0)")]},
+                      {"leap_bundled":[self.BUNDLED_ERROR.replace("LeapError::InvalidRecords","crate::LeapError::InvalidRecords")]},
+                      {"leap_bundled":[self.BUNDLED_ERROR+"; panic!()"]},
+                      {**healthy["mutation_error_values"],"coordinate":["crate::LeapError::InvalidRecords"]},
+                      {**healthy["mutation_error_values"],"leap_validation":["crate::LeapError::InvalidRecords"]},
+                      {**healthy["mutation_error_values"],"leap":["crate::LeapError::InvalidRecords; panic!()"]},
+                      {**healthy["mutation_error_values"],"leap":["crate::LeapError::InvalidMetadata"]},
+                      {**healthy["mutation_error_values"],"leap":"crate::LeapError::InvalidRecords"},
+                      {**healthy["mutation_error_values"],"leap":[True]},
+                      {**healthy["mutation_error_values"],"leap":["crate::LeapError::InvalidRecords"]*2}):
+            bad=json.loads(json.dumps(healthy));bad["mutation_error_values"]=value;variants.append(bad)
+        bad=json.loads(json.dumps(healthy));bad["critical_files"].pop();variants.append(bad)
+        bad=json.loads(json.dumps(healthy))
+        bad["coverage_guided_fuzzing"]["subjects"]["leap"]=self.EXPECTED["leap"];variants.append(bad)
+        for bad in variants:
+            with self.subTest(delta=[k for k in bad if bad[k]!=healthy.get(k)]):
+                (root/MODULE.POLICY).write_text(json.dumps(bad))
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.read_policy(root)
+        (root/MODULE.POLICY).write_text(json.dumps(healthy))
+        self.assertEqual(MODULE.read_policy(root),healthy)
+
+    def test_exact_error_literal_reaches_only_bundled_subject_command(self):
+        policy=MODULE.read_policy(ROOT)
+        for name,filename in self.EXPECTED.items():
+            expected=["--error",self.BUNDLED_ERROR] if name=="leap_bundled" else []
+            with self.subTest(owner=name):
+                self.assertEqual(MODULE.COMMON.per_subject_mutation_error_args(
+                    MODULE.SCOPE,filename,policy),expected)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.COMMON.per_subject_mutation_error_args(
+                MODULE.SCOPE,"crates/time-domain/src/leap/generated.rs",policy)
+
+    def test_new_context_cannot_claim_all_or_fuzz_or_fallback_full_tools(self):
+        policy=MODULE.read_policy(ROOT)
+        for lane in ("all","fuzz"):
+            args=SimpleNamespace(lane=lane,subject="all",tool_admission_profile="stable-core")
+            with self.subTest(lane=lane),patch.object(MODULE.COMMON,"Session") as session:
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.execute(args,{})
+                session.assert_not_called()
+        args=SimpleNamespace(lane="contracts",subject="all",tool_admission_profile="full")
+        with patch.object(MODULE.COMMON,"Session") as session:
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.execute(args,{})
+            session.assert_not_called()
+        for lane in ("contracts","coverage","mutation"):
+            self.assertEqual(MODULE.COMMON.admission_profile(
+                SimpleNamespace(lane=lane,tool_admission_profile="stable-core"),
+                MODULE.SCOPE,policy),"stable-core")
+
+    def test_selected_lane_reports_leap_unfuzzed_and_preserves_finish(self):
+        args=SimpleNamespace(lane="coverage",subject="leap_validation",
+                             tool_admission_profile="stable-core")
+        with tempfile.TemporaryDirectory() as temporary:
+            session=SimpleNamespace(work=Path(temporary),tools=Path(temporary)/"tools",
+                                    run=lambda *args,**kwargs:None,finish=unittest.mock.Mock())
+            report={}
+            with patch.object(MODULE.COMMON,"Session",return_value=session), \
+                 patch.object(MODULE.COMMON,"run_analysis_lanes") as run, \
+                 patch.object(MODULE,"fuzz",side_effect=AssertionError("unselected fuzz")):
+                MODULE.execute(args,report)
+            self.assertEqual(report["subjects"],{"leap_validation":self.EXPECTED["leap_validation"]})
+            self.assertEqual(report["fuzz"]["status"],"not-performed")
+            self.assertEqual(report["fuzz"]["not_fuzzed"],dict(list(self.EXPECTED.items())[5:]))
+            self.assertEqual(run.call_args.args[-1],"coverage")
+            session.finish.assert_called_once()
+            session.finish.reset_mock()
+            with patch.object(MODULE.COMMON,"Session",return_value=session), \
+                 patch.object(MODULE.COMMON,"run_analysis_lanes",
+                              side_effect=MODULE.Incomplete("independent lane failure")):
+                with self.assertRaisesRegex(MODULE.Incomplete,"independent lane failure"):
+                    MODULE.execute(args,{})
+            session.finish.assert_called_once()
+
+    def test_contract_dispatch_requires_both_actual_legal_markers(self):
+        cases=MODULE.contract_examples()
+        with tempfile.TemporaryDirectory() as temporary:
+            work=Path(temporary);dependency=work/"immutable";dependency.mkdir()
+            calls=[]
+            def run(label,command,timeout,**kwargs):
+                calls.append((label,kwargs.get("specimen")))
+                if label == "contract-library":
+                    self.assertEqual(command[command.index("--jobs")+1],"6")
+                if label.startswith("external-legal-execution"):
+                    return cases[Path(command[0]).name]["success_marker"]
+                return ""
+            session=SimpleNamespace(work=work,stable=work/"stable",run=run,protect=lambda _:None)
+            report={}
+            with patch.object(MODULE.COMMON,"library_artifact",return_value="/work/target/debug/libtime_domain.rlib"), \
+                 patch.object(MODULE,"copy_contract_dependencies",return_value=dependency):
+                MODULE.contracts(session,{"contracts_wall_seconds":300,"jobs":6},report)
+            self.assertEqual(report["contracts"]["legal_consumers_compiled_and_executed"],2)
+            self.assertEqual(len([label for label,_ in calls if label.startswith("external-legal-execution")]),2)
+            negatives=[specimen for _,specimen in calls if specimen is not None]
+            self.assertEqual(len(negatives),len(cases)-2)
+            self.assertTrue(all(case["source"] and case["tokens"] for case in negatives))
+        # A legacy success marker cannot substitute for the new actual consumer.
+        with tempfile.TemporaryDirectory() as temporary:
+            work=Path(temporary);dependency=work/"immutable";dependency.mkdir()
+            def wrong_marker(label,command,timeout,**kwargs):
+                return cases["legal"]["success_marker"] if label.startswith("external-legal-execution") else ""
+            session=SimpleNamespace(work=work,stable=work/"stable",run=wrong_marker,protect=lambda _:None)
+            report={}
+            with patch.object(MODULE.COMMON,"library_artifact",return_value="/work/target/debug/libtime_domain.rlib"), \
+                 patch.object(MODULE,"copy_contract_dependencies",return_value=dependency):
+                with self.assertRaisesRegex(MODULE.Incomplete,"Legal external consumer"):
+                    MODULE.contracts(session,{"contracts_wall_seconds":300,"jobs":6},report)
+            self.assertNotIn("contracts",report)
 
 
 if __name__ == "__main__":

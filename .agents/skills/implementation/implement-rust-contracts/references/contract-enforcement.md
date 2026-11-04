@@ -291,7 +291,11 @@ checked consumer and a discriminating check with a valid neighboring control:
   than only an intermediate validator return value.
 
 Use [contract tests](../../../testing/qa-contract-tests/SKILL.md), meaningful
-property/fuzz controls and bounded Kani proofs for suitable finite invariants.
+property/fuzz controls and the mandatory
+[mathematical proof workflow](../../../testing/references/formal-verification.md)
+for product algorithms under OD-10. Cover the full admitted success/error contract
+at the executable owner; optional Kani use for other finite invariants does not
+make mathematical proof optional.
 [CodeQL](../../../testing/references/codeql-data-flow.md) can investigate paths
 around construction or from original DTOs to effects; inspect real callers and
 challenge query coverage before claiming no bypass. Compiler docs/lints, skill

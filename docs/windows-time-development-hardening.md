@@ -778,6 +778,37 @@ Keep corruption instrumentation separate from representative performance measure
 
 Add a tool only when it addresses a concrete uncovered invariant. Keep interpreter isolation, model a legitimate reachable witness, inject a fault to obtain a counterexample, and record unsupported operations. Reducing a proof bound or excluding a failing FFI case reduces the claim; it does not prove the omitted behavior.
 
+#### 9.6.1 Mandatory product mathematical proof gate — 5 November 2026
+
+[OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+requires machine-checked proofs of product mathematical algorithms, as specified by
+[architecture §20.1.1](windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
+Maintain a per-algorithm obligation inventory in the existing task under
+CHECK-7/8/25 and CHECK-10 where applicable. Define the theorem independently of
+the implementation: full admitted domain, required success/error behavior,
+invariant preservation, checked machine operations, units, rounding/error bounds
+and promised termination/work bounds. Constructor and caller assumptions need
+identified owners and their own proof coverage; proving a consumer does not
+prove its input admission or physical/trust assumptions.
+
+Use the [formal-verification workflow](../.agents/skills/testing/references/formal-verification.md)
+and an admitted tool/profile. Bind actual executable source and proof/model
+correspondence, dependencies/configuration, compiler/verifier/solver and all
+assumptions to the receipt. Require independently reviewed specifications,
+nonempty completed checks, reachable controls, distinct compiled defects that
+violate promised properties, and restored healthy passes. Preserve failures and
+resource/attempt accounting; unsupported syntax, timeout, empty selection or
+unsatisfied unwinding leaves the obligation incomplete. An unsupported verifier
+may justify another bounded tool evaluation; it does not waive the proof gate.
+
+Reuse unchanged evidence and run required affected proofs at stable candidate
+checkpoints. The [S1.1c rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
+owns the first campaign; other domain, leap, exchange and Core mathematics remain
+open until their own proofs pass. Keep shipping compiler checks, runtime guards,
+independent tests, fuzzing, per-file coverage/mutation and native/package evidence.
+Mandatory algorithm proofs do not adopt a new tool globally or change OD-05
+§7.5's optional release-build provenance.
+
 ### 9.7 Verification of upstream code and stress testing
 
 Chrony and every other upstream codebase, crate, native library, tool, copied/ported implementation and generated component must be treated as potentially containing defects or vulnerabilities. Reputation, prior deployment, upstream tests, signatures and absent advisories do not exempt adopted behavior from independent verification. This is a verification requirement, not a claim that a particular upstream revision has a known defect. Apply [architecture sections 20.1 and 20.3](windows-time-architecture.md#201-independent-numerical-truth) to the exact revision, selected features, supported targets and actual NevroTick integration.

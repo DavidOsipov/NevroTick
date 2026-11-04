@@ -18,6 +18,16 @@ contract do not establish unavoidable consumer validation. Apply
 [contract QA](../qa-contract-tests/SKILL.md); missing required direct-call,
 transformation or rejection-effect evidence remains incomplete.
 
+For existing and new product mathematical algorithms, reconcile OD-10's
+[mandatory proof evidence](../references/formal-verification.md) against the
+actual candidate: full admitted domain, required success/error outcomes,
+machine/rounding semantics, invariants and applicable constructor/caller
+obligations. Reuse valid unchanged proofs; new mathematics, changed semantics or
+invalidated proof inputs require affected proofs. Missing, subset-only or
+incomplete required proofs leave the owning CHECK and dependent mathematical
+acceptance incomplete. Verifier choice remains subject to admission; runtime
+guards, tests and native/package evidence retain their separate requirements.
+
 For required native memory/resource claims, reconcile
 [Windows diagnostics](../references/windows-memory.md): exact image/tools,
 effective checks, intended execution token, reached cases and first stops,

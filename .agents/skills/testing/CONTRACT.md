@@ -70,6 +70,19 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 
 ## Product-specific evidence
 
+Product mathematical algorithms require machine-checked proofs under
+[OD-10](../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+and [architecture §20.1.1](../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
+Use the [proof workflow](references/formal-verification.md): inventory existing
+and future algorithms, full admitted domains, success/error completeness,
+machine/rounding semantics and invariants in their existing tasks. Require
+independently reviewed specifications, actual-source correspondence, nonempty
+completed results, reachable healthy/error and compiled defect controls, and
+restored healthy passes. Missing, stale, subset-only or model-only evidence leaves
+the omitted obligations open and blocks dependent mathematical acceptance.
+Verifier choice remains conditional; proof completion is required. Preserve the
+other evidence layers and reuse proofs only while their relevant inputs match.
+
 Use [numerical and protocol truth](references/numerical-protocol.md) for time models, packets and strict contracts; [Windows evidence](references/windows-evidence.md) for OS/UI/package claims; and [Rust techniques](references/rust-techniques.md) when selecting runner, property, fuzz, model or mutation tooling. Load only the relevant reference.
 
 Apply the current [UI-M0 scope](../../../docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) before UI analysis or qualification. Additional tools do not activate deferred D1/D2/D3 work or permit live service, network or clock effects in that fixture-only milestone.

@@ -72,6 +72,24 @@ CHART_COMPOSITION_SUBJECTS = (
     ("chart_roundoff", "crates/time-core/src/regression/chart/roundoff.rs"),
     ("chart_batch", "crates/time-core/src/chart_batch.rs"),
 )
+DOMAIN_LEAP_SUBJECTS = (
+    ("coordinate", "crates/time-domain/src/coordinate.rs"),
+    ("era", "crates/time-domain/src/era.rs"),
+    ("exchange", "crates/time-domain/src/exchange.rs"),
+    ("clock", "crates/time-domain/src/clock.rs"),
+    ("rounding", "crates/time-domain/src/rounding.rs"),
+    ("leap", "crates/time-domain/src/leap.rs"),
+    ("leap_validation", "crates/time-domain/src/leap/validation.rs"),
+    ("leap_interpretation", "crates/time-domain/src/leap/interpretation.rs"),
+    ("leap_bundled", "crates/time-domain/src/leap/bundled.rs"),
+)
+DOMAIN_LEAP_ERROR_VALUE = (
+    "{ let _ = (CONTINUOUS_FROM, DATA_REVISION, FINITE_FUTURE_BEFORE, HISTORY_COMPLETE_BEFORE, "
+    "LEAP_RECORDS, PROVENANCE_SHA256, RAW_SHA256, LeapContinuousFrom::new, LeapDataIdentity::new, "
+    "LeapFutureExpiry::new, LeapHistoryBefore::new); LeapError::InvalidRecords }"
+)
+DOMAIN_LEAP_ERROR_SUBJECTS = ("leap_bundled",)
+ENGINE_CONTRACT_SUBJECTS = (("library", "crates/nevrotick-engine/src/lib.rs"),)
 
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
@@ -500,15 +518,47 @@ def chart_composition_equivalences_valid(entries: object) -> bool:
         return False
 
 
-def per_subject_mutation_error_args(scope: Scope, filename: str, policy: dict) -> list[str]:
-    """Permit one literal error replacement for its exact current chart owner.
+def require_domain_leap_role(scope: Scope, policy: dict) -> None:
+    """Admit the same exact domain role at tool and mutation-command boundaries."""
+    facts = {
+        "schema_version": 4, "package": "time-domain", "source_file_count": 166,
+        "critical_files": list(dict(DOMAIN_LEAP_SUBJECTS).values()),
+        "tool_admission_profile": "stable-core", "mutation_equivalences": [],
+        "mutation_error_values": {name: [DOMAIN_LEAP_ERROR_VALUE] for name in DOMAIN_LEAP_ERROR_SUBJECTS},
+        "maximum_mutants": 512,
+        "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+        "coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
+        "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+        "contracts_wall_seconds": 300, "jobs": 6, "test_threads": 12,
+        "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+    }
+    if (type(scope) is not Scope
+            or type(scope.package) is not str or scope.package != "time-domain"
+            or type(scope.policy) is not str or scope.policy != "policy/time-domain-analysis.json"
+            or type(scope.subjects) is not tuple or scope.subjects != DOMAIN_LEAP_SUBJECTS
+            or type(policy) is not dict
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in facts.items())):
+        raise Incomplete("Leap-domain analysis requires its exact nine-owner stable role and literal error map.")
 
-    An absent field preserves legacy scopes; current chart/reference roles require explicit empty maps.
+
+def per_subject_mutation_error_args(scope: Scope, filename: str, policy: dict) -> list[str]:
+    """Permit only the fixed literal errors for their exact reviewed owner roles.
+
+    An absent field preserves legacy scopes. Current chart/reference roles need
+    explicit empty maps; domain leap selects only its bundled-data adapter.
     A present field admits no
     arbitrary Rust expression, another package/file, or renamed policy role.
     """
     if not isinstance(policy, dict):
         raise Incomplete("Mutation error policy is not a mapping.")
+    if (type(scope) is Scope and (scope.subjects == DOMAIN_LEAP_SUBJECTS
+            or (scope.policy == "policy/time-domain-analysis.json" and policy.get("schema_version") == 4))):
+        require_domain_leap_role(scope, policy)
+        if type(filename) is not str or filename not in dict(DOMAIN_LEAP_SUBJECTS).values():
+            raise Incomplete("Leap-domain mutation identifies an unreviewed source file.")
+        selected = {dict(DOMAIN_LEAP_SUBJECTS)[name] for name in DOMAIN_LEAP_ERROR_SUBJECTS}
+        return ["--error", DOMAIN_LEAP_ERROR_VALUE] if filename in selected else []
     settled_rate_role = (
         policy.get("admission_status") == "admitted-settled-rate-four-owner-inventory-only"
         or (type(scope) is Scope and (
@@ -664,7 +714,11 @@ def mutation_campaign_command(scope: Scope, tools: Path, subject: str, command: 
     if message_format == "json":
         expected.append("--cargo-arg=--message-format=json")
     expected.extend(per_subject_mutation_error_args(scope, filename, {} if policy is None else policy))
-    if policy is not None and "mutation_error_values" in policy and scope.policy != "policy/time-core-analysis.json":
+    domain_campaign = (type(scope) is Scope and scope.package == "time-domain"
+                       and scope.policy == "policy/time-domain-analysis.json"
+                       and scope.subjects == DOMAIN_LEAP_SUBJECTS)
+    if (policy is not None and "mutation_error_values" in policy
+            and scope.policy != "policy/time-core-analysis.json" and not domain_campaign):
         raise Incomplete("The chart error inventory card admits listing only, never a campaign.")
     expected.extend(["--baseline", "run", "--build-timeout", "90", "--timeout", "60",
                      "--output", "/work/mutation/" + subject])
@@ -1094,13 +1148,44 @@ def _require_private_output(root, output):
         raise Incomplete("Portable analysis requires at least 2 GiB free Linux work space.")
 
 
+def require_engine_contract_role(scope: Scope, policy: dict) -> None:
+    """Admit current inert constructor probes, without historical engine gates."""
+    facts = {
+        "schema_version": 1, "admission_status": "admitted-engine-external-contracts-only",
+        "package": "nevrotick-engine", "source_file_count": 166,
+        "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
+        "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
+        "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},
+    }
+    if (type(scope) is not Scope or type(scope.package) is not str or scope.package != "nevrotick-engine"
+            or type(scope.policy) is not str or scope.policy != "policy/engine-analysis.json"
+            or type(scope.subjects) is not tuple or scope.subjects != ENGINE_CONTRACT_SUBJECTS
+            or type(policy) is not dict or set(policy) != set(facts)
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in facts.items())):
+        raise Incomplete("Engine external contracts require their exact inert library-only role.")
+
+
 def admission_profile(args, scope, policy):
-    """Require explicit, policy-bound opt-in before narrowing core tool custody."""
+    """Require an exact stable role before narrowing analysis-tool custody."""
     profile = getattr(args, "tool_admission_profile", "full")
     if type(profile) is not str or profile not in ANALYSIS.ADMISSION_PROFILES:
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.subjects == ENGINE_CONTRACT_SUBJECTS
+            or policy.get("admission_status") == "admitted-engine-external-contracts-only"):
+        if profile != "stable-core" or args.lane != "contracts":
+            raise Incomplete("The engine external-contract role admits only stable constructor contracts.")
+        require_engine_contract_role(scope, policy)
+        return profile
+    if (scope.subjects == DOMAIN_LEAP_SUBJECTS
+            or (scope.policy == "policy/time-domain-analysis.json"
+                and (profile == "stable-core" or policy.get("schema_version") == 4))):
+        if profile != "stable-core" or args.lane not in {"contracts", "coverage", "mutation"}:
+            raise Incomplete("Leap-domain analysis requires its exact nine-owner stable contracts/coverage/mutation role.")
+        require_domain_leap_role(scope, policy)
+        return profile
     if (scope.policy == "tasks/settled-rate-inventory-admission.json"
             or policy.get("admission_status") == "admitted-settled-rate-four-owner-inventory-only"):
         facts = {
@@ -1384,6 +1469,9 @@ class Session:
         self.admission_profile = admission_profile(args, scope, policy)
         _require_private_output(self.root, args.output_dir)
         self.dependency_policy, self.product_identity = PRODUCT.admit_product(self.root)
+        if (scope.subjects in (DOMAIN_LEAP_SUBJECTS, ENGINE_CONTRACT_SUBJECTS)
+                and len(self.product_identity) != policy["source_file_count"]):
+            raise Incomplete("Contract-role product input count differs from its admitted role.")
         self.identity = dict(self.product_identity)
         equivalences = admit_mutation_equivalences(self.root, scope, policy)
         proof_inputs = tuple(entry["proof"]["path"] for entry in equivalences)

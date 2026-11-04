@@ -21,8 +21,11 @@ Keep independent expectations; encode/decode round trips alone may share bugs. B
 
 Retain concrete original/minimized input, seed, strategy/tool/configuration/source identity, actual reached failure. Replay concrete counterexample alone from clean state; keep named regression. Strategy edits can change seed meaning. Read [Rust techniques](../references/rust-techniques.md).
 
-When a small finite invariant needs bounded proof beyond sampled cases, select
-admitted Kani through [configured analysis](../references/configured-tooling.md#additional-rust-analysis).
+For product mathematical algorithms, sampled cases complement the
+[mandatory proof workflow](../references/formal-verification.md) under OD-10;
+they cannot close its full-domain obligations. For other small finite invariants,
+select a bounded proof when it addresses a named gap. Kani is one admitted option
+through [configured analysis](../references/configured-tooling.md#additional-rust-analysis).
 Keep independent expectations, explicit assumptions/unwind bounds and reachable
 valid-state controls; report all incomplete obligations and excluded inputs.
 For malformed byte coverage, route a separate production-decoder target through

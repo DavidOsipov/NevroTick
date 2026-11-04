@@ -18,6 +18,14 @@ exists. Keep the current GPL/TLS-provider/CNG admission holds in
 [section 18.7](../../../../../docs/windows-time-architecture.md#187-tls-nts-and-windows-trust-decisions);
 portable numerical success does not clear them.
 
+Chrony-derived mathematical algorithms also require the
+[mandatory proof workflow](../../../testing/references/formal-verification.md)
+under OD-10 and architecture §20.1.1. Prove the actual Rust implementation's full
+admitted success/error and machine/rounding contract before its mathematical
+acceptance. Upstream proofs, differential parity and simulator examples alone
+cannot close local obligations; inventory unproved helpers/callers and reuse
+only evidence bound to unchanged relevant inputs.
+
 ## Slice inputs and reviewable outputs
 
 Before implementation, establish artifacts in existing task evidence location;

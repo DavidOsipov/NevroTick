@@ -48,7 +48,7 @@ BUILD_SCRIPTS = {"getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107",
 # Bound concurrent LLVM test-binary links within the ordinary128-task sandbox.
 # Test execution and ten-worker mutation scheduling have separate policies.
 TEST_BUILD_JOBS = 6
-BOUNDED_TEST_BUILD_PACKAGES = {"time-core", "ntp-wire"}
+BOUNDED_TEST_BUILD_PACKAGES = {"time-core", "ntp-wire", "time-domain"}
 OPTIMIZED_DISCRIMINATORS = {
     "time-domain": "release_build_preserves_checked_admission",
     "ntp-exchange": "release_build_preserves_exchange_admission",

@@ -41,7 +41,7 @@ to own requirements, and task records own executed evidence.
 | Can a Store release carry independently checkable evidence of its source and build? | [Enhanced build provenance](plans/release-provenance.md) records the possible attestation, reproducible-build and delivered-payload chain and its limits. [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026) makes this additional assurance optional, with no new release blocker; existing artifact custody, SBOM/licence, integrity and installed-product checks remain required. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | How are leap seconds, silent-LI servers and Windows event ownership handled? | [Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales) owns the selected contract; [NV-LP-001](plans/leap-second-policy.md) records primary evidence, local knowledge, source/guard/Windows behavior; [S1.4's task](../tasks/s1.4-leap-policy.md) owns implementation cases and remaining native gates. |
-| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) reconcile completed S157/S158/S1.4a–c scopes with the current Core checkpoint, explicit date/data/import bounds and later protocol/native work. The first pure S1.4 consumer already exists; this separate leap child is pending. |
+| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) reconcile completed S157/S158/S1.4a–c scopes with the current Core checkpoint, explicit date/data/import bounds and later protocol/native work. The [implementation continuation](../tasks/s1.4-leap-policy.md#15-pure-implementation-authoring--5-november-2026) has an initial portable pass; new-owner qualification remains in progress. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
 | What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-20, mapped to technical checks. |
@@ -63,6 +63,26 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Mandatory mathematical proofs, 5 November 2026:**
+[OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+requires machine-checked product mathematical proofs under
+[architecture §20.1.1](windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
+and [hardening §9.6.1](windows-time-development-hardening.md#961-mandatory-product-mathematical-proof-gate--5-november-2026).
+The [next-task record](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+routes the first continuation to the existing
+[S1.1c rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026).
+This supersedes earlier optional-proof wording; actual-source proofs of the
+remaining domain, leap, exchange and Core mathematics are still required.
+Historical bounded checks do not establish the stronger gate. Tool selection,
+Windows/native qualification and OD-05's optional enhanced release provenance
+retain their separate status.
+
+The [proof workflow](../.agents/skills/testing/references/formal-verification.md)
+and shared [testing contract](../.agents/skills/testing/CONTRACT.md#product-specific-evidence)
+carry this requirement through planning, Rust/contract implementation and final
+qualification. Missing or invalidated proof evidence keeps dependent mathematical
+acceptance incomplete; choosing a different tool does not waive the obligation.
 
 **Independent MSIX removal, 5 November 2026:** the
 [recovery continuation](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
@@ -110,8 +130,8 @@ completed its selected four-owner Linux fixture gates on the sealed V8 candidate
 contracts, coverage, four mutation cohorts and exact union passed. All 136 viable
 variants were caught; 151 were unviable, with no survivors/timeouts/equivalences.
 This is neither the full 24-owner manifest nor P1/Windows/product qualification.
-The next bounded Core action is the existing leap task's pure contract, with
-explicit date-scope inputs and frozen ingestion limits before implementation.
+The active bounded continuation is the existing leap task's pure implementation
+qualification, with explicit date-scope inputs and frozen ingestion limits.
 Original failures, exact candidates, scoped holds and UI-M0 deferrals remain.
 
 **Release operations, 4 November 2026:** the [release policy](release-policy.md)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify the admitted S1.1c portable numerical/domain analysis scope.
+"""Qualify the admitted S1.1c/S1.4 portable domain analysis scope.
 
 GPL-2.0-only, David Osipov with AI assistance, 29 October 2026. Orchestration
 adapts the repository's verify-wire-analysis.py; shared custody/accounting lives
@@ -26,8 +26,16 @@ SPEC.loader.exec_module(COMMON)
 ANALYSIS, PRODUCT, PREPARE = COMMON.ANALYSIS, COMMON.PRODUCT, COMMON.PREPARE
 RUNTIME = COMMON.RUNTIME
 Incomplete = COMMON.Incomplete
-SUBJECTS = {name: f"crates/time-domain/src/{name}.rs"
-            for name in ("coordinate", "era", "exchange", "clock", "rounding")}
+LEGACY_SUBJECTS = {name: f"crates/time-domain/src/{name}.rs"
+                   for name in ("coordinate", "era", "exchange", "clock", "rounding")}
+LEAP_SUBJECTS = {
+    "leap": "crates/time-domain/src/leap.rs",
+    "leap_validation": "crates/time-domain/src/leap/validation.rs",
+    "leap_interpretation": "crates/time-domain/src/leap/interpretation.rs",
+    "leap_bundled": "crates/time-domain/src/leap/bundled.rs",
+}
+SUBJECTS = {**LEGACY_SUBJECTS, **LEAP_SUBJECTS}
+GENERATED_DATA = "crates/time-domain/src/leap/generated.rs"
 POLICY = "policy/time-domain-analysis.json"
 SCOPE = COMMON.Scope("time-domain", tuple(SUBJECTS.items()), POLICY)
 REGISTRY = "registry+https://github.com/rust-lang/crates.io-index"
@@ -219,12 +227,23 @@ def fuzz_metadata(metadata, selected):
 def read_policy(root):
     """Fixed thresholds and complete source/manifest/graph admission precede execution."""
     policy = json.loads((root / POLICY).read_text())
-    required = {"schema_version": 1, "package": "time-domain", "critical_files": list(SUBJECTS.values()),
+    required = {"schema_version": 4, "package": "time-domain", "critical_files": list(SUBJECTS.values()),
+                "source_file_count": 166, "tool_admission_profile": "stable-core",
+                "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+                "mutation_equivalences": [],
+                "mutation_error_values": {"leap_bundled": [
+                    "{ let _ = (CONTINUOUS_FROM, DATA_REVISION, FINITE_FUTURE_BEFORE, "
+                    "HISTORY_COMPLETE_BEFORE, LEAP_RECORDS, PROVENANCE_SHA256, RAW_SHA256, "
+                    "LeapContinuousFrom::new, LeapDataIdentity::new, LeapFutureExpiry::new, "
+                    "LeapHistoryBefore::new); LeapError::InvalidRecords }"]},
                 "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
                 "maximum_mutants": 512, "coverage_wall_seconds": 300, "mutation_wall_seconds": 1200,
                 "mutation_build_seconds": 90, "mutation_test_seconds": 60, "contracts_wall_seconds": 300,
-                "jobs": RUNTIME.MAX_JOBS, "test_threads": RUNTIME.MAX_JOBS}
-    if any(type(policy.get(key)) is not type(value) or policy.get(key) != value for key, value in required.items()):
+                "jobs": 6, "test_threads": RUNTIME.MAX_JOBS}
+    if (type(policy) is not dict or set(policy) != {*required, "coverage_guided_fuzzing"}
+            or SCOPE.subjects != COMMON.DOMAIN_LEAP_SUBJECTS
+            or any(type(policy.get(key)) is not type(value) or policy.get(key) != value
+                   for key, value in required.items())):
         raise Incomplete("Unreviewed time-domain analysis scope, threshold or budget.")
     COMMON.admit_mutation_equivalences(root, SCOPE, policy)
     inventory = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
@@ -233,7 +252,12 @@ def read_policy(root):
                 or sum(module.get("package") == "time-domain" and filename in module.get("files", [])
                        for module in inventory.get("security_modules", [])) != 1):
             raise Incomplete("A numeric owner is absent/duplicated in the security/critical inventory.")
+    if (GENERATED_DATA in inventory.get("critical_files", [])
+            or any(GENERATED_DATA in module.get("files", []) for module in inventory.get("security_modules", []))):
+        raise Incomplete("Constant-only generated leap data has no executable denominator.")
     selected = policy["coverage_guided_fuzzing"]
+    if type(selected) is not dict or selected.get("subjects") != LEGACY_SUBJECTS:
+        raise Incomplete("Legacy numeric fuzzing must identify exactly its original five owners.")
     if selected.get("status") != "admitted-test-only-source" or selected.get("fuzzer_flags") != list(COMMON.RUNTIME.SANITIZER_FLAGS):
         raise Incomplete("Exact finite sanitizer profile admission is missing.")
     paths = {"manifest": "policy/time-domain-fuzz-manifest.toml", "lockfile": "policy/time-domain-fuzz.lock",
@@ -266,7 +290,8 @@ def contract_examples():
              'let mono = MonotonicNs::new(1).duration_since(MonotonicNs::new(0))?; '
              'let awake = ActiveAwakeNs::new(1).duration_since(ActiveAwakeNs::new(0))?; '
              'let phase = exact.offset().round_nanoseconds_ties_even()?; '
-             'let rtt = exact.round_trip().round_nanoseconds_ties_even()?;')
+             'let rtt = exact.round_trip().round_nanoseconds_ties_even()?; '
+             'let _ = (&utc, &exact, &mono, &awake, &phase, &rtt);')
     legal = ('let window = EraWindow::new(0, 0)?; assert_eq!(unfold_ntp(0, 0, &window)?.ticks(), 0); '
              'assert_eq!(exact.offset().numerator(), 0); assert_eq!(exact.round_trip().numerator(), 0); '
              'assert_eq!(MonotonicNs::new(0).checked_add(mono)?.nanoseconds(), 1); '
@@ -312,6 +337,86 @@ def contract_examples():
         item["source"] = '\n'.join(['use time_domain::*;', 'fn main() -> Result<(), DomainError> {', setup,
                                     item.pop("statement"), 'Ok(())', '}']) + '\n'
         item["line"] = 4
+    examples["legal"]["success_marker"] = "legal-time-domain-contracts:11"
+    examples.update(leap_contract_examples())
+    return examples
+
+
+def leap_contract_examples():
+    """External checked leap consumers; every rejection has one owned cause line.
+
+    The independent legal consumer reaches constructors, bundled input and the
+    complete-interval interpretation. Boxed errors permit both existing domain
+    and leap errors without an unrelated conversion diagnostic.
+    """
+    setup = (
+        "let records = [(2_272_060_800_u64, 10_i32)]; "
+        "let history_before = LeapHistoryBefore::new(2_272_060_802)?; "
+        "let expiry = LeapFutureExpiry::new(2_272_060_803)?; "
+        "let continuous = LeapContinuousFrom::new(2_272_060_803)?; "
+        "let identity = LeapDataIdentity::new(1, [1; 32], [2; 32])?; "
+        "let dates = EraWindow::new(2_272_060_800_i128 << 32, 2_272_060_800_i128 << 32)?; "
+        "let scope = LeapDateScope::new(dates)?; "
+        "let knowledge = LeapKnowledge::new(&records, history_before, Some(expiry), Some(continuous), identity)?; "
+        "let answer = knowledge.interpret(dates, scope)?; "
+        "let _ = (&records, history_before, expiry, continuous, identity, dates, scope, &knowledge, answer);"
+    )
+    marker = "legal-leap-contracts:checked-history-and-whole-interval"
+    legal = (
+        "assert_eq!(knowledge.records(), &[(2_272_060_800, 10)]); "
+        "assert_eq!(knowledge.history_before().ntp_seconds(), 2_272_060_802); "
+        "assert_eq!(knowledge.expiry(), Some(expiry)); "
+        "assert_eq!(knowledge.continuous_from(), Some(continuous)); "
+        "assert_eq!(knowledge.identity(), identity); "
+        "assert_eq!(identity.revision(), 1); "
+        "assert_eq!(identity.raw_source_sha256(), [1; 32]); "
+        "assert_eq!(identity.provenance_sha256(), [2; 32]); "
+        "assert_eq!(scope.dates(), dates); "
+        "assert_eq!(answer.dates(), dates); "
+        "assert_eq!(answer.identity(), identity); "
+        "assert_eq!(answer.offset(), LeapOffsetKnowledge::Known(10)); "
+        "assert_eq!(answer.events(), LeapEventKnowledge::NoEvents); "
+        "assert_eq!(answer.known_transition_count(), 0); "
+        "let bundled = bundled_leap_knowledge()?; "
+        "assert_eq!(bundled.records().last(), Some(&(3_692_217_600, 37))); "
+        'println!("' + marker + '");'
+    )
+    examples = {"leap_legal": {"statement": legal, "code": None, "tokens": [], "success_marker": marker}}
+    representations = [
+        ("leap_history", "LeapHistoryBefore", "second", "history_before", "0_u64"),
+        ("leap_expiry", "LeapFutureExpiry", "second", "expiry", "0_u64"),
+        ("leap_continuous", "LeapContinuousFrom", "second", "continuous", "0_u64"),
+        ("leap_identity", "LeapDataIdentity", "revision", "identity", "(0_u64, [1_u8; 32], [2_u8; 32])"),
+        ("leap_scope", "LeapDateScope", "dates", "scope", "dates"),
+        ("leap_knowledge", "LeapKnowledge<'_>", "records", "knowledge", "()"),
+        ("leap_answer", "LeapInterpretation", "offset", "answer", "()"),
+    ]
+    for name, typename, field, value, raw in representations:
+        literal_type = typename.split("<", 1)[0]
+        examples[name + "_construction"] = {
+            "statement": f"let _ = {literal_type} {{ ..{value} }};",
+            "code": "E0451", "tokens": ["private", field]}
+        examples[name + "_mutation"] = {
+            "statement": f"let mut value = {value}; value.{field} = value.{field};",
+            "code": "E0616", "tokens": ["private", field]}
+        examples[name + "_default"] = {
+            "statement": f"let _: {typename} = Default::default();",
+            "code": "E0277", "tokens": [literal_type, "Default"]}
+        examples[name + "_from"] = {
+            "statement": f"let _: {typename} = {raw}.into();",
+            "code": "E0277", "tokens": [literal_type, "From"]}
+    examples["leap_metadata_units"] = {
+        "statement": "let _ = LeapKnowledge::new(&records, expiry, None, None, identity);",
+        "code": "E0308", "tokens": ["LeapHistoryBefore", "LeapFutureExpiry"]}
+    examples["leap_records_borrow_mutation"] = {
+        "statement": "records[0].1 = 11; let _ = knowledge.records(); assert_eq!(records[0].1, 11);",
+        "code": "E0506", "tokens": ["records", "borrowed"]}
+    for name, specimen in examples.items():
+        owned_setup = setup.replace("let records =", "let mut records =", 1) if name == "leap_records_borrow_mutation" else setup
+        specimen["source"] = "\n".join([
+            "use time_domain::*;", "fn main() -> Result<(), Box<dyn std::error::Error>> {",
+            owned_setup, specimen.pop("statement"), "Ok(())", "}"]) + "\n"
+        specimen["line"] = 4
     return examples
 
 
@@ -346,7 +451,7 @@ def contracts(session, policy, report):
     deadline = time.monotonic() + policy["contracts_wall_seconds"]
     run = session.run
     output = run("contract-library", [str(session.stable / "bin/cargo"), "build", "--package", "time-domain",
-                 "--frozen", "--jobs", str(RUNTIME.MAX_JOBS), "--lib", "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
+                 "--frozen", "--jobs", str(policy["jobs"]), "--lib", "--message-format=json"], COMMON.remaining_timeout(deadline, 120))
     artifact = COMMON.library_artifact(output, "time-domain", "/work/source/crates/time-domain/Cargo.toml")
     dependency_copy = copy_contract_dependencies(session, artifact)
     consumers = session.work / "contract-inputs"; consumers.mkdir(mode=0o700)
@@ -363,11 +468,13 @@ def contracts(session, policy, report):
         run("external-consumer-" + name, command, COMMON.remaining_timeout(deadline, 60),
             sealed=[consumers, dependency_copy], specimen=specimen if specimen["code"] else None)
         if specimen["code"] is None:
-            text = run("external-legal-execution", ["/work/contracts/" + name], COMMON.remaining_timeout(deadline, 30),
+            label = "external-legal-execution" if name == "legal" else "external-legal-execution-" + name
+            text = run(label, ["/work/contracts/" + name], COMMON.remaining_timeout(deadline, 30),
                        sealed=[consumers, dependency_copy])
-            if "legal-time-domain-contracts:11" not in text:
+            if specimen["success_marker"] not in text:
                 raise Incomplete("Legal external consumer did not reach every selected representation.")
-    report["contracts"] = {"legal_consumers_compiled_and_executed": 1, "library_artifact": artifact,
+    report["contracts"] = {"legal_consumers_compiled_and_executed": sum(item["code"] is None for item in examples.values()),
+                           "library_artifact": artifact,
                            "immutable_dependencies_sha256": PRODUCT.inventory(dependency_copy),
                            "required_diagnostics": {name: {key: item[key] for key in ("code", "tokens", "line")}
                                                     for name, item in examples.items() if item["code"]}}
@@ -513,7 +620,9 @@ def fuzz(session, selected, report):
             count = re.search(r"Done (\d+) runs", text)
             if not count or int(count[1]) != 256:
                 raise Incomplete("Healthy numeric fuzz target did not complete its finite 256 runs.")
-            report["fuzz"] = {"observed_runs": 256, "subjects": dict(SUBJECTS), "seed_files_sha256": seed_identity,
+            report["fuzz"] = {"observed_runs": 256, "subjects": dict(LEGACY_SUBJECTS),
+                              "not_fuzzed": dict(LEAP_SUBJECTS), "status": "legacy-five-owner-only",
+                              "seed_files_sha256": seed_identity,
                               "seed_lengths": [176], "seeded_fault": "pending", "sanitizer": "address", "target": ANALYSIS.PLATFORM}
         else:
             report["fuzz"]["seeded_fault"] = "observed intended exact phase-offset assertion failure"
@@ -528,6 +637,9 @@ def fuzz(session, selected, report):
 def execute(args, report):
     """Run only the reviewed admitted fixed scope and preserve partial observations."""
     policy = read_policy(ROOT)
+    COMMON.admission_profile(args, SCOPE, policy)
+    report["fuzz"] = {"status": "not-performed", "subjects": dict(LEGACY_SUBJECTS),
+                      "not_fuzzed": dict(LEAP_SUBJECTS)}
     selected = policy["coverage_guided_fuzzing"]
     extra = ("scripts/verify-time-domain-analysis.py", *selected["inputs_sha256"])
     session = COMMON.Session(ROOT, args, report, SCOPE, policy, extra)
@@ -548,10 +660,13 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("contracts", "coverage", "mutation", "fuzz", "all"), default="all")
     parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
-    report = {"status": "incomplete", "scope": "S1.1c pure time-domain portable contracts/coverage/mutation/numeric fuzz",
+    if args.tool_admission_profile == "stable-core" and args.lane not in {"contracts", "coverage", "mutation"}:
+        parser.error("--tool-admission-profile stable-core requires contracts, coverage or mutation")
+    report = {"status": "incomplete", "scope": "S1.1c/S1.4 pure domain contracts/coverage/mutation; leap fuzzing not performed",
               "native_qualification": "not performed"}
     try:
         if args.vendor_dir is None:

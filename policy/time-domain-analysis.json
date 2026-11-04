@@ -1,12 +1,16 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "package": "time-domain",
   "critical_files": [
     "crates/time-domain/src/coordinate.rs",
     "crates/time-domain/src/era.rs",
     "crates/time-domain/src/exchange.rs",
     "crates/time-domain/src/clock.rs",
-    "crates/time-domain/src/rounding.rs"
+    "crates/time-domain/src/rounding.rs",
+    "crates/time-domain/src/leap.rs",
+    "crates/time-domain/src/leap/validation.rs",
+    "crates/time-domain/src/leap/interpretation.rs",
+    "crates/time-domain/src/leap/bundled.rs"
   ],
   "coverage_minimum_line_percent": 90,
   "mutation_minimum_viable_killed_percent": 95,
@@ -16,7 +20,7 @@
   "mutation_build_seconds": 90,
   "mutation_test_seconds": 60,
   "contracts_wall_seconds": 300,
-  "jobs": 12,
+  "jobs": 6,
   "test_threads": 12,
   "coverage_guided_fuzzing": {
     "status": "admitted-test-only-source",
@@ -29,8 +33,8 @@
       "policy/time-domain-fuzz-target.rs": "78855e99831b8448deef8180904a0438424df18dcf31d466e82d39f235f78709",
       "policy/time-domain-fuzz-manifest.toml": "82228e73a748919ea3012883667350278fc2e26c28c855d10d2be33a89ea0b52",
       "policy/time-domain-fuzz.lock": "ab1ba0f3322d5a52528b08756e800e235f6e5ed64a2b9758f3aa6d6b6a62794e",
-      "policy/ui-m0-dependencies.json": "1778cfc773f61b46ecee6c6bc600416630855c3b2454dcc8a02cdfd8928b6043",
-      "policy/ntp-wire-analysis.json": "db7f2df70384cfa0e8740daf2988e3d0b18d14e634b0966ae32adb32052f3dcd",
+      "policy/ui-m0-dependencies.json": "7fd786ea6e874c518405e4b7c2c0a64bea932f42dff52bd3e8a37801ed911f93",
+      "policy/ntp-wire-analysis.json": "f7f7939d84a2ae30891e1f4e530b23d97cd851c216d1a0af54666d4baa3a649e",
       "policy/dependency-notices/libfuzzer-sys-0.4.13-LLVM-LICENSE.txt": "1a8f1058753f1ba890de984e48f0242a3a5c29a6a8f2ed9fd813f36985387e8d",
       "tasks/s1.1-exchange-vectors.json": "f4ef0a5e339cad487587f5417feb2a12ca4a06ac279d94131265d691181b41ae"
     },
@@ -382,278 +386,24 @@
       "sha256": "046cf31cd88df6794731bdaa9ee66666753ddd8c16574bea6c4913790bb015d4",
       "lockfile_sha256": "33401f068cf4a0dd591026b6ec7b9c566942bb95252053b5c56b71f681de40b8",
       "scope": "guarded metadata only; no compiler/proc-macro execution"
+    },
+    "subjects": {
+      "coordinate": "crates/time-domain/src/coordinate.rs",
+      "era": "crates/time-domain/src/era.rs",
+      "exchange": "crates/time-domain/src/exchange.rs",
+      "clock": "crates/time-domain/src/clock.rs",
+      "rounding": "crates/time-domain/src/rounding.rs"
     }
   },
-  "mutation_equivalences": [
-    {
-      "id": "TD-E-001",
-      "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
-      "source_sha256": "366397df0c6bcd260d566b5bac310c882796734887af886a5fdf99a023bb1dc8",
-      "mutant": {
-        "name": "crates/time-domain/src/era.rs:115:53: replace | with ^ in unfold_ntp",
-        "package": "time-domain",
-        "file": "crates/time-domain/src/era.rs",
-        "function": {
-          "function_name": "unfold_ntp",
-          "return_type": "-> Result<UtcCoordinateQ32, DomainError>",
-          "span": {
-            "start": {
-              "line": 102,
-              "column": 1
-            },
-            "end": {
-              "line": 145,
-              "column": 2
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 115,
-            "column": 53
-          },
-          "end": {
-            "line": 115,
-            "column": 54
-          }
-        },
-        "replacement": "^",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "CHECK-6/7/25 exact raw bits and unique in-window era; hardening section 9.4",
-      "rationale": "Widened u32 fields occupy disjoint bit positions, so OR equals XOR for all input pairs.",
-      "proof": {
-        "path": "tasks/s1.1-time-domain-equivalences.md",
-        "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
-        "section": "TD-E-001",
-        "reviewer": "/root/nts_negotiation_independent_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "TD-E-002",
-      "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
-      "source_sha256": "366397df0c6bcd260d566b5bac310c882796734887af886a5fdf99a023bb1dc8",
-      "mutant": {
-        "name": "crates/time-domain/src/era.rs:141:25: replace || with && in unfold_ntp",
-        "package": "time-domain",
-        "file": "crates/time-domain/src/era.rs",
-        "function": {
-          "function_name": "unfold_ntp",
-          "return_type": "-> Result<UtcCoordinateQ32, DomainError>",
-          "span": {
-            "start": {
-              "line": 102,
-              "column": 1
-            },
-            "end": {
-              "line": 145,
-              "column": 2
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 141,
-            "column": 25
-          },
-          "end": {
-            "line": 141,
-            "column": 27
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "CHECK-6/7/25 exact raw bits and unique in-window era; hardening section 9.4",
-      "rationale": "The unchanged unique Euclidean era bounds imply the reconstructed coordinate lies in the inclusive window; both exact predicates are false on every reaching execution.",
-      "proof": {
-        "path": "tasks/s1.1-time-domain-equivalences.md",
-        "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
-        "section": "TD-E-002",
-        "reviewer": "/root/nts_negotiation_independent_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "TD-E-003",
-      "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
-      "source_sha256": "d7208286fb97303a64b719aa880ee07ec2411fef8c17abbda9acfb5e2b33e7b6",
-      "mutant": {
-        "name": "crates/time-domain/src/exchange.rs:150:45: replace || with && in exchange_arithmetic",
-        "package": "time-domain",
-        "file": "crates/time-domain/src/exchange.rs",
-        "function": {
-          "function_name": "exchange_arithmetic",
-          "return_type": "-> Result<ExchangeArithmetic, DomainError>",
-          "span": {
-            "start": {
-              "line": 94,
-              "column": 1
-            },
-            "end": {
-              "line": 161,
-              "column": 2
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 150,
-            "column": 45
-          },
-          "end": {
-            "line": 150,
-            "column": 47
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "CHECK-6/7/25 exact arithmetic and checked output invariants; architecture section 6.3.1 every-helper contracts; hardening section 9.4",
-      "rationale": "Every admitted coordinate difference lies in plus or minus (2^96-1), so both exact transformed numerators lie in plus or minus (2^97-2). Both final rejection operands are false on every reaching execution; the pure helper changes no short-circuit effect.",
-      "proof": {
-        "path": "tasks/s1.1-time-domain-equivalences.md",
-        "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
-        "section": "TD-E-003",
-        "reviewer": "/root/nts_negotiation_independent_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "TD-E-004",
-      "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
-      "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
-      "mutant": {
-        "name": "crates/time-domain/src/rounding.rs:59:9: replace || with && in round",
-        "package": "time-domain",
-        "file": "crates/time-domain/src/rounding.rs",
-        "function": {
-          "function_name": "round",
-          "return_type": "-> Result<(i64, i128), DomainError>",
-          "span": {
-            "start": {
-              "line": 26,
-              "column": 1
-            },
-            "end": {
-              "line": 64,
-              "column": 2
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 59,
-            "column": 9
-          },
-          "end": {
-            "line": 59,
-            "column": 11
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "CHECK-6/7/25 exact arithmetic and checked output invariants; architecture section 6.3.1 every-helper contracts; hardening section 9.4",
-      "rationale": "For every i128 numerator and either fixed scale, unchanged nearest-even arithmetic either returns the same earlier error or reaches a bounded residual with even destination at either tie endpoint. Both outer rejection operands are false, so OR and AND agree.",
-      "proof": {
-        "path": "tasks/s1.1-time-domain-equivalences.md",
-        "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
-        "section": "TD-E-004",
-        "reviewer": "/root/nts_negotiation_independent_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "TD-E-005",
-      "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
-      "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
-      "mutant": {
-        "name": "crates/time-domain/src/rounding.rs:59:35: replace || with && in round",
-        "package": "time-domain",
-        "file": "crates/time-domain/src/rounding.rs",
-        "function": {
-          "function_name": "round",
-          "return_type": "-> Result<(i64, i128), DomainError>",
-          "span": {
-            "start": {
-              "line": 26,
-              "column": 1
-            },
-            "end": {
-              "line": 64,
-              "column": 2
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 59,
-            "column": 35
-          },
-          "end": {
-            "line": 59,
-            "column": 37
-          }
-        },
-        "replacement": "&&",
-        "genre": "BinaryOperator"
-      },
-      "requirement": "CHECK-6/7/25 exact arithmetic and checked output invariants; architecture section 6.3.1 every-helper contracts; hardening section 9.4",
-      "rationale": "The positive half-scale prevents simultaneous equality to both residual endpoints. The original endpoint-OR combined with odd destination is also false because unchanged nearest-even arithmetic guarantees even tie destinations over the complete helper domain.",
-      "proof": {
-        "path": "tasks/s1.1-time-domain-equivalences.md",
-        "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
-        "section": "TD-E-005",
-        "reviewer": "/root/nts_negotiation_independent_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    },
-    {
-      "id": "TD-E-006",
-      "candidate_sha256": "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1",
-      "source_sha256": "387fa926a079aa7b87477c97dea8b79049595ac8a793ead449b19abb8b0b5519",
-      "mutant": {
-        "name": "crates/time-domain/src/rounding.rs:59:26: delete - in round",
-        "package": "time-domain",
-        "file": "crates/time-domain/src/rounding.rs",
-        "function": {
-          "function_name": "round",
-          "return_type": "-> Result<(i64, i128), DomainError>",
-          "span": {
-            "start": {
-              "line": 26,
-              "column": 1
-            },
-            "end": {
-              "line": 64,
-              "column": 2
-            }
-          }
-        },
-        "span": {
-          "start": {
-            "line": 59,
-            "column": 26
-          },
-          "end": {
-            "line": 59,
-            "column": 27
-          }
-        },
-        "replacement": "",
-        "genre": "UnaryOperator"
-      },
-      "requirement": "CHECK-6/7/25 exact arithmetic and checked output invariants; architecture section 6.3.1 every-helper contracts; hardening section 9.4",
-      "rationale": "Dropping the negative residual endpoint check changes no result because unchanged nearest-even arithmetic always gives an even destination at that endpoint, as at the positive endpoint. Earlier errors and all non-tie results coincide over every i128 numerator and both fixed scales.",
-      "proof": {
-        "path": "tasks/s1.1-time-domain-equivalences.md",
-        "sha256": "7a40504bd32556e7bb188ae4cc9e88a67bb05196c1d8d505a5b64e944264bd48",
-        "section": "TD-E-006",
-        "reviewer": "/root/nts_negotiation_independent_review",
-        "verdict": "independently-justified-equivalent"
-      }
-    }
-  ]
+  "mutation_equivalences": [],
+  "source_file_count": 166,
+  "tool_admission_profile": "stable-core",
+  "mutation_jobs": 10,
+  "mutation_process_limit": 512,
+  "mutation_message_format": "json",
+  "mutation_error_values": {
+    "leap_bundled": [
+      "{ let _ = (CONTINUOUS_FROM, DATA_REVISION, FINITE_FUTURE_BEFORE, HISTORY_COMPLETE_BEFORE, LEAP_RECORDS, PROVENANCE_SHA256, RAW_SHA256, LeapContinuousFrom::new, LeapDataIdentity::new, LeapFutureExpiry::new, LeapHistoryBefore::new); LeapError::InvalidRecords }"
+    ]
+  }
 }

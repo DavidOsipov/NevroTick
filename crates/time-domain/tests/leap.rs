@@ -1,6 +1,9 @@
 //! Independent leap-history and admission controls through the public boundary.
 #![forbid(unsafe_code)]
 
+#[path = "private/leap_properties.rs"]
+mod leap_properties;
+
 use std::error::Error;
 
 use time_domain::{
@@ -152,6 +155,12 @@ fn invalid_constructor_preserves_admitted_healthy_records() -> Result<(), Box<dy
     assert_eq!(retained, before);
     assert_eq!(retained.records(), &EARLY_HISTORY);
     let scope = LeapDateScope::new(window(2_272_060_800, 2_335_219_199)?)?;
+    assert_answer(
+        retained.interpret(window(2_287_785_600, 2_287_785_600)?, scope)?,
+        LeapOffsetKnowledge::Known(11),
+        LeapEventKnowledge::KnownEvents,
+        1,
+    );
     assert_eq!(
         retained.interpret(window(2_335_219_200, 2_335_219_200)?, scope),
         Err(LeapError::UnsupportedDates)
@@ -693,5 +702,251 @@ fn monthly_calendar_rules_cover_leap_and_century_neighbors() -> Result<(), Box<d
             assert_eq!(answer, Err(LeapError::InvalidRecords));
         }
     }
+    Ok(())
+}
+
+/// Finite coverage can admit a known prospective event after reviewed history.
+///
+/// This synthetic announcement tests the domain contract, not a real calendar
+/// prediction. The event is covered only when the finite exclusive end permits it.
+///
+/// # Errors
+/// Propagates unexpected rejection of the legal future-coverage neighbor.
+/// # Panics
+/// Fails if future records are always rejected, coverage is inclusive or answers
+/// lose the distinct historical endpoint and prospective event.
+#[test]
+fn prospective_event_requires_finite_coverage_beyond_history() -> Result<(), Box<dyn Error>> {
+    let records = [(2_272_060_800, 10), (2_287_785_600, 11)];
+    let reviewed = 2_287_785_599;
+    let expiry = 2_287_785_601;
+    for insufficient in [None, Some(2_287_785_600)] {
+        assert_eq!(
+            knowledge(&records, reviewed, insufficient, None),
+            Err(LeapError::InvalidRecords)
+        );
+    }
+    let history = knowledge(&records, reviewed, Some(expiry), None)?;
+    assert_eq!(history.history_before().ntp_seconds(), reviewed);
+    assert_eq!(
+        history.expiry().map(LeapFutureExpiry::ntp_seconds),
+        Some(expiry)
+    );
+    let scope = LeapDateScope::new(window(reviewed - 1, expiry)?)?;
+    let event = 2_287_785_600_i128 * SECOND;
+    assert_answer(
+        history.interpret(EraWindow::new(event - 1, event)?, scope)?,
+        LeapOffsetKnowledge::Varying,
+        LeapEventKnowledge::KnownEvents,
+        1,
+    );
+    assert_answer(
+        history.interpret(EraWindow::new(event + 1, event + 1)?, scope)?,
+        LeapOffsetKnowledge::Known(11),
+        LeapEventKnowledge::NoEvents,
+        0,
+    );
+    assert_answer(
+        history.interpret(window(expiry, expiry)?, scope)?,
+        LeapOffsetKnowledge::Unknown,
+        LeapEventKnowledge::Unknown,
+        0,
+    );
+    Ok(())
+}
+
+/// Distinct declared revisions and digests reach the actual whole-interval result.
+///
+/// Identity bytes are labels only. These legal neighbors challenge accidental
+/// defaulting or aliasing while the same immutable calendar remains unchanged.
+///
+/// # Errors
+/// Propagates unexpected rejection of nonzero identities or healthy knowledge.
+/// # Panics
+/// Fails if any declared revision/source/provenance label is changed or coalesced.
+#[test]
+fn distinct_data_identities_reach_interpretation_consumers() -> Result<(), Box<dyn Error>> {
+    let records = [(2_272_060_800, 10)];
+    let dates = window(2_272_060_801, 2_272_060_802)?;
+    let scope = LeapDateScope::new(dates)?;
+    let mut previous = None;
+    for (revision, source, provenance) in [
+        (7, [0x3a; 32], [0x55; 32]),
+        (u64::MAX, [0x3a; 32], [0xaa; 32]),
+        (7, [0x5c; 32], [0x55; 32]),
+    ] {
+        let declared = LeapDataIdentity::new(revision, source, provenance)?;
+        let history = LeapKnowledge::new(
+            &records,
+            LeapHistoryBefore::new(REVIEWED_BEFORE)?,
+            None,
+            None,
+            declared,
+        )?;
+        let answer = history.interpret(dates, scope)?;
+        assert_answer(
+            answer,
+            LeapOffsetKnowledge::Known(10),
+            LeapEventKnowledge::NoEvents,
+            0,
+        );
+        assert_eq!(answer.dates(), dates);
+        assert_eq!(answer.identity(), declared);
+        assert_eq!(answer.identity().revision(), revision);
+        assert_eq!(answer.identity().raw_source_sha256(), source);
+        assert_eq!(answer.identity().provenance_sha256(), provenance);
+        if let Some(prior) = previous {
+            assert_ne!(answer.identity(), prior);
+        }
+        previous = Some(answer.identity());
+    }
+    Ok(())
+}
+
+/// Signed negative-event trajectories can reach zero and negative exact offsets.
+///
+/// Literal monthly dates were independently calculated with a Gregorian calendar;
+/// the synthetic signs are not claims about actual 1972 history.
+///
+/// # Errors
+/// Propagates unexpected rejection of ordered unit negative/positive transitions.
+/// # Panics
+/// Fails if signed offsets are clamped, rejected or hidden by equal endpoints.
+#[test]
+fn negative_events_preserve_zero_and_negative_offset_knowledge() -> Result<(), Box<dyn Error>> {
+    let records = [
+        (2_272_060_800, 10),
+        (2_274_739_200, 9),
+        (2_277_244_800, 8),
+        (2_279_923_200, 7),
+        (2_282_515_200, 6),
+        (2_285_193_600, 5),
+        (2_287_785_600, 4),
+        (2_290_464_000, 3),
+        (2_293_142_400, 2),
+        (2_295_734_400, 1),
+        (2_298_412_800, 0),
+        (2_301_004_800, -1),
+        (2_303_683_200, 0),
+    ];
+    let history = knowledge(&records, 2_335_219_200, None, None)?;
+    let scope = LeapDateScope::new(window(2_272_060_800, 2_335_219_199)?)?;
+    for (second, offset) in [
+        (2_274_739_200_u64, 9),
+        (2_298_412_800, 0),
+        (2_301_004_800, -1),
+        (2_303_683_200, 0),
+    ] {
+        let after = i128::from(second) * SECOND + 1;
+        assert_answer(
+            history.interpret(EraWindow::new(after, after)?, scope)?,
+            LeapOffsetKnowledge::Known(offset),
+            LeapEventKnowledge::NoEvents,
+            0,
+        );
+    }
+    assert_answer(
+        history.interpret(
+            EraWindow::new(
+                2_298_412_800_i128 * SECOND + 1,
+                2_303_683_200_i128 * SECOND + 1,
+            )?,
+            scope,
+        )?,
+        LeapOffsetKnowledge::Varying,
+        LeapEventKnowledge::KnownEvents,
+        2,
+    );
+    Ok(())
+}
+
+/// Fixed error messages remain useful and exclude rejected identity-label bytes.
+///
+/// # Errors
+/// Propagates unexpected acceptance of a negative control or healthy rejection.
+/// # Panics
+/// Fails if any real rejection formats an empty, changed or unbounded message.
+#[test]
+fn rejected_inputs_have_fixed_redacted_error_messages() -> Result<(), Box<dyn Error>> {
+    let history = knowledge(&EARLY_HISTORY, REVIEWED_BEFORE, None, None)?;
+    let scope = LeapDateScope::new(window(2_272_060_800, 2_303_683_200)?)?;
+    let invalid_metadata = LeapFutureExpiry::new(u64::MAX)
+        .err()
+        .ok_or("oversized metadata unexpectedly accepted")?;
+    let invalid_records = knowledge(&[(2_272_060_800, i32::MIN)], REVIEWED_BEFORE, None, None)
+        .err()
+        .ok_or("invalid baseline unexpectedly accepted")?;
+    let invalid_scope = LeapDateScope::new(window(0, 1)?)
+        .err()
+        .ok_or("unsupported scope unexpectedly accepted")?;
+    let invalid_identity = LeapDataIdentity::new(0, [b'S'; 32], [b'P'; 32])
+        .err()
+        .ok_or("zero revision unexpectedly accepted")?;
+    let unsupported = history
+        .interpret(window(2_303_683_201, 2_303_683_201)?, scope)
+        .err()
+        .ok_or("out-of-scope query unexpectedly accepted")?;
+    for (actual, expected) in [
+        (invalid_metadata, "invalid leap metadata"),
+        (invalid_records, "invalid leap records"),
+        (invalid_scope, "invalid leap date scope"),
+        (invalid_identity, "invalid leap data identity"),
+        (unsupported, "unsupported leap dates"),
+    ] {
+        let message = actual.to_string();
+        assert_eq!(message, expected);
+        assert!(message.len() <= 32);
+    }
+    assert_answer(
+        history.interpret(window(2_287_785_600, 2_287_785_600)?, scope)?,
+        LeapOffsetKnowledge::Known(11),
+        LeapEventKnowledge::KnownEvents,
+        1,
+    );
+    Ok(())
+}
+
+/// Deterministic property evidence over a closed, independently labelled domain.
+///
+/// Exactly five tiny signed ledgers × two history bounds × three expiry states
+/// × four rule states produce 120 valid contexts. Their 21 Q32 representatives
+/// yield 231 ordered endpoint pairs each: 27,720 accepted interpretations plus
+/// 240 rejected scope neighbors. This is deterministic coverage, not fuzzing.
+///
+/// # Errors
+/// Propagates any model-inventory error or unexpected real constructor rejection.
+/// # Panics
+/// Fails on an interpretation mismatch, vacuous truth category or wrong count.
+#[test]
+fn generated_intervals_match_independent_segment_truth() -> Result<(), Box<dyn Error>> {
+    leap_properties::check_closed_inventory()
+}
+
+/// A Gregorian 400-year cycle preserves month starts across the scalar envelope.
+///
+/// The two literal dates add respectively 40 billion and 400 billion years to
+/// 1 January 1972. Both are month starts; only the first fits signed-i64 seconds.
+/// # Errors
+/// Propagates unexpected metadata, scope or healthy-ledger rejection.
+/// # Panics
+/// Fails if an out-of-envelope monthly record escapes the checked coverage bound.
+#[test]
+fn huge_monthly_records_retain_the_checked_numeric_envelope() -> Result<(), Box<dyn Error>> {
+    let healthy = [(2_272_060_800, 10), (1_262_278_082_272_060_800, 11)];
+    let hostile = [(2_272_060_800, 10), (12_622_780_802_272_060_800, 11)];
+    let endpoint = 9_223_372_036_854_775_807;
+    let accepted = knowledge(&healthy, endpoint, None, None)?;
+    assert_eq!(
+        knowledge(&hostile, endpoint, None, None),
+        Err(LeapError::InvalidRecords)
+    );
+    let scope = LeapDateScope::new(window(2_272_060_800, endpoint)?)?;
+    let dates = window(1_262_278_082_272_060_800, 1_262_278_082_272_060_800)?;
+    assert_answer(
+        accepted.interpret(dates, scope)?,
+        LeapOffsetKnowledge::Known(11),
+        LeapEventKnowledge::KnownEvents,
+        1,
+    );
     Ok(())
 }

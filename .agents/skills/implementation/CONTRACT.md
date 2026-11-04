@@ -97,6 +97,14 @@ and the applicable lifecycle/retention checks before claiming it is verified.
 
 ## Evidence and completion
 
+Product mathematical algorithms require source-bound machine-checked proofs
+under [OD-10](../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+and [architecture §20.1.1](../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
+Apply the [proof workflow](../testing/references/formal-verification.md) to existing
+and new algorithms and changes invalidating proof evidence. Missing full-domain
+success/error, machine/rounding or invariant obligations keep the dependent
+mathematical acceptance incomplete. A tool deferral does not waive them.
+
 Select checks through [testing contract](../testing/CONTRACT.md) and relevant QA
 owner; add no second testing policy. Changed enforcement needs independent invalid
 and valid neighboring controls through actual adapter/consumer. Confirm executed

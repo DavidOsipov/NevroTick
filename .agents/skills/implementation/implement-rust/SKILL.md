@@ -53,6 +53,15 @@ thresholds, use [numerical kernels](references/numerical-kernels.md). Separate
 independent mathematical results from rounded execution controls; freeze the
 supported conditioning/range envelope and comparison semantics before coding.
 
+For existing or new product mathematical algorithms, apply OD-10 through the
+[mandatory proof workflow](../../testing/references/formal-verification.md).
+Require actual-source proofs of the full admitted domain, required success/error
+outcomes, machine/rounding semantics and invariants. New algorithms, changed
+semantics or invalidated proof inputs reopen the affected obligations; reuse
+valid unchanged proofs. Record remaining obligations under the existing task's
+CHECK owners; missing proofs leave their mathematical acceptance incomplete.
+Preserve runtime guards, tests and native Windows evidence.
+
 When changing error types/propagation, error-to-output mappings, retry/recovery,
 fallible cleanup or panic boundaries, read and apply
 [error handling and safe diagnostics](references/error-handling.md). Enforce the
@@ -104,7 +113,8 @@ application workspace. Preserve target mitigation flags and narrow expectations.
 For a concrete memory/ownership gap, select admitted Miri on reached portable
 tests. For synchronization changes, select an instrumented bounded Loom model;
 use experimental Lockbud only after the real source/features compile on its
-separate admitted compiler. Small arithmetic/state invariants may suit Kani;
+separate admitted compiler. Kani is one verifier option for mathematical proofs
+or selected state invariants under its admitted profile;
 hostile parser/conversion inputs may suit cargo-fuzz. Use the guide's guarded
 analysis lane and then qualify the real harness; bootstrap controls alone test
 no product path. Keep shipping Rust and native Windows observations separate.

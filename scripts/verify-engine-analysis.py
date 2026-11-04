@@ -12,6 +12,7 @@ import json
 import math
 from pathlib import Path
 import re
+import shutil
 import sys
 import time
 import tomllib
@@ -32,6 +33,17 @@ SUBJECTS = {
     "cli": "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
 }
 SCOPE = COMMON.Scope("nevrotick-engine", tuple(SUBJECTS.items()), POLICY)
+CONTRACT_SCOPE = COMMON.Scope(
+    "nevrotick-engine", (("library", "crates/nevrotick-engine/src/lib.rs"),), POLICY)
+FIXED_CONTRACT_POLICY = {
+    "schema_version": 1,
+    "admission_status": "admitted-engine-external-contracts-only",
+    "package": "nevrotick-engine", "source_file_count": 166,
+    "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
+    "tool_admission_profile": "stable-core",
+    "contracts_wall_seconds": 300, "jobs": 6, "test_threads": 1,
+    "mutation_equivalences": [], "mutation_error_values": {},
+}
 BOUND_INPUTS = (
     "Cargo.toml", "Cargo.lock", "crates/nevrotick-engine/Cargo.toml",
     *SUBJECTS.values(), "crates/nevrotick-engine/tests/runtime_boundary.rs",
@@ -130,12 +142,13 @@ def inventory_bindings(policy: dict, *, required: bool = False) -> dict:
 def read_policy(root: Path) -> dict:
     """Bind the fixed engine scope to the actual whole product and protected helpers."""
     policy = read_json(root / POLICY)
-    extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "scope"}
+    extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "scope", "external_contracts"}
     if (set(policy) != set(FIXED_POLICY) | extras
             or any(type(policy.get(key)) is not type(value) or policy.get(key) != value
                    for key, value in FIXED_POLICY.items())
             or not isinstance(policy["scope"], str) or not 0 < len(policy["scope"]) <= 2048):
         raise Incomplete("Unreviewed engine analysis scope, threshold, budget or profile.")
+    validate_contract_policy(policy["external_contracts"])
     _, identity = PRODUCT.admit_product(root)
     if (not isinstance(policy["candidate_sha256"], str)
             or policy["candidate_sha256"] != COMMON.canonical_sha256(identity)):
@@ -154,6 +167,189 @@ def read_policy(root: Path) -> dict:
     inventory_bindings(policy)
     COMMON.admit_mutation_equivalences(root, SCOPE, policy)
     return policy
+
+
+def validate_contract_policy(value: dict) -> dict:
+    """Admit only the current inert external-contract role, never old campaigns."""
+    if (type(value) is not dict or set(value) != set(FIXED_CONTRACT_POLICY)
+            or CONTRACT_SCOPE.subjects != COMMON.ENGINE_CONTRACT_SUBJECTS
+            or any(type(value.get(key)) is not type(expected) or value[key] != expected
+                   for key, expected in FIXED_CONTRACT_POLICY.items())):
+        raise Incomplete("Engine external contracts require the exact current inert stable role.")
+    return value
+
+
+def read_contract_policy(root: Path) -> dict:
+    """Keep the historical candidate labels separate from current source custody."""
+    parent = read_json(root / POLICY)
+    extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "scope", "external_contracts"}
+    if set(parent) != set(FIXED_POLICY) | extras:
+        raise Incomplete("Engine historical/contract policy fields are missing or unknown.")
+    policy = validate_contract_policy(parent["external_contracts"])
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    filename = policy["critical_files"][0]
+    if (manifest.get("critical_files", []).count(filename) != 1
+            or sum(module.get("package") == CONTRACT_SCOPE.package and filename in module.get("files", [])
+                   for module in manifest.get("security_modules", [])) != 1):
+        raise Incomplete("Engine constructor owner lacks its exact critical/security registration.")
+    return policy
+
+
+def contract_examples() -> dict:
+    """Exercise private checked plans without creating any runtime or socket.
+
+    Negative APIs are compile-only, including the uncalled schedule helper.
+    Every causal statement remains on line four, with all setup values used.
+    """
+    setup = (
+        "let peers = [SocketAddr::from(([127, 0, 0, 1], 41_001)), "
+        "SocketAddr::from(([127, 0, 0, 1], 41_002))]; "
+        "let timeout = Duration::from_millis(250); "
+        "let config = Config::new(peers, timeout)?; "
+        "let schedule = ControlSchedule::new(None, None)?; "
+        "let _ = (&peers, timeout, &config, &schedule);"
+    )
+    marker = "legal-engine-contracts:checked-only-no-runtime"
+    legal = (
+        "assert!(Config::new(peers, Duration::from_secs(30)).is_ok()); "
+        "assert!(matches!(Config::new([peers[0], peers[0]], timeout), Err(PilotError::DuplicatePeer))); "
+        "assert!(matches!(Config::new(peers, Duration::ZERO), Err(PilotError::InvalidTimeout))); "
+        "assert!(matches!(Config::new(peers, Duration::from_secs(30) + Duration::from_nanos(1)), "
+        "Err(PilotError::InvalidTimeout))); "
+        "let zero_port = SocketAddr::from(([127, 0, 0, 1], 0)); "
+        "assert!(matches!(Config::new([zero_port, peers[1]], timeout), Err(PilotError::InvalidPeer))); "
+        "assert!(ControlSchedule::new(None, None).is_ok()); "
+        "assert!(ControlSchedule::new(Some(Duration::ZERO), Some(Duration::from_secs(30))).is_ok()); "
+        "let excessive = Some(Duration::from_secs(30) + Duration::from_nanos(1)); "
+        "assert!(matches!(ControlSchedule::new(excessive, None), Err(PilotError::InvalidTimeout))); "
+        "assert!(matches!(ControlSchedule::new(None, excessive), Err(PilotError::InvalidTimeout))); "
+        'println!("' + marker + '");'
+    )
+    examples = {
+        "legal": {"statement": legal, "code": None, "tokens": [], "success_marker": marker},
+        "config_construction": {
+            "statement": "let _ = Config { peers: [peers[0], peers[0]], timeout: Duration::ZERO };",
+            "code": "E0451", "tokens": ["peers", "timeout", "private"]},
+        "schedule_construction": {
+            "statement": "let _ = ControlSchedule { stop_after: Some(Duration::from_secs(31)), "
+                         "invalidate_after: Some(Duration::from_secs(31)) };",
+            "code": "E0451", "tokens": ["stop_after", "invalidate_after", "private"]},
+        "raw_config_prepare": {
+            "statement": "let _ = prepare(&(peers, timeout));",
+            "code": "E0308", "tokens": ["Config", "mismatched types"]},
+        "raw_schedule_execute": {
+            "statement": "fn rejected(pilot: PreparedPilot) { let _ = execute(pilot, "
+                         "(None::<Duration>, None::<Duration>)); }",
+            "code": "E0308", "tokens": ["ControlSchedule", "mismatched types"]},
+    }
+    for name, value, field, replacement in (
+            ("config_peers", "config", "peers", "[peers[0], peers[0]]"),
+            ("config_timeout", "config", "timeout", "Duration::ZERO"),
+            ("schedule_stop", "schedule", "stop_after", "Some(Duration::from_secs(31))"),
+            ("schedule_invalidate", "schedule", "invalidate_after", "Some(Duration::from_secs(31))")):
+        examples[name + "_mutation"] = {
+            "statement": f"let mut value = {value}; value.{field} = {replacement}; let _ = &value;",
+            "code": "E0616", "tokens": [field, "private"]}
+    for name, typename, raw in (
+            ("config", "Config", "(peers, timeout)"),
+            ("schedule", "ControlSchedule", "(None::<Duration>, None::<Duration>)")):
+        examples[name + "_default"] = {
+            "statement": f"let _: {typename} = Default::default();",
+            "code": "E0277", "tokens": [typename, "Default"]}
+        examples[name + "_from"] = {
+            "statement": f"let _: {typename} = {raw}.into();",
+            "code": "E0277", "tokens": [typename, "From"]}
+    for specimen in examples.values():
+        specimen["source"] = "\n".join([
+            "use nevrotick_engine::*; use std::{net::SocketAddr, time::Duration};",
+            "fn main() -> Result<(), PilotError> {", setup, specimen.pop("statement"), "Ok(())", "}"]) + "\n"
+        specimen["line"] = 4
+    return examples
+
+
+def copy_contract_dependencies(session, artifact: str) -> Path:
+    """Freeze actual Cargo-emitted libraries as independent immutable copies."""
+    source = session.work / artifact.removeprefix("/work/")
+    if (source.resolve(strict=True) != source or not source.is_file()
+            or not source.is_relative_to(session.work / "target")):
+        raise Incomplete("Actual engine contract library escaped its emitted target.")
+    destination = session.work / "contract-deps"
+    destination.mkdir(mode=0o700)
+    for item in sorted((session.work / "target/debug/deps").iterdir()):
+        if item.suffix not in {".rlib", ".rmeta", ".so"}:
+            continue
+        digest = PRODUCT.sha256(item)
+        target = destination / item.name
+        shutil.copyfile(item, target)
+        target.chmod(0o400)
+        if PRODUCT.sha256(target) != digest:
+            raise Incomplete("Engine contract dependency changed while copied.")
+    library = destination / "libnevrotick_engine.rlib"
+    digest = PRODUCT.sha256(source)
+    shutil.copyfile(source, library)
+    library.chmod(0o400)
+    if PRODUCT.sha256(library) != digest:
+        raise Incomplete("The copied engine library differs from its actual Cargo artifact.")
+    session.protect(destination)
+    return destination
+
+
+def contracts(session, policy: dict, report: dict) -> None:
+    """Compile intended external causes and execute only checked constructors."""
+    deadline = time.monotonic() + policy["contracts_wall_seconds"]
+    output = session.run(
+        "contract-library", [str(session.stable / "bin/cargo"), "build", "--package", "nevrotick-engine",
+        "--frozen", "--jobs", str(policy["jobs"]), "--lib", "--message-format=json"],
+        COMMON.remaining_timeout(deadline, 120))
+    artifact = COMMON.library_artifact(output, "nevrotick-engine",
+                                       "/work/source/crates/nevrotick-engine/Cargo.toml")
+    dependencies = copy_contract_dependencies(session, artifact)
+    consumers = session.work / "contract-inputs"
+    consumers.mkdir(mode=0o700)
+    (session.work / "contracts").mkdir(mode=0o700)
+    examples = contract_examples()
+    for name, specimen in examples.items():
+        (consumers / (name + ".rs")).write_text(specimen["source"])
+    session.protect(consumers)
+    for name, specimen in examples.items():
+        command = [str(session.stable / "bin/rustc"), "--edition", "2024", "--crate-name", name,
+                   "--error-format=json", "/work/contract-inputs/" + name + ".rs",
+                   "--extern", "nevrotick_engine=/work/contract-deps/libnevrotick_engine.rlib",
+                   "-L", "dependency=/work/contract-deps", "--out-dir", "/work/contracts"]
+        session.run("external-consumer-" + name, command, COMMON.remaining_timeout(deadline, 60),
+                    sealed=[consumers, dependencies], specimen=specimen if specimen["code"] else None)
+        if specimen["code"] is None:
+            text = session.run("external-legal-execution", ["/work/contracts/" + name],
+                               COMMON.remaining_timeout(deadline, 30), sealed=[consumers, dependencies])
+            if specimen["success_marker"] not in text:
+                raise Incomplete("Legal engine consumer did not reach checked constructor neighbors.")
+    report["contracts"] = {
+        "legal_consumers_compiled_and_executed": 1,
+        "library_artifact": artifact,
+        "immutable_dependencies_sha256": PRODUCT.inventory(dependencies),
+        "required_diagnostics": {name: {key: specimen[key] for key in ("code", "tokens", "line")}
+                                 for name, specimen in examples.items() if specimen["code"]},
+        "effect_scope": "Config/ControlSchedule construction only; no runtime, socket or execute calls",
+    }
+
+
+def execute_contracts(args, report: dict) -> None:
+    """Qualify only external admission contracts on a separately admitted candidate."""
+    policy = read_contract_policy(ROOT)
+    if args.subject not in {"library", "all"}:
+        raise Incomplete("External engine contracts belong only to the library owner.")
+    COMMON.admission_profile(args, CONTRACT_SCOPE, policy)
+    report.update(subjects=CONTRACT_SCOPE.select(args.subject), qualification_passed=False,
+                  contracts_qualification_passed=False, historical_campaign_bindings_reused=False)
+    session = COMMON.Session(ROOT, args, report, CONTRACT_SCOPE, policy, (WRAPPER, TESTS))
+    try:
+        if read_contract_policy(session.source) != policy:
+            raise Incomplete("Captured engine contract policy differs from its admitted current role.")
+        report["candidate_sha256"] = COMMON.canonical_sha256(session.product_identity)
+        contracts(session, policy, report)
+    finally:
+        session.finish()
+    report["contracts_qualification_passed"] = True
 
 
 def readiness_proposal() -> dict:
@@ -255,6 +451,9 @@ def validate_baseline(work: Path, subject: str) -> dict:
 
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
+    if args.lane == "contracts":
+        execute_contracts(args, report)
+        return
     if args.lane not in {"enumerate", "coverage", "mutation"}:
         raise Incomplete("Unknown engine analysis lane.")
     policy = read_policy(ROOT)
@@ -300,8 +499,9 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("enumerate", "coverage", "mutation"), required=True)
+    parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation"), required=True)
     parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
@@ -315,6 +515,7 @@ def main(argv=None) -> int:
         report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
     except (Incomplete, PRODUCT.ENV.Incomplete, OSError, ValueError, KeyError, TypeError, StopIteration) as error:
         report["qualification_passed"] = False
+        report["contracts_qualification_passed"] = False
         report["error"] = str(error)
     if report.get("owned_output") == str(args.output_dir):
         (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")

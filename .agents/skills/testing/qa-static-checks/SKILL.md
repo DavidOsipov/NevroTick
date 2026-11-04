@@ -36,13 +36,16 @@ a valid consumer. These controls prove field/API restrictions only: use
 checked transformations and release-active failure behavior.
 
 For static lock defects, select the guarded experimental Lockbud lane only on
-source/features compatible with its separate compiler. For small finite
-properties, select Kani with reachable harnesses and justified assumptions;
-record failed/incomplete obligations. For a new verifier or formal proof, apply
-[formal-verification evaluation](../references/formal-verification.md): compare
-the complete contract on actual executable code, review trust assumptions and
-require meaningful defect controls before adoption. Miri, Loom and cargo-fuzz answer different
-execution/model questions; route those gaps through
+source/features compatible with its separate compiler. For existing or new
+product mathematical algorithms, apply OD-10's
+[mandatory proof workflow](../references/formal-verification.md): require
+actual-source proofs of the full admitted domain, required success/error outcomes,
+machine/rounding semantics and invariants with reviewed assumptions and meaningful
+controls. New mathematics, changed semantics or invalidated evidence reopen
+affected obligations; reuse valid unchanged proofs. Missing proofs leave the
+owning CHECK acceptance incomplete. Kani is one verifier option, subject to
+admission; this gate selects no new tool installation. Miri, Loom and cargo-fuzz
+answer different execution/model questions; route those gaps through
 [Rust techniques](../references/rust-techniques.md), not a static-pass label.
 
 For source-to-sink or taint questions, use

@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.9<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.10<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -37,6 +37,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
+| OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -511,3 +512,34 @@ the authoritative UTC rule changes, a supported Windows contract contradicts
 the selected mapping/ownership design, or a proposed stronger event-time promise
 requires new mechanisms or authority. Routine work under this selected contract
 needs no repeated design permission; material exceptions still follow OD-04.
+
+## 14. OD-10 — mandatory mathematical proofs
+
+**Direct owner instruction, 5 November 2026:** David stated that formal proofs
+are now mandatory, supplied the source-bound rounding/era proof handoff and
+instructed the main development agent to synchronize the repository and continue.
+This supersedes earlier guidance that treated whole-domain mathematical proofs
+as optional assurance. It does not select a new compiler or verifier, or weaken
+the admitted execution controls.
+
+**Required outcome:** product mathematical algorithms need machine-checked
+proofs tied to their actual executable source and declared admitted domains.
+The contract includes required success, rejection/error classification, exact
+units, machine representability and the declared rounding/error bounds; include
+state preservation, termination and bounded work where applicable. Inventory
+assumptions, omitted constructors/callees and source correspondence explicitly.
+Behavioral examples, a standalone tool control, a proof of a separate model or
+an always-error-compatible postcondition cannot close that requirement.
+
+The existing S1.1 domain, S1.4 leap and S1.2/S1.3 Core owners retain their proof
+obligations under CHECK-7/8/25. The
+[S1.1 continuation](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
+owns the initial rounding/era campaign and outstanding inventory. A completed
+bounded theorem closes only its declared scope; other mathematical obligations
+remain open before their owners' acceptance. Runtime validation, independent
+tests, coverage/mutation, security, native Windows and final-package evidence
+remain separately required. No protected host execution is authorized here.
+
+The choice and admission of additional proof tools remains evidence-led. This
+requirement is distinct from optional enhanced release/build provenance in
+OD-05 §7.5, and grants no publication or release approval.

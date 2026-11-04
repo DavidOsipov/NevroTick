@@ -13,7 +13,11 @@ Keep exact NTP timestamp differences and Windows conversions in checked integer/
 When translating integer logic into a model or proof, reconcile
 [specification and machine semantics](formal-verification.md#relate-integer-specifications-to-machine-operations),
 especially negative division/remainder, casts and required-success overflow paths.
-This semantic review does not require adopting a formal verifier.
+Product mathematical algorithms require machine-checked, source-bound proofs
+under [OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+and the [proof workflow](formal-verification.md). Semantic review and behavioral
+oracles complement that gate. No particular additional verifier is selected here;
+an unavailable tool leaves its required proof incomplete.
 
 For a numerical kernel or threshold, use the
 [numerical procedure](../../implementation/implement-rust/references/numerical-kernels.md).

@@ -126,13 +126,25 @@ arithmetic. Do not impose exact-constant results on unrelated algorithms.
   and tool admission. Reuse [numerical QA](../../../testing/references/numerical-protocol.md)
   and the existing test/analysis lanes rather than creating a parallel framework.
 
-## Optional whole-domain rounding proof
+## Mandatory mathematical proofs and rounding obligations
 
-Consider Gappa only for a named consumer-relevant rounding-error bound over a
-declared nonempty domain that existing fixtures or bounded Kani checks do not
-adequately establish. Begin with one small kernel and compare the maintenance
-cost with the current verification route. No arithmetic-only change requires
-this tool, a new proof stack or an installation.
+[OD-10](../../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+makes machine-checked product mathematical proofs mandatory under
+[architecture §20.1.1](../../../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
+For every numerical algorithm, maintain its full admitted-domain theorem,
+required success/error behavior, machine ranges, rounding/error envelope and
+promised termination/work bounds in the existing task. Use the
+[formal-verification workflow](../../../testing/references/formal-verification.md)
+for actual-source correspondence, assumptions, meaningful controls and exact
+proof-input identity. Fixtures and tool bootstrap controls do not close this gate.
+Keep unfinished obligations explicit before dependent qualification; a tool or
+solver limitation does not convert the required proof into an optional check.
+
+The verifier is a separate selection. Consider Gappa for a named
+consumer-relevant rounding-error bound over a declared nonempty domain when it
+adds value to the current route. Begin with one small kernel and compare
+maintenance cost. This requirement admits no particular new proof stack or
+installation; use already admitted tools where adequate.
 
 Map the model to current Rust conversions, exact constant values, units, operation
 order, separate/fused operations and intermediate admission guards. A formula

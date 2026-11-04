@@ -48,6 +48,16 @@ Subagent assignments include the bounded question, canonical sections and
 acceptance IDs, current task/candidate, writable scope and expected evidence.
 The coordinator reconciles results against the integrated candidate.
 
+For existing or future mathematical algorithms, apply
+[OD-10](docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
+and [architecture §20.1.1](docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026):
+source-bound machine-checked proofs over the full admitted domain are mandatory.
+Track unproved obligations in the existing task; do not close dependent
+mathematical acceptance with examples, a model-only proof or a deferred verifier.
+Use the [proof workflow](.agents/skills/testing/references/formal-verification.md)
+for specification, controls, assumptions and exact-candidate evidence. Reuse
+unchanged proofs; retain runtime validation and the other required checks.
+
 ## Read the right authority
 
 NevroTick: chrony-derived Rust NTP/NTS client, native GUI; initially supported
