@@ -9,12 +9,18 @@ mod clock;
 mod coordinate;
 mod era;
 mod exchange;
+mod leap;
 mod rounding;
 
 pub use clock::{ActiveAwakeDurationNs, ActiveAwakeNs, MonotonicDurationNs, MonotonicNs};
 pub use coordinate::{MAX_COORDINATE_TICKS, MIN_COORDINATE_TICKS, UtcCoordinateQ32};
 pub use era::{EraWindow, unfold_ntp};
 pub use exchange::{ExchangeArithmetic, PhaseOffsetQ33, SignedRoundTripQ32, exchange_arithmetic};
+pub use leap::{
+    LEAP_BASELINE_NTP_SECONDS, LeapContinuousFrom, LeapDataIdentity, LeapDateScope, LeapError,
+    LeapEventKnowledge, LeapFutureExpiry, LeapHistoryBefore, LeapInterpretation, LeapKnowledge,
+    LeapOffsetKnowledge, MAX_LEAP_NTP_SECONDS, MAX_LEAP_RECORDS, bundled_leap_knowledge,
+};
 pub use rounding::{RoundedPhaseOffsetNs, RoundedRoundTripNs};
 
 /// Fixed redacted domain failures; rejected input is never retained.

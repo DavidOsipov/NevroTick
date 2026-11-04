@@ -1,0 +1,62 @@
+{
+  "checksum_reference": {
+    "role": "Interoperability reference for digit-stream checksum convention only; no upstream daemon code imported.",
+    "url": "https://github.com/ntpsec/ntpsec/blob/bea210dba1e05188051872ebb002d9aedc9f7f5f/ntpd/ntp_leapsec.c#L847-L909"
+  },
+  "history_review": {
+    "baseline_ntp_seconds": 2272060800,
+    "baseline_tai_minus_utc_seconds": 10,
+    "complete_before_ntp_seconds": 3992284800,
+    "complete_before_utc": "2026-07-06T00:00:00Z",
+    "semantics": "Explicit conservative history-review endpoint; not inferred from the last transition, file expiry, update metadata or host clock.",
+    "source_title": "IERS Bulletin C 72, 6 July 2026",
+    "source_url": "https://hpiers.obspm.fr/iers/bul/bulc/bulletinc.72"
+  },
+  "licence": {
+    "bytes": 252,
+    "path": "LICENSE.iana",
+    "scope": "The leap list and tzdb licence explicitly place this data in the public domain.",
+    "sha256": "0613408568889f5739e5ae252b722a2659c02002839ad970a63dc5e9174b27cf",
+    "url": "https://data.iana.org/time-zones/tzdb-2026f/LICENSE"
+  },
+  "limits": {
+    "generated_bytes": 65536,
+    "interpretation_record_inspections": 128,
+    "line_bytes_without_ending": 512,
+    "metadata_occurrences_per_kind": 1,
+    "offset_maximum": 2147483647,
+    "offset_minimum": -2147483648,
+    "physical_lines": 1024,
+    "raw_bytes": 65536,
+    "records_including_baseline": 128,
+    "signed_offset_characters": 11,
+    "timestamp_decimal_digits": 19,
+    "timestamp_maximum": 9223372036854775807
+  },
+  "production_date_scope": {
+    "default": null,
+    "semantics": "A finite explicit caller-supplied scope is required; no OPEN-5/6 production date/era policy is selected."
+  },
+  "raw_input": {
+    "bytes": 5065,
+    "checksum_role": "unkeyed consistency only; not release authentication",
+    "compatibility_checksum_sha1": "a9bad14584c31c70758402aab37bfd545923836a",
+    "expires_before_ntp_seconds": 4023129600,
+    "maximum_line_bytes": 110,
+    "path": "inputs/iana-2026f-leap-seconds.list",
+    "physical_lines": 120,
+    "records": 28,
+    "sha256": "db5a895f16853b03bfc865e8d68f9fc8710ef1740e3400c701cd46a5bbbc3433",
+    "updated_ntp_seconds": 3992312697,
+    "url": "https://data.iana.org/time-zones/tzdb-2026f/leap-seconds.list"
+  },
+  "schema_version": 1,
+  "selected_continuous_rule": {
+    "effective_ntp_seconds": 4019760000,
+    "effective_utc": "2027-05-20T00:00:00Z",
+    "semantics": "No event or offset impulse at this boundary; does not repair an earlier missing offset. Structural data identity is not authentication.",
+    "source_doi": "10.59161/CGPM2026RES5E",
+    "source_url": "https://www.bipm.org/en/cgpm-2026/resolution-5"
+  },
+  "status": "pinned-source-inputs-only; no product or release qualification"
+}

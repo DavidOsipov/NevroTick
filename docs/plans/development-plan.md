@@ -10,7 +10,7 @@
 
 **Immediate priority:** finish the current bounded Core chain, then secure, bounded NTP/NTS acquisition
 
-**Current task:** [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#modeled-settled-active-time-delivery--implementation-contract) has a frozen clock-domain, local cursor and arithmetic-bound contract and ongoing selected qualification; follow the task's latest candidate, failed attempts and next checks. Current changed bytes remain unqualified. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
+**Current Core checkpoint:** [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. Next prepare the [pure leap knowledge/interpretation contract](../../tasks/s1.4-leap-policy.md#1-pure-knowledge-and-interpretation), reconcile its selection prerequisites and freeze finite inputs without selecting production date policy implicitly. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
 The [engine checkpoint](../../tasks/engine-transport-pilot.md#s43-complete-current-engine-mutation-checkpoint)
 records a bounded, unauthenticated two-peer loopback observer, not production
@@ -742,9 +742,12 @@ This qualifies one selected owner of 24, with no instrumented branch, full P1 or
 Windows/product claim. Preserve pre-admission rejection and post-admission
 invalidation. The active-time delivered-rate contract is now frozen in the
 [current Core task](../../tasks/s1.3-source-selection-readiness.md#modeled-settled-active-time-delivery--implementation-contract).
-Its latest addenda own the current test repair, source/recipe bindings and affected
-portable, coverage, mutation/union and mechanism checks; do not restart the
-contract freeze or mark an unobserved mutation kill complete. Preserve separate
+Its [final selected checkpoint](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners)
+now records completed portable, contracts, coverage, four mutation cohorts and
+exact union on the V8 candidate. All 136 viable variants were caught; 151 were
+unviable, with no survivors, timeouts or E entries. Retain its source/recipe
+bindings and original-producer mechanism controls; do not restart the contract
+freeze or promote this selected scope to the full 24-owner manifest or P1. Preserve separate
 clock domains, actual delivered portions, duplicate/unknown outcomes,
 interval-to-chart meaning and outward arithmetic bounds. Do not send rounded
 integrated phase through the exact-scalar zero-input-error constructor. Broker
@@ -767,9 +770,11 @@ agreement, no single-peer fallback and failure atomicity. Stateful generation
 continuity and actual achieved-correction admission need their own contracts;
 a mathematical chart grants no acknowledgement or clock authority. The
 [pure-leap entry table](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint)
-now distinguishes completed S157/S158 predecessors, scoped S1.4a–c evidence,
-the unfinished current rate-delivery checkpoint and the leap child's finite
-date/data/import freeze. The first pure S1.4 consumer already exists; the
+distinguishes completed S157/S158 predecessors, scoped S1.4a–c evidence,
+the completed selected rate-delivery checkpoint and the leap child's finite
+date/data/import freeze. The later [pure contract preparation](../../tasks/s1.4-leap-policy.md#14-pure-knowledge-contract-preparation--4-november-2026)
+records current selected bounds and pinned inputs; implementation admission remains
+pending. The first pure S1.4 consumer already exists; the
 first leap-knowledge child is still pending. Calendar construction does not
 consume broker acknowledgements or production freshness/defaults, whereas
 dependent controller/guard equations retain their actual numerical and runtime

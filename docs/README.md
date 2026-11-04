@@ -105,6 +105,15 @@ independent bit-for-bit rebuilds and a public proof bundle remain optional;
 required custody, SBOM/licence, package integrity and installed/native lifecycle
 checks keep their existing owners. No reproducible release is claimed.
 
+**Core checkpoint, 4 November 2026:** [modeled settled active-time delivery](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners)
+completed its selected four-owner Linux fixture gates on the sealed V8 candidate:
+contracts, coverage, four mutation cohorts and exact union passed. All 136 viable
+variants were caught; 151 were unviable, with no survivors/timeouts/equivalences.
+This is neither the full 24-owner manifest nor P1/Windows/product qualification.
+The next bounded Core action is the existing leap task's pure contract, with
+explicit date-scope inputs and frozen ingestion limits before implementation.
+Original failures, exact candidates, scoped holds and UI-M0 deferrals remain.
+
 **Release operations, 4 November 2026:** the [release policy](release-policy.md)
 consolidates supported-version records, backport decisions, bad-release
 containment, state-preserving correction and recovery of publishing authority.
