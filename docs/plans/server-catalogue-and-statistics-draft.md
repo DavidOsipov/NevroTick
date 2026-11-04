@@ -15,6 +15,15 @@ The [owner decisions](../nevrotick-owner-decisions.md), [architecture](../window
 
 The [allocation in §5](#5-proposed-storage-allocation) maps all 24 data groups to their proposed live/durable homes. It recommends compact RAM, small advisory summaries and optional detailed archives, then answers the catalogue-signature, RAM-compression, SQLite-protection and NTS-pinning questions. Existing mandatory and secret-state contracts remain separate.
 
+**Leap-policy integration, 4 November 2026:** [architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](leap-second-policy.md) now select the leap-knowledge and silent-source
+contract, with implementation owned by the [S1.4 task](../../tasks/s1.4-leap-policy.md).
+The fields below bind this inventory to that contract; they do not select the
+catalogue/Q/H encodings, scoring, persistence defaults or experiment budgets.
+Earlier source-baseline and byte-preservation statements in the review receipts
+describe their original candidates, before this amendment; those receipts do not
+qualify the added contract or any runtime behavior.
+
 ### 1.1 What the discussion establishes
 
 | Item | Status and consequence |
@@ -31,6 +40,17 @@ The [allocation in §5](#5-proposed-storage-allocation) maps all 24 data groups 
 The earlier discussion considered JSON/CBOR or another bounded catalogue representation. The later binary refinement makes JSON a possible publisher input or comparison reference, not the preferred shipped catalogue. SQLite for mutable operational state and compact summaries, optional Parquet with internal compression for detailed history, compressed batches and recent observations kept only in RAM remain proposals compared in §5. The illustrative seven-day/hourly and 180-day/daily windows, 32 MiB statistics budget, and seven-day/64 MiB raw-history budget are **not adopted limits**. The architecture's existing 10 MiB diagnostic-log budget has a different scope.
 
 Existing fixed IPC/configuration/persisted-record boundaries retain their adopted bounded direct Serde/JSON decoding and mandatory private validation contracts. Considering formats for a new catalogue or history artifact does not authorize a change to those boundaries. The public **source catalogue** in this draft is also distinct from the protected-storage owner's **root/key catalogue**, which records store authority and key lifecycle.
+
+The selected leap dataset is a separately owned class of public release
+data: reviewed historical transitions and future coverage plus the effective-dated
+continuous-UTC rule from **20 May 2027**. It is normalized for immutable compiled
+use and bound to the same authenticated complete release, without a runtime
+external leap-file downloader, arbitrary file path or new trust root. Source
+catalogue entries and Q/H records refer to its revision/digest; they cannot rewrite
+it. Future coverage being unknown does not erase history or globally stop fresh
+same-segment UTC tracking. All admitted date/era hypotheses, possible month-end
+guards and source-scale provenance retain NV-LP-001's rules. This selects neither
+a timeless TAI−UTC value nor a format for the separate source catalogue.
 
 ### 1.2 Inventory classifications
 
@@ -84,6 +104,7 @@ Sensitivity distinguishes public release data, local operational metadata, secur
 | Authenticity envelope | If a separate signature is selected: signed context/domain, algorithm, verification-key ID, exact captured covered bytes, signature and envelope version. Any deterministic publisher encoding is specified before signing; verification does not decode and re-encode into different bytes. If release-bound digest verification is selected: its expected value must come from an independently trusted release component. |
 | Key lifecycle | Public trust-root IDs, authorized successor/overlap relations, withdrawn key/revision metadata, activation/retirement rules and recovery provenance. Release signing and Roughtime server keys are different authorities. |
 | Freshness inputs | Optional creation/expiry fields with their time basis, minimum accepted revision/lineage where policy requires it, and outcome for unknown current time, stale catalogue, incompatible reader or withdrawn key. Exact policy is open. |
+| Leap dataset reference | Exact admitted release-bound dataset revision/digest and effective-rule revision needed to interpret source profiles and retained observations. Historical coverage, finite future coverage, `Unknown` and `ContinuousFrom` remain separate meanings under NV-LP-001; catalogue expiry is not leap-history invalidity or automatic time-service shutdown. The referenced compiled dataset has its own domain owner, not a mutable Q/H copy. |
 
 **Raw/derived and lifetime:** authenticity metadata is raw release evidence; the loader's verification result is a current derived result bound to the exact artifact and trust generation. Revalidate on release/policy change. Retain the identity of catalogue revisions referenced by retained summaries without requiring indefinite copies of every full catalogue. Signed data can be old or false; offline/VM rollback and first-install freshness remain separate design problems. No TUF or runtime updater is selected. Sources: time-assurance §7; [MSIX plan](windows-msix-store.md); [MSIX signing](https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview).
 
@@ -96,7 +117,7 @@ Sensitivity distinguishes public release data, local operational metadata, secur
 | Stable identities | Logical source ID, operator ID, human label and endpoint IDs. Identifier lifecycle prevents reuse for an unrelated operator/key; display names are not keys. |
 | Independence relationships | Known common operator, administrative control, upstream clock, hosting/site or other relevant dependency groups; relationship type, evidence reference, observed/reviewed date and confidence category. Missing relationships mean unassessed, not independent. |
 | Location | Country/region as advertised, measured or explicitly unknown; optional finer site information, provenance/method and applicability to an endpoint rather than automatically to its operator. Distinguish operator domicile, server location and a coarse IP estimate; anycast geography may be variable or unknown. A required field does not justify inventing a location. |
-| Time behavior | Declared UTC/leap handling, leap-smear policy identity/window/function where known, reference-clock claims, compatibility status and provenance. Self-reported stratum does not verify a physical reference clock. |
+| Time behavior | Declared UTC/leap handling, leap-smear policy identity/window/function where known, reference-clock claims, compatibility status and operator/configuration provenance. V1 requires admitted unsmeared-UTC provenance; `Smeared` and `Unknown` scale states are ineligible. Record announcement behavior separately: an unsmeared provider may never announce LI, and unknown announcement behavior does not make its scale unknown. NTS, LI=0 or agreement alone proves neither scale nor physical reference quality. |
 | Curation lifecycle | First admitted revision, last changed revision, withdrawn/replaced IDs and reason. Keep sufficient dictionary/tombstone information for old records to remain intelligible. |
 
 **Sensitivity/lifetime:** release entries are public; local user sources may reveal organizational infrastructure. Curation is evidence-backed policy metadata, not a conclusion from one local observation. Changes can invalidate independence, compatibility or aggregate grouping. Geography is a selection/diagnostic hint, not authentication or an independent vote. Sources: OD-03; architecture §6; time-assurance §5 and §7; [RFC 8633](https://www.rfc-editor.org/rfc/rfc8633.html).
@@ -182,6 +203,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | --- | --- |
 | Unique identity | Opaque installation/run/boot identity as required, attempt/exchange ID, observation ID, acquisition/selection round ID and monotonically ordered event sequence within its declared scope. Do not use device serial numbers. |
 | Generations | Engine incarnation, boot/power/clock mapping, applied-correction, association, source/catalogue, source-policy/key/pin and network/resolution generations when relevant. Do not duplicate a generation merely under a second name. |
+| Leap context | Release dataset and effective-rule revisions, complete admitted true-date/era interval, scale segment, possible-event identity, guard phase, minimum post-guard acquisition instant and applicable mapping generation. Retain coverage status separately from current UTC observation quality and from whether TAI−UTC conversion is known. Derive regime from all admitted date hypotheses, never the host date alone. |
 | Observation timing | Qualified monotonic send/receive/event instants and clock-source identity; active-awake versus elapsed-age interpretation; optional qualified UTC/calendar value or interval and its trust/era provenance. |
 | Processing timing | Completion/ingestion/evaluation instants, deadline, maximum evidence age and uncertainty growth basis. Late ingestion does not make an old observation fresh. |
 | Representation | Schema-defined integer/fixed-point units, ranges, sign convention and explicit missing-value reason. Preserve a supported date representation across century-scale recovery rather than assuming one convenient epoch width is sufficient. |
@@ -214,6 +236,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | Phase measures | Raw observed Windows-relative offset, public sign convention, and optional normalized residual against a named reference at a common evaluation instant/clock frame. Reference or continuity absent means residual unavailable. |
 | Uncertainty | Interval endpoints or radius with defined meaning; deterministic bound, protocol-advertised dispersion, model error or statistical estimate distinguished. Record included network-delay/asymmetry, timestamp, oscillator/aging and model components where used. |
 | Numeric validity | Unit, finite/range checks, saturation/overflow status, quantization and conversion provenance. Negative/pathological delays are rejected or handled only by the qualified protocol rule, not silently changed to a plausible zero. |
+| Event-span validity | Full possible T1–T4 span and its uncertainty/capture provenance, linked to DATA-09's scale segment and guard context. A delayed completion must still satisfy current span, generation and post-guard initiation checks. Crossing or ambiguous data can remain bounded provisional evidence, but cannot enter ordinary offset fits or create a drift observation. |
 | Derived variation | Jitter, frequency estimate/skew, residual spread and relevant sample counts/window/evaluator version if computed. Statistical spread is not an authenticated absolute-error bound. |
 
 **Raw/derived and lifetime:** retain raw versus adjusted values as different fields; adjusted values name DATA-14's actual-effect/reference dependencies. A large raw offset can mean the local clock is wrong. Measurements from different clock epochs, time scales, paths or references are not automatically mergeable. NTS authentication does not establish symmetric network delay. Sources: architecture §6; [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html); [RFC 8915](https://www.rfc-editor.org/rfc/rfc8915.html).
@@ -225,6 +248,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | Field group | Meaning and presence |
 | --- | --- |
 | Protocol context | NTP mode/version, stratum, leap indicator, root delay/dispersion, relevant precision/poll fields and bounded reference/KoD classification only where used for eligibility or explanation. Server declarations remain claims. |
+| Leap and scale admission | Raw LI is retained through authentication and checked against the current local rule; record source-scale provenance, calendar/segment context and bounded result separately. LI=0 is an ordinary candidate, including when all peers are silent. A demonstrably contradictory LI=1/2 observation is excluded from discipline; healthy peers keep their votes and fresh consistent observations may re-enter. LI=3 remains unsynchronized and stratum zero control-only. Unknown future coverage is not itself contradiction or a global tracking veto. |
 | Exchange checks | Request-match, duplicate/replay, timestamp/era, endpoint, packet-length/extension and freshness outcomes; authentication not applicable/not run/pass/fail/unknown, with stage and bounded reason. |
 | NTS-KE evidence | Expected verified identity, actual negotiated protocol/AEAD and endpoint binding, full-authentication event ID/age, certificate/trust/pin-policy generations, validation-time basis and bootstrap ancestry. Public cert/key identifiers can replace full chains in ordinary history. |
 | Protected NTP evidence | Association generation, admitted AEAD/authentication result, source/endpoint binding, key-age/full-authentication-age status and final eligible/rejected reason. Cookies, traffic keys, session tickets and exporters are excluded. |
@@ -242,6 +266,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | Reserve result | Candidate date/era interval, population/catalogue revision, admitted and actually sampled source sets, sampling procedure/RNG instance or round reference, known dependency groups, policy filtering and resulting limitations. Do not retain live RNG secrets. |
 | Branch lifecycle | Why preferred bootstrap ran or did not run; unavailable/unusable/conflicting/stale/date-incompatible status; reserve eligibility reason, bounded attempts and final evidence outcome. Healthy strict NTS is not dependent on a new Roughtime round. |
 | Applicability | Observation IDs, common evaluation instant, supported time-scale/era interpretation, evidence lifetime, policy generations and original ancestry. Future full NTS must retain the date-hypothesis ancestry and revalidation result. |
+| Leap/date dependency | Preserve the complete date interval and all admitted regime/era hypotheses, referenced leap policy and whether a dependent interpretation crosses a possible event. Bootstrap acquisition and NTS transport do not require an already discipline-eligible observation. A provisional date supplies neither a leap vote nor direct clock authority; eventual discipline must satisfy the ordinary guard, fresh-quorum and broker gates. |
 
 **Sensitivity/lifetime:** operational evidence, with persistent conflict handled by DATA-18. Ordinary records retain verification summaries; complete protocol proofs are conditional evidence, not universal packet history. Roughtime deliberately permits invalid “greased” replies; an invalid signature cannot identify a particular packet as deliberate grease or establish operator dishonesty. Authenticated disagreement can show a conflict without identifying which participant is wrong. Keep compatible-time and common-reference assumptions explicit. Sources: time-assurance §§4–7; [RFC 10049 §§7–8](https://www.rfc-editor.org/rfc/rfc10049.html#section-7); [RFC 9523](https://www.rfc-editor.org/rfc/rfc9523.html).
 
@@ -255,6 +280,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | Comparison reference | Reference estimate/interval ID, contributing observation IDs, dependency groups, time scale and bootstrap ancestry; whether the assessed source also influenced its comparison reference. |
 | Decision meaning | Agrees/contradicts/insufficient evidence/stale/not assessed with precise interval/comparison rule and applicability. A broad overlapping interval need not provide useful discrimination. |
 | Correction link | Proposal ID versus actual broker operation/outcome ID, actual mode/rate/phase, applied instant/quantization and before/after clock generation as needed by the qualified transformation. An uncertain outcome is not a confirmed correction. |
+| Leap/recovery link | Applicable boundary/segment and guard transition, observed native-state provenance and fresh post-guard agreement. Windows alone executes explicit leap events; OS event execution is not a broker acknowledgement. Link only the actually measured residual correction, never a synthetic ±1-second request or an event inferred from LI votes. |
 | Explanation | Bounded exclusion/admission reason, reference independence limitations and any qualified rebase reference. Avoid retaining full duplicated sample sets when stable IDs suffice. |
 
 **Raw/derived and lifetime:** selection and residuals are derived; dependencies must survive as interpretable references or their limitations must be explicit. The requested correction cannot substitute for the actual acknowledged effect when adjusting old offsets. A reference that includes the same source can bias its apparent quality; independent comparison or explicit dependence is required before treating a residual as evidence against that source. Broker journal retention remains DATA-21's concern. Sources: architecture §§6 and 10; time-assurance §5.
@@ -268,6 +294,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | Current source model | Bounded admitted sample window, current offset/frequency/skew, covariance or sufficient statistics when the chosen model needs them, age/uncertainty and source/clock generation bindings. |
 | System model | Current aggregate estimate, oscillator/drift prior, model/version, units, confidence/validity conditions, source provenance and last independent measurement time. |
 | Restart binding | Saved schema/model version, actual capture event, applicable boot/hardware/VM/power/clock context, elapsed-age basis, uncertainty growth and compatibility/invalidation result. |
+| Leap continuity | Revalidate dataset/rule and scale-segment applicability under current mapping and guard state. A preserved drift prior does not revive crossing samples, renew votes or prove that an OS event/cancellation occurred. Unknown future coverage may coexist with fresh ordinary Tracking outside guards; restored history cannot manufacture that status. |
 | Restoration outcome | Accepted bounded prior/discarded/incompatible/continuity unknown with reason. Restored prior is distinguishable from fresh acquired measurements. |
 
 **Raw/derived and lifetime:** this is derived working state, not a second server-reputation store. Full historical sample restoration is not adopted; same boot alone is insufficient continuity. Reboot/Fast Startup/suspend, external time changes, hardware/VM changes and policy changes require the existing applicability rule. Corrupt optional priors are discarded and acquisition restarts; they neither restore current synchronization nor replenish correction authority. Source: architecture §12.1.1.
@@ -826,6 +853,16 @@ execution of the proposed cases in §7 or completion of any product phase.
 ### 10.1 Minimum logical records
 
 The six families below refine the DATA inventory; they are not six required tables, files or public API types. C/Q/H retain §5's conceptual meanings. The engine owns advisory quality writes; the core remains independent of files and ambient clocks; UI receives bounded service projections. Existing strict JSON/domain-construction boundaries remain unchanged. A format experiment does not replace their parsers or authorize a Cargo dependency.
+
+The later leap-policy integration applies to these families as well: catalogue
+profiles retain unsmeared-scale provenance and separate announcement behavior;
+immutable contexts reference the admitted dataset/rule, full date hypotheses and
+scale segment; observations preserve raw LI and span/admission results. Aggregate
+compatibility must account for those meanings rather than merging across an event
+or substituting today's mapping. An assessment links the real acknowledged
+residual correction and cannot turn a guard timeout into fresh evidence. Keep the
+compiled public dataset outside C/Q/H format comparisons and the optional secret
+cache; the existing release and continuity owners remain authoritative.
 
 | Family and proposed identity | Minimum information and lifecycle |
 | --- | --- |

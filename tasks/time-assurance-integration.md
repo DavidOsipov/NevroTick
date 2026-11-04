@@ -1,7 +1,7 @@
 # Roughtime and Khronos/Ananke coordination task
 
 **Date:** 3 November 2026, Asia/Tbilisi<br>
-**Current amendment baseline:** `DavidOsipov/NevroTick@9c6b5ef39b134c844a850deb9126823d668babe7`; NV-TA-001 revision 1.1. Earlier receipt identities are retained below.<br>
+**Current integration baseline:** `DavidOsipov/NevroTick@7550f83292f959a6d0acbb2d396e964a6bcf4b01`; 4 November 2026 leap-policy integration, NV-TA-001 revision 1.2. Earlier amendment and receipt identities are retained below.<br>
 **Design owner:** [NV-TA-001](../docs/plans/time-assurance-integration.md)<br>
 **Mode/status:** documentation and future work definition; protocol/runtime implementation and qualification have not run.<br>
 **Coordinator:** future numerical/protocol owner, with independent security and Windows reviewers; David owns material policy choices.
@@ -29,6 +29,18 @@ gates. Continuous watchdog operation is a deferred alternative. The future
 reserve is automatic within its qualified envelope; until then the current
 strict-default/explicit-helper baseline remains. Healthy retained NTS does not
 gain an unnecessary Roughtime dependency.
+
+**Leap-policy integration, 4 November 2026:** apply [NV-LP-001](../docs/plans/leap-second-policy.md)
+and [architecture §10.5](../docs/windows-time-architecture.md#105-leap-seconds-and-time-scales)
+through the [S1.4 task](s1.4-leap-policy.md) before dependent TA integration.
+The reviewed compiled dataset, effective UTC rule and full date/era hypotheses
+belong to that policy; bootstrap results do not replace them. Preserve useful
+all-LI=0 unsmeared sources, bounded possible-month-end guards and independent
+acquisition while a sample lacks discipline authority. A demonstrably conflicting
+LI observation is excluded without discarding healthy peers or blocking fresh
+consistent re-entry. Native explicit events remain kernel-owned; no synthetic
+±1-second request or extra correction budget is introduced. Existing phase order,
+execution holds and historical review receipts remain unchanged.
 
 This task does not activate future implementation, change the next Core task,
 select providers/dependencies, change public licensing or permit direct clock
@@ -86,9 +98,9 @@ run. Later unresolved choices do not block this documentation handoff.
 | ID / owner | Work and required input | Observable exit / current status |
 | --- | --- | --- |
 | **TA-W01 — coordinator/source reviewer** | Reconcile the request, primary sources, existing KHR/RGT stages and affected consumers | This plan/task and canonical routing exist; source findings are separated from qualification. **Source/design work complete; review receipt below owns handoff evidence** |
-| **TA-W02 — protocol/security owner** | Freeze preferred/reserve triggers, automatic-recovery envelope, evidence fields, dependency groups, era/frame/interval admission, generations and conflict clearance; distinguish date-specific failures from other NTS errors and resolve the expired-key/common-path case | Reviewed contract and independent expected-result table for the selected slice; exact owners, assurance limits and forbidden effects. **Future, not executed** |
+| **TA-W02 — protocol/security owner** | Freeze preferred/reserve triggers, automatic-recovery envelope, evidence fields, dependency groups, era/frame/interval admission, generations and conflict clearance; integrate NV-LP-001's dataset/rule/scale-segment, full-date-hypothesis and guard fields without a circular bootstrap prerequisite; distinguish date-specific failures from other NTS errors and resolve the expired-key/common-path case | Reviewed contract and independent expected-result table for the selected slice; exact owners, assurance limits and forbidden effects. **Future, not executed** |
 | **TA-W03 — Roughtime/dependency owner** | Select exact wire/client/crypto graph under CHECK-26; implement bounded inert decoding and mandatory-root-key evidence construction after TA-W02 | Valid response accepted; missing/wrong root, version/unit errors, malformed/replayed input and invalid intervals cannot create authenticated evidence. **Future** |
-| **TA-W04 — core/engine owner** | Model branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth | TA-C01–TA-C07/10/13/16/18/21 controls reach the policy consumer; no duplicate credit, stale admission or extra clock controller. **Future** |
+| **TA-W04 — core/engine owner** | Model branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth; retain acquisition during leap ambiguity, all-silent healthy controls and fresh post-guard admission under the S1.4 contract | TA-C01–TA-C07/10/12/13/16/18/21 controls reach the policy consumer; no duplicate credit, stale admission, calendar-vote learning or extra clock controller. **Future** |
 | **TA-W05 — KHR numerical/security owner** | After the Windows-plan handoff, evaluate cold-start reserve candidates, Ananke-inspired admission, initial roster/refresh and bounded sampling against the unchanged baseline; do not import periodic-watchdog security bounds | KHR-0's recovery/error/false-acceptance/latency/cost evidence plus `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs qualified bounded implementation. **Future KHR phase** |
 | **TA-W06 — RGT transport/trust owner** | Reconcile the dated census and linked first-schema key inventory by wire version/operator/key/upstream; consume the catalogue owner's required key/profile bindings, admit update/rollback rules, and qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first | Exact compatibility and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries and decoded public-key lengths are not live passes. **Future RGT phase** |
 | **TA-W07 — Windows/NTS owner** | With admitted artifacts and owned disposable environment, exercise both date-basis routes under OPEN-8/R-02/R-05, exact error categories and fresh isolated verification across hypotheses | Valid supported-date recovery and explicit failure for bad identity/revocation/era; TA-C11/19/20/22, no unauthorized effect, observed cleanup/restoration. **Conditional; no execution authorized by this task alone** |
@@ -133,6 +145,28 @@ obligations, including applicable coverage/mutation/native evidence.
 | **TA-C20 — trust/security; controlled credentials and peers** | Common-path forged Pool date plus a compromised expired test NTS key; valid current authority and saved-bound controls | Candidate-date/certificate self-consistency is not independent proof. Enforce configured saved bounds, NTS agreement and revocation; record unsupported assurance when those constraints cannot exclude the scenario, not a fabricated safe recovery | CHECK-9/14/15 |
 | **TA-C21 — policy; portable** | Signed Roughtime contradiction followed by reserve agreement, timeout or a route change; sufficient independent resolving evidence as control | Conflict and provenance survive; only the frozen clearance policy admits final recovery. No majority across mechanism labels | CHECK-7/9/14 |
 | **TA-C22 — TLS/session lifecycle; controlled verifier then native owner** | Change candidate date while resumable state or old verification remains; fresh isolated full-handshake control | No stale certificate-time assurance or cross-hypothesis session reuse; fresh identity/verification/protected-observation gates pass independently, within aggregate limits | CHECK-9/12/27 |
+
+**Leap-policy refinements to existing cases — planned, not executed:** TA-W02/04
+reuse TA-C04/05 for dataset/rule/mapping changes, crossing or delayed replies and
+the minimum fresh post-guard acquisition instant. TA-C07/09 cover a host date
+wrong by a century, all admitted era hypotheses and intervals spanning a known
+event or the **20 May 2027** effective rule. A rule-date crossing is a healthy
+control when all hypotheses yield the same admissible event-free interpretation;
+actual interpretation ambiguity withholds only dependent clock authority while
+bounded independent bootstrap/NTS acquisition continues. Rejecting all acquisition
+cannot pass these cases.
+
+TA-C10 preserves the distinction between a valid release with unknown future
+coverage, expired historical input metadata, and corrupted package/mandatory
+state. The first may continue ordinary tracking outside guards; none resets
+protected floors or consumed correction authority. TA-C12 supplies all-LI=0
+unsmeared peers, a false announcement plus healthy peers, fresh source re-entry,
+and every possible month-end under unknown leap-capable coverage. A nonzero-LI
+quorum is never required; a faulty peer cannot extend the guard or reduce normal
+agreement. TA-C15 and TA-W07 retain kernel-only explicit events, actual measured
+residual recovery and no synthetic extra second when Windows already handled
+the event. Reuse CHECK-6/7/8/9/10/11/12/14/15/25 at their existing phase scopes;
+portable refinements do not qualify native event behavior or execute RGT-C01.
 
 ## 5. Exit and claim discipline
 

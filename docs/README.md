@@ -35,6 +35,7 @@ to own requirements, and task records own executed evidence.
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
 | How is the selected complete MSIX hardened and prepared for a Store attempt with services? | [MSIX/Store plan](plans/windows-msix-store.md), [amended OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [current W11-W10 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): explicit content integrity, sealed executable paths, Store-compatible CIG, per-role protections, supported service provisioning and recovery. Local mechanics, owner submission and final Store-delivered qualification are separate stages; no working package or Store acceptance is claimed. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
+| How are leap seconds, silent-LI servers and Windows event ownership handled? | [Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales) owns the selected contract; [NV-LP-001](plans/leap-second-policy.md) records primary evidence, local knowledge, source/guard/Windows behavior; [S1.4's task](../tasks/s1.4-leap-policy.md) owns implementation cases and remaining native gates. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
 | What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-20, mapped to technical checks. |
@@ -56,6 +57,18 @@ earlier results, and verify relevant source/environment identity before relying 
 them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Leap policy, 4 November 2026:** [OD-09](nevrotick-owner-decisions.md#13-od-09--leap-policy-and-silent-servers)
+records the requested multi-agent GitHub MCP/Windows Learn MCP research and
+document integration. The selected design carries immutable reviewed history
+and effective UTC rules, accepts silent LI=0 sources with admitted unsmeared
+provenance, retains useful tracking when future coverage is unknown, and leaves
+explicit leap execution to Windows. Bounded event guards lead to fresh-quorum
+measured-residual recovery without synthetic seconds. [NV-LP-001](plans/leap-second-policy.md)
+and its task distinguish this decision from absent implementation and OPEN-7
+native evidence; current S1.3 priority, execution holds and UI-M0 remain intact.
+Affected maintained plans/skills are reconciled; archived source copies and
+historical qualification receipts retain their original scope.
 
 **Binary catalogue refinement, 4 November 2026:** the owner requested a small,
 secure native Windows utility with a release catalogue for hundreds of NTP/pool,

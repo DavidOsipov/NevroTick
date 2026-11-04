@@ -1,6 +1,6 @@
 # Roughtime, NTS and Khronos/Ananke coordination
 
-**Document:** NV-TA-001, revision 1.1<br>
+**Document:** NV-TA-001, revision 1.2<br>
 **Evidence reviewed:** 3 November 2026, Asia/Tbilisi<br>
 **Project baseline:** [9c6b5ef39b134c844a850deb9126823d668babe7](https://github.com/DavidOsipov/NevroTick/tree/9c6b5ef39b134c844a850deb9126823d668babe7)<br>
 **Status:** owner-selected future bootstrap priority and retained research; no new runtime mechanism, provider preset, dependency or correction authority is qualified.<br>
@@ -27,6 +27,15 @@ The [architecture](../windows-time-architecture.md), [OD-02](../nevrotick-owner-
 and [R-02/R-05](../nevrotick-research-handoff.md) retain their authority. Relevant
 contracts are REQ-3/8/10/12, DEC-2/6/7/8/12, OPEN-8 and the CHECK mappings in the
 task. Local TA-W/TA-C identifiers do not replace those requirements.
+
+**Leap-policy integration, 4 November 2026:** [architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](leap-second-policy.md) add the selected date/scale/guard contract;
+the [S1.4 task](../../tasks/s1.4-leap-policy.md) owns its implementation before
+dependent integration. Reviewed compiled leap history, future coverage and the
+continuous-UTC rule effective **20 May 2027** remain separate from a bootstrap
+date. The rule is evaluated against all admitted true-date/era hypotheses, not
+the local clock. This amendment qualifies no new source, native mapping or
+clock-write envelope; earlier research/review receipts retain their own scope.
 
 Keep the two roadmap sequences distinct:
 
@@ -109,6 +118,11 @@ Khronos takeover/panic and a Roughtime command-line clock setter must not bypass
 that graph. The selected future reserve supplies only a provisional TLS date;
 it cannot enter an NTS quorum or acquire a clock controller of its own.
 
+The Windows kernel remains the sole executor of explicit leap events. None of
+these mechanisms schedules an extra event or synthesizes a ±1-second broker
+request. The leap guard and subsequent fresh-quorum residual correction use the
+same engine/broker ownership and actual-outcome rules as ordinary recovery.
+
 **Selected future operating role:** conditional bootstrap reserve. Healthy NTS
 tracking does not periodically activate Khronos under this profile. A later
 continuous observer or correction inhibitor would be a separately selected and
@@ -118,6 +132,15 @@ Until that extension is specified and qualified, the current strict-default and
 explicitly enabled plain-helper baseline remains controlling.
 
 ## 4. Runtime activation without a bootstrap cycle
+
+Leap-policy ambiguity limits the authority of a dependent time observation or
+correction; it does not stop independent bootstrap acquisition, NTS transport or
+authenticated complete-release admission. Do not require an already
+discipline-eligible sample to obtain the independent date evidence needed for
+that admission. Provisional responses retain their limited consumers and cannot
+be promoted into a leap vote, ordinary quorum or direct clock write. Unknown
+future calendar coverage alone does not activate the reserve or stop qualified
+NTS tracking outside the applicable guard.
 
 1. Reuse eligible cached associations or an adequate trusted time basis for
    strict NTS. Preserve key/trust-age limits. A healthy restart need not depend
@@ -180,8 +203,9 @@ implementation; documentation alone does not enforce the contract.
 | Origin and trust | Mechanism, protocol version, authentication class, peer/key identity, certificate-time basis and bootstrap ancestry; parser success is not authentication |
 | Independent support | Operator groups, known upstream-clock/hosting dependencies and original observation IDs; unknown independence stays unknown |
 | Selection provenance | Catalogue/pool version, selected/responding/admitted/independently supported sets, admission reasons and RNG/round identity |
-| Time context | UTC/era range, precisely defined interval/uncertainty, qualified monotonic observation and evaluation instants, aging/fault assumptions and valid lifetime |
-| Current applicability | Boot/clock epoch, policy and key generations, applied-correction context, eligible consumers and explicit limitations |
+| Time context | Complete admitted UTC/era hypotheses, precisely defined interval/uncertainty, qualified monotonic observation and evaluation instants, aging/fault assumptions and valid lifetime; defined protocol scale and unsmeared-UTC provenance for the NTP source population |
+| Leap context | Admitted release dataset/effective-rule revisions, historical and future coverage, scale segment, possible-event identity, guard phase and possible exchange span; raw LI remains an authenticated or unauthenticated source claim with its own admission result |
+| Current applicability | Boot/clock/mapping epoch, policy and key generations, applied-correction context, eligible consumers and explicit limitations; distinguish bootstrap-usable evidence from discipline eligibility and preserve the minimum post-guard acquisition instant |
 | Verdict | `agrees`, `contradicts`, `insufficient evidence` or `stale`, with a bounded reason; disabled/not-yet-initialized monitors remain visibly unassessed |
 
 Compare evidence at one qualified evaluation instant and clock frame. Do not
@@ -228,6 +252,16 @@ range and conversion bounds before handing a point to a verifier API. Retain
 network-delay and elapsed-time uncertainty; no unqualified symmetric-delay or
 perfect-monotonic-clock assumption.
 
+Apply the same whole-interval rule to leap history and the effective UTC regime.
+An interval straddling 20 May 2027 may proceed when every admitted hypothesis
+still yields the same event-free segment and admissible target. If any hypothesis
+crosses a possible event or changes interpretation, withhold the dependent
+sample's clock authority while bounded independent acquisition continues. Fresh
+evidence and qualified monotonic passage can resolve the ambiguity; choosing a
+convenient midpoint, era or host-clock regime cannot. The supported true-date
+interval is separate from how far Windows is wrong. An unknown TAI−UTC conversion
+does not globally disable same-segment NTP UTC tracking.
+
 ## 6. Coordination and failure decisions
 
 Here, **qualified NTS** means the complete current identity, admission, freshness,
@@ -239,6 +273,10 @@ guards. It does not replace existing tracking policy with a continuous watchdog.
 | --- | --- | --- |
 | Qualified NTS; reserve not triggered or disabled | Not assessed is not agreement | Existing NTS/broker policy continues; no periodic Khronos work or invented protection claim |
 | Qualified NTS; Roughtime unavailable, insufficient or stale | Absence is not contradiction | Continue the existing tracking policy; no new mandatory Roughtime dependency or authentication downgrade |
+| NTP population has admitted unsmeared-UTC provenance; all eligible peers send LI=0 | Announcement silence is not unknown scale or proof of no event | Ordinary acquisition/tracking remains available under local leap knowledge and every existing source/clock gate; no nonzero-LI quorum is required |
+| Future leap coverage unknown; current exchange is outside all applicable ambiguity guards | Historical validity, future coverage and present observation quality are separate | Continue ordinary Tracking with the coverage qualifier; in a leap-capable regime protect every possible month-end and require fresh post-guard quorum. No perpetual Holdover or dynamic LI-vote calendar |
+| A supported date/era hypothesis crosses a possible event or changes interpretation | Acquisition evidence may remain useful without discipline authority | Withhold the dependent observation/correction; continue bounded independent bootstrap and NTS transport. No convenient-date selection, quorum reduction or clock write from provisional data |
+| LI=1/2 demonstrably contradicts covered local knowledge or continuous UTC | Conflict belongs to that observation, not every configured identity | Reject it from discipline and diagnose; healthy peers retain their votes and fresh consistent observations can re-enter. One peer cannot extend a guard, rewrite history or schedule a leap |
 | Fresh comparable evidence agrees | Compatibility is conditional on provenance and uncertainty | Record the bounded corroboration; no new vote, tighter precision claim or expanded correction budget |
 | Plain reserve contradicts qualified NTS | Provisional evidence has weaker authentication | Bounded diagnosis; no plain replacement clock or unlimited veto |
 | Fresh Roughtime and NTS contradict | No generic majority across mechanisms | Preserve conflict and evidence; reject an inconsistent Roughtime-dependent bootstrap candidate. Outside that dependency, existing NTS policy controls; a new correction inhibitor requires qualification |

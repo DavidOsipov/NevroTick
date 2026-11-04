@@ -59,6 +59,7 @@ Windows 11 x64, `x86_64-pc-windows-msvc`. Start with
 | [Owner decisions](docs/nevrotick-owner-decisions.md) | Accepted instructions, pending recommendations and individual owner-decision procedure. Read before changing reuse, correction, source defaults or release policy. |
 | [Research handoff](docs/nevrotick-research-handoff.md) | Remaining evidence assignments, NTS provider candidates and decision gates; research findings are not implementation qualification. |
 | [Architecture](docs/windows-time-architecture.md) | Canonical technical/security contracts, ownership, decisions, delivery phases, CHECK requirements. |
+| [Leap policy](docs/plans/leap-second-policy.md) and [S1.4 task](tasks/s1.4-leap-policy.md) | Read for leap/LI, UTC scale, calendar metadata or Windows mapping changes. Architecture §10.5 selects local reviewed knowledge, useful silent-source admission and kernel-only explicit events; implementation/native evidence remain pending. |
 | [Feature plan](docs/windows-time-features.md) | Proposed V1 capabilities, journeys, presentation, acceptance scenarios, delivery slices; architecture controls technical semantics. |
 | [Development hardening](docs/windows-time-development-hardening.md) | Enforcement/qualification policy; inspect actual configuration and TOOLING.md for adopted bootstrap checks versus pending application/native evidence. |
 | [ASVS applicability](docs/asvs-5.0.0-applicability.md) | Applicability/planned verification; no completed compliance. |

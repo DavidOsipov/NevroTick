@@ -277,6 +277,15 @@ requires the following distinct controls; the plan owns their detailed contract.
   Observe valid update/repair as well as refusal. The independent cases and
   CHECK-16/18/23/26 evidence belong to
   [plan section 3.4](plans/windows-msix-store.md#34-threats-and-independent-controls).
+- **Compiled leap-data provenance.** The [selected calendar and policy](plans/leap-second-policy.md#3-knowledge-and-distribution-contract)
+  ship as reviewed immutable generated data within that same authenticated
+  complete release. Bind pinned inputs, generator identity, normalized revision
+  and digest, and supported coverage to build and submitted/delivered payload
+  records. `#h` or a standalone checksum is not release authentication. Do not
+  add a separate downloader, runtime leap-file path, hot update or TUF authority.
+  Package corruption is an integrity failure; valid unknown future coverage is
+  a distinct policy state. Authorized update/rollback preserves protected floors,
+  consumed correction authority and mandatory recovery.
 - **Wrong-clock and offline availability.** Apply section 5.1 to first
   installation, pre-login startup, helper activation, maintenance and recovery.
   Signing and timestamping alone do not settle those paths.
@@ -345,6 +354,7 @@ See [NV-DEC-001 section 7](nevrotick-owner-decisions.md#7-od-05--signing-and-rel
 | Explicit package-content enforcement and role-specific Store-compatible CIG/mitigations | Windows/security verifier | Plan sections 3.1–3.4 and CHECK-16/18/23/26; exact-path readbacks and behavioral controls not executed |
 | Store account, initial controlled submission and capability/certification acceptance | David Osipov / Microsoft Store | David performs submission; external acceptance is not established by preparation |
 | Protected source/build candidate and final Store-delivered package/catalog/payload identity | Build/release verifier | Keep both identities and validated SBOM assets; actual Store artifact not available or qualified |
+| Immutable normalized leap calendar/policy and reproducible provenance | Domain/build/release verifier | NV-LP-001 selects the same authenticated complete-release channel; generated data, revision/digest binding and final-artifact evidence remain to be implemented and qualified |
 | Valid/tampered/unsigned/substituted/unrelated-Store-package controls | Release/security verifier | Package trust, CIG and NevroTick role authorization require separate evidence; not executed |
 | Wrong-clock/offline activation and recovery | Windows/release/security verifier | Section 5.1 cases required on the selected artifact; not executed |
 | Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final Store-artifact evidence required before broad release |

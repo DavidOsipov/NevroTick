@@ -87,6 +87,12 @@ Do not implement “pick the server with the lowest ping.” Response speed alon
 
 The existing starting proposal is four independently operated NTS identities, with at least two agreeing eligible identities **and** the majority rule satisfied. That is a configuration proposal, not a promise that any two of four names suffice. Hostname aliases or several addresses from one operator do not automatically establish independence. The shipped provider set must also have a compatible time-scale/leap policy. RFC 8633 supports using diverse sources and explains the limitations of too few or correlated sources. [R1]
 
+Under the [selected leap policy](windows-time-architecture.md#105-leap-seconds-and-time-scales),
+an admitted unsmeared UTC server remains usable when it never announces a leap
+(LI=0). Neither that flag nor NTS proves its time scale. A demonstrably
+contradictory leap claim excludes that observation while healthy peers retain
+their votes; no automatic smaller quorum or different scale is substituted.
+
 **Acceptance:** controlled agreeing, disagreeing, stale and duplicate sources yield the expected membership and reasons; a fast wrong source is rejected. Loss of agreement does not silently reduce the minimum or enter single-source mode. [Architecture §7; CHECK-7/8]
 
 Before production integration, freeze the majority population, independent groups,
@@ -103,6 +109,12 @@ Show a concise headline, current profile, source agreement, age of the last qual
 Keep the last snapshot visible during disconnection, clearly marked as historical. A missing pipe connection alone does not prove that a service stopped. Display a confirmed service failure only when the available evidence establishes it. Reopening or refreshing the window cannot make old measurements fresh.
 
 Use **Time sync active** for qualified ongoing tracking, with **Gradually correcting the clock** where applicable. Avoid an unqualified **Time is correct** or a green shield suggesting guaranteed UTC accuracy. Observe-only always says that clock changes by this product are disabled.
+
+An unknown future leap schedule is a visible qualifier, not automatic service
+failure. Around an ambiguous event, show temporary holdover/rechecking and growing
+uncertainty. After fresh agreement, report the measured remaining correction;
+do not claim that Windows handled the event without evidence. Section 4 owns the
+user-facing wording; [NV-LP-001](plans/leap-second-policy.md) owns its meaning.
 
 **Acceptance:** running-but-unqualified, disconnected, expired, conflicting, waiting-for-approval and healthy cases have distinct truthful presentations. A stale or incompatible status record cannot fabricate a current success. [Architecture §§6, 9, 16; CHECK-14/22/25]
 
@@ -136,6 +148,12 @@ When fresh measurements disappear, show holdover only while the prior model rema
 
 On sleep, clock discontinuity or generation change, discard obsolete work and rebuild the time mapping. Do not count time asleep as delivered active adjustment. Service recovery must reconcile actual state and current ownership before cleanup: an old numeric rate or saved journal does not authorize resetting someone else's adjustment.
 
+Leap recovery uses the same guarded lifecycle: Windows owns explicit leap events;
+the product protects ambiguous measurements, then reacquires fresh compatible
+agreement and corrects only the measured residual. It adds no predetermined
+second and grants no exceptional correction allowance. Unknown future coverage
+alone permits normal tracking outside the protected boundaries (§10.5).
+
 **Acceptance:** restore legitimate sources after each fault and observe successful fresh acquisition. Late callbacks have no effect; repeated crashes do not reset budgets. Lost/ambiguous ownership produces read-only blocked handling, including for cleanup. [Architecture §§9–11; CHECK-10/11/12/27]
 
 ### F-08 — Recover from a bad date and review large changes
@@ -149,6 +167,11 @@ The hints affect only the isolated certificate-time recovery path. They cannot s
 If the accepted result lies outside tested automatic correction limits, show **Review clock correction — Administrator required**. Display the direction, magnitude/target interval, evidence freshness, consequence and single-use nature. A changed generation, policy, estimate or expired proposal requires a new review. Declining leaves the clock unchanged by that proposal.
 
 **Owner goal OD-02:** include approximately 100-year local-date errors in recovery qualification. Exact true-date/era bounds, authenticated quorum and direction/runtime correction policy remain open. The tentative 12-hour plain-NTP limit is not an adopted value; preserve separate acquisition and broker authority.
+
+Leap and continuous-UTC rules use the full supported candidate date interval,
+not the wrong Windows date. Ambiguous interpretation withholds clock authority
+while independent bootstrap acquisition remains possible; a leap-eligible
+discipline sample cannot be required to obtain the date needed to admit it.
 
 Cached authentication must also meet the [association lifetime contract](windows-time-architecture.md#74-nts-implementation-contract);
 a fresh packet need not mean a fresh full authentication decision. A wrong but
@@ -165,6 +188,13 @@ signing profile. No generic security-state reset or signature bypass is added.
 Diagnostics starts with the observed problem and a useful remedy. It contains a bounded recent-event timeline, last failure, product/component compatibility, active profile and relevant policy/ownership state. Technical details are expandable; process names, pipe paths and TLS implementation choices are not required knowledge for normal use.
 
 Differentiate observed facts from hypotheses. For example: **No reply from the configured servers** is an observation; **Your firewall is blocking NTP** is only a possible cause without further evidence. Offer checks the user can take without recommending weaker authentication.
+
+Expandable time-scale details distinguish source policy, missing announcements,
+conflicting claims, calendar coverage and unverified Windows event knowledge.
+Silent LI=0 is not a fault. Coalesce metadata notices; a legacy input-file expiry
+must not produce repeated errors once the separately sourced continuous-UTC rule
+covers the current date. Normal users need the effect and next action, not raw LI
+bits or kernel API names.
 
 Provide **Copy summary** and **Export diagnostics** with a preview. Default export redacts private endpoints and usernames and never contains NTS cookies/keys, TLS secrets, credentials or arbitrary memory. Export is initiated and written by the ordinary UI from bounded redacted data; a caller's filename never becomes an arbitrary privileged service write. No automatic upload or telemetry is enabled.
 
@@ -237,7 +267,9 @@ The UI presents authoritative service state; it does not invent a second clock-t
 | Initializing | Starting and checking configuration | No success inferred before ownership/policy readiness |
 | Acquiring | Checking time sources | Waiting for enough admissible current evidence |
 | Tracking | Time sync active | Current policy is met; show authentication and any correction still in progress |
+| Tracking with unknown future leap coverage | Time sync active — future leap schedule unknown | Ordinary event-free measurements remain usable; no claim of exact handling at an unknown event |
 | Holdover | No fresh time check — using the previous model | Prior estimate remains within its declared budget; uncertainty is increasing |
+| Leap guard / post-event reacquisition | Rechecking time around a UTC transition | Temporary protected interval and fresh reacquisition; show uncertainty and any remaining correction, not an assumed applied second |
 | Conflict | Time sources disagree | No new correction from disputed measurements |
 | Reacquiring | Rechecking after a change | Old-generation exchanges no longer count |
 | BootstrapHints / BootstrapNts | Recovering secure time using an unauthenticated approximate date | Provisional recovery; the hints have not changed Windows time |
@@ -350,16 +382,16 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | --- | --- | --- | --- |
 | AC-01 | F-01/02/10 | Boot without login, synchronize, open/close/crash UI, then log off. Service behavior continues; default closure leaves no UI process. | CHECK-12/21/23 |
 | AC-02 | F-02/04/07 | Remove all usable sources, age through holdover and expiry, then restore them. No fake freshness or fallback; recovery succeeds without reinstall/reset. | CHECK-9/11/14 |
-| AC-03 | F-03/04 | Fast wrong, agreeing, stale and duplicate sources produce independently expected membership and reasons. Source loss cannot manufacture votes or lower the policy. | CHECK-7/8/14 |
-| AC-04 | F-02/06 | Valid NTS succeeds; wrong identity, invalid signatures/AEAD, forged NAK and outages never select plain NTP. Deliberately authorized NTP mode remains labelled. | CHECK-2/6/9 |
+| AC-03 | F-03/04 | Fast wrong, agreeing, stale and duplicate sources produce independently expected membership and reasons. Silent unsmeared LI=0 sources remain usable; contradictory leap observations do not suppress healthy peers. Source loss cannot manufacture votes or lower the policy. | CHECK-7/8/14 |
+| AC-04 | F-02/06 | Valid NTS succeeds; wrong identity, invalid signatures/AEAD, forged NAK and outages never select plain NTP. Deliberately authorized NTP mode remains labelled. NTS/LI does not establish unsmeared-scale provenance; incompatible/unknown scales cannot join the UTC population. | CHECK-2/6/9 |
 | AC-05 | F-04 | Old/malformed/incompatible snapshots and failed connections cannot become current Tracking. Source reply, accepted estimate, applied correction and snapshot ages remain distinct. | CHECK-14/25 |
 | AC-06 | F-05 | Ordinary-user refresh succeeds; request storms/direct IPC stay bounded. Refresh carries no destination/target time and cannot override correction authority. | CHECK-2/3/25/27 |
 | AC-07 | F-06 | Valid current policy applies atomically. Cancelled UAC, invalid input, storage failure and stale-revision edits preserve the active policy. | CHECK-2/3/15/25 |
 | AC-08 | F-06/07 | Startup/restart already configured observe-only makes no product clock write. During active-to-observe transition, valid-owner cleanup precedes completion; lost/ambiguous ownership prevents a blind reset. No implicit Windows Time handback. | CHECK-5/10/12 |
-| AC-09 | F-08 | Cached NTS and strict NTS take precedence. Qualified helper recovery leaves global time unchanged until final authentication/agreement and broker authority pass; successful recovery retains its certificate-time basis/history. | CHECK-6/9/10 |
+| AC-09 | F-08 | Cached NTS and strict NTS take precedence. Qualified helper recovery leaves global time unchanged until final authentication/agreement and broker authority pass; successful recovery retains its certificate-time basis/history. Wrong host dates cannot choose leap policy; ambiguity withholds effects without circularly blocking independent acquisition. | CHECK-6/9/10 |
 | AC-10 | F-08 | Two-helper timeout/disagreement/alias cannot become one-helper mode. Successful one- and two-helper paths preserve discoverable hint provenance after Tracking resumes; wrong-name certificate never enters hint recovery. | CHECK-8/9/14 |
 | AC-11 | F-08 | Correct current exceptional approval works once; stale/changed/expired/replayed approval fails. Acquisition success does not authorize an oversized correction. | CHECK-3/10/12 |
-| AC-12 | F-07 | Suspend/resume, Modern Standby, external clock change and late callbacks preserve generation boundaries. Time asleep is not counted as delivered slew. | CHECK-10/11/27 |
+| AC-12 | F-07 | Suspend/resume, Modern Standby, external clock change, leap guards and late callbacks preserve generation boundaries. Time asleep is not counted as delivered slew. Fresh post-guard quorum restores useful tracking; no synthetic second or false native-event acknowledgement. | CHECK-10/11/27 |
 | AC-13 | F-01/07 | Kill engine and broker during correction. Recover only with current ownership; ambiguous/successor state blocks resets. Crash loops preserve consumed budgets. | CHECK-10/12/27 |
 | AC-14 | F-01/06 | Managed-policy takeover defaults to observation; later GPO/controller activation causes honest conflict handling without fighting the owner. | CHECK-5/13 |
 | AC-15 | F-01 | Store package update, repair/Reset and uninstall before UI launch, with UI closed, old sessions and last-user transitions; inject interruption. No partial product, erased last recovery path, permissive reset, stale-owner restoration or false completion. | CHECK-13/18/23 |

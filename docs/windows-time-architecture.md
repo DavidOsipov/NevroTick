@@ -43,6 +43,13 @@ Core work and Windows/fuzz/storage execution holds remain under the
 
 This specification defines the proposed product, its security boundaries, failure behavior, implementation sequence and evidence required for release. It is a design deliverable. No application has been implemented or qualified by this work. Words such as **must** state requirements for the future implementation; they do not describe controls already deployed.
 
+**4 November leap-policy amendment:** [NV-LP-001](plans/leap-second-policy.md)
+selects release-bundled history and effective UTC rules, usable silent-LI sources,
+bounded event protection and Windows as the sole explicit leap-event executor.
+Section 10.5 owns the contract; [S1.4's task](../tasks/s1.4-leap-policy.md) owns
+implementation and evidence. This is a design selection under OD-09, not a native
+pass or a change to current S1.3 priority, correction authority or execution holds.
+
 **Owner delivery decision, 3 November 2026:** prepare **one complete hardened MSIX for a Microsoft Store submission attempt**, including the services. The product contains a normal-user native UI, a network-facing synchronization engine without clock-setting privilege, a small privileged clock broker and the administration helper. One product owns installation, updates, repair, removal and reversible Windows Time Service handover. Sections 19.4–19.5 and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) distinguish this selected direction from unresolved provisioning, Store acceptance and actual artifact qualification. Prior Store approval is not a prerequisite for preparing the submission candidate. Retain the MSI design and signing profiles as fallback/reference material for David to reconsider after a Store rejection or concrete technical evidence; they are not a parallel deliverable or an MSIX prerequisite. This decision does not change the current Core priority, Windows execution stop, separate fuzz hold, storage pause or UI-M0 deferrals.
 
 **Revision 1.4 changes:** reconciles a fresh independent review of all maintained Markdown documents and all 345 ASVS clauses. It corrects 16 worksheet records, including seven draft classification changes; makes conditional native HTTP retrieval and legacy NTP entropy decisions explicit; aligns JSON/status wording; and adds a source-derived extreme-date verifier qualification case. Original verification text and prior additions remain traceable. All controls remain unimplemented/unexecuted. See the [full review report](windows-time-review.md).
@@ -206,7 +213,7 @@ sequenceDiagram
     B->>E: Request measurements for current generation
     E->>N: Bounded NTP or NTS exchanges
     N-->>E: Untrusted responses
-    E->>E: Admit samples, estimate and select agreement
+    E->>E: Admit scale, LI, exchange span and generations; select agreement
     E->>B: Typed bounded correction proposal
     B->>B: Check identity, ownership, epochs and total budget
     alt Current proposal is authorized and within bounds
@@ -438,13 +445,14 @@ Represent UTC, monotonic time, active-awake time, NTP wire timestamps, durations
 | --- | --- | --- |
 | LogicalSource | Administrator-approved configuration | Stable ID, intended NTS identity, endpoints, independence group, time scale, trust profile; several IPs do not create several votes |
 | Exchange | Engine association | Request token/UID, endpoint, send/receive timestamp pairs, association and clock generations, deadline; one accepted response |
-| ValidatedSample | Protocol admission | Offset/delay/dispersion, stratum/leap, time of observation, authentication and certificate-time provenance |
+| ValidatedSample | Protocol admission | Offset/delay/dispersion, stratum and raw LI claim, full possible exchange span, time of observation, authentication and certificate-time provenance; current scale-segment/leap-policy/mapping admission under §10.5 |
 | SourceEstimate | Pure core | Offset at a stated common instant, frequency/skew, uncertainty interval, aged statistics and reason for eligibility/rejection |
 | SelectionSnapshot | Pure core | Eligible set, interval majority, principal, supporters, rejected set, configured minimum and generation |
 | CorrectionProposal | Engine; authorized by broker | Finite phase/rate request, expected revision/generation, deadline, source evidence reference and step permission |
 | AppliedCorrection | Broker | Operation identity, durable outcome or explicit uncertainty, actual mode/rate/phase, quantization, application instant, remaining budget and generation |
 | StatusSnapshot | Broker publication owner | Coherent versioned view with freshness, authentication, agreement, uncertainty, next action and last failure |
 | TrustState | Protected persistence | Floor/model with uncertainty assumptions, evidence and supersession history; drift prior; separate NTS key/full-authentication ages and trust-policy revision; version/validation bounds |
+| LeapKnowledge / LeapContext | Reviewed release data / pure core | Separate historical ledger, future coverage and effective UTC rule; current true-date interval, event guard and policy/mapping generation. Neither network LI nor raw Windows ticks establish this authority (§10.5) |
 
 Network samples, administrator policy and measured actuation are different authorities. Status is a projection, not an alternative controller state. A cached observation has its own age/provenance and does not become fresh when the UI reloads.
 
@@ -650,7 +658,7 @@ without importing upstream spike/step thresholds or a second controller. [S122]
 
 ### 7.3 NTP client behavior
 
-Version 1 sends NTPv4 client-mode requests and accepts server-mode replies for current configured associations. Use ephemeral randomized client ports; do not open an NTP server listener. Associate a response with the saved real transmit timestamp even if the wire token uses anti-spoofing randomization. Validate era interpretation, essential timestamps, synchronized leap state, valid time stratum, root properties, local clock continuity and one-response-per-request behavior. A stratum-zero Kiss-o'-Death response is control information, never a time sample. [S16, S19]
+Version 1 sends NTPv4 client-mode requests and accepts server-mode replies for current configured associations. Use ephemeral randomized client ports; do not open an NTP server listener. Associate a response with the saved real transmit timestamp even if the wire token uses anti-spoofing randomization. Validate era interpretation, essential timestamps, LI/scale/segment admission under §10.5, valid time stratum, root properties, local clock continuity and one-response-per-request behavior. LI=3 rejects ordinary time; LI=0 alone never rejects a silent source or proves no leap. A stratum-zero Kiss-o'-Death response is control information, never a time sample. [S16, S19, S125]
 
 Before S2.1 socket admission, qualify RFC 9109's recommendation that a randomized
 client port **SHOULD NOT** be shared across associations. Choose per-association
@@ -879,6 +887,12 @@ During recovery, use wording such as: “Checking secure time servers using an u
 
 DNS failure, packet loss, NTS server outage, a wrong-name certificate, an unknown trust anchor, invalid signature, prohibited algorithm, forged NTS NAK or AEAD failure must never enable ordinary plain-NTP discipline. Bootstrap samples cannot alter regular source statistics, persisted drift, leap scheduling or the Windows clock. Every gate requires a valid neighboring case so an implementation that rejects all recovery cannot pass.
 
+Leap-policy selection uses the whole independently supported date/era interval,
+not the faulty host date. Provisional acquisition remains available while scale
+or event interpretation is unresolved; discipline admission must not become a
+circular prerequisite for the bootstrap that resolves it. Section 10.5 defines
+the event-free interpretation required before a resulting clock proposal.
+
 ### 8.5 Future Roughtime and watchdog coordination
 
 The owner-selected future RGT-0 direction and requested Khronos/Ananke
@@ -938,6 +952,12 @@ Service health and clock trust are independent. Retry deadlines use a monotonic 
 | Stopping | Cancel transient correction and finalize protected state | SCM stopped acknowledgement follows cleanup, or cleanup failure is durably reported |
 
 Events may arrive more than once or after cancellation. Stop, power, network and service-restart transitions must be idempotent. A fresh valid request after the fault is removed must succeed; permanent self-disablement is not acceptable recovery unless required by an unresolved security condition.
+
+Leap knowledge is a separate qualifier: unknown future coverage can coexist
+with Tracking outside ambiguous boundaries. Section 10.5's event guard uses
+Holdover, then fresh Reacquiring; elapsed guard time alone cannot restore votes.
+Expose historical coverage, current UTC rule and native-event uncertainty without
+turning a legacy file-expiry warning into permanent loss of synchronization.
 
 Runtime trust state and actuator mode are separate. Initializing, bootstrap and
 acquisition never acquire clock ownership implicitly; without current ownership
@@ -1086,9 +1106,53 @@ Orderly stop, update and uninstall must restore the policy-approved base/default
 
 ### 10.5 Leap seconds and time scales
 
-Retain positive and negative leap state in the model and tests. Only accepted sources may influence leap handling. Avoid mixing unsmeared UTC and differently smeared providers in one voting population. A provider's time-scale policy is configuration/provenance, not something inferred reliably from one packet.
+**Selected v1 contract, 4 November 2026:** use reviewed release-bundled leap
+history and separately effective UTC policy. Preserve historical validity when
+future coverage expires or is absent. A missing `#@`, LI=0 or an unkeyed checksum
+cannot establish unlimited future authority. The separately sourced continuous
+UTC rule becomes effective on **20 May 2027**; it creates no leap, epoch reset or
+37-second correction. Evaluate it against the whole admitted true-date/era
+interval, never the incorrect startup wall clock. Retain both signs and
+historical transitions in the model and tests. [S125]
 
-The Windows backend must choose and prove one leap owner so the OS and service do not both apply a leap. A bounded slew-based correction is a possible product policy, but the residual phase must remain visible while it completes. Exact Windows leap integration is a P0/P4 qualification item; absence of an internet leap event during development is not evidence that the path works.
+Only explicitly admitted **unsmeared UTC** sources join this population.
+Unknown scale and unknown LI-announcement behavior are different: an unsmeared
+source that never announces remains usable. LI=0 is an ordinary candidate and
+does not veto a local event; LI=3 is ineligible for ordinary time; stratum zero
+remains control-only. LI=1/2 corroborates or conflicts with the local rule, but
+never schedules a leap or rewrites history. A demonstrated contradiction excludes
+that observation, not healthy peers; fresh consistent evidence may re-enter.
+Unknown future coverage permits ordinary same-segment tracking outside guards,
+with its qualifier visible. Keep existing authentication, minima, freshness and
+correction budgets; no dynamic LI-majority event authority is adopted.
+
+**One explicit-event executor: Windows.** NevroTick leaves global leap settings
+and OS event history unchanged and injects no synthetic ±1-second operation.
+Stopping W32Time does not prove kernel leap handling is disabled. Qualify the
+default process compatibility presentation and supported Windows conversions;
+FILETIME, UTC/NTP coordinates and elapsed time are distinct domains. Process
+presentation flags do not transfer global ownership. Do not use undocumented
+event setters or a `w32tm` output parser as the runtime contract. [S125]
+
+Before a known or conservatively possible event, reconcile/cancel transient
+work under existing ownership and durable-outcome rules. Protect a finite window
+covering source realizations, native presentation, uncertainty, exchange lifetime
+and actuation latency; when future coverage is unknown, cover each possible
+month-end in the leap-capable regime. No periodic legacy guard is needed inside
+covered continuous UTC. Advance mapping generation once per boundary, reject
+crossing/late work, retain only the qualified holdover base and grow uncertainty.
+Afterward require fresh post-guard exchanges wholly within one compatible segment
+and the ordinary independent quorum. Correct **only the measured residual**;
+predicted OS action is not an acknowledgement and timeout restores no authority.
+
+The [focused policy](plans/leap-second-policy.md) specifies ingestion, LI cases,
+bootstrap, guards, Windows limits and source pins; the
+[S1.4 task](../tasks/s1.4-leap-policy.md) owns implementation cases. OPEN-7/S0.4/P4
+still require supported-build mapping, finite bounds and real recovery evidence.
+Without verified native event knowledge, exact UTC during a leap is not promised;
+the qualified guard and subsequent residual-convergence contract remains. Absence
+of an internet leap during development is not evidence that this path works;
+synthetic and native evidence must exercise the stated cases.
 
 ---
 
@@ -1148,6 +1212,7 @@ guarantee after abrupt death. See [lifecycle research](plans/windows11-integrati
 | State class | Writer | Protection and recovery |
 | --- | --- | --- |
 | Installed executables/libraries | Elevated installer only | Protected Program Files or MSIX package location; ordinary users/services cannot replace code |
+| Bundled leap history and UTC rules | Reviewed complete release | Public immutable data with source/revision/digest bound to package provenance; not optional encrypted cache. Unknown future coverage differs from corrupt package content; update/rollback never resets protected correction continuity (§10.5) |
 | Machine security/source policy | Broker after authorized helper request | Protected ProgramData path, strict schema, revision compare-and-swap, atomic durable replacement |
 | Broker journal and boot/step state | Broker/installer with explicit ownership | Separate ACL and schema; corruption blocks unsafe writes, not a reset to permissive defaults |
 | Drift/statistical prior | Engine | Bounded validated values; corruption discards optional prior and enters acquisition |
@@ -1494,6 +1559,11 @@ The shared `diagnostics` module owns stable event IDs, versioned field meanings,
 
 Record service lifecycle, policy revision changes, authorization denials, source state transitions, bootstrap entry/exit, step/slew decisions, ownership conflicts, recovery outcomes and diagnostic-session changes. Coalesce routine repeated decisions instead of recording every packet/poll. Include event code/version, component and process-instance discriminator, sequence within that instance, relevant policy/clock generation, operation/request correlation and UTC with its time-quality label. Monotonic ordering remains meaningful across wall-clock repair; separate process sequences do not imply a global total order or correct UTC.
 
+Leap diagnostics add bounded policy-revision, coverage/regime, source-claim
+conflict, guard/reacquisition and native-knowledge qualifiers (§10.5). A silent
+LI=0 source is not an error. Coalesce stale-calendar notices; do not emit recurring
+expiry errors once the independently covered continuous-UTC rule applies.
+
 Log a failure at its decision owner with the useful outcome; lower layers propagate typed errors rather than repeatedly logging and returning the same failure. UI synchronization/authorization state comes from coherent authoritative snapshots and acknowledgements, never parsing log text. Diagnostic events and session state are neither the durable correction journal nor proof of caller identity, clock ownership or UTC.
 
 #### 12.3.2 Levels and required events
@@ -1821,9 +1891,9 @@ The following are design threat scenarios, not confirmed application vulnerabili
 
 **Path:** Pre-sleep exchange or prior UTC/monotonic mapping, leap/smear mismatch → resumed model → incorrect offset or delivered-slew accounting.
 
-**Control and failure:** Distinct typed clock domains; power/time-change and sampled discontinuity detection; new clock generation; invalidate cross-discontinuity exchanges; explicit active-awake accounting for finite slew; bounded drift prior and reacquisition. One leap owner; no hidden mixing of incompatible smear scales. Self-induced steps correlate with broker acknowledgements.
+**Control and failure:** Distinct typed clock domains; power/time-change and sampled discontinuity detection; new clock generation; invalidate cross-discontinuity exchanges; explicit active-awake accounting for finite slew; bounded drift prior and reacquisition. Section 10.5 adds reviewed local leap knowledge, silent-LI admission, bounded event guards and Windows-only explicit event execution; no synthetic second or incompatible smear population. Self-induced steps correlate with broker acknowledgements.
 
-**Residual and owner:** Windows build/power-mode behavior and VM integration must be measured. Platform/core owner decides leap policy. **Verification:** CHECK-7/10/11, P1/P4: S3/S4/Modern Standby, manual step, VM restore and synthetic positive/negative leap; no old completion writes current state; legitimate post-resume acquisition succeeds.
+**Residual and owner:** Windows build/power-mode behavior and VM integration must be measured. Platform/core qualifies the selected leap policy and limits exact event-time claims when OS knowledge is unverified. **Verification:** CHECK-7/10/11, P1/P4: S3/S4/Modern Standby, manual step, VM restore, silent-LI positive/negative events, expired/unknown calendars and false announcements; no old completion writes current state; fresh post-event recovery succeeds without requiring nonzero LI.
 
 #### THR-12 — Broker death leaves a transient rate active
 
@@ -2895,14 +2965,14 @@ Every check below is **planned / not executed**. Owners are future engineering r
 | CHECK-4 | Review every ASVS row against actual surfaces and evidence | No omitted IDs, unsupported N/A or native analogue described as literal conformity | P0/P7, independent reviewer |
 | CHECK-5 | W32Time active/disabled/managed-policy states; detected competing controller | One cooperating owner; correct prior state restored; no fight with GPO | P0/P4/P6, installer/platform |
 | CHECK-6 | Raw NTP/NTS vectors, replay, malformed extensions, wrong UID/key/origin, KoD/NAK handling and storms; RFC 8915 alignment checklist | Invalid packet has no time/cookie effect; valid neighboring packet accepted exactly once; admitted KoD changes only permitted control state, never supplies a time sample | P1/P2, protocol |
-| CHECK-7 | Symmetric/asymmetric delay, variable drift, one/two falsetickers, 2-source disagreement | Expected selection/principal/supporters and no-majority behavior; no fastest-peer shortcut | P1, numerical core |
+| CHECK-7 | Symmetric/asymmetric delay, variable drift, one/two falsetickers, 2-source disagreement; §10.5 calendar/LI/segment cases | Expected selection/principal/supporters and no-majority behavior; healthy all-LI=0 admission, no crossed-event fit or LI-created leap; no fastest-peer shortcut | P1, numerical core |
 | CHECK-8 | Identity/endpoint duplication and configured minimum changes | One logical source cannot obtain multiple votes; no silent minimum reduction | P1/P2, core/security |
 | CHECK-9 | Clock years wrong, cached keys, expired/future certificates, 1/2 helpers and expired-compromised-key attack | No plain-clock actuation; wrong identity still rejected; residual attack documented honestly | P2, protocol/security |
-| CHECK-10 | Actual Windows rate/step sign, units, quantization, cancellation, acknowledgement loss and cumulative correction accounting | Actual integrated effects consume policy budgets; no double step, arithmetic overflow or stale correction; independently known safe correction succeeds | P0/P4, clock backend |
-| CHECK-11 | S3/S4/Modern Standby, manual step, VM restore, network/VPN switch | Generations invalidate old work; no integration of sleep as delivered active slew; fresh recovery succeeds | P4, platform |
+| CHECK-10 | Actual Windows rate/step sign, units, quantization, cancellation, acknowledgement loss and cumulative correction accounting; native handled/missing/unexpected leap cases | Actual integrated effects consume policy budgets; no double step or synthetic leap correction, arithmetic overflow or stale correction; independently known safe residual correction succeeds | P0/P4, clock backend |
+| CHECK-11 | S3/S4/Modern Standby, manual step, VM restore, network/VPN switch; leap guard and mapping/presentation changes | Generations invalidate old/crossing work; no integration of sleep as delivered active slew; fresh post-guard recovery succeeds even with all LI=0 | P4, platform |
 | CHECK-12 | Kill engine/broker during transient slew; crash loops, boot before login, UI exit and a successor setting a rate during outage | Owned recovery cleans up within measured bounds; successor/ambiguous state and observe-only restart emit no fresh reset; step budget survives SCM restart | P4, platform/security |
 | CHECK-13 | Fault injection at each single-product install/update/repair/uninstall stage, including disabled rollback, hostile repair inputs, old-generation cleanup and reboot | Correct owner/restoration; no successor reset or privileged path oracle; no conflicting generations; legitimate maintenance completes | P0/P4/P6, installer/security |
-| CHECK-14 | Source outage, stale evidence, disagreement and malformed snapshot | UI/CLI show correct trust/freshness/uncertainty; no fabricated synchronized status | P3/P5, core/UI |
+| CHECK-14 | Source outage, stale evidence, disagreement and malformed snapshot; leap coverage/conflict/guard/native-knowledge qualifiers | UI/CLI show correct trust/freshness/uncertainty; unknown future coverage may accompany legitimate Tracking; no fabricated exact event-time or synchronized status | P3/P5, core/UI |
 | CHECK-15 | Corrupt/old/incompatible state, reparse/hardlink/path swap, disk-full and interrupted replacement | Protected files cannot redirect privileged writes; invalid critical policy does not become permissive | P3/P4, platform/security |
 | CHECK-16 | Inspect build/PE/runtime evidence against section 15.4's role manifest; test activation/startup failure, actual SCM child-policy enforcement, DLL canaries, import/load paths and valid dependencies | Required protection enforced before normal protected work; valid workflows and applicable UI accessibility remain functional; failure preserves ownership-aware recovery | P0/P6/P7, security/build |
 | CHECK-17 | Secret-bearing paths/exports; required-event filtering; diagnostic-session expiry; sink failure/flooding | Allowlisted useful output at every enabled level; authorized finite collection; non-suppressible required routing; bounded aggregate storage/loss and safe cleanup. See section 12.3 and hardening section 9.8 | P2/P3/P5, security |
@@ -3088,7 +3158,7 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-4 | Race-safe mutual IPC authentication and revocation semantics | Named pipes with OS identity proof; local RPC fallback | Security/platform, S0.3 |
 | OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings, durable reservation/settlement, boot epochs, production quorum/freshness and holdover budgets | OD-02 accepts very large authenticated recovery as a goal; qualify era/target bounds, quorum and effects. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |
 | OPEN-6 | Bootstrap absolute date/era range and one/two-helper default; Pool role and NTS preset | Existing opt-in baseline pending OD-03 resolution; two helpers preferred, explicit weaker one; evidence-defined protected floor and narrowly authorized supersession without budget resets. Pool vendor zone/provider qualification required | Product/security, S0.7/P2 |
-| OPEN-7 | Windows leap ownership and actual finite-slew failure envelope | Single owner, bounded transient component, measured recovery | Platform/core, S0.4/P4 |
+| OPEN-7 | Qualify selected leap mapping/presentation, OS event knowledge/behavior, finite guard/cancellation/recovery and finite-slew failure envelope | §10.5 selects Windows-only explicit events, local reviewed knowledge and guard plus measured-residual recovery; exact event-time claim needs native evidence | Platform/core, S0.4/P4; pure S1.4 cases in NV-LP-001 |
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
 | OPEN-10 | Native UI accessibility and measured resource fit | Win32 controls through audited Rust adapter | UI/accessibility, S0.5 |
@@ -3304,6 +3374,8 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 
 - **S123 - Protected CNG/TPM key and memory boundaries, checked 2 November 2026.** Microsoft [NCryptCreatePersistedKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreatepersistedkey), [NCryptOpenKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenkey), [key storage properties](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers), [NCryptDecrypt](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptdecrypt), [NCryptSignHash](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptsignhash), [VBS example](https://techcommunity.microsoft.com/blog/windows-itpro-blog/advancing-key-protection-in-windows-using-vbs/4050988), [TPM provider boundary](https://learn.microsoft.com/en-us/windows/security/hardware-security/tpm/how-windows-uses-the-tpm) and [VirtualLock](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtuallock). REQUIRE/PREFER, provider versus key evidence and caller-memory boundaries do not establish application qualification; the VBS-flag documentation retains a prerelease notice.
 - **S124 - Application VBS enclaves, separate from CNG root protection, checked 2 November 2026.** Microsoft [overview](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves), [development guide](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves-dev-guide) and [pinned tooling README](https://github.com/microsoft/VbsEnclaveTooling/blob/ec3ea90ddac245da7c96112dea0e27ee1a78f986/README.md). The selected path owns its OS/SDK/ABI/import/signing/debug/strict-memory requirements; the general enclave floor is not the CNG VBS-key feature floor. CFG is required for enclave DLLs; exact hardened-host compatibility remains unqualified.
+
+- **S125 - Leap knowledge and Windows ownership, checked 4 November 2026.** [NV-LP-001 source map](plans/leap-second-policy.md#8-sources-and-inspection-pins) pins RFC/erratum, IERS/BIPM/IANA, Chrony/NTPsec/ntpd-rs and official Microsoft evidence. §10.5 selects the project policy; source inspection is not Windows qualification and does not change the adopted upstream-code pin.
 
 ## Appendix B. Worksheet attribution and use
 

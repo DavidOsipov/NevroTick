@@ -1,7 +1,7 @@
 # NevroTick: useful Windows 11 integration mechanisms
 
-**Document:** NV-WIN11-RESEARCH-001, revision 1.1<br>
-**Date:** 3 November 2026<br>
+**Document:** NV-WIN11-RESEARCH-001, revision 1.2<br>
+**Date:** 4 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Owner-requested documentation integration; source research and proposed qualification, no native execution.
 
@@ -14,6 +14,12 @@ adapter work. The original inspected baseline and review claims below retain
 their original scope; the follow-up was reconciled with later `45ff247` task
 adoption and execution holds. Its findings extend the existing W11/ST-W owners,
 without selecting optional APIs or qualifying Windows behavior.
+
+**4 November leap-policy amendment:** [NV-LP-001](leap-second-policy.md) now
+selects the v1 leap contract, including silent-LI sources, native ownership and
+the default process presentation. Its Windows work stays with W11-W02/S0.4/P4;
+its immutable dataset follows the existing complete-release channel. The source
+review below retains its original baseline and supplies no native qualification.
 
 ## Decision and scope
 
@@ -75,7 +81,28 @@ Microsoft's Modern Standby guidance describes substantial session-0 throttling, 
 
 `SetWaitableTimerEx` offers tolerable delay for coalescing. On Windows 8 and later, relative timers exclude low-power time; absolute timers respond to system-time changes. [T6] Use timers as wake-up requests and recheck the actual deadline and generation when execution resumes. Background cache work can tolerate coalescing; a single timer policy should not be applied indiscriminately to broker work. High-resolution timers require a measured benefit.
 
-Windows also offers per-process leap-second presentation through `ProcessLeapSecondInfo`. [T7] Qualify logging, formatting and imported native libraries with the chosen setting; this does not assign global leap-second ownership or replace the existing protocol and clock-control policy.
+The selected [v1 Windows leap contract](leap-second-policy.md#6-windows-contract-and-limits)
+keeps the kernel as the sole explicit-event executor. NevroTick does not schedule
+another leap, change global settings/history or parse `w32tm` output as a runtime
+protocol. Stopping W32Time does not prove native leap knowledge absent. Preserve
+the transactional ordinary-clock takeover, foreign-owner checks and restoration.
+
+Qualify the **default compatibility presentation** in engine and broker: no
+`:60` opt-in, with each process's mode recorded and verified through the documented
+process APIs. A positive leap stretches the displayed 59th second over two real
+seconds in this mode; this is not global leap disablement. [T7] Cover formatting,
+logging and imported libraries, and invalidate the mapping if presentation is
+unexpected or unverified. Keep FILETIME ticks, civil UTC, NTP coordinates and
+monotonic intervals distinct; qualify documented conversions and preserve
+sub-millisecond precision outside the guard.
+
+The [event guard](leap-second-policy.md#5-event-guard-holdover-and-reacquisition)
+settles transient corrections, excludes ambiguous exchanges and reacquires fresh
+ordinary agreement before correcting the measured residual. No synthetic extra
+second follows an OS-handled event. Unverified native event knowledge limits
+exact event-time UTC; it does not justify an undocumented setter or a second
+executor. Unknown future-calendar coverage alone still permits ordinary tracking
+outside possible-event guards, with the persistent qualifier defined by NV-LP-001.
 
 ## 2. Integrate the DNS service without losing Windows policy
 

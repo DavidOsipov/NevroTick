@@ -411,6 +411,18 @@ Collection is separate from approval, signing and publication. Neither Python no
 raw source caches become installed client requirements. No tool file, dependency,
 probe, benchmark or automatic updater is implemented by this handoff.
 
+**Leap-policy integration, 4 November 2026:** [NV-LP-001](../docs/plans/leap-second-policy.md)
+and [S1.4](s1.4-leap-policy.md) own the separate immutable compiled public leap
+dataset, its release-bound revision/digest and effective-rule provenance; this
+does not choose C's final binary format. DATA-02/03/09 retain source-scale
+provenance separately from announcement behavior: all-LI=0 unsmeared peers remain
+ordinary candidates, while contradictory observations follow NV-LP-001 exclusion
+and fresh re-entry. Unknown future coverage does not globally stop tracking or
+independent bootstrap acquisition. The future publisher collector preserves
+claims and evidence; it grants no runtime fetch, probe, leap-schedule or clock
+authority. Carry these cases into the existing schema/TA/S1.4 owners below; the
+completed review receipts in §7.1–7.3 retain their original scope and contents.
+
 | Preparation / existing owner | Required documentary exit and retained gap |
 | --- | --- |
 | Catalogue/schema and QA — DATA-01–09; OPEN-CAT-01 | Freeze stable-ID/reference/normalization rules, presence, exact profile/key bindings, aggregate limits, generated-data alternative and old/new reader behavior. Distinguish recognized inert Roughtime metadata from enabled/qualified runtime; explicitly identify any reviewed compatible projection. Freeze concrete accepted/refused fixtures before implementation; no final encoding or parser graph is selected now. |

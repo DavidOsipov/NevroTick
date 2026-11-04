@@ -24,6 +24,14 @@ names do not establish authenticity, compatibility, compression ratio or speed.
 No benchmark, product implementation or Windows qualification was performed to
 produce these tables.
 
+**Selected leap-policy integration, 4 November 2026:** [architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](leap-second-policy.md) govern the public leap dataset and derived
+observation context. The [S1.4 task](../../tasks/s1.4-leap-policy.md) owns future
+implementation. Its release-bound immutable compiled dataset is separate from
+the source-catalogue and Q/H format candidates below; their format, quota and
+implementation choices remain open. Earlier source/review baselines describe
+their recorded candidates, not qualification of this amendment.
+
 ## 1. Reading the tables
 
 | Term | Meaning |
@@ -31,7 +39,7 @@ produce these tables.
 | **C — catalogue** | Immutable public source definitions delivered as a binary resource or generated read-only image data with the application release. Reviewed preset, configured and active membership remain separate under OPEN-CAT-02/R-04/OD-03; an entry alone grants no use or replacement permission. The current direction is one complete hardened MSIX; the retained MSI alternative needs its own installed-file trust and lifecycle qualification. Exact representation remains unselected. |
 | **Q — quality store** | Mutable advisory summaries, historical dictionaries, coverage and sparse events. SQLite typed rows and a bounded versioned JSON snapshot remain alternatives. |
 | **H — optional history** | Justified detailed observations or proof material, stored as completed external segments or batches inside Q. It does not supply live authentication or clock authority. |
-| **E — existing owners** | Separately owned policy, broker journals, trusted bounds, recovery records, drift prior and optional secret storage. E does not mean one combined database. |
+| **E — existing owners** | Separately owned policy, broker journals, trusted bounds, recovery records, drift prior, public leap dataset and optional secret storage. E does not mean one combined database or one confidentiality requirement. |
 | **U — user data** | Preferences, display projections and explicitly saved support exports. |
 | **R — publisher records** | Curation, release evidence and signing custody outside the installed client. |
 | **Format specification** | Identify the storage mechanism, record encoding, batch/file container and compression separately. For example, `SQLite BLOB + versioned Protobuf batch + Zstd` names three different layers and remains only a candidate. |
@@ -49,6 +57,7 @@ exports and independently owned mandatory stores are separate.
 | What is retained | Where | Data format | Why here | Day-30 volume / maximum status | Security model |
 | --- | --- | --- | --- | --- | --- |
 | **Release catalogue:** sources, operators, dependence groups, country/region or explicit unknown, endpoints, protocols, optional addresses and public provenance. Each Roughtime record requires public-key algorithm/bytes and exact profile binding from the first schema. DATA-02–05; public subset of DATA-01. | C: immutable package resource or generated read-only installed-image data; bounded admitted index in RAM. | **If a separate resource is chosen:** constrained, schema-defined CBOR is the recommended comparison candidate. Generated immutable Rust tables remain a leading release-bound alternative; Protobuf is conditional. JSON may be a publisher input or comparison reference, not the preferred shipped format. Final schema and encoding remain unselected. | Infrequently updated shared source definitions for hundreds of records; reviewed preset membership and authorized local policy remain separate. | Catalogue byte/record caps are **unset**. It does not grow per poll. The 16-active-source bound does not cap the complete catalogue or authorize active objects for all its entries. | Authenticate the exact artifact under the release trust contract; bound resource loading or validate generated construction, then enforce identities, endpoints, profiles and current policy. Recognizing inert Roughtime metadata does not enable or qualify its runtime. A separate project signature is unselected. Authenticity does not establish freshness or defeat whole-release rollback. |
+| **Reviewed leap history, future coverage and effective UTC rule.** Separate domain owner; DATA-02 references identity, DATA-09 applicability. | E: immutable compiled data in the same authenticated complete release; bounded read-only domain view. | Normalized versioned data generated from reviewed pinned inputs, with exact dataset/rule revision and digest. This selects no C/Q/H encoding. | Public authority for interpreting events and the continuous-UTC rule effective 20 May 2027; independent of optional secret restoration and source announcements. | No per-poll or day-30 growth. Import byte/record/date/work limits are frozen by S1.4 before implementation. | Existing release integrity/version-transition rules; no runtime external leap-file downloader, arbitrary input path or new trust root. Absent/expired future coverage preserves valid history and may remain `Unknown`; corrupted package bytes remain an integrity failure. Updates cannot reset protected correction continuity. |
 | **Authorized machine/source/security policy, local overrides and future NTS pin policy.** DATA-06–07 and authoritative local definitions. | E: broker or other explicitly authorized policy owner; narrow validated RAM projections. | **Strict versioned UTF-8 JSON is already selected for machine policy.** Future pinset schema remains unselected; choosing a new catalogue encoding does not replace this policy contract. | Authority-bearing settings need their own writer, revision and recovery lifecycle. | Total byte cap **unset**; bounded policy state rather than a 30-day observation archive. | Authorized writes, revision/CAS checks, protected file and parent-directory rights, qualified durable replacement and migration. Invalid mandatory policy cannot silently become permissive defaults. |
 | **Resolution, network, time-base and applicability-generation contexts.** DATA-08–09. | Current contexts in RAM; only necessary historical dictionaries and bindings in Q/H. | Typed RAM IDs/maps; typed SQLite rows or JSON snapshot records in Q; fields/dictionaries of the chosen H representation. | Avoid repeating descriptions in every observation while preserving compatibility and provenance. | Shared Q/H budgets. Historical context and dictionary cardinality caps remain **unset**. | Historical addresses, generations and prior verification results do not authorize a current connection or prove freshness. Re-admit live state and reject incompatible mappings. |
 | **Current exchanges, recent samples and estimator state.** Live DATA-10–12 and DATA-15. | Bounded engine/core RAM. | Rust structs/enums, arrays and bounded rings; no hot-state compression by default. | Predictable live access and mutation without database or codec work on timing-critical paths. | Up to **16 × 64 = 1,024 regression samples** under the architecture's count bounds. Total bytes are not frozen; pending native work, helper state and other buffers are additional. No 30-day accumulation in this live window. | Checked units, source identity, correlation, generations and private domain construction. Do not restore pending exchanges. Logical retirement does not release native handles, buffers or permits before actual native completion. |
@@ -56,6 +65,18 @@ exports and independently owned mandatory stores are separate.
 | **NTS association secrets and optional protected snapshots.** DATA-22. | Private bounded working RAM; optional separate protected store. | Private RAM buffers/association objects. Persistent candidate: a versioned encrypted and authenticated envelope; exact canonical encoding and cryptographic suite remain **unselected**. | Minimize secret lifetime and keep secret custody separate from catalogue, statistics and diagnostics. | Byte/lifetime limits **unset**. `NoPersistentCache` means zero application-created secret snapshots, not zero nonsecret lifecycle metadata or proof of no OS paging/dump copies. | Follow the qualified protected-storage roots, exact-envelope binding, epochs and recovery rules. No secret copies in C/Q/H/UI/logs. Public-key wrapping plus AEAD alone does not establish independently trusted-writer authenticity. |
 
 ## 3. Table B — quality, evidence and optional history
+
+Source profiles and historical contexts retain provenance for unsmeared UTC,
+announcement behavior separately, the admitted leap dataset/effective-rule
+revision, all supported date/era hypotheses, scale segment and mapping generation.
+Observation summaries retain raw LI, the possible exchange span and bounded
+admission reason. All-LI=0 can remain useful; a demonstrably contradictory
+announcement excludes that observation, without removing healthy peers or
+preventing fresh consistent re-entry. Unknown future coverage alone permits
+ordinary Tracking outside the calendar-derived guard; it is not a storage error.
+Guard transitions, post-guard acquisition and residual corrections retain their
+existing fresh-quorum and actual-acknowledgement rules. Q/H cannot supply leap
+authority, merge incompatible segments or restore a pending exchange.
 
 | What is retained | Where | Data format | Why here | Day-30 volume / maximum status | Security model |
 | --- | --- | --- | --- | --- | --- |

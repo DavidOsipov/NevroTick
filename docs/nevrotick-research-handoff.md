@@ -1,6 +1,6 @@
 # NevroTick — research handoff for the next AI
 
-**Document:** NV-RESEARCH-001, revision 1.3<br>
+**Document:** NV-RESEARCH-001, revision 1.4<br>
 **Prepared:** 29 October 2026, Asia/Tbilisi  
 **Owner:** David Osipov  
 **Input:** [Owner decisions NV-DEC-001](nevrotick-owner-decisions.md), [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md)  
@@ -14,6 +14,18 @@ The [focused plan](plans/windows-msix-store.md) and existing W11-W10/W11-W05 tas
 own that work; Store preapproval and MSI completion are not preparation gates.
 Technical qualification and actual Store outcome remain open; existing execution
 holds and Core priority remain.
+
+**4 November 2026 leap-policy amendment:** [architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](plans/leap-second-policy.md) select reviewed compiled leap history,
+separate future coverage and the continuous-UTC rule effective **20 May 2027**,
+distributed in the authenticated complete release. Correct unsmeared sources
+remain usable even if all send LI=0. Unknown future coverage alone does not block
+ordinary tracking outside bounded ambiguity guards. The [S1.4 task](../tasks/s1.4-leap-policy.md)
+owns the pure contract; R-02/R-04/R-08 carry its date, provider and native evidence
+requirements into their existing assignments. The kernel alone executes explicit
+events; no source vote, global leap-setting change or synthetic ±1-second broker
+request is adopted. Source/design selection is separate from implementation,
+native qualification and the existing execution holds.
 
 ## 1. Assignment and limits
 
@@ -83,6 +95,26 @@ Specify:
 
 Study [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html#section-6), [RFC 8915](https://www.rfc-editor.org/rfc/rfc8915.html#section-8), and the selected Chrony [configure](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/configure) / [util.c](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/util.c) era mapping. Do not derive the era solely from the broken OS clock. Do not claim a lower-bound date, NTS label, fresh handshake or multiple aliases alone proves UTC.
 
+### Leap-aware date admission
+
+Carry the admitted release dataset/effective-rule
+revision, complete true-date/era hypotheses, source-scale provenance and compatible
+segment into recovery. A host date wrong by a century cannot select the regime
+or establish calendar freshness. An interval straddling the rule's effective date
+can proceed only when all admitted hypotheses yield the same event-free
+interpretation and admissible target. A hypothesis crossing a possible event
+withholds the dependent sample's clock authority, not independent bootstrap
+acquisition or NTS transport. Do not make discipline eligibility a prerequisite
+for obtaining the date evidence needed to decide that eligibility.
+
+Qualify useful ordinary Tracking with an unknown-future qualifier outside the
+calendar-derived guard. In a leap-capable regime, unknown coverage protects every
+possible month-end, not just June and December; covered continuous UTC needs no
+recurring legacy guard. Post-guard observations must be fresh, initiated after the
+guard and wholly within one compatible segment, with unchanged quorum/broker
+limits. Historical TAI−UTC knowledge, future scheduling and fresh NTP UTC evidence
+are distinct; a missing current conversion does not by itself prohibit tracking.
+
 ### Floor construction and supersession
 
 Identify the exact uncertainty quantity, fault/delay assumptions, model version and supporting source evidence used to derive a saved floor. A regression standard error, confidence interval, root distance and conservative bound are not interchangeable. An authenticated, intact record can still contain a floor ahead of true UTC after previously accepted bad evidence; strict decoding and corruption recovery do not address that case.
@@ -100,6 +132,9 @@ R-02/R-04 must freeze a decision table naming the majority denominator, configur
 | Case family | Expected property |
 | --- | --- |
 | Local date ±100 years; true date inside/outside supported interval; 2036 rollover; era boundaries | Correct independent interpretation when supported; explicit rejection when ambiguous or out of range |
+| Full date interval spans a leap event or the 20 May 2027 rule boundary; valid event-free hypotheses as control | No convenient midpoint/host-date regime; ambiguous samples have no clock authority while independent acquisition continues. Identical admissible interpretations across the rule boundary proceed without an artificial clock impulse |
+| Unknown future leap coverage, expired source metadata and all-LI=0 unsmeared sources; covered history and fresh same-segment observations | Historical knowledge survives metadata expiry; useful Tracking continues outside bounded possible-month-end guards with honest coverage status and fresh post-guard quorum |
+| A demonstrably false LI=1/2 claim beside healthy peers; later consistent observation | Exclude the contradictory observation, preserve healthy votes and fresh re-entry; no dynamic leap schedule, indefinite guard renewal or lowered minimum |
 | No trusted floor, stale build, corrupted state, restored old snapshot | No permissive default or unearned date trust |
 | Intact future floor from previously accepted bad evidence; correct independent sources return | Execute only the approved supersession/refusal path; retain provenance and consumed broker authority |
 | One malicious NTS source, duplicate operator aliases, contradictory intervals, loss of quorum | No duplicate votes, no silent minimum reduction, no unauthenticated substitute |
@@ -158,7 +193,7 @@ Do not select Ubuntu's distro-only endpoints for NevroTick merely because they a
 
 The NTP Pool preference is recorded, but Pool service is plain NTP and a shipped default needs an allocated vendor zone. See [authentication](https://news.ntppool.org/docs/authentication/) and [vendor policy](https://www.ntppool.org/vendors.html). The recommendation is NTS for normal operation and Pool for the deliberate plain profile/helper role. If David wants Pool-only as the primary default instead, present that explicit DEC-5 change and consequences. Do not infer it from the provider name or treat the supplied NTS list as approval of the four-host shortlist.
 
-Produce one admission record per selected provider: official identity and ports, operator/reference dependencies, geographic suitability, permission/terms and date, leap/smear policy, DNS/delegated endpoint rules, normal/burst/KoD limits, TLS/AEAD/Windows-verifier behavior, observation environment and open conditions. Apply bounded backoff and provider restrictions. Do not freeze IP addresses or treat two rotating Pool results as assured independent operators.
+Produce one admission record per selected provider: official identity and ports, operator/reference dependencies, geographic suitability, permission/terms and date, leap/smear policy and its operator/configuration provenance, separately recorded announcement behavior, DNS/delegated endpoint rules, normal/burst/KoD limits, TLS/AEAD/Windows-verifier behavior, observation environment and open conditions. V1 requires admitted unsmeared-UTC provenance; unknown or smeared scale is ineligible, but an unsmeared provider's absent/unknown announcement behavior is not a scale failure. NTS, LI=0 and agreement alone do not prove scale. Apply bounded backoff and provider restrictions. Do not freeze IP addresses or treat two rotating Pool results as assured independent operators.
 
 ## 7. R-05 — Windows trust with a wrong system date
 
@@ -230,6 +265,17 @@ research. Store-managed updates need the selected complete lifecycle qualificati
 For every relevant ASVS requirement, separate literal applicability, native adaptation, implementation, observation and unresolved exception. Bring David individual evidence-backed decisions about hardware-backed isolation, authentication/revocation semantics, in-use secrets, logging, delegated retrieval or plain-NTP assurance. No blanket L3 acceptance has been granted.
 
 Continue the existing phase-specific investigations for account/token/DACL separation, race-safe IPC, real Windows rate/step/leap semantics, recovery after process death, exact supported builds, installer-tool terms, native resource budgets and complete MSIX feasibility. Propose a decision only when an actual tradeoff remains after authorized investigation. Keep full UI qualification deferred at the UI-M0 reentry triggers; completing a fixture prototype closes no later accessibility gate.
+
+For OPEN-7, apply the selected [Windows leap contract](plans/leap-second-policy.md#6-windows-contract-and-limits)
+through W11-W02/S0.4/P4. The open evidence now concerns supported-build process
+presentation/conversions, actual kernel knowledge and event behavior, finite
+guard/cancellation/recovery bounds and clock ownership. Do not reopen an extra
+event scheduler or change global OS leap state to make a test pass. Observe
+OS-handled, absent and unexpected events of both signs, including no extra
+correction when the measured residual is zero, lost acknowledgements and fresh
+reacquisition. Timer expiry or kernel event execution is not an acknowledged
+broker effect. No reviewed API documentation or portable fixture closes this
+native gate.
 
 For native mitigations, follow [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) and [hardening section 6.4](windows-time-development-hardening.md#64-per-process-mitigation-qualification). Resolve the actual SCM child-policy installation/readback/denial path, required startup failure and ownership-aware recovery, exact native-provider compatibility, and standalone-helper versus MSI DLL hosting. Strict CFG and CET strengthening remain separately qualified candidates. Do not replace the two-service topology, introduce a launcher or silently modify host policy to close an evidence gap.
 

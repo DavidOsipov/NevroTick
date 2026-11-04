@@ -27,6 +27,16 @@ adds concrete Windows API cases to these same assignments. Its later
 preserves the original receipts and current execution holds; it creates no new
 storage work-item or acceptance catalogue.
 
+**Leap-policy integration, 4 November 2026:** [NV-LP-001](../docs/plans/leap-second-policy.md)
+and [architecture §10.5](../docs/windows-time-architecture.md#105-leap-seconds-and-time-scales)
+assign immutable compiled public leap data to the authenticated complete release
+and pure domain owner. Apply the [plan's revised state separation](../docs/plans/windows-protected-storage.md#2-owners-data-classes-and-restoration)
+when preparing ST-W01 or later recovery work. The [S1.4 task](s1.4-leap-policy.md)
+owns history/coverage/effective-rule and guard implementation; no new ST-W/ST-T
+item or storage-provider prerequisite is created. This is a documentation
+integration, not execution of the source-only card, native tests or earlier
+receipt refresh.
+
 | Reconciliation with the predecessor | Disposition |
 | --- | --- |
 | Existing VBS/TPM/fresh optional state/no-cache direction, exact committed envelope, installation witness and finite slots | Retained; exact construction, default and provider/build/account/profile row remain open. No error-induced DPAPI/software/plaintext fallback. |
@@ -69,6 +79,13 @@ and [CNG admission](../docs/plans/windows-protected-storage-upstream-lessons-2.m
 
 Prepare the following source-bound outputs in this record or the existing
 canonical plan section that owns the decision:
+
+First identify the separate data classes: compiled public leap history/rules,
+optional secret snapshots and mandatory continuity. The public dataset's
+revision/digest may be referenced by restored evidence, but its bytes do not
+enter the optional-cache encryption/fallback construction. Distinguish a valid
+bundle with unknown future coverage from a corrupt package or mandatory record;
+neither key loss nor cache reset changes leap authority or refunds broker budgets.
 
 1. Identify the candidate wrapping/signing operations, exact authenticated bytes,
    independent expected crypto result, actual-key evidence, per-call silence,
@@ -258,6 +275,19 @@ authenticated-connection notification and stale/Unknown presentation remain
 deferred until their existing re-entry gate; no live storage or service UI enters
 UI-M0. Final package identity, native account/profile and lifecycle results have
 their own acceptance owners.
+
+For restored time-model/evidence consumers, carry the admitted dataset/rule
+revision, complete supported date/era hypotheses and compatible scale segment
+through current mapping and guard checks. Unknown future coverage can remain a
+qualifier on useful Tracking outside bounded guards; it is not an optional-store
+failure or a reason to wait indefinitely for storage recovery. The ordinary
+source/age/quorum and independent-bootstrap rules still apply. All-LI=0 unsmeared
+sources remain useful; a demonstrably contradictory announcement is excluded
+only through current observation admission, not by rewriting stored history or
+globally disabling healthy peers. Preserve fresh re-entry and protected continuity
+through updates/rollback. OS event execution cannot settle a broker outcome or
+justify a synthetic extra second; those checks remain S1.4/OPEN-7 and the existing
+CHECK-10/11/12/15/18/23 owners.
 
 ## 6. Evidence, review and continuation
 

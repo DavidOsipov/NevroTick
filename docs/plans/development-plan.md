@@ -25,6 +25,7 @@ experiment pause remain binding; general host Windows execution is not reopened.
 Agent navigation: [implementation contracts](#3-mandatory-explicit-contracts-during-implementation),
 [phase skill map](#5-required-skill-reading-and-use-by-phase),
 [phase acceptance](#6-phase-implementation-and-acceptance-gates),
+[selected leap-policy handoff](#42-apply-the-selected-leap-policy),
 [next task](#7-next-executable-task-for-a-development-agent),
 [protected-storage task](../../tasks/windows-protected-storage.md),
 [Windows 11 integration task](../../tasks/windows11-integration.md),
@@ -110,7 +111,7 @@ integration, not read-only source analysis or independent pure work.
 | Domain/protocol owner | Raw bounded bytes → inert records → checked values/observations | No sockets, ambient clock, Windows calls or privileged effects in the pure core. Binary NTP/NTS has protocol-specific parsers. |
 | Numerical owner | Admitted observations → bounded history → regression/majority/combination → estimate/proposal | An estimate or proposal is not authority and is not an applied correction. |
 | Engine owner | Admitted endpoints → DNS/UDP/TLS/native jobs → authenticated observations → core | Network-facing, no clock privilege; engine-only bounded runtime. |
-| Broker owner | OS-authenticated request + current policy/ownership/budgets → serialized guard/effect → actual acknowledgement | Sole clock-effect owner; hostile authorized engine is part of the threat model. |
+| Broker owner | OS-authenticated request + current policy/ownership/budgets → serialized guard/effect → actual acknowledgement | Sole application owner of ordinary clock correction; the Windows kernel executes explicit leap events under §10.5. Hostile authorized engine is part of the threat model. |
 | Platform owner | Narrow role-specific Windows adapter → real token/handle/SCM/clock result | Shared `windows-platform` code grants no generic privilege or command surface. |
 | UI owner | Coherent admitted snapshot → presentation; user intent → independently authorized receiver | Normal user, no direct clock/service-policy writes; UI checks convey no authority. |
 | Lifecycle/release owner | Approved complete package + protected journal → install/maintenance/restoration | One complete MSIX, both machine services, UI and narrow helper; supported provisioning and recovery, no separate engine prerequisite. |
@@ -254,6 +255,25 @@ Before each dependent implementation, freeze scenario bounds, expected transitio
 and source/function provenance in its existing task. This amendment selects no
 new numerical constants, crypto graph, full-history persistence or Windows effect.
 
+### 4.2 Apply the selected leap policy
+
+[NV-LP-001](leap-second-policy.md) and
+[architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales)
+select the design; implementation and native qualification remain pending. Use
+the [S1.4 task](../../tasks/s1.4-leap-policy.md) for its bounded contracts and case
+matrix. Preserve the current S1.3 priority and existing execution holds.
+
+| Existing stage / owner | Required handoff and observable exit |
+| --- | --- |
+| S1.4 after selection prerequisites; domain/core | Keep immutable historical offsets separate from future coverage and the effective-dated continuous-UTC rule. All-LI=0 remains usable; local knowledge drives the event guard, never LI-majority event learning. Exercise absent/expired metadata, unknown coverage and the 2027 no-impulse boundary. CHECK-7/25/26 and policy CHECK-6/8/11/14. |
+| P2; protocol/engine | Carry raw LI, source-scale provenance, the whole possible T1–T4 span and current policy/mapping generations into admission. Reject a contradictory observation without resetting healthy peers. Unknown future coverage permits same-segment tracking with a qualifier outside possible-event guards. CHECK-6/7/8/11/14/25. |
+| S0.4/P4 and W11-W02; platform/broker | Qualify kernel-only explicit leap execution, process presentation, mapping, finite guard/cancellation and fresh residual recovery. No extra scheduled leap, global leap-setting change or synthetic ±1-second correction. CHECK-10/11/12/27; native assumptions remain open. |
+
+The authenticated complete release carries the reviewed dataset; no runtime leap
+file, downloader or additional trust root is selected. Expiry does not erase
+history or create a synchronization shutdown after the continuous rule applies.
+Neither existing fixture results nor upstream source inspection closes these gates.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading
@@ -388,6 +408,7 @@ owners. Keep sockets/OS clocks outside them.
 | Regression | Known offset/drift/noise trajectories meet predeclared error and uncertainty envelopes; sample aging/pruning remains bounded. Applied corrections use actual acknowledgements or a documented stable coordinate system. | CHECK-7/10, AC-19 |
 | Selection | Independently specified survivor/principal/supporter sets and reasons match. Fast wrong peers, duplicate identities, lost peers and two-source disagreement cannot manufacture votes, lower minimum agreement or silently become a single-peer profile. | CHECK-7/8, AC-03 |
 | Combination/discipline | Preserve different offset/frequency weighting, principal hysteresis and uncertainty. Step/slew/holdover proposals remain pure, bounded and invalidated by modeled generation changes; no feedback from merely requested effects. | CHECK-7/8/10 |
+| Leap knowledge and guard — S1.4 | Apply [NV-LP-001](leap-second-policy.md): separate history/future coverage, admit silent LI=0 sources, preserve complete date/exchange intervals and model guard/reacquisition without synthetic leap effects. Unknown future coverage alone does not prohibit event-free tracking. | CHECK-6/7/8/11/14/25/26 |
 | Contracts/tooling | Real entry points reject construction/transform bypasses; healthy controls succeed. Nonzero tests, lint/SAST failure propagation, source provenance, reviewed security-module/critical-file scope and applicable coverage/mutation gates are established. | CHECK-19/20/25/26 |
 
 Use exact/analytic and independently implemented reference calculations, adversarial
@@ -428,6 +449,7 @@ not production NTS replay qualification; retain OPEN-5/6's unresolved bounds.
 | Acceptance | Independent observation and valid/fault controls | Mapping |
 | --- | --- | --- |
 | NTP transport and KoD | Controlled IPv4/IPv6 peers exercise correlation, endpoints, eras and generations. Test reviewed RATE backoff, DENY/RSTR cessation, unknown codes, forged/stale/replayed controls and extreme poll claims. Observe sends and source state; KoD never enters time arithmetic/history or lowers agreement policy. A healthy neighboring source remains usable. | CHECK-6/8/27 |
+| Leap claims and source scale | Preserve authenticated bytes and raw LI through staged admission. All-LI=0 unsmeared UTC peers remain candidates; contradictory observations and smeared/unknown-scale sources cannot acquire discipline authority. Recheck whole exchange span, age and policy/mapping generations after delayed completion; preserve healthy identities. | [S1.4/P2 handoff](../../tasks/s1.4-leap-policy.md), CHECK-6/7/8/11/14/25 |
 | NTS-KE | TLS 1.3 baseline, `ntske/1`, verified identity, complete request flush, bounded framing/cardinality/end rules and offered protocol/AEAD negotiation. Wrong identity, unknown critical records, truncation and unoffered algorithms fail without a usable association. | CHECK-6/9/26 |
 | RFC 8915 and cipher preference | Close the linked checklist with actual entry-point cases for KE errors/warnings/closure, exporter/nonce/AD, cookies, trailing fields, NTS KoD/NAK and retry reset. Observe AES-GCM offer order and negotiated suites; qualify provider acceleration/fallback without raising the CPU floor or admitting a new graph. | CHECK-6/9/17/26 |
 | NTS packets | Independent exporter/AEAD known-answer and peer tests cover direction, UID, origin, replay, corrupt tag and wrong key. Fresh request UID has at least 32 CSPRNG octets; use the required AES-SIV-CMAC-256 profile through an admitted maintained library, not new cryptographic primitives. | CHECK-6/20/26 |
@@ -480,8 +502,16 @@ recovery, crash-loop limits and successor/ambiguous ownership without blind rese
 Observe-only startup performs no clock write; transition from active correction
 completes only current-owner cleanup and does not implicitly hand back W32Time.
 
-Freeze supported date/era, leap owner, automatic/exceptional correction envelopes
-and one-use approval rules before enabling them. OD-02's approximately 100-year
+Apply [NV-LP-001](leap-second-policy.md) under S0.4/P4 and W11-W02: the Windows
+kernel alone executes explicit leap events. Qualify process presentation and
+conversion, cancellation before the event guard, mapping invalidation and fresh
+post-guard quorum. Correct only the measured residual through existing authority;
+do not add a scheduled leap or synthetic ±1-second correction. Unknown OS event
+knowledge limits event-time accuracy; a portable guard model proves no native result.
+
+Freeze supported date/era, native leap mapping/guard/recovery bounds,
+automatic/exceptional correction envelopes and one-use approval rules before
+enabling them. OD-02's approximately 100-year
 authenticated-recovery target is not an unlimited step policy. “12 hours” is not
 an approved plain-NTP constant. Test valid neighbors and forbidden effects for
 CHECK-5/10/11/12/13, applicable CHECK-3/25/27 and AC-08/11/12/13/14/19. P4
@@ -672,6 +702,7 @@ At each bounded checkpoint:
 
 | Owner / existing workstream | Disposition and next action |
 | --- | --- |
+| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Selected design, implementation pending. Prepare the next bounded pure contract after current S1.3 prerequisites; route protocol admission and native mapping/recovery to their existing owners. This adds no prerequisite to the current S1.3 checkpoint and lifts no execution hold. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01's source card is ready when the acquisition owner reaches it. Reuse completed Learn research and record dispositions in the Windows task; no broad survey or native probe is needed. |

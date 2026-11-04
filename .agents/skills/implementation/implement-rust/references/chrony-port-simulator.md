@@ -143,6 +143,29 @@ after discontinuity and accepted leap/time-scale ownership. Compatible supporter
 need not be independent error samples. Never average away all uncertainty or infer
 tracking from reachability.
 
+### Leap and time-scale slices
+
+For leap knowledge, LI admission or event simulation, read
+[architecture §10.5](../../../../../docs/windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](../../../../../docs/plans/leap-second-policy.md) before adapting
+upstream behavior. Keep historical offsets, future coverage and native mapping
+separate. Do not copy a missing-expiry rejection, an epoch-zero expiry default or
+dynamic LI-majority event learning. Expired metadata does not invalidate history;
+unknown future coverage permits qualified event-free tracking. Use possible UTC
+month-ends in the unknown leap-capable regime, not a June/December-only guard.
+
+Model all-LI=0 unsmeared sources as useful controls. LI silence neither creates
+nor cancels a locally known event; a contradictory observation cannot reset
+healthy peers or renew a guard. Use the full admitted date interval and possible
+exchange span, explicit scale provenance and current policy/mapping generations.
+
+Model the Windows kernel as the sole executor of explicit leap events. Exercise
+known, missing and unexpected native handling, both event signs, crossing/late
+exchanges and guard cancellation/reacquisition. Recover only the fresh measured
+residual under existing authority; add no synthetic ±1-second action or global
+leap-setting change. Pure traces qualify no native mapping or event-time accuracy.
+Keep S1.3 prerequisites before the [S1.4 task](../../../../../tasks/s1.4-leap-policy.md).
+
 ## Deterministic event simulator seam
 
 Use a portable explicit interface, with no real sleeps, sockets or clock writes.

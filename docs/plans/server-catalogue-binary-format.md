@@ -31,6 +31,12 @@ The complete catalogue is distinct from the active association set. Hundreds of 
 | E: policy, journals, trusted bounds and secrets | Existing separate authorized owners and lifecycle contracts | Catalogue refresh/repair/reset cannot delete or renew E authority. NTS secret persistence retains the qualified VBS/TPM/no-persistent-cache contract. |
 | R: publisher collection/provenance | Maintainer workspace and reviewed repository inputs/evidence, outside installed runtime | Raw downloaded pages, full collection logs, Python tooling and signing secrets are not client catalogue contents. Keep only client-required public provenance. |
 
+**Leap-policy integration, 4 November 2026:** [NV-LP-001](leap-second-policy.md#3-knowledge-and-distribution-contract)
+owns the separate public E dataset: reviewed history, future coverage and the
+effective UTC rule, compiled immutably into the same authenticated complete
+release. Its revision/digest and rule provenance do not select C's encoding or
+make optional Q/H or secret-cache availability a dependency.
+
 Do not put the sole mandatory restoration record in automatically disposable service state. Actual paths, owners, replacement rights and removal/Reset recovery remain under the existing architecture/MSIX contracts. Choosing ProgramData alone is no enforcement evidence.
 
 As arithmetic only, 300 records at an assumed 512 bytes each equal 153,600 bytes (150 KiB), excluding indexes and runtime overhead. No measured average or maximum is implied. Catalogue caps are unset. The existing 32-MiB target is combined engine/broker **steady-state private bytes**, with peaks reported separately; the 20-MiB compressed complete-MSIX target includes all required payloads. Both remain unmeasured product goals here. Q's separate proposed disk allowance is not another RAM budget, and private bytes alone do not account for mapped/image residency.
@@ -68,7 +74,8 @@ These are proposed logical records, not finalized CDDL, Rust types or database t
 | Catalogue envelope | Format/schema identity; catalogue namespace and lineage/revision; release binding; required schema features and declared data profiles; exact payload identity; declared collection counts; provenance reference | Schema version, ordered data revision, application version and runtime generation have different meanings. Validate declared counts against bounded decoded contents; do not allocate from them unchecked. Unknown incompatible schema semantics reject the candidate atomically. A colocated digest alone is no authentication. |
 | Source | Stable source ID; fixed-service or dynamic-pool kind; nominal operator/dependence references or explicit unknown; service-definition references; usage and provenance references | A display name, hostname or current IP is not the permanent identity. One source can expose several protocol services without gaining independent votes. A pool alias does not declare the operators of all future DNS answers. |
 | Operator and dependence metadata | Stable nominal operator ID; typed relationships, evidence and uncertainty | Common administration, upstream time, site/hosting and implementation are distinct relationships. Unknown stays explicit; neither geography nor a shared key proves independent operators. Selection authority remains with its existing owner. |
-| Geography and time behavior | Required country/region value or explicit unknown at the appropriate source/endpoint scope; time-scale/leap/smear policy reference with provenance and compatibility status | Keep operator domicile, advertised service location, anycast scope and IP-derived estimates distinct. Known, unknown and incompatible time behavior cannot collapse into an assumed UTC default. Preserve DATA-03/05; finer location stays optional. |
+| Geography and time behavior | Required country/region value or explicit unknown at the appropriate source/endpoint scope; time-scale/leap/smear profile with operator/configuration provenance and compatibility status; separate announcement-behavior claim | Keep operator domicile, advertised service location, anycast scope and IP-derived estimates distinct. V1 requires admitted unsmeared-UTC provenance; unknown announcement behavior does not mean unknown scale. LI=0 remains an ordinary candidate even if every source is silent, but proves neither scale nor absence of an event. Preserve DATA-03/05 and NV-LP-001; finer location stays optional. |
+| Leap-policy reference | Exact admitted release-bound leap-dataset revision/digest and effective-rule revision/provenance needed to interpret time profiles and retained observations | Reference the separate compiled domain dataset, not a mutable C/Q/H copy. Keep historical coverage, finite future coverage, `Unknown` and `ContinuousFrom` distinct under NV-LP-001 and DATA-02/09. |
 | Endpoint | Stable endpoint ID; exact service/protocol role; transport; typed normalized host/address; explicit port; profile reference | Separate DNS identity, literal address and optional hints. An endpoint cannot mix protocol fields merely because their primitive types match. Its destination remains subject to the current resolver/network policy. |
 | Plain NTP service | Fixed operator endpoint versus dynamic pool alias; explicit permitted query-role policy reference; usage/vendor-zone provenance | Ordinary plain synchronization, helper hints and a future reserve are different policy roles. DNS results are observations, not permanent trusted pool membership. Listing the service enables none of these roles by itself. |
 | NTS service | Expected NTS-KE authentication identity; KE endpoint; claimed versus admitted support; allowed negotiated-destination policy reference | Keep the KE connection target, verified identity, negotiated NTP destination/port and actual peer separate. Actual KE results belong to the association owner. Never infer an NTP port from the KE port; certificate observations are not pins [C6]. |
@@ -164,6 +171,12 @@ The pinned ecosystem also contains an experimental ML-DSA-44 entry. It is exclud
 
 The tool belongs to R/publisher preparation. It collects candidate NTP/pool, NTS and Roughtime definitions, normalizes them, produces a reviewable semantic diff and eventually emits the selected binary resource or generated tables from approved inputs. Collection is not default admission, signing or publication.
 
+The collector preserves source-scale and announcement claims with their evidence;
+it cannot promote LI, agreement or a fetched list into leap knowledge. Offline
+leap ingestion remains under [S1.4](../../tasks/s1.4-leap-policy.md), from reviewed
+pinned inputs. This adds no runtime downloader, implicit network build/probe,
+new trust root or clock authority; §6.2's explicitly bounded publisher fetch stays separate.
+
 ### 6.1 Source adapters
 
 | Family | Initial input candidates | Required handling |
@@ -219,6 +232,12 @@ Old and new processes may coexist during update. Stage and admit the complete re
 An invalid initial catalogue produces an explicit source-catalogue failure under current acquisition policy. It must not silently select plain NTP, accept unknown keys, create a fresh policy or clear mandatory conflicts. A failed replacement preserves the prior valid in-process generation where its trust/lifecycle contract still permits use; prior validity is not eternal eligibility.
 
 A badly wrong clock makes wall-time-only catalogue expiry circular. Authenticity, catalogue freshness, key retirement and whole-package rollback require separately defined evidence and recovery. OPEN-CAT-01 owns format/trust-root strategy, OPEN-CAT-02 owns roster/profile/cold-resolution admission, and OPEN-CAT-03 owns freshness/withdrawal/rollback, alongside time assurance. Do not introduce an arbitrary maximum age or assume a valid signature prevents replay.
+
+Unknown future leap coverage in an otherwise valid supported release is not an
+invalid catalogue or a global tracking veto. NV-LP-001 owns all-date-hypothesis
+admission, bounded possible-month-end guards, contradictory-LI observation
+exclusion and fresh re-entry; provisional date acquisition must remain possible
+without first obtaining discipline-eligible samples.
 
 For optional state, distinguish safe discard from required historical interpretation. A new catalogue must not reinterpret an old source ID, transfer its score to a different operator/key, or reset enforced restrictions. Retired dictionaries can be reclaimed only after their retained references are handled under the Q/H contract.
 

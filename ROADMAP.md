@@ -404,6 +404,10 @@ no claim of authenticated production time yet.
   by decoding to milliseconds and reconstructing it.
 - [ ] Produce mode-4 replies with valid, truthful reference, receive and transmit
   timestamps, leap/stratum/root fields and era interpretation.
+  Reuse the pure history/UTC-rule and silent-source semantics of
+  [NV-LP-001](docs/plans/leap-second-policy.md); qualify Android's served timestamp
+  and local clock-owner behavior at AND-C01/AND-1. The selected Windows kernel
+  ownership mechanism is not an Android implementation claim.
 - [ ] Derive served time from a validated UTC estimate plus a monotonic clock
   that includes suspend. Avoid feeding the same adjustable Android wall clock
   back into its own source. Reject cross-boot monotonic anchors.

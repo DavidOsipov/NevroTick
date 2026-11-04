@@ -14,6 +14,17 @@ Read [the security contract](../CONTRACT.md), architecture sections 5–8, 12 an
 5. Keep unauthenticated NTP-only mode, NTS-only tracking and opt-in bootstrap hints visibly separate. Loss, DNS/TLS/AEAD/identity failures never silently enable plain discipline, reduce two-helper requirements or change normal source statistics/drift/leap state through hints.
 6. Protected files need strict bounded versioned records, fixed authorized locations, actual ACL/handle/path checks and atomic replacement at current owner. Reject corrupt mandatory policy/journals; optional priors follow explicit reacquisition. Safe-looking paths prove no protection against reparse/replacement or check/open races.
 
+For leap metadata or LI admission, apply
+[architecture §10.5](../../../../docs/windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](../../../../docs/plans/leap-second-policy.md). Bound offline dataset
+ingestion; `#h` is a consistency checksum, not publisher authentication. Separate
+historical validity from future coverage; add no runtime leap-file path, downloader
+or trust root. Preserve raw LI through authentication and current semantic admission.
+LI=0 silence remains valid; exclude a demonstrated contradictory observation
+without resetting healthy identities. Require explicit unsmeared-scale provenance,
+complete exchange-span and current policy/mapping-generation checks before effects.
+LI claims authorize neither kernel event changes nor synthetic clock corrections.
+
 Select real-entry [qa-adversarial-inputs](../../testing/qa-adversarial-inputs/SKILL.md), [qa-structured-fuzzing](../../testing/qa-structured-fuzzing/SKILL.md), contract and resource tests. Include malformed and valid-shaped unauthorized/stale cases, plus repeated individually valid inputs that exhaust aggregate budgets. Pair every hostile family with useful accepted neighbors; verify forbidden state/effects, bounded redacted rejection/diagnostics and cleanup. Record raw inputs/options and reached seam; harness rejection proves no product behavior.
 
 At live acquisition/scheduling integration, trace every trigger through the engine's

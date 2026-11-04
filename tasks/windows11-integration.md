@@ -1,7 +1,7 @@
 # Windows 11 integration: agent task and evidence record
 
-**Date:** 3 November 2026 (Asia/Tbilisi).  
-**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Package implementation and native product qualification remain unexecuted.<br>
+**Date:** 4 November 2026; earlier dated receipts retain their recorded time zones.<br>
+**Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Package implementation and native product qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
@@ -145,15 +145,29 @@ at their existing phase scopes.
 
 **Owner/stage:** platform/clock; S0.4/P4, with DNS lifetime consumers at DNS-1/3/5.
 **Prerequisites:** [clock backend](../docs/windows-time-architecture.md#10-windows-clock-backend),
-owned restoration and the [sleep/timer research](../docs/plans/windows11-integration.md#sleep-timers-and-leap-presentation).
+owned restoration, the [sleep/timer research](../docs/plans/windows11-integration.md#sleep-timers-and-leap-presentation),
+and the selected [leap policy](../docs/plans/leap-second-policy.md#6-windows-contract-and-limits).
+The [S1.4 task](s1.4-leap-policy.md) owns the pure calendar/guard prerequisites;
+S1.3 remains ahead of dependent S1.4 implementation.
 
 **Work:** preserve UTC, QPC and active-awake meanings. Modern Standby may suspend
 services; a sleep-excluding system clock does not measure broker execution.
 Recheck authoritative deadlines and generations after delayed/coalesced wakes.
 No timer promises a finite lease on a programmed rate. Keep residual-rate and
 unknown-cleanup outcomes, with mandatory broker work independent of optional
-saves. Evaluate process leap presentation separately from global leap ownership;
-high-resolution timers remain conditional on measured need.
+saves. High-resolution timers remain conditional on measured need.
+
+For v1, retain the kernel as the **sole explicit leap-event executor** and qualify
+the default compatibility presentation in engine and broker, recording/verifying
+their own mode through supported process APIs without opting into `:60`.
+Unexpected mode cannot reuse a trusted mapping. Keep FILETIME, civil UTC and NTP
+coordinates distinct and preserve sub-millisecond conversion precision outside
+the guard. No global leap setting/history changes, event injection, guessed NT
+setter, temporary W32Time start or `w32tm` parser belongs to the production path.
+Operator/lab status output is diagnostic evidence, not a stable API contract.
+Separately admitted synthetic-event fixtures follow the
+[S0.4 lab boundary](s1.4-leap-policy.md#3-native-mapping-and-broker-effects), with
+documented setup, independent observation and restoration; they are not shipped.
 
 The [follow-up](../docs/plans/windows11-integration-follow-up.md#2-packet-timestamps-socket-metadata-and-completion)
 adds the actual I/O wait and unattended-resume path: an IOCP timeout can exclude
@@ -170,6 +184,22 @@ Modern Standby behavior. Observe actual adjustment mode/trajectory and cleanup
 under the existing clock fixture; retain uncertain outcomes. Timer policies do
 not resurrect DNS TTLs or enqueue every missed refresh. **Mapping:**
 CHECK-10/11/12/21/25/27; DNS-C05/11 for affected lifetime/context consumers.
+
+Carry the [NV-LP-001 guard and native limits](../docs/plans/leap-second-policy.md#5-event-guard-holdover-and-reacquisition)
+into those same S0.4/P4 observations:
+
+- Compare OS-handled, missing and unexpected native events, both signs, with
+  healthy all-LI=0 sources. Exact event-time UTC requires separate OS knowledge
+  evidence; a missing proof retains visible uncertainty and residual recovery.
+- Challenge default presentation, changed/unsupported mode, conversion ranges
+  and precision, plus delayed crossing exchanges. No hidden `:60` opt-in, fixed
+  FILETIME-to-NTP formula or universal 37-second correction may pass.
+- Observe transient cancellation outcome, owned base rate and actual trajectory
+  through guard, sleep/restart and reacquisition. Kernel action is not a broker
+  acknowledgement; an OS-handled event must not cause a duplicate ±1-second act.
+- After the guard require fresh ordinary independent agreement and correct only
+  the measured residual under existing budgets. Future coverage unknown alone
+  permits qualified Tracking outside guards; timeout alone restores no authority.
 
 ### W11-W03 Qualify native DNS ownership and coverage
 
@@ -1532,3 +1562,31 @@ and final absence. The connect-argv omission and protection/token evidence gaps
 above remain explicit. Scoped staged/unstaged whitespace checks passed; all 370
 local links/anchors across this task, the documentation guide and development
 plan resolved. `docs/SHA256SUMS.txt` is absent; no bundle-integrity claim follows.
+
+### 4.20 Selected leap-policy integration — 4 November 2026
+
+[NV-LP-001](../docs/plans/leap-second-policy.md) selects silent-source handling,
+independent leap knowledge, kernel-only explicit event execution and the bounded
+guard/residual-recovery contract. This amendment replaces W11-W02's open process-
+presentation choice with default compatibility mode, without claiming an adapter,
+native event-table interface or completed Windows qualification.
+
+| Existing owner / stage | Disposition and next action |
+| --- | --- |
+| W11-W02, platform/clock; S0.4/P4, CHECK-10/11/12/27 | Carry the selected mode, precision, actual native-event/trajectory and guard cases above into the owned clock fixture after its prerequisites. Native product execution remains unqualified; the S1.4 task owns pure policy work after S1.3. |
+| W11-W10, package/build/release; P6, CHECK-18/23/26 | Bind the reviewed immutable compiled calendar and effective-dated policy to the same authenticated complete release. Record source/generator/revision/digest identity in submitted and delivered provenance; no downloader, hot file path or TUF adoption. |
+
+The [package plan](../docs/plans/windows-msix-store.md#31-package-integrity-and-sealed-executable-content),
+[signing guide](../docs/windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries)
+and [hardening matrix](../docs/windows-time-development-hardening.md#911-windows-integration-qualification-refinements)
+carry these obligations into their current owners. Valid unknown future coverage
+is distinct from corrupt package content and does not create a synchronization
+shutdown outside guards. Release changes preserve consumed clock authority and
+mandatory recovery state.
+
+This is documentation integration, not a new implementation or execution grant.
+Retain S1.3 priority, the scoped Sandbox boundary in section 4.19, the blocked
+stager/artifact, separate fuzz hold, storage pause and UI-M0 deferrals. Historical
+receipts keep their original candidates; Store submission and broad release
+remain David's separate decisions. The S1.4 task records the coordinated
+documentation review and final-candidate checks.

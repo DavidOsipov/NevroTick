@@ -1,7 +1,7 @@
 # Windows protected optional storage: execution and qualification plan
 
-**Document:** NV-STORAGE-PLAN-001, revision 1.3<br>
-**Date:** 3 November 2026<br>
+**Document:** NV-STORAGE-PLAN-001, revision 1.4<br>
+**Date:** 4 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Maintained design and future qualification plan. Recording this direction is authorized; implementation, native experiments, exact cryptographic choices and the product default are not approved by this document.<br>
 **Initial design baseline:** [`de3777230d2adc30fa9eea9895e7dcbb370dec1e`](https://github.com/DavidOsipov/NevroTick/tree/de3777230d2adc30fa9eea9895e7dcbb370dec1e). Revision 1.1 records the first upstream research against [`1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea`](https://github.com/DavidOsipov/NevroTick/tree/1e58ef9255e13d62a9fdcd2542c4472e4ea3c8ea). Revision 1.2 incorporates the second source review and agent-task routing against [`6b28711f5510e3550039d5fcf8bbcf3ccba791a5`](https://github.com/DavidOsipov/NevroTick/tree/6b28711f5510e3550039d5fcf8bbcf3ccba791a5). These were API-derived partial snapshots, not local checkouts.
@@ -50,8 +50,18 @@ and separate mandatory-state owners remain unchanged.
 
 ## 2. Owners, data classes and restoration
 
+**Leap-policy integration, 4 November 2026:** [architecture §10.5](../windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](leap-second-policy.md) select reviewed leap history, separate future
+coverage and the effective continuous-UTC rule from **20 May 2027**. The normalized
+dataset is immutable compiled public data in the same authenticated complete
+release, with future implementation owned by the [S1.4 task](../../tasks/s1.4-leap-policy.md).
+It is neither optional encrypted NTS/DNS state nor a mutable statistical cache.
+This amendment changes no root provider, cryptographic construction, no-cache
+fallback, storage-experiment hold or evidence status of earlier receipts.
+
 | Owner | State and permitted effect | Required separation |
 | --- | --- | --- |
+| Release/domain leap-policy owner | Reviewed pinned history/coverage/effective-rule inputs, exact generated dataset revision/digest and immutable current domain view | Public release integrity and domain admission; no optional-cache key dependency, runtime external leap-file downloader or arbitrary import path. Source LI and statistical history cannot rewrite this authority. |
 | Installer/elevated lifecycle helper | Installation identity, service identity, fixed namespaces, owner/DACL baseline and authorized provisioning/recovery transaction | Existing narrow verbs and policy revisions; no arbitrary path/provider interface. |
 | Engine storage manager | Provider operations, catalogue, bounded root/snapshot transitions and optional NTS snapshots under the final service identity | No clock/debug privilege or general privileged decryption service. |
 | Broker | Mandatory policy, correction ledger, ownership and durable reservation/outcome reconciliation | No engine secrets; optional cache loss never refunds spent/uncertain authority. |
@@ -60,7 +70,24 @@ and separate mandatory-state owners remain unchanged.
 
 Optional NTS restoration must pass [§7.4](../windows-time-architecture.md#74-nts-implementation-contract), [§12.1.1](../windows-time-architecture.md#1211-restoration-validity) and current source/trust/algorithm/policy admission. Preserve complete association state and independent key/full-authentication/resumption ages; unknown elapsed age follows the conservative policy. Restore no outstanding exchange, reuse no old request identity, and obtain fresh admissible observations. Decryption does not establish current authentication, agreement, UTC truth or clock authority. Exact lifetime choices remain with their existing owners.
 
-Loss of optional NTS state permits fresh acquisition only under unchanged NTS and bootstrap rules: cached association where admitted, strict KE, then the separately qualified opt-in provisional-time path. It never enables implicit plain NTP, weaker identity checks, a discarded inconvenient authenticated floor or a clock write. TLS resumption persistence is not added here. Saved floors, leap/trust material and drift priors retain their own provenance, expiry and supersession contracts.
+Loss of optional NTS state permits fresh acquisition only under unchanged NTS and bootstrap rules: cached association where admitted, strict KE, then the separately qualified opt-in provisional-time path. It never enables implicit plain NTP, weaker identity checks, a discarded inconvenient authenticated floor or a clock write. TLS resumption persistence is not added here. Saved floors, trust material and drift priors retain their own provenance, lifetime and supersession contracts; leap history and future coverage follow the separate NV-LP-001 contract above.
+
+An otherwise valid release may contain unknown future leap coverage. Expired or
+absent source metadata does not erase its admitted historical transitions, and
+unknown future coverage alone permits fresh same-segment Tracking outside the
+calendar-derived guards. Do not confuse that state with corrupted authenticated
+package bytes or invalid mandatory policy/journals, which retain their existing
+integrity/refusal rules. NoPersistentCache does not remove compiled public data,
+and VBS/TPM unavailability cannot make that data depend on secret-cache recovery.
+
+Release updates, authorized rollback and optional-cache reset cannot erase
+protected floors, spent correction authority or unresolved broker outcomes.
+Restored drift/evidence must revalidate its dataset/rule and scale-segment
+applicability under the current complete date/era hypotheses and mapping/guard
+generation; copying an old record does not revive crossing exchanges or fresh
+votes. Kernel leap execution is not a broker acknowledgement. Native continuity
+and measured residual correction remain with OPEN-7/S0.4/P4; the storage owner
+neither schedules an event nor fabricates a ±1-second effect.
 
 DNS demand history is optional private optimization state. Loss may produce an empty learning model; it cannot relax DoQ, certificate pins, DNSSEC or routing policy. Ordinary DNS service remains independent of statistics persistence.
 

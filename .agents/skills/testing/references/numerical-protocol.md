@@ -49,6 +49,34 @@ Use the [port recipe](../../implementation/implement-rust/references/chrony-port
 for exact upstream callers. These scenarios add no constants or unconditional
 accuracy/convergence guarantee; record per-event outputs and physical assumptions.
 
+## Leap knowledge and event boundaries
+
+When the slice reaches leap or time-scale policy, use
+[architecture §10.5](../../../../docs/windows-time-architecture.md#105-leap-seconds-and-time-scales)
+and [NV-LP-001](../../../../docs/plans/leap-second-policy.md). Keep independent
+history/coverage truth, provider scale, Windows behavior and observation age distinct.
+Pair these cases under S1.4/P2 and CHECK-6/7/8/11/14/25/26:
+
+- All unsmeared sources send LI=0 with a locally known event, with no event and
+  with unknown future coverage. Silence grants no calendar authority; unknown
+  coverage alone permits same-segment tracking outside possible-event guards.
+  Include non-June/December month-ends; covered continuous UTC needs no recurring
+  legacy guard.
+- Expired or absent expiry metadata preserves valid history without inventing
+  unlimited future coverage; malformed replacement leaves the admitted dataset
+  intact. Wide file dates do not wrap like packet seconds; the effective
+  continuous-UTC boundary causes no clock impulse or universal 37-second mapping.
+- One contradictory observation leaves healthy peers eligible. Authentication
+  does not prove scale; smeared/unknown-scale inputs cannot join unsmeared UTC.
+- Full T1–T4 spans crossing a guard, delayed completions, stale generations and
+  repeated LI cannot admit corrections or extend guard authority. Reacquisition
+  requires fresh post-guard exchanges and the existing independent quorum.
+
+Separately qualify CHECK-10/11/12/27 on Windows: the kernel alone executes explicit
+leaps, and recovery corrects measured residual only. Test OS-handled, missing and
+unexpected events, both signs and approximately zero residual without a duplicate
+second. Simulated success proves no native presentation, cancellation or accuracy.
+
 ## NTP and NTS boundaries
 
 Use independent exact byte/crypto vectors/controlled peer fixtures. Exercise short/truncated frames, length overflow, invalid extension alignment, mode/version, origin/UID/association mismatch, replay, duplicate replies, NAK storms, cookie/key handling (CHECK-6). Assert invalid packets cause no sample/cookie/clock effect; admit valid neighbor exactly once.

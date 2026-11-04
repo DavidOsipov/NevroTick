@@ -74,7 +74,7 @@ sequenceDiagram
     B->>E: Request measurements for current generation
     E->>N: Bounded NTP or NTS exchanges
     N-->>E: Untrusted responses
-    E->>E: Admit samples, estimate and select agreement
+    E->>E: Admit scale, LI, exchange span and generations; select agreement
     E->>B: Typed bounded correction proposal
     B->>B: Check identity, ownership, epochs and total budget
     alt Current proposal is authorized and within bounds
@@ -91,6 +91,14 @@ sequenceDiagram
 ```
 
 An API success/readback acknowledges what the backend applied or accepted; it does not itself measure end-to-end UTC accuracy. Publish successful applied-state acknowledgement only after its durable outcome is recorded. Lost acknowledgements and crash-unknown effects follow section 10.2.1; they never authorize a duplicate relative correction. The UI request carries no target timestamp or destination. Both diagrams describe required future behavior, not tested implementation.
+
+[Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales)
+also gates this sequence by current leap-policy/scale segment and mapping
+generation. Silent LI=0 sources may supply ordinary evidence. Windows alone
+executes explicit leap events; the broker has no synthetic leap command. During
+an event guard no new correction proceeds, and afterward only a fresh compatible
+quorum can justify measured-residual correction. A predicted OS leap is not an
+`AppliedCorrection` acknowledgement.
 
 ## 3. 6.1.1 Input-to-effect validation flow
 

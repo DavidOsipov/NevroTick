@@ -187,6 +187,17 @@ obligations. Preserve both submitted and Store-delivered identities because Stor
 processing/signing may change bytes. A Cargo crate list is not an inventory of
 runtime DLLs; inspect the emitted and actually loaded images.
 
+The [selected leap dataset and policy](leap-second-policy.md#3-knowledge-and-distribution-contract)
+are **reviewed immutable generated data compiled into the admitted consumers**,
+delivered through this same authenticated complete release. Bind pinned source
+identities, generator version, normalized data/policy revision and digest, and
+supported coverage to the build and submitted/Store-delivered records. No build
+silently fetches mutable upstream data; no new downloader, arbitrary runtime file
+path, hot replacement or TUF trust root follows. A corrupt payload is a package
+integrity failure; valid unknown future coverage is a policy state, not an
+installation failure or a reason to erase usable history. Authorized update and
+rollback retain protected floors, consumed correction authority and recovery.
+
 #### 3.1.1 Trusted Launch for the supported package profile
 
 Add **Trusted Launch** to the strongest-profile qualification target on supported
@@ -617,6 +628,13 @@ inventory facts, not a Windows runtime dependency closure or release SBOM.
 | Elevated lifecycle helper | No `admin-helper` production crate or executable is present | The narrow installed helper and supported activation/provisioning mechanism remain prerequisites. A declaration alone supplies neither executable nor authority. |
 | Linked portable owners | `ntp-wire`, `time-domain`, `ntp-exchange`, `time-core` | Library code is linked into the relevant process; these are not four additional installed services or runtime DLLs. Their fixture qualifications do not establish production sample/clock eligibility. |
 
+**4 November addition:** NV-LP-001 assigns the shared normalized leap calendar and
+effective-dated policy to generated immutable data, with pure implementation
+pending in S1.4. Inventory the eventual compiled data and its provenance alongside
+the affected linked owners; it creates no extra executable, service, capability,
+mutable package-data store or independently updated product. This addition does
+not rewrite the inspected-source facts in the table above.
+
 Use the actual Cargo feature graph before naming runtime providers: UI/domain/core
 use garde with `derive`; the engine's current-thread Tokio feature set is `rt`,
 `net`, `time`, `sync`, `macros`. No production TLS/NTS provider, storage provider,
@@ -634,6 +652,7 @@ The package author uses this field-level profile when real components exist:
 | `Dependencies/TargetDeviceFamily` | `Name="Windows.Desktop"`; freeze actual `MinVersion` and `MaxVersionTested` | Existing Windows 11 target, required features and the build-26100 Trusted Launch row must agree. A test maximum is not proof of coverage. [S51] |
 | Ordinary UI `Application` | Explicit actual `Executable`, stable unique `Id`, `uap10:RuntimeBehavior="packagedClassicApp"`, `uap10:TrustLevel="mediumIL"` | This expresses the selected ordinary full-trust Win32 UI; it supplies no AppContainer or administrative authority. Avoid contradictory legacy `EntryPoint` attributes. [S51, S52] |
 | Package `Properties` | Explicit content integrity; Trusted Launch for the admitted supported profile; real display/asset metadata | Resolve namespaces and SDK schema, then inspect the emitted and Store-delivered manifest. Protect all executable content as in section 3.1. |
+| Compiled calendar/policy provenance | Same authenticated complete release and supported coverage as [NV-LP-001](leap-second-policy.md#3-knowledge-and-distribution-contract) | Reproduce reviewed pinned-input generation and bind the exact normalized revision/digest and generator to the actual payload. No new manifest capability, runtime download or separate updater is required. |
 | `runFullTrust` | Required for the intended medium-IL desktop application | Declare the restricted capability and verify the actual activation graph. It is not elevation. [S14, S51] |
 | `packagedServices` | Required for declared `windows.service` extensions | Disclose the real engine and broker; record their own-process SCM service entries, executable paths, accounts and startup configuration. Account/provisioning mapping remains unresolved under section 4. [S14–S17] |
 | `allowElevation` | Justified only for the intended bounded elevated lifecycle operations | Exact helper activation and Store capability admission remain unresolved; normal UI use stays unelevated. [S14] |
