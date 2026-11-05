@@ -1850,3 +1850,83 @@ scoped `ready`/`revise`/`blocked` verdict with inspected-input and tool evidence
 Reconcile actual findings in this same record. Until then, fresh independent
 plan review is **NOT RUN** and the dependent implementation handoff is not ready;
 completed documentation repairs and the separate current proof queue remain valid.
+
+### Fresh-agent review handoff — 5 November 2026
+
+**Owner request:** David clarified that the review must use native subagents,
+then requested an English handoff for another agent after those launches failed.
+The contract candidate is main commit
+`27c1df1336bd0b6febd237d77bc94b3774de1790`, tree
+`40c65f10cf5b95cc92831cf7815af1ad9ac2480c`; its storage-refinement predecessor is
+`8ac407a367bd2231076d12fe6e3db66e425f1281`. The earlier routing amendment is that
+predecessor's diff from `8f1a3b8afab82ea736fb9ea44c99160c90a5075c`. Read the current
+main and dirty state before proceeding; preserve subsequent unrelated work and
+identify any changed review inputs. This handoff adds no product requirement or
+implementation result and does not replace the current development §7 queue.
+
+**Latest native dispatch receipt:** the following three workers were each
+created with `fork_turns: "none"`. They received a repository path, immutable
+candidate, bounded read-only assignment and evidence/output requirements, with
+no inherited conversation or coordinator verdict.
+
+| Worker | Assigned boundary | Actual result |
+| --- | --- | --- |
+| `review_storage_fresh` | Existing data/storage owners, Q0/Q-J, lifecycle, optional history, ST-W01 and PATH-15–20 | Not run: context-capacity error; no usable analysis. |
+| `review_network_fresh` | Family/interface/path reuse, NTP/NTS and SOCKS, DNS and policy activation, PATH-01–20 | Not run: context-capacity error; no usable analysis. |
+| `review_contracts_fresh` | Cross-document ownership, credential purpose/recipient, UI/broker consumers, evidence and stage consistency | Not run: context-capacity error; no usable analysis. |
+
+Each worker returned the same raw failure:
+
+```text
+Agent errored: Codex ran out of room in the model's context window. Start a new thread or clear earlier history before retrying.
+```
+
+The available results do not establish which repository inputs, if any, were
+read or which MCP calls were made. This is not three clean reviews. No finding,
+comprehension paragraph or review-based repair is attributed to these workers.
+The earlier failed/unconfirmed attempts above retain their original status.
+
+**Next coordinator's bounded assignment:**
+
+1. Read AGENTS.md, docs/README.md, the testing contract and repository
+   `plan-independent-review` plus `review-and-handoff` guidance. Freeze the actual
+   commit and relevant dirty bytes. Compare both amendment diffs above and read
+   their surrounding canonical owners; a patch alone is insufficient.
+2. With working native delegation, create three fresh workers for the boundaries
+   in the table. Explicitly disable conversation inheritance. Supply the user's
+   requirements, frozen sources, relevant acceptance IDs and read-only scope;
+   withhold the coordinator's proposed answers. Have each begin with two original
+   paragraphs describing the proposed change and the actual implemented system.
+   Use independent temporary output paths and a single repository-editing owner.
+   Do not repeat this unchanged failed launch configuration in the same session.
+3. Read architecture §§7.3/7.4/12.1–12.2/17.1, the DATA inventory and storage
+   tables, protected-storage and catalogue tasks, the affected feature/Windows/UI
+   consumers and current engine source. Inspect relevant DNS owners when the
+   path crosses their boundaries. Review PATH-01–20 and AC-21/22 as planned
+   discriminators, not executed tests. Verify uncertain protocol/API claims
+   through available applicable MCP and primary sources, recording actual
+   calls and limitations; tool availability must be rediscovered.
+4. Require scoped `ready`/`revise`/`blocked` results with inspected inputs, exact
+   locations, severity, evidence, consequences, minimum correction and a useful
+   valid neighbor for each material invalid case. Missing implementation of an
+   explicitly planned feature is not an observed runtime defect. Preserve raw
+   reviewer results and actual completion status in this existing record.
+5. Reconcile findings against the integrated candidate. Retain stable existing
+   STORE-N/NET-N/DOC-N identities when a finding is semantically the same; label
+   new findings separately. Apply justified documentation corrections to their
+   canonical owner and affected task/feature consumers. Verify affected findings
+   after repair; do not rewrite independent reports to match author intent.
+6. Check the resulting documentation diff, active links/anchors, canonical IDs
+   and historical evidence preservation. Read docs/SHA256SUMS.txt only if present;
+   no absent-manifest pass. Use code/native/formal checks only for an actual
+   authorized changed guarantee. Preserve scoped Windows/storage/fuzz holds,
+   UI-M0 deferrals, mandatory proof obligations and unrelated current work.
+
+**Exit:** an actual completed, candidate-bound review; evidence-backed dispositions
+for material findings; verified corrections where needed; and a named next stage
+with remaining prerequisites. An unavailable necessary reviewer remains not run.
+Documentation consistency does not execute PATH cases, qualify Windows/proxy/
+storage behavior, complete product proofs or grant release approval. David's
+existing authorization for ordinary documentation repairs and integration to
+main remains; verify final remote bytes before claiming publication and report
+CI results honestly. This handoff itself leaves independent review **NOT RUN**.
