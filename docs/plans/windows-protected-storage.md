@@ -96,6 +96,29 @@ rules; optional-cache recovery cannot replace their qualification.
 
 DNS demand history is optional private optimization state. Loss may produce an empty learning model; it cannot relax DoQ, certificate pins, DNSSEC or routing policy. Ordinary DNS service remains independent of statistics persistence.
 
+**Conditional proxy-credential handoff, 5 November 2026:** the
+[network profile](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
+must reuse this engine storage manager and its qualified mechanisms rather than
+introducing a password database or an implicit Windows credential fallback.
+This is a proposed new **purpose**, not an expansion of the admitted NTS/DNS
+payloads. Before enabling it, ST-W01 freezes its bounded schema, authorized
+input/readers, independent purpose/key/epoch binding, credential reference/revision,
+intended proxy identity/endpoint and authentication/channel profile,
+replace/delete/restart outcomes and actual provider/service identity. Reuse the
+existing exact-envelope, namespace, outcome, redaction and lifetime rules where
+applicable. Do not assume NTS/DNS root sharing or copy secrets into machine policy,
+Q/H, user preferences, diagnostics or the broker.
+
+A configured authenticated proxy may require its credential for any useful
+acquisition. Therefore `ContinueWithoutRestore` does not mean that a missing
+credential can be regenerated like NTS state or replaced with no authentication,
+another proxy or Direct. Until an authorized qualified credential is available,
+that profile remains unavailable; any separately qualified still-admissible live
+session keeps its own lifetime rules. A nonpersistent credential-input mode, if
+later selected, must expose its unattended-restart limitation. The existing
+NTS/DNS policy matrix and native experiment pause remain unchanged; no proxy
+secret provider, authentication method or product default is admitted here.
+
 Use two nonsecret durable control records. The lifecycle owner's **installation witness** distinguishes `Provisioning(transaction-id)`, `Initialized` and explicitly authorized `Recovery(transaction-id)`. Matching initial catalogue publication is acknowledged durably and consumes that provisioning authority; an interruption reconciles the same transaction. Missing expected catalogue/key in an initialized installation means recovery, while a missing optional snapshot may simply mean fresh acquisition.
 
 The sensitive-state owner's **catalogue** binds installation/store/purpose, actual provider and key identities, public fingerprints, generated/imported origin, use/export policy, evidence category, policy/privacy revisions and active/prepared/retired disposition. It admits no enumerated “newest” key or envelope-supplied verification identity. Copying its assertions into broker storage would not make them attested.

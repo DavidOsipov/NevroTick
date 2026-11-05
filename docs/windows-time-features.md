@@ -308,9 +308,23 @@ exception list is proposed for the first integration. Preserve the canonical
 [proxy and reachability contract](windows-time-architecture.md#observed-path-history-and-user-network-policy).
 
 Apply shows the route/resolver changes and uses the existing authorized atomic
-revision transaction. Ordinary Sync now can diagnose the active profile within
-its budget; it cannot probe arbitrary unapproved draft hosts. Display fallback
-as a network-path choice, never as permission to lower NTS trust or source quorum.
+machine-policy revision transaction. Show **Saved**, **Applying**, **Effective**
+and **Blocked/unknown activation** according to the service's actual outcome;
+persisting settings does not mean old network I/O has finished. Do not claim
+wire-level recall of traffic already submitted to the OS/proxy. Ordinary Sync now
+can diagnose the effective profile within its budget; it cannot probe arbitrary
+unapproved draft hosts or resume a superseded route during blocked activation.
+Display fallback as a network-path choice, never as permission to lower NTS trust
+or source quorum.
+
+Use the existing [state owners](windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners):
+machine settings are protected policy, live path hints are scheduler RAM, optional
+history belongs to Q and credentials have a separately qualified secret purpose.
+Initial path learning restarts cold after service restart; do not promise durable
+remembering before the existing Q/hint-loader work is qualified. Unavailable
+optional history does not prevent live reuse. No UI database access, second
+settings file or plaintext saved password is introduced. A missing required proxy
+credential has a visible remedy and cannot silently select Direct/no-authentication.
 
 ### 3.4 Diagnostics
 
@@ -459,8 +473,8 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
 | AC-19 | F-02/03/07 | Independently generated offset/drift/asymmetry cases and real clock measurements establish convergence/holdover behavior within the declared test envelope. | CHECK-7/8/10/11/24 |
 | AC-20 | All | Measure startup, idle/active CPU, memory, wakeups, log bounds and package size on the declared Windows machine with supported protections enabled. | CHECK-21 |
-| AC-21 | F-02/04/07/09 | Both local families enabled with one upstream black hole; working alternative is reused, preferred-path recovery is bounded, and network change invalidates obsolete history. A failed Internet destination does not exclude permitted IPv6 LAN/VPN or proxy-side paths. | CHECK-6/8/9/14/21/27 |
-| AC-22 | F-06/07/09/10 | Strict adapter/family/proxy/resolver choices survive failures without silent escape. Pair a UDP-capable SOCKS route with TCP-only/failed relay, incompatible proxy-DNS family policy, loopback/service-lifetime and invalid/stale-draft cases; preserve useful accepted operation and truthful status. | CHECK-2/3/6/9/14/25/27 |
+| AC-21 | F-02/04/07/09 | Both local families enabled with one upstream black hole; working alternative is reused, preferred-path recovery is bounded, and network change invalidates obsolete history. A failed Internet destination does not exclude permitted IPv6 LAN/VPN or proxy-side paths. Optional history disabled/full/corrupt cannot prevent live reuse; restart cannot revive stale deadlines or authenticate old observations. | CHECK-6/8/9/14/15/21/27 |
+| AC-22 | F-06/07/09/10 | Strict adapter/family/proxy/resolver choices survive failures without silent escape. Pair a UDP-capable SOCKS route with TCP-only/failed relay, incompatible proxy-DNS family policy, loopback/service-lifetime and invalid/stale-draft cases; preserve useful accepted operation and truthful saved/effective status. Cover old I/O during Apply and missing/wrong-purpose proxy credentials; no silent direct/no-authentication recovery. | CHECK-2/3/6/9/14/15/25/27 |
 
 Resource targets remain those of architecture §17, including separate service/UI/tray accounting; they are unmeasured goals. Do not invent an internet-accuracy SLA, recovery deadline or automatic step threshold to complete a feature card. The [development-hardening specification](windows-time-development-hardening.md) governs test scope, coverage/mutation gates, independent review and truthful evidence accounting.
 

@@ -56,6 +56,14 @@ exports and independently owned mandatory stores are separate.
 
 ## 2. Table A — catalogue, policy and live state
 
+**5 November network refinement:** [architecture §12.1.3](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
+maps the new interface/family/proxy profile to existing DATA-06/E machine-policy
+JSON and learned path state to DATA-08/09/10/17 RAM. Optional history uses the
+same Q writer and shared quota below; Q0/Q-J still owns the unselected SQLite
+versus bounded JSON snapshot choice. No new cache/database path or per-poll write
+is selected. Conditional proxy credentials require a separate-purpose qualification
+under the existing protected-storage owner and remain excluded from C/Q/H/U.
+
 | What is retained | Where | Data format | Why here | Day-30 volume / maximum status | Security model |
 | --- | --- | --- | --- | --- | --- |
 | **Release catalogue:** sources, operators, dependence groups, country/region or explicit unknown, endpoints, protocols, optional addresses and public provenance. Each Roughtime record requires public-key algorithm/bytes and exact profile binding from the first schema. DATA-02–05; public subset of DATA-01. | C: immutable package resource or generated read-only installed-image data; bounded admitted index in RAM. | **If a separate resource is chosen:** constrained, schema-defined CBOR is the recommended comparison candidate. Generated immutable Rust tables remain a leading release-bound alternative; Protobuf is conditional. JSON may be a publisher input or comparison reference, not the preferred shipped format. Final schema and encoding remain unselected. | Infrequently updated shared source definitions for hundreds of records; reviewed preset membership and authorized local policy remain separate. | Catalogue byte/record caps are **unset**. It does not grow per poll. The 16-active-source bound does not cap the complete catalogue or authorize active objects for all its entries. | Authenticate the exact artifact under the release trust contract; bound resource loading or validate generated construction, then enforce identities, endpoints, profiles and current policy. Recognizing inert Roughtime metadata does not enable or qualify its runtime. A separate project signature is unselected. Authenticity does not establish freshness or defeat whole-release rollback. |

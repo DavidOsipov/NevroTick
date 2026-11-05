@@ -827,8 +827,12 @@ or completed KE does not establish a usable protected NTP path. Do not diagnose
 an ISP-wide outage from one failed server, or suppress usable LAN/VPN/proxy paths
 because another destination fails. [S20, S126, S127]
 
-The engine keeps a finite, initially memory-only path-history cache, separate from
-DNS, keys/cookies, accepted time and correction authority. Key it by logical
+The engine refines the existing scheduler's finite, initially memory-only
+contextual path state (DATA-08/09/10/17), rather than adding a second cache owner
+or database. Reuse its current context, attempt identities and transitions;
+§12.1.3 maps live state and optional history to the existing storage inventory.
+Keep it separate from DNS answers, keys/cookies, accepted time and correction
+authority. Key it by logical
 source/delegation and concrete destination, transport stage, interface identity
 and source-address context, network/route epoch, active policy revision, and
 direct/proxy/resolver context. Track monotonic observation age, outcome and bounded
@@ -867,6 +871,20 @@ Keep network family separate from the source's NTP/NTS trust profile:
 | Prefer IPv6 / Prefer IPv4 | Soft ordering among permitted candidates. Reuse a working fallback while the preferred path is penalized; probe recovery within budget and return only under the qualified hysteresis rule. |
 | Interface: Automatic | Follow current permitted OS routing, reconciling changes at the engine owner. |
 | Interface: selected adapter | Pin the actual owned sockets to that interface; show unavailable on removal or inability to honor the pin. Do not substitute another adapter silently. Resolve a stored stable identity to current indices; names and recycled indices are not durable identity. |
+
+Persist that profile through §12.1's existing strict versioned machine-policy
+JSON and broker/helper revision transaction, not UI preferences or Q history.
+Keep **saved policy revision** separate from **effective acquisition revision**.
+At cutover, stop admitting old-profile work, retire its publication eligibility,
+and reconcile owned sockets, DNS/verifier jobs and proxy associations through
+§§6/17.1's actual-completion rules. Recheck the current revision at each send or
+delegated-I/O boundary, including after awaits. Do not report the new profile as
+effective until its owned-I/O boundary is established; blocked or indeterminate
+activation is visible and cannot silently resume the old route. Already submitted
+traffic cannot be recalled from the OS or a remote proxy. Cancellation requests,
+closing a waiter and a durable policy write do not prove wire-level quiescence.
+Qualify the exact adapter's retirement/activation semantics under CHECK-2/6/14/27;
+this selects no machine-wide firewall or ability to stop another process. [S109]
 
 Apply the family/interface rule to the socket's **immediate peer**: the time
 destination for direct traffic, or the proxy/control/UDP-relay endpoint for
@@ -907,12 +925,24 @@ selected verifier's AIA/OCSP/CRL retrieval also satisfy it; OPEN-8 verification
 requirements cannot be disabled to make proxy mode work. An interface selector
 is not a machine-wide traffic filter. [S20, S129, S131]
 
-Proxy credentials, if supported, require bounded admission, redaction and the
-existing service-owned secret lifecycle; no plaintext configuration/log/export
-or automatic Windows-credential forwarding. RFC 1929 username/password does not
-encrypt the proxy hop. Freeze the supported authentication/channel/storage
-profile before enabling that option; a limited no-authentication profile must
-not claim complete SOCKS5-method support. Existing protected-storage holds remain.
+Proxy credentials, if supported, require bounded admission, redaction and a
+separately scoped purpose under the existing engine secret-storage owner
+(§12.1.3). The current NTS/DNS allowlists do not already admit proxy passwords.
+Machine policy carries only a bounded opaque credential reference/revision;
+no plaintext password belongs in policy, Q/H, UI preferences, logs or exports,
+and the broker does not become a secret custodian. Do not forward ambient Windows
+credentials. Bind credential use to the admitted proxy identity/endpoint and
+authentication/channel profile as well as its purpose and revision. A changed
+proxy or a different process claiming a loopback port cannot inherit permission
+to receive an existing credential; later NTS server authentication does not
+authenticate that earlier proxy-credential recipient. Freeze the actual authorized
+credential-input, replacement, restart and unavailable-secret behavior through
+the existing storage task before enabling authentication. Missing credentials
+cannot select no-authentication, another proxy or Direct; a persistence fallback
+does not manufacture a credential for unattended restart. RFC 1929 username/password
+does not encrypt the proxy hop. Qualify the authentication/channel/storage profile;
+a limited no-authentication profile must not claim complete SOCKS5-method support.
+Existing protected-storage holds remain.
 SOCKS4, ordinary HTTP CONNECT as a complete time path, PAC/WPAD, automatic system
 proxy import, split KE-only proxying and CONNECT-UDP remain outside this first
 proposal. Ordinary CONNECT supplies a stream; HTTP UDP proxying is a distinct
@@ -1477,6 +1507,8 @@ guarantee after abrupt death. See [lifecycle research](plans/windows11-integrati
 | Bundled leap history and UTC rules | Reviewed complete release | Public immutable data with source/revision/digest bound to package provenance; not optional encrypted cache. Unknown future coverage differs from corrupt package content; update/rollback never resets protected correction continuity (§10.5) |
 | Machine security/source policy | Broker after authorized helper request | Protected ProgramData path, strict schema, revision compare-and-swap, atomic durable replacement |
 | Broker journal and boot/step state | Broker/installer with explicit ownership | Separate ACL and schema; corruption blocks unsafe writes, not a reset to permissive defaults |
+| Current path preference and recovery state | Existing engine scheduler | Bounded RAM under DATA-08/09/10/17; disposable hints, no independent database or authority; §12.1.3 |
+| Optional source-quality summaries/history | Existing engine quality/storage owner | Advisory Q/H allocation and format decision remain with the catalogue/statistics plan; never required for live path selection; §12.1.3 |
 | Drift/statistical prior | Engine | Bounded validated values; corruption discards optional prior and enters acquisition |
 | NTS keys/cookies | Engine association owner | Service-SID ACL plus Windows-protected encryption; version/source/provenance binding; never UI-readable |
 | UI preferences | Current user | Per-user storage; cannot affect time policy or authorize operations |
@@ -1802,6 +1834,56 @@ and remnants remain limits, not accepted risk or completed ASVS controls.
 The plan maps these obligations to existing BND/THR/CHECK and DNS-C owners;
 source review establishes no native pass.
 
+
+#### 12.1.3 Network state reuses existing storage owners
+
+**5 November 2026 reconciliation:** the owner requested reuse of the repository's
+cache/database design. The [DATA inventory and allocation](plans/server-catalogue-and-statistics-draft.md#5-proposed-storage-allocation),
+[storage tables](plans/server-catalogue-storage-tables.md),
+[catalogue/statistics task](../tasks/server-catalogue-and-statistics.md) and
+[protected-storage task](../tasks/windows-protected-storage.md) retain their
+owners and staged decisions. The network refinement adds no `network-cache`
+file, new database, storage daemon, generic cache framework or selected backend.
+These are design contracts; the current loopback transport pilot implements
+neither learned routing nor Q/H or a production secret store.
+
+| Information | Reused owner and placement | Admission and lifecycle |
+| --- | --- | --- |
+| Authorized interface/family/proxy/resolver profile | DATA-06; existing broker/helper machine-policy JSON in the protected ProgramData namespace | One schema/revision and shared checked construction. Engine receives its admitted projection. Invalid mandatory policy cannot reset to Direct/Automatic; effective activation is separately acknowledged under §7.3. Exact filename/schema bounds remain with the policy owner. |
+| Current endpoint and network context | DATA-08/09; existing resolver/network/association owners in bounded RAM | Reference admitted resolver results and existing network, policy, association and clock generations. Do not mirror an answer cache or invent a parallel generation for the same authority. Stable adapter identity is policy; live indices/source addresses are current observations. |
+| Successful-path ordering, failure penalty and recovery deadline | DATA-17; the existing scheduler's bounded RAM state | Use DATA-10 stage outcomes. Initial service restart discards these hints and reacquires within existing guards. A hit, inspection, export or restored descriptive row is not a new network success. Eviction cannot clear mandatory restrictions, active retry/rate guards or consumed authority. |
+| Attempt facts and optional explanations | DATA-10/16/17/19/20; live counters plus the existing Q writer if separately enabled | One terminal/stage identity feeds both path state and bounded aggregation. Local exclusions, not-run stages, local resource loss and real transport failures remain distinct; retries/duplicate completions cannot double-count. Optional history backpressure cannot block acquisition or manufacture a peer failure. |
+| Durable path summaries or later restart hints | Optional Q under the existing catalogue/statistics task; H only for separately justified detail | SQLite typed rows versus bounded versioned JSON snapshot remains the existing Q0/Q-J choice. No per-poll durability requirement or second file family. Loading Q is outside timing-critical work; absent/corrupt Q leaves ordinary bounded acquisition available. A future hint loader must re-admit current policy/destination/context and qualified age; process-local monotonic deadlines are not portable across restart. Unqualified old penalties cannot exclude current candidates. |
+| NTS secrets and authentication ages | DATA-22; existing private association RAM and separately qualified optional protected snapshot | Keep the complete association/lifetime/current-trust contract. Path history stores only nonsecret references; it neither duplicates cookies/keys nor refreshes their ages. |
+| Conditional proxy credentials | Existing engine secret-storage manager, with an explicitly frozen purpose/allowlist and credential revision before support | Reuse §12.1.2's provider, namespace, exact-envelope, outcome and lifecycle contracts where applicable; do not put credentials in NTS/DNS payloads or automatically share their keys/epochs. ST-W01 must freeze the separate purpose, authorized input/readers and binding to the admitted proxy identity/endpoint and authentication/channel profile. The current NTS/DNS optional-state matrix alone does not qualify a persistent proxy credential or credential-free restart. |
+| DNS, UI and mandatory safety state | Existing independent DNS, U and E owners | Future DNS learning/privacy epochs are not time-source Q. UI receives redacted requested/effective projections, never database access. Broker journals, trusted floors, restrictions and clock recovery retain their independent failure and durability rules. |
+
+The scheduler updates admitted live state without awaiting a database, snapshot,
+compression or diagnostic write. Only a bounded handoff feeds optional Q/H; its
+producer-incarnation/attempt/stage identity makes duplicate processing harmless
+and reports gaps explicitly. One observation remains one fact across RAM and Q.
+Share compatible immutable IDs/records, not secret payloads or authority-bearing
+objects across owners. No future system-wide DNS service is required to implement
+the direct NTP/NTS path.
+
+Freeze total RAM bytes, live/retired path and context counts, queued handoffs,
+reader-held copies, outstanding native work and maintenance/reprobe work before
+dependent implementation. Count all families/stages/proxies against the existing
+source and aggregate budgets; 16 active sources alone does not bound this product
+of contexts. If Q is later enabled, its rows, dictionaries, sidecars, staging and
+migration consume the existing **shared** Q allowance, not another allowance per
+cache. The storage plan's 32 MiB Q example remains unadopted. Reuse DATA-20 and
+§17's accounting; clearing or evicting advisory state never replenishes independent
+retry/security budgets. Freeze a useful bounded recovery control beside every
+exhaustion/unknown-continuity refusal.
+
+Clear-history and restart affect only their declared optional classes. Delayed
+writers/readers cannot republish retired history as current after a reset or
+policy change. Preserve explicit unavailable coverage and current generation
+checks; do not reset policy, credential references, NTS full-authentication age,
+DNS privacy barriers, mandatory conflict state or broker authority. Runtime
+implementation, Q format/retention choice, protected-storage qualification and
+native profile cutover remain separate pending work in their existing tasks.
 
 ### 12.2 Configuration semantics
 
