@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.11<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs and OD-11 SOCKS5 scope/deferral added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.12<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral and OD-12 GeoIP experiment placement added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -39,6 +39,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
 | OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
+| OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -588,3 +589,28 @@ capacity justify the bounded stage. Keep independent review and exact-candidate
 portable/native/interoperability evidence open until executed. No implementation,
 dependency, protected-storage experiment, host reconfiguration or production
 proxy support is approved or established by this documentation decision.
+
+## 16. OD-12 — GeoIP experiment after Khronos
+
+**Direct owner instruction, 5 November 2026:** David asked to place the discussed
+experiment in `ROADMAP.md` after Khronos. The discussion proposed locating time
+sources and optionally the client's public egress to test geographically favorable
+server selection, with GeoLite2-City as a possible input.
+
+**Roadmap integration:** [GEO-0](../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
+sits between KHR-C01 and Android. Its GEO-C01 comparison/disposition belongs to the
+[existing catalogue task](../tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos),
+reusing catalogue and advisory-history owners. `ADOPT_LIMITED`, `DEFER` or `REJECT`
+all close the experiment; production GeoIP implementation is separately scoped
+and is not an Android prerequisite. An adopted Khronos implementation retains its
+existing qualification requirement before Android. Current Windows P0–P7 and the
+separate RGT-0 → CHR-0 order remain intact.
+
+**Engineering experiment boundary:** geography may order ordinary acquisition
+candidates but cannot grant trust, replace actual measurements, weaken independent
+agreement or change a qualified Khronos/Ananke sampler. The roadmap defines
+comparison controls, missing/incorrect-location cases and cost evidence. No
+GeoIP database, mandatory client-IP lookup, additional persistent store or public
+probe is selected or authorized by this planning instruction. Data/licence/update
+review, exact experiment admission and independent review remain future work;
+the instruction establishes no measured performance benefit.
