@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.12<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral and OD-12 GeoIP experiment placement added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.13<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement and OD-13 default Slint UI added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -40,6 +40,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
+| OD-13 | Use Slint as the default UI toolkit after the live-Windows comparison | **Accepted toolkit direction, 5 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -614,3 +615,53 @@ GeoIP database, mandatory client-IP lookup, additional persistent store or publi
 probe is selected or authorized by this planning instruction. Data/licence/update
 review, exact experiment admission and independent review remain future work;
 the instruction establishes no measured performance benefit.
+
+
+## 17. OD-13 — Slint as the default UI toolkit
+
+**Accepted owner decision, 5 November 2026, Asia/Tbilisi.** After the
+[live-Windows Slint experiment](../tasks/s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026),
+David instructed: “We'll use it as default! Put this decision in all docs.”
+The unpublished local draft called this OD-11; integration with published
+SOCKS5 OD-11 and GeoIP OD-12 renumbers the Slint decision to OD-13 without
+changing its accepted scope.
+Slint is the default for subsequent NevroTick UI work. This supersedes DEC-3's
+Win32-common-controls toolkit selection and the 30 October instruction to retain
+Win32 as the default. It does not erase the earlier candidates or their evidence.
+
+| Decision card | Accepted direction and remaining qualification |
+| --- | --- |
+| Related owners | DEC-3, OPEN-10, S0.5, UI-M0, CHECK-21/22; OPEN-1/13 and CHECK-20/26 own dependency/licence admission |
+| Starting configuration | Slint 1.18.1 with explicit winit/software rendering and Fluent-style widgets, as measured. Freeze the exact admitted version/features for the migration; a later renderer/feature change needs its own graph and affected evidence |
+| Evidence and reason | Three live-host Slint trials measured 7.730 MiB visible private memory and 23.629 MiB working set, with no detected CPU-time increment in the selected visible/minimized idle phases. The 228-line UI adapter suggests less UI coding than the 1,432-line Win32 implementation. Different layouts/DPI, short sampling and incomplete interaction/accessibility limit those conclusions |
+| Options and outcome | Retain Win32, select Slint, or continue other toolkit experiments. David selected Slint; agents must not reopen the general toolkit choice because qualification remains pending |
+| Existing implementation | The checked-in `nevrotick-ui` Windows adapter is still Win32. Preserve its shared checked model, behavioral contracts and historical receipts until a separately qualified Slint replacement exists; this documentation decision changes no Rust or Cargo bytes |
+| Product boundaries | Ordinary-user UI only. Preserve the engine/broker/helper authority split, fixture-only UI-M0 effects, D1/D2/D3 deferrals and their re-entry triggers, current Core priority and existing execution holds |
+| Required follow-through | Reuse the existing UI-M0/S0.5 task chain for exact dependency/licence admission, generated-code/lint and lifetime ownership, checked validation reuse, native window/editor/lifecycle observations, actual accessibility at its gate, resources and complete MSIX delivery |
+| Revisit trigger | Concrete licensing, target, accessibility, security or resource evidence prevents the selected delivery. Bring that bounded issue under OD-04; no automatic fallback or blanket exception follows |
+
+**Selection is separate from admission.** The private pilot disabled accessibility
+and tray features; that does not remove the product's keyboard/UIA/Narrator or
+optional-tray requirements at their existing gates. Slint draws its Fluent-style
+widgets rather than inheriting Win32 child-control semantics. Qualify actual
+behavior and accessibility exposure on Windows; old Win32 passes cannot transfer.
+The software renderer is the starting configuration, not a mandate to introduce
+continuous redraw, a browser runtime or a GPU loop.
+
+Slint's GPLv3/royalty-free/commercial grants and the selected Apache-2.0-only
+winit graph remain unresolved against the current GPL-2.0-only codebase. This
+owner instruction selects the toolkit; it grants no relicensing, incompatible
+combined-distribution clearance, paid agreement, publication or release approval.
+A process split alone supplies no licence clearance. Preserve the current licence
+and notices, and resolve the exact graph under the existing dependency owners.
+
+The private `slint!` prototype also exposed a generated-unsafe/lint boundary:
+Slint-generated allowances conflict with crate-level `forbid(unsafe_code)`.
+The product migration must define and review that boundary explicitly rather
+than silently relaxing the workspace's unsafe policy. Retain bounded input
+admission, weak callback ownership, UI-thread affinity and deterministic teardown.
+
+The [architecture §16.1](windows-time-architecture.md#161-toolkit-and-interaction-model)
+controls the toolkit contract; the [UI-M0 task](../tasks/ui-m0.md) owns the next
+bounded migration and evidence. This decision records direction, not completion
+of S0.5, CHECK-21/22, P0/P5 or release qualification.

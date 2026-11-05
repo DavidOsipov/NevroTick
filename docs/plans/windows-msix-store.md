@@ -86,7 +86,7 @@ S14]
 
 ### Value beyond the certificate
 
-MSIX can retain the native Rust/Win32 product; packaging does not require a UWP or
+MSIX can retain the native Rust desktop product, whose default UI is now Slint under [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit); packaging does not require a UWP or
 WinUI rewrite. Store supplies package hosting/updates and a stable application
 identity. Full-trust desktop packaging is not an AppContainer boundary and does
 not grant elevation or clock authority. [S08, S14, S30]
@@ -301,7 +301,7 @@ targets; none are asserted active by this document. [S31, S43–S48]
 | CET / hardware stack protection | Qualify shadow stacks on supported hardware and OS; test strict mode and non-CET/EHCONT image restrictions against the actual toolchain/modules. `/CETCOMPAT` alone is no hardware or runtime proof. Unsupported hardware is a declared platform class, not a fictitious pass. |
 | Image loading | Target `NoRemoteImages`, `NoLowMandatoryLabelImages`, `PreferSystem32Images` alongside sealed content and safe search. The last is a search preference; low-IL blocking does not reject every medium-IL writable path. |
 | Extension points, handles and heap | Disable legacy extension points where compatible, use strict handle checks and heap corruption termination. Qualify supported UI/IME/accessibility paths; this does not block every injection technique. |
-| Win32k | Target prohibition for headless engine/broker when their dependencies permit. Never apply to the native Win32 UI. |
+| Win32k | Target prohibition for headless engine/broker when their dependencies permit. Never apply to the desktop UI, including its Slint/Windows backend. |
 | Child creation | Block children in leaf engine/broker processes. Inventory UI/helper launch needs and qualify their narrow launch path separately; no broad shell/command interpreter escape. |
 
 For every row record role, OS/architecture/hardware support, required or optional
@@ -671,7 +671,7 @@ inventory facts, not a Windows runtime dependency closure or release SBOM.
 
 | Product role | Actual source at this checkpoint | Packaging/activation consequence |
 | --- | --- | --- |
-| Ordinary-user desktop UI | `crates/nevrotick-ui` has a fixture-only `main.rs` and Win32 adapter; direct dependencies are garde 0.23.0 and Windows-only windows-sys 0.61.2 | It is a usable reference for the future UI entry point, not a production package payload. Retain `asInvoker` behavior and UI-M0 deferrals. |
+| Ordinary-user desktop UI | `crates/nevrotick-ui` has a fixture-only `main.rs` and Win32 adapter; direct dependencies are garde 0.23.0 and Windows-only windows-sys 0.61.2 | It is a Win32 reference candidate for the future Slint UI entry point under OD-13, not a production package payload. Slint graph/licence, generated-code and native/package qualification remain pending in the UI-M0 migration handoff. Retain `asInvoker` behavior and UI-M0 deferrals. |
 | Network-facing engine service | `crates/nevrotick-engine` contains a library and explicit `nevrotick-observe` CLI; direct external dependencies are getrandom 0.4.3 and Tokio 1.54.1, plus local `ntp-wire` | The observation CLI is not an SCM service. A production service entry point, host adapter, providers and native dependency closure remain absent/unqualified. |
 | Clock broker | No `clock-broker` production crate or executable is present in the inspected tree | Its service identity, clock/IPC/recovery adapters and independently qualified payload must be implemented through P3/P4. Do not substitute the observer CLI. |
 | Elevated lifecycle helper | No `admin-helper` production crate or executable is present | The narrow installed helper and supported activation/provisioning mechanism remain prerequisites. A declaration alone supplies neither executable nor authority. |
@@ -699,7 +699,7 @@ The package author uses this field-level profile when real components exist:
 | --- | --- | --- |
 | `Identity` | One product identity, `ProcessorArchitecture="x64"`, monotonic release version | Exact `Name`/`Publisher` come from David's Partner Center identity; do not invent them. Bind submitted and delivered versions separately. [S02, S51] |
 | `Dependencies/TargetDeviceFamily` | `Name="Windows.Desktop"`; freeze actual `MinVersion` and `MaxVersionTested` | Existing Windows 11 target, required features and the build-26100 Trusted Launch row must agree. A test maximum is not proof of coverage. [S51] |
-| Ordinary UI `Application` | Explicit actual `Executable`, stable unique `Id`, `uap10:RuntimeBehavior="packagedClassicApp"`, `uap10:TrustLevel="mediumIL"` | This expresses the selected ordinary full-trust Win32 UI; it supplies no AppContainer or administrative authority. Avoid contradictory legacy `EntryPoint` attributes. [S51, S52] |
+| Ordinary UI `Application` | Explicit actual `Executable`, stable unique `Id`, `uap10:RuntimeBehavior="packagedClassicApp"`, `uap10:TrustLevel="mediumIL"` | This expresses the selected ordinary full-trust Windows desktop UI, with Slint as its default toolkit; it supplies no AppContainer or administrative authority. Avoid contradictory legacy `EntryPoint` attributes. [S51, S52] |
 | Package `Properties` | Explicit content integrity; Trusted Launch for the admitted supported profile; real display/asset metadata | Resolve namespaces and SDK schema, then inspect the emitted and Store-delivered manifest. Protect all executable content as in section 3.1. |
 | Compiled calendar/policy provenance | Same authenticated complete release and supported coverage as [NV-LP-001](leap-second-policy.md#3-knowledge-and-distribution-contract) | Reproduce reviewed pinned-input generation and bind the exact normalized revision/digest and generator to the actual payload. No new manifest capability, runtime download or separate updater is required. |
 | `runFullTrust` | Required for the intended medium-IL desktop application | Declare the restricted capability and verify the actual activation graph. It is not elevation. [S14, S51] |
@@ -725,7 +725,7 @@ the source/activation layer without inventing observed enforcement:
 | Role / actual creation owner | Earliest supported application-owned work | Remaining creation/compatibility evidence |
 | --- | --- | --- |
 | Future own-process engine and broker / SCM | Main connects promptly with `StartServiceCtrlDispatcherW`; bounded service-specific initialization in `ServiceMain` establishes supported policies/readback and the existing token/configuration admission before providers, normal network/IPC or clock work. Preserve control/status registration and bounded cleanup. [S43, S56] | SCM owns creation. No reviewed service manifest field supplies a general process-mitigation vector. Loader/static-import/CRT and thread-local-storage callback execution precedes service code; startup inventory and final package trust must cover it. Child restrictions, initial CFG/HSP and any creation-only policy still need their real supported mechanism. |
-| Ordinary desktop UI / Windows packaged activation | Its trusted entry point can set supported runtime policies before its application work; retain Win32k and separately qualify native controls/accessibility. [S43, S52] | The application does not thereby control Windows' parent-side creation attributes. Record the initial image/loader state, CIG/ACG compatibility and actual package identity. |
+| Ordinary desktop UI / Windows packaged activation | Its trusted entry point can set supported runtime policies before its application work; retain Win32k and separately qualify the actual Slint backend/widgets/accessibility. [S43, S52] | The application does not thereby control Windows' parent-side creation attributes. Record the initial image/loader state, CIG/ACG compatibility and actual package identity. |
 | Installed elevated helper / approved activation and UAC path | The helper's own trusted entry point can perform bounded admission before its permitted lifecycle operation. IPC payloads never choose a weaker role. [S43] | The exact supported activation/account/package-identity path remains unresolved. A UAC-launched helper is not automatically created with attributes set on some different process. Keep its narrow rights and recovery behavior separately qualified. |
 | An actually application-created child, if a necessary operation later requires one | `PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY` can carry the documented creation values, including `PROCESS_CREATION_MITIGATION_POLICY_BLOCK_NON_MICROSOFT_BINARIES_ALLOW_STORE`. [S33] | This is a mechanism reference, not selection of a launcher or additional child process. It does not prove SCM/UI/UAC activation or bypass the leaf-service no-child contract. |
 

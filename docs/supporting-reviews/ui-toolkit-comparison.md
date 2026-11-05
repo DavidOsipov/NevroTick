@@ -2,7 +2,10 @@
 
 **Date:** 30 October 2026, Asia/Tbilisi
 
-**Disposition:** comparison closed; retain Win32.
+**Historical disposition, 30 October:** comparison closed; retain Win32.
+**Current direction, 5 November:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default after the later live-host experiment. The historical
+results below remain unchanged; they supply no Slint qualification.
 
 **Execution record:** [S0.5 comparison task](../../tasks/s0.5-ui-comparison.md).
 
@@ -10,7 +13,8 @@
 
 David rejected the tested egui configuration because approximately **145 MiB of
 private memory is unacceptable for this simple UI**. Keep the existing Win32
-implementation and resource targets. Reduced application code and styling/testing
+implementation and resource targets at that date. The toolkit-default decision
+is now superseded by OD-13. Reduced application code and styling/testing
 benefits do not authorize a larger memory budget or further egui experiments in
 the current task.
 
@@ -154,6 +158,7 @@ contains exact artifact identities, ZIP/source-map hashes and original temporary
 and Windows paths. The ZIP SHA-256 is
 `eeb4869556097643cd79581569cd26752a08bb783d554204444bff1ff1f84e7d`.
 
-Use these results for the recorded configuration and decision. Continue the
-existing Win32 plan. Any future egui investigation needs a new explicit task and
+Use these results for the recorded configuration and historical decision. Follow
+OD-13 and the [UI-M0 migration](../../tasks/ui-m0.md) for current Slint work; retain
+the Win32 reference until replacement qualification. Any future egui investigation needs a new explicit task and
 must address the owner's footprint requirement and the actual dependency graph.

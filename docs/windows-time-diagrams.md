@@ -5,6 +5,12 @@
 
 These editable Mermaid views are extracted from the [canonical architecture and threat model](windows-time-architecture.md). Keep each diagram in that plan authoritative and regenerate this companion when the architecture changes. GitHub and other Mermaid-capable Markdown renderers display the diagrams directly; the fenced source is also available to edit.
 
+**UI toolkit amendment, 5 November 2026:**
+[OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint (winit/software and Fluent-style starting configuration). The
+diagrams show the selected process owner; the checked-in Win32 reference is not
+yet migrated or replaced by qualified Slint evidence.
+
 **Distribution contract, amended 3 November 2026:** one complete hardened MSIX per
 supported architecture is selected for David's Store submission attempt with
 services. It contains the native UI, engine service, privileged clock broker,
@@ -40,7 +46,7 @@ flowchart TD
     O["Local users and processes"]
     subgraph PRODUCT["One installed product"]
         direction TB
-        U["Native UI - normal user"]
+        U["Slint UI - normal user"]
         E["Engine service - no clock privilege"]
         B["Clock broker - narrow time privilege"]
         A["Admin helper - elevated on demand"]
@@ -68,7 +74,7 @@ The outer box is an **installation boundary**, not a shared privilege boundary. 
 
 ```mermaid
 sequenceDiagram
-    participant U as Native UI
+    participant U as Slint UI
     participant B as Clock broker
     participant E as Engine service
     participant N as Time sources

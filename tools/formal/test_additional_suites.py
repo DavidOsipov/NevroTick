@@ -26,6 +26,47 @@ SUITES = load("additional_suites_test", HERE / "additional_suites.py")
 
 
 class AdditionalSuiteTests(unittest.TestCase):
+    def test_core_proofs_use_the_frozen_source_and_complete_fixed_contract(self):
+        for selector, stem in (("endpoint-finish", "endpoint_finish"),
+                               ("fraction-constructor", "fraction_constructor"),
+                               ("fraction-comparison", "fraction_comparison")):
+            with self.subTest(selector=selector):
+                projection = load(f"additional_{stem}_metadata_test", HERE / f"{stem}_projection.py")
+                self.assertEqual(SUITES.jobs(selector), projection.schedule())
+                name = f"{stem}::{stem}_full_domain"
+                self.assertEqual(SUITES.expected_contract(stem, name),
+                                 (frozenset(projection.REQUIRED_ASSERTIONS[name]),
+                                  frozenset(projection.REQUIRED_COVERS[name])))
+                self.assertEqual(set(SUITES.input_names(selector)), {
+                    "tools/formal/additional_suites.py", f"tools/formal/{stem}_projection.py",
+                    f"tools/formal/{stem}_harness.rs", f"tools/formal/test_{stem}.py"})
+                with tempfile.TemporaryDirectory() as directory:
+                    folder = Path(directory)
+                    source = folder / "source"
+                    for name in [*SUITES.input_names(selector),
+                                 "crates/time-core/src/projection_enclosure.rs",
+                                 "crates/time-core/src/selection.rs"]:
+                        destination = source / name
+                        destination.parent.mkdir(parents=True, exist_ok=True)
+                        destination.write_bytes((ROOT / name).read_bytes())
+                    loaded = []
+
+                    def frozen_loader(name, path):
+                        loaded.append(path)
+                        self.assertTrue(path.is_relative_to(source))
+                        return load(name, path)
+
+                    healthy = []
+                    for index, job in enumerate(SUITES.jobs(selector), 1):
+                        inputs = folder / f"inputs-{index}"
+                        metadata = SUITES.prepare(frozen_loader, source, inputs, job, index)
+                        self.assertEqual(metadata["entrypoint"], inputs / "proof.rs")
+                        self.assertEqual(metadata["mutation"] is None, job["case"] == "healthy")
+                        if job["case"] == "healthy":
+                            healthy.append((inputs / "proof.rs").read_bytes())
+                    self.assertEqual(len(loaded), 5)
+                    self.assertEqual(healthy[0], healthy[1])
+
     def test_each_selected_proof_closure_includes_registry_and_only_selected_code(self):
         for selector, stem in (("coordinate-exchange", "coordinate_exchange"), ("clock", "clock"),
                                ("leap-calendar", "leap_calendar"), ("relative-range", "relative_range"), ("exchange-composition", "exchange_composition"), ("calendar-composition", "calendar_composition"), ("leap-ticks", "leap_ticks"), ("calendar-finite-laws", "calendar_finite_laws"), ("leap-coverage", "leap_coverage")):
@@ -115,6 +156,9 @@ class AdditionalSuiteTests(unittest.TestCase):
             ("leap_ticks", "leap_ticks_full_domain"): (8, 7),
             ("calendar_finite_laws", "calendar_finite_laws_full_domain"): (7, 4),
             ("leap_coverage", "leap_coverage_full_domain"): (9, 13),
+            ("endpoint_finish", "endpoint_finish::endpoint_finish_full_domain"): (8, 10),
+            ("fraction_constructor", "fraction_constructor::fraction_constructor_full_domain"): (8, 14),
+            ("fraction_comparison", "fraction_comparison::fraction_comparison_full_domain"): (12, 20),
         }
         for (subject, harness), sizes in expected_sizes.items():
             with self.subTest(subject=subject, harness=harness):

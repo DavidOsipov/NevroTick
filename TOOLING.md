@@ -1,5 +1,14 @@
 # Rust development environment
 
+**UI toolkit decision, 5 November 2026:**
+[OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint with the measured winit/software and Fluent-style starting
+configuration. Current repository UI commands still check the Win32 reference
+implementation; they establish no Slint qualification. The [UI-M0 task](tasks/ui-m0.md)
+owns exact graph/licence admission, generated-code/lint-boundary review and the
+migrated candidate's checks. No toolchain, Cargo graph or native execution
+authority changes through this documentation amendment.
+
 Prepared on 28 October 2026 for the initial NevroTick development stage.
 The repository pin is Rust **1.99.1**, the current stable release checked against
 its official distribution manifest. Rustup is **1.29.2**. The same compiler and
@@ -1216,10 +1225,19 @@ owns the retained failure, two bounded diagnostic reserves and any separately
 admitted verifier repair. The separate private candidate now has the matching
 `rustc-dev` component and rebuilt compiler: all 46 binding tests and eight
 bounded MEMBER controls qualified, including the intended false-assertion
-failure and restored health. Its complete 7,130-entry inventory changes only
-the compiler. This does not qualify the public constructor; continue its separate
-five-job campaign. Shared tool installation and shipping Rust/LLVM policy are
-unchanged. Runtime admission checks the effective tools and frozen build
+failure and restored health. That historical 7,130-entry inventory changed only
+the compiler. The current private 7,131-entry inventory also contains one exact
+copy of its existing LLVM library in the target `rustlib` directory, required by
+the nested Cargo/rustc loader. The installed library is 207,996,272 bytes,
+SHA-256 `559bc1644a9b1124bf62bf11cb022c8c385cb53dc940893a8a87b44241f9a77d`;
+the extension and original entries qualified separately. Constructor compilation
+now reaches CBMC; its latest fixed 120-second attempt timed out without returning
+checks. The public constructor proof remains incomplete; follow its existing
+checkpoint's source-only hold. The follow-on target-refinement and raw-property-ID
+driver patches are unbuilt and unadopted; no new driver is installed. The reusable
+[compiler repair source kit](tools/formal/kani-padded-union/README.md) belongs in
+Git; generated toolchains and campaign outputs remain external. Shared tool installation and shipping
+Rust/LLVM policy are unchanged. Runtime admission checks the effective tools and frozen build
 provenance without reopening unused compiler-build source/vendors.
 
 The [later full-admission metadata optimization](tasks/s0.1-protocol-comparison.md#full-tool-admission-metadata-optimization--1-november-2026)

@@ -166,8 +166,12 @@ def input_names(subject: str, solver_backend: str = "cadical") -> list[str]:
         names.add("tools/formal/rounding_harness.rs")
     if subject in ("era", "all"):
         names.update(("tools/formal/era_harness.rs", "tools/formal/era_projection.py"))
-    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage"):
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"):
         names.update(additional_suites().input_names(subject))
+    if subject in {"endpoint-finish", "fraction-constructor", "fraction-comparison"}:
+        names.update(("crates/time-core/Cargo.toml",
+                      "crates/time-core/src/projection_enclosure.rs",
+                      "crates/time-core/src/selection.rs"))
     if solver_backend == "z3":
         names.update(Z3_INPUTS)
     if (ROOT / ".cargo/config.toml").exists():
@@ -207,7 +211,7 @@ def require_sources(check, source: Path, records: dict, subject: str,
 
 def jobs(subject: str) -> list[dict]:
     """Return the complete fixed schedule, without retries or solver concurrency."""
-    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage"):
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"):
         result = additional_suites().jobs(subject)
         if not 1 <= len(result) <= MAX_JOBS:
             raise Incomplete("Empty or excessive additional proof schedule")
@@ -753,7 +757,7 @@ def main(argv=None) -> int:
     parser.add_argument("--output-dir", required=True,
                         help="fresh canonical absolute private directory outside this checkout")
     parser.add_argument("--subject", choices=("rounding", "era", "all", "coordinate-exchange",
-                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage"), default="all",
+                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"), default="all",
                         help="fixed suite; all retains the original twelve-job rounding/era schedule")
     parser.add_argument("--start-at", type=int, default=1,
                         help="execute only this fixed-schedule suffix; omitted jobs are not qualified")

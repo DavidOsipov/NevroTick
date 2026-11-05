@@ -1,6 +1,6 @@
 # Native security implementation skills
 
-Read [CONTRACT.md](CONTRACT.md) for security work. Select changed input-to-effect path; native controls replace website mechanisms rather than inherit names.
+Read [CONTRACT.md](CONTRACT.md) for security work. Select the changed input-to-effect path; Slint widgets and narrow Windows adapters implement native UI behavior, with explicit semantics and independent authority checks.
 
 | Surface | Owner |
 | --- | --- |

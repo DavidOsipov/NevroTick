@@ -1,0 +1,556 @@
+--- a/kani-driver/src/args/mod.rs
++++ b/kani-driver/src/args/mod.rs
+@@ -332,6 +332,12 @@
+     #[arg(long, hide_short_help = true)]
+     pub no_restrict_vtable: bool,
+ 
++    /// Apply checked per-callsite subsets of the generated vtable target sets.
++    /// This experimental proof mode requires -Z restrict-vtable and retains the
++    /// original map, supplied request and applied map. It never disables guards.
++    #[arg(long, value_name = "PATH", hide_short_help = true)]
++    pub vtable_target_refinements: Option<PathBuf>,
++
+     /// Disable CBMC's slice formula which prevents values from being assigned to redundant variables in traces.
+     #[arg(long, hide_short_help = true)]
+     pub no_slice_formula: bool,
+@@ -474,6 +480,48 @@
+     pub fn restrict_vtable(&self) -> bool {
+         self.common_args.unstable_features.contains(UnstableFeature::RestrictVtable)
+             && !self.no_restrict_vtable
++    }
++
++    /// Require the closed all-checks envelope before any supplied refinement is
++    /// consumed. Rechecked by the model consumer so direct callers cannot bypass
++    /// CLI validation. The absent-option path imposes no additional restrictions.
++    pub(crate) fn validate_vtable_target_refinements(&self) -> Result<(), Error> {
++        if self.vtable_target_refinements.is_none() {
++            return Ok(());
++        }
++        if !self.restrict_vtable()
++            || !self.keep_temps
++            || !self.exact
++            || self.harnesses.len() != 1
++            || !self.run_sanity_checks
++            || self.export_json.is_none()
++            || !self.checks.memory_safety_on()
++            || !self.checks.overflow_on()
++            || !self.checks.undefined_function_on()
++            || !self.checks.unwinding_on()
++            || self.no_assertion_reach_checks
++            || self.no_assert_overrides
++            || self.no_assert_contracts
++            || self.ignore_global_asm
++            || self.prove_safety_only
++            || !self.cbmc_args.is_empty()
++            || self.only_codegen
++            || self.no_codegen
++            || self.output_format() == OutputFormat::Old
++            || self.concrete_playback.is_some()
++            || self.coverage
++            || self.synthesize_loop_contracts
++            || self.common_args.unstable_features.contains(UnstableFeature::Lean)
++        {
++            return Err(Error::raw(
++                ErrorKind::ArgumentConflict,
++                "--vtable-target-refinements requires -Z restrict-vtable, --keep-temps, \
++                 one exact harness, --run-sanity-checks, structured --export-json, all default \
++                 and assertion reachability checks, and ordinary CBMC verification without \
++                 raw --cbmc-args, safety-only, contract suppression, playback or synthesis",
++            ));
++        }
++        Ok(())
+     }
+ 
+     /// Assertion reachability checks should be disabled
+@@ -952,6 +1000,7 @@
+         unstable()?;
+         conflicting_options()?;
+         deprecated_stabilized_obsolete()?;
++        self.validate_vtable_target_refinements()?;
+ 
+         // Bespoke validations that don't fit into any of the categories above.
+         if let Some(randomize_layout) = self.randomize_layout
+@@ -1241,6 +1290,52 @@
+         );
+     }
+ 
++    const REFINEMENT_ARGS: &str = "-Z restrict-vtable -Z unstable-options \
++        --vtable-target-refinements refinements.json --keep-temps --harness proof::selected \
++        --exact --run-sanity-checks --export-json out.json";
++
++    #[test]
++    fn guarded_refinement_cli_accepts_closed_envelope() {
++        let parsed = parse_unstable_disabled(REFINEMENT_ARGS).unwrap();
++        assert_eq!(parsed.verify_opts.vtable_target_refinements,
++            Some(PathBuf::from("refinements.json")));
++    }
++
++    #[test]
++    fn guarded_refinement_cli_rejects_missing_required_envelope() {
++        for required in [
++            "-Z restrict-vtable", "--keep-temps", "--exact", "--run-sanity-checks",
++            "--export-json out.json",
++        ] {
++            let args = REFINEMENT_ARGS.replace(required, "");
++            // split_whitespace also handles the deliberate space left by removal.
++            let command = format!("kani file.rs {args}");
++            let parsed = StandaloneArgs::try_parse_from(command.split_whitespace()).unwrap();
++            assert!(parsed.verify_opts.validate().is_err(), "accepted without {required}");
++        }
++        assert!(parse_unstable_disabled(&format!("{REFINEMENT_ARGS} --harness other")).is_err());
++    }
++
++    #[test]
++    fn guarded_refinement_cli_rejects_check_suppression_and_raw_backend_args() {
++        for incompatible in [
++            "--no-default-checks", "--no-memory-safety-checks", "--no-overflow-checks",
++            "--no-undefined-function-checks", "--no-unwinding-checks", "--no-restrict-vtable",
++            "--no-assertion-reach-checks", "--no-assert-overrides", "--prove-safety-only",
++            "--only-codegen", "--no-codegen", "--output-format old",
++            "--cbmc-args --property ignored", "--cbmc-args --no-assertions",
++        ] {
++            assert!(parse_unstable_disabled(&format!("{REFINEMENT_ARGS} {incompatible}")).is_err(),
++                "accepted {incompatible}");
++        }
++    }
++
++    #[test]
++    fn guarded_refinement_absent_option_preserves_ordinary_args() {
++        let args = "-Z unstable-options --no-default-checks --cbmc-args --property selected";
++        assert!(parse_unstable_disabled(args).is_ok());
++    }
++
+     #[test]
+     fn check_disable_slicing_unstable() {
+         check_unstable_flag!("--no-slice-formula", no_slice_formula);
+--- a/kani-driver/src/metadata.rs
++++ b/kani-driver/src/metadata.rs
+@@ -1,18 +1,208 @@
+ // Copyright Kani Contributors
+ // SPDX-License-Identifier: Apache-2.0 OR MIT
+ 
+-use anyhow::Result;
++use anyhow::{Context, Result, ensure};
+ use std::path::Path;
+ 
+ use kani_metadata::{
+     HarnessMetadata, InternedString, TraitDefinedMethod, VtableCtxResults, find_proof_harnesses,
+ };
+-use std::collections::{BTreeSet, HashMap};
++use std::collections::{BTreeMap, BTreeSet, HashMap};
+ use std::fs::File;
+-use std::io::{BufReader, BufWriter};
++use std::io::{BufReader, BufWriter, Read, Write};
++use std::marker::PhantomData;
+ 
+ use crate::session::KaniSession;
+ use serde::Deserialize;
++use serde::de::{IgnoredAny, MapAccess, SeqAccess, Visitor, value::MapAccessDeserializer};
++
++const MAX_REFINEMENT_BYTES: usize = 256 * 1024;
++const MAX_LINKED_RESTRICTION_BYTES: usize = 8 * 1024 * 1024;
++const MAX_REFINEMENT_ITEMS: usize = 64;
++const MAX_REFINEMENT_NAME_BYTES: usize = 1024;
++
++/// An exact generated name, with a nonempty, bounded UTF-8 representation.
++struct RefinementName(String);
++
++impl<'de> Deserialize<'de> for RefinementName {
++    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
++        struct NameVisitor;
++        impl Visitor<'_> for NameVisitor {
++            type Value = RefinementName;
++
++            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++                f.write_str("a nonempty generated name of at most 1024 UTF-8 bytes")
++            }
++
++            fn visit_str<E: serde::de::Error>(self, value: &str) -> Result<Self::Value, E> {
++                if value.is_empty() || value.len() > MAX_REFINEMENT_NAME_BYTES {
++                    return Err(E::custom("refinement name is empty or exceeds its byte limit"));
++                }
++                Ok(RefinementName(value.to_owned()))
++            }
++        }
++        deserializer.deserialize_str(NameVisitor)
++    }
++}
++
++/// Count both request entries and targets during decoding, without trusting a
++/// sequence size hint. The outer byte limit also bounds parser scratch storage.
++struct RefinementItems<T>(Vec<T>);
++
++impl<'de, T: Deserialize<'de>> Deserialize<'de> for RefinementItems<T> {
++    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
++        struct ItemsVisitor<T>(PhantomData<T>);
++        impl<'de, T: Deserialize<'de>> Visitor<'de> for ItemsVisitor<T> {
++            type Value = RefinementItems<T>;
++
++            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++                f.write_str("a nonempty array of at most 64 refinement items")
++            }
++
++            fn visit_seq<A: SeqAccess<'de>>(self, mut sequence: A) -> Result<Self::Value, A::Error> {
++                let mut values = Vec::new();
++                while values.len() < MAX_REFINEMENT_ITEMS {
++                    match sequence.next_element()? {
++                        Some(value) => values.push(value),
++                        None if values.is_empty() => {
++                            return Err(serde::de::Error::custom("empty refinement array"));
++                        }
++                        None => return Ok(RefinementItems(values)),
++                    }
++                }
++                if sequence.next_element::<IgnoredAny>()?.is_some() {
++                    return Err(serde::de::Error::custom("refinement array exceeds 64 items"));
++                }
++                Ok(RefinementItems(values))
++            }
++        }
++        deserializer.deserialize_seq(ItemsVisitor(PhantomData))
++    }
++}
++
++/// Derived Serde structs also accept positional arrays. Require actual objects
++/// while preserving the derive's duplicate-field and unknown-field rejection.
++struct RefinementObject<T>(T);
++
++impl<'de, T: Deserialize<'de>> Deserialize<'de> for RefinementObject<T> {
++    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
++        struct ObjectVisitor<T>(PhantomData<T>);
++        impl<'de, T: Deserialize<'de>> Visitor<'de> for ObjectVisitor<T> {
++            type Value = RefinementObject<T>;
++
++            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++                f.write_str("a refinement object")
++            }
++
++            fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
++                T::deserialize(MapAccessDeserializer::new(map)).map(RefinementObject)
++            }
++        }
++        deserializer.deserialize_map(ObjectVisitor(PhantomData))
++    }
++}
++
++#[derive(Deserialize)]
++#[serde(deny_unknown_fields)]
++struct VtableRefinementDocument {
++    version: u32,
++    refinements: RefinementItems<RefinementObject<VtableRefinementEntry>>,
++}
++
++#[derive(Deserialize)]
++#[serde(deny_unknown_fields)]
++struct VtableRefinementEntry {
++    callsite: RefinementName,
++    targets: RefinementItems<RefinementName>,
++}
++
++/// Constructed only by complete, bounded decoding and duplicate rejection.
++/// Original-map membership remains contextual and is checked by `refine_targets`.
++struct CheckedVtableRefinements(Vec<(String, Vec<String>)>);
++
++fn decode_vtable_refinements(bytes: &[u8]) -> Result<CheckedVtableRefinements> {
++    ensure!(bytes.len() <= MAX_REFINEMENT_BYTES, "refinement document exceeds 256 KiB");
++    let RefinementObject(document): RefinementObject<VtableRefinementDocument> =
++        serde_json::from_slice(bytes).context("invalid vtable target refinement document")?;
++    ensure!(document.version == 1, "unsupported vtable target refinement version");
++    let mut sites = BTreeSet::new();
++    let mut refinements = Vec::new();
++    for RefinementObject(entry) in document.refinements.0 {
++        ensure!(sites.insert(entry.callsite.0.clone()), "duplicate refinement callsite");
++        let mut unique_targets = BTreeSet::new();
++        let mut targets = Vec::new();
++        for target in entry.targets.0 {
++            ensure!(unique_targets.insert(target.0.clone()), "duplicate refinement target");
++            targets.push(target.0);
++        }
++        refinements.push((entry.callsite.0, targets));
++    }
++    Ok(CheckedVtableRefinements(refinements))
++}
++
++/// Return a complete map with only the requested nonempty subsets replaced.
++/// No original map is mutated, including on a later entry's rejection.
++fn refine_targets(
++    original: &BTreeMap<String, Vec<String>>,
++    requested: CheckedVtableRefinements,
++) -> Result<BTreeMap<String, Vec<String>>> {
++    for (site, targets) in &requested.0 {
++        let choices = original.get(site).context("unknown refinement callsite")?;
++        ensure!(targets.iter().all(|target| choices.contains(target)),
++            "refinement contains a target outside its original callsite choices");
++    }
++    let mut refined = original.clone();
++    for (site, targets) in requested.0 {
++        refined.insert(site, targets);
++    }
++    Ok(refined)
++}
++
++/// Read one regular-file handle once, with a hard byte limit before decoding.
++/// The caller owns/seals input paths; this is not a hostile-filesystem protocol.
++fn read_refinement_input(path: &Path, limit: usize) -> Result<Vec<u8>> {
++    ensure!(std::fs::symlink_metadata(path)?.is_file(), "refinement input is not a regular file");
++    let file = File::open(path)?;
++    ensure!(file.metadata()?.is_file(), "opened refinement input is not a regular file");
++    let mut bytes = Vec::new();
++    file.take((limit + 1) as u64).read_to_end(&mut bytes)?;
++    ensure!(bytes.len() <= limit, "refinement input exceeds its byte limit");
++    Ok(bytes)
++}
++
++/// Fresh artifacts never replace the original map, the supplied path or an
++/// earlier receipt. Failed writes abort before goto-instrument is invoked.
++fn write_refinement_artifact(path: &Path, bytes: &[u8]) -> Result<()> {
++    let mut file = File::options().write(true).create_new(true).open(path)?;
++    file.write_all(bytes)?;
++    file.flush()?;
++    Ok(())
++}
++
++/// Prepare the complete checked map and retain the exact consumed request.
++/// Requires fresh, distinct output paths in the owned model output directory.
++/// This changes neither function bodies nor assertions: the existing guarded
++/// CBMC restriction transformation remains the sole model transformer.
++pub(crate) fn write_refined_vtable_restrictions(
++    original_path: &Path,
++    request_path: &Path,
++    snapshot_path: &Path,
++    refined_path: &Path,
++) -> Result<()> {
++    ensure!(original_path != snapshot_path && original_path != refined_path
++        && request_path != snapshot_path && request_path != refined_path
++        && snapshot_path != refined_path, "refinement artifact paths overlap");
++    let request_bytes = read_refinement_input(request_path, MAX_REFINEMENT_BYTES)?;
++    let requested = decode_vtable_refinements(&request_bytes)?;
++    let original_bytes = read_refinement_input(original_path, MAX_LINKED_RESTRICTION_BYTES)?;
++    let original = serde_json::from_slice(&original_bytes)?;
++    let refined = refine_targets(&original, requested)?;
++    let refined_bytes = serde_json::to_vec(&refined)?;
++    ensure!(refined_bytes.len() <= MAX_LINKED_RESTRICTION_BYTES,
++        "refined map exceeds its byte limit");
++    write_refinement_artifact(snapshot_path, &request_bytes)?;
++    write_refinement_artifact(refined_path, &refined_bytes)
++}
+ 
+ /// From either a file or a path with multiple files, output the CBMC restrictions file we should use.
+ pub fn collect_and_link_function_pointer_restrictions(
+@@ -158,6 +348,144 @@
+     use super::*;
+     use kani_metadata::{HarnessAttributes, HarnessKind};
+     use std::path::PathBuf;
++
++    fn refinement_map() -> BTreeMap<String, Vec<String>> {
++        BTreeMap::from([
++            ("owner.site".to_owned(), vec!["first".to_owned(), "second".to_owned()]),
++            ("other.site".to_owned(), vec!["untouched".to_owned()]),
++        ])
++    }
++
++    fn refinement_request(site: &str, targets: &str) -> Vec<u8> {
++        format!(r#"{{"version":1,"refinements":[{{"callsite":"{site}","targets":[{targets}]}}]}}"#)
++            .into_bytes()
++    }
++
++    #[test]
++    fn guarded_refinement_accepts_subset_and_preserves_other_sites() {
++        let original = refinement_map();
++        let requested = decode_vtable_refinements(&refinement_request("owner.site", r#""second""#))
++            .unwrap();
++        let refined = refine_targets(&original, requested).unwrap();
++        assert_eq!(refined["owner.site"], vec!["second"]);
++        assert_eq!(refined["other.site"], original["other.site"]);
++        assert_eq!(refined.len(), original.len());
++        assert_eq!(original, refinement_map());
++    }
++
++    #[test]
++    fn guarded_refinement_accepts_equal_nonempty_target_set() {
++        let original = refinement_map();
++        let requested = decode_vtable_refinements(
++            &refinement_request("owner.site", r#""first","second""#),
++        ).unwrap();
++        assert_eq!(refine_targets(&original, requested).unwrap(), original);
++    }
++
++    #[test]
++    fn guarded_refinement_rejects_unknown_site_or_added_target() {
++        let original = refinement_map();
++        for bytes in [
++            refinement_request("unknown.site", r#""first""#),
++            refinement_request("owner.site", r#""untouched""#),
++            refinement_request("owner.site", r#""first","new""#),
++        ] {
++            let requested = decode_vtable_refinements(&bytes).unwrap();
++            assert!(refine_targets(&original, requested).is_err());
++            assert_eq!(original, refinement_map());
++        }
++    }
++
++    #[test]
++    fn guarded_refinement_strict_document_rejections() {
++        let invalid = [
++            r#"{"version":2,"refinements":[{"callsite":"s","targets":["t"]}]}"#,
++            r#"{"version":1,"refinements":[]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":[]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"","targets":["t"]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":[""]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":["t","t"]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":["t"]},{"callsite":"s","targets":["t"]}]}"#,
++            r#"{"version":1,"version":1,"refinements":[{"callsite":"s","targets":["t"]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","\u0063allsite":"s","targets":["t"]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":["t"],"extra":0}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":["t"]}],"extra":0}"#,
++            r#"[1,[{"callsite":"s","targets":["t"]}]]"#,
++            r#"{"version":1,"refinements":[["s",["t"]]]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":["t"]}]} {}"#,
++            r#"{"version":1,"refinements":null}"#,
++            r#"{"version":1.0,"refinements":[{"callsite":"s","targets":["t"]}]}"#,
++            r#"{"version":1,"refinements":[{"callsite":"s","targets":["t"]}]"#,
++        ];
++        for document in invalid {
++            assert!(decode_vtable_refinements(document.as_bytes()).is_err(), "accepted {document}");
++        }
++    }
++
++    #[test]
++    fn guarded_refinement_bounds_and_valid_neighbors() {
++        let name = "x".repeat(MAX_REFINEMENT_NAME_BYTES);
++        assert!(decode_vtable_refinements(&refinement_request(&name, r#""t""#)).is_ok());
++        assert!(decode_vtable_refinements(&refinement_request(&(name + "x"), r#""t""#)).is_err());
++        let unicode_name = "é".repeat(MAX_REFINEMENT_NAME_BYTES / 2);
++        assert!(decode_vtable_refinements(&refinement_request(&unicode_name, r#""t""#)).is_ok());
++        assert!(decode_vtable_refinements(&refinement_request(&(unicode_name + "é"), r#""t""#)).is_err());
++        for count in [MAX_REFINEMENT_ITEMS, MAX_REFINEMENT_ITEMS + 1] {
++            let targets = (0..count).map(|index| format!("\"t{index}\""))
++                .collect::<Vec<_>>().join(",");
++            assert_eq!(decode_vtable_refinements(&refinement_request("s", &targets)).is_ok(),
++                count == MAX_REFINEMENT_ITEMS);
++            let entries = (0..count).map(|index| {
++                format!(r#"{{"callsite":"s{index}","targets":["t"]}}"#)
++            }).collect::<Vec<_>>().join(",");
++            let document = format!(r#"{{"version":1,"refinements":[{entries}]}}"#);
++            assert_eq!(decode_vtable_refinements(document.as_bytes()).is_ok(),
++                count == MAX_REFINEMENT_ITEMS);
++        }
++        let mut bytes = refinement_request("s", r#""t""#);
++        bytes.resize(MAX_REFINEMENT_BYTES, b' ');
++        assert!(decode_vtable_refinements(&bytes).is_ok());
++        bytes.push(b' ');
++        assert!(decode_vtable_refinements(&bytes).is_err());
++    }
++
++    #[test]
++    fn guarded_refinement_retains_request_and_both_maps_without_overwrite() {
++        let directory = tempfile::tempdir().unwrap();
++        let original = directory.path().join("original.json");
++        let request = directory.path().join("request.json");
++        let snapshot = directory.path().join("snapshot.json");
++        let refined = directory.path().join("refined.json");
++        let original_bytes = serde_json::to_vec(&refinement_map()).unwrap();
++        let request_bytes = refinement_request("owner.site", r#""first""#);
++        std::fs::write(&original, &original_bytes).unwrap();
++        std::fs::write(&request, &request_bytes).unwrap();
++        write_refined_vtable_restrictions(&original, &request, &snapshot, &refined).unwrap();
++        assert_eq!(std::fs::read(&original).unwrap(), original_bytes);
++        assert_eq!(std::fs::read(&snapshot).unwrap(), request_bytes);
++        let applied: BTreeMap<String, Vec<String>> =
++            serde_json::from_slice(&std::fs::read(&refined).unwrap()).unwrap();
++        assert_eq!(applied["owner.site"], vec!["first"]);
++        assert_eq!(applied["other.site"], refinement_map()["other.site"]);
++        assert!(write_refined_vtable_restrictions(&original, &request, &snapshot, &refined).is_err());
++        assert_eq!(std::fs::read(&original).unwrap(), original_bytes);
++    }
++
++    #[test]
++    fn guarded_refinement_rejection_writes_no_applied_artifacts() {
++        let directory = tempfile::tempdir().unwrap();
++        let original = directory.path().join("original.json");
++        let request = directory.path().join("request.json");
++        let snapshot = directory.path().join("snapshot.json");
++        let refined = directory.path().join("refined.json");
++        std::fs::write(&original, serde_json::to_vec(&refinement_map()).unwrap()).unwrap();
++        std::fs::write(&request, refinement_request("unknown.site", r#""first""#)).unwrap();
++        assert!(write_refined_vtable_restrictions(&original, &request, &snapshot, &refined).is_err());
++        assert!(!snapshot.exists() && !refined.exists());
++        std::fs::write(&request, vec![b' '; MAX_REFINEMENT_BYTES + 1]).unwrap();
++        assert!(write_refined_vtable_restrictions(&original, &request, &snapshot, &refined).is_err());
++        assert!(!snapshot.exists() && !refined.exists());
++    }
+ 
+     pub fn mock_proof_harness(
+         name: &str,
+--- a/kani-driver/src/call_goto_instrument.rs
++++ b/kani-driver/src/call_goto_instrument.rs
+@@ -1,14 +1,16 @@
+ // Copyright Kani Contributors
+ // SPDX-License-Identifier: Apache-2.0 OR MIT
+ 
+-use anyhow::Result;
++use anyhow::{Result, ensure};
+ use std::ffi::{OsStr, OsString};
+ use std::fs::File;
+ use std::io::BufReader;
+ use std::path::Path;
+ use std::process::Command;
+ 
+-use crate::metadata::collect_and_link_function_pointer_restrictions;
++use crate::metadata::{
++    collect_and_link_function_pointer_restrictions, write_refined_vtable_restrictions,
++};
+ use crate::project::Project;
+ use crate::session::KaniSession;
+ use crate::util::alter_extension;
+@@ -23,10 +25,21 @@
+         project: &Project,
+         harness: &HarnessMetadata,
+     ) -> Result<()> {
++        self.args.validate_vtable_target_refinements()?;
++        let restrictions = project.get_harness_artifact(harness, ArtifactType::VTableRestriction);
++        if self.args.vtable_target_refinements.is_some() {
++            ensure!(restrictions.is_some(), "refinement requires a generated vtable restriction map");
++            ensure!(harness.attributes.kind == kani_metadata::HarnessKind::Proof
++                && !harness.attributes.should_panic
++                && harness.attributes.stubs.is_empty()
++                && harness.attributes.verified_stubs.is_empty()
++                && harness.contract.is_none()
++                && !harness.has_loop_contracts,
++                "refinement requires an ordinary unstubbed proof without contracts");
++        }
+         // We actually start by calling goto-cc to start the specialization:
+         self.specialize_to_proof_harness(input, output, &harness.mangled_name)?;
+ 
+-        let restrictions = project.get_harness_artifact(harness, ArtifactType::VTableRestriction);
+         if let Some(restrictions_path) = restrictions {
+             self.apply_vtable_restrictions(output, restrictions_path)?;
+         }
+@@ -78,13 +91,26 @@
+ 
+     /// Apply -Z restrict-vtable to a goto binary.
+     pub fn apply_vtable_restrictions(&self, goto_file: &Path, restrictions: &Path) -> Result<()> {
++        self.args.validate_vtable_target_refinements()?;
+         let linked_restrictions = alter_extension(goto_file, "linked-restrictions.json");
+         self.record_temporary_file(&linked_restrictions);
+         collect_and_link_function_pointer_restrictions(restrictions, &linked_restrictions)?;
+ 
++        let applied_restrictions = if let Some(request) = &self.args.vtable_target_refinements {
++            let snapshot = alter_extension(goto_file, "target-refinements.request.json");
++            let refined = alter_extension(goto_file, "refined-linked-restrictions.json");
++            self.record_temporary_files(&[&snapshot, &refined]);
++            write_refined_vtable_restrictions(
++                &linked_restrictions, request, &snapshot, &refined,
++            )?;
++            refined
++        } else {
++            linked_restrictions
++        };
++
+         let args: Vec<OsString> = vec![
+             "--function-pointer-restrictions-file".into(),
+-            linked_restrictions.into(),
++            applied_restrictions.into(),
+             goto_file.to_owned().into_os_string(), // input
+             goto_file.to_owned().into_os_string(), // output
+         ];

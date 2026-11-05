@@ -1,0 +1,243 @@
+diff --git a/kani-driver/src/cbmc_output_parser.rs b/kani-driver/src/cbmc_output_parser.rs
+--- a/kani-driver/src/cbmc_output_parser.rs
++++ b/kani-driver/src/cbmc_output_parser.rs
+@@ -92,6 +92,8 @@
+     pub fn_name: Option<String>,
+     pub class: String,
+     pub id: u32,
++    /// Exact decoded CBMC property identifier, before parsing or demangling.
++    pub raw_id: String,
+ }
+ 
+ impl Property {
+@@ -159,7 +161,12 @@
+             } else {
+                 Some(format!("{:#}", demangle(attributes[0])))
+             };
+-            return Ok(PropertyId { fn_name, class: "recursion".to_owned(), id: 1 });
++            return Ok(PropertyId {
++                fn_name,
++                class: "recursion".to_owned(),
++                id: 1,
++                raw_id: id_str,
++            });
+         };
+ 
+         // Split the property name into three from the end, using `.` as the separator
+@@ -208,6 +215,7 @@
+             fn_name: attributes_tuple.0,
+             class,
+             id: attributes_tuple.2.parse().unwrap(),
++            raw_id: id_str,
+         })
+     }
+ }
+@@ -598,6 +606,7 @@
+         );
+         assert_eq!(prop_id.class, String::from("sanity_check"));
+         assert_eq!(prop_id.id, 1);
++        assert_eq!(prop_id.raw_id, "alloc::raw_vec::RawVec::<u8>::allocate_in.sanity_check.1");
+ 
+         let dummy_prop = Property {
+             description: "".to_string(),
+@@ -628,6 +637,7 @@
+         );
+         assert_eq!(prop_id.class, "missing_definition");
+         assert_eq!(prop_id.id, 1);
++        assert_eq!(prop_id.raw_id, "alloc::raw_vec::RawVec::<u8>::allocate_in.1");
+ 
+         let dummy_prop = Property {
+             description: "".to_string(),
+@@ -657,6 +667,7 @@
+         assert_eq!(prop_id.fn_name, None);
+         assert_eq!(prop_id.class, String::from("assertion"));
+         assert_eq!(prop_id.id, 1);
++        assert_eq!(prop_id.raw_id, "assertion.1");
+ 
+         let dummy_prop = Property {
+             description: "".to_string(),
+@@ -683,6 +694,7 @@
+         assert_eq!(prop_id.fn_name, None);
+         assert_eq!(prop_id.class, String::from("recursion"));
+         assert_eq!(prop_id.id, 1);
++        assert_eq!(prop_id.raw_id, ".recursion");
+ 
+         let dummy_prop = Property {
+             description: "".to_string(),
+@@ -712,6 +724,7 @@
+         );
+         assert_eq!(prop_id.class, String::from("recursion"));
+         assert_eq!(prop_id.id, 1);
++        assert_eq!(prop_id.raw_id, "alloc::raw_vec::RawVec::<u8>::allocate_in.recursion");
+ 
+         let dummy_prop = Property {
+             description: "".to_string(),
+@@ -730,6 +743,28 @@
+             dummy_prop.property_name(),
+             "alloc::raw_vec::RawVec::<u8>::allocate_in.recursion.1"
+         );
++    }
++
++    #[test]
++    fn check_property_raw_id_preserves_mangled_fallback_identity() {
++        let raw = "_RNvCsjGD3dMRtdCH_8controls13selected_call.1";
++        let prop_id: PropertyId = serde_json::from_value(serde_json::json!(raw)).unwrap();
++        assert_eq!(prop_id.raw_id, raw);
++        assert_eq!(prop_id.fn_name.as_deref(), Some("controls::selected_call"));
++        assert_eq!(prop_id.class, "missing_definition");
++        assert_eq!(prop_id.id, 1);
++    }
++
++    #[test]
++    fn check_property_raw_id_preserves_distinct_ids_with_equal_parsed_counters() {
++        let first: PropertyId = serde_json::from_str("\"assertion.01\"").unwrap();
++        let second: PropertyId = serde_json::from_str("\"assertion.1\"").unwrap();
++        assert_eq!(first.fn_name, second.fn_name);
++        assert_eq!(first.class, second.class);
++        assert_eq!(first.id, second.id);
++        assert_eq!(first.raw_id, "assertion.01");
++        assert_eq!(second.raw_id, "assertion.1");
++        assert_ne!(first.raw_id, second.raw_id);
+     }
+ 
+     #[test]
+diff --git a/kani-driver/src/frontend/schema_utils.rs b/kani-driver/src/frontend/schema_utils.rs
+--- a/kani-driver/src/frontend/schema_utils.rs
++++ b/kani-driver/src/frontend/schema_utils.rs
+@@ -252,6 +252,7 @@
+             .map(|(i, prop)| {
+                 json!({
+                     "id": i + 1,
++                    "raw_property_id": prop.property_id.raw_id,
+                     "function": prop.property_id.fn_name.as_deref().unwrap_or("unknown"),
+                     "status": format!("{:?}", prop.status),
+                     "description": prop.description,
+diff --git a/kani-driver/src/frontend/tests/schema_utils_test.rs b/kani-driver/src/frontend/tests/schema_utils_test.rs
+--- a/kani-driver/src/frontend/tests/schema_utils_test.rs
++++ b/kani-driver/src/frontend/tests/schema_utils_test.rs
+@@ -106,6 +106,7 @@
+                 id: 1,
+                 fn_name: Some("foo".to_string()),
+                 class: "safety".to_string(),
++                raw_id: "foo.safety.1".to_string(),
+             },
+             status: CheckStatus::Success,
+             description: "no overflow".to_string(),
+@@ -123,6 +124,7 @@
+                 id: 2,
+                 fn_name: Some("bar".to_string()),
+                 class: "assertion".to_string(),
++                raw_id: "bar.assertion.2".to_string(),
+             },
+             status: CheckStatus::Failure,
+             description: "assert failed".to_string(),
+@@ -155,12 +157,79 @@
+     // --- Assertions ---
+     assert_eq!(json["harness_id"], "crate::my_harness");
+     assert_eq!(json["status"], "Failure");
++    assert_eq!(json["checks"][0]["id"], 1);
++    assert_eq!(json["checks"][1]["id"], 2);
++    assert_eq!(json["checks"][0]["raw_property_id"], "foo.safety.1");
++    assert_eq!(json["checks"][1]["raw_property_id"], "bar.assertion.2");
+     assert_eq!(json["checks"][0]["function"], "foo");
+     assert_eq!(json["checks"][1]["function"], "bar");
+     assert_eq!(json["checks"][1]["location"]["file"], "src/main.rs");
+ 
+     // Optional extra check
+     assert!(json["duration_ms"].as_u64().unwrap() >= 100);
++}
++
++#[test]
++fn test_verification_export_preserves_raw_fallback_and_recursion_ids() {
++    let harness = HarnessMetadata {
++        pretty_name: "crate::identity_harness".to_string(),
++        mangled_name: "identity_harness".to_string(),
++        crate_name: "sample_crate".to_string(),
++        original_file: "src/lib.rs".to_string(),
++        original_start_line: 1,
++        original_end_line: 2,
++        goto_file: None,
++        attributes: HarnessAttributes::new(HarnessKind::Proof),
++        contract: None,
++        has_loop_contracts: false,
++        is_automatically_generated: false,
++        is_bounded: false,
++        is_ctor_based: false,
++    };
++    let raw_ids = [
++        "_RNvCsjGD3dMRtdCH_8controls13selected_call.1",
++        "assertion.01",
++        ".recursion",
++    ];
++    let properties = raw_ids
++        .iter()
++        .map(|raw| Property {
++            property_id: serde_json::from_value(serde_json::json!(raw)).unwrap(),
++            status: CheckStatus::Success,
++            description: "identity survives normalized presentation".to_string(),
++            source_location: SourceLocation {
++                file: None,
++                function: None,
++                line: None,
++                column: None,
++            },
++            reach: None,
++            trace: None,
++        })
++        .collect();
++    let harness_result = HarnessResult {
++        harness: &harness,
++        result: VerificationResult {
++            status: VerificationStatus::Success,
++            failed_properties: FailedProperties::None,
++            results: Ok(properties),
++            runtime: Duration::from_millis(1),
++            generated_concrete_test: false,
++            ignored_quantifiers: 0,
++            coverage_results: None,
++            cbmc_stats: None,
++        },
++    };
++    let value = create_verification_result_json(&harness_result);
++    for (index, raw) in raw_ids.iter().enumerate() {
++        assert_eq!(value["checks"][index]["id"], index + 1);
++        assert_eq!(value["checks"][index]["raw_property_id"].as_str(), Some(*raw));
++        assert_eq!(value["checks"][index]["status"], "Success");
++    }
++    assert_eq!(value["checks"][0]["function"], "controls::selected_call");
++    assert_eq!(value["checks"][0]["category"], "missing_definition");
++    assert_eq!(value["checks"][1]["category"], "assertion");
++    assert_eq!(value["checks"][2]["category"], "recursion");
+ }
+ 
+ #[test]
+diff --git a/kani-driver/src/sarif.rs b/kani-driver/src/sarif.rs
+--- a/kani-driver/src/sarif.rs
++++ b/kani-driver/src/sarif.rs
+@@ -308,6 +308,7 @@
+                 fn_name: Some("harness".to_string()),
+                 class: "assertion".to_string(),
+                 id: 1,
++                raw_id: "harness.assertion.1".to_string(),
+             },
+             source_location: SourceLocation {
+                 file: Some("src/lib.rs".to_string()),
+diff --git a/kani-driver/src/concrete_playback/test_generator.rs b/kani-driver/src/concrete_playback/test_generator.rs
+--- a/kani-driver/src/concrete_playback/test_generator.rs
++++ b/kani-driver/src/concrete_playback/test_generator.rs
+@@ -737,6 +737,7 @@
+                 fn_name: Some("".to_string()),
+                 class: "assertion".to_string(),
+                 id: 1,
++                raw_id: "assertion.1".to_string(),
+             },
+             status: CheckStatus::Failure,
+             reach: None,
+@@ -782,6 +783,7 @@
+                 fn_name: Some("".to_string()),
+                 class: "assertion".to_string(),
+                 id: 1,
++                raw_id: "assertion.1".to_string(),
+             },
+             status: CheckStatus::Failure,
+             reach: None,

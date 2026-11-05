@@ -25,7 +25,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Enforce function/module contracts, IPC/configuration admission or domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
 | Implement numerical kernels or adapt upstream algorithm semantics | [Numerical procedure](implementation/implement-rust/references/numerical-kernels.md) and [Chrony caller-path extraction](implementation/implement-rust/references/chrony-port-simulator.md) under `implement-rust` |
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
-| Implement native controls, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
+| Implement Slint UI, Windows presentation, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
@@ -44,10 +44,12 @@ shared garde rules inside fallible private domain construction, and current
 authorization/effect checks. All function/module interfaces follow
 [contract enforcement](implementation/implement-rust-contracts/references/contract-enforcement.md),
 including checked transformations and explicit failure/effect obligations.
-Native Win32
-UI, unprivileged network engine, privileged clock broker, administrative helper
-and the complete package have distinct owners. Prototype crates require
-dependency qualification. Retained TUF research adopts no updater or second
+The normal-user Slint UI, unprivileged network engine, privileged clock broker,
+administrative helper and complete package have distinct owners. [OD-13](../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default; the checked-in Win32 UI remains the reference until
+migration. The measured winit/software-renderer configuration is a starting point,
+with licensing and the complete product feature/target graph still unqualified.
+Prototype crates require dependency qualification. Retained TUF research adopts no updater or second
 release. Future-version work must name changed architecture decisions.
 
 The current [OD-05 delivery decision](../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)

@@ -1,0 +1,405 @@
+diff --git a/cprover_bindings/src/goto_program/expr.rs b/cprover_bindings/src/goto_program/expr.rs
+--- a/cprover_bindings/src/goto_program/expr.rs
++++ b/cprover_bindings/src/goto_program/expr.rs
+@@ -125,6 +125,10 @@
+     Member {
+         lhs: Expr,
+         field: InternedString,
++        /// Serialized storage type of a padded union field. The logical result
++        /// type remains the original payload type; serialization projects the
++        /// identically named, offset-zero payload out of this wrapper.
++        padded_typ: Option<Type>,
+     },
+     /// `__nondet()`
+     Nondet,
+@@ -419,9 +423,9 @@
+                 let (i, c2) = sub(index);
+                 (mk(Index { array: a, index: i }), c1 || c2)
+             }
+-            ExprValue::Member { lhs, field } => {
++            ExprValue::Member { lhs, field, padded_typ } => {
+                 let (l, c) = sub(lhs);
+-                (mk(Member { lhs: l, field }), c)
++                (mk(Member { lhs: l, field, padded_typ }), c)
+             }
+             ExprValue::FunctionCall { function, arguments } => {
+                 let (f, c1) = sub(function);
+@@ -527,7 +531,7 @@
+             Dereference(e) => e.is_side_effect(),
+             If { c, t, e } => c.is_side_effect() || t.is_side_effect() || e.is_side_effect(),
+             Index { array, index } => array.is_side_effect() || index.is_side_effect(),
+-            Member { lhs, field: _ } => lhs.is_side_effect(),
++            Member { lhs, .. } => lhs.is_side_effect(),
+             ShuffleVector { vector1, vector2, indexes } => {
+                 vector1.is_side_effect()
+                     || vector2.is_side_effect()
+@@ -908,8 +912,26 @@
+             self.typ.is_struct_tag() || self.typ.is_union_tag(),
+             "Can't apply .member operation to\n\t{self:?}\n\t{field}",
+         );
+-        if let Some(ty) = self.typ.lookup_field_type(field, symbol_table) {
+-            expr!(Member { lhs: self, field }, ty)
++        if let Some(component) = self.typ.lookup_field(field, symbol_table) {
++            let ty = component.typ();
++            let padded_typ = match component {
++                DatatypeComponent::UnionField { padded_typ, .. } if padded_typ != &ty => {
++                    // codegen_union emits an offset-zero payload of the same
++                    // name followed only by trailing storage padding. Reject an
++                    // unexpected wrapper shape instead of guessing a cast.
++                    assert!(padded_typ.is_struct_tag());
++                    let fields = padded_typ.lookup_components(symbol_table).unwrap();
++                    assert!(matches!(
++                        fields.first(),
++                        Some(DatatypeComponent::Field { name, typ })
++                            if *name == field && typ == &ty
++                    ));
++                    assert!(fields[1..].iter().all(DatatypeComponent::is_padding));
++                    Some(padded_typ.clone())
++                }
++                _ => None,
++            };
++            expr!(Member { lhs: self, field, padded_typ }, ty)
+         } else {
+             unreachable!("unable to find field {} for type {:?}", field, self.typ())
+         }
+diff --git a/cprover_bindings/src/irep/to_irep.rs b/cprover_bindings/src/irep/to_irep.rs
+--- a/cprover_bindings/src/irep/to_irep.rs
++++ b/cprover_bindings/src/irep/to_irep.rs
+@@ -301,13 +301,29 @@
+             ExprValue::IntConstant(_) => {
+                 unreachable!("Should have been processed in previous step")
+             }
+-            ExprValue::Member { lhs, field } => Irep {
+-                id: IrepId::Member,
+-                sub: vec![lhs.to_irep(mm)],
+-                named_sub: linear_map![
+-                    (IrepId::CLvalue, Irep::one()),
+-                    (IrepId::ComponentName, Irep::just_string_id(field.to_string())),
+-                ],
++            ExprValue::Member { lhs, field, padded_typ } => {
++                let mut member = Irep {
++                    id: IrepId::Member,
++                    sub: vec![lhs.to_irep(mm)],
++                    named_sub: linear_map![
++                        (IrepId::CLvalue, Irep::one()),
++                        (IrepId::ComponentName, Irep::just_string_id(field.to_string())),
++                    ],
++                };
++                if let Some(padded_typ) = padded_typ {
++                    // The outer member has the serialized union component's
++                    // storage type. The inner member selects its offset-zero
++                    // payload; Expr::to_irep supplies the original result type.
++                    member = Irep {
++                        id: IrepId::Member,
++                        sub: vec![member.with_type(padded_typ, mm)],
++                        named_sub: linear_map![
++                            (IrepId::CLvalue, Irep::one()),
++                            (IrepId::ComponentName, Irep::just_string_id(field.to_string())),
++                        ],
++                    };
++                }
++                member
+             },
+             ExprValue::Nondet => side_effect_irep(IrepId::Nondet, vec![]),
+             ExprValue::PointerConstant(0) => Irep {
+@@ -991,3 +1007,279 @@
+         }
+     }
+ }
++
++
++#[cfg(test)]
++mod padded_union_member_tests {
++    use super::*;
++    use crate::goto_program::{Symbol, SymbolTable};
++    use crate::machine_model::test_util::machine_model_test_stub;
++    use std::collections::BTreeMap;
++
++    fn add_struct(st: &mut SymbolTable, name: &str, fields: Vec<DatatypeComponent>) -> Type {
++        st.insert(Symbol::struct_type(name, name.into(), fields));
++        Type::struct_tag(name)
++    }
++
++    fn add_union(st: &mut SymbolTable, payload: Type, storage: Type) -> Type {
++        st.insert(Symbol::union_type(
++            "MemberTestUnion",
++            "MemberTestUnion",
++            vec![
++                DatatypeComponent::unionfield("f", payload, storage),
++                DatatypeComponent::unionfield("whole", Type::unsigned_int(96), Type::unsigned_int(96)),
++            ],
++        ));
++        Type::union_tag("MemberTestUnion")
++    }
++
++    fn padded_fixture() -> (SymbolTable, Type, Type, Type) {
++        let mut st = SymbolTable::new(machine_model_test_stub());
++        let payload = Type::unsigned_int(32);
++        let storage = add_struct(
++            &mut st,
++            "MemberTestStorage",
++            vec![
++                DatatypeComponent::field("f", payload.clone()),
++                DatatypeComponent::padding("trailing", 64),
++            ],
++        );
++        let union = add_union(&mut st, payload.clone(), storage.clone());
++        (st, payload, storage, union)
++    }
++
++    fn definitions(st: &SymbolTable) -> BTreeMap<String, Irep> {
++        st.iter().map(|(name, symbol)| (name.to_string(), symbol.typ.to_irep(st.machine_model()))).collect()
++    }
++
++    // Independent serialized-format check: resolve the compound type through
++    // the emitted namespace and compare the selected declared component type.
++    // This does not call Expr::member or inspect its padded_typ metadata.
++    fn members_well_typed(node: &Irep, definitions: &BTreeMap<String, Irep>) -> bool {
++        let valid_here = if node.id == IrepId::Member {
++            (|| {
++                if node.sub.len() != 1 {
++                    return None;
++                }
++                let compound_type = node.sub[0].lookup(IrepId::Type)?;
++                let definition = match compound_type.id {
++                    IrepId::StructTag | IrepId::UnionTag => {
++                        definitions.get(&compound_type.lookup_as_string(IrepId::Identifier)?)?
++                    }
++                    IrepId::Struct | IrepId::Union => compound_type,
++                    _ => return None,
++                };
++                let selected = node.lookup(IrepId::ComponentName)?;
++                let components = definition.lookup(IrepId::Components)?;
++                let component = components.sub.iter().find(|component| component.lookup(IrepId::Name) == Some(selected))?;
++                Some(component.lookup(IrepId::Type)? == node.lookup(IrepId::Type)?)
++            })().unwrap_or(false)
++        } else {
++            true
++        };
++        valid_here
++            && node.sub.iter().all(|child| members_well_typed(child, definitions))
++            && node.named_sub.iter().all(|(_, child)| members_well_typed(child, definitions))
++    }
++
++    fn count_id(node: &Irep, id: &IrepId) -> usize {
++        usize::from(&node.id == id)
++            + node.sub.iter().map(|child| count_id(child, id)).sum::<usize>()
++            + node.named_sub.iter().map(|(_, child)| count_id(child, id)).sum::<usize>()
++    }
++
++    fn count_symbol(node: &Irep, identifier: &str) -> usize {
++        usize::from(node.id == IrepId::Symbol
++            && node.lookup_as_string(IrepId::Identifier).as_deref() == Some(identifier))
++            + node.sub.iter().map(|child| count_symbol(child, identifier)).sum::<usize>()
++            + node.named_sub.iter().map(|(_, child)| count_symbol(child, identifier)).sum::<usize>()
++    }
++
++    fn assert_payload_projection(node: &Irep, st: &SymbolTable, payload: &Type, storage: &Type) {
++        let mm = st.machine_model();
++        assert!(members_well_typed(node, &definitions(st)));
++        assert_eq!(node.lookup(IrepId::Type), Some(&payload.to_irep(mm)));
++        assert_eq!(node.lookup(IrepId::CLvalue), Some(&Irep::one()));
++        assert_eq!(node.lookup_as_string(IrepId::ComponentName).as_deref(), Some("f"));
++        assert_eq!(node.sub.len(), 1);
++        let storage_member = &node.sub[0];
++        assert_eq!(storage_member.id, IrepId::Member);
++        assert_eq!(storage_member.lookup(IrepId::Type), Some(&storage.to_irep(mm)));
++        assert_eq!(storage_member.lookup(IrepId::CLvalue), Some(&Irep::one()));
++        assert_eq!(storage_member.lookup_as_string(IrepId::ComponentName).as_deref(), Some("f"));
++    }
++
++    #[test]
++    fn padded_member_serializes_two_typed_lvalues() {
++        let (st, payload, storage, union) = padded_fixture();
++        let member = Expr::symbol_expression("u", union.clone()).member("f", &st);
++        assert_eq!(member.typ(), &payload);
++        assert!(matches!(member.value(), ExprValue::Member { padded_typ: Some(typ), .. } if typ == &storage));
++        assert_eq!(storage.sizeof_in_bits(&st), 96);
++        assert_eq!(union.sizeof_in_bits(&st), 96);
++        let node = member.to_irep(st.machine_model());
++        assert_payload_projection(&node, &st, &payload, &storage);
++        assert_eq!(count_id(&node, &IrepId::Member), 2);
++        assert_eq!(count_symbol(&node, "u"), 1);
++    }
++
++    #[test]
++    fn ordinary_and_equal_size_members_remain_single_projection() {
++        let mut st = SymbolTable::new(machine_model_test_stub());
++        let payload = Type::unsigned_int(32);
++        let ordinary = add_struct(&mut st, "MemberTestOrdinary", vec![DatatypeComponent::field("f", payload.clone())]);
++        st.insert(Symbol::union_type(
++            "MemberTestEqual",
++            "MemberTestEqual",
++            vec![DatatypeComponent::unionfield("f", payload.clone(), payload.clone())],
++        ));
++        for typ in [ordinary, Type::union_tag("MemberTestEqual")] {
++            let member = Expr::symbol_expression("u", typ).member("f", &st);
++            assert!(matches!(member.value(), ExprValue::Member { padded_typ: None, .. }));
++            let node = member.to_irep(st.machine_model());
++            assert!(members_well_typed(&node, &definitions(&st)));
++            assert_eq!(node.lookup(IrepId::Type), Some(&payload.to_irep(st.machine_model())));
++            assert_eq!(count_id(&node, &IrepId::Member), 1);
++            assert_eq!(count_symbol(&node, "u"), 1);
++        }
++    }
++
++    #[test]
++    fn padded_address_and_assignment_use_the_payload_lvalue() {
++        let (st, payload, storage, union) = padded_fixture();
++        let member = Expr::symbol_expression("u", union).member("f", &st);
++        assert!(member.can_take_address_of());
++        let address = member.clone().address_of().to_irep(st.machine_model());
++        assert_eq!(address.id, IrepId::AddressOf);
++        assert_eq!(address.lookup(IrepId::Type), Some(&payload.clone().to_pointer().to_irep(st.machine_model())));
++        assert_payload_projection(&address.sub[0], &st, &payload, &storage);
++        assert_eq!(count_symbol(&address, "u"), 1);
++        let assignment = member.assign(Expr::int_constant(42, payload.clone()), Location::none()).to_irep(st.machine_model());
++        assert_eq!(assignment.lookup(IrepId::Statement), Some(&Irep::just_id(IrepId::Assign)));
++        assert_payload_projection(&assignment.sub[0], &st, &payload, &storage);
++        assert_eq!(assignment.sub[1].lookup(IrepId::Type), Some(&payload.to_irep(st.machine_model())));
++        assert_eq!(count_symbol(&assignment, "u"), 1);
++    }
++
++    #[test]
++    fn nested_payload_field_preserves_all_three_member_types() {
++        let mut st = SymbolTable::new(machine_model_test_stub());
++        let scalar = Type::unsigned_int(32);
++        let payload = add_struct(&mut st, "MemberTestPayload", vec![DatatypeComponent::field("leaf", scalar.clone())]);
++        let storage = add_struct(&mut st, "MemberTestNestedStorage", vec![
++            DatatypeComponent::field("f", payload.clone()),
++            DatatypeComponent::padding("trailing", 64),
++        ]);
++        let union = add_union(&mut st, payload, storage);
++        let node = Expr::symbol_expression("u", union).member("f", &st).member("leaf", &st).to_irep(st.machine_model());
++        assert!(members_well_typed(&node, &definitions(&st)));
++        assert_eq!(node.lookup(IrepId::Type), Some(&scalar.to_irep(st.machine_model())));
++        assert_eq!(count_id(&node, &IrepId::Member), 3);
++        assert_eq!(count_symbol(&node, "u"), 1);
++    }
++
++    #[test]
++    fn same_type_substitution_retains_projection_without_old_base() {
++        let (st, payload, storage, union) = padded_fixture();
++        let member = Expr::symbol_expression("u", union.clone()).member("f", &st);
++        let replacement = Expr::symbol_expression("v", union);
++        let (replaced, changed) = member.substitute_symbol(&"u".into(), &replacement);
++        assert!(changed);
++        let node = replaced.to_irep(st.machine_model());
++        assert_payload_projection(&node, &st, &payload, &storage);
++        assert_eq!(count_id(&node, &IrepId::Member), 2);
++        assert_eq!(count_symbol(&node, "u"), 0);
++        assert_eq!(count_symbol(&node, "v"), 1);
++    }
++
++    #[test]
++    fn side_effecting_union_base_is_not_duplicated() {
++        let (st, payload, storage, union) = padded_fixture();
++        let base = Expr::symbol_expression("make_union", Type::code_with_unnamed_parameters(vec![], union)).call(vec![]);
++        let member = base.member("f", &st);
++        assert!(member.is_side_effect());
++        let node = member.to_irep(st.machine_model());
++        assert_payload_projection(&node, &st, &payload, &storage);
++        assert_eq!(count_id(&node, &IrepId::Member), 2);
++        assert_eq!(count_id(&node, &IrepId::SideEffect), 1);
++        assert_eq!(count_symbol(&node, "make_union"), 1);
++    }
++
++    // Exercise the recursive reconstruction law used by the pure inliner.
++    // This is a binding-level reconstruction control, not a TyCtxt-backed
++    // integration test of GotocCtx::inline_as_pure_expr_toplevel.
++    fn rebuild_logical_members(expr: &Expr, st: &SymbolTable) -> Expr {
++        match expr.value() {
++            ExprValue::Member { lhs, field, .. } => rebuild_logical_members(lhs, st).member(*field, st),
++            _ => expr.clone(),
++        }
++    }
++
++    #[test]
++    fn recursive_logical_rebuild_does_not_double_unwrap_storage() {
++        let (st, payload, storage, union) = padded_fixture();
++        let original = Expr::symbol_expression("u", union).member("f", &st);
++        let rebuilt = rebuild_logical_members(&original, &st);
++        let first = original.to_irep(st.machine_model());
++        let second = rebuilt.to_irep(st.machine_model());
++        assert_eq!(first, second);
++        assert_payload_projection(&second, &st, &payload, &storage);
++        assert_eq!(count_id(&second, &IrepId::Member), 2);
++    }
++
++    #[test]
++    fn union_initializer_keeps_original_payload_and_storage_width() {
++        let (st, payload, _, union) = padded_fixture();
++        let initializer = Expr::union_expr(union.clone(), "f", Expr::int_constant(42, payload.clone()), &st).to_irep(st.machine_model());
++        assert_eq!(initializer.id, IrepId::Union);
++        assert_eq!(initializer.lookup(IrepId::Type), Some(&union.to_irep(st.machine_model())));
++        assert_eq!(initializer.sub[0].lookup(IrepId::Type), Some(&payload.to_irep(st.machine_model())));
++        assert_eq!(union.sizeof_in_bits(&st), 96);
++    }
++
++    #[test]
++    fn malformed_storage_wrapper_shapes_are_rejected() {
++        for shape in 0..5 {
++            let mut st = SymbolTable::new(machine_model_test_stub());
++            let payload = Type::unsigned_int(32);
++            let storage = if shape == 0 {
++                Type::unsigned_int(96)
++            } else {
++                let fields = match shape {
++                    1 => vec![],
++                    2 => vec![DatatypeComponent::field("wrong", payload.clone())],
++                    3 => vec![DatatypeComponent::field("f", Type::unsigned_int(16))],
++                    4 => vec![DatatypeComponent::field("f", payload.clone()), DatatypeComponent::field("extra", payload.clone())],
++                    _ => unreachable!(),
++                };
++                add_struct(&mut st, "MalformedMemberStorage", fields)
++            };
++            let union = add_union(&mut st, payload, storage);
++            let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++                Expr::symbol_expression("u", union).member("f", &st)
++            }));
++            assert!(outcome.is_err(), "unreviewed wrapper shape {shape} was accepted");
++        }
++    }
++
++    #[test]
++    fn independent_type_checker_rejects_missing_or_mistyped_projections() {
++        let (st, payload, storage, union) = padded_fixture();
++        let valid = Expr::symbol_expression("u", union).member("f", &st).to_irep(st.machine_model());
++        let defs = definitions(&st);
++        assert!(members_well_typed(&valid, &defs));
++
++        // Baseline defect: direct union member is annotated with raw T.
++        let baseline = valid.sub[0].clone().with_type(&payload, st.machine_model());
++        assert!(!members_well_typed(&baseline, &defs));
++
++        // A two-node projection with the physical storage member mistyped T.
++        let mut wrong_storage = valid.clone();
++        wrong_storage.sub[0] = wrong_storage.sub[0].clone().with_type(&payload, st.machine_model());
++        assert!(!members_well_typed(&wrong_storage, &defs));
++
++        // The inner payload member must be T, not the wrapper W.
++        let wrong_payload = valid.with_type(&storage, st.machine_model());
++        assert!(!members_well_typed(&wrong_payload, &defs));
++    }
++}
+diff --git a/kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs b/kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs
+--- a/kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs
++++ b/kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs
+@@ -395,7 +395,7 @@
+             ExprValue::Index { array, index } => self
+                 .inline_as_pure_expr(array, visited)
+                 .index(self.inline_as_pure_expr(index, visited)),
+-            ExprValue::Member { lhs, field } => {
++            ExprValue::Member { lhs, field, .. } => {
+                 let inlined_lhs = self.inline_as_pure_expr(lhs, visited);
+                 // If the inlined lhs is a Struct literal, extract the field directly
+                 // by numeric index (e.g., field "0" → values[0]).
+@@ -1273,7 +1273,7 @@
+     use cbmc::goto_program::BinaryOperator::*;
+     match expr.value() {
+         // Member(Struct([f0, f1, ...]), "N") → simplify(fN)
+-        ExprValue::Member { lhs, field } => {
++        ExprValue::Member { lhs, field, .. } => {
+             let simplified_lhs = simplify_overflow_result(lhs);
+             match simplified_lhs.value() {
+                 // If lhs simplified to a Struct, extract the field by index

@@ -546,7 +546,7 @@ by the map below.
 | W11-W04/05, S0.2/S0.3/P3; platform/IPC/security | SCM, token, named-pipe, overlapped-I/O and process-mitigation APIs | Actual token/ACL and peer proof, state transitions, callback/control errors, cancellation custody and effective protections. Retain Mullvad prototype and Microsoft plural service hold. |
 | W11-W08, S3.4/S5.3; diagnostics/UI | ETW/Event Log and qualified emitter | Bounded typed/redacted events, authorised DEBUG expiry and required-event routing; tracing is not authoritative state. |
 | ST-W01/03/04 and W11-W05; storage/lifecycle | NCrypt/CNG, protected file operations, conditional registry wrapper | VBS symbol/version coverage, actual key protection, directory/ACL/size limits and uncertain publication/recovery. Registry transactions do not cover service or file effects. |
-| W11-W09, S0.5/P5; UI | Existing common controls and conditional window/Reactor/picker helpers | Preserve lifecycle/error observation and UI-M0 deferrals; compare runtime/package/accessibility/resource cost only at the separately scoped trigger. |
+| W11-W09, S0.5/P5; UI | Retained Win32/common-controls reference; OD-13-selected Slint successor, with OS picker helpers conditional at their existing trigger | Preserve the M0-SL migration chain, actual lifecycle/error observation and UI-M0 deferrals. Reuse retained pilot evidence; qualify the selected Slint graph/runtime/package/accessibility/resource cost. Revisit other toolkits only for a bounded issue preventing selected delivery. |
 
 Before its next dependent adapter, record the exact operation -> selected
 published crate/API/features/SDK symbols -> remaining invariant owner -> valid

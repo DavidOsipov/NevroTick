@@ -389,7 +389,17 @@ Detailed execution evidence remains in the [S1.1e task](../tasks/s1.1-determinis
 
 **Architecture contract assessment, 30 October 2026:** the [critical review](supporting-reviews/architecture-contract-review.md) distinguishes valid specification gaps from existing controls and stale external snapshots. [Canonical acceptance refinements](windows-time-architecture.md#2021-contract-review-acceptance-refinements), [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix) and [the execution workstream](plans/development-plan.md#82-contract-review-workstream-and-interface-gates) cover ownership, durable correction, adjustment modes, trust lifetimes, fresh agreement and lifecycle/tooling evidence. Unresolved numerical and trust-policy decisions remain held; no native qualification is claimed.
 
-**UI toolkit comparison, 30 October 2026:** the [Win32 versus egui report](supporting-reviews/ui-toolkit-comparison.md) summarizes measurements, tradeoffs and evidence limits; the [S0.5 execution record](../tasks/s0.5-ui-comparison.md#results) retains detailed inputs and receipts. David rejected the tested egui Glow/AccessKit configuration on memory consumption and closed the comparison; retain Win32 and the existing resource targets. This pilot establishes no full accessibility, sustained performance or product-graph admission.
+**Current UI toolkit decision, 5 November 2026:**
+[OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects **Slint as the default**, starting with the measured winit/software
+renderer and Fluent-style widgets. The
+[Slint comparison result](../tasks/s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026)
+records 7.730 MiB visible private memory and no detected CPU-time increment in
+short idle trials; it is not full qualification. Exact licence/graph admission,
+generated-code safety and the [UI-M0 migration](../tasks/ui-m0.md) remain pending.
+The earlier [Win32/egui report](supporting-reviews/ui-toolkit-comparison.md)
+preserves the 30 October decision and measurements, superseded as a default by
+OD-13. The checked-in UI is still Win32; keep its receipts and the resource targets.
 
 **Protocol follow-up, 30 October 2026:** [NTP client behavior](windows-time-architecture.md#73-ntp-client-behavior) makes KoD support explicit through pinned Chrony/independent-codebase analysis and reuse. The [existing protocol task](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) records RFC 8915 alignment and remaining implementation checks; [TLS policy](windows-time-architecture.md#1871-license-gate-and-finite-provider-choice) prioritizes AES-GCM while retaining provider/CPU qualification. These are P2 requirements, not implemented NTS/KoD support or measured AES speedup.
 
@@ -433,7 +443,7 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 
 **IPC external comparison, 29 October 2026:** [architecture section 5.4](windows-time-architecture.md#54-native-ipc-implementation-and-qualification) records refinements from Microsoft guidance and pinned Tokio/Mio, Kestrel and OpenVPN source: caller-token association/reversion, effective rights, continuous pipe ownership and cancellation/completion. [Hardening section 9.9](windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification) maps them to existing native acceptance checks. The transport, runtime, dependency and UI-M0 decisions remain; external comparison is not implementation evidence.
 
-**Current UI milestone:** [UI-M0, architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), is a restricted native fixture-only prototype. D1 display/theme, D2 production service/policy-state and D3 full keyboard/Narrator/UIA work are explicitly **Deferred**, not prerequisites for UI-M0. Restore them at their specified integration/preview gates. Other workstreams and eventual product/release requirements remain unchanged; completing UI-M0 does not complete P0 toolkit qualification.
+**Current UI milestone:** [UI-M0, architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), is a restricted native fixture-only prototype. Slint is now the selected toolkit; the current Win32 implementation remains a reference until migration is qualified. D1 display/theme, D2 production service/policy-state and D3 full keyboard/Narrator/UIA work are explicitly **Deferred**, not prerequisites for UI-M0. Restore them at their specified integration/preview gates. Other workstreams and eventual product/release requirements remain unchanged; completing UI-M0 does not complete P0 toolkit qualification.
 
 **Latest owner instructions:** [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) records accepted reuse/recovery/release choices and unresolved default-profile policy. [nevrotick-research-handoff.md](nevrotick-research-handoff.md) assigns the remaining investigations, including the supplied NTS directory and proposed operator candidates. Read these before interpreting older unconditional signing language in retained historical reviews.
 
@@ -474,7 +484,7 @@ kit for brand artwork and variants.
 
 Apply the references within the current UI-M0 scope and D1–D3 deferrals. The React
 viewer illustrates the design; its validators, dependencies and mock outcomes do
-not define the Rust/Win32 implementation. Rendered HTML/screenshots may predate
+not define the Rust/Slint implementation. Rendered HTML/screenshots may predate
 specification corrections. The live canonical architecture and accepted owner
 decisions retain precedence over archived copies in the design bundle.
 
@@ -489,7 +499,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [development-compiler-review.md](supporting-reviews/development-compiler-review.md): compiler/lint/profile and Windows mitigation review.
 - [development-evidence-review.md](supporting-reviews/development-evidence-review.md): CI trust, isolation, mutation contract and correction verification.
 - [basic-features-review.md](supporting-reviews/basic-features-review.md): integrated product feature, UX, authority and acceptance review.
-- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): measured Win32/egui pilot, dependency concerns and the owner's decision to retain Win32; detailed execution stays in the S0.5 task.
+- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): historical Win32/egui measurements and decision, now superseded by OD-13's Slint default; subsequent GPUI, Reactor and Slint evidence stays in the S0.5 task.
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.

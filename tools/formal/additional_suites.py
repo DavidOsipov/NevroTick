@@ -20,6 +20,9 @@ _STEMS = {
     "leap-ticks": "leap_ticks",
     "calendar-finite-laws": "calendar_finite_laws",
     "leap-coverage": "leap_coverage",
+    "endpoint-finish": "endpoint_finish",
+    "fraction-constructor": "fraction_constructor",
+    "fraction-comparison": "fraction_comparison",
 }
 _FIELDS = {"subject", "case", "harness", "intended_failure", "restored_healthy"}
 
@@ -34,8 +37,8 @@ def input_names(selector: str) -> list[str]:
     if selector == "calendar-finite-laws":
         result.extend(("tools/formal/calendar_composition_harness.rs",
                        "tools/formal/calendar_composition_projection.py"))
-    if selector == "leap-coverage":
-        result.append("tools/formal/test_leap_coverage.py")
+    if selector in {"leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"}:
+        result.append(f"tools/formal/test_{stem}.py")
     return result
 
 
@@ -118,6 +121,33 @@ def jobs(selector: str) -> list[dict]:
         add("leap_coverage", "bridge_one_second_gap", "leap_coverage_control_gap",
             "unbridged gap remains unknown")
         add("leap_coverage", "healthy", "leap_coverage_full_domain", restored=True)
+    elif selector == "endpoint-finish":
+        add("endpoint_finish", "healthy", "endpoint_finish::endpoint_finish_full_domain")
+        add("endpoint_finish", "reject_all", "endpoint_finish::endpoint_finish_control_success",
+            "endpoint required success")
+        add("endpoint_finish", "omit_negative_floor", "endpoint_finish::endpoint_finish_control_negative_floor",
+            "endpoint exact negative floor")
+        add("endpoint_finish", "range_as_invariant", "endpoint_finish::endpoint_finish_control_range_error",
+            "endpoint range rejection classification")
+        add("endpoint_finish", "healthy", "endpoint_finish::endpoint_finish_full_domain", restored=True)
+    elif selector == "fraction-constructor":
+        add("fraction_constructor", "healthy", "fraction_constructor::fraction_constructor_full_domain")
+        add("fraction_constructor", "always_error", "fraction_constructor::fraction_constructor_control_success",
+            "fraction required success")
+        add("fraction_constructor", "wrong_numerator", "fraction_constructor::fraction_constructor_control_numerator",
+            "fraction exact numerator retained")
+        add("fraction_constructor", "wrong_error", "fraction_constructor::fraction_constructor_control_error",
+            "fraction rejection classification")
+        add("fraction_constructor", "healthy", "fraction_constructor::fraction_constructor_full_domain", restored=True)
+    elif selector == "fraction-comparison":
+        add("fraction_comparison", "healthy", "fraction_comparison::fraction_comparison_full_domain")
+        add("fraction_comparison", "always_error", "fraction_comparison::fraction_comparison_control_success",
+            "comparison required success")
+        add("fraction_comparison", "reverse_unequal", "fraction_comparison::fraction_comparison_control_unequal",
+            "comparison strict unequal order")
+        add("fraction_comparison", "zero_alignment", "fraction_comparison::fraction_comparison_control_alignment",
+            "comparison unreduced equality")
+        add("fraction_comparison", "healthy", "fraction_comparison::fraction_comparison_full_domain", restored=True)
     else:
         add("calendar_finite_laws", "healthy", "calendar_finite_laws_full_domain")
         add("calendar_finite_laws", "cycle_year_coefficient", "calendar_finite_laws_control_year", "Gregorian segment year recurrence")
@@ -213,6 +243,45 @@ def expected_contract(subject: str, harness: str) -> tuple[frozenset[str], froze
                   "continuous zero rule is retained", "finite zero expiry preserves history",
                   "fractional candidate starts inside an unknown gap",
                   "upper coordinate with continuous coverage is admitted", "full scalar metadata endpoints are included"}
+    elif (subject, harness) == ("endpoint_finish", "endpoint_finish::endpoint_finish_full_domain"):
+        assertions = {"endpoint required success", "endpoint checked overflow classification",
+                      "endpoint range rejection classification", "endpoint never interval error",
+                      "endpoint oracle success envelope", "endpoint exact floor relation",
+                      "endpoint exact ceiling relation", "endpoint residual rounding classification"}
+        covers = {"endpoint raw minimum negative floor is invariant",
+                  "endpoint raw maximum positive ceiling is invariant",
+                  "endpoint exact minimum succeeds", "endpoint exact maximum succeeds",
+                  "endpoint negative floor rounds into range", "endpoint positive ceiling rounds into range",
+                  "endpoint exact lower neighbor is unrepresentable", "endpoint exact upper neighbor is unrepresentable",
+                  "endpoint negative ceiling needs no adjustment", "endpoint positive floor needs no adjustment"}
+    elif (subject, harness) == ("fraction_constructor", "fraction_constructor::fraction_constructor_full_domain"):
+        assertions = {"fraction required success", "fraction rejection classification",
+                      "fraction exact numerator retained", "fraction zero canonicalization",
+                      "fraction nonzero shift retained", "fraction output numerator bound",
+                      "fraction output shift bound", "fraction output proper dyadic"}
+        covers = {"fraction zero at shift zero is canonical", "fraction zero at maximum shift is canonical",
+                  "fraction one half succeeds", "fraction maximum numerator at shift 53 succeeds",
+                  "fraction unit numerator at maximum shift succeeds", "fraction zero beyond maximum shift is rejected",
+                  "fraction zero at raw maximum shift is rejected", "fraction oversized proper numerator is rejected",
+                  "fraction raw maximum numerator is rejected", "fraction nonzero numerator at zero shift is rejected",
+                  "fraction unit boundary is rejected", "fraction proper neighbor succeeds",
+                  "fraction maximum numerator at shift 63 succeeds", "fraction maximum numerator at shift 64 succeeds"}
+    elif (subject, harness) == ("fraction_comparison", "fraction_comparison::fraction_comparison_full_domain"):
+        assertions = {"comparison left factory completeness", "comparison right factory completeness",
+                      "comparison required success", "comparison exact rational ordering",
+                      "comparison oracle gap bound", "comparison oracle scaled width",
+                      "comparison positive numerator bit bounds", "comparison leading exponent bounds",
+                      "comparison equal power alignment relation", "comparison alignment count bound",
+                      "comparison alignment retains numerator bits", "comparison unequal powers strict order"}
+        covers = {"comparison zero equality", "comparison zero below minimum positive",
+                  "comparison minimum positive above zero", "comparison identical one half",
+                  "comparison quarter below half", "comparison half above quarter",
+                  "comparison same shift less", "comparison same shift greater",
+                  "comparison unreduced equality left", "comparison unreduced equality right",
+                  "comparison maximum alignment left", "comparison maximum alignment right",
+                  "comparison maximum alignment less", "comparison maximum alignment greater",
+                  "comparison gap63 greater", "comparison gap63 less", "comparison gap64 greater",
+                  "comparison gap64 less", "comparison maximum numerator wide gap", "comparison maximum shift gap"}
     elif (subject, harness) == ("era_constructor", "proof::era_constructor_full_domain"):
         assertions = {"public window admission iff full raw contract", "exact earliest coordinate retained",
                       "exact latest coordinate retained", "constructed endpoints remain ordered",
@@ -259,6 +328,12 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         selector = "calendar-finite-laws"
     elif subject == "leap_coverage":
         selector = "leap-coverage"
+    elif subject == "endpoint_finish":
+        selector = "endpoint-finish"
+    elif subject == "fraction_constructor":
+        selector = "fraction-constructor"
+    elif subject == "fraction_comparison":
+        selector = "fraction-comparison"
     else:
         raise ValueError("Unknown additional proof subject")
     schedule = jobs(selector)
@@ -283,6 +358,12 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         prepared = projection.prepare_leap_ticks(source, inputs, job["case"], harness)
     elif selector == "leap-coverage":
         prepared = projection.prepare_leap_coverage(source, inputs, job["case"], harness)
+    elif selector == "endpoint-finish":
+        prepared = projection.prepare_endpoint_finish(source, inputs, job["case"], harness)
+    elif selector == "fraction-constructor":
+        prepared = projection.prepare_fraction_constructor(source, inputs, job["case"], harness)
+    elif selector == "fraction-comparison":
+        prepared = projection.prepare_fraction_comparison(source, inputs, job["case"], harness)
     else:
         prepared = projection.prepare_calendar_finite_laws(source, inputs, job["case"], harness)
     if not isinstance(prepared, dict) or prepared.get("entrypoint") != inputs / "proof.rs":

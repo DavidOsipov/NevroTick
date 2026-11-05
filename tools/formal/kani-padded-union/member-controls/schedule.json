@@ -1,0 +1,358 @@
+{
+  "status": "prepared-source-only-not-executed",
+  "scope": "padded MEMBER source repair controls only; no general Kani adoption or product qualification",
+  "source": {
+    "path": "controls.rs",
+    "sha256": "984db0a66bbc126bbcc1c6587c159e425f1d3e16edc9f5c1dd86860b97f7a671",
+    "bytes": 7169
+  },
+  "fixed_command_count": 8,
+  "automatic_retries": 0,
+  "stop_on_first_unexpected_or_incomplete_outcome": true,
+  "candidate_tool_identity": null,
+  "requires_new_complete_candidate_admission": true,
+  "profile": {
+    "kani_flags": [
+      "--default-unwind",
+      "1",
+      "--output-format",
+      "regular",
+      "--solver",
+      "cadical",
+      "-Z",
+      "unstable-options",
+      "--run-sanity-checks",
+      "--harness-timeout",
+      "60s"
+    ],
+    "rustflags": "--edition=2024 --check-cfg=cfg(test)",
+    "target": "x86_64-unknown-linux-gnu",
+    "wall_seconds": 180,
+    "cpu_seconds": 180,
+    "address_space_bytes": 8589934592,
+    "process_limit": 128,
+    "build_jobs": 2,
+    "solver_workers": 1
+  },
+  "domains": {
+    "bytes12": "all 2^96 independent storage bit patterns via twelve explicit arbitrary-u8 calls",
+    "padded_array_index": "all 0..9 via arbitrary u8 modulo ten; no assumptions",
+    "scalar_reads": "all 2^32 scalar patterns embedded in fully initialized 96-bit storage",
+    "scalar_writes": "each new word independently ranges over all u32 patterns",
+    "equal_size_neighbor": "all 2^32 storage bit patterns via four explicit arbitrary-u8 calls"
+  },
+  "initialization_and_layout": {
+    "target_contract": "fixed x86_64 Linux little-endian source ABI; independent byte packing observes scalar/nested offsets",
+    "padded": "repr(C), storage[12]/array[10]/u32: size12,alignment4; initialize storage before any union read/address",
+    "nested": "repr(C) Pair{u32,u32}: size8,alignment4; Nested storage[12]/Pair: size12,alignment4",
+    "equal": "repr(C), storage[4]/u32: size4,alignment4",
+    "references": "no &mut or references to an uninitialized union; raw addr_of_mut! pointers stay within one live aligned object; array indexing sees initialized u8 bytes",
+    "padding": "whole-storage byte arrays initialize every union byte initially; field writes are scalar payload stores, and no uninitialized padding is read as a value"
+  },
+  "inliner_limit": {
+    "full_tyctxt_inliner_exercised": false,
+    "source_origin": "official Kani0d2328a93f0e0ff66132d6bfa1a7d884877cf862",
+    "source_sha256": {
+      "kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs": "0c3ade94f377ab690b8ded4c273292beaea1515fcf2e9aed572948470e554540",
+      "kani-compiler/src/codegen_cprover_gotoc/overrides/hooks.rs": "8c4f5c992f63bed86410e455bc67d8626ff3e5847541c10f4a2d372ff9782043"
+    },
+    "observed_entrypoint": "inline_as_pure_expr_toplevel has only its definition at goto_ctx.rs499-500 in the complete pinned compiler/src tree",
+    "quantifier_path": "build_quantifier_predicate at hooks.rs1168+ extracts the closure return and calls substitute_symbol directly; it does not call the inliner entrypoint",
+    "qualification_limit": "binding recursive-rebuild tests remain source-unit evidence; no full GotocCtx inliner integration claim. Any new source caller or broader adoption requires a separately reviewed control."
+  },
+  "fixed_jobs": [
+    {
+      "index": 1,
+      "harness": "padded_array_read",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "padded array selected byte retention"
+      ],
+      "required_satisfied_covers": [
+        "padded array zero first byte",
+        "padded array maximum last byte"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "padded_array_read",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-1/kani.json",
+        "--target-dir",
+        "/work/target-1"
+      ]
+    },
+    {
+      "index": 2,
+      "harness": "padded_scalar_read",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "padded scalar exact retention"
+      ],
+      "required_satisfied_covers": [
+        "padded scalar zero",
+        "padded scalar maximum"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "padded_scalar_read",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-2/kani.json",
+        "--target-dir",
+        "/work/target-2"
+      ]
+    },
+    {
+      "index": 3,
+      "harness": "initialized_union_write_read",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "first initialized union write retained",
+        "second initialized union write replaces first"
+      ],
+      "required_satisfied_covers": [
+        "initialized writes zero to maximum",
+        "initialized writes maximum to zero"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "initialized_union_write_read",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-3/kani.json",
+        "--target-dir",
+        "/work/target-3"
+      ]
+    },
+    {
+      "index": 4,
+      "harness": "raw_address_write_read",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "padded field address equals union base",
+        "raw pointer reads initialized scalar",
+        "raw write is visible through union field",
+        "raw write is visible through pointer"
+      ],
+      "required_satisfied_covers": [
+        "raw pointer zero write",
+        "raw pointer maximum write"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "raw_address_write_read",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-4/kani.json",
+        "--target-dir",
+        "/work/target-4"
+      ]
+    },
+    {
+      "index": 5,
+      "harness": "nested_payload_field",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "nested payload head retention",
+        "nested payload tail retention",
+        "nested write preserves neighboring head",
+        "nested payload write retention"
+      ],
+      "required_satisfied_covers": [
+        "nested payload zero write",
+        "nested payload maximum write"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "nested_payload_field",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-5/kani.json",
+        "--target-dir",
+        "/work/target-5"
+      ]
+    },
+    {
+      "index": 6,
+      "harness": "equal_size_neighbor",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "equal-size scalar exact retention"
+      ],
+      "required_satisfied_covers": [
+        "equal-size zero",
+        "equal-size maximum"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "equal_size_neighbor",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-6/kani.json",
+        "--target-dir",
+        "/work/target-6"
+      ]
+    },
+    {
+      "index": 7,
+      "harness": "false_retention_control",
+      "expected_native_exit": "ordinary-nonzero",
+      "required_successful_assertions": [
+        "negative control retains healthy scalar predicate"
+      ],
+      "required_satisfied_covers": [],
+      "sole_intended_failure": "deliberately false padded retention",
+      "restored_healthy": false,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "false_retention_control",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-7/kani.json",
+        "--target-dir",
+        "/work/target-7"
+      ]
+    },
+    {
+      "index": 8,
+      "harness": "padded_scalar_read",
+      "expected_native_exit": 0,
+      "required_successful_assertions": [
+        "padded scalar exact retention"
+      ],
+      "required_satisfied_covers": [
+        "padded scalar zero",
+        "padded scalar maximum"
+      ],
+      "sole_intended_failure": null,
+      "restored_healthy": true,
+      "argv": [
+        "<admitted-candidate>/bin/kani-driver",
+        "<readonly-controls>/controls.rs",
+        "--harness",
+        "padded_scalar_read",
+        "--exact",
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s",
+        "--export-json",
+        "/work/job-8/kani.json",
+        "--target-dir",
+        "/work/target-8"
+      ]
+    }
+  ],
+  "completion_contract": "All six healthy contexts, exact sole false-assertion failure with its positive assertion successful, and byte-identical restored healthy scalar must qualify under unchanged memory/overflow/pointer/undefined-function/unwinding/sanity checks. No crash/timeout/missing JSON/unreachable named property counts as success."
+}

@@ -78,7 +78,7 @@ Inspected source entrypoints, group router/shared contract; no website edits.
 | implement-typescript | implement-rust | Preserve owner/caller/effect tracing and proportional verification; use Rust ownership, Result, exact newtypes, FFI/async obligations and actual target admission |
 | implement-zod-contracts | implement-rust-contracts | Preserve checked-output consumption, invariant ownership, failure atomicity and valid/invalid controls; replace Zod with the architecture's bounded Serde DTO → fallible private domain construction → current effect guard |
 | evolve-data-contracts | evolve-data-contracts | Preserve semantic compatibility matrices and separate rollout/retirement; cover versioned native IPC, protected policy/journals, mixed generations and MSI rollback |
-| implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use native Win32/UIA/Narrator/DPI and English-first catalog instead of HTML/ARIA/browser assertions or mandatory website locales |
+| implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use Slint/Windows UIA/Narrator/DPI and English-first catalog under current OD-13 instead of HTML/ARIA/browser assertions or mandatory website locales |
 
 Copied no browser/ECMAScript corpus, website examples, npm scripts or website-only
 enforcement helper into Rust project.
@@ -89,7 +89,7 @@ enforcement helper into Rust project.
   reviews and update research do not establish implementation.
 - [Architecture](../../../docs/windows-time-architecture.md), sections 5–6:
   bounded exact representation and separate service authorization; section 16:
-  native Win32 candidate, accessible behavior and English-first locale; sections
+  Slint default under [OD-13](../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit), accessible behavior and English-first locale; sections
   17–18: bounded work, dependency admission and toolchain policy.
 - [Update assessment](../../../docs/windows-time-update-assessment.md): TUF is
   research, not adopted runtime/updater architecture.

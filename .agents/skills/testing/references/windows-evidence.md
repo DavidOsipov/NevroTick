@@ -44,7 +44,7 @@ MSI/SignPath/OpenPGP remain conditional fallback/reference if David reconsiders 
 
 ## Native UI, accessibility and presentation
 
-The current candidate is Win32 common controls via windows/windows-sys, not a webview. Use UI Automation properties/control patterns/events with keyboard and actual Narrator output. Prefer available Accessibility Insights for Windows; Inspect is a legacy diagnostic fallback. Do not assert application accessibility solely because controls are native (CHECK-22).
+[OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint as the default UI toolkit; the checked-in Win32 UI is the reference until migration. The measured winit/software/Fluent pilot does not qualify a product feature graph. Identify the actual Slint accessibility feature/bridge and inspect UI Automation properties/control patterns/events with keyboard and actual Narrator output. Prefer available Accessibility Insights for Windows; Inspect is a legacy diagnostic fallback. Slint-drawn widgets provide no inherited Win32 child-control accessibility pass (CHECK-22). The pilot's disabled accessibility feature is not the product policy; preserve UI-M0's D1/D3 deferrals until their re-entry gates.
 
 Check critical status/source/settings/diagnostics/elevation/tray flows, clear trust/freshness/uncertainty, stale snapshot behavior, accessible error association, tab order, visible focus, Escape/cancel and focus return after dialogs/UAC. Distinguish quitting UI from stopping synchronization; tray-only access must not be required.
 

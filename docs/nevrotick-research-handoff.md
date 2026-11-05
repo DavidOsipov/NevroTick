@@ -27,6 +27,13 @@ events; no source vote, global leap-setting change or synthetic ±1-second broke
 request is adopted. Source/design selection is separate from implementation,
 native qualification and the existing execution holds.
 
+**5 November 2026 UI amendment:** [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default toolkit, with winit/software and Fluent-style widgets
+as the measured starting configuration. R-01 retains exact combined-graph licence
+admission; R-08/UI-M0 retain generated-code, Windows/accessibility, resource and
+package qualification. The Win32 reference and historical receipts remain; the
+selection changes no Core priority, UI-M0 deferral or execution hold.
+
 ## 1. Assignment and limits
 
 Investigate the unresolved questions below and produce concrete options with evidence. This assignment is research and planning. It does not authorize provider contact, accepting terms, submitting vendor/signing applications, spending money, generating release credentials, public releases or changes to the user's Windows clock/services/trust stores.
@@ -50,7 +57,7 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-07 — concrete owner exceptions | OPEN-5/8/9 and affected clauses | Decision cards with compensating controls and bounded residual risk | Affected behavior or assurance claim |
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
-These tasks do not reopen the native Win32 direction, two-service authority split,
+These tasks do not reopen the [OD-13-selected Slint UI direction](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit), two-service authority split,
 ordinary-user UI, time-only v1 or Windows 11 x64 first. The selected delivery target
 is now one complete hardened MSIX; its supported service provisioning and recovery
 remain to be qualified, with no separate MSI service prerequisite. Retained MSI

@@ -58,7 +58,7 @@ that workstream's experiment pause or select its product default.
 | Area | Observed repository state | Consequence for the next agent |
 | --- | --- | --- |
 | Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml) and bounded [engine](../../crates/nevrotick-engine/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source and loopback acquisition do not establish the complete core or production acquisition. |
-| UI | `main` → native adapter → checked fixture model → standard Win32 controls. Preview edits are transient. | Keep UI-M0 isolated; no network, production IPC, persistence, service, elevation or clock effects. |
+| UI | `main` → current Win32 adapter → checked fixture model → Win32 controls. Preview edits are transient. [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint for the successor adapter; migration and product graph admission are pending. | Keep UI-M0 isolated; no network, production IPC, persistence, service, elevation or clock effects. |
 | UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
 | Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and a two-peer loopback engine exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
 | Dependencies | The six-owner workspace retains the reviewed UI-M0/garde cohort and adds the admitted minimal Tokio/getrandom engine graph. Exchange and core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | The [engine dependency checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) owns its selected graph rows. Integrated checks apply to their recorded source/features. |
@@ -303,7 +303,8 @@ remain unchanged.
 [architecture reuse register](../windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
 and [Windows admission rules](../windows-time-development-hardening.md#711-windows-api-and-wrapper-admission).
 The current UI already uses `windows-sys`; broader Windows adapters remain
-planned. Keep the selected Win32 UI, engine Tokio route, service-wrapper
+planned. Keep the OD-13-selected Slint UI direction and its Win32 reference,
+engine Tokio route, service-wrapper
 dispositions and portable domain/protocol owners. This handoff refines existing
 work, selects no dependency/toolkit and changes no current Core next task or hold.
 
@@ -319,7 +320,7 @@ restart a repository-wide library survey for each slice.
 | S0.2/S0.3, P2–P4; W11 platform/IPC/network/clock owners | At the next dependent adapter, consume [W11 task §4.29](../../tasks/windows11-integration.md#429-windows-component-reuse-routing--5-november-2026). Map generated APIs and compatible wrappers before considering handwritten bindings. | Exact API/type/error/lifetime coverage and remaining product owner are explicit; CHECK-26/27 admission and the relevant native CHECK remain open until exercised. Microsoft plural services stays held; Mullvad stays a candidate. |
 | ST-W01/ST-W04; storage/dependency/security | Before the VBS-dependent construction/provider freeze, resolve the absent REQUIRE/PREFER flags in the planned 0.62.2 projection via [storage task §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026). | Source/API coverage card identifies compatible published binding or bounded pinned generation, then separate actual-key/native support evidence; no silent software fallback, probe execution or storage-pause release. |
 | Concrete registry consumer; platform or UI owner | Compare `windows-registry` only when that existing settings/state slice needs it. | A smaller admitted adapter preserves access/DACL, value-size bounds and recoverable effects; otherwise retain the narrow current-binding approach. No generic registry layer is scheduled. |
-| S0.5/P5; UI/dependency/accessibility | Follow [the conditional toolkit record](../../tasks/s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026) only for a demonstrated maintenance/resource need and separately scoped comparison. | Measured equivalent fixture, error/lifecycle behavior, accessibility, runtime/MSIX and mitigation evidence supports retain/adopt/defer; no automatic Reactor/window migration or reopening of the closed egui experiment. |
+| S0.5/P5; UI/dependency/accessibility | Follow [the conditional toolkit record](../../tasks/s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026) only for a concrete issue preventing OD-13-selected Slint delivery and its bounded revisit decision. The UI-M0 M0-SL chain remains current. | Reuse the retained Reactor/Slint pilot observations; any changed candidate still needs equivalent fixture, lifecycle/error, accessibility, runtime/MSIX and mitigation evidence. No automatic Reactor/window migration or general toolkit reselection. |
 | S5.3; UI/diagnostics | At export implementation, use [UI reuse handoff](../../tasks/ui-m0.md#windows-component-reuse-handoff--5-november-2026) and recheck actual `windows-pickers` publication. | Selected ordinary-UI picker preserves cancellation/errors, redaction and safe bounded writes; the reviewed placeholder release provides no implementation evidence. |
 
 The [grouped backlog](../../tasks/development-backlog.md#windows-component-reuse-at-existing-stage-entry)
@@ -633,6 +634,14 @@ performance/lifetime evidence includes the applicable CHECK-21 measurements.
 
 ### P5 — truthful, accessible production UI
 
+**Default toolkit — 5 November 2026:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Rust/Slint, starting from the measured winit/software-renderer and
+Fluent-style pilot. Consume the [existing UI-M0 migration handoff](../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026):
+exact product graph/licence admission, generated-code/unsafe-policy reconciliation,
+shared checked validation, native lifecycle and D1–D3 re-entry evidence remain
+required. Existing Win32 code and receipts are a reference candidate, not a
+completed Slint migration. This selection does not displace current Core work.
+
 Use the [design specification](../nevrotick-design-v0.2/docs/02-ui-spec.md),
 [interactive preview](../nevrotick-design-v0.2/NevroTick-UI-preview.html),
 [screen catalogue](../nevrotick-design-v0.2/screens/README.md) and
@@ -758,6 +767,13 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**UI direction amendment — 5 November 2026:** Slint is the accepted default under
+[OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit).
+The [existing UI-M0 handoff](../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026)
+owns pending product graph/licence admission and adapter migration. It supplies
+no new implementation priority, native authorization or qualification pass;
+the current Core/proof-first continuation below remains the executable task.
+
 **Mandatory mathematical proofs — 5 November 2026.**
 [OD-10](../nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 requires machine-checked product mathematical proofs under
@@ -785,8 +801,32 @@ unchanged campaign or disable model/safety/sanity checks. The coordinator
 reconciles the integrated candidate after remote sync.
 The isolated compiler repair has now passed its 46 binding tests and eight
 bounded verifier controls, including the intended assertion failure and restored
-healthy pass. Continue the separate five-job public-constructor campaign with
-that qualified private candidate; these tool results establish no product theorem.
+healthy pass. Its private LLVM layout repair lets constructor compilation reach
+CBMC, but the full-domain and constant-rejection 120-second attempts timed out
+without returned checks. These tool results establish no constructor theorem.
+The [coordinator checkpoint](../../tasks/s1.1-time-domain.md#public-constructor-proof-checkpoint--5-november-2026)
+now ends at source preparation: follow-on target-refinement and property-ID
+driver patches are held unbuilt, unexecuted and unadopted. No further Kani
+engineering, driver build or constructor solver campaign follows automatically. The raw
+constructor proof remains mandatory and open; dependent acceptance stays held.
+Continue independent product-proof obligations within the existing inventory
+using admitted tools. Revisit a Kani extension only through a separate finite,
+reviewable benefit/qualification decision.
+
+The first completed independent Core leaf is the
+[Core endpoint-finish checkpoint](../../tasks/s1.3-source-selection-readiness.md#independent-endpoint-finish-proof-checkpoint--5-november-2026):
+the actual integer-only outward-rounding helper over its complete raw domain,
+using the existing admitted verifier unchanged. Its five-job healthy/defect/restored
+campaign qualified only that helper's full raw domain. The
+[Fraction constructor checkpoint](../../tasks/s1.3-source-selection-readiness.md#fraction-constructor-proof-checkpoint--5-november-2026)
+has also qualified `Fraction::new` over every raw `(u64, u32)` input, with complete
+admission/rejection, exact retention, zero canonicalization and its own three
+compiled defects/restored proof. Endpoint reuse across the additive shared-runner
+changes has a separate reviewed irrelevance argument. Next freeze and independently
+review `Fraction::compare` over all checked fraction pairs before its bounded
+campaign; the same Core task retains the remaining producer/composition inventory.
+The public era-constructor proof and held verifier extensions retain their
+separate incomplete status.
 
 Carry a per-algorithm remaining-proof inventory into the existing domain,
 exchange, Core and [leap task](../../tasks/s1.4-leap-policy.md#rust-contract-audit-follow-up--5-november-2026)

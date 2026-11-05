@@ -7,6 +7,14 @@
 
 ## 1. Authority, scope and reconciliation
 
+**UI amendment — 5 November 2026:** [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default UI toolkit. The current source inventory and older
+Win32 observations below retain their exact candidates. UI-M0's existing
+[migration handoff](ui-m0.md#slint-migration-handoff--5-november-2026) owns pending
+graph/licence, generated-code and native evidence; W11-W09 and package owners
+must qualify the actual Slint graph when their slices are reached. The selection
+lifts no Windows/fuzz/storage hold or D1–D3 deferral.
+
 Read [AGENTS.md](../AGENTS.md), the [documentation guide](../docs/README.md),
 the [Windows 11 research](../docs/plans/windows11-integration.md), its
 [Microsoft Learn follow-up](../docs/plans/windows11-integration-follow-up.md), the
@@ -480,10 +488,13 @@ ST-T14/16 and DNS-C12/14 for affected storage/DNS paths.
 ### W11-W09 Add truthful native notifications at the deferred UI stage
 
 **Owner/stage:** UI/accessibility; P5 after the relevant D2/D3 re-entry gate.
-**Prerequisites:** actual authenticated service snapshots, restored deferred
+**Prerequisites:** the admitted Slint/backend/renderer and selected accessibility
+exposure from the [UI migration chain](ui-m0.md#slint-migration-handoff--5-november-2026),
+actual authenticated current-generation service snapshots, restored D2/D3
 contracts and [native UI research](../docs/plans/windows11-integration.md#8-present-live-state-through-native-ui-facilities).
 
-**Work:** evaluate `UiaRaiseNotificationEvent` and supported processing modes for
+**Work:** qualify the actual Slint accessibility/Windows bridge without assuming
+inherited Win32-control semantics. Evaluate `UiaRaiseNotificationEvent` and supported processing modes for
 meaningful state changes; ordinary ticking status must not create important
 announcement spam. Local Windows App SDK notifications are a separate candidate
 with deployment/dependency cost; unpackaged support does not remove that review
@@ -1782,10 +1793,10 @@ Store-delivered qualification remain distinct. Current execution holds remain.
 
 | Canonical stage | Owner and bounded continuation | Required observation / exit |
 | --- | --- | --- |
-| S6.1 | W11-W10 with platform/security; freeze per-binary mitigation and DLL policy | Effective installed-role protections beside permitted workflows and tamper/load refusals; compiler flags alone are insufficient. |
+| S6.1 | W11-W10 with platform/security; freeze per-binary mitigation/DLL policy including the actual Slint/backend/generated/native module closure | Effective installed-role protections for engine, broker, helper and UI, including permitted Slint rendering/editing and applicable assistive/IME workflows beside tamper/load refusals; compiler flags or old Win32/pilot evidence alone are insufficient. |
 | S6.2 | W11-W05/W11-W10 lifecycle; resolve supported provisioning/removal and recovery before the admitted lab card | Install/update/repair/Reset/interruption/removal preserve ownership and restoration; failed recovery is visible and safe. |
-| S6.3 | W11-W10 with service/UI owners; integrate complete one-product behavior | Unelevated launch, old-component refusal, downgrade policy and unattended/last-user removal preserve all required components and mandatory authority. |
-| S6.4 | W11-W10 with release/license owner and independent QA; prepare exact submission then qualify delivered bytes | Reconcile Cargo/native/build/proc-macro grants and notices, generated code, SBOM and every non-Cargo package payload; bind submitted/delivered identities, trust and installed contents. Store signing is not helper authorization. |
+| S6.3 | W11-W10 with service/UI owners; integrate the actual Slint executable/runtime/assets into complete one-product behavior | Unelevated launch, close-versus-service behavior, old-component refusal, downgrade policy and unattended/last-user removal preserve all required components and mandatory authority; the standalone pilot EXE is no package pass. |
+| S6.4 | W11-W10 with release/license owner and independent QA; prepare exact submission then qualify delivered bytes | Reconcile exact Slint/framework/backend/features, generated code, executable/runtime/assets, Cargo/native/build/proc-macro grants/notices and complete SBOM/payload/size inventory; bind submitted/delivered identities, trust and installed contents. Store signing is not helper authorization. |
 
 The full [P6 exit](../docs/plans/development-plan.md#p6--complete-installation-hardening-and-release-artifacts)
 remains CHECK-13/16/18/20/23, applicable CHECK-5/15/26/27 and AC-15/20 on

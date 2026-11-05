@@ -223,13 +223,23 @@ never scaffold product crates merely to pass documentation/tool checks.
 
 ## Current UI milestone
 
+[OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects **Slint as the default UI toolkit**, starting with the measured
+winit/software renderer and Fluent-style widgets. The checked-in Win32 adapter
+is a reference implementation pending the migration in [UI-M0](tasks/ui-m0.md).
+Do not reopen toolkit selection or treat historical Win32 receipts as Slint
+qualification. Resolve the exact dependency/licence graph and generated-code
+unsafe/lint boundary; retain the existing validation, lifecycle, accessibility,
+resource and package gates. Selection grants no licence or execution waiver.
+
 Apply [architecture §16.5](docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
 before UI/QA skills. UI-M0 is an unelevated, fixture-only native prototype.
 **D1** theme/contrast/text/DPI work, **D2** production freshness/reconnect/policy/
 administrative-result handling and **D3** full keyboard/Narrator/UIA work are
 **Deferred**: do not implement or qualify them now, or make them UI-M0 blockers.
-Retain standard controls' inherited behavior and labels, Rust/FFI quality checks,
-sample-data labelling, disabled protected actions and native window observations.
+Retain toolkit-provided basic keyboard/editing behavior and meaningful labels,
+Rust/FFI quality checks, sample-data labelling, disabled protected actions and
+native window observations. Slint widgets inherit no Win32-control accessibility pass.
 No live network/DNS, production IPC, persistence, services, elevation or clock
 effects. Carry deferred owners/triggers into the backlog and next-stage plan;
 restore them before the integrations/preview claims specified in §16.5.
@@ -255,7 +265,7 @@ them before executing that tooling; the native Rust build does not use it.
 Read canonical sections for exact limits; preserve these boundaries:
 
 - Separate network-facing engine without clock privilege, narrow privileged
-  clock broker, normal-user Win32 UI, elevated lifecycle helper. Deliver one
+  clock broker, normal-user Slint UI, elevated lifecycle helper. Deliver one
   complete MSIX under amended OD-05, subject to supported service provisioning
   and complete lifecycle qualification. Older MSI-first summaries are superseded;
   retain MSI-specific mechanics only for a later owner-selected alternative.

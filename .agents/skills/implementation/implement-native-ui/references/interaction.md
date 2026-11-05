@@ -2,9 +2,13 @@
 
 Architecture section 16 controls acceptance. Transfer website semantic intent to
 native roles, relationships and behavior; HTML tags, ARIA/browser audits prove no
-native Windows behavior.
+native Windows behavior. [OD-13](../../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint; its drawn widgets require actual Windows accessibility integration
+and native evidence rather than assumed Win32 control inheritance. Apply D1/D3
+only at architecture §16.5's re-entry gates; the resource pilot's disabled
+accessibility feature establishes no product policy.
 
-Choose native text, action, check/radio, list/dialog controls by task. Expose meaningful
+Choose Slint text, action, check/radio, list/dialog widgets by task. Expose meaningful
 UI Automation names, roles, values, states, relationships and supported patterns.
 Associate labels/errors; decorative icons must not duplicate action names. Task-specific
 dialog titles, predictable initial focus, correct Escape/cancel and returned focus

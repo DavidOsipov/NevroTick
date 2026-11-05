@@ -4,8 +4,8 @@
 **System essentials, under control.**
 
 NevroTick is my personal Rust project for secure timekeeping and, later,
-encrypted DNS. It starts on **Windows 11 x64**, with a small native interface
-and chrony-derived numerical algorithms.
+encrypted DNS. It starts on **Windows 11 x64**, with **Slint** as the selected
+native UI toolkit and chrony-derived numerical algorithms.
 
 ## Why I am building this
 
@@ -22,7 +22,7 @@ integrations are outside the planned timekeeping scope.
 ## What is being built
 
 - **Windows first:** authenticated network time, chrony-derived estimation,
-  source agreement and a lightweight native UI. The planned engine and clock
+  source agreement and a lightweight Slint UI. The planned engine and clock
   broker have separate privileges and ship in one complete MSIX. The selected
   [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
   package protections, followed by a Microsoft Store submission with services;
@@ -49,6 +49,10 @@ Start with the [skills index](.agents/skills/README.md) for ideas to adapt.
 ## Project status
 
 **Early development — the current software does not synchronize your clock.**
+
+[Slint is the owner-selected default](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit).
+The checked-in sample-data UI still uses Win32; its [Slint migration](tasks/ui-m0.md)
+needs exact dependency/licence admission and candidate-specific Windows evidence.
 
 The workspace contains a sample-data Windows UI, portable protocol/numerical
 fixtures and a bounded, unauthenticated two-peer loopback observer. Its

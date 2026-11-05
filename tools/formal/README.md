@@ -6,6 +6,12 @@ require source-bound mathematical proofs. This driver covers only its named
 suite obligations; no suite covers every product algorithm.
 Track actual completion and remaining constructor/caller and other mathematical
 obligations in the [existing S1.1c task](../../tasks/s1.1-time-domain.md).
+The [Core task](../../tasks/s1.3-source-selection-readiness.md#independent-endpoint-finish-proof-checkpoint--5-november-2026)
+owns the separate endpoint-finish proof and its omitted producer/composition obligations.
+Its [Fraction constructor checkpoint](../../tasks/s1.3-source-selection-readiness.md#fraction-constructor-proof-checkpoint--5-november-2026)
+owns full raw admission, exact retention and zero canonicalization separately.
+The same task's [comparison contract](../../tasks/s1.3-source-selection-readiness.md#fraction-comparison-proof-contract--5-november-2026)
+owns checked-pair rational ordering and lossless machine alignment separately.
 Use the [proof workflow](../../.agents/skills/testing/references/formal-verification.md)
 for acceptance; preparing this runner does not establish a completed campaign.
 
@@ -41,6 +47,17 @@ inconsistent padded-union member types. The constructor theorem remains open.
 Do not repeat the unchanged campaign or disable checks to bypass this failure.
 Follow the [constructor proof checkpoint](../../tasks/s1.1-time-domain.md#public-constructor-proof-checkpoint--5-november-2026)
 for the retained failure, bounded tool diagnostics and verifier-repair gates.
+The isolated compiler repair and SDK loader fix now let the private candidate
+reach CBMC, but its fixed 120-second attempt returned no completed checks.
+The [compiler repair source kit](kani-padded-union/README.md) retains the reviewed
+patch, regression tests, exact source/tool prerequisites and reproduction steps
+in this repository. Tool binaries, SDKs, vendors and campaign outputs remain
+external. The kit does not select a new default verifier or qualify the
+constructor; the same task owns those remaining gates.
+The follow-on target-refinement and raw-property-ID driver patches are held at
+source preparation. They have not been built, executed or adopted. The current
+checkpoint authorizes no additional Kani engineering or constructor solver campaign;
+independent product proofs may continue through the existing admitted lanes.
 
 The separately admitted model inspector is bound to the qualified local
 third-run receipt and its healthy linked model; it accepts no alternate source
@@ -83,6 +100,9 @@ Additional explicit suites use the same admitted execution profile:
 | `leap-ticks` | 5 | Full-u64 whole-second/Q32 conversion and exact success/retention/error through the actual coordinate constructor |
 | `calendar-finite-laws` | 5 | Seven actual-Rust Gregorian year/month/epoch laws and four original covers; the separate arbitrary-cycle period leaf is still required |
 | `leap-coverage` | 5 | Coverage prefix over all admitted Q32 windows and optional metadata; point-membership and gap-witness theorems, separate from constructors and ledger traversal |
+| `endpoint-finish` | 5 | Actual Core integer endpoint floor/ceiling over every raw i128 component, residual sign and direction; exact output/rounding and complete overflow/range errors |
+| `fraction-constructor` | 5 | Actual Core private Fraction constructor over every raw u64/u32 pair; complete admission/rejection, exact retention, canonical zero and output invariants |
+| `fraction-comparison` | 5 | Actual Core Fraction comparison over every checked pair; exact rational order, required success, factory completeness and machine-alignment bounds |
 
 Each includes compiled defects and restored healthy proofs. Review its actual
 source correspondence, assumptions and omissions before declaring a finite
