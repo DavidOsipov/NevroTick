@@ -265,6 +265,8 @@ For optional state, distinguish safe discard from required historical interpreta
 
 ## 8. Open questions and smallest subsequent work
 
+**6 November 2026:** the owner-requested [open-question register](../server-catalogue-open-questions.md) consolidates these existing decisions and records the proposed per-source expected-DNSSEC rule. OPEN-CAT-01/02/03 and the DNS/time-assurance owners retain authority; the register selects no format, provider, replacement behavior or runtime mechanism.
+
 These are scoped preparation gaps, not new blockers for current Core development. The existing task assigns their resolution before dependent C, approval or runtime work. The offline R input stage in §6.4 has its own frozen contract and bounded verification; production implementation and resource comparisons remain future work.
 
 | Question | Existing owner / dependency | Required next evidence |

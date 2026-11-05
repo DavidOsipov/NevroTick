@@ -183,6 +183,8 @@ Store reusable data and proof results independently of client packet constructio
 
 Learning may choose when to ask again; it cannot extend DNS TTLs, relax signature checks, promote unsigned data to authenticated data or authorize a clock change. Persisted demand statistics are optimization hints, never cached proof of DNS authenticity.
 
+**Catalogue proposal, 6 November 2026:** [expected DNSSEC protection](../server-catalogue-open-questions.md#3-proposed-addition-expected-dnssec-protection) records a possible release-reviewed per-source RequireSecure rule, distinct from historical observations and ordinary validator classification. A proven insecure delegation can violate that stronger policy without proving MiTM. DATA-04/06/08/09, OPEN-CAT-01–03, DNS-C03/04/05/11/12 and time-assurance retain scope, bootstrap and generation ownership. This is an unresolved integration proposal, not validator implementation or a new global startup/release prerequisite.
+
 ### 3.3 Hardware acceleration and multiple cores
 
 Treat both as required workstreams for the future DNSSEC feature, with qualified implementations and measured workload-specific results:

@@ -1647,3 +1647,90 @@ Rust campaign, Windows operation, public-server probe, signing or release occurr
 Local frozen inputs, merge/custody records, edit hashes and review results are
 retained under `/tmp/nevrotick-remote-review-k4ykd04d/`. The final evidence appendix
 does not change the reviewed routing or turn planned/native gates into passes.
+
+## 9. Open-question register and DNSSEC continuity proposal — 6 November 2026
+
+**Owner request:** collect the remaining catalogue questions in a separate document under `docs`, and record the idea of remembering expected DNSSEC protection for supplied time-source domains. The [new register](../docs/server-catalogue-open-questions.md) indexes existing OPEN-CAT-01/02/03 decisions and adds a bounded proposal under the current DNS/time-assurance owners. It does not repeat the completed §7 design review or reopen Roughtime-first bootstrap.
+
+**Baseline and evidence:** upstream `3de77a3f50324d5400042811127c85efe3cd4c5b`, complete tree `eb35b606679d19e603f245de14debd57f7bb751b`; 754 materialized blobs matched that tree before edits. The checkout is a partial synthetic snapshot, not publishable upstream history. Two focused research lanes completed after one context-initialization failure/retry each: primary RFC semantics and current-repository/Microsoft Learn ownership. Failed initial launches are NOT RUN, not clean reviews. Primary links are in the register; no live provider DNSSEC state was measured.
+
+**Prepared meaning:** historical Secure observation, reviewed RequireSecure policy and current validated resolver evidence remain separate. Insecure, Bogus, Indeterminate and operational/time-unavailable outcomes retain their meanings. Refusing an unmet requirement does not establish MiTM. Exact domain/delegation coverage, policy enablement/change, resolver ownership and noncircular Roughtime discovery remain open before dependent implementation. The current local-validation/DoQ direction, ordinary source-agreement rules and E lifecycle retain authority.
+
+**Scope:** one new documentation register and narrow links in the documentation guide, binary plan, DNS plan and this existing task. Preserve development §7 byte-for-byte, all previous task/review receipts, production source and collector code. No DNS/protocol probe, provider contact, collector/test/build/native/proof/fuzz execution, dependency change or Windows operation occurred. Mathematical proof requirements and optional enhanced release provenance remain separate.
+
+The applicable documentary checks are current-source/owner reconciliation, local links/anchors, unchanged canonical IDs/queue/historical evidence and whitespace. A fresh independent review and its actual result are retained below before publication; it evaluates this documentation handoff, not DNS-C/CHECK execution or release qualification.
+
+**Next action:** existing §8.5 still owns catalogue continuation when selected. The new proposal must first settle its stated source-policy/DNS/time-assurance questions at the appropriate checkpoint. Current Core/proof work and all scoped native/fuzz/storage/UI holds retain their order and status.
+
+Research input SHA-256 identities:
+
+- `dnssec-catalogue-semantics.md`: `6a9b7acc3fb9cf5f6693c2d9d3e3d9dc0abfd77ce9c0873be76818de57847bdd`.
+- `dnssec-catalogue-existing-owners.md`: `7687a4b3c3ca0ddb50858fdba13255978a485afe4583b3273b4ba76aa483e7f0`.
+
+### 9.1 Independent review and coordinator closeout
+
+The fresh-context `dnssec_register_review` agent completed its bounded retry and returned **READY** for documentation publication, with **no material findings**. Its first initialization failure remains NOT RUN. The raw report, including both comprehension paragraphs and its precise evidence limits, is preserved verbatim below. Review manifest SHA-256: `13730420978ff6ca918b5c2cee6028e4fb9ea7def8ea47d7dd2eeb328d8d9158`; raw report SHA-256: `104a0002804776731ece69fb00480ce0b04c73dfa56c5df183d0ec139566b438`.
+
+The reviewer verified all five frozen file identities, the exact diff, 27 added local links/anchors, unchanged relevant canonical documents and all 226,146 historical task bytes. Coordinator checks independently confirmed the full upstream tree and 754 materialized blobs, 29 scoped preservation checks and no new local-link failures. The broader 380-link scan retains 45 pre-existing snapshot-relative references in unchanged historical reports; they were not rewritten or represented as valid current navigation.
+
+After review, the coordinator's explicit new-file whitespace check found two Markdown hard-break trailing-space sequences that the tracked-only diff check did not cover. They were replaced with blank paragraph separators; an exact whitespace-token comparison confirmed no content change. The final register SHA-256 is `e616b93590b7d50a5f2494ef5db910b1c9022528bcdb43ae4f9b6f607e32bef4`. All other reviewed substantive bytes remain unchanged; this closeout and the raw review are appended to the frozen task prefix. Final link/whitespace and publication-blob checks bind this receipt-only/formatting delta; unaffected review conclusions are reused. No runtime or provider evidence is added.
+
+<details>
+<summary>Completed independent documentation review — verbatim</summary>
+
+````text
+The change creates a separate catalogue decision register under `docs`, adds navigation from the existing guide and plans, and appends a continuation record to the existing task. It consolidates the unresolved catalogue decisions and records a proposed per-source requirement for validated DNSSEC protection. Publisher observations, approved policy and current resolver evidence remain distinct. Failure of the proposed requirement prevents admission of the affected DNS-derived destination; it does not, by itself, establish a man-in-the-middle attack.
+
+The documented system has bounded offline publisher collection and semantic comparison, alongside separately scoped protocol, numerical, UI and transport work. Production catalogue construction, integrated authenticated time acquisition and DNSSEC validation remain planned or unqualified. The accepted future cold-bootstrap order is Roughtime, then full NTS, with a conditional Khronos/Ananke reserve; existing usable NTS need not wait for that bootstrap. The current Core/proof queue, execution holds and later DNS workstream remain separate from this documentation milestone.
+
+# Independent review: catalogue open questions and DNSSEC proposal
+
+## Inputs, independence and completion
+
+**Reviewer:** `/root/dnssec_register_review`, fresh-context assignment without the author's conversation. **Status: completed.** The earlier context-initialization failure produced no review and remains **NOT RUN**; this report is the completed bounded retry. I did not consult the two author research reports, private knowledge or memory services, or delegate further review.
+
+**Stage reviewed:** publication of the owner-requested catalogue open-question register and DNSSEC proposal as documentation. The user asked to record the open questions separately and raised expected DNSSEC protection as an additional idea. This review does not qualify its implementation or a product release.
+
+The inspected checkout is `/workspace/scratch/68e2481482dd/NevroTick-source-catalogue`. Packet provenance identifies upstream commit `3de77a3f50324d5400042811127c85efe3cd4c5b`, tree `eb35b606679d19e603f245de14debd57f7bb751b`. Independently observed local HEAD is `ddfca22f453f5423c7ec365de6acec2947c8256d`, tree `f881abcb0122bd209b04181e12718e20a489394c`. The upstream commit object is absent from this partial synthetic checkout; I did not independently repeat the coordinator's 754-blob remote-materialization receipt.
+
+The frozen manifest SHA-256 is `13730420978ff6ca918b5c2cee6028e4fb9ea7def8ea47d7dd2eeb328d8d9158`. The companion diff and independently reconstructed actual diff both hash to `947ed9dc4760f30d7791a315237c560e96d3d797a09cad40560ea9698fe2dfb3` and are byte-identical. All five actual file lengths, SHA-256 values and Git blob identities match the manifest:
+
+| Candidate file | Actual SHA-256 |
+| --- | --- |
+| `docs/README.md` | `755fc99bc212c8341efd94cc0e1e786f615ec4eb2ac299218bd0561a72dcbb7a` |
+| `docs/plans/server-catalogue-binary-format.md` | `6dfc61e0fd89b6a902689e12661d0b0ba0701ac14d11be922cabb06323d173d2` |
+| `docs/plans/system-dns-cache-design.md` | `5734116398b6b14d03474e96aa6826c76ceae6ce01a38cb264194279693618e5` |
+| `docs/server-catalogue-open-questions.md` | `f1dd4019803117c60eda5bcc59a97b18b2086a615b3aab2f37be7661a976035f` |
+| `tasks/server-catalogue-and-statistics.md` | `310f75de8c60983de5b3218aa9a01d88e3f0bd6cfb6b485ed13818d53315f680` |
+
+I read the applicable root `AGENTS.md`, documentation routing, repository `plan-independent-review` skill, review/handoff procedure and testing contract. No nested `AGENTS.md` was found. Substantive inspection covered the complete proposed register and changed passages; catalogue binary-plan representation, schema, pipeline, lifecycle and open-decision sections; DATA-04/06/08/09 and OPEN-CAT-01–03; OD-02/03; R-04; NV-TA-001 §§1/3/4/7.1; DNS §§3.2/3.4/11/12; architecture current-state and NTS/destination boundaries; catalogue task retained scenarios and §8.5; and development §7.
+
+## Verdict
+
+**READY — for publication of this documentation candidate.** No material finding requires correction before that named stage. This verdict closes neither an OPEN-CAT decision nor a DNS-C, CHECK, native, mathematical-proof or release gate. Missing future implementation is correctly identified as future work, rather than represented as an executed safeguard.
+
+## Material findings and assessment
+
+**Material findings: none.** No corrective finding IDs are issued. The following locations and evidence explain the verdict and its limits.
+
+**Existing decisions and remaining questions — register §§1–2.** OPEN-CAT-01 retains representation, schema, construction and release trust; OPEN-CAT-02 retains roster, permission, profiles, preset ownership and replacement scope; OPEN-CAT-03 retains freshness, withdrawal and rollback. The index also preserves early-reader compatibility, effective C/E composition, actual independent-group counts, provider budgets and installed-adoption limits from binary-plan §8 and task §7.2. Adjacent Q/H, pinning and storage questions remain routed to their existing owners. Neither the four-operator shortlist nor the documentary Roughtime inventory becomes an approved preset. The previously completed documentation review is not reopened.
+
+**Security meaning — register §§3.1–3.3.** The distinction between an ordinary validator result and a stronger application policy is sound. An authenticated insecure delegation can violate RequireSecure without making the returned data cryptographically Bogus. A validation failure can have operational causes as well as adversarial causes. [RFC 4035 §4.3](https://www.rfc-editor.org/rfc/rfc4035.html#section-4.3) and [RFC 9499 §11](https://www.rfc-editor.org/rfc/rfc9499.html#section-11) support those distinctions; [RFC 8078 §1.2](https://www.rfc-editor.org/rfc/rfc8078.html#section-1.2) supplies a concrete legitimate DNSSEC-removal case. The proposed diagnostic therefore avoids an unsupported attack verdict. Historical Secure evidence is not allowed to overwrite approved policy, and absence of an extra requirement does not authorize Bogus data.
+
+**Actual enforcement and scope — register §§3.2–3.4.** The rule belongs at destination admission, consuming current resolver-owned evidence under DATA-04/06/08/09 and BND-2. It is not delegated to optional history, a publisher observation, packet flags or transport success. [RFC 4035 §4.9.3](https://www.rfc-editor.org/rfc/rfc4035.html#section-4.9.3) supplies the trusted-validator/secure-channel boundary for remote validation; [RFC 6840 §§5.7–5.9](https://www.rfc-editor.org/rfc/rfc6840.html#section-5.7) clarifies signaling. The inspected Microsoft [DNS_QUERY_RESULT](https://learn.microsoft.com/en-us/windows/win32/api/windns/ns-windns-dns_query_result) and [DNS_QUERY_RAW_RESULT](https://learn.microsoft.com/en-us/windows/win32/api/windns/ns-windns-dns_query_raw_result) contracts do not themselves document a qualified local-validation proof. The register appropriately leaves exact implementation/build qualification open.
+
+**Delegation, time and continuation — register §§3.3–4.** Alias/terminal-answer coverage, NTS service identity versus delegated destination, authenticated negative answers and legitimate synthesized records are retained. [RFC 6672 §5.3.1](https://www.rfc-editor.org/rfc/rfc6672.html#section-5.3.1) confirms why demanding a signature on every individual record would be wrong. Signature-time checks require a usable time interpretation under [RFC 4035 §5.3.1](https://www.rfc-editor.org/rfc/rfc4035.html#section-5.3.1). The note explicitly routes cold discovery back to NV-TA-001 without authorizing a DNS-based clock write, weakened verification or a recursive requirement for already-established time. A new DNS failure does not automatically revoke an otherwise admissible association or stop independent eligible sources. Whole-machine DNS-2 is not imported as an initial time-client release prerequisite.
+
+## Documentary checks and limits
+
+The dirty inventory contains exactly the five expected Markdown files. The four existing files have no removed lines. All **226,146 pre-existing task bytes** remain an exact prefix, preserving historical reports and receipts. Their prefix SHA-256 is `29a1ec25a1e6aa0b3f74c3164eb36b5b01087b52ad29bffbe1e9b0947b6d484d`. I checked all **27 newly added local link occurrences**, including anchors: no failures. Historical packet-relative references remain historical evidence and were not reclassified as new navigation defects. `git diff --check` passed. No `docs/SHA256SUMS.txt` exists, so no documentation-bundle integrity claim is made.
+
+Development plan, owner decisions, research handoff, architecture, time-assurance plan and original catalogue inventory are byte-identical to local HEAD. No product code or tests were inspected or executed; no DNS/protocol probe, provider contact, installation, Windows action or repository mutation occurred. Primary-source retrieval resolved documentary semantics only. These results establish no provider's current DNSSEC status and no runtime protection.
+
+## One permitted next action
+
+The coordinator may append this raw completed report to the existing catalogue task and publish the bounded documentation change through the already-authorized repository workflow, binding that final publication to its actual candidate. Subsequent catalogue work remains with task §8.5 and the existing queue; implementation of RequireSecure first needs its recorded scope, policy and noncircular bootstrap decisions.
+
+````
+
+</details>
