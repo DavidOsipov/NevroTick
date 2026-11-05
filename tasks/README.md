@@ -59,8 +59,13 @@ parents; it creates no second execution sequence.
 | [Enhanced build provenance](../docs/plans/release-provenance.md) | Optional under OD-05 §7.5: attestations, independent rebuilds and public source-to-Store evidence add no release blocker or P6/P7 prerequisite. W11-W10 retains the existing required custody, SBOM/licence, trust and installed-payload checks. |
 
 [Future roadmap parents](development-backlog.md#future-roadmap-parents) now retain
-DNS, Android and Chrony-replacement ownership explicitly. Their staged contracts
-remain in the linked plans; none becomes a prerequisite to current Core work.
+DNS, Android, Chrony-replacement and deferred SOCKS5 ownership explicitly. Their
+staged contracts remain in the linked plans; none becomes a prerequisite to current
+Core work.
+Under [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+Direct family/interface/path-history work stays in P2/P5; proxy-specific work is
+outside first Windows delivery. The [existing engine task](engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+owns its limited future profile and SOCKS-C01 checks.
 
 Preserve [current execution holds and scoped Sandbox permission](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
 Core priority and UI-M0 deferrals. The blocked S134 artifact, general host Windows

@@ -142,6 +142,8 @@ Ordinary users can read the settings summaries and source information permitted 
 The planned [network settings](#331-time-network-settings--5-november-2026)
 also belong to that machine policy: adapter, address-family mode, direct/proxy
 route and resolver choice cannot be changed by a display preference or raw draft.
+First Windows delivery exposes Direct with its qualified interface/family controls;
+proxy-specific controls are deferred to SOCKS-0 under OD-11.
 
 The editor separates **Draft changes** from saved and effective settings. Apply first summarizes the changed behavior, including loss of authentication in plain-NTP mode and any exceptional-correction implications. It then invokes UAC for that operation. Successful activation publishes one validated revision. Cancelled authorization, invalid/stale input and a proven not-committed persistence refusal preserve the prior policy. A committed revision or uncertain outcome requires the existing owner's reconciliation and truthful applying/blocked/unknown status; do not infer rollback, retry blindly or resume the old route. See [architecture §12.2](windows-time-architecture.md#122-configuration-semantics) and §3.3.1 below.
 
@@ -277,23 +279,30 @@ Keep Apply/Cancel for machine-policy drafts. Simple per-user display choices can
 Place **Network connection** under **Time sources and trust**, reachable from
 Settings and from a source's connection details. Keep one active acquisition
 profile initially; do not add competing per-user service settings. The owner
-requested interface, IP-family and proxy choices; the following is their planned
-presentation, with the initial SOCKS5 support profile still requiring protocol,
-Windows and service-secret qualification. UI-M0 remains a fixture-only milestone.
+requested interface, IP-family and proxy choices. The later
+[OD-11 decision](nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+keeps Direct interface/family controls in current P2/P5 and moves all proxy support
+beyond first Windows delivery to [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition).
+Do not enable a proxy editor or advertise working proxy support in that first
+delivery. Reject unsupported imported/raw proxy settings explicitly; never drop
+them into Direct. UI-M0 remains a fixture-only milestone.
 
 | Control | Values and useful explanation |
 | --- | --- |
 | Network interface | Automatic or a named adapter with current availability. A selected adapter is a strict pin; disappearance does not silently select another. |
 | IP version | Automatic; IPv4 only; IPv6 only; Prefer IPv6; Prefer IPv4. This is separate from NTP/NTS authentication. |
-| Connection route | Direct, or Manual SOCKS5 proxy with bounded host/IP and port. UDP relay support is required. Proxy failure does not allow direct fallback. |
-| Resolve time-server names | Explicit local resolution or resolution through the proxy. Display the privacy/routing consequence; never switch automatically after failure. Proxy-host bootstrap lookup is a separate disclosed dependency. |
-| Proxy authentication | Only methods qualified for the service/channel and protected-secret lifecycle. Do not expose a working password option before that support exists; never export saved credentials. |
+| Connection route | Direct in first Windows delivery. Future SOCKS-0: manual `127.0.0.1` or `::1` plus port, no authentication, qualified UDP relay. No direct fallback. |
+| Resolve time-server names | Existing local resolver in Direct and the first future SOCKS5 subset. The latter explicitly discloses that DNS is local and is not tunnelled. Proxy DNS is a later extension, not a first-profile toggle. |
+| Proxy authentication | No password control in first Windows delivery or the first future SOCKS5 subset. A later authenticated SOCKS5 extension must first qualify its channel/service and existing protected-secret lifecycle. |
 | Connection details | Requested profile and actual interface, immediate-peer IP family, direct/proxy path, last successful exchange age, KE/UDP stage and bounded recovery reason. Unknown facts remain unknown. |
 
 For direct traffic, label the family control **IP version to the time server**;
-for proxy traffic, **IP version to the proxy**. The proxy's onward family is
-separate: IPv4 locally can reach IPv6 remotely through a capable relay. With proxy
-DNS, display **Target family selected by proxy**; do not offer an enforceable
+for future proxy traffic, **IP version to the proxy**. The proxy's onward family is
+separate: IPv4 locally can reach IPv6 remotely through a capable relay. The initial
+loopback subset permits only Automatic interface, not a physical-adapter pin; a
+hard family conflicting with its literal is invalid, and a preference cannot
+create a second endpoint. If a later proxy-DNS extension is qualified,
+display **Target family selected by proxy**; do not offer an enforceable
 target-family promise from an ordinary SOCKS domain request. A separately offered
 target constraint needs admitted numeric destinations or a qualified resolver;
 required destination-scope checks must also be enforceable before target traffic.
@@ -303,13 +312,18 @@ policy-preserving remedy under architecture §7.4; do not display an invented
 remote address or bypass the profile. The IPv6 label
 describes the selected IP leg, not guaranteed native IPv6 end to end.
 
-The supplied Firefox example (`127.0.0.1:10808`, SOCKS5, proxy DNS) is a possible
-user-entered profile, not a default or a tested proxy. A local proxy controls its
+The supplied Firefox example provides the possible endpoint `127.0.0.1:10808`,
+not a default or a tested proxy. Its proxy-DNS checkbox is outside the first
+future subset. A local proxy controls its
 own onward interface and may disappear at logout. Show this limitation; do not
 claim that selecting Wi-Fi here binds another application's Internet connection.
 No PAC/WPAD, automatic system-proxy import, SOCKS4, HTTP-only KE proxy or bypass
-exception list is proposed for the first integration. Preserve the canonical
+exception list is in the selected proxy direction. Preserve the canonical
 [proxy and reachability contract](windows-time-architecture.md#observed-path-history-and-user-network-policy).
+The future connection check uses the authorized effective profile and configured
+sources in an observation-only path. Show SOCKS negotiation, UDP relay, NTS-KE and
+valid packet stages separately; a reachable TCP port cannot mean time acquisition
+works. The check changes no clock, endpoint policy or trust setting.
 
 Apply shows the route/resolver changes and uses the existing authorized atomic
 machine-policy revision transaction. Show **Saved**, **Applying**, **Effective**
@@ -327,7 +341,8 @@ history belongs to Q and credentials have a separately qualified secret purpose.
 Initial path learning restarts cold after service restart; do not promise durable
 remembering before the existing Q/hint-loader work is qualified. Unavailable
 optional history does not prevent live reuse. No UI database access, second
-settings file or plaintext saved password is introduced. A missing required proxy
+settings file or plaintext saved password is introduced. The first future subset
+has no proxy credential. In a later authenticated extension, a missing required
 credential has a visible remedy and cannot silently select Direct/no-authentication.
 
 ### 3.4 Diagnostics
@@ -386,7 +401,7 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Normal trust profile | Existing NTS-only baseline pending OD-03 resolution | Pool preference does not establish an NTS preset or silently authorize a default trust downgrade |
 | Source preset | Target four diverse NTS operators; supplied directory is discovery input | Candidate shortlist in research R-04; qualification and exact identities remain open. Pool defaults require a vendor zone and an explicit role |
 | Agreement | Existing minimum-two-plus-majority proposal | Freeze the tested policy; never reduce automatically |
-| Time-network route | Proposed Direct, Automatic interface and Automatic IP mode | Machine policy; explicit proxy/pinned/only-family choices are strict; qualify the §3.3.1 profile before enabling controls |
+| Time-network route | Direct, Automatic interface and Automatic IP mode | Machine policy; qualify current pinned/only-family controls. Proxy support is deferred beyond first delivery to SOCKS-0; unsupported proxy state cannot reset to Direct |
 | Plain NTP | Available by deliberate profile change | Administrator; permanently visible unauthenticated label |
 | Recovery hints | Off | Administrator explicitly chooses one or two helpers |
 | Two-helper recovery | Both must satisfy policy | No silent one-helper fallback |
@@ -479,6 +494,13 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-20 | All | Measure startup, idle/active CPU, memory, wakeups, log bounds and package size on the declared Windows machine with supported protections enabled. | CHECK-21 |
 | AC-21 | F-02/04/07/09 | Both local families enabled with one upstream black hole; working alternative is reused, preferred-path recovery is bounded, and network change invalidates obsolete history. A failed Internet destination does not exclude permitted IPv6 LAN/VPN or proxy-side paths. Optional history disabled/full/corrupt cannot prevent live reuse; restart cannot revive stale deadlines or authenticate old observations. | CHECK-6/8/9/14/15/21/27 |
 | AC-22 | F-06/07/09/10 | Strict adapter/family/proxy/resolver choices survive failures without silent escape. Pair a UDP-capable SOCKS route with TCP-only/failed relay, incompatible proxy-DNS family policy, loopback/service-lifetime and invalid/stale-draft cases; preserve useful accepted operation and truthful saved/effective status. Cover old I/O during Apply and missing/wrong-purpose proxy credentials; no silent direct/no-authentication recovery. | CHECK-2/3/6/9/14/15/25/27 |
+
+**AC-21/22 scope after OD-11:** direct-family/interface, path-history and shared
+Apply/reconciliation cases remain current P2/P5 work. Proxy-specific cases are
+deferred to SOCKS-0/SOCKS-C01; proxy DNS and credential cases activate only for
+their later extensions. First-delivery validation still rejects unsupported
+proxy configuration without a Direct reset. Retaining these IDs records future
+criteria, not executed checks or a new proxy prerequisite to Windows delivery.
 
 Resource targets remain those of architecture §17, including separate service/UI/tray accounting; they are unmeasured goals. Do not invent an internet-accuracy SLA, recovery deadline or automatic step threshold to complete a feature card. The [development-hardening specification](windows-time-development-hardening.md) governs test scope, coverage/mutation gates, independent review and truthful evidence accounting.
 

@@ -1635,11 +1635,19 @@ proof-workflow changes. The current two-peer loopback pilot implements none of
 this card's learned routing or proxy behavior. Keep the existing first controlled
 measurement and development §7's public-constructor proof continuation separate.
 
+**Later scope disposition:** [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+and [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition) defer every
+proxy-specific portion of this card beyond first Windows P0–P7 delivery.
+Direct family/interface behavior, live path reuse and shared policy/storage
+contracts remain current P2/P5 work. The [limited future profile and check plan](#socks5-feasibility-and-deferral--5-november-2026)
+supersede the earlier broad first-profile proposal; historical reviews below keep
+their original scope and do not qualify that newer subset.
+
 ### Contract freeze and implementation order
 
 1. **Engine/domain owner, before dependent S2.1 scheduling:** define the single
    acquisition profile, hard/soft family semantics, stable adapter identity,
-   immediate-hop versus proxy-side destination meaning, finite path-history key,
+   direct immediate-hop meaning, finite path-history key,
    monotonic age/cooldown/reprobe/hysteresis rules and aggregate bounds. Learned
    state can reorder permitted paths, never grant permission, fresh time or votes.
    Reuse DATA-06 machine policy, DATA-08/09 contexts, DATA-10 outcomes and DATA-17
@@ -1662,26 +1670,30 @@ measurement and development §7's public-constructor proof continuation separate
    [Windows §4.28](windows11-integration.md#428-explicit-network-profile-qualification--5-november-2026).
    Platform observations do not establish ISP reachability. Preserve permitted
    local/VPN/on-demand paths and the prior timestamp/native-work custody contracts.
-4. **Protocol/security owner, dependent S2.2 proxy slice:** freeze a limited manual
-   SOCKS5 capability and authentication profile, exact licensed dependency choice
+4. **Protocol/security owner, deferred SOCKS-0:** after ordinary S2.2 and first
+   Windows delivery, freeze the limited manual loopback/no-auth/local-DNS
+   SOCKS5 profile, exact licensed dependency choice
    if any, relay-address policy, bounded parser, TCP-control ownership, UDP wrapper
    and inner packet/timestamp handling. Qualify NTS-KE and protected UDP separately,
    preserving TLS identity, delegation, association and the full KE retry-reset
    rule. Resolve the known/unknown actual-KE-peer and default-endpoint boundary
    through architecture §7.4 before admitting a proxy route. A proxy's reply or
    transport handshake is not an accepted time sample.
-5. **Resolver/trust/secret owners:** make local versus proxy DNS and proxy bootstrap
-   resolution explicit; audit selected verifier retrieval before claiming a strict
+5. **Resolver/trust/secret owners, proxy portions deferred to SOCKS-0:** the first
+   future subset uses local DNS and numeric proxy/target addresses. Any later
+   proxy DNS or proxy-host bootstrap resolution must be explicit; audit selected verifier retrieval before claiming a strict
    proxy-only acquisition path. Enforce destination scope before target I/O;
    reject unsupported family/address restrictions with domain forwarding. Preserve
    OPEN-8 and service-owned secret/storage gates;
    no weaker certificate checks, ambient user credentials or plaintext fallback.
-   Extend the existing ST-W01 preparation with a separately qualified credential
-   purpose; the NTS/DNS optional-cache matrix does not authorize missing-password
+   Only a later authenticated SOCKS5 extension adds a separately qualified
+   credential purpose to ST-W01; the first subset has none. The NTS/DNS
+   optional-cache matrix does not authorize missing-password
    recovery. Reuse protected mechanisms, not their payloads or secret identities.
 6. **UI owner, full-product settings/P5:** implement the
    [feature §3.3.1 controls](../docs/windows-time-features.md#331-time-network-settings--5-november-2026)
-   and AC-21/22 through authorized policy Apply, with requested/effective state and
+   for Direct and the direct/shared parts of AC-21/22; proxy controls remain
+   deferred to SOCKS-0. Use authorized policy Apply, with requested/effective state and
    current remedies. UI-M0, HTML design references and public-server probing are
    not part of this documentation slice.
    Persist the existing machine-policy revision separately from activation;
@@ -1689,18 +1701,25 @@ measurement and development §7's public-constructor proof continuation separate
    acknowledgements. A saved revision cannot prove already submitted traffic was
    recalled or that another process changed its route.
 
-The first proposed profile is Direct or Manual SOCKS5, with Automatic or a pinned
-interface and Automatic/Only IPv4/Only IPv6/Prefer IPv6/Prefer IPv4 for NevroTick's
-immediate IP leg. An onward proxy-target constraint is distinct; proxy DNS alone
-cannot enforce it. Do not add a hidden direct escape, split KE-only proxy, browser
-PAC/system import, SOCKS4 or HTTP CONNECT-UDP to complete the initial slice.
-Unsupported profiles remain visibly unavailable pending their actual qualification.
+First Windows delivery uses Direct, with Automatic or a pinned interface and
+Automatic/Only IPv4/Only IPv6/Prefer IPv6/Prefer IPv4. The first future SOCKS-0
+subset uses the architecture's numeric loopback endpoint, Automatic interface,
+no authentication and explicitly local DNS. Proxy DNS/remote endpoints/credentials
+are separate later SOCKS5 extensions. No hidden direct escape, split KE-only proxy,
+PAC/system import, SOCKS4 or HTTP proxy support is part of this direction.
+Unsupported profiles remain visibly unavailable, including on import/downgrade;
+do not interpret a rejected proxy policy as Direct.
 
 ### Paired acceptance cases — planned, not executed
 
 Each row requires the real relevant producer/consumer and a healthy neighbor.
 Portable policy/codec cases precede native routes and controlled proxy fixtures;
 neither mocks nor source inspection close Windows or timing evidence.
+After OD-11, direct/shared portions retain their current owners; every proxy-only
+portion is deferred to SOCKS-0. Proxy-DNS and credential portions additionally
+require their later extension. The first subset's local DNS is explicitly allowed,
+not the silent resolver escape rejected by PATH-08. The applicability split does
+not turn a deferred case into a pass or weaken current direct-path acceptance.
 
 | Case | Failure/control and required observation | Existing owners |
 | --- | --- | --- |
@@ -2173,3 +2192,129 @@ by this bounded read. No scanner, allowlist or required check was changed and
 no result is transferred to the revised candidate. Final publication/CI requires
 read-back of the actual integrated commit and its checks; the PR/final delivery
 receipt supplies that exact identity. No all-green claim follows from this record.
+
+## SOCKS5 feasibility and deferral — 5 November 2026
+
+**Request and candidate:** David asked for a concrete SOCKS5-only profile and
+checks, with permission to defer the feature if implementation/support cost is
+disproportionate. Baseline main is `b9fb17d32c64418bdc524e966e1cab4389575dd6`.
+This source/documentation amendment selects deferral under
+[OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral).
+[SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition) owns future timing
+and SOCKS-C01; this existing engine task owns the bounded child, without a new
+proxy task, cache or database. First Windows delivery remains Direct. Current
+P2/P5 direct-family/interface, path-history and shared Apply/storage work stays
+in place; development §7's public-constructor proof continuation is unchanged.
+
+### Concrete future child and evidence owners
+
+Use the canonical [limited profile](../docs/windows-time-architecture.md#limited-socks5-profile--deferred):
+manual `127.0.0.1`/`::1` plus port; method 0x00 only; explicit local DNS; numeric
+admitted targets; Automatic interface; concrete same-IP/nonzero-port UDP relay.
+The example port 10808 is not a default or tested service. Domain/wildcard/other
+relay addresses, remote proxies, credentials and proxy DNS are outside this first
+subset. Keep an observation-only diagnostic over the admitted effective profile;
+it must not create another unbounded probe or clock-authority path.
+
+The engine/transport owner should freeze one active UDP-association owner for the
+single profile, with its own bound UDP socket and monitored TCP control stream.
+Reuse the existing policy/network/association generations and total resource
+budget; do not introduce a second policy owner. Each bounded KE stream retains
+its original TLS identity and numeric target. Advertise the actual bound client
+UDP endpoint, admit the returned relay before connecting/sending, then demultiplex
+numeric inner sources through existing source-specific exchange owners. Existing
+NTS cookies, crypto, replay, endpoint and timeout rules remain authoritative.
+
+Before implementation, freeze finite parser/buffer/connection/queue limits and
+timeout/backoff/recovery transitions through the current engine owner. A failed
+control/relay retires only the affected work without refilling source/security
+budgets. Retain actual native completion and truthful saved/effective activation.
+The first subset creates no secret purpose; authentication is a later ST-W01
+extension. DATA-06 stores authorized policy; DATA-08/09/10/17 retain live state;
+optional Q is not needed for either cold acquisition or live path reuse.
+
+| Bounded check group | Independently expected observation | Existing owner / acceptance |
+| --- | --- | --- |
+| Profile and no-authentication wire contract | Valid numeric loopback/port and method 0x00 succeed. Zero/out-of-range port, remote/domain endpoint, incompatible hard family or physical-adapter pin, bad versions/reserved fields, method 0x02/0xff or unoffered method fail before unauthorized effects. Imported unsupported proxy policy never becomes Direct. | Domain/IPC/protocol; CHECK-2/3/6/25, PATH-10/12/14/19, AC-22 |
+| Full NTP/NTS path | A bounded independent fixture completes TCP CONNECT/KE and real UDP ASSOCIATE plus correlated valid time packets; a TCP-only proxy or successful KE with blocked UDP cannot produce a working-path result. Closing KE leaves the separate UDP control usable. Ordinary NTP remains labelled unauthenticated. | Engine/protocol; PATH-03/07/08, CHECK-6/8/9 |
+| Relay and packet boundary | Concrete same-IP relay works. Domain/wildcard/wrong-family/wrong-IP/zero-port replies fail before relay I/O. Wrong outer sender, unexpected inner numeric source, fragment/reserved errors, truncation, oversized data and stale association cannot publish or cause an out-of-bounds copy. A valid neighboring packet still works. | Codec/transport/security; PATH-09/11/17, CHECK-6/9/21/25/27 |
+| NTS endpoint and resolver identity | Local DNS may return several admitted numeric candidates; the original TLS name survives CONNECT. An IPv4 loopback proxy can reach an admitted IPv6 target even with no usable local IPv6 path; the reverse case is distinct. Resolver filtering must not erase those remote candidates. Omitted Server Negotiation uses the chosen KE IP, never proxy BND.ADDR or a new name lookup. Valid explicit delegation works; forbidden scope, TLS identity or authentication fails with no plain/direct recovery. Local DNS is disclosed and cannot silently become domain forwarding. | Resolver/protocol/trust; PATH-03/08/09/10, THR-21, OPEN-8, CHECK-6/8/9 |
+| Actual egress | Observe time/helper packets only at the qualified relay and expected local DNS under its explicit policy. Audit actual verifier retrieval; required AIA/OCSP/CRL must follow the admitted route or the profile is unavailable. Exercise resolver/verifier failures with a healthy complete path. No unapproved direct packet or disabled verifier check repairs a failed proxy. | Resolver/verifier/platform; PATH-08/10/19, CHECK-2/6/9/17/27 |
+| Loss and lifecycle | Control EOF/reset, silent UDP loss, proxy starts late/restarts, service starts before login, logout and resume produce bounded observable recovery. Retired packets cannot complete a new exchange. Verify under the actual Windows service token, not a browser/user-shell session. | Engine/Windows; PATH-04/07/12/17, CHECK-6/9/12/14/21/27 |
+| Policy cutover and retained work | Apply with queued sends, DNS/verifier jobs and old relay/control I/O: distinguish precommit rejection from unknown/postcommit outcomes. Saved state is not effective state; old results cannot publish, and retirement retains real native charges. Unsupported downgraded/imported profiles cannot resume Direct. | Policy/native/IPC; PATH-19, AC-07/22, CHECK-2/3/6/14/25/27 |
+| Timing and resources | Compare controlled direct and encapsulated packet timestamps against independent fixture truth; include delay/asymmetry and route changes. No false accuracy, extra source vote or lower quorum. Measure sockets, tasks, buffers and wakeups across loss/retry/cutover; warm reuse works with Q absent/full/corrupt. | Numerical/engine/QA; PATH-13/15/16/17/20, CHECK-7/8/9/14/21/27 |
+
+Portable policy/codec cases come first, then a controlled local server fixture,
+then actual Windows service evidence with one pinned maintained proxy and the
+qualified NTS/verifier graph. Those are staged future checks, not permission to
+run host experiments now. Existing native/Sandbox, storage and fuzz holds retain
+their exact scope. Only enable product controls after the supported envelope and
+SOCKS-C01 evidence exist. Remote proxy/auth/proxy-DNS extensions receive their
+additional cases then; they do not block Direct or the first no-authentication
+subset. No implementation schedule or quantified maintenance estimate is claimed.
+
+### Source feasibility assessment
+
+The protocol split/control lifetime and endpoint constraints are grounded in
+[RFC 1928 §§4–7](https://www.rfc-editor.org/rfc/rfc1928.html#section-4) and
+[RFC 8915 §4.1.7](https://www.rfc-editor.org/rfc/rfc8915.html#section-4.1.7), already
+retained as architecture S129/S20. Local DNS is a deliberate limitation: it avoids
+inventing a SOCKS domain-family selector or actual-KE-peer metadata that the
+protocol does not provide. It does not promise proxy-DNS privacy or universal
+compatibility. A no-authentication subset is not full RFC method support.
+
+Two public Rust candidates were read through GitHub MCP at pinned commits:
+
+| Candidate / inspected source | Finding and consequence for this bounded profile |
+| --- | --- |
+| `tokio-socks` 0.5.3, `3f2c090cedb4546434a237f71103cf02c4da27c0`; [README](https://github.com/sticnarf/tokio-socks/blob/3f2c090cedb4546434a237f71103cf02c4da27c0/README.md) and [manifest](https://github.com/sticnarf/tokio-socks/blob/3f2c090cedb4546434a237f71103cf02c4da27c0/Cargo.toml) | CONNECT is checked, ASSOCIATE is unchecked in the actual Markdown. It is not a complete TCP-plus-UDP adapter for time acquisition. A rendered list that loses checkbox state is insufficient evidence of UDP support. |
+| `fast-socks5` 1.0.0, `bae2fc05f993d3a247b5435ba7da221f3fd80a3c`; [client source](https://github.com/dizda/fast-socks5/blob/bae2fc05f993d3a247b5435ba7da221f3fd80a3c/src/client.rs) and [manifest](https://github.com/dizda/fast-socks5/blob/bae2fc05f993d3a247b5435ba7da221f3fd80a3c/Cargo.toml) | Has UDP ASSOCIATE and a supplied-socket path. Inspected `bind_internal` advertises `[::]:0`, resolves/connects the returned relay internally before the caller can admit it. Inspected `recv_from` copies `data.len()` into the caller slice without a local capacity guard. The UDP owner retains a private control stream, but the inspected receive path does not monitor its EOF. These require adaptation/qualification for NevroTick's endpoint, bounded-buffer and lifecycle contracts. |
+
+These are source observations, not reproduced runtime failures, a full upstream
+audit or product vulnerabilities; neither candidate is selected or installed.
+The point is that a small library API does not remove the required integration
+and review work. [3proxy's SOCKS documentation](https://3proxy.org/doc/man8/socks.8.html)
+describes UDP support and is a possible later interoperability input, not a tested
+or selected NevroTick proxy.
+
+Microsoft Learn MCP was also used to read
+[WinHttpGetIEProxyConfigForCurrentUser](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpgetieproxyconfigforcurrentuser).
+Its remarks distinguish interactive-user settings from service-account settings
+and restrict service use without impersonation. This supports keeping manual
+service policy; it does not prove loopback connectivity, select WinHTTP or qualify
+any proxy/service combination.
+
+### Review and continuation status
+
+Coordinator source research and self-review checked the TCP-only false-positive,
+control-stream lifetime, local-DNS disclosure, exact NTS default target, relay
+admission before I/O, buffer bounds, actual service context, no-authentication
+scope, existing data ownership and the current/future task split. Review identified
+that a loopback proxy cannot honor a selected physical onward interface and that
+an endpoint literal cannot implement a preference by inventing an alternative;
+the limited profile now rejects/labels those combinations explicitly. Strict
+relay-address limits remain an interoperability limitation to qualify later.
+
+One fresh bounded read-only subagent dispatch, `socks5_scope_review`, used
+`fork_turns: none`. It failed with a context-capacity error before returning any
+usable analysis. No independent review pass or inspected inputs are attributed
+to it, and the same failed configuration was not retried. Independent review
+remains required before the later implementation handoff is called ready.
+The earlier incoming-coordinator report applies to its recorded older inputs;
+this amendment does not silently extend its verdict to the new profile.
+
+The final documentation receipt records checks on this amendment separately.
+No product/proxy/native, new mathematical proof or storage execution is claimed.
+Next overall task remains development §7; next proxy action occurs only at
+SOCKS-0's future entry, starting with the finite profile/transition freeze and
+independent review above.
+
+**Documentation receipt:** `git diff --check` and focused validation passed on
+this 14-Markdown-file amendment: 1,090 active inline relative-link occurrences,
+110 distinct target paths, 131 contiguous architecture source IDs, PATH-01–20
+and AC-01–22. All 22 pre-existing fenced blocks across the changed files remain
+byte-identical; development §7 and OD-10 are unchanged. Source, manifests, lockfile,
+CI configuration and UI assets are unchanged. The containing commit/tree binds
+the integrated documentation; these checks establish no product, proxy, native,
+formal-proof or independent-review pass. Publication/CI status must be read back
+for that actual commit, separately from the historical observations above.

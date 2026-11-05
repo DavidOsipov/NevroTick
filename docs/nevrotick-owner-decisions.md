@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.10<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.11<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs and OD-11 SOCKS5 scope/deferral added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -38,6 +38,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
 | OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
+| OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -543,3 +544,47 @@ remain separately required. No protected host execution is authorized here.
 The choice and admission of additional proof tools remains evidence-led. This
 requirement is distinct from optional enhanced release/build provenance in
 OD-05 §7.5, and grants no publication or release approval.
+
+## 15. OD-11 — SOCKS5 scope and deferral
+
+**Direct owner instruction, 5 November 2026:** David asked for a concrete working
+proxy profile and its checks, proposed supporting only SOCKS5, and authorized
+moving the functionality to `ROADMAP.md` if it would create disproportionate
+implementation and maintenance work. He did not authorize a weaker routing,
+authentication or storage guarantee.
+
+**Assessment and disposition:** implementing only a TCP SOCKS handshake would
+not support NTP/NTS. A usable profile also needs the UDP relay/control lifecycle,
+cross-stage endpoint identity, strict route preservation, service-context recovery
+and defensible timing evidence. The source-based assessment in the
+[existing engine task](../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+therefore selects deferral under the owner's conditional instruction. This is an
+engineering judgement about scope, not a measured schedule estimate or a claim
+that SOCKS5 is infeasible. Implementing it during current P2/P5 was considered;
+its additional qualification and support duties are not justified for first
+delivery. Deferral retains a concrete next stage instead of promising partial
+TCP-only support.
+
+**Scope now:** first Windows delivery uses Direct. Current direct-family/interface
+policy, upstream-failure recovery and successful-path reuse stay with their
+existing P2/P5 owners. Unsupported proxy configuration, including an imported
+newer profile, must be rejected explicitly; it cannot be silently erased or
+interpreted as Direct. Existing shared policy cutover, storage and security
+requirements remain. This does not reorder the current proof-first work or future
+KHR/Android and RGT/CHR sequences.
+
+**Proposed first future subset:** manual numeric loopback SOCKS5, method 0x00
+only, explicitly local DNS, admitted numeric targets, NTS TCP CONNECT and a
+separate monitored UDP ASSOCIATE owner. The
+[architecture](windows-time-architecture.md#limited-socks5-profile--deferred)
+owns exact semantics; [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition)
+owns timing and SOCKS-C01. No password input or new secret purpose is needed for
+this subset. Remote proxies, authentication and proxy DNS are later SOCKS5
+extensions with their own qualification; other proxy protocol families and
+automatic browser/system import are outside the selected direction.
+
+**Revisit:** after first Windows delivery, when a real use case and maintenance
+capacity justify the bounded stage. Keep independent review and exact-candidate
+portable/native/interoperability evidence open until executed. No implementation,
+dependency, protected-storage experiment, host reconfiguration or production
+proxy support is approved or established by this documentation decision.

@@ -817,6 +817,15 @@ first controlled measurement, proof-first queue and native qualification distinc
 
 #### Observed path history and user network policy
 
+**Later 5 November scope decision:** [OD-11](nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+moves all proxy-specific implementation and product controls to
+[SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition), beyond first
+Windows delivery. Direct family/interface admission, upstream-failure handling
+and path reuse remain in current P2/P5. Shared contracts below still govern those
+features; proxy clauses are future requirements, not current release blockers or
+implemented capabilities. Reject unsupported proxy configuration/imports without
+silently resetting the route to Direct.
+
 **5 November 2026 refinement:** David requested upstream IPv4/IPv6 failure
 handling, reuse of successful paths, and user selection of interface, IP-family
 policy and proxy. Local admission above establishes only a candidate: an enabled
@@ -901,9 +910,9 @@ is controlled by that proxy. Reject a profile that promises a physical-adapter
 pin it cannot enforce. `IP_UNICAST_IF` and `IPV6_UNICAST_IF` are platform-adapter
 candidates pending qualification; their input byte orders differ. [S127, S128, S129]
 
-**Proxy scope proposed for first integration:** Direct or manually configured
-SOCKS5 with UDP ASSOCIATE for NTP/NTS packets and, when NTS is selected, TCP CONNECT
-for NTS-KE.
+**Deferred SOCKS5 integration:** the limited first future subset is defined below.
+SOCKS5 uses UDP ASSOCIATE for NTP/NTS packets and, when NTS is selected, TCP CONNECT
+for NTS-KE. Direct is the only route in first Windows delivery.
 Qualify the actual server's UDP relay; a SOCKS5 label/TCP success is insufficient.
 Keep the UDP association's controlling TCP connection alive independently of
 the short KE tunnel. Its loss invalidates relay work; recreate it within the
@@ -915,8 +924,10 @@ SOCKS datagrams only (`FRAG=0`);
 reject unsupported fragmentation and account for wrapper bytes/MTU. [S129]
 
 Proxy selection is strict: failure cannot send time traffic directly, silently
-resolve target names locally, use a different proxy or enable plain NTP. Configure
-local target resolution versus proxy-side resolution explicitly. A SOCKS domain
+resolve target names locally, use a different proxy or enable plain NTP. The
+initial future subset explicitly uses local DNS; proxy-side DNS remains a later
+extension. Configure their different privacy/routing consequences explicitly.
+A SOCKS domain
 request carries no independent desired-family selector: with proxy DNS, show
 the target family as proxy-selected/unknown. A hard target-family/address policy
 and §7.4/THR-21 destination-scope admission require admitted numeric destinations
@@ -932,8 +943,9 @@ selected verifier's AIA/OCSP/CRL retrieval also satisfy it; OPEN-8 verification
 requirements cannot be disabled to make proxy mode work. An interface selector
 is not a machine-wide traffic filter. [S20, S129, S131]
 
-Proxy credentials, if supported, require bounded admission, redaction and a
-separately scoped purpose under the existing engine secret-storage owner
+Proxy credentials belong only to a later authenticated SOCKS5 extension, not the
+initial no-authentication subset. If supported, they require bounded admission,
+redaction and a separately scoped purpose under the existing engine secret-storage owner
 (§12.1.3). The current NTS/DNS allowlists do not already admit proxy passwords.
 Machine policy carries only a bounded opaque credential reference/revision;
 no plaintext password belongs in policy, Q/H, UI preferences, logs or exports,
@@ -951,8 +963,8 @@ does not encrypt the proxy hop. Qualify the authentication/channel/storage profi
 a limited no-authentication profile must not claim complete SOCKS5-method support.
 Existing protected-storage holds remain.
 SOCKS4, ordinary HTTP CONNECT as a complete time path, PAC/WPAD, automatic system
-proxy import, split KE-only proxying and CONNECT-UDP remain outside this first
-proposal. Ordinary CONNECT supplies a stream; HTTP UDP proxying is a distinct
+proxy import, split KE-only proxying and CONNECT-UDP remain outside the selected
+proxy direction. Ordinary CONNECT supplies a stream; HTTP UDP proxying is a distinct
 protocol, and interactive-user proxy settings are not service configuration.
 [S129, S130, S131]
 
@@ -964,6 +976,66 @@ poor quality by lowering the agreement/accuracy gates. The engine and Windows
 tasks qualify actual encapsulated TX/RX timestamp locations and estimator effects;
 no code, dependency or native support is adopted by this planning amendment.
 [S20]
+
+##### Limited SOCKS5 profile — deferred
+
+This is the concrete first candidate for SOCKS-0, not an implemented profile or
+an admission of every RFC 1928 authentication method. Its narrow compatibility
+envelope is intentional; expand it only through a separately reviewed extension.
+
+| Profile field | First future subset |
+| --- | --- |
+| Route and proxy endpoint | Manual SOCKS5; explicit numeric `127.0.0.1` or `::1`, port 1–65535. No hostname bootstrap, remote endpoint, discovery or implicit default port. The supplied `127.0.0.1:10808` is an example only. |
+| Authentication | Offer exactly method `0x00` (no authentication); accept only that selected method. Reject a request for credentials, any unoffered method or no acceptable method. No username/password field, credential reference or ambient Windows authentication. |
+| DNS and target identity | Explicit local resolution through the existing admitted resolver; send numeric admitted KE/NTP/helper destinations to SOCKS. Do not discard remote A/AAAA candidates merely because that family is unavailable for local sockets. Preserve the original TLS name and the numeric KE target for RFC 8915's omitted-server default. Proxy DNS/domain target forwarding is unsupported. |
+| Interface and family | Automatic interface for the proxy profile, with NevroTick's sockets bound to loopback. Physical-adapter pinning is unsupported here. Family policy applies to the immediate proxy/relay leg: a hard family inconsistent with the literal is invalid; preferences cannot create another endpoint. The proxy owns its onward interface/family and may reach an admitted target of the other family. |
+| UDP relay | One active relay association for the single acquisition profile; separately accounted retiring work may remain during cutover. Bind a loopback UDP socket first and advertise its actual client address/port in UDP ASSOCIATE. Accept only a numeric relay address equal to the configured loopback IP, with nonzero port and matching immediate family. Domain/wildcard/other relay addresses are unsupported; do not guess how to replace `0.0.0.0` or `::`. |
+
+The engine's existing transport owner retains the control TCP connection and
+actually observes close/error; merely storing an unread stream is insufficient.
+Each NTS-KE CONNECT uses its own bounded stream and original TLS identity. Closing
+KE does not close the UDP association. A lost control connection retires the
+relay epoch and pending exchanges; packet timeouts and relay stalls enter existing
+bounded recovery. Re-establish within the common budgets, never per poll or by
+opening an unbounded parallel association. Preserve source-specific NTS keys,
+cookies, request correlation and retry state under their existing owners.
+
+Validate the selected method/command, reserved fields, address type and complete
+reply before using a returned endpoint. Validate actual relay sender, `FRAG=0`,
+numeric inner source/address/port, bounded lengths and current association before
+passing the payload to unchanged NTP/NTS admission. Check destination-buffer
+capacity before copying; truncation, oversized wrappers and stale data are errors,
+not panics or valid time. Account for wrapper/MTU overhead. Use the actual client
+socket TX/RX timestamp provenance and admit the resulting delay/uncertainty;
+relay send timestamps are neither supplied by SOCKS5 nor authenticated by NTS.
+[S20, S129]
+
+Local DNS is an explicit exception to tunnelling, visible before Apply. This
+subset promises proxy carriage of time and recovery-helper traffic, not remote
+DNS privacy or machine-wide tunnelling. Before activation, the verifier owner
+must qualify required AIA/OCSP/CRL I/O through the selected route, or establish
+that the selected valid verification path needs no such online I/O. A required
+unroutable retrieval blocks the profile; never silently bypass it or disable
+OPEN-8 checks. No TLS provider or verifier-transport implementation is selected
+by this requirement. The shared no-escape and policy-cutover rules still apply.
+
+Treat the local proxy as untrusted and independently managed. The engine must
+work under its actual service token when the proxy is available, and report a
+bounded unavailable state when it starts late, stops, restarts or disappears at
+logout. A process replacing a loopback listener does not acquire NTS identity;
+plain NTP remains explicitly unauthenticated. No browser configuration, interactive
+credential or assurance about the proxy's onward route is inherited. [S131]
+
+Reuse DATA-06 policy and DATA-08/09/10/17 live ownership; optional Q history is
+neither required for acquisition nor a credential store. The first subset creates
+no proxy secret purpose. A later authenticated extension must first satisfy the
+conditional secret contract above. An authorized observation-only connection
+check uses configured sources and the same bounded admission path, reports SOCKS
+negotiation, UDP association, KE and valid packet stages separately, and grants
+no clock, trust or voting authority. A port-open/TCP-only check cannot say
+"time connection works". Exact checks and release scope belong to the
+[existing engine task](../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+and SOCKS-C01.
 
 ### 7.4 NTS implementation contract
 

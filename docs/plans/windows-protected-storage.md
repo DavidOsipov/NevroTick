@@ -100,6 +100,11 @@ DNS demand history is optional private optimization state. Loss may produce an e
 [network profile](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
 must reuse this engine storage manager and its qualified mechanisms rather than
 introducing a password database or an implicit Windows credential fallback.
+Under [OD-11](../nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+this purpose activates only for a later authenticated SOCKS5 extension. Direct
+first delivery and SOCKS-0's first loopback/no-auth/local-DNS subset require no
+proxy credential or extra storage gate. Keep this handoff conditional; it does
+not expand the present ST-W01 assignment or lift the storage pause.
 This is a proposed new **purpose**, not an expansion of the admitted NTS/DNS
 payloads. Before enabling it, ST-W01 freezes its bounded schema, authorized
 input/readers, independent purpose/key/epoch binding, credential reference/revision,

@@ -1,6 +1,6 @@
 # NevroTick roadmap
 
-**Updated:** 4 November 2026
+**Updated:** 5 November 2026
 
 **First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
 
@@ -35,6 +35,7 @@ applying time to its own clock.
 | System-wide Windows DNS | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning) and [detailed DNS/cache design](docs/plans/system-dns-cache-design.md): DNS answers for the whole computer and its applications, DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC with hardware acceleration and multiple CPU cores, and an evaluated adaptive cache. Native integration, actual coverage and performance remain to be qualified. |
 | Roughtime bootstrap | [RGT-0](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock): obtain an authenticated approximate-time interval to bootstrap NTS when the local date is badly wrong; provider, trust-policy and Windows qualification remain future work. |
 | Chrony-independent implementation | [CHR-0](#chr-0--independently-replace-chrony-derived-implementations): owner-selected future replacement stage immediately after Roughtime. Remove reliance on Chrony's licence for the replacement implementation; the future public licence remains open, and David will authorize Microsoft to use the resulting code in Windows within the rights established for it. |
+| Optional SOCKS5 time acquisition | [SOCKS-0](#socks-0--optional-socks5-time-acquisition): deferred beyond the first Windows P0–P7 delivery under [OD-11](docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral). Direct family/interface policy and successful-path reuse stay in the current plan. No new predecessor to KHR-0, Android or RGT-0 → CHR-0 is introduced. |
 
 The [architecture](docs/windows-time-architecture.md),
 [owner decisions](docs/nevrotick-owner-decisions.md) and
@@ -273,6 +274,68 @@ Until replacement qualification and the corresponding release decisions, the
 current Chrony-derived code keeps its existing GPL-2.0-only obligations. This
 future stage does not stop the present port or advance its implementation ahead
 of the selected Roughtime predecessor.
+
+### SOCKS-0 — optional SOCKS5 time acquisition
+
+**Status, 5 November 2026:** deferred beyond the first Windows P0–P7 delivery.
+David requested a concrete SOCKS5 profile and allowed deferral if implementation
+and support would be disproportionate. The engineering assessment selects that
+deferral under [OD-11](docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral);
+the profile below is a future design, not a working or qualified product feature.
+First Windows delivery uses Direct. Its IPv4/IPv6 admission, upstream-failure
+handling, successful-path reuse and interface selection retain their existing
+P2/P5 owners and gates.
+
+**Why later:** NTS needs both a TCP KE tunnel and actual UDP time exchanges.
+SOCKS5 adds an independently owned TCP-controlled UDP relay, endpoint admission,
+policy cutover, resolver/verifier routing, timestamp uncertainty and service versus
+user-proxy lifetime. A successful TCP connection does not qualify those behaviors.
+The [bounded source assessment and check plan](tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+also found that the examined libraries do not remove these integration duties.
+This is a qualitative engineering judgement; no measured implementation estimate
+or compatibility pass is claimed.
+
+**Owners:** existing engine/protocol and Windows adapter owners, with resolver,
+verifier, UI and independent security/QA review at their dependent boundaries.
+Reuse the current engine task; do not start a parallel proxy project or database.
+Schedule the stage when a real supported use case and maintenance capacity justify
+it, after Windows delivery. Its place among other future work remains undecided;
+the existing Windows → KHR → Android and RGT → CHR ordering is unchanged.
+
+**First future profile:** the canonical
+[limited SOCKS5 profile](docs/windows-time-architecture.md#limited-socks5-profile--deferred)
+uses a manually supplied numeric loopback endpoint, no proxy authentication,
+explicit local DNS and numeric admitted destinations. NTS keeps its original TLS
+server name. CONNECT carries KE; a separate monitored UDP ASSOCIATE session carries
+time/helper datagrams. There is no automatic Direct fallback. The initial relay
+must return the configured loopback IP and a nonzero port; other relay forms are
+unsupported until separately qualified. The proxy owns its onward interface.
+Local DNS is a disclosed routing/privacy exception, not proxy DNS or a claim that
+all host traffic is tunnelled.
+
+Remote proxy endpoints, authentication and proxy-side DNS are later, separately
+admitted **SOCKS5 extensions**. None is required for this first subset. SOCKS4,
+HTTP proxy modes, PAC/WPAD, browser/system import and bypass lists are outside the
+selected proxy direction. In particular, the Firefox example's proxy-DNS checkbox
+does not become a promised first-profile capability.
+
+| Future step | Required result and evidence owner |
+| --- | --- |
+| Freeze the subset | Engine/protocol owner specifies bounded wire/state transitions, relay admission, complete I/O ownership and supported failure/status outcomes. Reuse DATA-06/08/09/10/17 and applicable PATH-03–20; admit any dependency on its exact source/graph. Independent review must resolve material contract findings before implementation readiness. |
+| Portable controlled fixture | Exercise a real adapter against an independently specified local SOCKS fixture: valid CONNECT and UDP traffic alongside TCP-only proxy, malformed replies, fragmentation, oversize/truncated packets, wrong source, close/stall, stale revision and retry-budget cases. Check actual sends and retained resources, not only return values. |
+| Windows service and interoperability | Run the same controls under the intended engine service token, including proxy starts late, restart/logout, suspend/resume and Apply with outstanding I/O. Qualify one pinned real proxy supporting the exact subset, DNS/verifier egress, NTS identity/default delegation, timestamps and uncertainty; disclose the tested compatibility envelope. |
+| Product controls and support | Enable only the qualified settings. An observation-only connection check reports proxy negotiation, UDP relay, KE and valid packet results separately; it changes no clock or trust policy. Distinguish configured, saved, effective and failed state. Diagnostics are bounded/redacted and failed proxy acquisition cannot escape to Direct. |
+
+**Exit SOCKS-C01:** retain the exact product/proxy/environment identities and
+executed positive, rejection, recovery and resource evidence above, independent
+review and the applicable existing CHECK/AC gates. Demonstrate useful NTS and
+explicitly unauthenticated NTP operation through the relay without a direct time
+packet, unapproved verifier escape or false success after a TCP-only test. Local
+DNS must match its explicit policy. Close relevant mathematical obligations under
+OD-10; do not repeat unchanged proofs or replace native checks with a model.
+Documentation, library API availability and a browser proxy test do not close this
+exit. No dependency, server installation, native experiment or release is enabled
+by this entry.
 
 ## 2. Intended behavior and limits
 
@@ -805,12 +868,14 @@ Resolve these choices when the dependent stage is ready, using the existing
   no generic majority vote across mechanisms or automatic new clock authority.
 - The post-CHR-0 public distribution licence and concrete Microsoft permission,
   based on the replacement candidate's reviewed rights rather than a licence label.
+- SOCKS-0 scheduling after first Windows delivery, the exact maintained proxy
+  compatibility envelope and any later SOCKS5 authentication/remote/DNS extension.
 
 Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-KHR-C01, RGT-C01, CHR-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+KHR-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.

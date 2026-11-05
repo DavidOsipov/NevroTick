@@ -82,8 +82,13 @@ Only load the leaves needed by that item's changed guarantee.
 
 **5 November proxy-credential scope:** consume the
 [conditional-purpose handoff](../docs/plans/windows-protected-storage.md#2-owners-data-classes-and-restoration)
-when ST-W01 reaches authenticated proxy support. Reuse the existing engine storage
-manager; freeze purpose/key/epoch isolation, bounded credential references,
+when ST-W01 reaches authenticated proxy support.
+[OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+defers proxy support beyond first Windows delivery; only a later authenticated
+SOCKS5 extension needs this purpose. The first future loopback/no-auth/local-DNS
+subset does not, and this handoff is not a current ST-W01 or Direct prerequisite.
+For that authenticated extension, reuse the existing engine storage manager;
+freeze purpose/key/epoch isolation, bounded credential references,
 authorized input/readers, replacement and missing-secret behavior before enabling
 it. The NTS/DNS allowlists and continuation matrix do not already qualify this
 purpose. Map malformed/old/wrong-purpose state, unavailable root, partial replace,

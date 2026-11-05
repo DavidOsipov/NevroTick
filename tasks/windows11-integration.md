@@ -2226,7 +2226,11 @@ new host configuration or public-server probe.
 Extend §4.27 through the same engine/platform owners and
 [network-profile card](engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026).
 Apply the [canonical contract](../docs/windows-time-architecture.md#observed-path-history-and-user-network-policy)
-before dependent S2.1/S2.2 binding or proxy integration. This adds no W11-W11 label
+before dependent S2.1/S2.2 direct binding. Under
+[OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+all proxy-specific qualification below belongs to deferred
+[SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition), after first
+Windows delivery; it is not a current P2/P5 prerequisite. This adds no W11-W11 label
 and does not make the future system DNS service a prerequisite for direct NTP.
 
 Qualify selected interface identity to current IPv4/IPv6 index mapping, source
@@ -2253,7 +2257,9 @@ revision, cancellation request or completed waiter is not effective-profile
 evidence; late native completion retains its resource charge and cannot publish
 as current. Already submitted remote/OS traffic is outside any recall claim.
 The existing ST-W01/02/03/04/06/07 owners qualify a conditional proxy credential's
-separate purpose, service readers and lifecycle; no new secret backend or path.
+separate purpose, service readers and lifecycle only for a later authenticated
+SOCKS5 extension. The first future subset uses loopback/no-auth/local-DNS and
+needs no proxy secret purpose; no new secret backend or path.
 
 **Disposition:** source-backed planning only. CHECK-2/6/8/9/12/14/17/21/25/27 and
 AC-21/22 retain their existing evidence owners; the engine card supplies paired
