@@ -759,6 +759,62 @@ This policy requires no shared timer or blocking DNS/TLS work in the core.
 
 Define an explicit NTP-era pivot and plausible date range. The 32-bit seconds field wraps in 2036; a grossly wrong OS date cannot safely serve as the only era anchor. A persisted authenticated floor, operator date anchor and release policy can constrain interpretation. If interpretation remains ambiguous, block automatic stepping and explain the required remedy.
 
+#### Address-family admission and alternative progress
+
+Before scheduling a destination, the engine classifies local IPv4/IPv6 usability
+for its actual interface/source-address/route context. Distinguish a disabled
+family, no current local path, a locally usable candidate and unknown evidence.
+A current, conclusive local exclusion skips that candidate without waiting for a
+connection timeout or recording a failed peer exchange. A family disabled on one
+adapter is not disabled on every adapter. A configured address alone may be
+unusable; qualify source-address selection, including duplicate/tentative or
+expired state. An absent default Internet route or negative Internet-connectivity
+hint cannot exclude an otherwise permitted LAN/VPN destination. [S126]
+
+Dormant/on-demand state is not administrative disablement. Where ordinary
+policy-permitted network activity can activate an OS-configured path, absence of
+an already active path is not a conclusive exclusion. Preserve a bounded ordinary
+attempt or resolution/recovery path; observation-only polling must not prevent
+that activation. This grants no authority to enable or reconfigure adapters/VPNs.
+[S126]
+
+The platform adapter supplies bounded observations; the engine owns admission and
+scheduling. Bind observations to current network/resolution context, obtain an
+initial snapshot and reconcile interface/address/route, VPN and resume changes
+through the existing generation lifecycle. Reads are not assumed atomic: known
+context changes invalidate the result. Failed, incomplete or stale inspection is
+unknown, not proof of a disabled family; preserve bounded attempts or rechecks
+under current destination policy. Unknown local evidence alone cannot indefinitely
+suppress an otherwise permitted candidate. Local exclusions require a bounded
+recovery path even if no further notification arrives. Cache and refresh observations
+outside packet-timing work, retain actual native-job custody under §17.1, and
+handle changes/errors between inspection and send. `GetAdaptersAddresses` and
+`GetBestRoute2` are candidates pending selected SDK/binding and native
+qualification, not an implemented adapter. [S126]
+
+For each logical source, freeze a finite candidate-set limit, address/family
+ordering, time to try an alternative and total attempt/deadline/concurrency
+bounds. While other currently admitted candidates remain, a silently failing
+first address/family cannot indefinitely monopolize acquisition. Preserve progress
+under repeated refreshes and unchanged/reordered DNS answers; report bounded
+exhaustion when no attempt is available. All candidates share §7.3's source and
+aggregate budgets, earliest-operation guards and retry state. DNS/network events
+cannot refill them. RFC 8305 informs address interleaving and staggered TCP
+connection attempts; its timing defaults, parallelism and a particular library
+are not adopted automatically. [S127]
+
+Apply this policy separately to NTS-KE acquisition and the negotiated protected
+NTP path. A TCP connection is not completed KE, and completed KE is not usable
+protected UDP. A failed UDP path must permit bounded alternative progress under
+§7.4's authenticated identity, delegation, key/cookie and association rules;
+changing an IP never authorizes arbitrary cookie migration or extra independent
+votes. Preserve the existing full-transaction KE-backoff reset rule, no-downgrade
+policy and final current-generation/consume-once guards. S2.1/S2.2's
+[engine task](../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
+owns the implementation sequence and paired controls. This refinement leaves the
+first controlled measurement, proof-first queue and native qualification distinct.
+[S20, S127]
+
 ### 7.4 NTS implementation contract
 
 NTS requires a TLS 1.3-or-later KE channel with `ntske/1`, verified server identity, bounded record parsing and exporter-derived direction-specific keys. Implement the interoperable AES-SIV-CMAC-256 profile using a maintained compatible library. Each protected request uses a fresh UID containing at least 32 CSPRNG-generated octets, cookie handling and authenticated response validation. NTS authenticates time data; it does not make an inaccurate server correct or remove network delay attacks. [S20]
@@ -3591,6 +3647,10 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S124 - Application VBS enclaves, separate from CNG root protection, checked 2 November 2026.** Microsoft [overview](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves), [development guide](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves-dev-guide) and [pinned tooling README](https://github.com/microsoft/VbsEnclaveTooling/blob/ec3ea90ddac245da7c96112dea0e27ee1a78f986/README.md). The selected path owns its OS/SDK/ABI/import/signing/debug/strict-memory requirements; the general enclave floor is not the CNG VBS-key feature floor. CFG is required for enclave DLLs; exact hardened-host compatibility remains unqualified.
 
 - **S125 - Leap knowledge and Windows ownership, checked 4 November 2026.** [NV-LP-001 source map](plans/leap-second-policy.md#8-sources-and-inspection-pins) pins RFC/erratum, IERS/BIPM/IANA, Chrony/NTPsec/ntpd-rs and official Microsoft evidence. §10.5 selects the project policy; source inspection is not Windows qualification and does not change the adopted upstream-code pin.
+
+- **S126 - Local address-family and destination-route evidence, checked 5 November 2026.** Microsoft [GetAdaptersAddresses](https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses), [adapter flags/status](https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_addresses_lh), [unicast address state](https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_unicast_address_lh) and [GetBestRoute2](https://learn.microsoft.com/en-us/windows/win32/api/netioapi/nf-netioapi-getbestroute2). Enablement is per adapter; enumeration can include duplicate addresses; a route query is local evidence. Adapter enumeration is synchronous. The existing [network reconciliation](plans/windows11-integration.md#exclusive-loopback-endpoints-and-reconciled-network-changes) and [connectivity-hint limits](plans/windows11-integration-follow-up.md#native-ip-helper-hints-may-satisfy-a-narrower-cost-requirement) retain their callback, generation and destination-specific qualification requirements.
+
+- **S127 - Alternative-address connection progress, checked 5 November 2026.** [RFC 8305 §§3–5](https://www.rfc-editor.org/rfc/rfc8305.html#section-3) describes resolution, address ordering and staggered connection attempts; [§9](https://www.rfc-editor.org/rfc/rfc8305.html#section-9) limits what initial connection success establishes. Apply with RFC 8915's negotiated endpoint and retry requirements in S20. The required bounded NTP/NTS progress contract is NevroTick's adaptation; no complete Happy Eyeballs implementation, timing constant or Windows behavior is qualified by these sources.
 
 ## Appendix B. Worksheet attribution and use
 

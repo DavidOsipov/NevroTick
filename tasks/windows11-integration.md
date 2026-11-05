@@ -2191,3 +2191,32 @@ checkpoint, leap implementation/proof scope, complete MSIX, optional enhanced
 release provenance, S134/native and fuzz restrictions, storage pause and UI-M0
 D1–D3 deferrals retain their recorded status. This preparation lifts no hold and
 supplies no source-to-native qualification.
+
+### 4.27 Address-family admission routing — 5 November 2026
+
+**Owner/stage:** engine/protocol with the platform adapter owner, before dependent
+S2.1/S2.2 acquisition integration. The [canonical contract](../docs/windows-time-architecture.md#address-family-admission-and-alternative-progress)
+and [existing engine task card](engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
+own local IPv4/IPv6 usability and bounded alternative-address progress. This note
+routes the Windows portion; it adds no W11-W11 label or acceptance gate and does
+not extend W11-W01's timestamp-only next card or depend on the future DNS service.
+
+Reuse the existing interface/address/route reconciliation and callback-custody
+rules. Qualify the selected adapter's initial observation, address suitability,
+destination-specific route/source selection, changed-during-read and unknown
+outcomes, bounded rechecks, and actual completion/stop behavior. Demonstrate
+disabled-family skipping beside a usable alternate interface/LAN/VPN path;
+global Internet/cost hints are not destination admission. `GetAdaptersAddresses`
+and `GetBestRoute2` remain source-supported candidates, with exact SDK/binding,
+intended-token behavior and native controls pending. Do not run synchronous
+enumeration on packet-timing paths or infer usable addresses from list presence.
+Distinguish genuinely disabled paths from dormant/on-demand paths that ordinary
+permitted traffic can activate; qualify the bounded activation/disabled pair
+without granting application authority to reconfigure adapters or VPNs.
+
+**Disposition:** documentation prepared; implementation and native evidence
+remain unexecuted. The engine card supplies finite case/profile preparation and
+existing CHECK-6/8/9/21/27 ownership, with CHECK-25 only where construction guards
+are reached. S1.1c remains first under development §7. Existing native/S134, fuzz,
+storage and UI holds/deferrals retain their current scope; this entry permits no
+new host configuration or public-server probe.
