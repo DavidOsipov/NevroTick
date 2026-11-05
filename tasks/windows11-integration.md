@@ -550,6 +550,18 @@ and the [release policy](../docs/release-policy.md). W11-W10 retains support and
 publication/incident readiness; W11-W05 retains mandatory-state and lifecycle
 recovery. Source preparation is recorded, while owner choices and actual
 rehearsals remain open at their existing phase gates.
+
+**Metadata requirement, 5 November 2026:** W11-W10/P6 consumes the
+[product/package metadata contract](../docs/plans/windows-package-metadata.md)
+under OD-05 §7.6. Before the package slice, inventory applicable fields and their
+authoritative values, unresolved Store/support/version inputs and per-component
+resources. Then generate from one maintained record and independently inspect
+emitted PE resources, selected MSIX or conditionally selected MSI metadata,
+localization and actual installed surfaces. Use the verified Windows API map;
+source binding presence is not dependency or native qualification. Existing
+CHECK-18/20/23/26/27 and W11-W05's service-description/lifecycle ownership apply.
+This source handoff selects no new crate, package tool, identity or release.
+
 The [provisioning refinement](#424-pre-start-service-provisioning-refinement--5-november-2026)
 and separate [independent-removal refinement](#425-independent-removal-with-outstanding-recovery--5-november-2026)
 supply W11-W05/W11-W10's next bounded source/evidence routing. Retention does not

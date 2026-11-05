@@ -697,6 +697,12 @@ and expansion fixtures; they do not add an unapproved translation/locale scope.
 
 ### P6 — complete installation, hardening and release artifacts
 
+Apply [the package-metadata contract](windows-package-metadata.md) under OD-05
+§7.6: one maintained source of product/release/component values, complete
+applicable PE/package/installed-app/Store fields, explicit version and locale
+mappings, and independent emitted/installed readback. W11-W10 owns this work
+within the existing package checks; MSI mappings remain conditional reference.
+
 Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
 helper and all required payloads. Follow the [MSIX plan](windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)
 and amended OD-05: source/design preparation needs no Store preapproval; local

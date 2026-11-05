@@ -341,6 +341,23 @@ No complete reproducible release or source-to-delivered-byte proof is claimed.
 Neither signing, attestation nor matching rebuilds prove that approved source,
 dependencies or build infrastructure contain no malicious behavior.
 
+### 7.6 Extensive, correct product and package metadata — 5 November 2026
+
+David requires the maximum useful, correct metadata whether the selected
+delivery is MSIX or a later MSI route. The
+[metadata contract](plans/windows-package-metadata.md) maps executable resources,
+installer/package and installed-app information, Store fields, localization,
+versions and source-of-value rules. Populate applicable supported fields and
+record justified absence; do not invent identities, support contacts or shipped
+capabilities, or enable package behavior merely to fill optional fields.
+
+W11-W10/P6 own the shared record, generated outputs and actual artifact/readback
+checks under existing CHECK-18/20/23/26/27. The field/generation design is source
+preparation, not implemented metadata or a qualified package. The selected
+complete-MSIX direction, possible later MSI reconsideration, Core priority and
+execution holds remain; enhanced public build provenance stays optional under
+§7.5.
+
 ## 8. OD-06 — future research and decision queue
 
 The [research handoff](nevrotick-research-handoff.md) is the bounded assignment for another AI. It separates protocol/platform findings from choices that require David and from provider decisions nobody on the project can grant.

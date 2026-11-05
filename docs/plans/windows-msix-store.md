@@ -695,6 +695,12 @@ not a v3 CPU/OS-state prerequisite check.
 
 The package author uses this field-level profile when real components exist:
 
+The [cross-format metadata contract](windows-package-metadata.md) supplies the
+complete descriptive-field inventory, per-binary resources, localization,
+version mapping, Store listing and independent readback rules under OD-05 §7.6.
+Apply it to this same candidate. It adds no speculative capability, invented
+Partner Center identity or parallel MSI deliverable.
+
 | Manifest/input surface | Concrete intended value or rule | Unfilled input / independent check |
 | --- | --- | --- |
 | `Identity` | One product identity, `ProcessorArchitecture="x64"`, monotonic release version | Exact `Name`/`Publisher` come from David's Partner Center identity; do not invent them. Bind submitted and delivered versions separately. [S02, S51] |
