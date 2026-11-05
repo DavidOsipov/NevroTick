@@ -48,11 +48,11 @@ does not perform or authorize those actions.
 
 ### 2.1 Current published commitment
 
-| Population, as of 4 November 2026 | Support status |
+| Population, as of 5 November 2026 | Support status |
 | --- | --- |
 | Production stable releases | None declared. No stable series, backport schedule, support lifetime or fixed response/remediation deadline is established. |
 | Development commits, snapshots, CI artifacts and prototypes | Experimental scope only. Reports about current and older revisions remain welcome through SECURITY.md. |
-| Intended initial platform | Windows 11 x64 is a product target. The exact supported OS builds, CPU profile, deployment policies and package transitions still require qualification. |
+| Intended initial platforms | [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) selects Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience. Exact OS/CPU/protection profiles, supported delivery and package transitions require row-specific qualification; this direction approves no stable-support commitment. |
 
 A source tag, a GitHub release, a private Store candidate or Store certification
 does not establish production support. Availability of archived bytes does not
@@ -142,6 +142,10 @@ Bind approval to an auditable candidate evidence record containing:
 - Package/publisher/product identity, submitted/delivered version, capabilities,
   platform applicability, launch paths, effective mitigations and helper/IPC
   admission evidence. Signer class alone is not product-role authority.
+- Each claimed [client/Server profile](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026):
+  edition/channel/install mode, build/UBR/KB, CPU/OS state, effective policy and
+  actual acquisition/licensing/update route; bind its CHECK results, timing/power
+  and resource evidence separately from fixture availability and suitability.
 - Supported component/schema/generation transitions from §6, actual lifecycle
   results, wrong-clock/offline verifier cases and remaining blockers.
 - Audience, visibility, flight/rollout state, observation/stop criteria, recovery
@@ -559,6 +563,11 @@ a release blocker regardless of administrative incident status. [W08, W09]
 All product/account/Store cases below are **planned, not executed by this
 documentation work**. Preserve existing CHECK owners and candidate-specific
 receipts; this is not a new acceptance catalog.
+
+Apply the [two-family platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+to every claimed OS profile. Local package mechanics, product/CPU admission and
+actual delivered-byte qualification remain distinct; Server delivery applicability
+is unresolved. No client result silently qualifies Server, and OPEN-2 stays open.
 
 | Distinguishing case and useful control | Required observation | Existing owners/environment |
 | --- | --- | --- |

@@ -53,6 +53,12 @@ to field definitions, bounded evidence and the next dependent OD-04 decision.
 Native capability, model assumptions and acceptable policy tolerances remain
 separate; source review adopts no production values or execution permission.
 
+**S0.4/S0.7 platform preparation:** [W11 §4.32](windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+records OD-14's two intended OS families and first engineering fixtures. Platform,
+build and W11-W05/10 owners resolve admission/delivery and actual fixture inputs;
+P4/P6/P7 consume row-specific timing, protection, lifecycle and resource evidence.
+OPEN-2, the current proof-first queue and all execution holds remain open/intact.
+
 ### Windows component reuse at existing stage entry
 
 **Source findings integrated 5 November 2026; dependent implementation remains

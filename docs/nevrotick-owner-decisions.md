@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.13<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement and OD-13 default Slint UI added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.14<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -41,6 +41,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
 | OD-13 | Use Slint as the default UI toolkit after the live-Windows comparison | **Accepted toolkit direction, 5 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
+| OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -698,3 +699,39 @@ The [architecture §16.1](windows-time-architecture.md#161-toolkit-and-interacti
 controls the toolkit contract; the [UI-M0 task](../tasks/ui-m0.md) owns the next
 bounded migration and evidence. This decision records direction, not completion
 of S0.5, CHECK-21/22, P0/P5 or release qualification.
+
+## 18. OD-14 — compact Windows platform scope
+
+**Direct owner direction, 5 November 2026:** David limited the initial intended
+OS scope to **Windows 11 26H2 and a corresponding Windows Server**, delegating
+the other parameters. This supersedes the generic Windows-11-only direction for
+platform preparation; it establishes no supported stable release or native pass.
+
+**Researched mapping:** Microsoft's dated release records identify Windows 11
+26H2 as GAC/build family **26300** and Windows Server **2025** as current
+LTSC/build family **26100**. The engineering counterpart is Server 2025, not a
+Server release called “26H2” or a promise of identical builds/features/servicing.
+[Client release information](https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information)
+and [Server release information](https://learn.microsoft.com/en-us/windows/release-health/windows-server-release-info)
+were checked on 5 November 2026.
+
+**Engineering fixtures:** start with Windows 11 26H2 **Pro x64** and Windows
+Server 2025 **Standard x64 with Desktop Experience**, using the MSVC target and
+OD-07's intended v3 baseline. These edition/install choices keep the complete
+desktop UI/services product concrete; they are not David's separate edition
+instructions or all-edition support promises. Exact UBR/KB, hardware, effective
+protections and availability remain inputs. Current generic binaries are not
+v3-qualified. Server Core and further editions are outside these first fixtures.
+
+The [existing W11 task §4.32](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+owns two rows and shared controls under existing CHECK/P0/P4/P6/P7 owners.
+OPEN-2 remains open. Qualify package applicability, product OS-family admission,
+safe CPU preflight, Server acquisition/update applicability and actual delivered
+bytes separately; one complete MSIX and David's Store attempt retain OD-05's
+owners. Managed-domain observation and administrator-authorized takeover retain
+architecture §1.2; DC/PDC time service remains outside the product.
+
+First-stable terms remain proposed under the [release policy](release-policy.md).
+Current Core/proof priority, native/S134 stop, separate fuzz hold, optional-storage
+pause, scoped Sandbox permission, UI-M0 D1–D3 deferrals, the Direct network profile,
+Slint and optional enhanced release provenance retain their existing scope.

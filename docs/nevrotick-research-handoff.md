@@ -42,6 +42,13 @@ Measurements, production values and decisions remain open; current Core proof
 priority, native/S134 stop, separate fuzz hold, optional-storage pause and
 limited Sandbox scope remain.
 
+**5 November 2026 platform amendment:** [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+supersedes the generic Windows-11-x64-first wording below with Windows 11 26H2
+x64 and Server 2025 x64 Desktop Experience. R-08 uses the existing
+[two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+for exact profiles, admission/delivery, fixture availability and native evidence;
+OPEN-2 and all current execution/acceptance gates remain open.
+
 ## 1. Assignment and limits
 
 Investigate the unresolved questions below and produce concrete options with evidence. This assignment is research and planning. It does not authorize provider contact, accepting terms, submitting vendor/signing applications, spending money, generating release credentials, public releases or changes to the user's Windows clock/services/trust stores.

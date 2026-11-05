@@ -174,7 +174,7 @@ accounts, privileges or startup policy merely to improve labels.
 | Application `Id`, `Executable` and existing activation declarations | Stable per-application identity and actual payload; preserve the selected ordinary-user UI and separate service/helper contract |
 | `uap:VisualElements` | Actual display name, description, background and square 44/150 image resources; conditional short name/tile/splash assets only where used |
 | `Resources/Resource` and PRI resources | Real supported resource languages and qualified assets; localized manifest strings use resolvable `ms-resource:` references |
-| `Dependencies/TargetDeviceFamily` | Actual `Windows.Desktop`, `MinVersion` and `MaxVersionTested`; tested-version metadata is not evidence that every later OS is qualified |
+| `Dependencies/TargetDeviceFamily` | Qualified device-family/schema and actual `MinVersion` and `MaxVersionTested`; resolve the candidate `Windows.Desktop` for both [OD-14 OS rows](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) through the MSIX profile. Tested-version metadata is not an upper support bound or evidence of OS qualification |
 | Other dependencies/extensions | Exact dependencies and implemented integration; no protocol/file association/COM/startup declarations solely to increase metadata count |
 | Derived installed identifiers | Read and retain PFN, full name, actual installed version and application identity; do not maintain a hand-invented duplicate of derived identifiers |
 

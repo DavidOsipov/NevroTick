@@ -49,6 +49,11 @@ supplies S0.4/S0.7/P4 and W11-W02/04/05 with unresolved fields, evidence provena
 paired controls and ordered handoff. It selects no production values, preserves
 current Core priority and lifts no native, fuzz or storage hold.
 
+The [two-family platform matrix](windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+records OD-14's Windows 11 26H2/Server 2025 direction at the same S0.4/S0.7,
+W11-W02/04/05/10 and P4/P6/P7 owners. Exact profiles, delivery and actual
+qualification remain open; no new task chain or native authorization follows.
+
 Every exit also uses the [phase gates](../docs/plans/development-plan.md#6-phase-implementation-and-acceptance-gates),
 [CHECK catalog](../docs/windows-time-architecture.md#202-acceptance-catalog) and
 [AC catalog](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence).

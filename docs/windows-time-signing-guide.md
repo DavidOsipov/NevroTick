@@ -162,7 +162,7 @@ The release evidence must establish:
 1. **Identity:** the expected provider/project publisher, code-signing use, chain, timestamp and applicable revocation checks.
 2. **Completeness:** all required payloads, helper/custom-action files and the final MSI are covered; embedded payload hashes match the signed inventory.
 3. **Origin:** exact reviewed commit, dependency lockfile, native inputs, toolchain, build and signing request.
-4. **Windows behavior:** install, ordinary-user launch, service operation, update, repair, rejection of unsupported downgrade and uninstall on a clean supported Windows 11 machine.
+4. **Windows behavior:** install, ordinary-user launch, service operation, update, repair, rejection of unsupported downgrade and uninstall on a clean installation of each claimed [client/Server profile](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026). This retained MSI route needs its own applicability and native evidence if later selected.
 5. **Negative controls:** a tampered package, substituted payload, unexpected publisher and unapproved version are rejected for the intended reason; a valid neighboring candidate succeeds.
 6. **Publication identity:** checksums and any release metadata describe the final signed bytes. Every published version attaches its prepared, validated SBOM assets alongside the complete MSI and final checksums. Reconcile Rust, native/generated/resources and actual MSI payload inventory against the exact version/source candidate and final signed hashes before publication; see [the repository SBOM tooling and handoff](../TOOLING.md#release-sbom-tooling). Attestations and an SBOM supplement that record; they do not replace Authenticode.
 

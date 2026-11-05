@@ -1094,6 +1094,13 @@ and [§17.1](../windows-time-architecture.md#171-bounded-async-and-native-work).
 The following are **unmeasured initial targets**, to freeze or explicitly revise
 with evidence, not achieved performance or authority to loosen limits.
 
+Apply these measurements to each claimed client/Server profile in the existing
+[platform matrix](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026).
+Attach matching physical timing/power and CHECK-21 hardware evidence where
+required; client results cannot fill Server cells. Availability, suitability and
+actual results remain separate. The durations below retain their existing phase
+gates and authorize no immediate campaign.
+
 | Measurement | Initial target and required context |
 | --- | --- |
 | Service memory | Engine + broker ≤32 MiB steady-state private bytes; p95 one-second samples over a one-hour, four-source run after warm-up; peaks separately. |
@@ -1498,6 +1505,14 @@ This review executed no product or native tests and establishes no implementatio
 default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
+
+**Two-family scope, 5 November 2026:** [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+and [W11 §4.32](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+route Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience through existing
+S0.4/S0.7, W11-W02/04/05/10 and P4/P6/P7 owners; UI retains S0.5/P5.
+Resolve applicability/OS/CPU admission and Server delivery before the dependent
+candidate claim, then establish suitable available fixtures and row-specific
+evidence. OPEN-2 remains open; section 7 and all execution dispositions remain.
 
 **Clock limits, 5 November 2026:** [W11 §4.31](../../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
 prepares the field/provenance/measurement/admission matrix for existing

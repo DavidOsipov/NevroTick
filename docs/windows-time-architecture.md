@@ -161,7 +161,7 @@ qualification. P0 investigations and D1–D3 re-entry gates remain unchanged.
 
 ### 1.2 Scope and non-goals
 
-Version 1 is a workstation NTPv4 client with NTS, an automatic background service, secure local administration, clear diagnostics and packaging verified under its declared release profile. Start with currently supported Windows 11 x64 releases, using the MSVC Rust target. Add ARM64 only after its own runtime, mitigation and package gates pass. The exact minimum Windows build and supported update channels must be frozen in P0; the historical API/MSIX minimum is not a promise to support every old Windows release.
+Version 1 is a Windows NTPv4 client with NTS, an automatic background service, secure local administration, clear diagnostics and packaging verified under its declared release profile. [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) selects Windows 11 26H2 x64 and the current Server counterpart, Windows Server 2025 x64 with Desktop Experience, using `x86_64-pc-windows-msvc`. Pro and Standard are first engineering fixtures, not all-edition support promises. The [two-family evidence matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) keeps exact build/UBR/servicing, CPU/protection, package applicability and native results open at their existing gates. Add ARM64 only after its own runtime, mitigation and package gates pass. An API/MSIX minimum or shared numeric build threshold does not select these two product families or establish support.
 
 The initial product is not an NTP server, PTP client, GPS/PPS/refclock host, domain-controller time service, kernel driver, chronyc-compatible remote management endpoint or general clock laboratory. It does not need symmetric peers, broadcast/multicast operation, interleaved mode, hardware timestamping, RTC temperature compensation or a plugin/script system. Time zones and daylight-saving settings remain Windows settings; the service disciplines UTC.
 
@@ -2995,7 +2995,7 @@ Use small independent behavioral checks for the editor and meaningful mouse-driv
 
 ## 17. Resource and performance targets
 
-The following are **unmeasured proposed budgets**, not inherited website mandates or achieved results. P0 records a reference Windows 11 x64 machine/VM configuration, OS build, CPU/RAM, power profile, antivirus state, network fixture and measurement tool. After the first working slice, revise budgets only through an explicit decision with measured reasons.
+The following are **unmeasured proposed budgets**, not inherited website mandates or achieved results. P0 records a reference configuration for each claimed client/Server row in the [platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026): edition/install mode, build/UBR, CPU/RAM, power profile, antivirus/effective protections, network fixture and measurement tool. Attach matching physical timing/power evidence where applicable and named-hardware CHECK-21 measurements to each claimed OS profile; client measurements cannot fill Server cells. Preserve the one-hour and 72-hour contracts below at their existing phase gates. After the first working slice, revise budgets only through an explicit decision with measured reasons.
 
 | Resource | Initial target | Measurement contract |
 | --- | --- | --- |
@@ -3874,7 +3874,7 @@ These decisions have proposed directions, not missing research disguised as impl
 | ID | Decision/evidence needed | Proposed direction | Owner and gate |
 | --- | --- | --- | --- |
 | OPEN-1 | Future repository license, crypto-provider artifact parity and exact compatible dependency/native graph | Preserve GPL-2.0-only chrony derivation; AWS-LC/ring graphs blocked pending authoritative resolution. Qualify MIT CNG-provider route first, Schannel second; record compatible grants and all transitive obligations | Product/license/security owners, S0.1/CHECK-26 |
-| OPEN-2 | Exact supported Windows builds, x64 baseline and ARM64 scope | Supported Windows 11 x64 first; qualify ARM64 separately | Platform owner, S0.4 |
+| OPEN-2 | Exact supported Windows builds, x64 baseline and ARM64 scope | OD-14 selects intended Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience; the [two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retains open profile, admission, delivery and candidate-specific evidence. Intended v3 migration remains unqualified; qualify ARM64 separately | Platform owner, S0.4 |
 | OPEN-3 | Final account/token/object-owner/DACL topology, including runtime replacement | Virtual-account broker plus restricted LocalService engine | Security/platform, S0.2 |
 | OPEN-4 | Race-safe mutual IPC authentication and revocation semantics | Named pipes with OS identity proof; local RPC fallback | Security/platform, S0.3 |
 | OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings, durable reservation/settlement, boot epochs, production quorum/freshness and holdover budgets | OD-02 accepts very large authenticated recovery as a goal; qualify era/target bounds, quorum and effects. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |

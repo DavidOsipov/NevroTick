@@ -5,6 +5,12 @@
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  
 **Owner request:** integrate the completed Microsoft Windows 11 investigation into maintained documentation, architecture, the development plan and tasks for implementation agents.
 
+**Platform status, 5 November 2026:** [OD-14](../docs/nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+limits initial intended scope to Windows 11 26H2 and the current Server counterpart,
+Server 2025 Desktop Experience, both x64. [Section 4.32](#432-two-family-windows-qualification-matrix--5-november-2026)
+owns the compact profile/evidence matrix; availability and complete-product
+results remain unverified/not run. Earlier W11 records retain their original scope.
+
 ## 1. Authority, scope and reconciliation
 
 **UI amendment — 5 November 2026:** [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
@@ -2684,3 +2690,269 @@ production measurement, mathematical proof, risk acceptance or release approval.
 > ## One permitted next action
 >
 > The coordinator may retain this completed raw review verbatim in the existing `tasks/windows11-integration.md` §4.31 handoff and carry its scoped READY disposition forward, preserving the current development §7 continuation and all later decision/execution gates.
+
+### 4.32 Two-family Windows qualification matrix — 5 November 2026
+
+**Direction accepted; qualification open.** [OD-14](../docs/nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+records David's Windows 11 26H2 plus corresponding Server instruction. The
+researched counterpart is **Server 2025 LTSC**, not a Server “26H2” or an identical
+client/server build. Pro/Standard and Desktop Experience below are engineering
+fixture choices, not all-edition support promises. OPEN-2 stays open. This card
+records no environment probe, product execution or first-stable approval.
+
+#### Two intended rows
+
+Both use `x86_64-pc-windows-msvc`, OD-07's intended **x86-64-v3**, the complete
+hardened MSIX and selected Slint UI. The [current generic configuration](../.cargo/config.toml)
+still uses `target-cpu=x86-64`; it does not qualify the intended migration.
+Exact serviced UBR/KB selection remains an input: the latest listed optional
+preview is not automatically the required baseline. [WM1]
+
+| Intended family and first fixture | Suitable evidence environment | Current disposition, availability/result and missing inputs |
+| --- | --- | --- |
+| **Windows 11 26H2 x64**; Pro, GAC, build family **26300**; workgroup baseline | Owned persistent client VM for tokens, SCM, installation, sessions and reboot/recovery. Named client hardware for physical timing/power claims and CHECK-21. | **Fixture planned; execution held at existing gates. Availability unverified; complete-product result not run.** Need exact image/UBR/KB, owned capacity/restoration, complete admitted candidate, effective policy and independent observers. |
+| **Windows Server 2025 x64**; Standard, LTSC, **Desktop Experience**, family **26100**; standalone non-DC baseline | Owned persistent Server installation with interactive desktop and unattended services. Matching **Server** hardware/evidence for physical timing/power and CHECK-21 claims. | **Fixture planned; execution held at existing gates. Availability unverified; complete-product result not run.** Need Server fixture, exact servicing, feature/manifest/dependency map and supported acquisition/licensing/install/update route, plus the same candidate/observer inputs. |
+
+Server Core and further editions are outside these first fixtures, without a
+universal incompatibility finding. Image publication is not owned availability;
+availability is not fitness for a claim. A suitable VM can establish many native
+enforcement/lifecycle properties, including supported HVCI configurations.
+Physical oscillator/power claims need matching hardware: VM pause/restore and
+one sleep class cannot qualify every S3/S4/Modern Standby case. Record actual
+supported states and leave omitted claims unqualified. [WM2]
+
+#### Shared case groups, applied to each row
+
+These reuse W11-W02/04/05/10, S0.4/S0.7 and P4/P6/P7; UI retains S0.5/P5.
+The [acceptance catalog](../docs/windows-time-architecture.md#202-acceptance-catalog)
+owns requirements; groups below are neither new CHECK IDs nor executed passes.
+
+| Group and existing checks | Independent useful/refused observations and owner |
+| --- | --- |
+| **Admission and enforced protection** — CHECK-1/16/20/26/27 | W11-W05/10 and build/security owners bind actual activation, token, early/lazy modules and queried per-role enforcement. Useful permitted work/load succeeds; wrong images/actions are denied; missing or query-failed **required** protection prevents readiness. Keep VBS configured/running, HVCI, App Control audit/enforced and process CET/CIG distinct. Preserve hardening §§6.4/6.7's required/optional classification and explicit optional dispositions. |
+| **Authority and time ownership** — CHECK-1/2/5/12/15 | W11-W04/05 observe ordinary, filtered/elevated and delegated/revoked principals at the actual protected effect. UI/engine cannot gain broker clock authority; current authorized work succeeds. Managed domain members default to observation until an **administrator explicitly authorizes takeover**, with existing policy/ownership/restoration checks. Controlling GPO or renewed competing ownership stops new actuation without fighting policy. Workgroup is the first positive fixture, not a new product restriction; DC/PDC time service remains a non-goal. |
+| **Lifecycle, timing and resources** — CHECK-5/9–13/21/23/27 | W11-W02/05/10, clock and performance owners observe boot before login, UI exit, real restart/restore, update/Reset/removal and pending recovery. Stale generations produce no new effects; fresh admitted recovery works. Distinguish UTC, QPC and active-awake time; record hypervisor/provider interventions and independent effect/accuracy observations. Observe product recovery and retained resources **before** laboratory teardown. Wrong-clock/offline trust retains its separate verifier controls. |
+
+Attach [§17's resource evidence](../docs/windows-time-architecture.md#17-resource-and-performance-targets)
+to **each claimed OS profile**, retaining the applicable one-hour baseline and
+72-hour soak at their existing phase gates, hardware/load/power identity and
+instrumented versus uninstrumented measurements. Client results cannot fill
+Server cells. Short Slint idle samples do not replace CHECK-21; full production
+UI/accessibility checks retain their existing re-entry gates.
+
+Directly cover known interactions: final Store signer × actual SCM activation ×
+complete early/lazy module graph × enforced role policy; service/update startup ×
+CPU admission; and interrupted removal × pending recovery. Pairwise coverage
+percentages cannot waive these interactions. Keep clock-limit policy and
+measurement ownership in [§4.31](#431-clock-correction-limits-preparation--5-november-2026).
+
+#### Three admission obligations and Server delivery
+
+W11-W05/W11-W10 with the build owner resolve one compact card before dependent
+implementation through [MSIX §§4/7.1](../docs/plans/windows-msix-store.md#4-services-capabilities-and-the-unresolved-provisioning-bridge):
+
+1. **Package applicability:** qualify actual device-family/schema, feature and
+   dependency support. A `MinVersion` at 26300 excludes intended Server 26100;
+   a lower common minimum permits unintended clients. `MaxVersionTested` is not
+   an upper support bound. Do not invent a `Windows.Server` family. [WM3]
+2. **Product OS-family admission:** distinguish the selected product/release
+   from registration permission. The supported manifest/activation/enforcement
+   mechanism remains unresolved; a numeric minimum alone cannot select both
+   intended families and exclude all others.
+3. **Safe CPU admission:** a below-v3-compatible prerequisite must execute before
+   **every** v3 payload and startup dependency, including direct, SCM, helper and
+   update paths. Check the complete feature set and usable OS vector state;
+   challenge masked/unsupported cases before effects. A globally v3-compiled
+   guard or an illegal-instruction crash does not qualify refusal. Usable v3
+   without optional AVX-512 retains the baseline path under
+   [hardening §6.7](../docs/windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch).
+
+Current App Installer/WinGet support for Server 2025 does not establish this
+complete service-bearing package's supported acquisition, licensing or update
+route. Conversely, older Server 2019 Store restrictions do not prove universal
+Server 2025 impossibility. Keep this precise delivery input unresolved. [WM4]
+Local test-signed mechanics precede David's controlled Store attempt; actual
+Store-delivered bytes and effective protections require their own checks before
+broad release. No ordinary-utility custom action, alternate installer or split
+package is selected to bypass the gap.
+
+#### Receipt identity and ordered handoff
+
+Preserve [UI-M0](ui-m0.md), [Slint pilot](s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026)
+and [Sandbox §4.19](#419-owner-ready-sandbox-scope--3-november-2026) at their actual
+pins/scopes. The Sandbox smoke executed built-in exit controls, **no NevroTick
+payload**, and established neither effective protections nor an unelevated
+token. Do not combine missing environment fields from different runs. Portable
+CI, Windows cross-builds and hosted Server image descriptions qualify no current
+client or complete-product row.
+
+Bind each eventual receipt to source plus relevant dirty bytes; toolchain/SDK,
+features and native/generated closure; local/submitted/delivered package hashes;
+OS edition/channel/install mode/build/UBR/KB and pending reboot; CPU/vector state,
+firmware/VM exposure; actual tokens, protection, domain/GPO, time providers,
+power/network/trust; CHECK owner, independent oracle, useful/denied observations,
+raw evidence and product cleanup. Keep proposed/held **disposition**,
+available/unavailable/unverified **availability**, claim-specific **fitness** and
+not-run/partial/failed/passed **result** separate. Missing infrastructure is an
+input, not a failed product test; an isolated pass does not pass the whole row.
+
+Revalidate affected claims after changes to bound bytes, servicing, firmware,
+CPU masking, policy/providers, activation or delivery. Preserve scoped historical
+passes and reuse unchanged evidence only with explicit identity correspondence.
+
+The next owners proceed at existing prerequisites: platform/package/build resolve
+the three admissions and delivery question, then freeze candidate/profile;
+fixture owner establishes actual availability, fitness and restoration; admitted
+mechanism/authority checks precede persistent lifecycle and row-specific timing,
+power/resources; David performs the controlled Store attempt; W11-W10/P7 qualify
+delivered bytes and obtain the support/release decision. No hardware or arbitrary
+UBR choice is required to complete this documentation card.
+
+[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+stays first: qualified comparison/complement, open timed-out addition and the
+conditional bounded Verus pilot retain their stated scopes and fallback.
+Native/S134 stop, separate fuzz no-retry hold, optional-storage pause, limited
+Sandbox scope, UI-M0 D1–D3, Direct-first, Slint, complete MSIX and optional
+enhanced release provenance remain. This card creates no immediate campaign.
+
+#### Compact primary-source basis
+
+Sources checked 5 November 2026; mutable platform pages require revalidation for
+an actual candidate. They establish platform facts, not NevroTick qualification.
+
+- **WM1:** [Windows 11 release information](https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information), [Server release information](https://learn.microsoft.com/en-us/windows/release-health/windows-server-release-info), [update release cycle](https://learn.microsoft.com/en-us/windows/deployment/update/release-cycle): product/build families and servicing types.
+- **WM2:** [Server installation options](https://learn.microsoft.com/en-us/windows-server/get-started/install-options-server-core-desktop-experience), [power states](https://learn.microsoft.com/en-us/windows/win32/power/system-power-states), [effective Device Guard state](https://learn.microsoft.com/en-us/windows/security/hardware-security/enable-virtualization-based-protection-of-code-integrity): environment and enforcement distinctions.
+- **WM3:** [TargetDeviceFamily schema](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-f-targetdevicefamily): applicability and tested-version semantics; actual activation remains a product obligation.
+- **WM4:** [MSIX supported platforms](https://learn.microsoft.com/en-us/windows/msix/supported-platforms), [WinGet](https://learn.microsoft.com/en-us/windows/package-manager/winget/), [WinGet on Server Desktop Experience](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell-on-windows?view=powershell-7.6): current component availability does not prove complete-package delivery.
+
+#### Reconciliation and completed review — 5 November 2026 UTC
+
+The GitHub, primary-web and Microsoft Learn MCP research lanes completed, then
+an analyst synthesized their results and a fifth agent integrated the compact
+card and existing routes. Research began at `aea66c10734c5dedc3f010840bc3436b5dad6898`;
+current Core/proof updates at `efd246fc8447b8f181879f9e6ae7c6a73bb8dc80` and the
+Slint/iced reaffirmation at `21726b2db44f225da0aaed82f03255c2f2c81023` were
+reconciled before the initial review. The later metadata contract at
+`42dadffe1adb9fd0d41a41f8cedf314516b06bd5` was preserved before final handoff.
+Historical source reports and CI observations retain their original identities.
+
+**Decision reconciliation:** OD-14 supersedes generic client-only platform
+preparation with the two intended families. Fixture editions are engineering
+choices; qualification and stable support remain open. Existing managed-domain
+administrator authority, DC/PDC non-goal, CPU/protection requirements, clock/UI
+contracts, resource budgets, complete-MSIX direction and optional enhanced
+release provenance remain. The current development §7 is byte-identical to the
+latest upstream predecessor; no new matrix campaign precedes it.
+
+**Initial frozen candidate:** 16 existing Markdown files over upstream
+`21726b2db44f225da0aaed82f03255c2f2c81023`, tree
+`58be1cc188a5818d17070874390925ca7f591c70`; diff SHA-256
+`ab4026cd72a9c9c8c04152e6d85a15e2273bcac458c9f8c5ad999edc506fc33d`.
+The reviewer received fresh context (`fork_turns: none`) and read-only scope.
+Its first context-window launch failed without a report (`not run`); one bounded
+retry **completed**, with **READY for documentation/research handoff** and no
+material WM-R finding. Raw-report SHA-256:
+`1d80babf4e74fb72c444435fe363c7280dbbbb1b31b2efe01b6b8f72275639f1`.
+
+**Concurrent metadata reconciliation:** the same reviewer completed a bounded
+source-drift continuation, reusing unaffected evidence. All original 16 authored
+replacement sequences remained identical after the incoming additions. One
+additional row in `docs/plans/windows-package-metadata.md` §6 aligns its device
+family with the same unresolved two-profile admission contract. The resulting
+17-file candidate is based on `42dadffe1adb9fd0d41a41f8cedf314516b06bd5`, full
+tree `691270cd8a6f5f55b27ed77b6ba0854f4bc20423` (1,575 entries, not truncated),
+with diff SHA-256
+`f938f8fafd148066a83a025ddd5eb68f44c0b58259fa654a5faa52c5ea70e550`.
+The addendum **completed**, also **READY** with no material finding; raw SHA-256:
+`ffe2147fcf0d9d3ebe94a2cfa7d831b67193a7a5b3b17dac0ba41868de2d24b4`.
+
+**Coordinator checks on that frozen candidate:** whitespace, 1,602 local Markdown
+links and all 46 scoped preservation checks passed. All five architecture Mermaid
+blocks, 138 prior source entries, canonical architecture IDs, clock/UI/resource
+contracts, historical W11 receipts, prior decisions and research obligations are
+retained. The coordinator matched all 739 materialized baseline blobs to the
+latest full upstream tree. Synthetic local HEAD
+`3dc95821813d001de87e8bf25d792379223cd2bb` is not upstream history or a publishable
+tree; the review's two untouched script-mode differences must remain local.
+Publication uses the complete real upstream tree and must preserve every path,
+type and mode outside these intended Markdown updates.
+
+Both raw reports below, including the reviewer's comprehension paragraphs, are
+retained verbatim. Their verdicts cover the identified candidates, not this
+subsequently appended factual receipt. Final receipt/link/preservation and full
+tree publication checks remain coordinator evidence. No product/native/proof/fuzz
+execution, environment allocation, dependency admission, service/clock/trust
+change, stable-support approval or release qualification follows from this work.
+
+#### Verbatim independent review — platform scope
+
+> The proposed change gives OPEN-2 a narrow starting scope: Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience. Pro and Standard are engineering fixtures within that direction. The patch adds a two-row qualification card to the existing Windows task and connects architecture, packaging, release policy and development routing to it. Selecting those targets does not assert that either complete product configuration works.
+>
+> The existing six-crate workspace provides a fixture UI, bounded protocol/numerical components and an unauthenticated loopback observer, rather than an integrated production time service. The inspected configuration still targets generic x86-64, and the UI entry point uses its Win32 adapter. V3 migration, Slint migration, production services/clock control and complete MSIX qualification remain pending. Current Core/proof work, native and fuzz restrictions, limited Sandbox authority, storage pause, Direct network scope and UI-M0 D1–D3 deferrals retain their separate owners. Mandatory mathematical proofs remain distinct from optional enhanced release provenance.
+>
+> ## Verdict and review identity
+>
+> **READY for the OPEN-2 documentation/research handoff only.** This bounded independent review completed on 5 November 2026. No material finding warrants a WM-R ID. Implementation readiness, native compatibility, stable support and release approval are outside this verdict.
+>
+> Context: fresh, separately delegated reviewer with request-only context and shared repository access. No inherited author discussion, analyst/integrator verdict, private KB or memory was used. This completed retry supplies actual review evidence; the preceding reported launch failure supplies none.
+>
+> | Identity | Independently observed result |
+> | --- | --- |
+> | Real upstream base | `21726b2db44f225da0aaed82f03255c2f2c81023`, confirmed through GitHub commit metadata |
+> | Upstream tree | `58be1cc188a5818d17070874390925ca7f591c70`; 1,574 entries, not truncated |
+> | Synthetic local HEAD | `2de5fed0c4ee45dcbfc3f9d2bfd16a7559c07f42`; all 738 materialized baseline blob hashes match the upstream tree |
+> | Actual working patch | 16 existing Markdown files; 268 insertions, 22 deletions; every supplied file SHA-256 and size matched |
+> | Exact diff SHA-256 | `ab4026cd72a9c9c8c04152e6d85a15e2273bcac458c9f8c5ad999edc506fc33d`; actual `git diff --binary HEAD` is byte-identical to the frozen patch |
+>
+> ## Inputs actually inspected
+>
+> I read the entire 16-file patch, candidate manifest, applicable `AGENTS.md`, `docs/README.md`, both independent-review skills, their shared review/handoff reference and testing contract.
+>
+> Bounded owner reads covered architecture §§1.2/17/20.2/OPEN-2; OD-05/07/10/13/14; hardening §§6.4/6.7/10; release-policy §§1–3/9; MSIX §§1/4/7/7.1; development-plan §§7/8/8.1/8.5; W11-W02/04/05/10 and §§4.19/4.32; and the S0.5 Slint pilot receipt. I checked workspace/UI/engine manifests, target configuration, toolchain, UI entry point and workflow runner excerpts. The GitHub research report's URL inventory located upstream pins; its conclusions were not an oracle. Primary pages and pinned sources were retrieved independently.
+>
+> ## Assessment
+>
+> - **Direction and evidence are separated correctly.** Microsoft's [client release record](https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information) identifies 26H2/GAC/build 26300; its [Server record](https://learn.microsoft.com/en-us/windows/release-health/windows-server-release-info) identifies Server 2025 as current LTSC/build 26100. OD-14 calls the counterpart an engineering mapping and leaves exact servicing, availability and support open. It does not invent a Server “26H2” or all-edition coverage.
+> - **Package registration is not mistaken for complete admission.** The [TargetDeviceFamily schema](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-f-targetdevicefamily) supports the minimum-version and tested-version distinctions. The patch correctly exposes the common-minimum problem and retains OS-family enforcement as unfinished work. [MSIX platform support](https://learn.microsoft.com/en-us/windows/msix/supported-platforms) and [WinGet availability](https://learn.microsoft.com/en-us/windows/package-manager/winget/) do not establish this product's Server acquisition/licensing/update route. No unsupported family name, installer workaround or automatic fallback is selected.
+> - **CPU and protection boundaries remain substantive.** Safe prerequisite execution before every v3 path preserves OD-07, including startup dependencies and SCM/update activation. The pinned Rust [detector](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std_detect/src/detect/os/x86.rs) checks OS vector state; its [macro contract](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/library/std_detect/src/detect/arch/x86.rs) explains why compile-enabled features cannot independently prove runtime admission. Required protection failures remain blocking, while optional dispositions stay explicit.
+> - **Existing product obligations survive the narrower scope.** Architecture §1.2's managed-domain observation default and administrator-authorized takeover remain, with GPO/competing-owner refusal and the DC/PDC non-goal. W11 §4.32 preserves per-profile physical timing/power evidence, named-hardware CHECK-21, one-hour/72-hour measurements and recovery observation before teardown. Short Slint, Sandbox, portable or cross-build receipts cannot fill those cells. The inspected Sandbox receipt supports the stated no-product-payload and incomplete token/protection limits. GitHub's [hosted-runner privilege policy](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) and the [pinned Server image](https://github.com/actions/runner-images/blob/42d27e4a2c1232e5640a88ed42a974c8918ecd28/images/windows/Windows2025-VS2026-Readme.md) support separating build infrastructure from the intended product profiles.
+>
+> ## Evidence limits
+>
+> This is source/document review, with a clean `git diff --check`; no product, native, proof or fuzz execution occurred. Historical raw logs/binaries were not independently replayed. Fixture availability, exact profiles, enforcement mechanisms and Server delivery remain unverified inputs, not observed product defects. Mutable primary pages require revalidation for implementation.
+>
+> The synthetic snapshot is not upstream history: two untouched scripts, `scripts/setup-xwin.py` and `scripts/xwin-linker.py`, have local mode 100644 versus upstream 100755, despite matching blobs. Missing unrelated paths and those mode differences must not become publication changes. Neither affects the reviewed Markdown patch.
+>
+> ## One permitted next action
+>
+> The coordinator may retain this raw review verbatim in existing `tasks/windows11-integration.md` §4.32 and carry the documentation handoff forward, preserving upstream metadata and all current implementation, execution, support and release gates.
+
+#### Verbatim independent review — concurrent metadata
+
+> The concurrent upstream change adds a shared contract for product, executable and package metadata, with OD-05/P6/W11-W10 routing. The additional platform edit changes one `TargetDeviceFamily` table row so the metadata contract follows both intended OS profiles and the existing unresolved MSIX applicability questions.
+>
+> The current product remains the same bounded workspace reviewed previously. Metadata generation, emitted-package readback and installed observations are planned work; neither the upstream contract nor this row supplies a working package, native compatibility or support approval. Existing Core priority, execution restrictions and optional enhanced-provenance policy remain intact.
+>
+> ## Scope, inputs and identity
+>
+> **READY for the documentation/research handoff.** This completed addendum is the same reviewer's bounded continuation, reusing unaffected evidence from the initial independent review. No material WM-R finding is identified.
+>
+> Inspected inputs: both frozen candidate diffs/manifests; the incoming metadata patch and preservation record; current metadata-contract §§1/4/6/8/10, OD-05 §7.6, MSIX §7.1 and the incoming documentation/task routes.
+>
+> - Supplied upstream base: `42dadffe1adb9fd0d41a41f8cedf314516b06bd5`.
+> - Observed synthetic HEAD: `3dc95821813d001de87e8bf25d792379223cd2bb`.
+> - Actual diff SHA-256: `f938f8fafd148066a83a025ddd5eb68f44c0b58259fa654a5faa52c5ea70e550`; byte-identical to the frozen delta candidate. All 17 supplied file hashes/sizes match.
+>
+> I independently recomputed the replacement comparison: all original 16 edit sequences are identical. The actual old-to-new local baseline delta exactly matches the supplied incoming patch. Incoming additions remain verbatim except the deliberately replaced metadata row. The initial raw report remains unchanged at SHA-256 `1d80babf4e74fb72c444435fe363c7280dbbbb1b31b2efe01b6b8f72275639f1`. `git diff --check` passed.
+>
+> ## Assessment and limits
+>
+> The row in `docs/plans/windows-package-metadata.md` §6 agrees with `docs/plans/windows-msix-store.md` §7.1: `Windows.Desktop` remains a candidate requiring qualification for both OD-14 rows; numeric applicability and tested-version metadata establish neither an exclusive support boundary nor qualification. The inherited [TargetDeviceFamily schema evidence](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-f-targetdevicefamily) remains applicable.
+>
+> The metadata additions retain authoritative value sources, explicit pending fields, independent artifact/readback checks, conditional MSI status and separate submitted/delivered identities. They introduce no contradictory platform claim or mandatory enhanced-provenance requirement.
+>
+> This is a drift/row review, not a broad metadata API audit or native/product/proof/fuzz execution. Upstream attribution uses the supplied incoming patch; no new whole-tree audit was performed. Initial evidence limits, including synthetic script-mode differences, continue to apply.
+>
+> ## One permitted next action
+>
+> Retain both raw reviews separately and verbatim in existing W11 §4.32, then carry the reconciled documentation handoff forward under its existing gates.

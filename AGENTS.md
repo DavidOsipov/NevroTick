@@ -60,8 +60,11 @@ unchanged proofs; retain runtime validation and the other required checks.
 
 ## Read the right authority
 
-NevroTick: chrony-derived Rust NTP/NTS client, native GUI; initially supported
-Windows 11 x64, `x86_64-pc-windows-msvc`. Start with
+NevroTick: chrony-derived Rust NTP/NTS client, native GUI; intended initial scope
+is Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience,
+`x86_64-pc-windows-msvc`, under [OD-14](docs/nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope).
+The [two-family matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+keeps exact profiles, availability and native/support qualification open. Start with
 [docs/README.md](docs/README.md), then task-relevant sections:
 
 | Document | Authority and use |

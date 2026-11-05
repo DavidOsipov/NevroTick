@@ -146,7 +146,8 @@ This fragment belongs under `Package/Properties`, with
 `xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"` and the
 prefix added to the existing `IgnorableNamespaces` list. It is a requirement for
 future authoring, **not a deployable product manifest**. The documented minimum
-is build 19041; NevroTick still needs its selected supported Windows 11 matrix.
+is build 19041; NevroTick still needs its selected client/Server qualification
+matrix under [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope).
 Use explicit `on`: the documented `default` behavior is `off`. Store integrity
 and repair behavior does not remove the obligation to inspect the delivered
 manifest and observe tamper handling. [S34–S36]
@@ -213,11 +214,11 @@ Windows builds. Microsoft documents `trustedLaunch:TrustedLaunch` under
 Bind that prefix to
 `http://schemas.microsoft.com/appx/manifest/trustedlaunch/windows10`. The page
 lists minimum build **26100**; its wording says "Windows 10 version 26100", so
-use the build requirement and qualify the selected Windows 11/SDK combination.
-This does not silently change the product's still-unfrozen supported Windows 11
+use the build requirement and qualify each selected client/Server OS/SDK combination.
+This does not settle the product's still-unqualified two-family platform
 matrix. A profile claiming Trusted Launch must meet its platform prerequisites
 and enforce it. An unsupported/ignored declaration is unavailable, not a passed
-protection; a supported older-OS profile needs an explicit compatibility
+protection; any later proposed older-OS profile needs an explicit compatibility
 disposition before release. [S50, S53]
 
 The documented boundary is **which executables may run under this package's
@@ -361,6 +362,25 @@ elevation. The specific capability catalog documents conditional approval. Keep
 this discrepancy visible; use the specific current policy for the conditional
 conclusion, and obtain actual eligibility evidence before claiming approval. [S14,
 S29]
+
+**Two-family scope, 5 November 2026:** [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+adds the intended Server 2025 Desktop Experience row alongside Windows 11 26H2.
+Microsoft's [MSIX platform page](https://learn.microsoft.com/en-us/windows/msix/supported-platforms)
+includes Server 2019 and later, while its detailed Server table ends at 2022.
+Current [WinGet documentation](https://learn.microsoft.com/en-us/windows/package-manager/winget/)
+includes Server 2025; App Installer/WinGet availability does not establish this
+complete service-bearing package's acquisition, licensing or update route.
+Older Server 2019 Store restrictions do not prove universal Server 2025
+impossibility. Supported delivery and actual delivered bytes remain unresolved
+under W11-W10, with David retaining the controlled Store attempt.
+
+The [platform card](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+separates package applicability, product OS-family admission and a safely
+executable below-v3 CPU prerequisite before every v3 startup path. No common
+numeric minimum selects only the two intended families; `MaxVersionTested` is
+not an upper support bound. The supported manifest/activation mechanism remains
+open. This adds no invented device family, ordinary-utility custom action,
+external installer, split package or automatic fallback.
 
 ### Account schema and the strongest credible alternative
 
@@ -704,7 +724,7 @@ Partner Center identity or parallel MSI deliverable.
 | Manifest/input surface | Concrete intended value or rule | Unfilled input / independent check |
 | --- | --- | --- |
 | `Identity` | One product identity, `ProcessorArchitecture="x64"`, monotonic release version | Exact `Name`/`Publisher` come from David's Partner Center identity; do not invent them. Bind submitted and delivered versions separately. [S02, S51] |
-| `Dependencies/TargetDeviceFamily` | `Name="Windows.Desktop"`; freeze actual `MinVersion` and `MaxVersionTested` | Existing Windows 11 target, required features and the build-26100 Trusted Launch row must agree. A test maximum is not proof of coverage. [S51] |
+| `Dependencies/TargetDeviceFamily` | Candidate `Name="Windows.Desktop"`; resolve the supported family/schema for both intended OS rows and freeze actual `MinVersion` and `MaxVersionTested` | Client 26300 and Server 26100 cannot be selected exclusively by one numeric minimum; `MaxVersionTested` is not an upper support fence. Reconcile required features/Trusted Launch, product-family admission and safe CPU preflight through the [platform card](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026); exact activation remains unresolved. [S51] |
 | Ordinary UI `Application` | Explicit actual `Executable`, stable unique `Id`, `uap10:RuntimeBehavior="packagedClassicApp"`, `uap10:TrustLevel="mediumIL"` | This expresses the selected ordinary full-trust Windows desktop UI, with Slint as its default toolkit; it supplies no AppContainer or administrative authority. Avoid contradictory legacy `EntryPoint` attributes. [S51, S52] |
 | Package `Properties` | Explicit content integrity; Trusted Launch for the admitted supported profile; real display/asset metadata | Resolve namespaces and SDK schema, then inspect the emitted and Store-delivered manifest. Protect all executable content as in section 3.1. |
 | Compiled calendar/policy provenance | Same authenticated complete release and supported coverage as [NV-LP-001](leap-second-policy.md#3-knowledge-and-distribution-contract) | Reproduce reviewed pinned-input generation and bind the exact normalized revision/digest and generator to the actual payload. No new manifest capability, runtime download or separate updater is required. |

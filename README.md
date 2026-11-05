@@ -4,8 +4,11 @@
 **System essentials, under control.**
 
 NevroTick is my personal Rust project for secure timekeeping and, later,
-encrypted DNS. It starts on **Windows 11 x64**, with **Slint** as the selected
-native UI toolkit and chrony-derived numerical algorithms.
+encrypted DNS. Its intended initial platforms are **Windows 11 26H2 x64** and
+**Windows Server 2025 x64 with Desktop Experience**, with **Slint** as the selected
+native UI toolkit and chrony-derived numerical algorithms. The
+[platform matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+records the remaining qualification; no production support is declared.
 
 ## Why I am building this
 
