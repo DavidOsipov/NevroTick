@@ -1825,3 +1825,28 @@ claimed. The pre-receipt diff SHA-256 is
 No Rust, proxy, storage, Windows-native or new formal-proof execution was needed
 or claimed for these documentation edits. A later review result must identify
 its actual candidate and inspected coverage before changing review readiness.
+
+**Repository-hosted fallback:** a GitHub MCP request named only
+`copilot-pull-request-reviewer[bot]` on PR #5, candidate commit
+`a13801dfbc4ff96ba7eeeae4d0bfee68660be489`, tree
+`ce03f2dfd313cb86b9814bd643195bf1bc472380`. The connector returned “Action
+completed”, but read-back at 09:34 UTC showed no requested reviewers, no review
+request event and no review result. Dispatch is therefore **unconfirmed**, not a
+completed review or evidence of a licence problem. No human reviewer was requested.
+No MCP-use trace or independent comprehension/findings can be attributed to it.
+
+The coordinator's final wording check also clarified that each real retry has
+its own DATA-10 identity, while duplicate processing does not count it twice,
+and that proxy DNS leaves the remote address unknown rather than fabricating a
+local resolver result for the path key. The frozen review-attempt identities above
+remain historical; they do not review these subsequent clarifications.
+
+**Next permitted action:** a working fresh session reads AGENTS.md, the current
+network card, architecture §§7.3/7.4/12.1–12.2/17.1, DATA-06/08–10/16–22, storage
+tables and protected-storage/DNS/current-source owners. It states its own
+comprehension of the proposal and actual system before critique, checks the
+current commit plus dirty bytes, uses available applicable MCP and returns a
+scoped `ready`/`revise`/`blocked` verdict with inspected-input and tool evidence.
+Reconcile actual findings in this same record. Until then, fresh independent
+plan review is **NOT RUN** and the dependent implementation handoff is not ready;
+completed documentation repairs and the separate current proof queue remain valid.
