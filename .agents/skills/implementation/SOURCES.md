@@ -5,6 +5,27 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Slint implementation guidance — 5 November 2026
+
+[implement-slint](implement-slint/SKILL.md) is an original local workflow alongside
+the native-UI adaptation. Its six conditional references contain the reusable
+API, source, Windows, testing, asset and example evidence; start at
+[examples and source research](implement-slint/references/examples-and-sources.md).
+The inspected Slint release is 1.18.1 at
+[`372cf0ee5577c3dfec309a45e7b778ba4e81b734`](https://github.com/slint-ui/slint/tree/372cf0ee5577c3dfec309a45e7b778ba4e81b734).
+Runtime/build manifests and immutable implementation qualify rolling-doc examples.
+Microsoft Learn governs the referenced Windows contracts. Public application
+repositories provide use cases, not inherited performance or security results.
+
+The references distinguish property-binding replacement, checked model mutation,
+UI-thread/lifetime ownership, precise time projection, feature/licence admission,
+AVIF encoder-versus-decoder support, developer control-server features and
+no-pixel versus rendered/native evidence. The Windows tray broadcast discrepancy
+is a source-level recovery concern for later native qualification, not a
+reproduced defect or a new UI-M0 blocker. No upstream implementation, dependency,
+font or asset is vendored; source notices remain with their owners. The
+[existing UI task](../../../tasks/ui-m0.md) retains admission and execution gates.
+
 ## Preserving established invariants — 4 November 2026
 
 The [Parse, don't validate explanation](implement-rust-contracts/references/contract-enforcement.md#parse-dont-validate-preserve-established-invariants)

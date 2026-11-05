@@ -36,6 +36,11 @@
       "name": "manage-windows-sandbox",
       "target": "environment/manage-windows-sandbox/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "implement-slint",
+      "target": "implementation/implement-slint/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

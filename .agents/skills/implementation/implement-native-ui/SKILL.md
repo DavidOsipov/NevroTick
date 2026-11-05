@@ -5,6 +5,11 @@ description: "Implement or review NevroTick Slint UI, Windows adapters, status p
 
 # Implement native UI
 
+For Slint-specific code and build work, also use
+[implement-slint](../implement-slint/SKILL.md). Its conditional references cover
+Rust integration, language/models, Windows lifecycle, dependencies/assets,
+testing and source examples; this skill retains product interaction semantics.
+
 Apply canonical architecture section 16.5 before the general guidance below.
 During UI-M0 use a fixture-only, unelevated UI, sample-data labels and disabled
 protected actions. Keep D1 display, D2 production state/policy and D3 full

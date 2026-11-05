@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Slint UI"
+  short_description: "Build and review Slint UI within NevroTick's contracts"
+  default_prompt: "Use $implement-slint with implement-native-ui to implement or review the selected NevroTick Slint boundary. Read only relevant references, preserve UI-M0 and deferred gates, verify the exact source and feature graph, and distinguish behavioral, rendered and native Windows evidence."

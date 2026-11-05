@@ -359,6 +359,43 @@ All local links in the five changed task records and changed-task whitespace
 checks passed. The Git index stayed unchanged. This task update ran no Rust,
 Cargo, native Windows or product qualification and preserves concurrent work.
 
+### Slint implementation-skill research — 5 November 2026
+
+Added [implement-slint](../.agents/skills/implementation/implement-slint/SKILL.md)
+and six conditional references alongside the native-UI skill. The requested
+dedicated path was absent from inspected base `5e98c79901c90de77db6c6047cb483ec10b8cbd5`;
+it is registered as an original local workflow, with no imported implementation.
+The skill index, native-UI route and agent guide now make it discoverable.
+
+Three research lanes used GitHub, Context7, Microsoft Learn, Exa and Firecrawl,
+with primary web documentation and coordinator source checks. Slint 1.18.1 at
+`372cf0ee5577c3dfec309a45e7b778ba4e81b734` is the inspected upstream baseline,
+not an admitted product graph. DeepWiki and Firecrawl's separate GitHub-research
+endpoint returned tool-availability errors; no findings rely on those calls.
+
+The references support M0-SL-01/02 with exact runtime/build feature and licence
+separation, generated unsafe/lint ownership, precision-safe presentation,
+binding/draft semantics, model notifications/identity, UI-thread delivery and
+lifecycle, asset derivation, supported editor/viewer tools and bounded testing.
+They record the AVIF encoder/decoder discrepancy and later tray broadcast/recovery
+concern with source links and explicit limits. Ordinary no-pixel tests, viewer
+rendering, optional developer MCP, native Windows and package evidence remain
+distinct. Examples are mapped to current owners; no example activates later work.
+
+Static verification: the package checker passes **64 skills**, including metadata,
+UI prompts, local Markdown links and inventories; changed-document link/anchor
+and whitespace checks pass. Pinned external GitHub targets were checked against
+complete upstream trees. The coordinator read the integrated references and
+reconciled their claims with the cited source and current repository contracts.
+Four fresh-context review attempts and two subsequent peer-review attempts
+returned context-window errors without usable analysis. They are failed review
+attempts, not independent approval or a behavioral skill-evaluation pass.
+
+This is source/documentation preparation only. No Cargo dependency, Rust source,
+brand asset, application execution or Windows state changed. M0-SL-01 licence/
+graph admission and M0-SL-02 candidate-bound contract review remain incomplete;
+M0-SL-03–05, current priorities, execution holds and D1/D2/D3 deferrals are unchanged.
+
 ### Retained candidate evidence gaps
 
 - Run the required Application Verifier/full-PageHeap profile on an owned image
