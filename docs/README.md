@@ -72,8 +72,9 @@ requires machine-checked product mathematical proofs under
 [architecture §20.1.1](windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
 and [hardening §9.6.1](windows-time-development-hardening.md#961-mandatory-product-mathematical-proof-gate--5-november-2026).
 The [next-task record](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-routes the first continuation to the existing
-[S1.1c rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026).
+owns the current sequence and remaining domain/Core proof inventory. The existing
+[S1.1c proof chain](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
+retains its scoped results and open public-constructor obligation.
 This supersedes earlier optional-proof wording; actual-source proofs of the
 remaining domain, leap, exchange and Core mathematics are still required.
 Historical bounded checks do not establish the stronger gate. Tool selection,
@@ -86,13 +87,22 @@ carry this requirement through planning, Rust/contract implementation and final
 qualification. Missing or invalidated proof evidence keeps dependent mathematical
 acceptance incomplete; choosing a different tool does not waive the obligation.
 
+**Ordinary S2.2 preparation, 5 November 2026:** the [engine composition card](../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+connects fresh normal-date KE, complete association publication, protected UDP and
+the actual numerical consumer through planned paired exits. Protocol, crypto and
+[W11 §4.30](../tasks/windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
+retain their existing semantics/trust/native owners. This is source preparation;
+provider/profile admission, finite contracts and execution remain open. The current
+queue stays in [development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
 **S2.1 preparation, 5 November 2026:** the existing [engine integration card](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 consolidates three research lanes and their analysis into the real acquisition
 producer/consumer handoff. It distinguishes the existing exchange-to-Core fixture
 chain, the first experimental real-UDP measurement and later justified
 uncertainty/Core admission. [W11-W01 §4.26](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
-remains partial source preparation. S1.1c stays first; no implementation, proof,
-native result, new gate or execution permission is established by this addition.
+remains partial source preparation. Development §7 controls the continuation;
+no implementation, proof, native result, new gate or execution permission is
+established by this addition.
 
 **Independent MSIX removal, 5 November 2026:** the
 [recovery continuation](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)

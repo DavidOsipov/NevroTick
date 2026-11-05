@@ -2314,3 +2314,32 @@ Native controls must preserve genuine errors, denied rights, reentrancy/late
 completion and legitimate progress; source signatures or library branding alone
 cannot close them. Keep Core priority, Windows stop, separate fuzz no-retry hold,
 storage pause, UI-M0 deferrals and selected complete-MSIX provisioning authority.
+
+### 4.30 Ordinary S2.2 Windows qualification — 5 November 2026
+
+**Disposition:** prepared source handoff, no native result or execution permission.
+The [engine composition card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+and [crypto profile](s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026)
+route existing W11-W01/04/05/08 and CHECK-9/21/26/27 work; add no new W11 gate.
+Preserve development §7 and every native/S134, fuzz and storage hold.
+
+Before the dependent experiment, bind the exact artifact/features, Windows build,
+principal/profile loading, effective stores, normal-date profile, resource limits
+and owned fixture/restoration. A controlled peer/root using ordinary validation
+can establish that declared lab path only. Final installed service identity,
+stores and enforcement remain P3/P6 checks; complete MSIX, Slint migration and
+all P3 work are not prerequisites for the bounded S2.2 prototype.
+
+| Existing owner | Paired native observation required at its admitted stage |
+| --- | --- |
+| Trust/platform, OPEN-8 | A valid selected-profile chain beside wrong identity/usage/date, revoked or explicitly distrusted leaf, removed root, unavailable/stale revocation and trust-policy cutover. Expected acceptance/refusal follows the frozen profile. Report opaque revocation status honestly; no automatic custom verifier or new strict-online policy. |
+| Network/service, W11-W01/04/05 | Identify actual intermediate/root/revocation fetch processes, protocols, redirects and cache behavior. Pair permitted retrieval and approved LAN/Direct paths with forbidden egress and policy cutover; unsupported enforcement refuses visibly. An engine socket/firewall observation cannot establish delegated-service enforcement. |
+| Lifecycle/diagnostics, W11-W04/05/08 | Slow/stalled retrieval, cancellation and late completion beside healthy acquisition/control responsiveness. Observe real submitted-job/byte bounds, retained permits/native inputs, stale-result disposal and bounded stop/restart behavior under §17.1/THR-26; waiter timeout is not completion. |
+
+Primary API contracts: [chain construction](https://learn.microsoft.com/windows/win32/api/wincrypt/nf-wincrypt-certgetcertificatechain),
+[SSL policy execution](https://learn.microsoft.com/windows/win32/api/wincrypt/nf-wincrypt-certverifycertificatechainpolicy)
+and [URL retrieval](https://learn.microsoft.com/windows/win32/api/wincrypt/nf-wincrypt-cryptretrieveobjectbyurlw).
+Record configured versus effective state and actual fetch/completion owners in
+this task. Source/API availability, portable fixtures and an interactive user’s
+successful chain do not qualify the installed service. Keep ordinary and
+wrong-date/reused-session evidence separate.

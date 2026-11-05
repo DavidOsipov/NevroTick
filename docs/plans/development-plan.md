@@ -495,6 +495,16 @@ and its divisor `1.0` do not close the runtime bridge. Both exits retain the
 existing mathematical proof, KoD, DNS, resource and native owners; the first
 measurement alone completes neither S2.1 nor P2.
 
+The [ordinary S2.2 composition card](../../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+prepares fresh, normally verified KE → complete current association → protected
+UDP → the same admitted numerical consumer. It assigns concrete producer/owner
+transitions and paired useful/refused observations, reusing the protocol checklist.
+Freeze the exact provider/transport and ordinary Windows profile, finite budgets/
+lifetimes and local zero-replacement-cookie disposition before dependent runtime
+work. Intermediate authentication success does not close the numerical bridge,
+full S2.2 or P2. A declared ordinary-validation lab path has narrower evidence
+than final service/store qualification; P3/P6 retain those installed-product checks.
+
 Before the dependent S2.1/S2.2 acquisition integration, complete the same task's
 [address-family admission and progress card](../../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026).
 It binds the engine's candidate scheduler to current local interface/address/route
@@ -846,6 +856,13 @@ controls. [W11-W01 §4.26](../../tasks/windows11-integration.md#426-s21-timestam
 is partial source preparation. Continue its finite capture/mapping contract and
 dependent uncertainty/Core admission when their owners reach the slice; this
 adds no prerequisite to or replacement for the proof-first continuation above.
+
+**Prepared S2.2 source work:** the [ordinary composition card](../../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+and [W11 §4.30](../../tasks/windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
+route later fresh-KE/protected-UDP/Core integration. Exact graph/trust admission,
+finite contracts, the local zero-cookie decision and actual implementation/
+qualification remain open. Use these owners when the slice is reached; this
+source preparation changes no proof/Slint ordering or execution hold.
 
 The same task's [address-family card](../../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
 is prepared documentation for later S2.1/S2.2 scheduling and platform work. Its

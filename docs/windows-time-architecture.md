@@ -78,8 +78,8 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 
 ## 1. Current-state capsule
 
-**Implementation status, 4 November 2026:** this summary was checked against
-[main at `889d534`](https://github.com/DavidOsipov/NevroTick/commit/889d534252d145e05f9442d6bbf66272d8e9f65f).
+**Implementation status, 5 November 2026:** this summary was reconciled against
+[main at `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
 The [workspace manifest](../Cargo.toml), [lockfile](../Cargo.lock) and current
 source contain six members. Source presence and task qualification are separate:
 the linked tasks retain the exact candidates, environments, completed checks and
@@ -89,9 +89,9 @@ remaining work.
 | --- | --- | --- |
 | [nevrotick-ui](../crates/nevrotick-ui/Cargo.toml) | Portable sample-data model and restricted native Windows UI | [UI-M0](../tasks/ui-m0.md); no engine/Core integration, with D1–D3 still deferred |
 | [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing and NTS envelope/plaintext readers | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; no TLS/AEAD, authenticated acquisition or sample authority |
-| [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding and distinct clock domains | [S1.1c](../tasks/s1.1-time-domain.md); pure arithmetic does not establish trusted time or clock effects |
+| [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
-| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); selected inert scopes, with current settled active-time delivery qualification incomplete |
+| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); [settled-rate qualification](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture scope, not full P1 |
 | [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer and `nevrotick-observe` CLI | [Transport pilot](../tasks/engine-transport-pilot.md); unauthenticated observations remain ineligible for clock control |
 
 The engine depends on `ntp-wire`, Tokio and `getrandom`; it is not connected to
@@ -107,8 +107,7 @@ remain open. No production-supported stable release is declared; the
 
 **Current next action:** follow the
 [development plan §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the latest addenda in its assigned task. The current Core continuation is
-settled active-time delivery qualification. This status correction changes no
+and the latest addenda in its assigned task. This status correction changes no
 task ordering, scoped Sandbox permission, blocked Windows artifact, separate
 fuzz/storage hold, UI-M0 deferral or release requirement.
 
@@ -1124,6 +1123,17 @@ not merely configuration or constructor tests. [S20, S122]
 RFC 8915 section 5.7 permits trailing unauthenticated extension fields and requires discarding those fields. Accept an otherwise valid protected response with well-framed trailing fields while giving them no semantic effect; malformed framing remains a separate rejection. The inspected Chrony 4.9 authenticator-last behavior is a recorded upstream difference, not an alternative RFC-alignment claim. Test the protected prefix and forbidden influence of trailing fields independently. [S17, S20]
 
 Freeze the relevant contracts before S2.2 integration and close the [RFC 8915 alignment checklist](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) across S2.2–S2.4 before P2 exit: KE record/error handling, retry reset, exporter/nonce/associated-data mapping, cookie lifecycle and the special KoD/NAK path. Ordinary time responses require packet authentication; the correlated KoD exception in section 5.7 is control-only and supplies neither authenticated time nor permission to downgrade. Keep the existing TLS/provider/trust gates; documentation alignment is not protocol qualification. [S20]
+
+The [ordinary S2.2 composition card](../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+joins the existing kernels to fresh KE, atomic association publication, protected
+UDP and the real numerical consumer. Freeze finite ephemeral key/association
+validity and invalidation before ordinary runtime use, even without caching.
+Initial KE cookies and zero replacement cookies in a protected UDP reply are
+different questions: the local acceptance/completion/retry disposition for the
+latter remains pending before dependent implementation. The [protocol appendix](../tasks/s0.1-protocol-comparison.md#ordinary-s22-composition-clarifications--5-november-2026)
+retains the precise RFC/source distinction, TLS completion boundaries and RFC
+SHOULD strength for size guidance. Packet/cookie completion never establishes
+numerical eligibility.
 
 Endpoint admission distinguishes the authenticated TLS server identity from any negotiated NTP hostname/address and port. A valid NTS-KE message is not permission for unrestricted outbound access. Validate the actual resolved destination against an administrator-approved network scope on initial connection, reconnect and DNS changes. Explicitly configured private/LAN servers remain supported; unsolicited loopback/private/out-of-scope redirection and unapproved ports are rejected. P0/P2 must choose an interoperable policy for legitimate provider delegation. Record the endpoint identity and policy reason without exposing secrets. See THR-21, OPEN-8 and CHECK-6/8/9/21. [S20]
 
@@ -3237,6 +3247,16 @@ The normal/provisional session split does not settle association authentication
 lifetime. Section 7.4 and R-05 require an explicit full-authentication versus
 resumption contract, current trust-policy binding and unknown-age behavior before
 S2.3 cache reuse. Certificate expiry alone is not that policy. [S116]
+
+For ordinary S2.2, the [crypto profile card](../tasks/s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026)
+owns the required freeze of actual principal/profile, effective stores, validation/
+date range, revocation/offline, retrieval/egress and policy-change contracts; the [W11 owner](../tasks/windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
+qualifies the selected lab path and later installed-service context separately.
+An opaque verifier success may truthfully report acceptance under profile X with
+revocation status not exposed when that profile permits it; it cannot establish
+confirmed non-revocation. A qualified adapter is required only when the selected
+policy needs information/control the interface lacks. This selects neither a
+custom verifier nor universal soft-fail/strict-online policy.
 
 #### 18.7.3 NTS packet AEAD, entropy and parser reuse
 

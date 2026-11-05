@@ -209,9 +209,11 @@ fixture association under [S1.1d](tasks/s1.1-exchange-association.md) and the
 selection/principal/supporter combination, reference readiness and modeled
 correction accounting. [S1.2](tasks/s1.2-regression-readiness.md) and the
 [current Core task](tasks/s1.3-source-selection-readiness.md) retain the exact
-implementation and qualification scopes. Current settled active-time delivery
-qualification remains incomplete; selected fixture results do not establish
-production sample eligibility, an integrated controller, clock authority or P1.
+implementation and qualification scopes. The [settled-rate receipt](tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners)
+records completed qualification within its four-owner Linux fixture scope; the current
+continuation follows [development §7](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+These scoped results do not establish production sample eligibility, an integrated
+controller, clock authority or P1.
 [nevrotick-engine](crates/nevrotick-engine/Cargo.toml) owns the engine-only
 [bounded transport pilot](tasks/engine-transport-pilot.md): two explicit loopback
 peers, a private current-thread runtime and the unauthenticated, ineligible

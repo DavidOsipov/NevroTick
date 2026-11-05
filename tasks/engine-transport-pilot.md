@@ -2318,3 +2318,300 @@ CI configuration and UI assets are unchanged. The containing commit/tree binds
 the integrated documentation; these checks establish no product, proxy, native,
 formal-proof or independent-review pass. Publication/CI status must be read back
 for that actual commit, separately from the historical observations above.
+
+## Ordinary full NTS composition — S2.2 preparation, 5 November 2026
+
+**Disposition:** source preparation against [upstream `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
+Implementation, qualification and independent integration review remain open at
+this handoff. [Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+continues to own the current proof/Slint sequence; this card grants no execution
+permission. Engine/protocol/crypto/platform owners reuse REQ-8/BND-2,
+CHECK-6/8/9/17/21/25/26/27 and OPEN-1/5/6/8. Numerical consumers additionally
+retain CHECK-7 and OD-10.
+
+**Full exit:** fresh, ordinarily verified normal-date KE publishes one complete
+current association; its protected UDP exchange completes once; admitted evidence
+reaches the actual history/estimator consumer. Observe a useful eligible exchange
+and an authentic but numerically refused exchange separately. Transport-only or
+authentication-only success is an intermediate receipt, not full S2.2 or P2.
+No clock writes, source-default selection or UI integration is required.
+
+The [engine manifest](../crates/nevrotick-engine/Cargo.toml) still contains only
+`getrandom`, `ntp-wire` and Tokio; real UDP ends in diagnostic `TransportFacts`.
+[Wire kernels](../crates/ntp-wire/src/lib.rs) provide inert KE/framing/exporter
+metadata, not a protected-NTP writer, authenticated association or Core bridge.
+Reuse the [S2.1 measurement and consumer card](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026),
+[path admission](#address-family-admission-and-bounded-acquisition-progress--5-november-2026),
+[Direct routing](#network-path-history-and-user-routing--5-november-2026) and
+[protocol checklist](s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up).
+Their contracts remain with those owners.
+
+### Ordered implementation handoff
+
+1. **Freeze dependent contracts.** Select and admit one exact TLS/provider/AEAD
+   graph and execution arrangement, normal-validation lab profile, packet semantics,
+   stage and total acquisition deadlines, and finite allocation/work budgets.
+   Include submitted/queued jobs, per-endpoint admission, pending requests,
+   active/staged/reserved secret bytes and fair progress. Record finite ephemeral
+   key/association validity and invalidation, cookie issuance/reuse and the still
+   **pending local zero-replacement-cookie acceptance/completion/retry decision**.
+   Existing 128 KiB, 20-second and two-job figures remain qualification candidates;
+   the existing ≥65,536-byte acceptance target retains RFC SHOULD strength.
+   No runtime values are selected here.
+2. **Engine acquires fresh KE.** Capture the configured verification identity and
+   admitted actual connected KE peer separately, with source/configuration,
+   network/path and trust revisions. Apply ordinary certificate validation, the
+   admitted TLS-1.3-only profile and exact `ntske/1`. Encode with
+   `encode_nts_ke_ntpv4_request`, retain the actual offer and flush the complete
+   request. Feed bounded TLS plaintext into `NtsKeAccumulator`, finalize once and
+   call `negotiate_nts_ke_ntpv4` against that offer. Preserve Error/Warning outcomes
+   and useful unknown-noncritical neighbors. Truncation before EOM or a failed
+   required check publishes no association. Freeze post-EOM error/EOF and shutdown
+   transitions: EOM, `finish()`, transport EOF and TLS closure are distinct.
+   Sending `close_notify` does not imply an unconditional RFC duty to await the
+   peer alert; use the [protocol clarification](s0.1-protocol-comparison.md#ordinary-s22-composition-clarifications--5-november-2026).
+3. **Association owner builds privately, then publishes together.** Bind the exact
+   offer/negotiation to its TLS job. Use `NtsKeNtpv4Negotiation::exporter_context`,
+   `NtsKeExporterDirection` and `NtsKeExporterContext::label()`/`context_bytes()`
+   at that connection’s regular exporter: protocol-0/algorithm-15 contexts
+   `00 00 00 0f 00` and `00 00 00 0f 01`, separate 32-byte C2S/S2C keys.
+   Metadata alone establishes neither key length nor connection authority.
+   Bind keys, bounded initial cookies, AEAD, TLS identity/trust basis, actual KE
+   peer, admitted UDP endpoint, lifetime and generations into one candidate.
+   Validate `server_hint()` as an allowed address/FQDN before resolution; printable
+   ASCII is not endpoint authority. Admit explicit delegation/`port_hint()` under
+   current Direct policy; absent server uses the saved actual KE IP, absent port
+   uses 123. A later family/address alternative needs its own bounded KE or
+   admitted explicit delegation; do not send an old candidate’s default keys/
+   endpoint provenance to a different IP. Serialize final current-state checks
+   with complete publication. Exporter, DNS, endpoint, cancellation or generation
+   failure discards the candidate; old state survives only while independently valid.
+4. **Protocol/crypto producer and engine sender protect requests.** Implement the
+   bounded protected writer and exclusive association/cookie owner. Fixture
+   `WireToken`, `CompletionFacts` and plain `ntp-exchange` results grant no NTS
+   authority. Issue a fresh ≥32-octet CSPRNG UID; save real T1 independently,
+   request/socket/endpoint identity, monotonic deadline and generations.
+   Reserve cookies through construction/send outcomes; prevent concurrent duplicate
+   issuance and implicit reuse after ambiguous sends. Any allowed reuse needs its
+   existing privacy-policy disposition. Bound retained bytes, copies and cleanup.
+   At actual send, recheck association, destination/path and protected encoding.
+   Exhaustion or failure enters bounded recovery, never ordinary plain fallback.
+5. **Receiver admits the complete packet.** Reuse `frame_no_legacy_mac_datagram`,
+   `read_nts_authenticator_parts` and, after S2C authentication/decryption,
+   `frame_nts_plaintext`. The protocol/crypto owner still enforces UID/field
+   placement/cardinality, AAD, selected-AEAD nonce/padding and cookie limits.
+   Stage cookies and observation evidence until full packet admission; well-framed
+   trailing unauthenticated fields have no semantic influence. Finally serialize
+   saved endpoint/socket/request and configuration/association/clock checks with
+   `send <= arrival <= processing_now < deadline`, publication and consume-once
+   completion. Malformed/wrong-tag/wrong-UID traffic leaves a healthy pending
+   request usable; genuine lifecycle invalidation retires it separately.
+6. **Scheduler and numerical consumers retain separate outcomes.** Reset KE retry
+   history only after protected NTP succeeds using that KE transaction’s keys/data;
+   TLS completion or delayed old-key success cannot reset a replacement’s failures.
+   The separately admitted KoD/NTSN path grants only bounded control/recovery effects.
+   Packet/cookie completion does not imply eligible-observation freshness. Reuse
+   S2.1’s lossless timestamp/header envelope, mapping, era/arithmetic and LI/scale
+   checks, then its separately frozen reference-time/uncertainty-to-divisor contract
+   and actual Core consumer. Preserve exact phase, signed raw RTT, units, errors
+   and age; no fabricated zero, divisor `1.0`, first-sample readiness or
+   fixture-derived production threshold.
+
+### Observable exit and Windows boundary
+
+Extend the existing bounded `nevrotick-observe` projection with actual KE/
+association outcome, named trust-profile basis, packet authentication/current
+completion, numerical eligibility/refusal and Core insufficient/ready/rejected
+outcome. Include allowlisted stage/reason, provenance/age and resource/retry results;
+exact field names stay with existing owners. Missing results remain absent.
+Exclude keys, cookies, raw sensitive packets/UIDs and unsanitized native errors.
+
+The [ordinary trust-profile card](s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026)
+and [Windows continuation](windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
+own OPEN-8 and CHECK-9/26/27. Keep CNG-first/Schannel-second candidate order.
+Async `tokio-rustls` and synchronous `StreamOwned` remain alternatives to qualify;
+either can block in a synchronous verifier. Retain permits and native inputs in
+the actual job until completion; cancellation removes publication eligibility,
+not capacity accounting. No replacement pools or detached retry growth.
+Use [§17.1/THR-26](../docs/windows-time-architecture.md#171-bounded-async-and-native-work)
+for stalled-work stop/escalation. Inventory actual delegated PKI fetch owners;
+the NTS socket’s Direct binding cannot establish their egress.
+
+### Paired acceptance evidence — planned, not run
+
+| Boundary / existing CHECK owners | Useful control and discriminating refusal observation |
+| --- | --- |
+| KE/exporter; 6/9/17/26 | Complete exchange with independently compared exports/vector, split/coalesced/noncritical forms. Pair wrong identity/ALPN, truncation/Error, swapped context/key and first-export-only failure: no partial publication; secret cleanup observed. |
+| Publication/path; 6/8/9/21/27 | Healthy warm replacement beside failure/race at each candidate stage; old state survives only if valid. Changed DNS without delegation retains actual KE IP. Allowed LAN/delegation succeeds; forbidden scope/port fails. KE-success/UDP-blocked remains incomplete; permitted alternatives make bounded progress with their own valid provenance. |
+| Packet/lifecycle; 6/9/17/26/27 | Independent protected reply succeeds once beside wrong UID/tag, malformed inner/outer fields, duplicate, stale generation and processing after deadline. Rejects cause no forbidden packet/cookie effect and preserve a healthy pending reply. Exercise trailing fields/replenishment; zero-cookie expectations await the recorded local decision. |
+| Recovery/resources; 6/9/21/27 | Exhaustion, ambiguous send, NTSN/refresh storms, old-key success and late native completion beside healthy progress. Observe actual sends, no plain fallback, same-transaction retry reset, retained permits and bounded teardown. |
+| Windows trust; 9/26/27 | Selected-profile valid chain beside wrong usage/date/name, revoked/distrusted, removed root, unavailable revocation, slow retrieval and policy cutover. Expected acceptance/refusal follows the frozen profile; observe actual fetch owners and responsiveness. |
+| Consumer; 6/7/8/25 | Authentic eligible evidence reaches actual history/estimator; authentic numerical refusal creates no vote/correction. Demonstrate sufficient history separately from first-observation insufficiency. Retain S2.1 numerical oracles and full-domain proof obligations. |
+
+Use controlled-peer facts and independent vectors/oracles, not only same-code
+round trips. Bind evidence to artifact/features/profile/Windows build and reached
+production seam. P2 retains its two-independent-implementation interoperability
+aim where practical; an unavailable second peer remains an evidence gap.
+
+**Remaining gates:** complete graph/licence and selected provider/Windows trust
+admission, finite runtime contracts including the local zero-cookie disposition,
+the real numerical bridge and its proofs, and actual interoperability/resource/
+native evidence. A declared normal-validation controlled lab peer/root can prove
+that narrow path; final installed service/store/enforcement checks remain P3/P6.
+Full MSIX, Slint migration and all P3 work are not prerequisites for the bounded
+S2.2 prototype. Cached/resumed associations, wrong-date recovery, source defaults
+and clock effects retain their later owners. Direct-first, OD-11/SOCKS-0,
+complete MSIX, all native/S134/fuzz/storage holds, limited Sandbox scope and
+optional enhanced release provenance remain unchanged. Source agreement closes
+no CHECK; the [standards appendix](s0.1-protocol-comparison.md#ordinary-s22-composition-clarifications--5-november-2026)
+also retains the unverified errata-coverage limit.
+
+### S2.2 preparation integration and independent review — 5 November 2026
+
+**Scope and predecessor:** this is the next ordinary-NTS source-preparation
+handoff from the original audit. Three completed research lanes inspected pinned
+GitHub implementations, primary RFC/web material and Microsoft Learn/API
+contracts; a fourth agent wrote the synthesis Markdown and a fifth integrated
+it into the existing engine/protocol/crypto/Windows tasks and documentation routes.
+Initial context-window launch failures produced no usable research or approval;
+only the completed retries and inspected sources support this handoff.
+
+The source research used upstream `5e98c79901c90de77db6c6047cb483ec10b8cbd5`.
+The coordinator reconciled ten intervening commits since the preceding S2.1
+publication and then retained the additional Slint-skill commit
+[`e68d953`](https://github.com/DavidOsipov/NevroTick/commit/e68d953c68573195427b00324ae6bb95856e328f)
+before freezing this candidate. Its added skill files, AGENTS route and UI-M0
+record remain upstream-owned; this handoff changes no skill or production source.
+
+| Reconciled obligation | Disposition and affected owner |
+| --- | --- |
+| Current proof and UI order | Development §7's complete proof/Slint prefix is preserved. Scoped endpoint/Fraction proofs, the remaining public era-constructor obligation and the next `Fraction::compare` continuation remain with their existing owners; held Kani follow-ups are not restarted. |
+| Direct/network, storage and reuse | Actual-KE-IP provenance, address-family progress, Direct-first/OD-11, network-state storage owners and the separate S2.3 lifetime/recovery scope are retained. No new proxy, persistence or ordinary-validation policy is selected. |
+| Windows/product decisions | Selected Slint, complete MSIX, Windows binding/component reuse, all native/S134/fuzz/storage holds, limited Sandbox scope and optional enhanced release provenance are retained. The declared S2.2 lab path does not qualify installed services. |
+| Current-state drift | AGENTS, the architecture capsule and guide routes now reflect the completed four-owner settled-rate fixture receipt and current §7 continuation; the capsule includes existing pure leap knowledge. Historical qualification records are not rewritten. |
+| Added preparation | The existing S2.2 owner now has ordered production transitions, actual-consumer and paired refusal exits. The local zero-cookie disposition, ordinary trust profile, finite runtime/lifetime contracts and their implementation evidence stay explicitly open. |
+
+**Frozen review identity:** actual upstream base
+`e68d953c68573195427b00324ae6bb95856e328f`, full tree
+`a2f6f9a6252edeecc8cc98fd87f244da06ac0e23`; ten changed Markdown files,
+47,269-byte patch, SHA-256
+`29233adde5b972b2d5743e993ef367fe043521c2d89b445c97efa59d902c9cf6`.
+The local `6034d8c5a773bfa1b7d2e0d8e5904540d440f498` is a synthetic
+partial-snapshot identity, not upstream history or a publishable repository tree.
+The coordinator matched all ten baseline file blobs to the complete upstream tree.
+
+**Review completion:** `s22_review` was dispatched with `fork_turns: none` and
+read-only bounded scope. The initial launch failed with a context-window error
+and supplied no review (`not run`). One bounded retry completed the requested
+review (`completed`, `READY` for this documentation handoff). The report below
+records its own comprehension, inputs actually inspected and evidence limits;
+no parent discussion, private KB or current author verdict supplied its conclusion.
+No material finding was established, so there is no `S22-R` resolution campaign.
+Raw-report SHA-256:
+`8a403464682cd4831790ded6023fc75c7dd95f3509f658a667df5d4206ef7322`.
+
+**Coordinator verification before review:** changed-file whitespace checks and
+1,266 internal Markdown link occurrences passed, with no missing target/heading
+or unavailable anchor content. The five architecture Mermaid blocks, canonical
+REQ/BND/DEC/THR/CHECK/OPEN identifiers, existing source entries, task histories and
+current proof/UI prefix are preserved. All ten candidate hashes stayed frozen
+through the review. No product tests, proof/native/fuzz/interoperability campaign
+or dependency admission was performed. The complete upstream inventory has no
+root `docs/SHA256SUMS.txt`; separate versioned design/asset manifests cover other
+files and remain unchanged. No documentation-bundle integrity claim is made.
+
+The verdict covers the frozen preparation patch, not this subsequently appended
+receipt. The coordinator preserves the complete raw review below verbatim;
+appending the evidence record does not convert source consistency into runtime,
+Windows, P2 or release qualification. Implementation and its required reviews
+remain open under the card above.
+
+#### Verbatim independent review
+
+> The change prepares the ordinary S2.2 acquisition path: a normal-date, certificate-validated NTS-KE transaction produces one complete association, that association protects a UDP exchange, and separately admitted time evidence reaches the real numerical consumer. It assigns the missing runtime transitions to the existing engine, protocol, crypto and Windows owners, with useful and refused controls at each boundary. It changes documentation and current-state routing; it does not implement these transitions or select the outstanding provider, trust profile, resource values or zero-replacement-cookie policy. The principal handoff is `tasks/engine-transport-pilot.md`, “Ordinary full NTS composition — S2.2 preparation, 5 November 2026.”
+>
+> The inspected workspace already contains six crates, inert NTS wire/negotiation kernels, a real two-peer loopback transport observer and a separate fixture exchange-to-Core chain. The transport currently ends in `TransportFacts`; it has no domain/Core dependency or authenticated association. Pure leap knowledge is present, and the existing settled-rate receipt records completion only for four Linux fixture owners. Production eligibility, the numerical bridge and their remaining proofs are still planned. `docs/plans/development-plan.md` §7 controls the current proof continuation; Slint is selected but its migration remains separately gated, Direct is the first-delivery route, SOCKS5 is deferred, and provider/native/storage/fuzz holds remain effective.
+>
+> ## Scoped verdict
+>
+> **READY for integration as the ordinary S2.2 documentation/research handoff at the frozen candidate identified below.** No material finding was established in this bounded review. The producer, state owner, consumer and future qualification relationships are coherent, and the inspected source and primary requirements support the consequential new assertions. This verdict grants no implementation admission, native experiment, product-security qualification, P2 closure or release approval.
+>
+> ## Candidate identity and review context
+>
+> | Item | Observed identity or scope |
+> | --- | --- |
+> | Review date | 5 November 2026 |
+> | Upstream base recorded in the review packet | `e68d953c68573195427b00324ae6bb95856e328f` |
+> | Upstream tree recorded in the review packet | `a2f6f9a6252edeecc8cc98fd87f244da06ac0e23` |
+> | Actual local HEAD | `6034d8c5a773bfa1b7d2e0d8e5904540d440f498`, a synthetic partial-snapshot commit, not upstream history |
+> | Frozen patch | 47,269 bytes; SHA-256 `29233adde5b972b2d5743e993ef367fe043521c2d89b445c97efa59d902c9cf6` |
+> | Working candidate verification | The working `git diff --no-ext-diff` exactly matched the frozen patch. All ten manifest file byte counts, SHA-256 values and Git blob identities matched. Git reported only those ten modified Markdown files. |
+> | Reviewer | Independent reviewer task `s22_review`; fresh-context review assignment, using the supplied request and inspected artifacts. No parent dialogue, private KB, saved memory or current analyst/integrator verdict was retrieved. |
+> | Completion | Completed bounded read-only review. The earlier launch supplied no usable review and is not credited as evidence. |
+>
+> The upstream base/tree provenance comes from the supplied verified-snapshot packet. I verified the local candidate identities, not the entire remote upstream tree or omitted files. Missing unrelated snapshot files were not classified as deletions.
+>
+> ### Changed files actually inspected
+>
+> I read every hunk of the frozen patch, including the current-state corrections, across:
+>
+> - `AGENTS.md`
+> - `docs/README.md`
+> - `docs/plans/development-plan.md`
+> - `docs/windows-time-architecture.md`
+> - `tasks/README.md`
+> - `tasks/development-backlog.md`
+> - `tasks/engine-transport-pilot.md`
+> - `tasks/s0.1-crypto-feasibility.md`
+> - `tasks/s0.1-protocol-comparison.md`
+> - `tasks/windows11-integration.md`
+>
+> ### Required context and source actually inspected
+>
+> | Input group | Actual inspection |
+> | --- | --- |
+> | Review requirements | Supplied independent-review request and candidate manifest; applicable root `AGENTS.md`; `docs/README.md` authority/routing and pertinent current amendments; `.agents/skills/planning/plan-independent-review/SKILL.md`; `.agents/skills/planning/references/review-and-handoff.md`; `.agents/skills/testing/qa-independent-review/SKILL.md`; `.agents/skills/testing/CONTRACT.md`. |
+> | Canonical contracts and decisions | `docs/windows-time-architecture.md` §§1, 7.4, 17.1 and 18.7; `docs/nevrotick-owner-decisions.md` OD-10, OD-11, OD-13 and OD-05 §7.5; `docs/plans/development-plan.md` P2 and §7. |
+> | Existing handoffs | `tasks/engine-transport-pilot.md` S2.1 measurement/consumer card, address-family admission/progress card and network-path/Direct routing card; `tasks/s0.1-protocol-comparison.md` RFC-alignment checklist and new ordinary-S2.2 appendix; `tasks/s0.1-crypto-feasibility.md` provider/native source leads, R-05 lifetime card and new ordinary profile card; `tasks/windows11-integration.md` W11-W01/04/05/08 ownership and §4.30. |
+> | Qualification status | `tasks/s1.3-source-selection-readiness.md`, “Settled-rate final qualification — four selected owners,” including its exact declared scope, receipt identities and remaining exclusions. This was inspection of the retained receipt, not re-execution or independent reproduction of its campaigns. |
+> | Workspace/dependency facts | Root `Cargo.toml` and the engine, wire, exchange, domain and Core manifests. The engine has only `getrandom`, `ntp-wire` and Tokio dependencies; Core is a dev dependency of the exchange fixture, not an engine runtime edge. No lockfile resolution or complete dependency audit was performed. |
+> | Runtime/wire source | `crates/nevrotick-engine/src/lib.rs` transport facts and stage/commit/processing owners; `crates/ntp-wire/src/lib.rs` exports; pertinent `nts_ke.rs`, `nts_negotiation.rs`, `nts_packet.rs` and plaintext-framing declarations/contracts. Checked the concrete accumulator, negotiation, endpoint-hint and exporter-context APIs named in the handoff. |
+> | Domain and consumer source | `crates/time-domain/src/lib.rs` and the leap source inventory; `crates/ntp-exchange/src/association.rs` receive/completion boundary; `crates/ntp-exchange/tests/support/scenario_driver.rs` actual `Composition::deliver`/`record` consumer path; `crates/time-core/src/regression/normalization.rs` fixture admission/provenance limits. |
+>
+> The three available research-lane reports were not used as review oracles. I inspected the cited primary sources directly. I did not read the current synthesis report.
+>
+> ### Primary external evidence actually inspected
+>
+> - [RFC 8915](https://www.rfc-editor.org/rfc/rfc8915.html), the affected KE completion, record, endpoint-default, size-guidance, retry, exporter and protected-packet/cookie requirements in §§4–5.7.
+> - [RFC 8446 §6.1](https://www.rfc-editor.org/rfc/rfc8446.html#section-6.1), closure-alert requirements, and the regular-versus-early exporter distinction associated with §7.5.
+> - [RFC 5297 §§3 and 6.1](https://www.rfc-editor.org/rfc/rfc5297.html#section-3), nonce placement and algorithm-15 key/nonce lengths.
+> - [Chrony pinned `nts_ntp_client.c`](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/nts_ntp_client.c), lines 200–225 and 404–547: saved-address fallback, cookie extraction and response-authentication completion.
+> - [ntpd-rs pinned response consumer](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/source.rs), lines 759–836; [KE result construction](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/nts/mod.rs), lines 363–420; and [spawner resolution](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntpd/src/daemon/spawn/nts.rs), lines 124–165.
+> - [Pinned rustls-platform-verifier Windows source](https://github.com/rustls/rustls-platform-verifier/blob/252e25161a91af476cbea620e29d277592d27ec7/rustls-platform-verifier/src/verification/windows.rs), bounded slices covering the SSL-policy flags, default engine/store, chain flags and timeout, date conversion, policy-status check and `ServerCertVerified` return.
+> - Microsoft contracts for [CertGetCertificateChain](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certgetcertificatechain), [CertVerifyCertificateChainPolicy](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-certverifycertificatechainpolicy), [system-store locations](https://learn.microsoft.com/en-us/windows/win32/seccrypto/system-store-locations), [CryptRetrieveObjectByUrlW](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/nf-wincrypt-cryptretrieveobjectbyurlw), and [BCryptGenerateSymmetricKey](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptgeneratesymmetrickey).
+>
+> ## Material findings
+>
+> **None established.** No `S22-R` finding ID is allocated. The following are the principal checks supporting that scoped result, rather than additional approval gates or claims of executed behavior.
+>
+> | Reviewed boundary | Assessment and evidence |
+> | --- | --- |
+> | Current state versus planned system | The new capsule and engine card correctly describe absent authenticated acquisition and the production numerical bridge. The manifests and actual `TransportFacts` producer support this distinction. The settled-rate correction is limited to the receipt's four-owner Linux fixture scope; it does not close OD-10 or P1. |
+> | KE parsing and exporter authority | Engine handoff steps 2–3 match the existing accumulator/negotiation API boundaries. `NtsKeExporterContext` owns five context bytes and a label but neither a connection nor keys. Requiring same-job binding, both 32-byte direction keys and complete publication prevents the handoff from treating inert metadata as authentication. Error/non-error cardinality and TLS closure remain explicitly distinguished. |
+> | RFC details and upstream differences | The size target retains SHOULD strength, and the closure wording does not invent a mandatory peer-alert wait. The zero-replacement-cookie distinction is accurate: the server's response obligation is separate from the explicit client UID/authentication checks. The cited Chrony extractor rejects when no acceptable replacement is extracted; the inspected ntpd-rs consumer processes new cookies after acceptance. The document leaves NevroTick's acceptance/completion/retry disposition pending instead of selecting policy from this difference. |
+> | Endpoint and replacement ownership | Step 3 retains the actual KE peer IP when no server is negotiated and port 123 when absent, consistent with §7.4 and RFC 8915 §§4.1.7–4.1.8. New address/family progress needs its own valid KE/delegation provenance. Private candidate construction, complete publication and independently valid old-state retention agree with the existing address-family and Direct contracts. |
+> | Packet completion and numerical eligibility | Steps 4–6 keep fresh UID issuance, exclusive cookie ownership, protected send, complete packet admission and consume-once state at identified owners. The current envelope reader intentionally lacks those semantic guarantees. The paired controls retain a healthy pending reply after malformed/uncorrelated traffic, while authentic numerical refusal creates no vote. The actual fixture consumer's `1.0` divisor is correctly excluded as production uncertainty evidence. |
+> | Windows trust and native work | The profile freeze and truthful opaque-result language match both the inspected verifier and §18.7.2. A null default chain engine is current-user context; successful API execution is separate from successful chain-policy status. The source checks leaf revocation, suppresses unknown-revocation policy errors and exposes an opaque success marker. The handoff does not convert this into confirmed non-revocation or automatically require a new verifier. Real-job permit/input custody, queued-job bounds and delegated-fetch ownership remain with §17.1 and W11 owners. |
+> | Stage and authority | Development §7 keeps the current proof queue. The new Windows card distinguishes a declared ordinary-validation lab path from final installed-service qualification. No complete-MSIX or Slint prerequisite is added to the bounded S2.2 prototype; no existing installed-product gate is marked complete. OD-11's Direct/SOCKS split and OD-05's optional enhanced provenance remain intact. |
+>
+> ## Evidence limits and retained open work
+>
+> This review performed read-only Git/hash checks, documentation/source inspection and bounded primary-source retrieval. It did not run Cargo, native Windows, mathematical-proof, fuzz, interoperability or resource campaigns; install anything; alter trust stores; contact NTS peers; modify the candidate; or publish anything. The raw report is the only output written.
+>
+> The review establishes consistency of the named handoff, not whole-repository correctness, complete source coverage, dependency/licence clearance or an independently repeated historical qualification. The partial snapshot's unrelated omissions are outside the finding set. I did not establish current RFC verified-errata coverage; the candidate already states that limit without claiming that no errata exist.
+>
+> Exact provider/transport admission, the ordinary Windows principal/store/revocation/egress profile, finite lifetimes and aggregate budgets, post-EOM runtime transitions, the zero-cookie disposition, the justified numerical consumer contract and proofs, and actual portable/native/interoperability evidence remain open at their declared dependent stages. Their absence is not a demonstrated product failure or a contradiction in this source-preparation handoff. Any change to the reviewed semantics or relevant candidate bytes requires rechecking the affected conclusions.
+>
+> ## One permitted next action
+>
+> Record this completed, candidate-scoped READY review verbatim in the existing engine task as part of integrating the ordinary S2.2 documentation handoff.
