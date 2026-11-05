@@ -637,6 +637,14 @@ Slint is the default for subsequent NevroTick UI work. This supersedes DEC-3's
 Win32-common-controls toolkit selection and the 30 October instruction to retain
 Win32 as the default. It does not erase the earlier candidates or their evidence.
 
+**Reaffirmed after the iced comparison, 5 November 2026.** After the reported
+iced experiment, upstream source review and development/community assessment,
+David explicitly decided to continue with Slint. The consolidated
+[Slint/iced assessment](supporting-reviews/slint-iced-assessment-2026-11-05.md)
+retains the evidence, competing strengths and unresolved source concerns.
+The reported measurements show no clear runtime-resource winner; this is a
+reaffirmation of OD-13, not a new performance claim or qualification waiver.
+
 | Decision card | Accepted direction and remaining qualification |
 | --- | --- |
 | Related owners | DEC-3, OPEN-10, S0.5, UI-M0, CHECK-21/22; OPEN-1/13 and CHECK-20/26 own dependency/licence admission |

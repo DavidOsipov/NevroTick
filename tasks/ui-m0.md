@@ -263,6 +263,15 @@ permission. Keep one candidate/evidence chain here and in S0.5. M0-SL-01 prepara
 finish with an unresolved blocker; that records **admission held**, not a pass
 that unblocks M0-SL-03.
 
+The [Slint/iced assessment](../docs/supporting-reviews/slint-iced-assessment-2026-11-05.md)
+records David's subsequent reaffirmation of Slint and the source-review inputs
+for this same queue. M0-SL-01/02 must disposition its unconfirmed SR-1 generic
+weak-handle and SR-2 future-destruction concerns against the exact admitted
+version and reachable application paths. These are local research labels, not
+confirmed product defects or new canonical gates; owner selection does not
+resolve them. The report's activity figures and private idle results grant no
+licence, generated-code, native or accessibility pass.
+
 | Work item / role owner | Current state and predecessors | Concrete output and observable exit |
 | --- | --- | --- |
 | **M0-SL-01 — exact graph and licence route** / dependency/security with UI | **Ready: source-only preparation.** Use OD-13 and the retained Slint 1.18.1 winit/software/Fluent pilot inputs; do not reopen general toolkit selection. Product graph adoption remains held. | Inventory exact runtime/build/proc-macro/native dependencies, selected grants/features and Windows/runtime payloads. Resolve the Slint and Apache-2.0-only winit questions against retained GPL-2.0-only obligations; produce an admitted route or a concrete OD-04 blocker/card. Freeze the candidate graph/build inputs before Cargo adoption. OPEN-1/13, CHECK-20/26; no clearance or paid agreement may be inferred. |

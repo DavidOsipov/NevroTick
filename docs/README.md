@@ -425,6 +425,12 @@ The earlier [Win32/egui report](supporting-reviews/ui-toolkit-comparison.md)
 preserves the 30 October decision and measurements, superseded as a default by
 OD-13. The checked-in UI is still Win32; keep its receipts and the resource targets.
 
+David reaffirmed Slint after the subsequent iced comparison. The consolidated
+[Slint/iced assessment](supporting-reviews/slint-iced-assessment-2026-11-05.md)
+retains the reported resource results, pinned source review, unresolved findings,
+dated community/development census and decision rationale. It records no clear
+runtime-resource winner and routes remaining admission work to UI-M0.
+
 **Protocol follow-up, 30 October 2026:** [NTP client behavior](windows-time-architecture.md#73-ntp-client-behavior) makes KoD support explicit through pinned Chrony/independent-codebase analysis and reuse. The [existing protocol task](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) records RFC 8915 alignment and remaining implementation checks; [TLS policy](windows-time-architecture.md#1871-license-gate-and-finite-provider-choice) prioritizes AES-GCM while retaining provider/CPU qualification. These are P2 requirements, not implemented NTS/KoD support or measured AES speedup.
 
 **Upstream code is not presumed bug-free or vulnerability-free.** Chrony and other reused projects, libraries and tools require independent verification of the behavior NevroTick relies on. See [architecture section 20.1](windows-time-architecture.md#201-independent-numerical-truth) and [the test and stress matrix](windows-time-development-hardening.md#97-verification-of-upstream-code-and-stress-testing).
@@ -524,6 +530,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [development-evidence-review.md](supporting-reviews/development-evidence-review.md): CI trust, isolation, mutation contract and correction verification.
 - [basic-features-review.md](supporting-reviews/basic-features-review.md): integrated product feature, UX, authority and acceptance review.
 - [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): historical Win32/egui measurements and decision, now superseded by OD-13's Slint default; subsequent GPUI, Reactor and Slint evidence stays in the S0.5 task.
+- [slint-iced-assessment-2026-11-05.md](supporting-reviews/slint-iced-assessment-2026-11-05.md): consolidated resource, source-quality, accessibility, verification and community/development assessment; David's reaffirmation of Slint, exact source pins, evidence limits and existing migration follow-through.
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.
