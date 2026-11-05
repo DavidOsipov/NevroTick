@@ -2220,3 +2220,33 @@ existing CHECK-6/8/9/21/27 ownership, with CHECK-25 only where construction guar
 are reached. S1.1c remains first under development §7. Existing native/S134, fuzz,
 storage and UI holds/deferrals retain their current scope; this entry permits no
 new host configuration or public-server probe.
+
+### 4.28 Explicit network-profile qualification — 5 November 2026
+
+Extend §4.27 through the same engine/platform owners and
+[network-profile card](engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026).
+Apply the [canonical contract](../docs/windows-time-architecture.md#observed-path-history-and-user-network-policy)
+before dependent S2.1/S2.2 binding or proxy integration. This adds no W11-W11 label
+and does not make the future system DNS service a prerequisite for direct NTP.
+
+Qualify selected interface identity to current IPv4/IPv6 index mapping, source
+selection, actual outbound/receive provenance and removal/reuse races. Microsoft's
+`IP_UNICAST_IF` takes an index in network byte order, while `IPV6_UNICAST_IF` uses
+host byte order; wrapper/default behavior is not enforcement. Capture required
+binding options before use and verify native effects, including supported
+dual-stack/IPv4-mapped cases. No route-table or adapter reconfiguration is granted.
+
+Keep configured local family, destination/transport success and proxy-side family
+distinct. Reconcile cached history after attachment/route/VPN/resume changes.
+For a proxy qualify both control and relay sockets under the actual engine token,
+separate UDP-control lifetime from KE, and verify wrapper-aware timestamps and
+uncertainty. A loopback proxy may be per-user and vanish at logout; selecting a
+physical adapter cannot control that process's onward route. Browser proxy
+settings, credentials and DNS behavior are not implicitly inherited by a service.
+
+**Disposition:** source-backed planning only. CHECK-2/6/8/9/12/14/17/21/25/27 and
+AC-21/22 retain their existing evidence owners; the engine card supplies paired
+controls. Native binding, controlled proxy compatibility, resolver/verifier egress,
+service credentials and independent plan review remain unexecuted. Preserve the
+current development §7 proof continuation, first fixed-peer measurement, provider,
+storage and Windows execution gates and UI-M0 deferrals.
