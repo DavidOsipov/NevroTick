@@ -446,7 +446,7 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 | A | [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) | Owner instructions of 29 October; accepted choices, recommendations and unresolved policy distinguished. |
 | B | [nevrotick-research-handoff.md](nevrotick-research-handoff.md) | Bounded future research, NTS operator candidates, evidence requirements and owner decision cards. |
 | C | [release-policy.md](release-policy.md) | Current support status and proposed stable-maintenance model; exact-candidate promotion, withdrawal, corrective recovery and publishing-authority incidents. Required operational rehearsals and product qualification remain open. |
-| 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, twenty acceptance scenarios and staged delivery. |
+| 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, AC-01–AC-22 acceptance scenarios and staged delivery. |
 | 2 | [windows-time-architecture.md](windows-time-architecture.md) | Canonical creation specification, revision 1.4: technical contracts, threat model, NTP/NTS, Windows authority and release gates. |
 | 3 | [windows-time-diagrams.md](windows-time-diagrams.md) | Editable Mermaid architecture views aligned with revision 1.4. |
 | 4 | [windows-time-development-hardening.md](windows-time-development-hardening.md) | Strict Rust/Windows agentic development policy, CI, auditors, tool qualification and evidence requirements. See the current tooling record for adopted bootstrap checks; application/native/release qualification remains pending. |

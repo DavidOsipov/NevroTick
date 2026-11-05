@@ -160,7 +160,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 
 | Field group | Meaning and presence |
 | --- | --- |
-| Policy identity | Strict schema, revision/compare-and-swap token, authorized-change record, catalogue lineage binding and effective policy generation. |
+| Policy identity | Strict schema, revision/compare-and-swap token, authorized-change record, catalogue lineage binding, saved revision and separately reported effective policy generation. The existing owner reconciles uncertain commit/activation outcomes under architecture §12.2; optional history is not that authority. |
 | Source choices | Enabled profiles, admitted local sources/endpoints, explicit disables, required authentication, compatible time scales, configured minima and dependency constraints. Keep administrator restrictions separate from measured quality. |
 | Recovery policy | Bootstrap branch eligibility, Roughtime and reserve policy references, trusted-bound requirements, failure classification and supported true-date/era range. No historical score grants a new reserve or preliminary clock-write path. |
 | Mandatory exclusions | Explicit source/key withdrawal and any persistent security quarantine required by a separately adopted policy, with its resolution record. The existing policy owner must define quarantine authority and persistence; a quality threshold cannot create them. Define reset/uninstall/migration ownership so “clear statistics” cannot remove an applicable restriction. |
@@ -189,7 +189,7 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 | Field group | Meaning and presence |
 | --- | --- |
 | Resolution binding | Query/service identity, resolution-generation/result reference, selected address, address family, port, resolution provenance and applicable lifetime/expiry basis. Reference the resolver's owned result rather than mirror its entire cache or DNSSEC design. |
-| Actual peer | NTS-KE peer address, negotiated NTP destination and actual time-packet peer as separate values; endpoint/address generation and transport. Actual peers may differ across associations. |
+| Actual peer | TLS service identity, NTS-KE target, negotiated NTP destination, actual time-packet peer and immediate proxy/relay as separate values; endpoint/address generation and transport. Preserve address provenance (observed, admitted numeric target or qualified proxy metadata) and explicit unknown state. Do not treat a proxy bind address as its remote peer; architecture §7.4 owns default-endpoint admission. Actual peers may differ across associations. |
 | Local context | Opaque installation-local network-context ID, route/interface generation, coarse connectivity/VPN/address-family context where needed, and change reason. Bound cardinality and avoid stable cross-device tracking identifiers. |
 | Optional environment | Coarse latency path class, supported timestamp-source capability and relevant network transition markers. Do not collect SSID, BSSID, MAC, full routing tables or location history by default. |
 

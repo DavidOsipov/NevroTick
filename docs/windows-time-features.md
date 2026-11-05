@@ -143,7 +143,7 @@ The planned [network settings](#331-time-network-settings--5-november-2026)
 also belong to that machine policy: adapter, address-family mode, direct/proxy
 route and resolver choice cannot be changed by a display preference or raw draft.
 
-The editor separates **Draft changes** from **Active settings**. Apply first summarizes the changed behavior, including loss of authentication in plain-NTP mode and any exceptional-correction implications. It then invokes UAC for that operation. Successful activation publishes one validated revision; cancellation, invalid input, stale revision or storage failure leaves the previous active policy intact.
+The editor separates **Draft changes** from saved and effective settings. Apply first summarizes the changed behavior, including loss of authentication in plain-NTP mode and any exceptional-correction implications. It then invokes UAC for that operation. Successful activation publishes one validated revision. Cancelled authorization, invalid/stale input and a proven not-committed persistence refusal preserve the prior policy. A committed revision or uncertain outcome requires the existing owner's reconciliation and truthful applying/blocked/unknown status; do not infer rollback, retry blindly or resume the old route. See [architecture §12.2](windows-time-architecture.md#122-configuration-semantics) and §3.3.1 below.
 
 Offer NTS, NTP and observe-only deliberately, with no mixed authenticated/plain voting. Bootstrap helpers have a separate editor and no normal-source selection role. Keep raw step/rate tuning out of the basic UI; expose only approved policy choices and their consequences. A deliberate single-source profile and unrestricted numerical tuning are deferred from this feature scope.
 
@@ -296,7 +296,11 @@ separate: IPv4 locally can reach IPv6 remotely through a capable relay. With pro
 DNS, display **Target family selected by proxy**; do not offer an enforceable
 target-family promise from an ordinary SOCKS domain request. A separately offered
 target constraint needs admitted numeric destinations or a qualified resolver;
-reject incompatible drafts instead of secretly using local DNS. The IPv6 label
+required destination-scope checks must also be enforceable before target traffic.
+Reject incompatible drafts instead of secretly using local DNS. If a valid NTS
+endpoint cannot be established at runtime, show the unsupported route and a
+policy-preserving remedy under architecture §7.4; do not display an invented
+remote address or bypass the profile. The IPv6 label
 describes the selected IP leg, not guaranteed native IPv6 end to end.
 
 The supplied Firefox example (`127.0.0.1:10808`, SOCKS5, proxy DNS) is a possible
@@ -420,7 +424,7 @@ Attempt cached/strict NTS → if appropriate, use only already-enabled helper re
 
 ### D. The user wants different servers
 
-Open Settings without elevation → edit a bounded draft → validate identities/profile compatibility → review the behavioral change → elevate for Apply → activate one current revision or leave the previous one intact. An outdated settings window must refresh and obtain a new review before replacing newer policy.
+Open Settings without elevation → edit a bounded draft → validate identities/profile compatibility → review the behavioral change → elevate for Apply → observe the authoritative saved/effective outcome. A proven precommit rejection preserves the prior policy; a committed or uncertain outcome follows the existing owner's reconciliation, with applying/blocked/unknown status instead of a rollback claim. An outdated settings window must refresh and obtain a new review before replacing newer policy.
 
 ### E. Synchronization appears to have stopped
 
@@ -459,7 +463,7 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-04 | F-02/06 | Valid NTS succeeds; wrong identity, invalid signatures/AEAD, forged NAK and outages never select plain NTP. Deliberately authorized NTP mode remains labelled. NTS/LI does not establish unsmeared-scale provenance; incompatible/unknown scales cannot join the UTC population. | CHECK-2/6/9 |
 | AC-05 | F-04 | Old/malformed/incompatible snapshots and failed connections cannot become current Tracking. Source reply, accepted estimate, applied correction and snapshot ages remain distinct. | CHECK-14/25 |
 | AC-06 | F-05 | Ordinary-user refresh succeeds; request storms/direct IPC stay bounded. Refresh carries no destination/target time and cannot override correction authority. | CHECK-2/3/25/27 |
-| AC-07 | F-06 | Valid current policy applies atomically. Cancelled UAC, invalid input, storage failure and stale-revision edits preserve the active policy. | CHECK-2/3/15/25 |
+| AC-07 | F-06 | A valid current revision becomes effective after its qualified activation boundary. Cancelled UAC, invalid/stale input and proven precommit persistence refusal preserve the prior policy. Lost/indeterminate commit results and postcommit activation failure require reconciliation and truthful saved/effective status, without blind retry or old-route resumption; pair with successful Apply. | CHECK-2/3/15/25; PATH-19 |
 | AC-08 | F-06/07 | Startup/restart already configured observe-only makes no product clock write. During active-to-observe transition, valid-owner cleanup precedes completion; lost/ambiguous ownership prevents a blind reset. No implicit Windows Time handback. | CHECK-5/10/12 |
 | AC-09 | F-08 | Cached NTS and strict NTS take precedence. Qualified helper recovery leaves global time unchanged until final authentication/agreement and broker authority pass; successful recovery retains its certificate-time basis/history. Wrong host dates cannot choose leap policy; ambiguity withholds effects without circularly blocking independent acquisition. | CHECK-6/9/10 |
 | AC-10 | F-08 | Two-helper timeout/disagreement/alias cannot become one-helper mode. Successful one- and two-helper paths preserve discoverable hint provenance after Tracking resumes; wrong-name certificate never enters hint recovery. | CHECK-8/9/14 |

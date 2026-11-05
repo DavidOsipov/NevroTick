@@ -564,7 +564,7 @@ The following is the default for security-relevant IPC, machine policy and broke
 | Identity and normalization | Decode escaped text once, canonicalize only as required by the field's domain, validate that canonical form and use it for comparison and effects. Keep an optional display label separate. Host identities are not arbitrary URLs or filesystem paths; DNS/IDNA/IP and endpoint admission follow the selected network policy |
 | Limits | Preserve 64 KiB maximum IPC frames, 16 clients and 4 in-flight requests/client. Initial schema budget: no recursive records and at most 16 container levels; maximum 16 logical sources and 2 bootstrap helpers; explicit bounded strings, collections, cookies and per-file bytes. P1 freezes the field/file limit table before those inputs are enabled |
 | Decoder work | Bound reads before body allocation, retain the JSON parser's recursion protection, and count collections during decoding. Never reserve directly from an untrusted length/size hint or read an unbounded file into memory. Decoder scratch space, escaped strings, error paths and queued responses belong to the budget; a post-parse `len()` check alone is not an allocation defense |
-| Failure atomicity | Reject without partial policy activation, network work, secret-store replacement or clock mutation. Failed policy updates keep the prior valid revision; invalid mandatory startup policy/journal blocks effects. Invalid optional statistical cache is discarded as an explicitly documented recovery case |
+| Failure atomicity | Admission rejection causes no partial policy activation, network work, secret-store replacement or clock mutation. Proven precommit policy rejection keeps the prior valid revision; committed/indeterminate outcomes follow §12.2 reconciliation. Invalid mandatory startup policy/journal blocks effects. Invalid optional statistical cache is discarded as an explicitly documented recovery case |
 
 Serde's unknown-field, conversion and default attributes are building blocks, not a complete strict-input policy. The source review confirmed direct-struct duplicate detection, Value-map replacement, the JSON struct array path, and explicit `Deserializer::end()` behavior. All must be qualified through the selected parser version, adapters and features. A bounded visitor does not mean every intermediate allocation is zero: the whole-frame cap limits parser scratch allocation, while narrower field/collection limits govern accepted state and further construction. [S62, S63, S64]
 
@@ -605,7 +605,7 @@ Consumers must use the checked return value, not an earlier unchecked copy. Prod
 | UI/helper to broker / `ipc-contract` and broker | Strict wire DTO; shared policy rules; real caller/verb rights; current revision and replay controls | Bounded error; no policy or clock effect. UI displays a field-level error or elevation/action requirement |
 | Engine to broker / broker | Strict correction DTO; exact units; finite envelope; current generations, freshness, ownership and cumulative budget | Reject/reconcile and preserve prior coherent state; no raw set-time command or constructor grants new rights |
 | Broker to UI/engine / receiving client | Genuine server identity; supported snapshot schema; consistent revision, age, bounds and trust labels | Show unavailable/stale/incompatible, never synthesize a synchronized state from a malformed snapshot |
-| Policy and journal / broker or installer | Bounded file read, strict versioned schema, validated migration, integrity/provenance and ownership procedures | Preserve prior valid policy on update; block unsafe startup/recovery when mandatory authority state is invalid |
+| Policy and journal / broker or installer | Bounded file read, strict versioned schema, validated migration, integrity/provenance and ownership procedures | Preserve prior valid policy on precommit rejection; reconcile committed/indeterminate outcomes under §12.2. Block unsafe startup/recovery when mandatory authority state is invalid |
 | Drift/cache/secrets / engine | Size/version/source binding; range and age checks; secret integrity and permitted association use | Discard invalid optional state and reacquire; corruption never authorizes plain-NTP fallback or resets broker budgets |
 | NTP and NTS / `ntp-wire`, `nts-client`, engine | Explicit bounded binary/TLS parsers, length arithmetic, record/authentication/replay/association checks, then domain sample admission | Packet or association rejection with bounded retry. No JSON-schema library validates these protocols |
 | Installer maintenance / installer and broker | Fixed allowed operation, bounded properties/journal, effective caller rights, safe paths/handles and version transitions | No privileged file/service/process effect from a valid-looking but unauthorized request; retain recovery machinery |
@@ -919,9 +919,13 @@ resolve target names locally, use a different proxy or enable plain NTP. Configu
 local target resolution versus proxy-side resolution explicitly. A SOCKS domain
 request carries no independent desired-family selector: with proxy DNS, show
 the target family as proxy-selected/unknown. A hard target-family/address policy
-requires admitted numeric destinations or a separately qualified resolving path;
-reject unenforceable combinations instead of promising a guarantee. Preserve the
-original NTS TLS identity through proxying and authenticated UDP delegation.
+and §7.4/THR-21 destination-scope admission require admitted numeric destinations
+or a separately qualified resolving/enforcing path **before target I/O**. A
+forwarded hostname or an address learned after sending cannot establish that
+precondition. Reject unenforceable combinations instead of promising a guarantee;
+this does not admit a new trusted-proxy enforcement mechanism. Preserve the
+original NTS TLS identity through proxying and authenticated UDP delegation,
+including §7.4's actual-KE-peer requirement when no server is negotiated.
 Proxy-host bootstrap resolution is separately declared (or use an IP literal).
 Do not claim all acquisition I/O stays inside the profile until DNS and the
 selected verifier's AIA/OCSP/CRL retrieval also satisfy it; OPEN-8 verification
@@ -1050,6 +1054,19 @@ RFC 8915 section 5.7 permits trailing unauthenticated extension fields and requi
 Freeze the relevant contracts before S2.2 integration and close the [RFC 8915 alignment checklist](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) across S2.2–S2.4 before P2 exit: KE record/error handling, retry reset, exporter/nonce/associated-data mapping, cookie lifecycle and the special KoD/NAK path. Ordinary time responses require packet authentication; the correlated KoD exception in section 5.7 is control-only and supplies neither authenticated time nor permission to downgrade. Keep the existing TLS/provider/trust gates; documentation alignment is not protocol qualification. [S20]
 
 Endpoint admission distinguishes the authenticated TLS server identity from any negotiated NTP hostname/address and port. A valid NTS-KE message is not permission for unrestricted outbound access. Validate the actual resolved destination against an administrator-approved network scope on initial connection, reconnect and DNS changes. Explicitly configured private/LAN servers remain supported; unsolicited loopback/private/out-of-scope redirection and unapproved ports are rejected. P0/P2 must choose an interoperable policy for legitimate provider delegation. Record the endpoint identity and policy reason without exposing secrets. See THR-21, OPEN-8 and CHECK-6/8/9/21. [S20]
+
+If the NTS-KE response omits Server Negotiation, the NTP destination is the
+actual KE server IP, not a fresh lookup of its name. SOCKS CONNECT `BND.ADDR`
+identifies the proxy's bind address, not that server. Keep TLS identity, KE target,
+delegated NTP target and immediate proxy/relay separate in DATA-08, with known
+address provenance or explicit unknown state. A numeric admitted KE target can
+satisfy the default while retaining the TLS name. Proxy-side resolution with an
+unknown KE peer requires a valid explicit server delegation or a separately
+qualified way to establish the required peer; either remains subject to pre-send
+destination admission. Otherwise the route is unsupported: use bounded recovery
+within the profile, never substitute the proxy address or silently use local DNS
+or Direct. This adds no resolver/metadata mechanism or persistence dependency.
+[S20, S129]
 
 ### 7.5 Operating profiles
 
@@ -1892,7 +1909,19 @@ native profile cutover remain separate pending work in their existing tasks.
 
 Use a versioned strict schema with explicit defaults and validation before activation. Reject duplicate/unknown security-critical keys, invalid integers, NaN/infinite values, ambiguous units, excessive source counts and conflicting profiles. Display-only preferences may use separately defined compatibility behavior.
 
-Validate source identity, endpoint and independence-group references. Preserve order only where it has meaning; do not accidentally make list order a security priority. A policy update publishes one immutable revision to broker and engine; late requests under the old revision cannot change the current clock. Failed validation or persistence leaves the prior policy active and reports why the change failed.
+Validate source identity, endpoint and independence-group references. Preserve order only where it has meaning; do not accidentally make list order a security priority. A policy update publishes one immutable revision to broker and engine; late requests under the old revision cannot change the current clock.
+
+Distinguish a proven **not-committed rejection** from a committed revision and an
+**indeterminate commit/activation outcome**. Invalid input, stale revision,
+cancelled authorization and a persistence refusal known to precede commit leave
+the prior policy active. A lost acknowledgement, uncertain commit or failure
+after commit does not establish rollback. Reconcile the operation and revision
+through the existing policy owner before retrying or admitting affected work;
+do not silently resume the old route. Report the known saved revision separately
+from effective acquisition and its applying/blocked/unknown state under §7.3.
+Successful policy persistence is not an atomic transaction with native I/O
+retirement and cannot recall already submitted traffic. No second policy store
+or UI-owned recovery authority is introduced.
 
 No external config `include`, environment-variable expansion, command substitution, arbitrary executable hooks or dynamically loaded plugins are needed. Import/export, if added, uses the same bounded schema and authority path; importing a file does not grant its author administrator rights.
 
@@ -3486,7 +3515,7 @@ The validation suite exercises public production decoding/construction entry poi
 | Declared garde rules | An unannotated field fails derivation; `allow_unvalidated` is prohibited and every justified `skip` names an independently reviewed enforcement owner. Test custom and cross-field rules through the real constructor, including rejected input and accepted neighbors; do not count macro compilation as runtime validation |
 | Resource behavior | Oversized headers/files, growth during reads, escaped strings, long numeric tokens, excessive collections/nesting and invalid-request storms remain within the declared byte/work/error budgets. Valid maximum-size cases still work; fuzzing is supplemented with measured peak allocation and bounded-work analysis |
 | Protected effect | Feed malformed and valid-shaped unauthorized/stale/replayed/overbudget requests directly to real handlers, bypassing UI. Assert no clock, policy, secret, network or installer effect as applicable; an authorized current neighboring request has the expected acknowledged effect. Mocks qualify only pure admission, not Windows enforcement |
-| Errors and recovery | Rejected secret-bearing input and hostile field names produce bounded allowlisted diagnostics without values/keys/cookies; logs cannot be flooded beyond limits. Failed policy update retains prior revision, invalid mandatory journal blocks writes, optional invalid drift state follows explicit reacquisition |
+| Errors and recovery | Rejected secret-bearing input and hostile field names produce bounded allowlisted diagnostics without values/keys/cookies; logs cannot be flooded beyond limits. Proven precommit policy rejection retains the prior revision; committed/indeterminate outcomes follow §12.2 reconciliation. Invalid mandatory journal blocks writes; optional invalid drift state follows explicit reacquisition |
 
 Fuzz frame/DTO parsing, DTO-to-domain conversion, configuration migration, numeric conversions and safe error projection independently, seeded with valid inputs. Keep NTP/NTS binary/crypto fuzz targets separate. A reject-all stub, zero discovered cases, parser-only pass or caught panic is not a successful admission test. Update critical-file coverage/mutation manifests for the decoder and invariant-bearing constructors under section 18.4.
 

@@ -482,8 +482,11 @@ provider gates. Route native binding/service behavior through the existing
 [Windows task](../../tasks/windows11-integration.md#428-explicit-network-profile-qualification--5-november-2026),
 and full-product controls through [feature §3.3.1](../windows-time-features.md#331-time-network-settings--5-november-2026)
 and the [UI re-entry note](../../tasks/ui-m0.md#network-settings-handoff--5-november-2026).
-The documented profile is unimplemented; its independent review and named native,
-proxy/resolver/secret checks remain outstanding. This does not replace §7's current
+The documented profile is unimplemented. The
+[incoming-coordinator review and corrections](../../tasks/engine-transport-pilot.md#incoming-coordinator-review-and-corrections--5-november-2026)
+record the completed source review, its context limits and three native review
+dispatches that remained NOT RUN. Native proxy/resolver/secret checks and dependent
+implementation qualification remain outstanding. This does not replace §7's current
 public-constructor proof continuation or expand the first fixed-peer measurement.
 
 The [storage reconciliation](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
