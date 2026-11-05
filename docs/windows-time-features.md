@@ -139,6 +139,10 @@ If the measurements require an exceptional correction, the app presents the sepa
 
 Ordinary users can read the settings summaries and source information permitted by installation policy without elevation. Protected material remains service-owned. Per-user appearance preferences also remain ordinary-user operations. Changing the source set, trust/profile, bootstrap configuration or clock policy uses a specific elevated helper operation and a current policy revision.
 
+The planned [network settings](#331-time-network-settings--5-november-2026)
+also belong to that machine policy: adapter, address-family mode, direct/proxy
+route and resolver choice cannot be changed by a display preference or raw draft.
+
 The editor separates **Draft changes** from **Active settings**. Apply first summarizes the changed behavior, including loss of authentication in plain-NTP mode and any exceptional-correction implications. It then invokes UAC for that operation. Successful activation publishes one validated revision; cancellation, invalid input, stale revision or storage failure leaves the previous active policy intact.
 
 Offer NTS, NTP and observe-only deliberately, with no mixed authenticated/plain voting. Bootstrap helpers have a separate editor and no normal-source selection role. Keep raw step/rate tuning out of the basic UI; expose only approved policy choices and their consequences. A deliberate single-source profile and unrestricted numerical tuning are deferred from this feature scope.
@@ -150,6 +154,13 @@ Changing an already-active installation to observe-only stops new product actuat
 ### F-07 — Recover after ordinary interruptions
 
 Handle offline startup, source outages, adapter/network changes, suspend/resume, external clock changes and separate engine/broker failures. Use bounded retry/reacquisition and preserve valid protected state. Ordinary network recovery should not require reinstalling, clearing settings or restarting the UI.
+
+Distinguish local family enablement from actual destination reachability. Both
+families may be configured while one upstream path fails. Reuse a recent working
+path within the active network/profile, with expiry and bounded recovery checks;
+show the observed failure rather than asserting the ISP lacks a protocol.
+[Architecture §7.3](windows-time-architecture.md#observed-path-history-and-user-network-policy)
+owns policy precedence, cache limits and the separate KE/UDP outcomes.
 
 When fresh measurements disappear, show holdover only while the prior model remains valid; age and uncertainty increase. After its budget expires, clearly show that the estimate is no longer usable. No new phase correction comes from absent/disputed sources, and neither plain NTP nor Windows Time becomes an automatic fallback.
 
@@ -261,6 +272,46 @@ Use three main groups: **Time sources and trust**, **Clock correction**, and **A
 
 Keep Apply/Cancel for machine-policy drafts. Simple per-user display choices can apply immediately. Field validation identifies the invalid value and remedy without exposing secrets. Warn before leaving an unsaved draft; do not elevate merely to view settings.
 
+#### 3.3.1 Time network settings — 5 November 2026
+
+Place **Network connection** under **Time sources and trust**, reachable from
+Settings and from a source's connection details. Keep one active acquisition
+profile initially; do not add competing per-user service settings. The owner
+requested interface, IP-family and proxy choices; the following is their planned
+presentation, with the initial SOCKS5 support profile still requiring protocol,
+Windows and service-secret qualification. UI-M0 remains a fixture-only milestone.
+
+| Control | Values and useful explanation |
+| --- | --- |
+| Network interface | Automatic or a named adapter with current availability. A selected adapter is a strict pin; disappearance does not silently select another. |
+| IP version | Automatic; IPv4 only; IPv6 only; Prefer IPv6; Prefer IPv4. This is separate from NTP/NTS authentication. |
+| Connection route | Direct, or Manual SOCKS5 proxy with bounded host/IP and port. UDP relay support is required. Proxy failure does not allow direct fallback. |
+| Resolve time-server names | Explicit local resolution or resolution through the proxy. Display the privacy/routing consequence; never switch automatically after failure. Proxy-host bootstrap lookup is a separate disclosed dependency. |
+| Proxy authentication | Only methods qualified for the service/channel and protected-secret lifecycle. Do not expose a working password option before that support exists; never export saved credentials. |
+| Connection details | Requested profile and actual interface, immediate-peer IP family, direct/proxy path, last successful exchange age, KE/UDP stage and bounded recovery reason. Unknown facts remain unknown. |
+
+For direct traffic, label the family control **IP version to the time server**;
+for proxy traffic, **IP version to the proxy**. The proxy's onward family is
+separate: IPv4 locally can reach IPv6 remotely through a capable relay. With proxy
+DNS, display **Target family selected by proxy**; do not offer an enforceable
+target-family promise from an ordinary SOCKS domain request. A separately offered
+target constraint needs admitted numeric destinations or a qualified resolver;
+reject incompatible drafts instead of secretly using local DNS. The IPv6 label
+describes the selected IP leg, not guaranteed native IPv6 end to end.
+
+The supplied Firefox example (`127.0.0.1:10808`, SOCKS5, proxy DNS) is a possible
+user-entered profile, not a default or a tested proxy. A local proxy controls its
+own onward interface and may disappear at logout. Show this limitation; do not
+claim that selecting Wi-Fi here binds another application's Internet connection.
+No PAC/WPAD, automatic system-proxy import, SOCKS4, HTTP-only KE proxy or bypass
+exception list is proposed for the first integration. Preserve the canonical
+[proxy and reachability contract](windows-time-architecture.md#observed-path-history-and-user-network-policy).
+
+Apply shows the route/resolver changes and uses the existing authorized atomic
+revision transaction. Ordinary Sync now can diagnose the active profile within
+its budget; it cannot probe arbitrary unapproved draft hosts. Display fallback
+as a network-path choice, never as permission to lower NTS trust or source quorum.
+
 ### 3.4 Diagnostics
 
 Present **Current issue → What it affects → Suggested next action**, followed by recent events and expandable technical evidence. About includes the complete product version, license/privacy information and a user-initiated link to the official release page. Opening that page is not an automatic update or an authorization to install a package.
@@ -317,6 +368,7 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Normal trust profile | Existing NTS-only baseline pending OD-03 resolution | Pool preference does not establish an NTS preset or silently authorize a default trust downgrade |
 | Source preset | Target four diverse NTS operators; supplied directory is discovery input | Candidate shortlist in research R-04; qualification and exact identities remain open. Pool defaults require a vendor zone and an explicit role |
 | Agreement | Existing minimum-two-plus-majority proposal | Freeze the tested policy; never reduce automatically |
+| Time-network route | Proposed Direct, Automatic interface and Automatic IP mode | Machine policy; explicit proxy/pinned/only-family choices are strict; qualify the §3.3.1 profile before enabling controls |
 | Plain NTP | Available by deliberate profile change | Administrator; permanently visible unauthenticated label |
 | Recovery hints | Off | Administrator explicitly chooses one or two helpers |
 | Two-helper recovery | Both must satisfy policy | No silent one-helper fallback |
@@ -407,6 +459,8 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
 | AC-19 | F-02/03/07 | Independently generated offset/drift/asymmetry cases and real clock measurements establish convergence/holdover behavior within the declared test envelope. | CHECK-7/8/10/11/24 |
 | AC-20 | All | Measure startup, idle/active CPU, memory, wakeups, log bounds and package size on the declared Windows machine with supported protections enabled. | CHECK-21 |
+| AC-21 | F-02/04/07/09 | Both local families enabled with one upstream black hole; working alternative is reused, preferred-path recovery is bounded, and network change invalidates obsolete history. A failed Internet destination does not exclude permitted IPv6 LAN/VPN or proxy-side paths. | CHECK-6/8/9/14/21/27 |
+| AC-22 | F-06/07/09/10 | Strict adapter/family/proxy/resolver choices survive failures without silent escape. Pair a UDP-capable SOCKS route with TCP-only/failed relay, incompatible proxy-DNS family policy, loopback/service-lifetime and invalid/stale-draft cases; preserve useful accepted operation and truthful status. | CHECK-2/3/6/9/14/25/27 |
 
 Resource targets remain those of architecture §17, including separate service/UI/tray accounting; they are unmeasured goals. Do not invent an internet-accuracy SLA, recovery deadline or automatic step threshold to complete a feature card. The [development-hardening specification](windows-time-development-hardening.md) governs test scope, coverage/mutation gates, independent review and truthful evidence accounting.
 
@@ -467,6 +521,11 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 These are existing phase gates or concrete refinements of them. Missing evidence is not a reason to silently weaken the feature. Proposed UI copy, default presentation and tray choices can be refined with user testing without changing the security semantics.
 
 ## 12. Sources, review and readiness
+
+The 5 November network-settings amendment uses architecture S127–S131; its
+[current evidence record](../tasks/engine-transport-pilot.md#integration-and-evidence-status)
+retains the outstanding independent review. Earlier review statements below
+describe their original candidate, not acceptance of this amendment.
 
 This plan is based primarily on the maintained [architecture](windows-time-architecture.md), [development-hardening specification](windows-time-development-hardening.md), [signing guide](windows-time-signing-guide.md) and their existing verification requirements. The following primary sources were checked on 28 October 2026 for the limited external claims above:
 

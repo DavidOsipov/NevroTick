@@ -71,6 +71,23 @@ reconnect/generations returns before live status; policy/authorization/result
 contracts return before real settings or protected commands. All remain Deferred.
 The disposable service/clock/MSI laboratory remains a later prerequisite.
 
+### Network settings handoff — 5 November 2026
+
+Before real settings/P5 re-entry, consume the planned
+[Network connection controls](../docs/windows-time-features.md#331-time-network-settings--5-november-2026)
+and the engine's [network-profile card](engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026).
+Provide a reachable Settings entry and source-detail link; preserve requested
+versus effective state, hard versus preferred family policy, direct/proxy leg
+labels, resolver choice and unavailable-adapter/UDP-relay remedies. A local
+proxy's onward interface and a proxy-resolved target family are not client-known
+facts. Reject unsupported combinations through the shared domain/IPC owner,
+including raw-handler bypass cases, and apply only an authorized current revision.
+
+This is a full-product handoff under F-06/07/09/10 and AC-21/22, not an implemented
+widget or M0 pass. UI-M0 retains deterministic fixtures, no live probes/settings
+effects and its existing D1–D3 deferrals. No HTML prototype or branding asset was
+changed by this documentation amendment.
+
 ## Implementation and evidence
 
 The one-member workspace contains `nevrotick-ui` and its private checked preview

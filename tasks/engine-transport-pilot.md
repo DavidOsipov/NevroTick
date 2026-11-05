@@ -1623,3 +1623,115 @@ operation or public-server probe ran for this documentation change. Complete the
 existing S1.1c continuation first, then freeze the finite acquisition profile at
 its dependent S2.1/S2.2 integration and record actual implementation/native results
 here under the existing checks and execution prerequisites.
+
+## Network path history and user routing — 5 November 2026
+
+**Scope and authority:** David's follow-up asks for upstream IPv4/IPv6 availability,
+reuse of successful connections and interface/proxy/family controls. This extends
+the preceding address-family card and architecture
+[observed path history and user network policy](../docs/windows-time-architecture.md#observed-path-history-and-user-network-policy).
+Starting main: `8f1a3b8afab82ea736fb9ea44c99160c90a5075c`, including the intervening
+proof-workflow changes. The current two-peer loopback pilot implements none of
+this card's learned routing or proxy behavior. Keep the existing first controlled
+measurement and development §7's public-constructor proof continuation separate.
+
+### Contract freeze and implementation order
+
+1. **Engine/domain owner, before dependent S2.1 scheduling:** define the single
+   acquisition profile, hard/soft family semantics, stable adapter identity,
+   immediate-hop versus proxy-side destination meaning, finite path-history key,
+   monotonic age/cooldown/reprobe/hysteresis rules and aggregate bounds. Learned
+   state can reorder permitted paths, never grant permission, fresh time or votes.
+   Include raw configuration/IPC bypasses and checked arithmetic/proof obligations
+   under CHECK-2/3/6/8/21/25/27. No guessed timer constant becomes a release promise.
+2. **Scheduler owner:** reuse a still-current working path; classify local exclusion,
+   transport failure, name resolution, certificate/authentication and protocol
+   rejection separately. Bound every alternate and recovery probe through the
+   existing scheduling owner. Keep a reachable healthy alternative; invalid metadata
+   or a single silent endpoint cannot exclude a family globally. Cache expiry,
+   unchanged DNS refreshes and network notifications do not refill budgets.
+3. **Windows adapter owner:** qualify explicit binding and actual source/route,
+   initial and changed network context, stale indices and failure races through
+   [Windows §4.28](windows11-integration.md#428-explicit-network-profile-qualification--5-november-2026).
+   Platform observations do not establish ISP reachability. Preserve permitted
+   local/VPN/on-demand paths and the prior timestamp/native-work custody contracts.
+4. **Protocol/security owner, dependent S2.2 proxy slice:** freeze a limited manual
+   SOCKS5 capability and authentication profile, exact licensed dependency choice
+   if any, relay-address policy, bounded parser, TCP-control ownership, UDP wrapper
+   and inner packet/timestamp handling. Qualify NTS-KE and protected UDP separately,
+   preserving TLS identity, delegation, association and the full KE retry-reset
+   rule. A proxy's reply or transport handshake is not an accepted time sample.
+5. **Resolver/trust/secret owners:** make local versus proxy DNS and proxy bootstrap
+   resolution explicit; audit selected verifier retrieval before claiming a strict
+   proxy-only acquisition path. Reject unsupported family/address restrictions
+   with domain forwarding. Preserve OPEN-8 and service-owned secret/storage gates;
+   no weaker certificate checks, ambient user credentials or plaintext fallback.
+6. **UI owner, full-product settings/P5:** implement the
+   [feature §3.3.1 controls](../docs/windows-time-features.md#331-time-network-settings--5-november-2026)
+   and AC-21/22 through authorized atomic Apply, with requested/effective state and
+   current remedies. UI-M0, HTML design references and public-server probing are
+   not part of this documentation slice.
+
+The first proposed profile is Direct or Manual SOCKS5, with Automatic or a pinned
+interface and Automatic/Only IPv4/Only IPv6/Prefer IPv6/Prefer IPv4 for NevroTick's
+immediate IP leg. An onward proxy-target constraint is distinct; proxy DNS alone
+cannot enforce it. Do not add a hidden direct escape, split KE-only proxy, browser
+PAC/system import, SOCKS4 or HTTP CONNECT-UDP to complete the initial slice.
+Unsupported profiles remain visibly unavailable pending their actual qualification.
+
+### Paired acceptance cases — planned, not executed
+
+Each row requires the real relevant producer/consumer and a healthy neighbor.
+Portable policy/codec cases precede native routes and controlled proxy fixtures;
+neither mocks nor source inspection close Windows or timing evidence.
+
+| Case | Failure/control and required observation | Existing owners |
+| --- | --- | --- |
+| PATH-01 | Both families locally usable; IPv6 upstream black hole with working IPv4, then reverse. Bounded fallback works and is reused. A concurrent permitted IPv6 LAN/VPN target remains usable. | CHECK-6/9/21/27; AC-21 |
+| PATH-02 | One failed endpoint versus a healthy endpoint in the same family. A failed TCP/UDP port or certificate does not become an ISP-wide family prohibition. | CHECK-6/9; AC-21 |
+| PATH-03 | TCP/proxy-login/KE success followed by blocked UDP versus a current accepted NTP reply. Only the appropriate stage becomes successful; cached history supplies no measurement/authentication freshness or KE budget reset. | CHECK-6/8/9/14 |
+| PATH-04 | Warm history versus expired DNS membership, changed attached network on the same adapter, address/route/VPN/resume, proxy/resolver or policy revision. Stale paths/completions cannot publish; valid unchanged history avoids repeated cold-start delays. | CHECK-6/14/21/27 |
+| PATH-05 | Only-family mode versus soft preference with a recent working fallback; restore the preferred path. No forbidden-family send; bounded recovery and hysteresis avoid a timeout on every poll or continuous switching. | CHECK-6/9/21; AC-21/22 |
+| PATH-06 | Selected adapter disappears or its index is reused versus the same valid identity at a current index. Fail visibly without migrating to another adapter; Automatic remains useful. | CHECK-6/25/27; AC-22 |
+| PATH-07 | SOCKS TCP CONNECT succeeds but UDP ASSOCIATE is unsupported or UDP cannot pass versus a working relay. Retain the separate control connection; its loss invalidates old relay work and triggers bounded reacquisition. | CHECK-6/9/21/27 |
+| PATH-08 | Proxy/DNS failure versus a healthy strict proxy route. Observe actual sends: no direct time packets, silent local target lookup, alternate proxy or NTS-to-NTP downgrade. Include proxy-host bootstrap resolution and verifier retrieval. | CHECK-2/6/9/17; AC-22 |
+| PATH-09 | IPv4 client-to-proxy with IPv6 destination and the reverse, including separate relay/control addresses. Enforce each owned leg's profile; local family absence does not veto a reachable proxy-side family. | CHECK-6/9/25 |
+| PATH-10 | Proxy-resolved name plus an unenforceable hard target-family/address rule versus admitted typed numeric destinations under an explicit resolver policy. Invalid combinations cannot Apply or silently leak resolution. | CHECK-2/3/6/25; AC-22 |
+| PATH-11 | Malformed/oversize relay address, header, reserved/fragment fields, wrong relay/source/association and late replay versus bounded valid standalone datagrams. Both wrapper and inner NTP/NTS guards must accept useful traffic and reject unauthorized effects. | CHECK-6/9/21/25/27 |
+| PATH-12 | Loopback proxy available versus user logout, missing listener, physical-adapter pin that cannot constrain proxy egress, or a different local process claiming the port. Show service-context limits and retain end-server authentication; loopback is not trust. | CHECK-2/6/9/12/14 |
+| PATH-13 | Direct versus encapsulated timestamp placement, excess delay/asymmetry and changed paths with old delay history. Preserve independent numeric truth, uncertainty and source/operator counts; adding a route grants no extra vote, and a shared relay remains a shared path. | CHECK-7/8/9/14/27 |
+| PATH-14 | Supported proxy authentication versus unoffered/downgraded method, unavailable protected credential, logging/export and restart failure. Preserve credentials, service authority and current policy; pair each refusal with the qualified healthy profile. | CHECK-2/9/15/17/25 |
+
+### Integration and evidence status
+
+The predecessor's local exclusions, unknown/on-demand recovery, bounded alternatives,
+one-source vote and NTS transaction rules remain in force. This refinement adds
+observed reachability/history and explicit user routing; it does not upgrade a
+local socket/route observation into end-to-end success. The intervening proof
+commit remains the current source for §7 sequencing; older receipt dates/hashes
+in this task retain their historical scope. Primary sources S127–S131 are linked
+from the canonical architecture; the Firefox screenshot supplies a UI example,
+not evidence of UDP or native-service support.
+
+The coordinator performed source research and authored this amendment. Fresh
+research delegates `dual_stack_path_policy` and `ntp_proxy_contract` both failed
+to start with a context-capacity error and returned no usable work; no inspected
+inputs, independent findings or successful review are attributed to them. An
+independent plan review remains **not run** and is required before the dependent
+implementation handoff is called ready. Coordinator self-review and document
+checks supply only their stated evidence. No product, native Windows, actual
+proxy or new formal-proof execution is claimed by this card.
+
+**Document checks on the authored candidate:** contract diff SHA-256
+`4ee0993bdd7e9ee5401625b822551dc3c2bebd0c0f016cca51e06d183670ad77`
+before this receipt. `git diff --check` passed. Focused validation checked 619
+repository link targets, including headings in 30 Markdown targets, and 131
+unique contiguous architecture source identifiers with no missing cited source.
+Seven links initially appeared missing because their targets were excluded by
+the sparse checkout; their skip-worktree entries and exact base-tree paths were
+verified without creating replacement files. All pre-existing lines of the six
+edited documents remain in their original order, and Markdown fences balance.
+The subsequent heading-depth correction preserves its validated anchor; this
+receipt adds no links or product semantics. These are documentation checks and
+coordinator self-review, not independent review, executed PATH-01–14 cases or
+proof of a supported proxy/interface implementation.

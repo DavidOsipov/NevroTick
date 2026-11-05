@@ -815,6 +815,119 @@ owns the implementation sequence and paired controls. This refinement leaves the
 first controlled measurement, proof-first queue and native qualification distinct.
 [S20, S127]
 
+#### Observed path history and user network policy
+
+**5 November 2026 refinement:** David requested upstream IPv4/IPv6 failure
+handling, reuse of successful paths, and user selection of interface, IP-family
+policy and proxy. Local admission above establishes only a candidate: an enabled
+adapter, suitable address and route can coexist with an ISP/upstream black hole.
+Use actual bounded acquisition outcomes to learn reachability to the configured
+destination. A UDP `connect`/send, generic Internet probe, successful proxy login
+or completed KE does not establish a usable protected NTP path. Do not diagnose
+an ISP-wide outage from one failed server, or suppress usable LAN/VPN/proxy paths
+because another destination fails. [S20, S126, S127]
+
+The engine keeps a finite, initially memory-only path-history cache, separate from
+DNS, keys/cookies, accepted time and correction authority. Key it by logical
+source/delegation and concrete destination, transport stage, interface identity
+and source-address context, network/route epoch, active policy revision, and
+direct/proxy/resolver context. Track monotonic observation age, outcome and bounded
+cooldown/recheck deadlines. Reuse a still-admitted successful path before repeating
+a known failing attempt; ordinary polling need not race both families again.
+Stage-local success stays stage-local. Mark an NTS acquisition usable only after
+a current correlated authenticated NTP reply; plain-profile replies retain their
+unauthenticated status and all measurement checks. Cache hits grant no fresh time,
+extra vote, authentication exception or budget reset. RFC 8305 permits historical
+ordering but forbids transferring that history between interfaces and recommends
+flushing it on network attachment changes. [S127]
+
+Reconcile network/VPN, route/source address, resume, proxy, resolver, policy and
+association changes before reuse; unchanged interface names do not identify the
+same attached network. An unchanged/reordered DNS refresh must not refill retry
+budgets. Current destination membership and DNS validity still apply: do not pin
+an expired address indefinitely. Freeze finite cache size, age limits, failure
+penalties, reprobe cadence and switch hysteresis in the existing engine task.
+Repeated transport failures temporarily demote their path; certificate/AEAD or
+policy failures retain their actual cause and are not evidence that an entire
+family is unavailable. One permitted recovery attempt must remain schedulable
+under the common budgets, even without another network notification. Prefer
+ordinary scheduled acquisition for rechecks; add no fleet-wide ping/beacon service.
+Switches partition/requalify path-specific delay history and uncertainty through
+the existing estimator owner; they do not reset security budgets or invent source
+independence. RTT may order acquisition, never authorize the fastest server's time.
+
+One active acquisition profile initially applies to time-source and recovery-helper
+traffic, under the existing machine-policy revision and Apply authorization.
+Keep network family separate from the source's NTP/NTS trust profile:
+
+| Choice | Required semantics |
+| --- | --- |
+| Automatic | Use permitted OS candidates and current successful-path history; retain bounded alternatives. This is the proposed initial default. |
+| IPv4 only / IPv6 only | Hard filter on the relevant NevroTick-owned IP leg; never cross families to hide failure. Canonicalize IPv4-mapped literals before classification. |
+| Prefer IPv6 / Prefer IPv4 | Soft ordering among permitted candidates. Reuse a working fallback while the preferred path is penalized; probe recovery within budget and return only under the qualified hysteresis rule. |
+| Interface: Automatic | Follow current permitted OS routing, reconciling changes at the engine owner. |
+| Interface: selected adapter | Pin the actual owned sockets to that interface; show unavailable on removal or inability to honor the pin. Do not substitute another adapter silently. Resolve a stored stable identity to current indices; names and recycled indices are not durable identity. |
+
+Apply the family/interface rule to the socket's **immediate peer**: the time
+destination for direct traffic, or the proxy/control/UDP-relay endpoint for
+proxied traffic. UI labels must change accordingly. Remote target families are
+separate: IPv4 to a proxy can carry a request for an IPv6 time destination and
+vice versa. Local family checks must not filter a proxy-side destination using
+the client's capabilities. NAT64/OS translation likewise means an IPv6 socket
+is not proof of native IPv6 at the remote server. Pinning NevroTick's socket
+cannot select a different process's egress; a loopback proxy's onward interface
+is controlled by that proxy. Reject a profile that promises a physical-adapter
+pin it cannot enforce. `IP_UNICAST_IF` and `IPV6_UNICAST_IF` are platform-adapter
+candidates pending qualification; their input byte orders differ. [S127, S128, S129]
+
+**Proxy scope proposed for first integration:** Direct or manually configured
+SOCKS5 with UDP ASSOCIATE for NTP/NTS packets and, when NTS is selected, TCP CONNECT
+for NTS-KE.
+Qualify the actual server's UDP relay; a SOCKS5 label/TCP success is insufficient.
+Keep the UDP association's controlling TCP connection alive independently of
+the short KE tunnel. Its loss invalidates relay work; recreate it within the
+existing budgets. Admit the returned relay endpoint and each bounded encapsulated
+datagram before the unchanged inner NTP/NTS parser, correlation and authentication
+guards. Qualify the relay's expected client-source context, including NAT and
+control/relay address-family compatibility. The initial profile accepts standalone
+SOCKS datagrams only (`FRAG=0`);
+reject unsupported fragmentation and account for wrapper bytes/MTU. [S129]
+
+Proxy selection is strict: failure cannot send time traffic directly, silently
+resolve target names locally, use a different proxy or enable plain NTP. Configure
+local target resolution versus proxy-side resolution explicitly. A SOCKS domain
+request carries no independent desired-family selector: with proxy DNS, show
+the target family as proxy-selected/unknown. A hard target-family/address policy
+requires admitted numeric destinations or a separately qualified resolving path;
+reject unenforceable combinations instead of promising a guarantee. Preserve the
+original NTS TLS identity through proxying and authenticated UDP delegation.
+Proxy-host bootstrap resolution is separately declared (or use an IP literal).
+Do not claim all acquisition I/O stays inside the profile until DNS and the
+selected verifier's AIA/OCSP/CRL retrieval also satisfy it; OPEN-8 verification
+requirements cannot be disabled to make proxy mode work. An interface selector
+is not a machine-wide traffic filter. [S20, S129, S131]
+
+Proxy credentials, if supported, require bounded admission, redaction and the
+existing service-owned secret lifecycle; no plaintext configuration/log/export
+or automatic Windows-credential forwarding. RFC 1929 username/password does not
+encrypt the proxy hop. Freeze the supported authentication/channel/storage
+profile before enabling that option; a limited no-authentication profile must
+not claim complete SOCKS5-method support. Existing protected-storage holds remain.
+SOCKS4, ordinary HTTP CONNECT as a complete time path, PAC/WPAD, automatic system
+proxy import, split KE-only proxying and CONNECT-UDP remain outside this first
+proposal. Ordinary CONNECT supplies a stream; HTTP UDP proxying is a distinct
+protocol, and interactive-user proxy settings are not service configuration.
+[S129, S130, S131]
+
+A proxy introduces a shared path and additional delay/asymmetry; NTS authenticates
+the server response, not relay timing. Preserve route-generation/timestamp
+provenance, bounded uncertainty, source/operator independence and existing quorum
+policy. Do not claim independent paths when sources share a relay, or repair
+poor quality by lowering the agreement/accuracy gates. The engine and Windows
+tasks qualify actual encapsulated TX/RX timestamp locations and estimator effects;
+no code, dependency or native support is adopted by this planning amendment.
+[S20]
+
 ### 7.4 NTS implementation contract
 
 NTS requires a TLS 1.3-or-later KE channel with `ntske/1`, verified server identity, bounded record parsing and exporter-derived direction-specific keys. Implement the interoperable AES-SIV-CMAC-256 profile using a maintained compatible library. Each protected request uses a fresh UID containing at least 32 CSPRNG-generated octets, cookie handling and authenticated response validation. NTS authenticates time data; it does not make an inaccurate server correct or remove network delay attacks. [S20]
@@ -3651,6 +3764,14 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S126 - Local address-family and destination-route evidence, checked 5 November 2026.** Microsoft [GetAdaptersAddresses](https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses), [adapter flags/status](https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_addresses_lh), [unicast address state](https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_unicast_address_lh) and [GetBestRoute2](https://learn.microsoft.com/en-us/windows/win32/api/netioapi/nf-netioapi-getbestroute2). Enablement is per adapter; enumeration can include duplicate addresses; a route query is local evidence. Adapter enumeration is synchronous. The existing [network reconciliation](plans/windows11-integration.md#exclusive-loopback-endpoints-and-reconciled-network-changes) and [connectivity-hint limits](plans/windows11-integration-follow-up.md#native-ip-helper-hints-may-satisfy-a-narrower-cost-requirement) retain their callback, generation and destination-specific qualification requirements.
 
 - **S127 - Alternative-address connection progress, checked 5 November 2026.** [RFC 8305 §§3–5](https://www.rfc-editor.org/rfc/rfc8305.html#section-3) describes resolution, address ordering and staggered connection attempts; [§9](https://www.rfc-editor.org/rfc/rfc8305.html#section-9) limits what initial connection success establishes. Apply with RFC 8915's negotiated endpoint and retry requirements in S20. The required bounded NTP/NTS progress contract is NevroTick's adaptation; no complete Happy Eyeballs implementation, timing constant or Windows behavior is qualified by these sources.
+
+- **S128 - Explicit outgoing interface selection, checked 5 November 2026.** Microsoft [IPPROTO_IP options](https://learn.microsoft.com/en-us/windows/win32/winsock/ipproto-ip-socket-options) and [IPPROTO_IPV6 options](https://learn.microsoft.com/en-us/windows/win32/winsock/ipproto-ipv6-socket-options) specify `IP_UNICAST_IF` and `IPV6_UNICAST_IF`. Their input indices use network and host byte order respectively; these are outgoing-socket controls, not control over another process's onward connection. Native binding, actual route/source and receive provenance still require qualification.
+
+- **S129 - SOCKS relay and authentication semantics, checked 5 November 2026.** [RFC 1928 §§4–7](https://www.rfc-editor.org/rfc/rfc1928.html#section-4) defines typed IPv4/domain/IPv6 destinations, command/address failures, UDP relay/control lifetime and fragmentation. Its domain form has no separate requested-family field. [RFC 1929 §3](https://www.rfc-editor.org/rfc/rfc1929.html#section-3) documents cleartext username/password transport. The limited proposed NevroTick profile is not a claim that every SOCKS server relays UDP or that all RFC authentication methods are implemented.
+
+- **S130 - HTTP proxy transport distinction, checked 5 November 2026.** [RFC 9110 §9.3.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.6) describes CONNECT tunnelling; [RFC 9298](https://www.rfc-editor.org/rfc/rfc9298.html) separately specifies proxying UDP in HTTP. Browser HTTP-proxy configuration does not establish an NTP UDP path; no HTTP proxy dependency or CONNECT-UDP implementation is selected here.
+
+- **S131 - Interactive proxy settings versus service context, checked 5 November 2026.** Microsoft [WinHttpGetIEProxyConfigForCurrentUser](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpgetieproxyconfigforcurrentuser) describes current-user/current-connection settings and the service impersonation caveat. This is evidence against assuming the logged-in browser's settings or credentials apply to the engine, not a recommendation to impersonate a user or add WinHTTP to the time transport.
 
 ## Appendix B. Worksheet attribution and use
 
