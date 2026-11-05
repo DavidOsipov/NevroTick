@@ -574,6 +574,33 @@ Separate acquisition from execution. Command families include `cargo fetch --loc
 
 After verified acquisition, deny egress independently and build from staged inputs with no automatic fallback downloads. Native archives, code generators and tool packages need the same provenance discipline as Rust crates. Build scripts' conventional `OUT_DIR` usage is not a security boundary.
 
+#### 7.1.1 Windows API and wrapper admission
+
+Apply [architecture §18.6.2](windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+when the existing adapter consumer is reached. Extend its CHECK-26 record with
+operation/owner, selected crate and published checksum/source, feature/target
+row, required SDK symbols and any pinned generator/metadata/output. Review the
+actual consumer path and remaining rights, bounds, error, callback and completion
+contract; a smaller source file is not sufficient evidence of equivalent behavior.
+
+Do not mix the planned `windows` 0.62.2/`windows-sys` 0.61.2 generation with
+current upstream namespaces or core types by assumption. Publication, source
+parity and a compilable target are separate checks. Resolve the documented
+VBS-flag gap at ST-W01/ST-W04 before its dependent implementation, retaining
+REQUIRE semantics and actual-key/native support evidence. Prefer a compatible
+published binding or narrow reviewed generation over hand-transcribed ABI or
+unverified constants; do not add generation to every build without need.
+
+For a proposed wrapper replacement, pair a legitimate operation with the relevant
+error/oversize/denial/reentrancy/late-completion control. Preserve SCM status
+errors and progress reporting, window-loop error distinctions, registry access
+and allocation limits, correct resource destruction and finite native-job custody.
+Run actual native checks only under the existing authorized fixture and holds.
+UI alternatives additionally need equivalent workloads, measured resource cost,
+accessibility, package/runtime inventory and mitigation compatibility at S0.5/P5.
+Conditional candidates and source-only gaps add no new current-Core or global
+release gate; existing CHECK-21/22/26/27 apply only to reached selected surfaces.
+
 ### 7.2 Tool selection and overlap
 
 | Tool | Decision | Important limit |

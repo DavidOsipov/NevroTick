@@ -47,6 +47,29 @@ and [architecture §21](../docs/windows-time-architecture.md#21-delivery-phases-
 | S0.5 full UI feasibility / UI/accessibility | Existing Win32 decision and narrower UI-M0/comparison evidence; define the representative window/source/settings/elevation/tray experiment in its own scope. Restore relevant full-feasibility requirements without expanding UI-M0. | Named keyboard/Narrator/UIA journeys work at required contrast/scales; missing focus/labels or unusable scaling fails feasibility. CHECK-22; UI-M0/comparison success alone cannot close it. |
 | S0.7 decision freeze / architecture/policy/security | Relevant P0 measurements, accepted owner decisions and remaining OPEN issues; prepare the next dependent decision card rather than guessing production limits. | ASVS/native-profile, step/date/holdover, supported-build, service trust/revocation/egress and native-work limits have explicit decisions or blockers. Unsupported alternatives remain blocked; CHECK-4/9/10/16/27 as applicable. |
 
+### Windows component reuse at existing stage entry
+
+**Source findings integrated 5 November 2026; dependent implementation remains
+deferred.** Apply [plan §4.4](../docs/plans/development-plan.md#44-apply-windows-component-reuse)
+and [architecture §18.6.2](../docs/windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+inside these existing parents. This is a shared entry checklist, not another
+workstream or an instruction to evaluate every Windows crate now.
+
+| Existing parent / owner | Trigger and next action | Required evidence or retained disposition |
+| --- | --- | --- |
+| S0.2/S0.3, S2.1, S3.1–S3.4, S4.1; platform/network/IPC/clock | Before the next dependent native adapter, map its operation to a selected published binding/wrapper, version/features/SDK symbols and remaining product contract in W11 §4.29. | API coverage and compatible ownership/error/callback behavior; subsequent native controls under existing holds. Retain Mullvad candidate and Microsoft plural service hold. |
+| S2.3 and reached protected-storage consumers; ST-W01/ST-W04 | Before VBS-dependent implementation, complete storage §6.7's binding/SDK coverage card and reconcile the missing flags. | Compatible generated/source-pinned API plus separate actual-key/OS evidence; REQUIRE semantics and policy-controlled fallback preserved. Native storage experiments remain paused. |
+| Existing settings/state adapter; platform/UI | A concrete registry operation justifies comparing `windows-registry`. | Exact rights/DACL, bounded values and failure recovery preserved; no unconditional dependency or move of authoritative state into the registry. |
+| S0.5/S5.1–S5.4; UI | A demonstrated UI maintenance/resource issue and separately scoped comparison justify `windows-window` or Reactor evaluation. | Equivalent fixture, resource/lifecycle/error, accessibility, package/runtime and mitigation evidence; retain Win32 until a supported decision. Closed egui result remains closed. |
+| S5.3; UI/diagnostics | Export needs a native picker: recheck working published `windows-pickers` or use the admitted OS dialog path. | Cancellation and error remain distinct, output stays bounded/redacted and written by the ordinary UI; no service arbitrary-path write. |
+
+Retain [UI handoff](ui-m0.md#windows-component-reuse-handoff--5-november-2026),
+[toolkit comparison trigger](s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026),
+[W11 routing](windows11-integration.md#429-windows-component-reuse-routing--5-november-2026)
+and [storage coverage](windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
+in their existing task chains. No optional crate becomes a current-Core,
+UI-M0 or global release prerequisite; existing CHECK/ST-T evidence still governs.
+
 ### Deferred production research contracts
 
 S0.7's architecture/security coordinator owns these research-to-contract handoffs

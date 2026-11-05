@@ -234,6 +234,26 @@ failure case under ST-T06/07/10/16/17; no new flush/commit sequence is selected.
 
 Qualify finite API/phase/build/provider/algorithm/profile rows. Required-VBS creation uses `NCRYPT_REQUIRE_VBS_FLAG`; `PREFER_VBS` may fall back to software. Provider-wide properties, names and unrelated probe keys do not prove protection of the actual key. Microsoft's example uses Microsoft Software KSP for required-VBS keys; the provider name alone proves neither outcome. `NCryptOpenKey` documents no REQUIRE_VBS reopen flag. Controlled origin, bound public identity and supported cross-boot reopen evidence must establish both actual roots; otherwise report Unknown/RecoveryRequired. [P1–P5]
 
+**Binding coverage refinement, 5 November 2026:** [architecture §18.6.2 and S135](../windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+record that the release-associated `windows` 0.62.2 cryptography projection
+contains the per-boot flag but lacks REQUIRE/PREFER VBS flags; the inspected
+new upstream generation has them under a different module layout. ST-W01's
+source freeze must inventory the actual required symbols, selected published
+package/checksum/source/features and SDK/metadata provenance. Choose a compatible
+binding or narrow reviewed generation before dependent implementation; do not
+copy unverified constants, silently mix projection generations or treat source
+presence as a supported Windows build. Microsoft's VBS-flag prerelease notice
+and REQUIRE/PREFER distinction remain part of that evidence.
+
+The [existing storage task §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
+separates source coverage, target compilation and later ST-W04 actual-key/native
+qualification. The first card is source-only and does not resume the storage
+experiment. Reuse CNG and file APIs while retaining authenticated-record,
+ownership, resource and uncertain-outcome contracts. If a concrete registry
+consumer warrants `windows-registry`, independently retain DACL/access and
+value-allocation bounds; its transactions do not replace cross-resource recovery
+or relocate authoritative state. No new storage dependency/backend is adopted.
+
 | Failure class | Treatment |
 | --- | --- |
 | Qualified VBS unavailable/off/unsupported result in an authorized fresh optional epoch | Policy may admit fresh TPM or NoPersistentCache, with actual mode/reason. |

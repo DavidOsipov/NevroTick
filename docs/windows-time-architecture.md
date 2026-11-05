@@ -3095,6 +3095,61 @@ A bounded synchronous-worker design or native readiness loop is a credible alter
 
 Qualify one representative Tokio slice first, following the existing phase boundaries and CHECK-21/26/27: measure section 17 resources with the actual feature graph and security settings; exercise stalled DNS/certificate work, saturated native-job admission, reconnects and stop while observing control responsiveness and timestamp placement. Reconsider the runtime only for a demonstrated budget miss, unresolved platform/security/lifecycle incompatibility, or evidence that a direct design materially reduces complexity while satisfying the same contracts. Compare equivalent workloads if such a problem warrants an alternative; two complete engines are not a prerequisite. Existing later integration/soak gates remain, and this adds no blocker or live behavior to UI-M0.
 
+#### 18.6.2 Windows component reuse and binding coverage
+
+**Source review integrated 5 November 2026.** The inspected NevroTick baseline
+`e82f3f6b352fde88beceece4d3084862d8778338` already uses `windows-sys` 0.61.2 in
+the native UI and plans the Windows projections above. Preserve that reuse and
+section 3.4's narrow role-specific adapters. Generated ABI declarations, typed
+COM/WinRT projections and suitable focused wrappers remove routine interop work;
+authorization, bounded input, actual native completion, recovery and product
+state remain with their existing owners. No general Windows framework or new
+runtime dependency is selected by this review. [S132–S136]
+
+Keep upstream source, published package and admitted product graph separate.
+The reviewed Microsoft source is `276aec3bebe45c63d9d64ff18134ba6c7f7d279a`;
+the inspected crates.io index is `12b557a3fe84361740ee09a3cac32bd447afd53d`.
+At that snapshot `windows-sys` ends at published 0.61.2, although upstream
+manifests describe a newer generation. `windows-pickers` has only the empty
+0.0.0 package in the index; its useful upstream API is not an admitted published
+dependency. Focused `windows-registry`, `windows-window`, `windows-threading`,
+`windows-time`, `windows-version`, `windows-services` and `windows-reactor`
+0.100.0 are published candidates, not automatic upgrades. The Reactor registry
+dependency list already differs from current upstream. Verify the selected
+archive/checksum/source/features rather than importing examples from main.
+The focused candidates' declared Rust 1.95 minimum fits the current workspace's
+1.99 floor; this establishes no target, licence or runtime qualification. [S132]
+
+| Existing owner or candidate | Reuse disposition and remaining contract |
+| --- | --- |
+| Clock, SCM, IPC, IP Helper/Winsock/DNS, mitigation, files and diagnostic adapters | Use the selected generated Windows APIs and compatible wrapper first. Retain resource-specific destructors, actual error results, callback/thread ownership, exact rights and bounded completion. The [W11 reuse map](plans/windows11-integration-follow-up.md#windows-component-reuse-at-the-adapter-boundary) assigns existing W11/CHECK owners; bindings do not replace domain/protocol algorithms, network-path policy or protected-state recovery. |
+| Service hosting | Retain the preferred Mullvad `windows-service` experiment and Microsoft plural `windows-services` hold above. The inspected Microsoft source still discards `SetServiceStatus` failure, hides checkpoint/wait-hint/exit-code control and automatically reports Running/Stopped after callbacks. Extended controls exist, but a callback returning `()` cannot return every native handler result. This is API fit, not a demonstrated vulnerability; do not duplicate SCM dispatchers. [S71, S133] |
+| `windows-registry` | Conditional candidate when a concrete settings/state adapter is reached. Owned keys, typed values and access options can remove boilerplate. Project DACL/path policy and bounded allocation remain explicit: inspected variable-size getters allocate from the reported value size, and default creation requests read/write. Registry transactions do not atomically cover files or service effects. Do not add a registry layer without a consumer. [S133] |
+| `windows-window` | Conditional comparison for top-level window/message-loop plumbing only; it is not a control/layout toolkit. Retain current Win32 UI. NevroTick distinguishes `GetMessageW` error `-1`, quit `0` and messages; the inspected upstream `run()` uses a boolean conversion and returns `()`, and destruction errors are not returned by `Drop`. Require equivalent lifecycle/error observability before replacement. This source observation is not a reproduced runtime failure. [S133] |
+| `windows-reactor` | Deferred toolkit alternative only for a demonstrated UI maintenance/resource need and a separately scoped comparison. Current upstream calls it a preview and requires Windows App Runtime. Compare an equivalent representative fixture, startup/private memory/idle/handles, keyboard/Narrator/UIA, final MSIX payload and UI mitigation compatibility. The closed egui result does not measure Reactor. No toolkit selection, runtime bundling or UI-M0 expansion follows. [S134] |
+| `windows-pickers` | Recheck a real published release when S5.3 export needs a picker; current useful API remains source-only in this review. Standard OS dialogs are reusable, but returned paths still need ordinary-UI file handling, cancellation/error distinction and safe bounds. Never turn a selected filename into an arbitrary privileged service write. [S134] |
+| `windows-threading` / `windows-future` | Conditional implementation helpers, not replacements for the selected engine runtime. A pool thread limit does not bound accepted work; waits do not establish a finite shutdown deadline. WinRT async projection is not an executor, and cancellation need not terminate the running closure/native operation. Preserve section 17.1 custody and section 18.6.1's Tokio decision. [S136] |
+| `windows-time`, `windows-collections`, `windows-version` | Use only at a concrete WinRT/diagnostic boundary. WinRT 100-ns date/duration values do not replace checked UTC/monotonic/active-time or NTP types and OD-10 proofs; collection projections do not replace internal bounded storage. A version query is diagnostic context, not proof of API/policy/hardware support. [S136] |
+| `windows-bindgen` | Conditional way to generate a small missing private ABI surface from pinned metadata. First establish the exact gap; keep generator/metadata/output provenance and compatible types. No blanket regeneration of working imports or generator execution on every consumer build is required. [S132, S136] |
+
+**VBS binding gap:** the release-associated `windows` 0.62.2 cryptography module
+at `32c3144490c016fe496a0aed769bce60987a2e9d` contains
+`NCRYPT_USE_PER_BOOT_KEY_FLAG` but lacks `NCRYPT_REQUIRE_VBS_FLAG` and
+`NCRYPT_PREFER_VBS_FLAG`; the reviewed new header-based `Win32/ncrypt` module
+contains both. Do not assume main's namespaces or symbols exist in the selected
+published projection. ST-W01/ST-W04 and CHECK-26 own a compatible binding/SDK
+choice before dependent storage implementation; supported actual-key behavior
+still needs its existing native evidence. REQUIRE and PREFER retain different
+fallback semantics, and Microsoft's VBS-flag prerelease notice remains material.
+This closes a documentation inventory gap, not the implementation/OS gate. [S135]
+
+Apply the [development-plan handoff](plans/development-plan.md#44-apply-windows-component-reuse)
+at each existing consumer's entry. Preserve Rustls/CNG and Schannel dispositions,
+the selected storage fallback, Core priority, Windows/fuzz/storage holds and
+UI-M0 D1–D3 deferrals. Candidate evaluation creates no new global release blocker
+and does not schedule every alternative. Record measured savings only after a
+bounded comparison; no percentage or performance improvement is established here.
+
 ### 18.7 TLS, NTS and Windows trust decisions
 
 #### 18.7.1 License gate and finite provider choice
@@ -3958,6 +4013,16 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S130 - HTTP proxy transport distinction, checked 5 November 2026.** [RFC 9110 §9.3.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.6) describes CONNECT tunnelling; [RFC 9298](https://www.rfc-editor.org/rfc/rfc9298.html) separately specifies proxying UDP in HTTP. Browser HTTP-proxy configuration does not establish an NTP UDP path; no HTTP proxy dependency or CONNECT-UDP implementation is selected here.
 
 - **S131 - Interactive proxy settings versus service context, checked 5 November 2026.** Microsoft [WinHttpGetIEProxyConfigForCurrentUser](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpgetieproxyconfigforcurrentuser) describes current-user/current-connection settings and the service impersonation caveat. This is evidence against assuming the logged-in browser's settings or credentials apply to the engine, not a recommendation to impersonate a user or add WinHTTP to the time transport.
+
+- **S132 - Windows component and publication snapshot, checked 5 November 2026.** [Microsoft focused-crate guidance](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/docs/readme.md); immutable crates.io-index entries for [windows-sys](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-sys), [windows-registry](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-registry), [windows-window](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-window), [windows-threading](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-threading), [windows-time](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-time), [windows-version](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-version), [windows-services](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-services) and [windows-reactor](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-reactor). Registry metadata proves the recorded publication/checksum/dependency declarations, not archive parity, runtime behavior or admission of a new product graph.
+
+- **S133 - Focused wrapper contracts, checked 5 November 2026.** Microsoft [registry key ownership/read allocation](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/registry/src/key.rs), [registry access options](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/registry/src/open_options.rs), [window scope](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/window/readme.md), [window loop/lifetime](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/window/src/window.rs), [service status/control source](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/services/src/lib.rs), and official [GetMessageW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessagew), [SetServiceStatus](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-setservicestatus) and [HandlerEx](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex) contracts. Source suitability findings are not reproduced vulnerabilities; qualify the selected release itself.
+
+- **S134 - UI candidates and release limits, checked 5 November 2026.** [Reactor preview/runtime contract](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/reactor/readme.md), [runtime staging](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/reactor-setup/readme.md), [picker source contract](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/pickers/readme.md) and [picker registry entry containing only 0.0.0](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-pickers). Recheck publication and exact package behavior at the consumer trigger; examples on main are not an available Cargo release or a NevroTick toolkit decision.
+
+- **S135 - VBS binding-generation coverage, checked 5 November 2026.** [windows 0.62.2 release-associated cryptography projection](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/windows/src/Windows/Win32/Security/Cryptography/mod.rs), [new ncrypt projection](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/windows/src/Windows/Win32/ncrypt/mod.rs) and [NCryptCreatePersistedKey flag semantics/prerelease notice](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreatepersistedkey). Symbol presence, target-build support and protection of the actual key are separate evidence.
+
+- **S136 - Windows interop helper boundaries, checked 5 November 2026.** Microsoft [thread-pool guidance](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/threading/readme.md), [WinRT futures](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/future/readme.md), [time values](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/time/readme.md), [collections](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/collections/readme.md), [version queries](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/version/readme.md) and [private binding generation](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/bindgen/readme.md). Each applies only at its selected boundary; none establishes portable-core proof, bounded production scheduling or native capability by itself.
 
 ## Appendix B. Worksheet attribution and use
 

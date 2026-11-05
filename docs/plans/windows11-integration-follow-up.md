@@ -528,6 +528,35 @@ APIs/DO flags do not replace the selected local DNSSEC validator. No value was
 established for direct TSC access, generic COM infrastructure, an automatic service
 restart controller, broad SCM/ETW group access or global timer/offload changes.
 
+### Windows component reuse at the adapter boundary
+
+**5 November 2026 source-only integration.** Apply the dated
+[architecture register and pinned sources S132–S136](../windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+inside existing assignments. `windows`/`windows-sys` already supply the planned
+ABI surface; suitable focused wrappers can remove routine code. The narrow
+product adapter remains responsible for current authority, bounds, effects and
+real completion. No dependency, wrapper, toolkit or native result is selected
+by the map below.
+
+| Existing consumer / owner | Reusable Windows surface | Retained product contract |
+| --- | --- | --- |
+| W11-W01, S2.1; acquisition/platform | IP Helper adapter/route queries and notifications; Winsock interface options and packet timestamp APIs | Local configuration versus destination reachability, network generations, callback/buffer lifetime, timestamp provenance and actual completion. Keep the chosen Tokio orchestration. |
+| W11-W02, S0.4/P4; clock/platform | Precise UTC, QPC, active-time and adjustment APIs | Clock-domain mapping, finite authorised correction, delivered-effect accounting and recovery; no general time-type replacement. |
+| W11-W03; future DNS/platform | Native DNS queries and interface DNS settings | NRPT/VPN policy, query completion, exact owned field restoration and independent DoQ/DNSSEC/cache contracts. |
+| W11-W04/05, S0.2/S0.3/P3; platform/IPC/security | SCM, token, named-pipe, overlapped-I/O and process-mitigation APIs | Actual token/ACL and peer proof, state transitions, callback/control errors, cancellation custody and effective protections. Retain Mullvad prototype and Microsoft plural service hold. |
+| W11-W08, S3.4/S5.3; diagnostics/UI | ETW/Event Log and qualified emitter | Bounded typed/redacted events, authorised DEBUG expiry and required-event routing; tracing is not authoritative state. |
+| ST-W01/03/04 and W11-W05; storage/lifecycle | NCrypt/CNG, protected file operations, conditional registry wrapper | VBS symbol/version coverage, actual key protection, directory/ACL/size limits and uncertain publication/recovery. Registry transactions do not cover service or file effects. |
+| W11-W09, S0.5/P5; UI | Existing common controls and conditional window/Reactor/picker helpers | Preserve lifecycle/error observation and UI-M0 deferrals; compare runtime/package/accessibility/resource cost only at the separately scoped trigger. |
+
+Before its next dependent adapter, record the exact operation -> selected
+published crate/API/features/SDK symbols -> remaining invariant owner -> valid
+and failing observation. Review the selected artifact rather than borrowing
+current main's namespaces; wrapper support is not target-build support.
+[W11 task §4.29](../../tasks/windows11-integration.md#429-windows-component-reuse-routing--5-november-2026)
+owns that handoff, and [storage §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
+owns the specific VBS coverage gap. Existing CHECK-26/27 and per-surface checks,
+Core priority and all native/fuzz/storage holds remain in force.
+
 ## 8. Primary sources
 
 Retrieved through Windows Learn MCP during the 3 November 2026 investigation.

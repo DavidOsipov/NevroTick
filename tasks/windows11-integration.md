@@ -2267,3 +2267,39 @@ controls. Native binding, controlled proxy compatibility, resolver/verifier egre
 service credentials and independent plan review remain unexecuted. Preserve the
 current development §7 proof continuation, first fixed-peer measurement, provider,
 storage and Windows execution gates and UI-M0 deferrals.
+
+### 4.29 Windows component reuse routing — 5 November 2026
+
+**Scope/status:** completed source comparison recorded against NevroTick
+`e82f3f6b352fde88beceece4d3084862d8778338`; integration into the plan supplies
+no build/native/provider/package pass. Use the
+[canonical reuse register and source pins](../docs/windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+and [W11 adapter map](../docs/plans/windows11-integration-follow-up.md#windows-component-reuse-at-the-adapter-boundary).
+The existing UI already uses `windows-sys`; the role-specific production adapters
+remain planned. No W11-W11, second dispatcher or general Windows manager is added.
+
+**Next action at the existing consumer's entry:** its platform/dependency owner
+records operation and caller -> selected published crate/API/version/checksum/
+source/features/SDK symbols -> resource/error/authority/completion obligations
+still enforced by NevroTick -> independent legal/refused observation. Reuse that
+card while its relevant candidate is unchanged. Check archive/source parity and
+type-generation compatibility before executing dependency or generator inputs.
+Publication, target compilation and runtime capability stay separate evidence.
+
+| Existing assignment / consumer | Required reuse disposition before dependent implementation |
+| --- | --- |
+| W11-W01, S2.1 | Reuse IP Helper/Winsock for local family/route/interface observations and timestamps; retain destination-specific success, network generation, ancillary bounds and actual I/O completion. No engine-runtime rewrite. |
+| W11-W02, S0.4/P4 | Reuse clock APIs; retain unit/domain mapping, current broker permission and acknowledged/uncertain correction outcomes. |
+| W11-W03 | Reuse selected DNS query/settings APIs; preserve NRPT/private-name policy, cancellation ownership and exact restoration, with future DoQ/DNSSEC remaining separate. |
+| W11-W04/05, S0.2/S0.3/P3 | Retain SCM/token/pipe/mitigation bindings and Mullvad service candidate. Microsoft plural `windows-services` stays held for status-error/progress/automatic-transition mismatches; extended controls exist. Qualify the actual wrapper lifetime and one lifecycle owner. |
+| W11-W08, S3.4/S5.3 | Reuse Event Log/ETW or the admitted emitter; retain event/redaction/budget/authorisation policy and required sinks. |
+| W11-W05 with ST-W01/03/04 | Preserve filesystem recovery and exact native rights. The [storage coverage card](windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026) owns the VBS-symbol gap and conditional registry-wrapper constraints. |
+| W11-W09, S0.5/P5 | Follow [UI reuse](ui-m0.md#windows-component-reuse-handoff--5-november-2026) and [conditional toolkit evaluation](s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026); select no new runtime or picker from main-only examples. |
+
+**Exit:** the next selected adapter has complete source/API coverage, a named
+product invariant owner and an observable valid/failure pair. CHECK-26/27 and
+the assignment's existing CHECK/ST-T cases remain the actual admission gates.
+Native controls must preserve genuine errors, denied rights, reentrancy/late
+completion and legitimate progress; source signatures or library branding alone
+cannot close them. Keep Core priority, Windows stop, separate fuzz no-retry hold,
+storage pause, UI-M0 deferrals and selected complete-MSIX provisioning authority.

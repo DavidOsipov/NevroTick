@@ -50,6 +50,16 @@ parents; it creates no second execution sequence.
 
 ## Retained research dispositions
 
+The [Windows component reuse handoff](../docs/plans/development-plan.md#44-apply-windows-component-reuse)
+is routed through the [existing-stage backlog](development-backlog.md#windows-component-reuse-at-existing-stage-entry),
+[W11 §4.29](windows11-integration.md#429-windows-component-reuse-routing--5-november-2026),
+[storage §6.7](windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
+and [UI handoff](ui-m0.md#windows-component-reuse-handoff--5-november-2026).
+It records generated API reuse, the VBS binding gap and conditional registry/UI
+candidates. Publication/source coverage does not admit a dependency, activate a
+native experiment or reopen the closed egui comparison; current holds and Core
+priority remain with plan §7.
+
 | Source / record | Disposition and re-entry owner |
 | --- | --- |
 | [Win32/egui comparison](../docs/supporting-reviews/ui-toolkit-comparison.md), [task](s0.5-ui-comparison.md) | Closed; retain Win32 and resource limits. A new renderer experiment needs its own explicit scope; this is not an unfinished UI task. |

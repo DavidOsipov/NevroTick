@@ -297,6 +297,37 @@ Hifitime/SOFARS dependency, saturation policy, live provider, astronomical scope
 new verifier mode or CI gate is selected. UI-M0 deferrals and native qualification
 remain unchanged.
 
+### 4.4 Apply Windows component reuse
+
+**5 November 2026 documentation integration:** use the source-bound
+[architecture reuse register](../windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+and [Windows admission rules](../windows-time-development-hardening.md#711-windows-api-and-wrapper-admission).
+The current UI already uses `windows-sys`; broader Windows adapters remain
+planned. Keep the selected Win32 UI, engine Tokio route, service-wrapper
+dispositions and portable domain/protocol owners. This handoff refines existing
+work, selects no dependency/toolkit and changes no current Core next task or hold.
+
+Before a dependent adapter is implemented, its owner records one small mapping:
+operation -> selected published crate/API/features and source -> remaining
+NevroTick invariants -> independent valid/failure observation -> disposition.
+Source presence, publication/archive parity, target build and native behavior
+remain separate evidence. Reuse qualified mappings when unchanged; do not
+restart a repository-wide library survey for each slice.
+
+| Existing consumer / owner | Next bounded action and trigger | Observable exit / disposition |
+| --- | --- | --- |
+| S0.2/S0.3, P2–P4; W11 platform/IPC/network/clock owners | At the next dependent adapter, consume [W11 task §4.29](../../tasks/windows11-integration.md#429-windows-component-reuse-routing--5-november-2026). Map generated APIs and compatible wrappers before considering handwritten bindings. | Exact API/type/error/lifetime coverage and remaining product owner are explicit; CHECK-26/27 admission and the relevant native CHECK remain open until exercised. Microsoft plural services stays held; Mullvad stays a candidate. |
+| ST-W01/ST-W04; storage/dependency/security | Before the VBS-dependent construction/provider freeze, resolve the absent REQUIRE/PREFER flags in the planned 0.62.2 projection via [storage task §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026). | Source/API coverage card identifies compatible published binding or bounded pinned generation, then separate actual-key/native support evidence; no silent software fallback, probe execution or storage-pause release. |
+| Concrete registry consumer; platform or UI owner | Compare `windows-registry` only when that existing settings/state slice needs it. | A smaller admitted adapter preserves access/DACL, value-size bounds and recoverable effects; otherwise retain the narrow current-binding approach. No generic registry layer is scheduled. |
+| S0.5/P5; UI/dependency/accessibility | Follow [the conditional toolkit record](../../tasks/s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026) only for a demonstrated maintenance/resource need and separately scoped comparison. | Measured equivalent fixture, error/lifecycle behavior, accessibility, runtime/MSIX and mitigation evidence supports retain/adopt/defer; no automatic Reactor/window migration or reopening of the closed egui experiment. |
+| S5.3; UI/diagnostics | At export implementation, use [UI reuse handoff](../../tasks/ui-m0.md#windows-component-reuse-handoff--5-november-2026) and recheck actual `windows-pickers` publication. | Selected ordinary-UI picker preserves cancellation/errors, redaction and safe bounded writes; the reviewed placeholder release provides no implementation evidence. |
+
+The [grouped backlog](../../tasks/development-backlog.md#windows-component-reuse-at-existing-stage-entry)
+retains these entry conditions. Windows/fuzz/storage execution holds and UI-M0
+D1–D3 deferrals remain separate. Existing CHECK-21/22/26/27 and ST-T owners
+supply checks at the selected boundary; optional candidates are not first-release
+blockers. No saving in time, memory or binary size is claimed before measurement.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading
@@ -1724,6 +1755,37 @@ tests, dependency installation or native qualification. Verdict: **ready for
 S0.1/R-01 and S1.1 preparation under the subsequent task instruction**; later
 graph, policy, Windows, UI, package and release gates remain open. Revalidate the
 affected review conclusions if their source, contract, skill or phase scope changes.
+
+### Windows component reuse integration — 5 November 2026
+
+David requested integration of the completed Windows-rs source/API review into
+the maintained documents, development plan, backlog and existing tasks. Baseline:
+`e82f3f6b352fde88beceece4d3084862d8778338`. The 34 locally materialised source
+files were matched to their GitHub blob identities before editing; this work used
+a pinned GitHub snapshot rather than a native Windows checkout.
+
+The documentation delta preserves Win32, the engine-only Tokio arrangement,
+Mullvad/Microsoft service-wrapper dispositions, TLS/provider gates, storage
+policy, all execution holds and current Core priority. It adds the conditional
+reuse map, release-versus-main distinctions, concrete VBS symbol-coverage work
+and existing-stage UI/registry triggers. No Cargo/source/skill/CI change, native
+experiment or dependency admission is part of this request.
+
+The earlier source review completed its three bounded Windows-services,
+network/storage and upstream-library passes. A fresh documentation reviewer
+`reuse_docs_review` was requested with `fork_turns: none` for the integrated
+12-file candidate. **Status: not run**; the tool returned
+`Agent errored: Codex ran out of room in the model's context window.`
+It supplied no comprehension or findings, so no independent documentation pass
+is claimed. The coordinator's own diff/source/decision reconciliation is separate
+evidence; later selected dependencies and native slices retain their review gates.
+
+Documentation checks cover the final changed-path inventory, added relative
+links/heading anchors and S132–S136 source identities, plus whitespace diagnostics.
+The baseline has no `docs/SHA256SUMS.txt`; no maintained-bundle checksum pass is
+claimed. Archived design manifests and their covered files are unchanged. Commit
+publication must preserve unrelated remote paths and compare the final changed
+Git blob identities before moving the branch with an expected-head lease.
 
 ### Documentation reconciliation — 3 November 2026
 

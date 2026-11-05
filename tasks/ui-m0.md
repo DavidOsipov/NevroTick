@@ -102,6 +102,37 @@ widget or M0 pass. UI-M0 retains deterministic fixtures, no live probes/settings
 effects and its existing D1–D3 deferrals. No HTML prototype or branding asset was
 changed by this documentation amendment.
 
+## Windows component reuse handoff — 5 November 2026
+
+**Source-only continuation:** read
+[architecture §18.6.2](../docs/windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage).
+The inspected UI at `e82f3f6b352fde88beceece4d3084862d8778338` already uses
+`windows-sys` 0.61.2. Keep its current Win32 adapter and M0-07/M0-08 lifecycle
+contract. `windows-window` covers the top-level window/loop, not controls or
+layout; its inspected `run()` does not expose the `GetMessageW` -1 error branch
+that this adapter distinguishes. This is a source-fit concern, not a reproduced
+crash or permission to replace/refactor the current UI.
+
+Before a later window-wrapper replacement, the UI owner must show a concrete
+maintenance benefit and preserve error/quit/message distinctions, borrowed HWND
+and callback state through destruction/reentrancy, close-versus-tray behavior
+and relevant USER/GDI/handle observations. Follow
+[the conditional toolkit record](s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026)
+for any separately scoped Reactor experiment; no renderer or runtime is adopted.
+
+At S5.3/F-09 export implementation, the UI/dependency owner first rechecks a
+working published picker package and its exact source/graph. The inspected
+`windows-pickers` index contains only 0.0.0; useful API in main does not qualify
+a Cargo dependency. A selected OS dialog must preserve cancellation versus
+failure, UI-thread/apartment/owner lifetime and bounded ordinary-UI output.
+Pair a valid redacted export with cancellation, denied/unavailable destination
+and stale/replaced-path cases; never forward a caller-selected filename to a
+privileged writer. The dialog's returned path is not an already opened safe file.
+
+**Disposition:** deferred at existing S0.5/P5 triggers and CHECK-17/21/22/26/27
+owners. No new UI-M0 acceptance, live export/persistence, dependency or native
+experiment is introduced; D1/D2/D3 and current execution holds remain intact.
+
 ## Implementation and evidence
 
 The one-member workspace contains `nevrotick-ui` and its private checked preview
