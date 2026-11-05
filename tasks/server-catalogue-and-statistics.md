@@ -34,6 +34,13 @@ recovery in RAM. Reuse those facts and the single engine Q writer for separately
 enabled descriptive DATA-16/17 history. Do not create a parallel network cache,
 history database, per-poll durable write or new allowance.
 
+[OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+keeps direct-path reuse in current acquisition work and moves proxy-specific
+portions to [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition), beyond
+first Windows delivery. The limited future subset still reuses these owners and
+requires no proxy credential store. This changes no Q format decision or live
+acquisition dependency.
+
 The next Q0/Q-J comparison retains its frozen recipe and open prerequisites;
 network acquisition does not wait for that format choice or future DNS storage.
 Before any later path-hint persistence, extend the same schema/compatibility and

@@ -476,27 +476,35 @@ the first fixed-peer measurement or a new prerequisite for the proof-first queue
 
 The [network-profile continuation](../../tasks/engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026)
 adds observed upstream reachability, successful-path reuse, explicit adapter/family
-policy and the proposed manual SOCKS5 TCP/UDP route. Freeze cache/cooldown/hysteresis
-and cross-leg policy before dependent S2.1/S2.2 work; preserve current proof and
-provider gates. Route native binding/service behavior through the existing
+policy. Under [OD-11](../nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+first Windows delivery uses Direct; the proposed SOCKS5 TCP/UDP route and all
+proxy-specific controls/checks move to [SOCKS-0](../../ROADMAP.md#socks-0--optional-socks5-time-acquisition),
+beyond P0–P7. Freeze direct/shared cache, cooldown, hysteresis and policy before
+dependent S2.1/S2.2 work; proxy qualification is not their prerequisite. Preserve
+current proof and provider gates. Route native binding/service behavior through the
+existing
 [Windows task](../../tasks/windows11-integration.md#428-explicit-network-profile-qualification--5-november-2026),
 and full-product controls through [feature §3.3.1](../windows-time-features.md#331-time-network-settings--5-november-2026)
 and the [UI re-entry note](../../tasks/ui-m0.md#network-settings-handoff--5-november-2026).
 The documented profile is unimplemented. The
 [incoming-coordinator review and corrections](../../tasks/engine-transport-pilot.md#incoming-coordinator-review-and-corrections--5-november-2026)
 record the completed source review, its context limits and three native review
-dispatches that remained NOT RUN. Native proxy/resolver/secret checks and dependent
-implementation qualification remain outstanding. This does not replace §7's current
-public-constructor proof continuation or expand the first fixed-peer measurement.
+dispatches that remained NOT RUN. Dependent implementation qualification remains
+outstanding; the later [SOCKS5 disposition](../../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+records the reduced future subset and its unexecuted proxy/native checks. This
+does not replace §7's current public-constructor proof continuation or expand the
+first fixed-peer measurement.
 
 The [storage reconciliation](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
 reuses DATA-06 policy, DATA-08/09 context, DATA-10 outcomes and DATA-17 scheduler
 RAM. Optional path history remains with the
 [existing Q0/Q-J owner](../../tasks/server-catalogue-and-statistics.md#network-path-reuse-handoff--5-november-2026),
-without a new database or live-acquisition dependency. Conditional proxy
-credentials enter the existing ST-W01 purpose/reader/recovery freeze; its NTS/DNS
-cache matrix does not already admit them. The engine's PATH-15–20 cover history
-failure/restart, boundedness, secret purpose, policy cutover and reset races.
+without a new database or live-acquisition dependency. Only a later authenticated
+SOCKS5 extension enters the existing ST-W01 purpose/reader/recovery freeze; neither
+Direct nor the first future no-authentication subset needs a proxy secret purpose.
+The NTS/DNS cache matrix does not already admit proxy credentials. The engine's
+PATH-15–20 cover history failure/restart, boundedness, secret purpose, policy
+cutover and reset races.
 Their checks remain planned; native/storage holds and current proof priority stand.
 
 The existing [protocol comparison follow-up](../../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up)

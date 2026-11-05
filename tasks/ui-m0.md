@@ -76,6 +76,13 @@ The disposable service/clock/MSI laboratory remains a later prerequisite.
 Before real settings/P5 re-entry, consume the planned
 [Network connection controls](../docs/windows-time-features.md#331-time-network-settings--5-november-2026)
 and the engine's [network-profile card](engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026).
+Under [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+first Windows delivery exposes Direct interface/family controls. Every proxy
+control and proxy-specific case below is deferred to
+[SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition); authentication
+and proxy DNS require later extensions beyond its first loopback/no-auth/local-DNS
+subset. Do not enable a proxy editor or discard unsupported imported proxy state
+into Direct. These cases are future acceptance, not new UI-M0/P5 blockers.
 Provide a reachable Settings entry and source-detail link; preserve requested
 versus effective state, hard versus preferred family policy, direct/proxy leg
 labels, resolver choice and unavailable-adapter/UDP-relay remedies. A local
