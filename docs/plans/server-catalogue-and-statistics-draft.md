@@ -326,6 +326,17 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 
 **Sensitivity/lifetime:** local operational state. Path-specific degradation should not automatically become a global operator ban; an adopted conflict policy may require DATA-18/21's stronger durable rule. Defaults for never-seen and insufficiently sampled sources must avoid both permanent starvation and unjustified trust. Deleting quality history may reset disposable preference but cannot clear explicit revocation, pins or a quarantine required by the adopted security policy. Reputation pruning/reweighting of a Khronos random population changes the sampling assumptions and needs separate analysis before use. Sources: time-assurance §5.1 and §7; [RFC 9523](https://www.rfc-editor.org/rfc/rfc9523.html).
 
+**Network-path refinement, 5 November 2026:** [architecture §7.3](../windows-time-architecture.md#observed-path-history-and-user-network-policy)
+uses this same scheduler state for successful IPv4/IPv6/direct/proxy path reuse,
+stage-specific penalties and bounded recovery. Its context comes from DATA-08/09,
+its outcomes from DATA-10, and its authorized profile from DATA-06. Apply the
+[§12.1.3 allocation](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners):
+initial hints are volatile RAM; optional summaries/restart hints belong to Q only
+after its existing qualification. This is not a second reachability/reputation
+database or a duplicate resolver cache. Current retry/security guards survive
+hint eviction. A Q record cannot recreate current eligibility, a monotonic deadline
+in a new incarnation, full authentication or an independent source vote.
+
 ### DATA-18 — Sparse evidence and unresolved security conflicts
 
 **Class:** Optional diagnostic detail plus conditional safety state for a separately frozen conflict/quarantine rule. The time-assurance design requires conflict preservation across branch changes and timeouts; its restart/persistence and clearance contract remains TA-W02 work. **Producer:** verifying/evidence-policy owner. **Consumers:** that owner, authorized investigation and bounded redacted status. **Sensitivity:** security-sensitive and potentially private.
@@ -397,6 +408,13 @@ does not construct authenticated evidence or make RGT-0 a current prerequisite.
 **Lifetime and recovery:** secret retention is minimized and separately bounded; historical cookie/key copies are not a reliability dataset. Cached secrets do not make measurements fresh, and cookie renewal, protected UDP traffic or resumed TLS cannot renew the original full-authentication age. Restoring an association never restores an outstanding exchange or reuses its request identity; new queries require fresh protocol correlation. Exact lifetime limits remain OPEN-8 work. The current preferred optional-protection research is VBS, then separately qualified TPM, then no persistent cache where allowed; no automatic DPAPI/software/plaintext fallback is adopted. Storage protection, rollback resistance and whole-process memory protection are different claims. Sources: architecture §§7.4 and 12.1.2; [protected-storage plan](windows-protected-storage.md).
 
 The protected-storage plan separately covers future DNS demand/history snapshots, their authentication, independently admitted keys, privacy generations and forget/retirement barriers. Calling those values “statistics” does not permit moving them into an ordinary time-source quality store, sharing their keys, or dropping their existing controls. DATA-16 proposes only nonsecret time-source quality history; it does not replace the DNS store's contract.
+
+The [network-profile refinement](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
+also proposes proxy credentials conditionally. They are **not** implicitly added
+to this NTS restart allowlist or the DNS snapshot. The existing protected-storage
+task must freeze a separate purpose, authorized input/readers, credential revision,
+replacement and unavailable-secret behavior before support. DATA-06 carries only
+a bounded opaque reference; C/Q/H/U, logs and the broker hold no credential value.
 
 ### DATA-23 — Logs, UI/status projections and authorized support exports
 

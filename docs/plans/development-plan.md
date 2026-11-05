@@ -486,6 +486,16 @@ The documented profile is unimplemented; its independent review and named native
 proxy/resolver/secret checks remain outstanding. This does not replace §7's current
 public-constructor proof continuation or expand the first fixed-peer measurement.
 
+The [storage reconciliation](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
+reuses DATA-06 policy, DATA-08/09 context, DATA-10 outcomes and DATA-17 scheduler
+RAM. Optional path history remains with the
+[existing Q0/Q-J owner](../../tasks/server-catalogue-and-statistics.md#network-path-reuse-handoff--5-november-2026),
+without a new database or live-acquisition dependency. Conditional proxy
+credentials enter the existing ST-W01 purpose/reader/recovery freeze; its NTS/DNS
+cache matrix does not already admit them. The engine's PATH-15–20 cover history
+failure/restart, boundedness, secret purpose, policy cutover and reset races.
+Their checks remain planned; native/storage holds and current proof priority stand.
+
 The existing [protocol comparison follow-up](../../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up)
 owns the RFC 8915 alignment checklist and completed
 [KoD source-to-scheduler review](../../tasks/s0.1-protocol-comparison.md#kod-source-to-scheduler-review).

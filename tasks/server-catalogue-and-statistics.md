@@ -24,6 +24,26 @@ The original continuation baseline was commit `d6bb2bdcd2145950586407698490b61d9
 
 UI receives bounded projections; it does not open the database. Quality history cannot authenticate a server, authorize a correction, clear mandatory state or renew full NTS authentication age.
 
+### Network-path reuse handoff — 5 November 2026
+
+Use [architecture §12.1.3](../docs/windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
+and the existing [engine network card](engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026)
+before integrating learned interface/family/proxy paths. DATA-08/09 owns context;
+DATA-10 owns stage/attempt identity; DATA-17 owns current ordering, penalty and
+recovery in RAM. Reuse those facts and the single engine Q writer for separately
+enabled descriptive DATA-16/17 history. Do not create a parallel network cache,
+history database, per-poll durable write or new allowance.
+
+The next Q0/Q-J comparison retains its frozen recipe and open prerequisites;
+network acquisition does not wait for that format choice or future DNS storage.
+Before any later path-hint persistence, extend the same schema/compatibility and
+whole-family accounting with context cardinality, qualified age, duplicates,
+reset/late-writer behavior and missing/corrupt history controls. A warm eligible
+RAM path must continue when optional Q is blocked, full or unavailable; history
+loss records a gap, not a failed server. Restarted hints cannot restore deadlines,
+current authentication, mandatory restrictions or consumed budgets. No benchmark,
+storage integration or runtime implementation is claimed by this handoff.
+
 ## 3. Next bounded preparation
 
 This section retains the Q0/Q-J statistical-store preparation. The

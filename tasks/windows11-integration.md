@@ -2244,6 +2244,17 @@ uncertainty. A loopback proxy may be per-user and vanish at logout; selecting a
 physical adapter cannot control that process's onward route. Browser proxy
 settings, credentials and DNS behavior are not implicitly inherited by a service.
 
+Reuse the [existing state allocation](../docs/windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners),
+not a native-adapter-owned database. Current interface/source observations and
+generations feed the engine owner; persisted policy stores stable identity, not
+a reusable live interface index. Qualify PATH-19's policy cutover with actual
+outstanding sends, resolution/verifier jobs and proxy-control lifetime. A saved
+revision, cancellation request or completed waiter is not effective-profile
+evidence; late native completion retains its resource charge and cannot publish
+as current. Already submitted remote/OS traffic is outside any recall claim.
+The existing ST-W01/02/03/04/06/07 owners qualify a conditional proxy credential's
+separate purpose, service readers and lifecycle; no new secret backend or path.
+
 **Disposition:** source-backed planning only. CHECK-2/6/8/9/12/14/17/21/25/27 and
 AC-21/22 retain their existing evidence owners; the engine card supplies paired
 controls. Native binding, controlled proxy compatibility, resolver/verifier egress,

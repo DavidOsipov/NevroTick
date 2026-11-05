@@ -80,6 +80,18 @@ Only load the leaves needed by that item's changed guarantee.
 
 ## 2. Next source-only assignment
 
+**5 November proxy-credential scope:** consume the
+[conditional-purpose handoff](../docs/plans/windows-protected-storage.md#2-owners-data-classes-and-restoration)
+when ST-W01 reaches authenticated proxy support. Reuse the existing engine storage
+manager; freeze purpose/key/epoch isolation, bounded credential references,
+authorized input/readers, replacement and missing-secret behavior before enabling
+it. The NTS/DNS allowlists and continuation matrix do not already qualify this
+purpose. Map malformed/old/wrong-purpose state, unavailable root, partial replace,
+unattended restart, late credential readers and redacted exports to existing
+ST-T03/05/07/10/14/17 and engine PATH-14/18, with healthy supported controls.
+No new ST-W item, provider choice, secret file/database or native execution is
+created; source-only preparation and the storage pause retain their scope.
+
 ### ST-W01 Prepare one construction and failure contract
 
 **Owner:** storage lead, with bounded platform/security review.  

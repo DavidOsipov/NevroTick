@@ -1642,6 +1642,10 @@ measurement and development §7's public-constructor proof continuation separate
    immediate-hop versus proxy-side destination meaning, finite path-history key,
    monotonic age/cooldown/reprobe/hysteresis rules and aggregate bounds. Learned
    state can reorder permitted paths, never grant permission, fresh time or votes.
+   Reuse DATA-06 machine policy, DATA-08/09 contexts, DATA-10 outcomes and DATA-17
+   scheduler state through [architecture §12.1.3](../docs/windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners).
+   Add no second cache owner/database or duplicate generation. Initial hints are
+   RAM-only; later Q history remains with the existing catalogue/statistics task.
    Include raw configuration/IPC bypasses and checked arithmetic/proof obligations
    under CHECK-2/3/6/8/21/25/27. No guessed timer constant becomes a release promise.
 2. **Scheduler owner:** reuse a still-current working path; classify local exclusion,
@@ -1650,6 +1654,9 @@ measurement and development §7's public-constructor proof continuation separate
    existing scheduling owner. Keep a reachable healthy alternative; invalid metadata
    or a single silent endpoint cannot exclude a family globally. Cache expiry,
    unchanged DNS refreshes and network notifications do not refill budgets.
+   One attempt/stage fact updates live state and the bounded optional-history
+   handoff; no database/codec write blocks the timing path. Keep not-run stages,
+   local exclusions and telemetry loss separate from actual peer failures.
 3. **Windows adapter owner:** qualify explicit binding and actual source/route,
    initial and changed network context, stale indices and failure races through
    [Windows §4.28](windows11-integration.md#428-explicit-network-profile-qualification--5-november-2026).
@@ -1666,11 +1673,18 @@ measurement and development §7's public-constructor proof continuation separate
    proxy-only acquisition path. Reject unsupported family/address restrictions
    with domain forwarding. Preserve OPEN-8 and service-owned secret/storage gates;
    no weaker certificate checks, ambient user credentials or plaintext fallback.
+   Extend the existing ST-W01 preparation with a separately qualified credential
+   purpose; the NTS/DNS optional-cache matrix does not authorize missing-password
+   recovery. Reuse protected mechanisms, not their payloads or secret identities.
 6. **UI owner, full-product settings/P5:** implement the
    [feature §3.3.1 controls](../docs/windows-time-features.md#331-time-network-settings--5-november-2026)
    and AC-21/22 through authorized atomic Apply, with requested/effective state and
    current remedies. UI-M0, HTML design references and public-server probing are
    not part of this documentation slice.
+   Persist the existing machine-policy revision separately from activation;
+   qualify old-generation I/O retirement and truthful pending/blocked/effective
+   acknowledgements. A saved revision cannot prove already submitted traffic was
+   recalled or that another process changed its route.
 
 The first proposed profile is Direct or Manual SOCKS5, with Automatic or a pinned
 interface and Automatic/Only IPv4/Only IPv6/Prefer IPv6/Prefer IPv4 for NevroTick's
@@ -1701,6 +1715,12 @@ neither mocks nor source inspection close Windows or timing evidence.
 | PATH-12 | Loopback proxy available versus user logout, missing listener, physical-adapter pin that cannot constrain proxy egress, or a different local process claiming the port. Show service-context limits and retain end-server authentication; loopback is not trust. | CHECK-2/6/9/12/14 |
 | PATH-13 | Direct versus encapsulated timestamp placement, excess delay/asymmetry and changed paths with old delay history. Preserve independent numeric truth, uncertainty and source/operator counts; adding a route grants no extra vote, and a shared relay remains a shared path. | CHECK-7/8/9/14/27 |
 | PATH-14 | Supported proxy authentication versus unoffered/downgraded method, unavailable protected credential, logging/export and restart failure. Preserve credentials, service authority and current policy; pair each refusal with the qualified healthy profile. | CHECK-2/9/15/17/25 |
+| PATH-15 | Working RAM path state with Q disabled, blocked, full or corrupt versus useful enabled history. Actual acquisition remains bounded and usable; the same attempt/stage completion updates each eligible consumer at most once. Local exclusions/not-run stages and history queue loss do not become peer failures or false complete coverage. | DATA-10/16/17/19/20; CHECK-6/9/17/21/27 |
+| PATH-16 | Initial restart with no path hints; a future descriptive Q row with wrong context or unknown monotonic age; and a healthy current RAM hit. Re-admit current candidates without restoring old cooldown deadlines, pending requests, authentication or votes. No Q/file-format dependency is required for ordinary acquisition. | DATA-08/09/17; CHECK-6/9/15/25 |
+| PATH-17 | Destination/interface/proxy/context churn, retained readers, queued history and native work reach the frozen total limit versus healthy bounded reuse/recovery. Include eviction and repeated reset/refresh. No new per-cache quota or unbounded retained copies; eviction cannot clear independent retry/security guards or starve permitted recovery. | DATA-20; CHECK-9/17/21/27 |
+| PATH-18 | Wrong-purpose, old-revision, missing or partly replaced proxy credential, changed proxy recipient or loopback-port takeover versus the qualified current credential/channel. Policy contains only its opaque reference; NTS/DNS envelopes cannot satisfy the proxy purpose, and end-server NTS does not authenticate the proxy recipient. Unavailable restoration cannot enable no-authentication, Direct or another proxy, and logs/exports reveal no value. | ST-T03/05/07/10/14/17; CHECK-2/9/15/17/25 |
+| PATH-19 | Apply Direct-to-proxy, adapter, resolver or credential changes while old sends/DNS/verifier/relay jobs are queued; include a postcommit activation failure and a validation/persistence refusal. Saved versus effective revisions and indeterminate outcomes remain distinct. No old revision starts new owned I/O after the established cutover; late results cannot publish. Pair with a successful qualified transition and retain actual native custody. | CHECK-2/3/6/14/25/27; AC-22 |
+| PATH-20 | Clear optional history during a delayed Q write/read/export, then receive fresh legitimate outcomes. Retired data cannot republish as current or duplicate observations; gaps stay visible. The operation does not erase machine policy, credentials, NTS full-authentication age, DNS privacy barriers, mandatory conflicts or broker authority. | DATA-17/19/20/21/22; CHECK-2/9/15/17/25/27 |
 
 ### Integration and evidence status
 
@@ -1735,3 +1755,98 @@ The subsequent heading-depth correction preserves its validated anchor; this
 receipt adds no links or product semantics. These are documentation checks and
 coordinator self-review, not independent review, executed PATH-01–14 cases or
 proof of a supported proxy/interface implementation.
+
+### Storage reuse self-review — 5 November 2026
+
+**Request and candidate:** David required the network proposals to reuse the
+repository's documented caches, database and storage ownership, followed by
+coordinator self-review and a fresh-context AI review using available applicable
+MCP. Base main is `8ac407a367bd2231076d12fe6e3db66e425f1281`. The twelve-file
+contract candidate before this receipt has diff SHA-256
+`5f05200e033c1370259133558a074ed4a7c26025ddcaf09e6374dbcdcaf9a346`.
+This is a documentation repair and future-case preparation, not implementation
+of a cache, database, proxy or configuration handler.
+
+The coordinator inspected current architecture §§6/7.3/7.4/12.1/12.2/17.1,
+DATA-06/08/09/10/15–23 and their RAM/C/Q/H/E/U allocation, the storage tables,
+catalogue/statistics and protected-storage tasks, the DNS storage/privacy
+contract, feature controls and Windows/UI handoffs. Current engine source and
+its manifest establish the bounded loopback pilot; the reviewed learned-routing,
+Q/H and production secret-store behavior remains planned. No whole-repository
+runtime audit or completed provider/native qualification is claimed.
+
+| Finding | Evidence and consequence in the predecessor | Applied documentary correction and future discriminator |
+| --- | --- | --- |
+| STORE-N01 — ownership gap | The §7.3 path-history paragraph introduced a cache without binding it to existing DATA-08/09/10/17 and Q. An implementer could create duplicate contexts, outcomes or a second store. | §12.1.3 and existing catalogue task now map one policy/context/outcome/scheduler chain; optional history uses the same Q writer and Q0/Q-J decision. PATH-15/16 distinguish live reuse from optional-storage availability. |
+| STORE-N02 — credential-purpose gap | The phrase “existing service-owned secret lifecycle” did not identify that the admitted NTS/DNS payloads and optional-state matrix do not cover proxy passwords. Treating lost credentials like regenerable NTS state could imply an invalid fallback. | Separate-purpose preparation under ST-W01, opaque policy reference, no secret payload/root sharing by implication, explicit unavailable authenticated profile. PATH-14/18 cover supported credentials beside wrong-purpose, stale and missing state. |
+| NET-N03 — saved/effective ambiguity | Atomic Apply described durable policy but not the retirement of old sends, resolver/verifier jobs or relay work. A UI could report the new route effective while old work still starts. | §7.3, feature and Windows/UI handoffs distinguish saved revision from qualified activation, final send guards and actual completion. PATH-19 covers successful cutover, precommit refusal and postcommit blocked/indeterminate activation. No packet-recall claim. |
+| STORE-N04 — consumer and capacity gap | Cache-size wording did not connect retained readers, context multiplicities, optional Q pressure, duplicate stage outcomes and reset races to existing DATA-10/19/20 owners. | One bounded handoff, explicit gaps/local failure categories, shared total accounting and no restored cross-incarnation deadlines or refunded independent guards. PATH-15–17/20 challenge those boundaries beside useful reuse/recovery. |
+| DOC-N05 — navigation drift | The documentation guide still advertised AC-01–AC-20 after the prior amendment added AC-21/22. | The existing guide now routes to AC-01–AC-22; acceptance rows retain planned status. |
+
+These are coordinator findings and source-backed plan corrections, not observed
+runtime defects or independent reviewer findings. No new database format, RAM
+compression, numerical quota, cache daemon, provider or product default is
+selected. The current public-constructor proof continuation and all scoped
+Windows/storage/fuzz/UI holds remain. Mathematical age/accounting algorithms
+still require OD-10 source-bound proofs at their dependent implementation exit.
+
+**Independent-review attempts:** `storage_owner_inventory` and
+`network_storage_cold_review` were both launched with `fork_turns: "none"`; the
+latter received only an on-disk neutral request and frozen patch identity.
+Both returned the platform error “Codex ran out of room in the model's context
+window” and no usable analysis. Their inspected inputs, comprehension and findings
+are unknown, not zero. A separate Liner MCP research-agent request supplied one
+user message containing the public repository and exact patch, with no conversation
+history. It returned `payment_method_required` and explicitly said the request was
+not performed; it supplied no review. No billing change or repeated charge attempt
+was made. The required fresh-context plan review remains **not run**; this receipt
+does not make the dependent implementation handoff ready.
+
+**Source/tool evidence:** GitHub MCP verified repository/base identity. Microsoft
+Learn search and full fetch confirmed `CancelIoEx` requests cancellation without
+waiting for completion; the existing architecture S109 is reused. Context7
+resolution and query retrieved official SQLite journal/temporary-file guidance;
+the primary PRAGMA page confirms `max_page_count` concerns the main file and
+`journal_size_limit` is not an aggregate live-family quota. These support existing
+contracts, not a selected SQLite dependency. Applicable local Git/file reads and
+primary-web checks were used; Serena, SocratiCode, Probe and Context-mode were not
+exposed in this session, and no local Codex/Claude/Gemini CLI was found. Unrelated
+MCP applications cannot supply repository-review evidence.
+
+**Document validation before the repository-hosted review attempt:**
+`git diff --check` passed. The focused check resolved 935 active relative links
+across 107 target paths, read heading targets in 37 Markdown documents, and found
+no missing path/anchor. Fourteen pre-existing fenced blocks, including verbatim
+historical reviews, remained byte-identical. The architecture retains 131 unique
+contiguous source IDs with all cited IDs defined; PATH-01–20 occur once each and
+remain planned. `docs/SHA256SUMS.txt` is absent, so no bundle-manifest pass is
+claimed. The pre-receipt diff SHA-256 is
+`9752935cc113824119af45bd83b16b4d4e3a03663162f94d0c2d529684e78d41`.
+No Rust, proxy, storage, Windows-native or new formal-proof execution was needed
+or claimed for these documentation edits. A later review result must identify
+its actual candidate and inspected coverage before changing review readiness.
+
+**Repository-hosted fallback:** a GitHub MCP request named only
+`copilot-pull-request-reviewer[bot]` on PR #5, candidate commit
+`a13801dfbc4ff96ba7eeeae4d0bfee68660be489`, tree
+`ce03f2dfd313cb86b9814bd643195bf1bc472380`. The connector returned “Action
+completed”, but read-back at 09:34 UTC showed no requested reviewers, no review
+request event and no review result. Dispatch is therefore **unconfirmed**, not a
+completed review or evidence of a licence problem. No human reviewer was requested.
+No MCP-use trace or independent comprehension/findings can be attributed to it.
+
+The coordinator's final wording check also clarified that each real retry has
+its own DATA-10 identity, while duplicate processing does not count it twice,
+and that proxy DNS leaves the remote address unknown rather than fabricating a
+local resolver result for the path key. The frozen review-attempt identities above
+remain historical; they do not review these subsequent clarifications.
+
+**Next permitted action:** a working fresh session reads AGENTS.md, the current
+network card, architecture §§7.3/7.4/12.1–12.2/17.1, DATA-06/08–10/16–22, storage
+tables and protected-storage/DNS/current-source owners. It states its own
+comprehension of the proposal and actual system before critique, checks the
+current commit plus dirty bytes, uses available applicable MCP and returns a
+scoped `ready`/`revise`/`blocked` verdict with inspected-input and tool evidence.
+Reconcile actual findings in this same record. Until then, fresh independent
+plan review is **NOT RUN** and the dependent implementation handoff is not ready;
+completed documentation repairs and the separate current proof queue remain valid.

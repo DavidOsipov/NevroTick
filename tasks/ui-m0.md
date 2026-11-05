@@ -83,6 +83,13 @@ proxy's onward interface and a proxy-resolved target family are not client-known
 facts. Reject unsupported combinations through the shared domain/IPC owner,
 including raw-handler bypass cases, and apply only an authorized current revision.
 
+Keep saved policy and effective acquisition revision separate through pending,
+blocked and successful activation; stale completions cannot update current UI.
+Use the existing machine-policy/secret/history owners, not per-user network
+configuration or direct Q access. Explain cold path learning after initial
+service restart, unavailable optional history and missing proxy credentials
+without promising durable cache support or silent direct/no-authentication fallback.
+
 This is a full-product handoff under F-06/07/09/10 and AC-21/22, not an implemented
 widget or M0 pass. UI-M0 retains deterministic fixtures, no live probes/settings
 effects and its existing D1–D3 deferrals. No HTML prototype or branding asset was
