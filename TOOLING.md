@@ -501,6 +501,20 @@ not a workspace-wide proof gate. Tool admission or its bootstrap controls alone
 cannot close the per-algorithm obligations. Missing proofs remain open in the
 existing source-owner task before dependent acceptance.
 
+**Verus candidate, 5 November 2026:** the
+[bounded Core addition pilot](tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+is justified for comparison after Kani's recorded zero-check timeout. Candidate
+release `0.2026.11.02.8bf68ee` uses existing Rust 1.99.1 and bundled Z3 4.16.0.
+It is **not installed, admitted or product-qualified** at this checkpoint;
+broader adoption remains DEFER. The card owns exact source/asset hashes,
+one-candidate bootstrap/footprint caps, compatibility and proof budgets, semantic
+controls and acceptance. Prepare isolated hash admission/read-only SDK execution
+before running it. The pinned launcher supports `VERUS_USE_RUSTUP=0`; no global
+rustup/PATH/SDK change is selected. Require explicit one-thread verification,
+actual SMT timeout distinct from resource units, complete selected obligations
+and `--no-cheating`. Existing Kani entrypoints and evidence remain in force;
+neither this candidate nor documentation changes the analysis installation policy.
+
 | Tool | Installed pin | Qualification and intended use |
 | --- | --- | --- |
 | cargo-fuzz / libfuzzer-sys | 0.13.2 / 0.4.13 | One-off GNU-target ASan controls observed: 256 healthy runs and the intended signed-byte defect. Product targets still need accepted seeds, independent invariants and target/sanitizer qualification. |

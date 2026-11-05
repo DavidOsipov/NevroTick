@@ -3,7 +3,8 @@
 **Status:** DEFERRED / not ready for implementation. This single grouped record
 fills parent-task gaps in [the task map](README.md); it does not replace the
 [development plan](../docs/plans/development-plan.md), existing active children
-or canonical architecture. Rows below are future cards, not completed evidence.
+or canonical architecture. Unless explicitly marked active, rows below are future
+cards; none is completed evidence.
 Role owners are responsibilities, not staffing assignments.
 
 Activate only the next bounded child when its named prerequisites and current
@@ -97,11 +98,24 @@ remain in [their existing task chain](s1.3-source-selection-readiness.md).
 **Exit:** [plan §6/P1](../docs/plans/development-plan.md#p1--pure-protocols-and-independently-checked-algorithms),
 CHECK-6/7/8/19/20 and pure CHECK-25; this proves no Windows effect.
 
-| Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
+**Active bounded continuation, 5 November 2026:** the
+[Verus addition pilot](s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+stays in the existing Core task under OD-10 and CHECK-7/8/25. The full checked-pair
+addition property remains unproved after Kani's **60,025 ms timeout with zero
+checks**. That named gap and David's conditional request to use Verus if better
+justify this trial; broader adoption remains **DEFER**.
+
+| Card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
+| S1.3 Verus addition pilot / numerical Core; tooling/QA | **Ready for compatibility/admission only.** Freeze the same full-domain addition contract and finite budget in the existing Core card; source proof depends on compatible actual APIs and completion within those limits. | Verify actual `Fraction::new`, `compare`, `complement` and `add_fractions` bodies with exact executable correspondence and source/tool custody. Require three compiled semantic defects to fail their intended obligations and a restored healthy pass. No product `external_body`, assumed central theorem, alternate executable behavior or model-only proof closes this exit. |
 | S1.4 discipline/holdover / Core/domain | Applicable S1.3 selection/combination and current reference, achieved-effect and active-time delivered-rate contracts; finish the current child first, then freeze one abstract controller/holdover transition. | Independent trajectories give bounded step/slew/holdover proposals; stale generations, duplicate/unknown effects and unacknowledged requests cannot create delivered correction or fresh observations. CHECK-7/8/10/11/25, AC-19. Current S1.4a–c and rate-delivery receipts stay in S1.3. |
 | S1.4 leap child / domain/Core/protocol | Use [the explicit entry and finite-input tables](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) after the current Core checkpoint. S157/S158 and selected S1.4a–c retain completed predecessor scopes; freeze the leap child's own date/data/import limits before dependent implementation. Static constructors do not require every later production contract. | Pure history/coverage/rule cases and atomic replacement are the first exit. Full silent-source acquisition, guard/reacquisition and LP-C04 stay in protocol integration; native mapping stays S0.4/P4. Existing LP-C cases and CHECK-6/7/8/11/14/25/26 retain their owning slices. |
 | S1.5 verification closure / tooling/dependency/QA | Existing configured application gates and selected critical owners; maintain required checks now, close remaining phase scope at its actual checkpoint. Deferred QF-02 recipe maintenance stays acknowledged in the active Core task. | Healthy code/inputs pass and intended lint/SAST/discovery/admission faults fail actual gates; retained provenance, applicable per-file coverage/mutation and exact receipt scope support closure. CHECK-19/20/25/26. No new implementation prerequisite or duplicate campaign. |
+
+Reuse unchanged Kani proofs within their recorded scope; the held Kani extensions
+remain held. `ScaledValue::split` remains an independent fallback. The pilot adds
+no global CI gate or phase blocker and lifts no execution hold; missing required
+mathematical evidence still leaves its existing dependent acceptance open.
 
 ## P2 acquisition
 

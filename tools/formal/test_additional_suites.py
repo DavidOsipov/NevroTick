@@ -26,17 +26,34 @@ SUITES = load("additional_suites_test", HERE / "additional_suites.py")
 
 
 class AdditionalSuiteTests(unittest.TestCase):
+    def test_addition_cannot_use_a_complement_position_or_modified_subject(self):
+        addition = SUITES.jobs("fraction-arithmetic")[5]
+        altered = dict(addition, subject="fraction_complement")
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+
+            def forbidden_loader(name, path):
+                self.fail("Arithmetic job outside its fixed group reached loading")
+
+            for job, index in ((addition, 1), (altered, 6)):
+                with self.subTest(job=job, index=index), self.assertRaises(ValueError):
+                    SUITES.prepare(forbidden_loader, folder / "source", folder / "inputs", job, index)
+            self.assertFalse((folder / "inputs").exists())
+
     def test_core_proofs_use_the_frozen_source_and_complete_fixed_contract(self):
         for selector, stem in (("endpoint-finish", "endpoint_finish"),
                                ("fraction-constructor", "fraction_constructor"),
-                               ("fraction-comparison", "fraction_comparison")):
+                               ("fraction-comparison", "fraction_comparison"),
+                               ("fraction-arithmetic", "fraction_arithmetic")):
             with self.subTest(selector=selector):
                 projection = load(f"additional_{stem}_metadata_test", HERE / f"{stem}_projection.py")
                 self.assertEqual(SUITES.jobs(selector), projection.schedule())
-                name = f"{stem}::{stem}_full_domain"
-                self.assertEqual(SUITES.expected_contract(stem, name),
-                                 (frozenset(projection.REQUIRED_ASSERTIONS[name]),
-                                  frozenset(projection.REQUIRED_COVERS[name])))
+                for job in SUITES.jobs(selector):
+                    if job["case"] == "healthy" and not job["restored_healthy"]:
+                        name = job["harness"]
+                        self.assertEqual(SUITES.expected_contract(job["subject"], name),
+                                         (frozenset(projection.REQUIRED_ASSERTIONS[name]),
+                                          frozenset(projection.REQUIRED_COVERS[name])))
                 self.assertEqual(set(SUITES.input_names(selector)), {
                     "tools/formal/additional_suites.py", f"tools/formal/{stem}_projection.py",
                     f"tools/formal/{stem}_harness.rs", f"tools/formal/test_{stem}.py"})
@@ -56,16 +73,18 @@ class AdditionalSuiteTests(unittest.TestCase):
                         self.assertTrue(path.is_relative_to(source))
                         return load(name, path)
 
-                    healthy = []
+                    healthy = {}
                     for index, job in enumerate(SUITES.jobs(selector), 1):
                         inputs = folder / f"inputs-{index}"
                         metadata = SUITES.prepare(frozen_loader, source, inputs, job, index)
                         self.assertEqual(metadata["entrypoint"], inputs / "proof.rs")
                         self.assertEqual(metadata["mutation"] is None, job["case"] == "healthy")
                         if job["case"] == "healthy":
-                            healthy.append((inputs / "proof.rs").read_bytes())
-                    self.assertEqual(len(loaded), 5)
-                    self.assertEqual(healthy[0], healthy[1])
+                            healthy.setdefault(job["subject"], []).append((inputs / "proof.rs").read_bytes())
+                    self.assertEqual(len(loaded), len(SUITES.jobs(selector)))
+                    for subject, copies in healthy.items():
+                        self.assertEqual(len(copies), 2, subject)
+                        self.assertEqual(copies[0], copies[1], subject)
 
     def test_each_selected_proof_closure_includes_registry_and_only_selected_code(self):
         for selector, stem in (("coordinate-exchange", "coordinate_exchange"), ("clock", "clock"),
@@ -159,6 +178,8 @@ class AdditionalSuiteTests(unittest.TestCase):
             ("endpoint_finish", "endpoint_finish::endpoint_finish_full_domain"): (8, 10),
             ("fraction_constructor", "fraction_constructor::fraction_constructor_full_domain"): (8, 14),
             ("fraction_comparison", "fraction_comparison::fraction_comparison_full_domain"): (12, 20),
+            ("fraction_complement", "fraction_arithmetic::fraction_complement_full_domain"): (7, 13),
+            ("fraction_addition", "fraction_arithmetic::fraction_addition_full_domain"): (11, 23),
         }
         for (subject, harness), sizes in expected_sizes.items():
             with self.subTest(subject=subject, harness=harness):

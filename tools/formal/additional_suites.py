@@ -23,6 +23,7 @@ _STEMS = {
     "endpoint-finish": "endpoint_finish",
     "fraction-constructor": "fraction_constructor",
     "fraction-comparison": "fraction_comparison",
+    "fraction-arithmetic": "fraction_arithmetic",
 }
 _FIELDS = {"subject", "case", "harness", "intended_failure", "restored_healthy"}
 
@@ -37,7 +38,7 @@ def input_names(selector: str) -> list[str]:
     if selector == "calendar-finite-laws":
         result.extend(("tools/formal/calendar_composition_harness.rs",
                        "tools/formal/calendar_composition_projection.py"))
-    if selector in {"leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"}:
+    if selector in {"leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"}:
         result.append(f"tools/formal/test_{stem}.py")
     return result
 
@@ -148,6 +149,23 @@ def jobs(selector: str) -> list[dict]:
         add("fraction_comparison", "zero_alignment", "fraction_comparison::fraction_comparison_control_alignment",
             "comparison unreduced equality")
         add("fraction_comparison", "healthy", "fraction_comparison::fraction_comparison_full_domain", restored=True)
+    elif selector == "fraction-arithmetic":
+        add("fraction_complement", "healthy", "fraction_arithmetic::fraction_complement_full_domain")
+        add("fraction_complement", "always_error", "fraction_arithmetic::fraction_complement_control_success",
+            "complement required success")
+        add("fraction_complement", "wrong_numerator", "fraction_arithmetic::fraction_complement_control_numerator",
+            "complement exact numerator relation")
+        add("fraction_complement", "wrong_error", "fraction_arithmetic::fraction_complement_control_error",
+            "complement rejection classification")
+        add("fraction_complement", "healthy", "fraction_arithmetic::fraction_complement_full_domain", restored=True)
+        add("fraction_addition", "healthy", "fraction_arithmetic::fraction_addition_full_domain")
+        add("fraction_addition", "always_error", "fraction_arithmetic::fraction_addition_control_success",
+            "addition required success")
+        add("fraction_addition", "wrong_carry", "fraction_arithmetic::fraction_addition_control_carry",
+            "addition exact carry")
+        add("fraction_addition", "wrong_residual", "fraction_arithmetic::fraction_addition_control_residual",
+            "addition exact residual")
+        add("fraction_addition", "healthy", "fraction_arithmetic::fraction_addition_full_domain", restored=True)
     else:
         add("calendar_finite_laws", "healthy", "calendar_finite_laws_full_domain")
         add("calendar_finite_laws", "cycle_year_coefficient", "calendar_finite_laws_control_year", "Gregorian segment year recurrence")
@@ -282,6 +300,31 @@ def expected_contract(subject: str, harness: str) -> tuple[frozenset[str], froze
                   "comparison maximum alignment less", "comparison maximum alignment greater",
                   "comparison gap63 greater", "comparison gap63 less", "comparison gap64 greater",
                   "comparison gap64 less", "comparison maximum numerator wide gap", "comparison maximum shift gap"}
+    elif (subject, harness) == ("fraction_complement", "fraction_arithmetic::fraction_complement_full_domain"):
+        assertions = {"complement factory completeness", "complement required success",
+                      "complement rejection classification", "complement exact numerator relation",
+                      "complement shift retained", "complement positive output bound", "complement proper output"}
+        covers = {"complement zero rejected", "complement quarter rejected", "complement below half neighbor rejected",
+                  "complement wide below half rejected", "complement minimum positive rejected",
+                  "complement maximum shift numerator rejected", "complement half succeeds",
+                  "complement unreduced half succeeds", "complement maximum half representation succeeds",
+                  "complement above half neighbor succeeds", "complement near one succeeds",
+                  "complement three quarters succeeds", "complement five eighths succeeds"}
+    elif (subject, harness) == ("fraction_addition", "fraction_arithmetic::fraction_addition_full_domain"):
+        assertions = {"addition left factory completeness", "addition right factory completeness",
+                      "addition required success", "addition exact carry", "addition exact residual",
+                      "addition oracle alignment exact", "addition oracle proper numerator bounds",
+                      "addition oracle sum representable", "addition high denominator positive",
+                      "addition global fraction maximum", "addition high numerator bound"}
+        covers = {"addition zero sum", "addition quarter plus zero", "addition zero plus quarter",
+                  "addition two quarters", "addition exact halves", "addition quarter plus three quarters",
+                  "addition three quarters plus quarter", "addition three quarters plus half",
+                  "addition half plus three quarters", "addition unreduced halves", "addition just below unit",
+                  "addition just above unit", "addition maximum numerator sum", "addition u128 edge left",
+                  "addition u128 edge right", "addition high denominator left", "addition high denominator right",
+                  "addition minimum positive plus zero", "addition zero plus minimum positive",
+                  "addition two minimum positives", "addition raw zeros canonicalize",
+                  "addition half plus quarter", "addition quarter plus half"}
     elif (subject, harness) == ("era_constructor", "proof::era_constructor_full_domain"):
         assertions = {"public window admission iff full raw contract", "exact earliest coordinate retained",
                       "exact latest coordinate retained", "constructed endpoints remain ordered",
@@ -334,6 +377,8 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         selector = "fraction-constructor"
     elif subject == "fraction_comparison":
         selector = "fraction-comparison"
+    elif subject in {"fraction_complement", "fraction_addition"}:
+        selector = "fraction-arithmetic"
     else:
         raise ValueError("Unknown additional proof subject")
     schedule = jobs(selector)
@@ -364,6 +409,8 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         prepared = projection.prepare_fraction_constructor(source, inputs, job["case"], harness)
     elif selector == "fraction-comparison":
         prepared = projection.prepare_fraction_comparison(source, inputs, job["case"], harness)
+    elif selector == "fraction-arithmetic":
+        prepared = projection.prepare_fraction_arithmetic(source, inputs, subject, job["case"], harness)
     else:
         prepared = projection.prepare_calendar_finite_laws(source, inputs, job["case"], harness)
     if not isinstance(prepared, dict) or prepared.get("entrypoint") != inputs / "proof.rs":

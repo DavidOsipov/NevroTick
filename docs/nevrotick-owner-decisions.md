@@ -547,6 +547,14 @@ The choice and admission of additional proof tools remains evidence-led. This
 requirement is distinct from optional enhanced release/build provenance in
 OD-05 §7.5, and grants no publication or release approval.
 
+**Conditional tool direction, 5 November 2026:** David asked to use Verus if it
+is better and to document justified work in the plan, backlog, tasks and relevant
+docs. The [bounded Core addition pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+records the current evidence-led evaluation, finite gates and acceptance.
+This instruction preserves the source-bound proof requirement and conditional
+adoption: a justified pilot is not demonstrated superiority, general verifier
+selection or a weaker mathematical acceptance rule.
+
 ## 15. OD-11 — SOCKS5 scope and deferral
 
 **Direct owner instruction, 5 November 2026:** David asked for a concrete working

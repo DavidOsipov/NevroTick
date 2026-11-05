@@ -8,6 +8,12 @@
 
 **Task record:** [S1.1c assessment and review results](../../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026).
 
+**5 November update:** the earlier snapshot and DEFER conclusion below remain
+historical. A [bounded Core addition pilot](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+is now justified by a named full-domain gap, an actual Kani timeout and David's
+conditional instruction to use Verus if it is better. Broader Verus adoption
+remains DEFER; no Verus payload or product proof has been admitted/executed yet.
+
 ## Conclusion and practical effect
 
 The supplied proposal gives a sound method for evaluating Verus. It identifies
@@ -158,3 +164,54 @@ A future trial should use the existing task and
 This report adds no proof execution or performance result to the preceding
 assessment. Existing behavioral, fuzz, memory, mutation and native qualification
 requirements retain their own scope.
+
+## Reconsideration triggered — 5 November 2026
+
+The 1 November assertion that application Kani had not run is a dated snapshot.
+Since then the source-bound rounding/era and named Core/domain helper checkpoints
+have qualified their declared scopes. The actual `add_fractions` full checked-pair
+proof stopped after 60,025 ms with zero checks; complement's preceding five-job
+group qualified, while addition remains open. This is a resource-limit result,
+not a mathematical counterexample or evidence that Verus will succeed.
+
+Separate read-only source/specification, readiness and plan reviews support one
+comparison: verify the actual constructor, comparison, complement and addition
+bodies through deductive contracts and integer/power lemmas. Keep required
+success, exact carry/residual, the complete domain, existing semantic fault
+witnesses and restored health. Reject model-only substitution, product
+`external_body`, assumed central properties and verification-only executable
+changes. Upstream standard-library specifications and verifier/compiler/solver
+trust must remain explicit.
+
+The [Core task card](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+owns the precise source, candidate and budgets; the [development plan](../plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and [backlog](../../tasks/development-backlog.md#p1-core-completion) route it.
+The candidate is official release `0.2026.11.02.8bf68ee` at
+`8bf68ee741df833ea5d0fe6a2255126fdea87e47`, requiring the already installed
+Rust 1.99.1. The 36,022,359-byte Linux asset has an upstream SHA256 digest;
+unpacked size, loader behavior and unchanged-API compatibility remain unmeasured.
+The pinned launcher supports a no-rustup mode, allowing isolated execution
+without shared toolchain/configuration changes. Source inspection alone does
+not admit that runtime.
+
+`checked_shl` is an unresolved first compatibility gate: not finding a model in
+inspected files is not proof of unsupported behavior. Test the actual API using
+the pinned candidate. The finite card permits no SDK/source build, verifier
+patch, unsupported-operation rewrite or assumed product contract as a workaround.
+Keep all completed Kani proofs and the failed addition receipt unchanged.
+
+The new disposition is **DEFER broad adoption; bounded pilot queued**. Only a
+complete equivalent-contract result, intended failures, restored health and
+acceptable measured integration/maintenance cost justify `ADOPT_LIMITED`.
+No installation, Verus proof, new CI requirement or release/native approval is
+established by this addendum.
+
+Current primary sources:
+
+- [Pinned release and Linux asset metadata](https://github.com/verus-lang/verus/releases/tag/release/0.2026.11.02.8bf68ee).
+- [Pinned installation guidance](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/INSTALL.md)
+  and [toolchain](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/rust-toolchain.toml).
+- [No-rustup launcher and bundled-solver selection](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/source/verus/src/main.rs).
+- [Thread, SMT-option and no-cheating controls](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/source/rust_verify/src/config.rs),
+  [solver option handling](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/source/air/src/context.rs)
+  and [Z3 timeout units](https://microsoft.github.io/z3guide/programming/Parameters/).

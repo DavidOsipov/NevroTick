@@ -4,6 +4,11 @@
 and [architecture §20.1.1](../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
 require source-bound mathematical proofs. This driver covers only its named
 suite obligations; no suite covers every product algorithm.
+The [bounded Verus addition pilot](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+is a separate queued evaluation of the same open addition contract. No Verus
+payload, guarded execution entrypoint or product proof is admitted yet. Follow
+that card and [TOOLING.md](../../TOOLING.md#additional-rust-analysis-tools) before
+acquisition/execution; the Kani commands below select no Verus candidate.
 Track actual completion and remaining constructor/caller and other mathematical
 obligations in the [existing S1.1c task](../../tasks/s1.1-time-domain.md).
 The [Core task](../../tasks/s1.3-source-selection-readiness.md#independent-endpoint-finish-proof-checkpoint--5-november-2026)
@@ -103,10 +108,17 @@ Additional explicit suites use the same admitted execution profile:
 | `endpoint-finish` | 5 | Actual Core integer endpoint floor/ceiling over every raw i128 component, residual sign and direction; exact output/rounding and complete overflow/range errors |
 | `fraction-constructor` | 5 | Actual Core private Fraction constructor over every raw u64/u32 pair; complete admission/rejection, exact retention, canonical zero and output invariants |
 | `fraction-comparison` | 5 | Actual Core Fraction comparison over every checked pair; exact rational order, required success, factory completeness and machine-alignment bounds |
+| `fraction-arithmetic` | 10 | Actual bounded complement followed by addition over every checked fraction/pair; exact admission/error, complement value, carry/residual and canonical-field oracle bounds |
 
 Each includes compiled defects and restored healthy proofs. Review its actual
 source correspondence, assumptions and omissions before declaring a finite
 checkpoint budget.
+
+The current `fraction-arithmetic` checkpoint qualified complement only. Addition's
+first healthy command timed out with zero checks; the cohort is incomplete and
+its later four jobs did not run. Follow the [recorded checkpoint](../../tasks/s1.3-source-selection-readiness.md#arithmetic-terminal-checkpoint--complement-qualified-addition-open)
+before further work; do not repeat its unchanged monolithic attempt or substitute
+larger limits/stubs for the required full-domain result.
 
 `exchange-composition` closes the original exchange contract only when its three
 universal theorems, four defects and three restored proofs all qualify under

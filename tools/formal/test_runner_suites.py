@@ -17,6 +17,24 @@ FIXTURE = load("formal_extended_json_fixture", "test_verify.py")
 
 
 class RunnerSuiteTests(unittest.TestCase):
+    def test_fraction_arithmetic_completes_complement_before_addition(self):
+        selected = VERIFY.selected_jobs("fraction-arithmetic", 1)
+        self.assertEqual([i for i, _ in selected], list(range(1, 11)))
+        jobs = [job for _, job in selected]
+        self.assertEqual([job["subject"] for job in jobs],
+                         ["fraction_complement"] * 5 + ["fraction_addition"] * 5)
+        self.assertEqual([job["case"] for job in jobs], [
+            "healthy", "always_error", "wrong_numerator", "wrong_error", "healthy",
+            "healthy", "always_error", "wrong_carry", "wrong_residual", "healthy"])
+        self.assertEqual([i for i, job in selected if job["restored_healthy"]], [5, 10])
+        names = VERIFY.input_names("fraction-arithmetic")
+        self.assertTrue({"tools/formal/fraction_arithmetic_harness.rs",
+                         "tools/formal/fraction_arithmetic_projection.py",
+                         "tools/formal/test_fraction_arithmetic.py",
+                         "crates/time-core/src/projection_enclosure.rs",
+                         "crates/time-core/src/selection.rs"}.issubset(names))
+        self.assertNotIn("tools/formal/era_constructor_harness.rs", names)
+
     def test_fraction_comparison_freezes_its_source_and_three_semantic_controls(self):
         selected = VERIFY.selected_jobs("fraction-comparison", 1)
         self.assertEqual([i for i, _ in selected], [1, 2, 3, 4, 5])
@@ -89,20 +107,20 @@ class RunnerSuiteTests(unittest.TestCase):
         self.assertNotIn("tools/formal/era_harness.rs", names)
 
     def test_driver_inventories_selected_proof_closure(self):
-        for selector in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"):
+        for selector in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"):
             with self.subTest(selector=selector):
                 self.assertTrue(set(SUITES.input_names(selector)).issubset(VERIFY.input_names(selector)))
                 self.assertNotIn("tools/formal/era_harness.rs", VERIFY.input_names(selector))
 
     def test_driver_runs_complete_fixed_schedules(self):
-        for selector, count in (("coordinate-exchange", 10), ("clock", 10), ("leap-calendar", 7), ("relative-range", 5), ("exchange-composition", 10), ("calendar-composition", 11), ("leap-ticks", 5), ("calendar-finite-laws", 5), ("leap-coverage", 5), ("endpoint-finish", 5), ("fraction-constructor", 5), ("fraction-comparison", 5)):
+        for selector, count in (("coordinate-exchange", 10), ("clock", 10), ("leap-calendar", 7), ("relative-range", 5), ("exchange-composition", 10), ("calendar-composition", 11), ("leap-ticks", 5), ("calendar-finite-laws", 5), ("leap-coverage", 5), ("endpoint-finish", 5), ("fraction-constructor", 5), ("fraction-comparison", 5), ("fraction-arithmetic", 10)):
             with self.subTest(selector=selector):
                 selected = VERIFY.selected_jobs(selector, 1)
                 self.assertEqual(len(selected), count)
                 self.assertEqual([job for _, job in selected], SUITES.jobs(selector))
 
     def test_new_healthy_results_need_their_own_complete_mathematical_contract(self):
-        for selector in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison"):
+        for selector in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"):
             for job in SUITES.jobs(selector):
                 if job["case"] != "healthy" or job["restored_healthy"]:
                     continue

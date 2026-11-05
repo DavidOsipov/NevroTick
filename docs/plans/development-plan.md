@@ -840,9 +840,31 @@ campaign qualified only that helper's full raw domain. The
 has also qualified `Fraction::new` over every raw `(u64, u32)` input, with complete
 admission/rejection, exact retention, zero canonicalization and its own three
 compiled defects/restored proof. Endpoint reuse across the additive shared-runner
-changes has a separate reviewed irrelevance argument. Next freeze and independently
-review `Fraction::compare` over all checked fraction pairs before its bounded
-campaign; the same Core task retains the remaining producer/composition inventory.
+changes has a separate reviewed irrelevance argument. The
+[comparison checkpoint](../../tasks/s1.3-source-selection-readiness.md#comparison-final-qualification--5-november-2026)
+has also qualified exact rational order, required success and lossless alignment
+over every checked fraction pair, with twelve assertions, twenty covers and its
+three compiled defects/restored proof. The same task's
+[arithmetic checkpoint](../../tasks/s1.3-source-selection-readiness.md#arithmetic-terminal-checkpoint--complement-qualified-addition-open)
+qualified complement's complete five-job group. Addition's first healthy proof
+timed out at 60 seconds with zero checks, stopping the ten-job cohort at job 6;
+addition and row 3 remain incomplete. No retry, wider limit or stubbing followed.
+**Conditional Verus trial — 5 November 2026:** David asked to use Verus if it
+offers a justified benefit and to document that work. The actual addition timeout
+now meets the earlier assessment's reconsideration trigger. Execute the
+[existing Core pilot's bounded compatibility/admission preparation](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026),
+then its actual-source comparison only if those gates pass. The hypothesis is
+deductive composition of the actual new/compare/complement/addition bodies for
+the same full contract; no product assumptions, narrowed domain or model substitute.
+The card pins one release, isolated bootstrap, explicit storage/time/attempt
+limits, three semantic faults and restored health. Broader adoption remains
+DEFER until measured source-bound benefit is demonstrated; no tool/CI or global
+phase gate is added. Completed Kani proofs remain reusable and held extensions
+are not reopened. The independent
+[scaled-value split proof](../../tasks/s1.3-source-selection-readiness.md#scaled-value-split-proof-contract--5-november-2026)
+is the fallback if Verus compatibility or the finite pilot fails. Addition and
+all dependent producer/composition obligations remain open. Any other addition
+decomposition needs its own reviewed finite checkpoint preserving the full contract.
 The public era-constructor proof and held verifier extensions retain their
 separate incomplete status.
 

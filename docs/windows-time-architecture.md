@@ -3646,6 +3646,15 @@ owns proof execution discipline. Runtime validation, tests, fuzzing,
 coverage/mutation, native Windows and package qualification remain required.
 OD-05 §7.5's enhanced release-build provenance remains separately optional.
 
+**Conditional tool evaluation, 5 November 2026:** the
+[existing Core task](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+now owns a justified bounded Verus comparison for addition after Kani's recorded
+timeout and David's instruction to use Verus if better. This is compatible with
+the conditional choice above: actual-source equivalence, full-domain success/error
+properties, verified callees, compiled semantic controls and restored health remain
+required. Broader Verus adoption/CI remains deferred until measured benefit;
+documentation or an admitted tool alone closes no product proof or phase gate.
+
 ### 20.2 Acceptance catalog
 
 For restricted UI-M0, use [M0-01–M0-08 in section 16.5](#165-restricted-first-ui-milestone-ui-m0). They do not discharge the full product CHECK catalog, P0 toolkit qualification or the deferred D1–D3 groups.

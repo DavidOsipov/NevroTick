@@ -82,6 +82,16 @@ Historical bounded checks do not establish the stronger gate. Tool selection,
 Windows/native qualification and OD-05's optional enhanced release provenance
 retain their separate status.
 
+**Conditional Verus pilot, 5 November 2026:** David asked to use Verus if it is
+better and document justified work. The named full-domain addition gap and
+Kani's actual zero-check timeout justify the
+[bounded Core pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026),
+routed through the [development plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and [P1 backlog](../tasks/development-backlog.md#p1-core-completion). Compatibility,
+isolated admission and actual-source benefit remain to be demonstrated. Broader
+adoption stays DEFER; completed Kani proofs, mandatory open obligations and all
+execution holds retain their scopes. No Verus installation or proof is claimed.
+
 The [proof workflow](../.agents/skills/testing/references/formal-verification.md)
 and shared [testing contract](../.agents/skills/testing/CONTRACT.md#product-specific-evidence)
 carry this requirement through planning, Rust/contract implementation and final
@@ -387,8 +397,11 @@ integration until a bounded actual-code comparison demonstrates additional value
 A valuable contract and a justified benefit hypothesis can trigger that pilot;
 prior Kani failure is not required. The report retains candidate properties, the
 Kani alternative, proof/trust boundaries and failure triage. No application proof
-was executed or new tool/CI gate adopted; the [S1.1c task](../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026)
-owns assessment history and review results.
+was executed or new tool/CI gate adopted **by that assessment**; the
+[S1.1c task](../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026)
+owns its history. The report's dated 5 November addendum and
+[current Core pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+now record the triggered evaluation; broader adoption remains deferred.
 
 **State-guided fuzzing experiment, 1 November 2026:** the
 [completed experiment report](supporting-reviews/state-guided-fuzzing-experiment.md)
@@ -514,7 +527,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.
-- [verus-assessment.md](supporting-reviews/verus-assessment.md): source-based evaluation, deferred integration, candidate properties, comparison with Kani, proof boundaries and conditions for a future pilot.
+- [verus-assessment.md](supporting-reviews/verus-assessment.md): historical source assessment and dated bounded Core pilot, retained Kani evidence, same-contract comparison, proof/trust boundaries and conditional adoption criteria.
 - [hifitime-lessons.md](supporting-reviews/hifitime-lessons.md): critically checked proof-specification, harness-reachability, conversion-anchor and leap-data lessons; current proof-status corrections and bounded adoption through existing domain/leap owners, without a new numerical dependency.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.

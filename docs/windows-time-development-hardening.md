@@ -836,6 +836,15 @@ resource/attempt accounting; unsupported syntax, timeout, empty selection or
 unsatisfied unwinding leaves the obligation incomplete. An unsupported verifier
 may justify another bounded tool evaluation; it does not waive the proof gate.
 
+The [5 November Core Verus pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+is such a conditional evaluation after the actual addition timeout and David's
+request to use Verus if better. Its existing task fixes one candidate, isolated
+admission, storage/time/attempt limits and complete actual-body scope. Preserve
+completed Kani evidence and open addition acceptance; use no product assumptions,
+alternate executable body or narrowed domain to obtain a pass. Broad tool/CI
+adoption remains deferred pending measured source-bound results. This selects
+no shipping compiler change and lifts no execution hold.
+
 Reuse unchanged evidence and run required affected proofs at stable candidate
 checkpoints. The [S1.1c rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
 owns the first campaign; other domain, leap, exchange and Core mathematics remain
