@@ -47,6 +47,8 @@ to own requirements, and task records own executed evidence.
 | What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-20, mapped to technical checks. |
 | What technical/security result is required? | [Architecture §20.2](windows-time-architecture.md#202-acceptance-catalog): CHECK-1–CHECK-27, independent expected results, protected effects, valid controls and stage/owner. |
 | What is in scope for the current UI prototype? | [Architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): M0-01–M0-08 and D1–D3 deferrals/re-entry gates; [UI-M0 task](../tasks/ui-m0.md) for implementation ownership and evidence. |
+| Which UI toolkit should the next agent use? | [OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) selects Slint as the complete Win32 UI replacement; [S0.5](../tasks/s0.5-ui-comparison.md) owns the migration. Source preparation and admitted fixture work can parallel Core; current Win32 source and results are the pre-migration baseline. |
+| How should translators add UI languages and how are binary catalogs delivered? | [UI localization](plans/ui-localization.md), under [OD-12](nevrotick-owner-decisions.md#16-od-12--externalized-ui-translations-and-binary-catalogs): editable JSON → validated CBOR → shared typed Rust presentation catalog. All raw catalogs remain untrusted; the 6 November threat amendment covers independent contracts, isolated conversion, bounded admission and critical-meaning review/fallback. Slint, tray/notifications and accessible names share one policy; source work belongs to S0.5, actual adopted-locale/native evidence to P5. |
 | Which unresolved decisions or investigations gate dependent work? | [Open decisions](windows-time-architecture.md#22-open-decisions-and-release-blockers), [owner-decision procedure](nevrotick-owner-decisions.md) and [research assignments](nevrotick-research-handoff.md). |
 | How are checks run, and where are results kept? | [TOOLING.md](../TOOLING.md#starting-implementation) and [configured tool execution](../.agents/skills/testing/references/configured-tooling.md); the existing task record owns candidate-specific results and gaps. |
 | How do agents prepare and manage a disposable Windows Sandbox from Windows or WSL? | [manage-windows-sandbox](../.agents/skills/environment/manage-windows-sandbox/SKILL.md): concise procedure with detailed operations, security/configuration, resource, winapp, evidence and troubleshooting references. [Windows task §4.16](../tasks/windows11-integration.md#416-windows-sandbox-management-skill--3-november-2026) records the skill delivery; current execution holds and product CHECK owners remain. |
@@ -387,7 +389,14 @@ Detailed execution evidence remains in the [S1.1e task](../tasks/s1.1-determinis
 
 **Architecture contract assessment, 30 October 2026:** the [critical review](supporting-reviews/architecture-contract-review.md) distinguishes valid specification gaps from existing controls and stale external snapshots. [Canonical acceptance refinements](windows-time-architecture.md#2021-contract-review-acceptance-refinements), [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix) and [the execution workstream](plans/development-plan.md#82-contract-review-workstream-and-interface-gates) cover ownership, durable correction, adjustment modes, trust lifetimes, fresh agreement and lifecycle/tooling evidence. Unresolved numerical and trust-policy decisions remain held; no native qualification is claimed.
 
-**UI toolkit comparison, 30 October 2026:** the [Win32 versus egui report](supporting-reviews/ui-toolkit-comparison.md) summarizes measurements, tradeoffs and evidence limits; the [S0.5 execution record](../tasks/s0.5-ui-comparison.md#results) retains detailed inputs and receipts. David rejected the tested egui Glow/AccessKit configuration on memory consumption and closed the comparison; retain Win32 and the existing resource targets. This pilot establishes no full accessibility, sustained performance or product-graph admission.
+**UI toolkit comparison, 30 October 2026; superseded choice on 5 November:** the
+[Win32 versus egui report](supporting-reviews/ui-toolkit-comparison.md) preserves
+the closed pilot and exact evidence. David rejected the tested egui configuration
+on memory consumption. [OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+now selects Slint as the complete Win32 UI replacement, with migration tracked in
+the [existing S0.5 record](../tasks/s0.5-ui-comparison.md). Keep the resource targets
+and licence/graph/native qualification requirements. Old results do not qualify
+Slint; selecting it requires no repeat toolkit-choice comparison.
 
 **Protocol follow-up, 30 October 2026:** [NTP client behavior](windows-time-architecture.md#73-ntp-client-behavior) makes KoD support explicit through pinned Chrony/independent-codebase analysis and reuse. The [existing protocol task](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) records RFC 8915 alignment and remaining implementation checks; [TLS policy](windows-time-architecture.md#1871-license-gate-and-finite-provider-choice) prioritizes AES-GCM while retaining provider/CPU qualification. These are P2 requirements, not implemented NTS/KoD support or measured AES speedup.
 
@@ -459,21 +468,23 @@ Accepted owner decisions govern their stated scope; recommendations and open que
 
 ## UI design and brand references
 
-David has designated these existing bundles as references for agents working on
-the UI. Use design v0.2 for screen composition and interaction flows, and the AVIF
-kit for brand artwork and variants.
+David selected design v0.4 as the current HTML reference on 5 November 2026.
+Use it for screen composition and interaction flows, and the AVIF kit for brand
+artwork and variants. Design v0.2 remains historical with its original scene IDs.
 
 | Reference | Start here |
 | --- | --- |
-| Design guidance | [Design v0.2 README](nevrotick-design-v0.2/README.md), then [UI specification](nevrotick-design-v0.2/docs/02-ui-spec.md). |
-| Visual and interaction examples | [Interactive HTML preview](nevrotick-design-v0.2/NevroTick-UI-preview.html) and [screen/scene catalogue](nevrotick-design-v0.2/screens/README.md). |
+| Design guidance | [Current design v0.4](nevrotick-design-v0.4/README.md), [usage and scenes](nevrotick-design-v0.4/README-RU.md), [tray/exit update](nevrotick-design-v0.4/review/tray/REPORT-RU.md), [status/notification audit](nevrotick-design-v0.4/review/status-notifications/REPORT-RU.md). |
+| Visual and interaction examples | [Interactive HTML preview](nevrotick-design-v0.4/NevroTick-UI-v0.4.html), [editable sources](nevrotick-design-v0.4/src/), [tests](nevrotick-design-v0.4/tests/). |
+| Historical design | [Design v0.2](nevrotick-design-v0.2/README.md), [retained UI specification](nevrotick-design-v0.2/docs/02-ui-spec.md) and [old screen/scene catalogue](nevrotick-design-v0.2/screens/README.md). |
 | Brand assets | [AVIF kit README](NevroTick-AVIF-kit-v1/README.md) and [asset manifest](NevroTick-AVIF-kit-v1/manifest.json), including transparent, light/dark and size variants. |
 | Asset rights and provenance | [Brand notice](NevroTick-AVIF-kit-v1/BRAND-LICENSE.txt) and the kit's per-image metadata; keep these separate from the application source-code licence. |
 
-Apply the references within the current UI-M0 scope and D1–D3 deferrals. The React
-viewer illustrates the design; its validators, dependencies and mock outcomes do
-not define the Rust/Win32 implementation. Rendered HTML/screenshots may predate
-specification corrections. The live canonical architecture and accepted owner
+Apply the references within the current UI-M0 scope and D1–D3 deferrals. HTML
+validators, dependencies and mock outcomes do not define the Rust/Slint
+implementation selected under OD-11. Imported Win32 descriptions reflect the
+pre-migration baseline. Simulated service, ownership and notification flows in v0.4 do
+not implement or qualify native behavior. The live canonical architecture and accepted owner
 decisions retain precedence over archived copies in the design bundle.
 
 ## Supporting reviews and comparison
@@ -487,7 +498,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [development-compiler-review.md](supporting-reviews/development-compiler-review.md): compiler/lint/profile and Windows mitigation review.
 - [development-evidence-review.md](supporting-reviews/development-evidence-review.md): CI trust, isolation, mutation contract and correction verification.
 - [basic-features-review.md](supporting-reviews/basic-features-review.md): integrated product feature, UX, authority and acceptance review.
-- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): measured Win32/egui pilot, dependency concerns and the owner's decision to retain Win32; detailed execution stays in the S0.5 task.
+- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): historical Win32/egui pilot and dependency concerns; OD-11 supersedes its retain-Win32 direction. Detailed evidence and the selected Slint migration stay in the S0.5 task.
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.

@@ -12,6 +12,12 @@ checkpoint numbers and passes never replace the current candidate or next action
 only its next activated child under the [grouped backlog](development-backlog.md).
 Role owners identify engineering responsibility, not assigned people.
 
+**Parallel ready source work:** [OD-11's Slint replacement amendment](s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
+owns source/dependency/licence preparation alongside Core. The Rust UI still
+uses Win32 until migration; graph admission, fixture-port evidence and native
+qualification remain separate. One integration owner serializes shared graph
+and schema changes.
+
 ## Phase and stage ownership
 
 | Phase / stages | Task and role owner | Readiness, prerequisites and observable exit |
@@ -20,7 +26,7 @@ Role owners identify engineering responsibility, not assigned people.
 | P0 S0.2 | [Platform parent](development-backlog.md#p0-platform-and-policy); platform/security | Deferred service-token/lifecycle experiment; intended accounts, admitted adapter and disposable fixture precede actual allowed/denied CHECK-1/27 observations. |
 | P0 S0.3 | [Platform parent](development-backlog.md#p0-platform-and-policy); IPC/security | Deferred mutual-identity experiment after token/endpoint contracts; real permitted/denied status/protected calls and fake endpoints establish CHECK-2 subset. |
 | P0 S0.4 | [Platform parent](development-backlog.md#p0-platform-and-policy), [W11-W02](windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation); clock/platform | Deferred measured backend experiment; bounded owned guest/reference/recovery precede sign/rate/step/power/cancel CHECK-10/11/12 observations. |
-| P0 S0.5 | [Platform parent](development-backlog.md#p0-platform-and-policy); UI/accessibility | Deferred full toolkit feasibility. [UI-M0](ui-m0.md) and the closed [Win32/egui comparison](s0.5-ui-comparison.md) supply narrower evidence; neither completes CHECK-22/S0.5. |
+| P0 S0.5 | [Slint migration and retained comparison](s0.5-ui-comparison.md#ordered-work-and-observable-exits); UI/accessibility + dependency/licence | OD-11 selects complete Win32 replacement. Ready source/licence/profile work → pinned reviewed graph → fixture-only v0.4 port → admitted native qualification and single-UI cutover. Full CHECK-22 feasibility retains D1/D3 triggers; Win32/egui history and UI-M0 passes do not qualify Slint. |
 | P0 S0.6 | [W11-W05](windows11-integration.md#w11-w05-observe-effective-scm-maintenance-and-process-policy), [W11-W10](windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need); packaging/platform/security | Existing owner for selected complete MSIX laboratory mechanics; provisioning/recovery and admitted guest gates precede CHECK-5/13/23 subset. No duplicate package task. |
 | P0 S0.7 | [Platform parent](development-backlog.md#p0-platform-and-policy); architecture/policy/security | Deferred finite decision freeze after relevant evidence; explicit decisions or dependent blockers, including native-work and supported-environment limits. |
 | P1 S1.1a–b | [Header](s1.1-header.md), [framing](s1.1-framing.md); protocol | Existing inert `ntp-wire` tasks; candidate-specific framing/admission evidence, not acquisition/authentication/sample authority. |
@@ -32,7 +38,7 @@ Role owners identify engineering responsibility, not assigned people.
 | P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition); engine/protocol/security | Deferred real UDP/DNS → NTS → qualified reuse/recovery → adversarial closure. Reuse the [engine pilot](engine-transport-pilot.md), protocol and crypto owners without inheriting production qualification. |
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary); platform/IPC/security/Core | Deferred final services → authenticated handlers → mandatory state → simulated-backend integration. W11/ST-W assignments refine these owners; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
-| P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred real status → settings/helper → diagnostics/tray → accessibility/resources. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
+| P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred live Slint status → settings/helper → diagnostics/tray → accessibility/resources after the selected replacement chain. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
 | P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then submission/delivered provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; local and Store-delivered exits differ. |
 | P7 | [Final-qualification parent](development-backlog.md#p7-final-qualification); independent QA/release, David approves release | Deferred exact integrated candidate after applicable phase evidence; reconcile CHECK-1–27/AC-01–20, installed bytes, unresolved blockers and actual release-profile trust. |
 
@@ -52,7 +58,7 @@ parents; it creates no second execution sequence.
 
 | Source / record | Disposition and re-entry owner |
 | --- | --- |
-| [Win32/egui comparison](../docs/supporting-reviews/ui-toolkit-comparison.md), [task](s0.5-ui-comparison.md) | Closed; retain Win32 and resource limits. A new renderer experiment needs its own explicit scope; this is not an unfinished UI task. |
+| [Win32/egui comparison](../docs/supporting-reviews/ui-toolkit-comparison.md), [task](s0.5-ui-comparison.md) | The 30 October experiment/rejection is closed and retained exactly. [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) supersedes its retain-Win32 direction; the existing task now owns the Slint migration. Resource targets remain, no comparison rerun or Win32 fallback is selected, and no Slint admission/qualification follows from historical results. |
 | [State-guided fuzzing experiment](../docs/supporting-reviews/state-guided-fuzzing-experiment.md), [harness task](s1.1-deterministic-harness.md) | Closed; reuse its strict oracle, corpus and targeted lifecycle lessons. Reopen only for a concrete uncovered transition, changed input model or demonstrated search gap. |
 | [Verus assessment](../docs/supporting-reviews/verus-assessment.md), [time-domain task](s1.1-time-domain.md#verus-proposal-assessment--1-november-2026) | DEFER integration; a named valuable contract and testable benefit hypothesis may justify one bounded comparison. No scheduled pilot or mandatory gate is added. |
 | [Update assessment](../docs/windows-time-update-assessment.md) and retained TUF reviews | TUF and a bespoke privileged updater remain unadopted. W11-W10 owns the selected MSIX delivery; a materially different update design requires its existing decision process. |

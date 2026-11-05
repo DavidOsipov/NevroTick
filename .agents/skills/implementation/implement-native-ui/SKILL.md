@@ -6,20 +6,31 @@ description: "Implement or review NevroTick native Windows controls, status pres
 # Implement native UI
 
 Apply canonical architecture section 16.5 before the general guidance below.
-During UI-M0 use fixture-only, unelevated native controls, sample-data labels and
+During UI-M0 use fixture-only, unelevated Slint views, sample-data labels and
 disabled protected actions. Keep D1 display, D2 production state/policy and D3
 full keyboard/Narrator/UIA work Deferred with owners/re-entry triggers; do not
-implement or qualify them as UI-M0 prerequisites. Retain inherited standard
+implement or qualify them as UI-M0 prerequisites. Retain inherited toolkit
 control behavior, accessible labels and the milestone's native observations.
 
-Use canonical architecture section 16. Default candidate: Win32 common controls
-through `windows`/`windows-sys` plus small safe adapter. Slint and egui/AccessKit
-alternatives need demonstrated need and license/target qualification. Translating
-website HTML skill does not justify webviews or toolkit changes.
+Use canonical architecture section 16 and
+[OD-11](../../../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
+For Slint components, models, callbacks, layouts and the toolkit build profile,
+use the [Slint implementation skill](../implement-slint/SKILL.md) and only its
+task-relevant references; this leaf owns the shared native UI requirements.
+Slint is the selected complete replacement for Win32 common controls. The
+[existing S0.5 task](../../../../tasks/s0.5-ui-comparison.md) owns the migration;
+do not ask for toolkit selection again. Pin and admit the actual Slint licence,
+backend/renderer/features and dependency graph before adoption. Keep narrow
+Windows adapters for required OS integration. Checked-in Win32 source and
+historical measurements remain the pre-migration baseline, not Slint evidence.
+Source preparation and admitted fixture implementation may parallel Core; retain
+native execution holds and one owner for shared schemas/Cargo graph. Translating
+the HTML reference does not justify webviews or live-service integration.
 
 Trace user task, control relationships, current status owner and effect path.
-Choose native controls/UI Automation patterns expressing actual action, value and
-selection semantics. Native controls alone prove no keyboard/screen-reader behavior.
+Choose Slint controls and Windows UI Automation patterns expressing actual action,
+value and selection semantics. Toolkit accessibility support alone proves no
+keyboard/screen-reader behavior on the selected Windows backend.
 
 Preserve these product semantics:
 
@@ -57,7 +68,7 @@ production Apply, persistence, service policy or other D2 behavior.
 
 Select Rust/FFI format, compiler/Clippy and focused checks through the
 [configured-tool workflows](../../testing/references/configured-tooling.md),
-using the UI crate's actual Windows target and binding features. Keep dependency
+using the UI crate's actual Windows target and selected toolkit/binding features. Keep dependency
 admission separate from fixture behavior. During UI-M0 retain those engineering
 checks and M0 native observations; apply the full accessibility guidance below
 only at its re-entry trigger.

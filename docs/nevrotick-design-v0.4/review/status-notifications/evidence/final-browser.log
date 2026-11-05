@@ -1,0 +1,38 @@
+[
+  {
+    "file": "index.html",
+    "width": 360,
+    "scenes": 30,
+    "checks": "settings both modes/test/OS/DND/presenter; all30 policies; persistence/dedupe/dismiss; safe/current/stale/invalid activation; planned transitions; unknown scope; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "browserNotificationCalls": 0
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "scenes": 30,
+    "checks": "settings both modes/test/OS/DND/presenter; all30 policies; persistence/dedupe/dismiss; safe/current/stale/invalid activation; planned transitions; unknown scope; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "browserNotificationCalls": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "scenes": 30,
+    "checks": "settings both modes/test/OS/DND/presenter; all30 policies; persistence/dedupe/dismiss; safe/current/stale/invalid activation; planned transitions; unknown scope; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "browserNotificationCalls": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "scenes": 30,
+    "checks": "settings both modes/test/OS/DND/presenter; all30 policies; persistence/dedupe/dismiss; safe/current/stale/invalid activation; planned transitions; unknown scope; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "browserNotificationCalls": 0
+  }
+]

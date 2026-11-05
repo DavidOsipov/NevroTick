@@ -1,0 +1,126 @@
+{
+  "source": "cd90ed04dbd26e8730204efd123fd22c80d01db6",
+  "independentCases": 35,
+  "modelStatusFixes": "pass",
+  "unresolved": {
+    "windowsOwnerFeedback": [
+      {
+        "operation": "start",
+        "owner": "Windows Time",
+        "feedback": " Service command sample Outcome unknown The acknowledgement was lost. The command may have completed; service state and clock ownership are unknown. Diagnose and reconcile before another command. "
+      },
+      {
+        "operation": "stop",
+        "owner": "Windows Time",
+        "feedback": " Service command sample Outcome unknown The acknowledgement was lost. The command may have completed; service state and clock ownership are unknown. Diagnose and reconcile before another command. "
+      },
+      {
+        "operation": "restart",
+        "owner": "Windows Time",
+        "feedback": " Service command sample Outcome unknown The acknowledgement was lost. The command may have completed; service state and clock ownership are unknown. Diagnose and reconcile before another command. "
+      }
+    ],
+    "trayMissingAriaTarget": [
+      {
+        "scene": "healthy",
+        "id": "sync-response"
+      },
+      {
+        "scene": "server-rate-limited",
+        "id": "sync-response"
+      },
+      {
+        "scene": "server-access-refused",
+        "id": "sync-response"
+      },
+      {
+        "scene": "acquiring",
+        "id": "sync-response"
+      },
+      {
+        "scene": "holdover",
+        "id": "sync-response"
+      },
+      {
+        "scene": "expired",
+        "id": "sync-response"
+      },
+      {
+        "scene": "offline",
+        "id": "sync-response"
+      },
+      {
+        "scene": "conflict",
+        "id": "sync-response"
+      },
+      {
+        "scene": "resume",
+        "id": "sync-response"
+      },
+      {
+        "scene": "ntp",
+        "id": "sync-response"
+      },
+      {
+        "scene": "slewing",
+        "id": "sync-response"
+      },
+      {
+        "scene": "leap-unknown",
+        "id": "sync-response"
+      },
+      {
+        "scene": "leap-guard",
+        "id": "sync-response"
+      },
+      {
+        "scene": "roughtime",
+        "id": "sync-response"
+      },
+      {
+        "scene": "roughtime-date-ready",
+        "id": "sync-response"
+      },
+      {
+        "scene": "roughtime-recovered",
+        "id": "sync-response"
+      },
+      {
+        "scene": "roughtime-unavailable",
+        "id": "sync-response"
+      },
+      {
+        "scene": "roughtime-rejected",
+        "id": "sync-response"
+      },
+      {
+        "scene": "reserve",
+        "id": "sync-response"
+      },
+      {
+        "scene": "recovered",
+        "id": "sync-response"
+      },
+      {
+        "scene": "signed-conflict",
+        "id": "sync-response"
+      },
+      {
+        "scene": "correction",
+        "id": "sync-response"
+      },
+      {
+        "scene": "correction-expired",
+        "id": "sync-response"
+      },
+      {
+        "scene": "all-rate-limited",
+        "id": "sync-response"
+      },
+      {
+        "scene": "debug-partial",
+        "id": "sync-response"
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Pending/. Input:
+
+'Configuration and time management · sample\n' +
+  'Time management change pending\n' +
+  '\n' +
+  'The request is pending. Clock release, service changes and the new owner are unconfirmed. Windows Time cannot be activated before qualified release.'
+
+    at /workspace/nevrotick-ui-audit/ownership-work/final-qa/independent-probe.cjs:29:143 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Configuration and time management · sample\n' +
+    'Time management change pending\n' +
+    '\n' +
+    'The request is pending. Clock release, service changes and the new owner are unconfirmed. Windows Time cannot be activated before qualified release.',
+  expected: /Pending/,
+  operator: 'match',
+  diff: 'simple'
+}

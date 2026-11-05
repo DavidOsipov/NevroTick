@@ -1,0 +1,274 @@
+[
+  {
+    "file": "index.html",
+    "width": 360,
+    "label": "windows-unavailable-retry-unshown",
+    "screenshot": "local-360-final-windows-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "index.html",
+    "width": 360,
+    "label": "product-unavailable-retry-unshown",
+    "screenshot": "local-360-final-product-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "index.html",
+    "width": 360,
+    "label": "simple-settings",
+    "screenshot": "local-360-final-simple-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "Settings\nTime check interval\n?\nAutomatic (recommended)\nCustom\n\nHow often to request time measurements. Recovery and server limits may extend the actual interval.\n\nSaved in this preview\nAutomatic\nUpdate preview\nBackground service\n\nBackground synchronization runs independently of this window.\n\nTime manager\nNevroTick\nCurrent ownership and synchronization are separate observations.\nStart automatically with Windows\nOn\nTime measurements: Automatic. Clock control: Automatic.\nWindows Time\nstopped · Disabled\nSample host observation; these are not Windows defaults.\n\nClosing the app does not change the service state. Service changes require an administrator.\n\nManage service in Power user\nNotifications\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\n\nWindows: Allowed · sample\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nNotification details in Power user\n\nNew alerts need an active NevroTick window or tray observer. Closing the last observer stops new local alerts; background services keep running.\n\nDate recovery\nRoughtime when needed\n\nRoughtime helps when an incorrect computer date prevents secure time checks. It provides a signed, approximate date only when needed.\n\nRecovering the date does not change your clock. Secure NTS checks, agreement between time sources and permission are still required before any clock change.\n\nReview date recovery in Power user\n\nSource policy and diagnostic details are available in Power user.\n\nReview time policy in Power user"
+  },
+  {
+    "file": "index.html",
+    "width": 360,
+    "label": "power-settings",
+    "screenshot": "local-360-final-power-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 360,
+    "label": "important-toast",
+    "screenshot": "local-360-final-important-toast.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nNo usable time estimate\n\nAutomatic clock corrections are withheld. Review network access and the configured time sources.\n\nOpen NevroTick",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 360,
+    "label": "suppressed-settings",
+    "screenshot": "local-360-final-suppressed-settings.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nThe same incident was already previewed. No duplicate notification was created; dismissing it does not resolve the problem.",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nBanner suppressed / Do Not Disturb · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may suppress the banner or keep an item in Notification Center. A visible banner is not confirmed.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "label": "windows-unavailable-retry-unshown",
+    "screenshot": "local-1280-final-windows-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "label": "product-unavailable-retry-unshown",
+    "screenshot": "local-1280-final-product-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "label": "simple-settings",
+    "screenshot": "local-1280-final-simple-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "Settings\nTime check interval\n?\nAutomatic (recommended)\nCustom\n\nHow often to request time measurements. Recovery and server limits may extend the actual interval.\n\nSaved in this preview\nAutomatic\nUpdate preview\nBackground service\n\nBackground synchronization runs independently of this window.\n\nTime manager\nNevroTick\nCurrent ownership and synchronization are separate observations.\nStart automatically with Windows\nOn\nTime measurements: Automatic. Clock control: Automatic.\nWindows Time\nstopped · Disabled\nSample host observation; these are not Windows defaults.\n\nClosing the app does not change the service state. Service changes require an administrator.\n\nManage service in Power user\nNotifications\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\n\nWindows: Allowed · sample\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nNotification details in Power user\n\nNew alerts need an active NevroTick window or tray observer. Closing the last observer stops new local alerts; background services keep running.\n\nDate recovery\nRoughtime when needed\n\nRoughtime helps when an incorrect computer date prevents secure time checks. It provides a signed, approximate date only when needed.\n\nRecovering the date does not change your clock. Secure NTS checks, agreement between time sources and permission are still required before any clock change.\n\nReview date recovery in Power user\n\nSource policy and diagnostic details are available in Power user.\n\nReview time policy in Power user"
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "label": "power-settings",
+    "screenshot": "local-1280-final-power-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "label": "important-toast",
+    "screenshot": "local-1280-final-important-toast.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nNo usable time estimate\n\nAutomatic clock corrections are withheld. Review network access and the configured time sources.\n\nOpen NevroTick",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "label": "suppressed-settings",
+    "screenshot": "local-1280-final-suppressed-settings.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nThe same incident was already previewed. No duplicate notification was created; dismissing it does not resolve the problem.",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nBanner suppressed / Do Not Disturb · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may suppress the banner or keep an item in Notification Center. A visible banner is not confirmed.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "label": "windows-unavailable-retry-unshown",
+    "screenshot": "local-480-final-windows-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "label": "simple-settings",
+    "screenshot": "local-480-final-simple-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "Settings\nTime check interval\n?\nAutomatic (recommended)\nCustom\n\nHow often to request time measurements. Recovery and server limits may extend the actual interval.\n\nSaved in this preview\nAutomatic\nUpdate preview\nBackground service\n\nBackground synchronization runs independently of this window.\n\nTime manager\nNevroTick\nCurrent ownership and synchronization are separate observations.\nStart automatically with Windows\nOn\nTime measurements: Automatic. Clock control: Automatic.\nWindows Time\nstopped · Disabled\nSample host observation; these are not Windows defaults.\n\nClosing the app does not change the service state. Service changes require an administrator.\n\nManage service in Power user\nNotifications\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\n\nWindows: Allowed · sample\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nNotification details in Power user\n\nNew alerts need an active NevroTick window or tray observer. Closing the last observer stops new local alerts; background services keep running.\n\nDate recovery\nRoughtime when needed\n\nRoughtime helps when an incorrect computer date prevents secure time checks. It provides a signed, approximate date only when needed.\n\nRecovering the date does not change your clock. Secure NTS checks, agreement between time sources and permission are still required before any clock change.\n\nReview date recovery in Power user\n\nSource policy and diagnostic details are available in Power user.\n\nReview time policy in Power user"
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "label": "power-settings",
+    "screenshot": "local-480-final-power-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "label": "important-toast",
+    "screenshot": "local-480-final-important-toast.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nNo usable time estimate\n\nAutomatic clock corrections are withheld. Review network access and the configured time sources.\n\nOpen NevroTick",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "label": "suppressed-settings",
+    "screenshot": "local-480-final-suppressed-settings.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nThe same incident was already previewed. No duplicate notification was created; dismissing it does not resolve the problem.",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nBanner suppressed / Do Not Disturb · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may suppress the banner or keep an item in Notification Center. A visible banner is not confirmed.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "label": "windows-unavailable-retry-unshown",
+    "screenshot": "standalone-360-final-windows-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "label": "product-unavailable-retry-unshown",
+    "screenshot": "standalone-360-final-product-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "label": "simple-settings",
+    "screenshot": "standalone-360-final-simple-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "Settings\nTime check interval\n?\nAutomatic (recommended)\nCustom\n\nHow often to request time measurements. Recovery and server limits may extend the actual interval.\n\nSaved in this preview\nAutomatic\nUpdate preview\nBackground service\n\nBackground synchronization runs independently of this window.\n\nTime manager\nNevroTick\nCurrent ownership and synchronization are separate observations.\nStart automatically with Windows\nOn\nTime measurements: Automatic. Clock control: Automatic.\nWindows Time\nstopped · Disabled\nSample host observation; these are not Windows defaults.\n\nClosing the app does not change the service state. Service changes require an administrator.\n\nManage service in Power user\nNotifications\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\n\nWindows: Allowed · sample\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nNotification details in Power user\n\nNew alerts need an active NevroTick window or tray observer. Closing the last observer stops new local alerts; background services keep running.\n\nDate recovery\nRoughtime when needed\n\nRoughtime helps when an incorrect computer date prevents secure time checks. It provides a signed, approximate date only when needed.\n\nRecovering the date does not change your clock. Secure NTS checks, agreement between time sources and permission are still required before any clock change.\n\nReview date recovery in Power user\n\nSource policy and diagnostic details are available in Power user.\n\nReview time policy in Power user"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "label": "power-settings",
+    "screenshot": "standalone-360-final-power-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "label": "important-toast",
+    "screenshot": "standalone-360-final-important-toast.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nNo usable time estimate\n\nAutomatic clock corrections are withheld. Review network access and the configured time sources.\n\nOpen NevroTick",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "label": "suppressed-settings",
+    "screenshot": "standalone-360-final-suppressed-settings.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nThe same incident was already previewed. No duplicate notification was created; dismissing it does not resolve the problem.",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nBanner suppressed / Do Not Disturb · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may suppress the banner or keep an item in Notification Center. A visible banner is not confirmed.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "label": "windows-unavailable-retry-unshown",
+    "screenshot": "standalone-1280-final-windows-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "label": "product-unavailable-retry-unshown",
+    "screenshot": "standalone-1280-final-product-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "label": "simple-settings",
+    "screenshot": "standalone-1280-final-simple-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "Settings\nTime check interval\n?\nAutomatic (recommended)\nCustom\n\nHow often to request time measurements. Recovery and server limits may extend the actual interval.\n\nSaved in this preview\nAutomatic\nUpdate preview\nBackground service\n\nBackground synchronization runs independently of this window.\n\nTime manager\nNevroTick\nCurrent ownership and synchronization are separate observations.\nStart automatically with Windows\nOn\nTime measurements: Automatic. Clock control: Automatic.\nWindows Time\nstopped · Disabled\nSample host observation; these are not Windows defaults.\n\nClosing the app does not change the service state. Service changes require an administrator.\n\nManage service in Power user\nNotifications\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\n\nWindows: Allowed · sample\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nNotification details in Power user\n\nNew alerts need an active NevroTick window or tray observer. Closing the last observer stops new local alerts; background services keep running.\n\nDate recovery\nRoughtime when needed\n\nRoughtime helps when an incorrect computer date prevents secure time checks. It provides a signed, approximate date only when needed.\n\nRecovering the date does not change your clock. Secure NTS checks, agreement between time sources and permission are still required before any clock change.\n\nReview date recovery in Power user\n\nSource policy and diagnostic details are available in Power user.\n\nReview time policy in Power user"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "label": "power-settings",
+    "screenshot": "standalone-1280-final-power-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "label": "important-toast",
+    "screenshot": "standalone-1280-final-important-toast.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nNo usable time estimate\n\nAutomatic clock corrections are withheld. Review network access and the configured time sources.\n\nOpen NevroTick",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "label": "suppressed-settings",
+    "screenshot": "standalone-1280-final-suppressed-settings.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nThe same incident was already previewed. No duplicate notification was created; dismissing it does not resolve the problem.",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nBanner suppressed / Do Not Disturb · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may suppress the banner or keep an item in Notification Center. A visible banner is not confirmed.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "label": "windows-unavailable-retry-unshown",
+    "screenshot": "standalone-480-final-windows-unavailable-retry-unshown.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nTime management change is incomplete\n\nNo active synchronizer is confirmed after an incomplete handover. Open NevroTick to review the current services and choose the next action.\n\nOpen NevroTick",
+    "main": "Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n\nTime manager: No active synchronizer\n\nYOUR SYSTEM CLOCK\nClock status\nNTS only\nHistorical evidence\nNo active synchronizer\n\nAutomatic synchronization is off. Your clock may drift until you explicitly choose a time manager.\n\nChoose Use NevroTick or Use Windows Time in Background service.\n\nClock activity: No active automatic synchronization\n\nTime management\nDiagnostics\nLast known offset\n—\nNo current usable estimate\nLast known uncertainty\n?\n—\nModel estimate, not a precision guarantee\nAuthentication\n?\nHistorical NevroTick evidence only\nSource agreement\n?\n0 of 4 identities · No current agreement after service operation\nPrevious source evidence is retained as history and supplies no current vote.\nLast qualified estimate\nNo current qualified estimate"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "label": "simple-settings",
+    "screenshot": "standalone-480-final-simple-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "Settings\nTime check interval\n?\nAutomatic (recommended)\nCustom\n\nHow often to request time measurements. Recovery and server limits may extend the actual interval.\n\nSaved in this preview\nAutomatic\nUpdate preview\nBackground service\n\nBackground synchronization runs independently of this window.\n\nTime manager\nNevroTick\nCurrent ownership and synchronization are separate observations.\nStart automatically with Windows\nOn\nTime measurements: Automatic. Clock control: Automatic.\nWindows Time\nstopped · Disabled\nSample host observation; these are not Windows defaults.\n\nClosing the app does not change the service state. Service changes require an administrator.\n\nManage service in Power user\nNotifications\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\n\nWindows: Allowed · sample\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nNotification details in Power user\n\nNew alerts need an active NevroTick window or tray observer. Closing the last observer stops new local alerts; background services keep running.\n\nDate recovery\nRoughtime when needed\n\nRoughtime helps when an incorrect computer date prevents secure time checks. It provides a signed, approximate date only when needed.\n\nRecovering the date does not change your clock. Secure NTS checks, agreement between time sources and permission are still required before any clock change.\n\nReview date recovery in Power user\n\nSource policy and diagnostic details are available in Power user.\n\nReview time policy in Power user"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "label": "power-settings",
+    "screenshot": "standalone-480-final-power-settings.png",
+    "preview": "Windows notification previewHTML sample · no system notification is sent",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "label": "important-toast",
+    "screenshot": "standalone-480-final-important-toast.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nProblem notification preview only. No system notification was sent.\n\nNevroTick\n×\nNo usable time estimate\n\nAutomatic clock corrections are withheld. Review network access and the configured time sources.\n\nOpen NevroTick",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nAllowed · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may silence banners or keep notifications in Notification Center.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "label": "suppressed-settings",
+    "screenshot": "standalone-480-final-suppressed-settings.png",
+    "preview": "Windows notification preview\nHTML sample · no system notification is sent\n\nThe same incident was already previewed. No duplicate notification was created; dismissing it does not resolve the problem.",
+    "main": "SETTINGS\nSettings\n\nSynchronization, source policy and personal preferences.\n\nSynchronization\nBackground service\nNotifications\nTime policy\nYour preferences\nWindows notifications\nNo administrator needed\nNotify me about problems\n\nImportant problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.\n\nOn\nWindows availability\nBanner suppressed / Do Not Disturb · sample\nAn app preference does not grant Windows permission. Windows or organization settings may suppress notifications.\nNevroTick app\nApp or tray is running · sample\nNevroTick or its tray observer must be running to send new alerts. Background timekeeping runs separately.\n\nWindows may suppress the banner or keep an item in Notification Center. A visible banner is not confirmed.\n\nSend test notification\nWindows notification settings preview\nWhen and how notifications appear\n\nPrototype — sample data. Changes affect this preview only."
+  }
+]

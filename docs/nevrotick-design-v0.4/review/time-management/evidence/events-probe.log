@@ -1,0 +1,56 @@
+Recent events
+
+Sequence order is retained even when the wall clock is wrong.
+
+Filter events
+All events
+Notices, warnings and errors
+INFO
+Time sync active
+2 s old
+
+Three independently operated sources agree. Your clock is being maintained under the current policy.
+
+#204 · Status
+NOTICE
+No phase correction pending
+Earlier in this fixture
+
+Only acknowledged effects count as applied correction.
+
+#203 · Time policy
+INFO
+Certificate-time basis
+Earlier in this fixture
+
+Signed Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.
+
+#202 · Evidence
+Recent events
+
+Sequence order is retained even when the wall clock is wrong.
+
+Filter events
+All events
+Notices, warnings and errors
+INFO
+Time sync active
+2 s old
+
+Three independently operated sources agree. Your clock is being maintained under the current policy.
+
+#204 · Status
+NOTICE
+No phase correction pending
+Earlier in this fixture
+
+Only acknowledged effects count as applied correction.
+
+#203 · Time policy
+INFO
+Certificate-time basis
+Earlier in this fixture
+
+Signed Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.
+
+#202 · Evidence

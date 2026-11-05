@@ -50,11 +50,16 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-07 — concrete owner exceptions | OPEN-5/8/9 and affected clauses | Decision cards with compensating controls and bounded residual risk | Affected behavior or assurance claim |
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
-These tasks do not reopen the native Win32 direction, two-service authority split,
+These tasks do not reopen the
+[OD-11 Slint replacement decision](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
+two-service authority split,
 ordinary-user UI, time-only v1 or Windows 11 x64 first. The selected delivery target
 is now one complete hardened MSIX; its supported service provisioning and recovery
 remain to be qualified, with no separate MSI service prerequisite. Retained MSI
-profiles are alternatives for a later owner decision.
+profiles are alternatives for a later owner decision. Current Win32 source and
+observations remain the pre-migration baseline; Slint version/features/backend,
+licensing, dependencies and native behavior still need qualification. Toolkit
+selection neither removes required Windows OS adapters nor lifts execution holds.
 
 ## 3. R-01 — source reuse and licence compatibility
 

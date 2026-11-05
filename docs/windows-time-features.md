@@ -27,11 +27,11 @@ This document translates [architecture revision 1.4](windows-time-architecture.m
 
 ### Current UI entry milestone: UI-M0
 
-The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). Build an unelevated native Win32 fixture-only prototype: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice.
+The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). [OD-11, 5 November 2026](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) selects complete replacement of the Win32 UI with Slint; the existing Win32 implementation and observations remain the pre-migration baseline. Preserve UI-M0's unelevated, fixture-only scope: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice. Toolkit selection supplies no Slint implementation, dependency admission or native qualification.
 
-D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator and UI Automation qualification) are **Deferred**. Agents must not implement or qualify them during UI-M0 or make them completion prerequisites. Preserve standard controls' inherited behavior and accessible labels. Restore the relevant D2 rules before each live-status, real-policy or protected-command integration; restore D1/D3 before general-user preview/release or earlier support/qualification claims. The UI owner carries their triggers into the backlog and next-stage record.
+D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator and UI Automation qualification) are **Deferred**. Agents must not implement or qualify them during UI-M0 or make them completion prerequisites. Preserve existing control behavior and accessible labels through the replacement. Restore the relevant D2 rules before each live-status, real-policy or protected-command integration; restore D1/D3 before general-user preview/release or earlier support/qualification claims. The UI owner carries their triggers into the backlog and next-stage record.
 
-Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one owner for the shared native adapter. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
+Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one UI implementation owner. Keep necessary Windows OS adapters narrow; selecting Slint does not remove their API responsibilities. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
 
 ### The ten basic capabilities
 
@@ -215,9 +215,30 @@ Use event ordering that remains intelligible when wall time is wrong. Full/unava
 
 Use one small main window with Sources, Settings and Diagnostics. Native controls, system visual preferences and progressive disclosure support familiarity and resource efficiency. English is the initial language; typed localized messages and stable reason codes prepare for later locales without requiring them now.
 
+**Translation mechanism, OD-12:** the [localization design](plans/ui-localization.md)
+separates editable JSON translation sources from generated binary CBOR resources.
+One typed Rust catalog supplies window/dialog/error/help text, tray/menu/local
+notifications and accessible names through the selected Slint bridge. A new
+language changes data rather than UI logic. Future per-user Language selection
+belongs with personal preferences and remains accessible in both UI modes;
+only adopted, validated available languages are offered, with English as the
+initial default/fallback. Specific additional locales and independent user-pack
+imports are not adopted by the mechanism request.
+
 Every critical action must work with keyboard and Narrator and expose correct UI Automation semantics. Support contrast themes, text scaling, at least 200% display scaling, multi-monitor DPI changes, visible focus, cancellation and focus restoration. Do not reorder focused source rows or announce every changing offset. Microsoft's accessibility guidance and WCAG2ICT inform the native evaluation; neither a framework nor this document establishes conformance. [R3, R4]
 
-Provide an **opt-in tray mode**, off by default: keep a small UI observer when the window closes, show an accessible status indicator, and offer Open, Sync now and Quit UI under the same permissions. A separate opt-in starts that tray observer at sign-in; enabling it does not alter service startup. Quit UI leaves synchronization running. All critical flows remain accessible from the main window.
+Provide an **opt-in tray mode**, off by default: keep a small UI observer when the window closes, show an accessible status indicator, and offer Open, contextual Sync now/Check sources, Diagnostics, Settings, About and Quit UI under the same permissions. A separate opt-in starts that tray observer at sign-in; enabling it does not alter service startup. Quit UI leaves service state unchanged; running background services keep running. All critical flows remain accessible from the main window.
+
+**Owner clarification, 5 November 2026:** quitting through the tray requires a
+confirmation explaining that the app/tray closes while background services keep
+running. If services are stopped or their state is unknown, say that instead.
+Offer **Manage background service**, opening **Settings → Background service**
+without quitting or issuing a service command. Explain **Stop** for a temporary
+stop and **Disable NevroTick** to prevent future starts; each retains its own
+confirmation/authorization. Cancel keeps the observer open. Confirmed Quit closes
+only the user observer, preserves tray/sign-in preferences and changes no clock
+owner. New local alerts require an active observer. These are UI contracts for
+the reached tray slice, not new UI-M0/native service execution authority.
 
 The tray is a visibility preference, not an extra clock controller or independent watchdog. Its memory/wakeup budget and actual accessibility must qualify before shipping. Rich notifications and historical charts are deferred.
 

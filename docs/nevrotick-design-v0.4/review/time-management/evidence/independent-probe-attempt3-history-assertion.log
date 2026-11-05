@@ -1,0 +1,133 @@
+AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /Time sync active|being kept in sync automatically/. Input:
+
+'Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n' +
+  '\n' +
+  'Time manager: Windows Time · Windows synchronization not yet verified\n' +
+  '\n' +
+  'DIAGNOSTICS\n' +
+  'Diagnostics\n' +
+  '\n' +
+  'Observed facts, useful next steps and a bounded event history.\n' +
+  '\n' +
+  'Export preview\n' +
+  'Background service evidence\n' +
+  '\n' +
+  'Read-only review. Diagnose does not restart services, collect DEBUG logs, repair the package or request elevation.\n' +
+  '\n' +
+  'Service observation\n' +
+  'Both services stopped · confirmed sample\n' +
+  'Sample evidence only; no Windows service query is performed.\n' +
+  'Clock ownership\n' +
+  'Windows Time\n' +
+  'Every real clock effect would still require a current ownership check.\n' +
+  'Synchronization\n' +
+  'Windows synchronization not yet verified\n' +
+  'Service availability and time synchronization are separate facts.\n' +
+  'Time manager\n' +
+  'Windows Time\n' +
+  'Windows synchronization is not yet verified.\n' +
+  'Start automatically with Windows\n' +
+  'Off\n' +
+  'Time measurements: Disabled. Clock control: Disabled.\n' +
+  'Windows Time\n' +
+  'running · Manual · trigger-start\n' +
+  'Synchronization not yet verified. Existing time settings preserved.\n' +
+  'Configuration and time management · sample\n' +
+  'Windows Time manages time\n' +
+  '\n' +
+  'Release and the new Windows Time owner are independently confirmed. NevroTick is stopped with startup disabled and recovery restarts inhibited. Windows Time is running; Windows synchronization is not yet verified.\n' +
+  '\n' +
+  'Review the status connection, ownership and retained events before another command. Unknown outcomes require authoritative reconciliation; ordinary repair is the complete-package route if service recovery fails.\n' +
+  '\n' +
+  'Back to Background service\n' +
+  'Current observation\n' +
+  'Information\n' +
+  'Windows Time manages time\n' +
+  '\n' +
+  'Windows Time is the independently confirmed clock manager. Windows synchronization is not yet verified.\n' +
+  '\n' +
+  'Effect on clock correction\n' +
+  'Windows Time manages the clock; NevroTick clock writes are blocked\n' +
+  'Clock ownership, running services and fresh synchronization evidence are separate observations.\n' +
+  'Suggested next action\n' +
+  'Windows time settings are preserved. Diagnose to review synchronization evidence.\n' +
+  'Time management\n' +
+  'Evidence freshness\n' +
+  '?\n' +
+  'Last measurement reply\n' +
+  'Per-source · see Sources\n' +
+  'Qualified estimate\n' +
+  'No current qualified estimate\n' +
+  'Applied correction\n' +
+  '3 min ago\n' +
+  '−1.6 ms acknowledged by the clock broker\n' +
+  'Status snapshot\n' +
+  '2 s old · before service operation\n' +
+  'Date recovery history\n' +
+  'Recent events\n' +
+  '\n' +
+  'Sequence order is retained even when the wall clock is wrong.\n' +
+  '\n' +
+  'Filter events\n' +
+  'All events\n' +
+  'Notices, warnings and errors\n' +
+  'INFO\n' +
+  'Time sync active\n' +
+  '2 s old\n' +
+  '\n' +
+  'Three independently operated sources agree. Your clock is being maintained under the current policy.\n' +
+  '\n' +
+  '#204 · Status\n' +
+  'NOTICE\n' +
+  'No phase correction pending\n' +
+  'Earlier in this fixture\n' +
+  '\n' +
+  'Only acknowledged effects count as applied correction.\n' +
+  '\n' +
+  '#203 · Time policy\n' +
+  'INFO\n' +
+  'Certificate-time basis\n' +
+  'Earlier in this fixture\n' +
+  '\n' +
+  'Signed Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n' +
+  '\n' +
+  '#202 · Evidence\n' +
+  'TEMPORARY DIAGNOSTICS\n' +
+  'Sample collection · Partial\n' +
+  '\n' +
+  'The selected component results are retained below. The duration is a frozen illustration; no data is collected.\n' +
+  '\n' +
+  'Sample response · Partial\n' +
+  'UI component\n' +
+  'Sample DEBUG active\n' +
+  'Service component\n' +
+  'Prior session ended by service stop or restart · history retained\n' +
+  'Configured duration\n' +
+  '5 minutes (illustrative)\n' +
+  'Remaining duration\n' +
+  '5 minutes · frozen sample; no timer\n' +
+  '\n' +
+  'Closing the dialog keeps this sample state. No real data is collected.\n' +
+  '\n' +
+  'Preview temporary collection\n' +
+  'Interactive example only. No live logging control.\n' +
+  'Technical context & retained history'
+
+    at /workspace/nevrotick-ui-audit/ownership-work/final-qa/independent-probe.cjs:31:203 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n' +
+    '\n' +
+    'Time manager: Windows Time · Windows synchronization not yet verified\n' +
+    '\n' +
+    'DIAGNOSTICS\n' +
+    'Diagnostics\n' +
+    '\n' +
+    'Observed facts, useful next steps and a bounded event history.\n' +
+    '\n' +
+    'Export preview\n' +
+    '...',
+  expected: /Time sync active|being kept in sync automatically/,
+  operator: 'doesNotMatch',
+  diff: 'simple'
+}

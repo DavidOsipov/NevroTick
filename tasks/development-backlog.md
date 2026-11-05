@@ -1,6 +1,9 @@
 # Deferred development parents
 
-**Status:** DEFERRED / not ready for implementation. This single grouped record
+**Status:** grouped future parents are DEFERRED. The existing
+[S0.5 Slint migration](s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
+has a ready source-only child; its later steps retain their stated admission
+gates. This single grouped record
 fills parent-task gaps in [the task map](README.md); it does not replace the
 [development plan](../docs/plans/development-plan.md), existing active children
 or canonical architecture. Rows below are future cards, not completed evidence.
@@ -44,7 +47,7 @@ and [architecture §21](../docs/windows-time-architecture.md#21-delivery-phases-
 | S0.2 service tokens / platform/security | Intended account topology, admitted wrapper/graph, disposable Windows fixture and current native gates; prepare one two-service token/lifecycle experiment. Clock-writing subcase also needs the canonical temporary experiment card. | Intended broker operation succeeds within policy while engine/UI clock and broker-injection access fail; real callback/stop ownership remains bounded. CHECK-1/27 subset. |
 | S0.3 mutual IPC / IPC/security | Relevant S0.2 identity evidence and §5.4 endpoint/caller-lifetime contract; specify one real status method plus one protected method and their allowed/denied principals. | Correct caller/server pair succeeds; fake server, wrong/revoked role, old session and restart/PID-reuse cases cannot gain effects. CHECK-2 subset; retain the canonical local-RPC alternative if pipe proof fails. |
 | S0.4 backend semantics / clock/platform | Owned guest, controlled reference, current owner, independent recovery and predeclared operation/phase/rate/duration/attempt bounds; apply W11-W02/leap child and begin read-only/denied calls. | Measured sign/units/quantization and delivered/cancelled effects match independent time; kill/restart/power and ambiguous outcomes do not imply a finite-expiry guarantee. CHECK-10/11/12. Unset write bounds mean no write. |
-| S0.5 full UI feasibility / UI/accessibility | Existing Win32 decision and narrower UI-M0/comparison evidence; define the representative window/source/settings/elevation/tray experiment in its own scope. Restore relevant full-feasibility requirements without expanding UI-M0. | Named keyboard/Narrator/UIA journeys work at required contrast/scales; missing focus/labels or unusable scaling fails feasibility. CHECK-22; UI-M0/comparison success alone cannot close it. |
+| S0.5 Slint replacement and UI feasibility / UI/accessibility + dependency/licence | [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) replaces the earlier Win32 direction. The [existing S0.5 amendment](s0.5-ui-comparison.md#ordered-work-and-observable-exits) owns ready source/licence/profile preparation → pinned reviewed graph → fixture v0.4 port → admitted native qualification/cutover. Source work may parallel Core; one owner serializes graph/schema writes. No new toolkit selection, parallel product UI or Win32 fallback. | Slint supplies its own fixture/lifecycle/resource evidence and eventual CHECK-22 feasibility at the named re-entry checkpoint. Historical Win32/egui results do not transfer; no automatic licence/resource/accessibility pass follows. D1–D3 and native execution holds remain at their existing triggers; the retiring Win32 instrumentation gap adds no source-work prerequisite. |
 | S0.7 decision freeze / architecture/policy/security | Relevant P0 measurements, accepted owner decisions and remaining OPEN issues; prepare the next dependent decision card rather than guessing production limits. | ASVS/native-profile, step/date/holdover, supported-build, service trust/revocation/egress and native-work limits have explicit decisions or blockers. Unsupported alternatives remain blocked; CHECK-4/9/10/16/27 as applicable. |
 
 ### Deferred production research contracts
@@ -162,7 +165,10 @@ refinements. **Exit:** [plan §6/P4](../docs/plans/development-plan.md#p4--windo
 ## P5 production UI
 
 **Owner:** UI/accessibility with service/security/lifecycle owners.
-**Status:** deferred; [UI-M0](ui-m0.md) remains its own restricted milestone.
+**Status:** live P5 is deferred; [UI-M0](ui-m0.md) retains its restricted
+Win32 history. [OD-11's selected Slint replacement](s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
+uses the existing S0.5 chain first and delivers one product UI. That source/fixture
+work creates no live P5 status or command path.
 Restore D2 freshness/reconnect/generation semantics before any live read-only
 status, then revision/authorization/confirmed-failed-unknown results before
 protected commands. Restore D1/D3 before general-user preview/release or an
@@ -177,7 +183,28 @@ earlier corresponding qualification claim. **Exit:** [plan §6/P5](../docs/plans
 
 ### Production UI contract handoff
 
-Before each relevant S5 child, read the maintained
+For externalized translations, follow [OD-12's catalog design](../docs/plans/ui-localization.md).
+S0.5 owns source/interface preparation. S5.1/S5.2 project stable codes and typed
+arguments into localized status/settings/errors without changing authorization;
+S5.3 uses the same catalog for tray and local notifications; S5.4 owns adopted
+locale, placeholder/plural, long-text/RTL and actual accessibility observations.
+Language is a per-user preference available in both UI modes; English is the
+initial adopted/default/fallback language. Separate source/binary files alone
+adopt neither additional locales nor arbitrary user-imported packs. This adds
+no current native UI-M0 or Core prerequisite.
+
+The [6 November 2026 threat amendment](../docs/plans/ui-localization.md#hostile-catalogs-security-amendment--6-november-2026-asiatbilisi)
+treats every raw JSON/CBOR input as malicious until bounded admission, including
+English and generated/signed files. Independent code-owned contracts/approval,
+isolated conversion and exact file/output custody are required. Critical content
+uses reviewed whole-group English fallback; ordinary valid omissions may fall
+back per message. Freeze finite limits and attack/healthy observations in S0.5;
+the design is no runtime, native or fuzz result.
+
+Before each relevant S5 child, read the
+current [design v0.4](../docs/nevrotick-design-v0.4/README.md) and
+[latest HTML audit](../docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md).
+Use the retained v0.2
 [UI specification](../docs/nevrotick-design-v0.2/docs/02-ui-spec.md),
 [source editor contract](../docs/nevrotick-design-v0.2/docs/03-server-configuration.md),
 [state/acceptance matrix](../docs/nevrotick-design-v0.2/docs/04-states-and-acceptance.md)

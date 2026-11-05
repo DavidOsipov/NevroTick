@@ -1,8 +1,9 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.10<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.15<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 Slint replacement and OD-12 translation catalogs added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
+**Security clarification:** 6 November 2026, Asia/Tbilisi — every JSON/CBOR input is potentially malicious, including contributor/translator catalogs and packaged/generated/English data.<br>
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
@@ -22,7 +23,10 @@ This record captures David's replies about reuse, correction policy, default ser
 
 Read this alongside the [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md) and [research handoff](nevrotick-research-handoff.md). The accepted changes are integrated into those canonical documents. Use this record to distinguish owner decisions from pending recommendations when reading or changing them. Existing requirements remain in force except where an accepted change below explicitly amends them. Recommendations do not become owner decisions merely because an agent wrote them down.
 
-The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2/D3 deferred at their existing gates. This decision record neither enables live UI integration nor blocks unrelated permitted core/platform work.
+OD-11 replaces the earlier Win32 toolkit choice with Slint. The fixture-only,
+unelevated UI boundary and D1/D2/D3 deferrals retain their existing gates. Toolkit
+selection enables the bounded migration work recorded below; it neither enables
+live UI integration nor blocks unrelated permitted Core/platform work.
 
 ## 2. Decision summary
 
@@ -38,6 +42,8 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
 | OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
+| OD-11 | Completely replace the Win32 UI with Slint, using the current documentation and v0.4 prototype | **Accepted toolkit and migration direction, 5 November 2026** | Pinned Slint version/backend/renderer/features and compatible licence/dependency graph; fixture implementation, actual Windows resource/lifecycle/accessibility evidence and later secured integration. Toolkit choice is settled; implementation and qualification remain open |
+| OD-12 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -543,3 +549,156 @@ remain separately required. No protected host execution is authorized here.
 The choice and admission of additional proof tools remains evidence-led. This
 requirement is distinct from optional enhanced release/build provenance in
 OD-05 §7.5, and grants no publication or release approval.
+
+## 15. OD-11 — replace the Win32 UI with Slint
+
+**Direct owner instruction, 5 November 2026:** David selected Slint as the
+complete replacement for the Win32 UI and explicitly named the
+[S0.5 task](../tasks/s0.5-ui-comparison.md) and this decision record for the change.
+He considers Slint suitable for the interface he needs. This is an accepted
+product direction, not a request to choose between toolkits again.
+
+**Selected outcome:** implement the Rust UI with Slint against the
+[current v0.4 reference](nevrotick-design-v0.4/README.md) and canonical feature,
+state and security contracts. Slint replaces Win32 common controls as the UI
+toolkit; a second product UI or automatic Win32 fallback is not selected.
+Windows platform APIs remain available through narrow reviewed adapters for
+required OS integration. DEC-3 and architecture §16 are amended accordingly.
+
+The existing Win32 source, native observations and closed Win32/egui comparison
+remain historical baseline evidence. The earlier instruction to retain Win32
+and UI-M0's prohibition on a replacement framework are superseded for this
+migration. Those results prove nothing about Slint's memory, accessibility,
+renderer, mitigation compatibility or native lifecycle. The current checkout
+still contains the Win32 implementation until the migration is implemented.
+
+**Execution and ownership:** continue the existing S0.5 record as the bounded
+Slint migration chain. Source and licence review, presentation/fixture contracts
+and admitted fixture-only implementation can proceed in parallel with the
+current Core proof/acquisition work; UI work does not require completion of
+unrelated Core tasks. One owner serializes Cargo graph/lockfile changes and
+shared presentation schemas; workers may implement disjoint views after that
+boundary is frozen. Native desktop interaction and shared outputs remain
+serialized. No further confirmation of the toolkit choice or repeat of the
+closed egui comparison is required.
+
+Before admitting Slint dependencies, pin the actual version, Windows
+backend/renderer/features and build/runtime/native graph, and establish a
+compatible licence basis under OPEN-1/CHECK-20/26. This instruction does not
+relicense Chrony-derived code, grant commercial rights or accept licence terms.
+A separate UI process is not automatic legal clearance. Bring any concrete
+incompatible-rights conflict or required resource/security-policy exception to
+David under OD-04; routine work within the selected direction continues.
+
+The first implementation remains unelevated and fixture-only, with visible
+sample-data context, transient checked editing and unavailable protected actions.
+The richer HTML service, ownership, recovery and notification simulations are
+design references, not authority to add live network/IPC, persistence, services,
+elevation or clock effects. D1/D2/D3 keep their existing re-entry triggers;
+production S5.1–S5.4 and actual Windows qualification remain separately gated.
+Retain the proposed resource targets, native execution restrictions, separate
+AES fuzz hold and storage pause. Adoption needs Slint-specific evidence; the
+toolkit decision itself is not a passing build, release or Windows result.
+
+## 16. OD-12 — externalized UI translations and binary catalogs
+
+**Direct owner instruction, 5 November 2026:** David requested an easy translation
+mechanism using separate files containing translated interface strings, naming
+JSON/XML or other formats and expressing a preference for binary formats such
+as CBOR. This selects the mechanism requirement and binary-delivery preference;
+it does not require translators to edit binary bytes.
+
+The [localization design](plans/ui-localization.md) defines the engineering route:
+editable UTF-8 JSON sources, build-time validation and deterministic CBOR language
+resources, with a typed application-owned Rust catalog projecting text into
+stable Slint properties/models and the tray/notification/accessibility adapters.
+Adding a translation changes catalog data rather than UI layout or business
+logic. Source editing, binary generation and package delivery are separate steps;
+CBOR is a serialization format, not compression or an automatic performance gain.
+
+Slint's built-in PO bundling is a documented alternative, but is not a CBOR
+loader. The inspected Windows Rust path does not establish ordinary gettext/MO
+loading or a stable custom CBOR-to-`@tr` hook. Do not use private Slint internals
+or claim such support to implement this direction. Exact codec/formatter,
+generated interfaces, finite bounds and dependency admission remain implementation
+work in the existing S0.5/P5 chain.
+
+Catalogs cover visible labels, errors, explanations/tooltips, dialogs, tray menu,
+local notifications and accessible names under one language/fallback policy.
+Keep stable error/action IDs and typed arguments; translation changes no wire,
+policy, source identity, numeric-unit/sign or authorization semantics. Preserve
+complete built-in English, check placeholder/plural contracts and display text
+as inert content. A locale change is a per-user presentation operation, never a
+service/clock or Windows-wide locale change.
+
+English remains the only adopted product language. This request adopts no
+complete Russian translation, automatic OS-language selection or arbitrary
+third-party pack import. The initial design reads reviewed packaged resources;
+independent post-install packs need their own explicit loading/trust contract.
+The HTML prototype and current Win32 source remain unchanged by this design.
+Source preparation may parallel Core; native integration, locale qualification,
+D1–D3 re-entry, package integrity, licensing and execution holds retain their
+existing owners and gates.
+
+### Security clarification — 6 November 2026
+
+David explicitly declared all JSON and CBOR potentially unsafe because they
+contain contributor/translator-controlled data, and requested malicious-payload
+defenses. Treat every such input as hostile at each raw-byte admission boundary:
+English source, other locales, schemas/metadata, generated output, previously
+accepted or signed/package-delivered files are not exempt. Review/signing establish
+different provenance/approval facts; they never replace parser/resource/sink checks.
+Immutable privately constructed validated values may still be reused within
+their unchanged context under the existing enforcement contract.
+
+The [localization plan](plans/ui-localization.md) now specifies layered build,
+decode, format, rendering and semantic controls. Message IDs/types/plural policy,
+required facts, action/link/activation IDs and criticality come from a separately
+controlled typed contract, never from catalog declarations. Translation bytes
+cannot change those rules or the checker that admits them. Build conversion is
+isolated from credentials/network/release authority; runtime independently admits
+final bytes. Reject malformed/overbudget candidates atomically and retain the
+last admitted state; invalid English data cannot become its own fallback.
+
+Syntactically valid wording can still deceive. Critical warning/action/accessibility
+groups need independently controlled per-locale semantic approval bound to exact
+content and contract revision. Missing/unreviewed critical groups fall back as a
+whole to admitted, approved English. No catalog field, signature, LLM verdict or
+schema pass proves the truth of a translation. These requirements refine OD-12
+and the existing security boundaries; no extra locale, import mode, dependency,
+validator/runtime implementation, fuzz execution or native/release pass is granted.
+
+David additionally requested strict UTF-8 for original JSON and a strict schema.
+The engineering profile is UTF-8 without BOM, no encoding detection/transcoding
+or lossy repair, and strict JSON escape decoding into Unicode scalar values.
+Valid escaped surrogate pairs remain supported; lone surrogates do not. The
+independently owned versioned schema is closed at every object layer, with exact
+required/allowed fields, types and finite bounds, plus decoded-key duplicate and
+typed semantic checks. No catalog selects or fetches its own schema. These rules
+apply before CBOR generation and equally to English; the complete schema and
+validator implementation remain existing S0.5 work.
+
+### Character repertoire clarification — 6 November 2026
+
+David requires all emoji and unusual symbols in translation input to reject.
+Implement that requirement as a code-owned closed repertoire for each adopted
+locale/field, with hard emoji denial and exact versioned Unicode/UCD/emoji data.
+Literal and escaped spellings are equivalent: inspect every decoded key/string
+in original JSON before generation and independently in runtime CBOR admission.
+No file header, translator exception or text-presentation selector waives it.
+
+The [localization character profile](plans/ui-localization.md#emoji-free-closed-character-repertoires)
+rejects emoji/pictographic forms, their flag/modifier/keycap/variation/tag variants,
+private-use/unassigned/noncharacters, U+FFFD/U+FEFF, authored bidi controls and
+unapproved controls/format/invisible/symbol characters. Plain ASCII digits,
+`#` and `*` remain ordinary text; a blanket Unicode `Emoji` property ban would
+incorrectly reject them. Ordinary letters, marks, punctuation, spaces and units
+need explicit code-owned repertoire membership. Orthographic joining controls
+require a reviewed locale/field/context rule and cannot admit emoji.
+
+This supersedes any earlier example treating literal U+FFFD or an arbitrary
+valid surrogate pair as fully admitted catalog content. Unicode decoding can
+succeed while character admission rejects. English remains the only adopted
+locale; all files reject atomically on a character violation, retaining admitted
+state. Exact inventories/tables/budgets and actual enforcement remain S0.5 work;
+this adopts no runtime, extra locale, new dependency or application/native result.

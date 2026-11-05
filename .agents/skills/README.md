@@ -1,7 +1,7 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-and seven original NevroTick workflows for the Windows time client in
+and eight original NevroTick workflows for the Windows time client in
 [the documentation guide](../../docs/README.md) and its development host.
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
@@ -26,6 +26,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Implement numerical kernels or adapt upstream algorithm semantics | [Numerical procedure](implementation/implement-rust/references/numerical-kernels.md) and [Chrony caller-path extraction](implementation/implement-rust/references/chrony-port-simulator.md) under `implement-rust` |
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
 | Implement native controls, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
+| Implement or review Slint views, Rust bindings/models, layout or build profile | [implement-slint](implementation/implement-slint/SKILL.md); native UI guidance retains milestone/accessibility contracts |
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
@@ -44,11 +45,14 @@ shared garde rules inside fallible private domain construction, and current
 authorization/effect checks. All function/module interfaces follow
 [contract enforcement](implementation/implement-rust-contracts/references/contract-enforcement.md),
 including checked transformations and explicit failure/effect obligations.
-Native Win32
-UI, unprivileged network engine, privileged clock broker, administrative helper
+The normal-user UI, selected for complete replacement with Slint under
+[OD-11](../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
+unprivileged network engine, privileged clock broker, administrative helper
 and the complete package have distinct owners. Prototype crates require
-dependency qualification. Retained TUF research adopts no updater or second
-release. Future-version work must name changed architecture decisions.
+dependency qualification; existing Win32 source/evidence is the pre-migration
+baseline, and required Windows OS adapters remain applicable. Retained TUF
+research adopts no updater or second release. Future-version work must name
+changed architecture decisions.
 
 The current [OD-05 delivery decision](../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
 selects one complete hardened MSIX for David's Store submission attempt,
@@ -106,7 +110,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 63 grouped skills without aliases;
+for precise selection. The pack registers 64 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack

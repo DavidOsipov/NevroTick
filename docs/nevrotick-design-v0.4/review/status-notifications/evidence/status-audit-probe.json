@@ -1,0 +1,30 @@
+{
+  "source": "ed523ef5aff4e6d04619419398dfaba7c60f6005",
+  "type": "independent source/model/view assertions, not browser/native verification",
+  "sceneCount": 30,
+  "sceneSurfaces": 300,
+  "operationCases": 599,
+  "operationSurfaces": 9600,
+  "counts": {
+    "startup-off": 116,
+    "disable": 125,
+    "use-windows": 150,
+    "stop": 104,
+    "restart": 104
+  },
+  "findings": [
+    {
+      "id": "P2-outcome-unknown-owner",
+      "scene": "outcome-unknown",
+      "rawOwner": "NevroTick",
+      "knownOwner": "Unknown · reconcile current ownership"
+    },
+    {
+      "id": "P2-windows-observer-unknown",
+      "operation": "start",
+      "unchangedWindows": "running",
+      "owner": "Unknown · reconcile current ownership",
+      "title": "Time management is unconfirmed"
+    }
+  ]
+}

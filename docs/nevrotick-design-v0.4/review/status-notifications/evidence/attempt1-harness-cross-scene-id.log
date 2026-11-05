@@ -1,0 +1,11 @@
+AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to:
+
+'nt-1'
+    at /workspace/nevrotick-ui-audit/notifications-work/final-qa/independent-notifications-probe.cjs:56:206 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'nt-1',
+  expected: 'nt-1',
+  operator: 'notStrictEqual',
+  diff: 'simple'
+}

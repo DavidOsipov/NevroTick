@@ -972,6 +972,12 @@ scope; a compiler accepting an option establishes no performance benefit.
 
 ## Starting implementation
 
+The current HTML design reference is [v0.4](docs/nevrotick-design-v0.4/README.md).
+Its local build and model tests use `node build.cjs` and
+`node --test tests/*.test.cjs` from that bundle, without npm dependencies.
+These HTML checks are separate from the Rust/native verifier below; the historical
+v0.2 React tooling is not needed to build or inspect v0.4.
+
 Start with [docs/README.md](docs/README.md) and the selected task. UI work uses
 architecture §16.5 and [the UI-M0 task record](tasks/ui-m0.md); pure wire work
 uses [S1.1a](tasks/s1.1-header.md) and [S1.1b](tasks/s1.1-framing.md);

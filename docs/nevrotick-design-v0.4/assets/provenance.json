@@ -1,0 +1,12 @@
+{
+  "source_repository": "DavidOsipov/NevroTick",
+  "source_commit": "8a66af924c509e898a9bab9bb3282f11b24fba93",
+  "assets": {
+    "logo.avif": "images/transparent/logos/nevrotick-horizontal-for-light.avif",
+    "mascot.avif": "images/transparent/mascot/mascot-full.avif",
+    "icon.avif": "images/transparent/icons/sizes/nevrotick-64.avif"
+  },
+  "author": "David Osipov",
+  "artwork": "AI-assisted; original AVIF bytes and embedded metadata preserved",
+  "rights": "Proprietary brand assets; see BRAND-LICENSE.txt"
+}

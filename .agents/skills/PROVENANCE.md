@@ -83,6 +83,14 @@ in the implementation source register and maintained CPU research; `LOCAL.json`
 registers the leaf. Links to Rust and processor specifications grant no new
 runtime dependency or product licence permission.
 
+The original local [implement-slint](implementation/implement-slint/SKILL.md)
+workflow, added 5 November 2026, is authored for OD-11 and the existing S0.5
+migration. Its [source register](implementation/implement-slint/SOURCES.md)
+identifies official documentation and immutable Slint/image source references;
+it vendors no upstream skill, framework code, fonts, brand assets or runtime.
+`LOCAL.json` registers this separate original leaf. These references neither
+assign Slint's licence to the skill nor clear the application's dependency graph.
+
 ## Contract-review amendment — 30 October 2026
 
 The [critical architecture assessment](../../docs/supporting-reviews/architecture-contract-review.md)

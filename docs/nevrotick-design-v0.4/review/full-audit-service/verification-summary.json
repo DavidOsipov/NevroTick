@@ -1,0 +1,23 @@
+{
+  "source_commit": "b1066f499210a62e294b3f75a52a884a2bcf1ade",
+  "standalone_sha256": "387bfa86331d45975f6b7b9142a92efa6487511f8eb343f3e452c9363d09230c",
+  "browser": "Chromium155",
+  "scenes": 30,
+  "model_view_tests_passed": 155,
+  "structural_documents_passed": 784,
+  "integrated_browser_scripts_passed": 10,
+  "independent_page_captures_accepted": 90,
+  "independent_badge_checks": 180,
+  "independent_service_workflow_groups": 18,
+  "independent_keyboard_reset_combinations": 6,
+  "independent_final_roughtime_service_transitions": 72,
+  "independent_fact_preservation_checks": 18,
+  "viewport_widths_px": [
+    360,
+    480,
+    1280
+  ],
+  "page_errors": 0,
+  "unexpected_remote_requests": 0,
+  "native_service_effects": "none; HTML prototype only"
+}

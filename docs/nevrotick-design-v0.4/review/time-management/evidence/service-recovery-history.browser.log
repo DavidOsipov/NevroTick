@@ -1,0 +1,438 @@
+{
+  "stageCases": 48,
+  "surfacesChecked": 96,
+  "results": [
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "healthy",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "healthy",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "healthy",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime-date-ready",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime-date-ready",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime-date-ready",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime-recovered",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime-recovered",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 360,
+      "scene": "roughtime-recovered",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "healthy",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "healthy",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "healthy",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime-date-ready",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime-date-ready",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime-date-ready",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime-recovered",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime-recovered",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "index.html",
+      "width": 1280,
+      "scene": "roughtime-recovered",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "healthy",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "healthy",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "healthy",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime-date-ready",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime-date-ready",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime-date-ready",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime-recovered",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime-recovered",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 360,
+      "scene": "roughtime-recovered",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "healthy",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "healthy",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "healthy",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime-date-ready",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime-date-ready",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime-date-ready",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime-recovered",
+      "stage": "pending",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime-recovered",
+      "stage": "stopped",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    },
+    {
+      "file": "NevroTick-UI-v0.4.html",
+      "width": 1280,
+      "scene": "roughtime-recovered",
+      "stage": "restarted",
+      "diagnostics": "history",
+      "currentRecovery": "unavailable",
+      "pageErrors": 0
+    }
+  ]
+}

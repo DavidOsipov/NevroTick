@@ -2,15 +2,25 @@
 
 **Date:** 30 October 2026, Asia/Tbilisi
 
-**Disposition:** comparison closed; retain Win32.
+**Historical disposition, 30 October 2026:** comparison closed; retain Win32.
+
+**Current direction, 5 November 2026:**
+[OD-11](../nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+selects complete replacement of the Win32 product UI with Slint and supersedes
+the retain-Win32 direction. The existing
+[S0.5 task amendment](../../tasks/s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
+owns ordered migration and qualification. This report retains the exact
+Win32/egui experiment and rejection; it supplies no Slint licence, resource,
+accessibility or native-lifecycle qualification. No toolkit-choice rerun is
+required, and no dual product UI or automatic Win32 fallback is selected.
 
 **Execution record:** [S0.5 comparison task](../../tasks/s0.5-ui-comparison.md).
 
 ## Decision
 
-David rejected the tested egui configuration because approximately **145 MiB of
-private memory is unacceptable for this simple UI**. Keep the existing Win32
-implementation and resource targets. Reduced application code and styling/testing
+On 30 October 2026 David rejected the tested egui configuration because approximately **145 MiB of
+private memory is unacceptable for this simple UI**. The decision at that time
+was to keep the existing Win32 implementation and resource targets. Reduced application code and styling/testing
 benefits do not authorize a larger memory budget or further egui experiments in
 the current task.
 
@@ -154,6 +164,7 @@ contains exact artifact identities, ZIP/source-map hashes and original temporary
 and Windows paths. The ZIP SHA-256 is
 `eeb4869556097643cd79581569cd26752a08bb783d554204444bff1ff1f84e7d`.
 
-Use these results for the recorded configuration and decision. Continue the
-existing Win32 plan. Any future egui investigation needs a new explicit task and
+Use these results for the recorded configuration and historical decision. The
+Win32 continuation recorded at closeout is superseded by OD-11; follow the
+existing S0.5 Slint migration amendment. Any future egui investigation needs a new explicit task and
 must address the owner's footprint requirement and the actual dependency graph.

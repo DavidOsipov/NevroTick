@@ -1,0 +1,13 @@
+{
+  "scope": "Independent source/model/view assertions; not browser/native qualification",
+  "root": "/tmp/nevrotick-notifications-review-62aa971",
+  "checks": {
+    "matrix": 1440,
+    "dedup": 120,
+    "activation": 32,
+    "overlays": 32,
+    "cancelScope": 22,
+    "status": 33
+  },
+  "findings": []
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "file": "index.html",
+    "width": 360,
+    "checks": "startup pending/success/unknown + DEBUG; full disable/cancel/enable; external preflight blockers; partial/unknown/rejection; Windows in all views/export; observation-only Start; explicit reverse; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "checks": "startup pending/success/unknown + DEBUG; full disable/cancel/enable; external preflight blockers; partial/unknown/rejection; Windows in all views/export; observation-only Start; explicit reverse; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "checks": "startup pending/success/unknown + DEBUG; full disable/cancel/enable; external preflight blockers; partial/unknown/rejection; Windows in all views/export; observation-only Start; explicit reverse; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "checks": "startup pending/success/unknown + DEBUG; full disable/cancel/enable; external preflight blockers; partial/unknown/rejection; Windows in all views/export; observation-only Start; explicit reverse; focus/reset/overflow",
+    "pageErrors": 0,
+    "externalRequests": 0
+  }
+]

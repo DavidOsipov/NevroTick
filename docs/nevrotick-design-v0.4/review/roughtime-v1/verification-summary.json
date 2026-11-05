@@ -1,0 +1,20 @@
+{
+  "standalone_sha256": "90b0de66e3e97515aecc44f5dd1a0f0db484ae641c4c23bfcffd582a7c57adba",
+  "source_commit": "4dc4582432a9ad1edf8c0c33ad1be6a1d98aacf5",
+  "browser": "Chromium 155.0.8059.79",
+  "scenes": 30,
+  "model_view_tests_passed": 103,
+  "rendered_html_structures_passed": 676,
+  "implementation_browser_matrix_cases_passed": 54,
+  "independent_browser_route_combinations_passed": 6,
+  "independent_semantic_and_regression_checks_passed": 22,
+  "independent_final_geometry_combinations_passed": 54,
+  "viewports_width_px": [
+    360,
+    480,
+    1280
+  ],
+  "page_errors": 0,
+  "unexpected_remote_requests": 0,
+  "scope": "HTML prototype only; no live Roughtime/NTS/service/UAC/clock or native accessibility qualification"
+}

@@ -1,0 +1,18 @@
+{
+  "standalone_sha256": "97099026af4426d5f95b5e6625708321a6558f82a171d22e09e84a442c8a577b",
+  "browser": "Chromium 155.0.8059.79",
+  "model_view_tests_passed": 96,
+  "rendered_html_structures_passed": 590,
+  "independent_browser_functional_groups_passed": 34,
+  "independent_responsive_checks_passed": 83,
+  "responsive_screenshots_visually_inspected": 37,
+  "console_errors": 0,
+  "page_errors": 0,
+  "unexpected_network_requests": 0,
+  "viewports_width_px": [
+    360,
+    480,
+    1280
+  ],
+  "scope": "HTML prototype; no live Windows service, clock effects, UAC, Narrator or real IME qualification"
+}

@@ -8,6 +8,12 @@
 **Product name:** NevroTick  
 **Scope:** a chrony-derived Rust NTP/NTS client for Windows, with a small native UI
 
+**5 November UI toolkit amendment:** [OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+selects Slint as the complete replacement for the Win32 UI. DEC-3 and §16 reflect
+the selected direction; checked-in Win32 source and its measurements remain the
+pre-migration baseline. Licence/graph admission, Slint implementation and native
+qualification are pending in the [existing S0.5 task](../tasks/s0.5-ui-comparison.md).
+
 **Documentation amendments:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; owner-directed adoption of garde-backed construction and explicit function/module contracts; adopted native memory diagnostics with separate retention evidence; and [owner decisions NV-DEC-001](nevrotick-owner-decisions.md). The owner decisions record derived reuse, large authenticated recovery as a qualification goal, the Pool/default-profile question, case-by-case risk decisions and an initial OpenPGP release alternative. These are design and agent-policy requirements, not application execution evidence.
 
 **30 October CPU amendment:** [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
@@ -178,7 +184,7 @@ The following choices form the implementation baseline. A gated choice is select
 | --- | --- | --- | --- |
 | DEC-1 | Port chrony's selected client algorithms into a deterministic Rust core; independently test, fix and optimize with recorded evidence and provenance (OD-01) | Preserves the behavior the user values while replacing Unix integration; more fidelity work than a one-shot SNTP utility | License review or differential tests show the chosen translation strategy is unsuitable |
 | DEC-2 | Use two own-process services: engine and clock broker | Network parsing has no clock privilege; SCM launches both without broker child-launch authority | P0 proves unacceptable resource cost or isolation cannot be enforced |
-| DEC-3 | Use a normal-user native Win32 UI through a narrow Rust Windows adapter | Small dependency/runtime footprint, familiar controls and built-in accessibility foundations | Representative accessibility prototype fails or FFI complexity becomes excessive |
+| DEC-3 | Replace the normal-user Win32 UI with Slint under OD-11; retain narrow Windows OS adapters | Owner-selected toolkit for the v0.4 interface; keep UI separate from service/clock authority. Existing Win32 results are historical, not Slint qualification | Concrete licence incompatibility or measured failure of resource, accessibility or security contracts requires an OD-04 exception/decision; choice alone lifts no gate |
 | DEC-4 | Use secured named pipes as the initial local transport | Simple local deployment and explicit Windows authorization | Mutual server identity cannot be proven without races; then evaluate authenticated local RPC |
 | DEC-5 | Retain the existing NTS-only selectable baseline while resolving OD-03's Pool/default-profile interaction; do not ship an unqualified preset | Prevents silent weakening of an authenticated configuration | An explicitly selected NTP-only profile is needed; it stays visibly unauthenticated |
 | DEC-6 | Prefer cached NTS associations before any bootstrap hint | Fresh authenticated UDP replies can avoid certificate-time circularity | State is absent, rejected, expired under policy or cryptographically invalid |
@@ -192,7 +198,7 @@ The following choices form the implementation baseline. A gated choice is select
 | DEC-14 | Use ASVS L3 as a clause-by-clause design target with native supplements | Provides traceability without pretending a desktop daemon is a web application | A new surface, stricter deployment profile or ASVS version changes applicability |
 | DEC-15 | Pin compiler, SDK, dependencies and checked feature combinations | Makes lint/build/evidence reproducible | Planned update review qualifies a replacement baseline |
 | DEC-16 | Enforce a small portable unsafe-free core and isolate Windows FFI | Shrinks the manually reviewed memory-safety surface | An unavoidable low-level optimization has measured benefit and a reviewed proof |
-| DEC-17 | Start with English UI and a typed localization catalog | Keeps initial scope explicit; supports later Russian without embedding text in protocols | Product owner adopts additional locales and translation QA capacity |
+| DEC-17 | Start with English and externalized typed message catalogs; OD-12's design uses editable JSON → validated CBOR resources and a Rust presentation bridge for Slint | Languages change data rather than UI/business logic; common labels/errors/tray/notifications/accessibility keep one locale policy | Qualify exact codec/formatter/interface/package profile and adopted locales; independently imported packs need a separate explicit contract |
 | DEC-18 | Use bounded direct Serde decoding, mandatory shared garde validation inside private fallible domain construction, and separate current authorization/effect guards; specify and enforce every function/module contract | Makes omitted field validation visible and prevents ordinary callers from bypassing construction; typed invariants, checked transformations and current guards carry guarantees across internal calls. Library selection is not a qualified dependency graph | Owner adopted garde on 29 October 2026. Section 18.5 qualifies its exact graph/features; changes must preserve unavoidable construction and one rule owner. A real TypeScript client or dynamic-schema requirement may reopen code generation |
 | DEC-19 | Admit a small dependency set per component, use Windows security facilities through owned adapters, and qualify the explicit TLS provider separately from Rustls | Dependencies should remove a specific bug class or integration burden; library defaults, native work and bundled code can introduce authority, resource and licensing problems | Failed exact-graph/license/Windows qualification or a measured unmet requirement. Sections 15.3, 17.1 and 18.6-18.10 govern changes; no library receives blanket security approval |
 
@@ -510,6 +516,17 @@ Network samples, administrator policy and measured actuation are different autho
 Configuration changes and lifecycle discontinuities create generations. Replies from a previous configuration, resumed connection or pre-suspend clock mapping cannot publish current status or alter the clock. Cancellation is cooperative: late completions still check generation at the final publication/effect boundary.
 
 ### 6.1 Validation architecture and enforcement order
+
+**Owner clarification, 6 November 2026:** all JSON/CBOR file and programmatic
+input is potentially malicious at raw admission, including contributor changes,
+English/translation sources, metadata/schemas, generated artifacts and signed
+or packaged resources. Origin, review, earlier acceptance and signature checks
+do not establish safe payload structure/content, bounded work or authorization.
+Apply bounded strict decoding, private checked construction and the current
+effect guard at their actual owners. Reuse immutable admitted internal values
+only while their invariants/context remain valid; a fresh load is a fresh boundary.
+The [catalog threat controls](plans/ui-localization.md) specialize this rule
+without admitting a second schema engine, runtime dependency or execution path.
 
 **Hostile-input assumption:** treat all user-entered product data and external programmatic data as potentially malicious at admission. This includes UI typing/paste, direct or automated IPC requests, peer/DNS/TLS data, configuration/imported/persisted records, and externally supplied process/native result fields where those surfaces exist. A UI widget, local process, authenticated channel, administrator identity, protected storage location or earlier acceptance does not establish that a payload is well-formed, bounded, semantically valid or authorized for the requested effect. Identity and origin supply only their specific verified guarantees; validation and current effect authorization remain mandatory. This rule introduces no new input surfaces or UI-M0 integrations.
 
@@ -2355,7 +2372,15 @@ Current Smart App Control guidance supports trusted RSA and ECC signatures; olde
 
 Use event metadata that remains meaningful while the clock is wrong: UTC plus time-quality/generation, monotonic sequence and operation correlation where appropriate. Persisted log timestamps do not prove correct UTC. Event-channel readers, writer permissions, clear/export authority, retention and failure behavior are part of the diagnostics inventory; no extra always-running logging service is required.
 
-Native UI integration remains section 16's Win32-control prototype. Use documented manifest/common-control, DPI, theme and UI Automation facilities; qualify keyboard, Narrator, contrast and text scaling rather than assuming the binding crate supplies accessibility. Native power, network and SCM notifications feed the single-owner event model. Avoid WMI polling and routine PowerShell/`sc.exe` subprocesses for APIs already exposed by the adapter. [S90]
+Native UI integration follows section 16's selected Slint replacement under
+OD-11; the current Win32-control prototype is the pre-migration baseline.
+Qualify the actual Slint backend, control semantics and Windows UIA provider;
+toolkit or binding availability alone supplies no accessibility evidence.
+Keyboard, Narrator, contrast, text scaling and DPI qualification retain the
+D1/D3 re-entry gates in §16.5. Keep narrow Windows adapters for required
+manifest, power, network, SCM and other OS facilities. Native notifications feed
+the single-owner event model at its admitted stage. Avoid WMI polling and routine
+PowerShell/`sc.exe` subprocesses for APIs already exposed by the adapter. [S90]
 
 ### 15.4 Per-process mitigation profiles and startup admission
 
@@ -2469,13 +2494,41 @@ The first UI implementation slice is the owner's restricted **UI-M0** milestone 
 
 ### 16.1 Toolkit and interaction model
 
-The default candidate is native Win32 common controls through the `windows`/`windows-sys` bindings, with a small safe wrapper layer. It avoids a browser runtime and offers familiar Windows interaction. Native controls are a foundation, not proof that the application is accessible. P0 must demonstrate the real status view, source list, settings dialog, elevation action and tray interaction with Windows accessibility tools. [S40, S50]
+**Selected toolkit, 5 November 2026:** Slint replaces Win32 common controls under
+[OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
+Use Rust presentation logic and Slint views against the current v0.4 design;
+retain narrow `windows`/`windows-sys` adapters where actual Windows integration
+requires them. The UI remains an ordinary-user process with no service or clock
+authority. A second product UI or automatic Win32 fallback is not selected.
+The checked-in Win32 preview remains the pre-migration implementation until
+replaced. Slint widgets and accessibility support do not themselves prove usable
+Windows behavior; P0/P5 still require their actual native observations. [S40, S50]
 
-Slint and egui/AccessKit remain alternatives if measured requirements justify them. Slint's framework license is not generally MIT merely because examples are; its GPLv3/royalty-free/commercial choices need review against chrony's GPLv2-only code. A UI process split is a security design decision, not automatic legal clearance. [S52]
+Pin Slint's version, Windows backend/renderer/features and complete dependency
+graph before admission. Its framework licence is not generally MIT merely
+because examples are; establish the applicable grant and compatibility with
+Chrony's GPLv2-only code. The toolkit choice is settled, while exact licence and
+target qualification remain open. A UI process split is a security design
+decision, not automatic legal clearance. [S52]
 
-The [30 October S0.5 comparison](../tasks/s0.5-ui-comparison.md#results) records a private egui/eframe 0.37.0 Glow/AccessKit pilot against the current Win32 fixture. David rejected the tested configuration because its approximately 145 MiB private-memory consumption is unacceptable for this simple UI, and closed the comparison. Retain Win32 and the existing resource targets; further egui experiments require a new explicit task. The resolved Apache-2.0-only runtime dependencies also remain an adoption concern under section 18.3; egui's own MIT option does not clear the whole native graph. The pilot completes neither CHECK-21/22 nor S0.5 and changes no UI-M0 deferral.
+The [30 October S0.5 comparison](../tasks/s0.5-ui-comparison.md#results) records a
+closed private Win32/egui pilot. David rejected the tested egui configuration's
+approximately 145 MiB private-memory use. OD-11 supersedes its retain-Win32
+direction; preserve those exact results without treating them as Slint evidence
+or reopening egui experiments. The existing resource targets and complete-graph
+licence review remain. Neither the old pilot nor the new toolkit selection
+completes CHECK-21/22, S0.5 or UI-M0's deferred requirements.
 
-No full-screen dashboard, animated charts or permanent GPU rendering is required. The normal experience is one small window with progressive disclosure and an optional tray icon. Closing the window exits the UI unless the user enabled the tray; the services continue. “Quit UI” and “stop synchronizing” must be distinct actions with accurate consequences.
+No full-screen dashboard, animated charts or permanent GPU rendering is required. The normal experience is one small window with progressive disclosure and an optional tray icon. Closing the window exits the UI unless the user enabled the tray; service state is unchanged and running services continue. “Quit UI” and “stop synchronizing” must be distinct actions with accurate consequences.
+
+**Tray exit clarification, 5 November 2026:** before Quit UI, confirm that only
+the observer closes and running background services remain running; show stopped
+or unconfirmed state honestly. Offer a navigation-only route to Settings →
+Background service, explaining Stop versus Disable NevroTick. That route neither
+quits nor issues a service command. Confirmed exit changes no service startup or
+clock ownership; the last observer's exit stops new local app notifications.
+The HTML tray demonstration supplies design evidence only; native lifecycle,
+authorization, notification and accessibility gates remain at their existing stages.
 
 ### 16.2 Main window
 
@@ -2511,11 +2564,76 @@ Use applicable WCAG 2.2 A/AA criteria through WCAG2ICT as an evaluation framewor
 
 Start with English, but centralize messages in a typed catalog with stable error IDs. Add Russian when the locale is explicitly adopted, preserving placeholder/plural parity and accessible names. Locale selection never changes wire identifiers, policy keys, numerical units or authorization semantics.
 
+**OD-12, 5 November 2026:** use translator-editable UTF-8 JSON catalogs and
+validated deterministic CBOR language resources through the
+[localization design](plans/ui-localization.md). A typed Rust presentation owner
+provides messages to Slint properties/models, tray, local notifications and
+accessible names; Slint does not consume those CBOR files directly. Its bundled
+PO workflow is an alternative with different delivery behavior; the inspected
+Windows gettext/MO path and private translation hooks are not the selected bridge.
+
+Validate the complete candidate catalog before publication, with finite byte,
+count, depth and string/argument limits; exact bounds and codec/formatter inputs
+must be frozen before implementation. Reject duplicate/unknown IDs, mismatched
+interface versions, malformed placeholders and incompatible argument/plural
+contracts without replacing the current language. Keep complete built-in English
+and explicit per-message fallback for permitted omissions. Catalogs contain
+inert text/data, never code or arbitrary plural expressions. Initially load only
+reviewed package resources; presentation fallback cannot waive package integrity
+or executable-admission failure. Additional locales and independent user imports
+remain separately adopted scope. Changing language preserves drafts, focus and
+current service/clock authority; historical Windows notifications need not be
+rewritten. Existing S0.5/P5 and D1–D3 gates apply.
+
+**Catalog security refinement, 6 November 2026:** independently code-owned
+message/action/type/plural/critical-group contracts constrain every JSON/CBOR,
+including English. Isolate contributor-data conversion from checker/release
+authority, re-admit final runtime bytes, bind paths and output publication to
+owned inventory/exact bytes, and bound aggregate decoding/format/render work.
+Literal-text sinks cannot gain markup, links, accelerator/notification commands
+or severity/authority from translated content. Critical visible/spoken warning
+groups require exact-content per-locale semantic approval; approved English group
+fallback differs from ordinary per-message fallback. Whole malformed catalogs
+still reject atomically. No automatic check proves truthful natural-language
+meaning or complete parser/renderer safety. The same plan owns adversarial and
+legitimate neighboring cases under existing CHECK-14/17/19/20/21/22/25/26.
+
+Original JSON catalog bytes must be strict UTF-8 without BOM: no auto-detection,
+transcoding, replacement decoding or repair. Reject invalid UTF-8 and unpaired
+JSON surrogate escapes; encoding validity alone cannot admit decoded characters.
+Apply one
+versioned code-owned closed schema at every object layer, exact types/required
+fields, decoded-key duplicate rejection and existing finite admission bounds
+before any CBOR generation. Schema declarations cannot choose/fetch validators;
+runtime independently checks the final CBOR semantic contract. The localization
+plan owns the exact source profile and its hostile/healthy qualification cases.
+
+The owner's emoji/unknown-symbol restriction applies to all decoded catalog
+keys/strings, including English and metadata, before JSON packing and again at
+runtime CBOR admission. Use pinned Unicode/UCD/emoji tables, a closed code-owned
+locale/field repertoire and hard emoji/pictographic/component denial. Plain
+digits/`#`/`*` are not forbidden merely for having the Unicode `Emoji` property.
+Reject unlisted symbols, private-use/unassigned/noncharacters, U+FFFD/U+FEFF,
+authored bidi controls and unapproved invisible/control/format content. Letters,
+marks, spaces/punctuation/units and narrowly justified orthographic joiners need
+explicit profile membership. Escape syntax and text presentation cannot bypass
+this guard; code-owned argument isolation is separate. On violation retain the
+admitted state and reject the whole candidate. The localization plan owns exact
+classification/exception/budget fixtures; no classifier is implemented here.
+
 Show local date/time where useful, with UTC available in diagnostics. Label milliseconds, seconds and ppm explicitly and handle negative signs consistently. Screen-reader text should expand abbreviations where necessary. Long translations, bidi text and non-ASCII source display names must not break layout or create ambiguous security-sensitive identifiers.
 
 ### 16.5 Restricted first UI milestone: UI-M0
 
-**Owner decision, 29 October 2026:** first build a small native Win32 visual and interaction prototype, running unelevated and disconnected from production services. This restriction applies only to the UI workstream. Engine, broker, protocol, installer and other work may proceed independently under their existing requirements. UI-M0 does not change the eventual architecture, complete-product distribution or release gates, and does not complete P0 toolkit qualification, S0.5 or P5.
+**Original owner decision, 29 October 2026; toolkit amended 5 November:** the
+first UI slice is a small unelevated visual and interaction prototype,
+disconnected from production services. It was implemented with Win32;
+[OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+now selects its complete replacement with Slint through the existing S0.5 task.
+Keep the fixture-only scope and M0-01–M0-08 expectations below. Engine, broker,
+protocol, installer and other work may proceed independently under their
+existing requirements, and admitted Slint fixture work can parallel Core.
+UI-M0 does not complete P0 toolkit qualification, S0.5, P5 or release gates.
 
 The slice contains an ordinary resizable window with NevroTick branding, Status, Sources and Settings, source details and a small source-edit preview. Checked-in deterministic fixtures feed plain presentation types and native controls. Time/offset/uncertainty/authentication/health are sample values, not live measurements. Keep a persistent **Prototype — sample data** label, including equivalent context in standalone preview dialogs. **Sync now is disabled** with an explanation. Machine-policy controls are visibly unavailable; other protected actions are disabled with explanations or omitted. No Apply transaction, UAC imitation or fabricated synchronization/admin success is permitted.
 
@@ -2523,15 +2641,24 @@ Local field validation may update an in-memory source preview through **Update p
 
 | ID | Status and boundary during UI-M0 | Re-entry trigger |
 | --- | --- | --- |
-| D1 | **Deferred:** light/dark/system theme selection, custom themes, contrast, enlarged text, mixed-monitor DPI adaptation and qualification. Use default native controls in one documented reference display configuration; inherited Windows behavior may remain. | Before a general-user preview/release or an earlier milestone claiming these display modes. |
+| D1 | **Deferred:** light/dark/system theme selection, custom themes, contrast, enlarged text, mixed-monitor DPI adaptation and qualification. Use the selected toolkit in one documented reference display configuration; preserve useful inherited control behavior without claiming native-control parity. | Before a general-user preview/release or an earlier milestone claiming these display modes. |
 | D2 | **Deferred:** production fresh/stale/unavailable snapshots, connection generations/reconnects, policy drafts/revisions/conflicts/review/apply, UAC and confirmed/failed/unknown administrative results. Only fixture data and transient local editor values are allowed. | Restore status freshness/connection/generation rules before live status, even read-only; restore policy, receiver authorization and result rules before real settings or protected commands. |
-| D3 | **Deferred:** full keyboard workflows, comprehensive focus management, Narrator/UIA qualification and custom accessibility providers. Preserve standard controls' inherited keyboard behavior and accessible labels without adding a full qualification campaign. | Before a general-user preview/release or an earlier accessibility/usability qualification claim. |
+| D3 | **Deferred:** full keyboard workflows, comprehensive focus management, Narrator/UIA qualification and custom accessibility providers. Preserve toolkit controls' inherited keyboard behavior and accessible labels without adding a full qualification campaign or assuming Win32 accessibility transfers to Slint. | Before a general-user preview/release or an earlier accessibility/usability qualification claim. |
 
 Agents must **not implement or qualify D1–D3 during UI-M0, or make completing them a prerequisite for finishing it**. Record them as Deferred, never Passed, Removed or Not applicable. The UI workstream owner carries all three items and their triggers into the backlog and next-stage plan; a later independent reviewer verifies the restored requirements. The owner has already selected this scope; no additional permission round is required. UI-M0 completion does not automatically satisfy the re-entry gates.
 
 Use one available Windows 11 x64 environment and one monitor. Prefer 100% scaling, default text size and a light theme only where already available; document the actual theme, display/text scaling and manifest settings. Do not change machine-wide preferences to force a preferred fixture. Essential content must fit and ordinary resizing remain usable through simple layout/scrolling in that configuration. No alternate-theme, contrast, text-scaling or mixed-DPI campaign is in scope.
 
-Create or reuse the real UI crate only when implementing this slice, with the approved toolchain, narrow Windows bindings and pinned features. Standard buttons, tabs, text fields, lists and dialogs suffice; a conventional source list/details panel may replace browser-specific variable-height rows. Keep one owner for the shared Win32 adapter, message loop, callback state, handles, string lifetimes and teardown conventions. Presentation-model work may proceed in disjoint files; serialize shared desktop interaction and build-output writes. Retain relevant compiler/format/lint/dependency checks, narrow documented unsafe FFI and independent review. This milestone admits no replacement framework, browser runtime, plug-in loader or updater.
+Reuse the real UI crate and checked fixture model where applicable. OD-11 admits
+the selected Slint replacement after its exact dependency/licence graph is
+reviewed; this supersedes the original no-replacement-framework restriction.
+Use ordinary toolkit buttons, tabs, text fields, lists and dialogs; a conventional
+source list/details panel may replace browser-specific variable-height rows.
+Keep one owner for shared model/schema, Cargo graph, Slint event-loop/callback
+lifetimes and Windows adapters/teardown. Disjoint presentation/view work can
+proceed in parallel; serialize shared desktop interaction and build-output writes.
+Retain compiler/format/lint/dependency checks, narrow documented unsafe FFI and
+independent review. No browser runtime, plug-in loader or updater is selected.
 
 There must be no actual NTP/NTS/DNS traffic, production IPC, service installation/control, registry policy writes, persistent preview state, elevation or host-clock action. The only data paths are fixture → presentation → controls and locally validated input → in-memory preview. Keep the fixture provider replaceable behind a small presentation boundary; do not add a service client, reconnect supervisor, generalized event/command system or hidden live-service switch. Restore the relevant D2 contracts before connecting real data or commands.
 
@@ -2646,7 +2773,7 @@ Preserve pure-core unsafe prohibitions and numerical operation/rejection contrac
 
 The inspected chrony core headers grant GPL version 2 without “or later.” The sample boilerplate near the end of COPYING is not a replacement grant for those files. A close Rust translation must be planned around GPL-2.0-only compatibility, notices, modification provenance and corresponding-source/build obligations. Changing languages does not erase upstream copyright. [S17, S48]
 
-Review every transitive license and selected alternative. MIT/Apache dual-licensed dependencies can generally use the MIT option for this plan; Apache-2.0-only code is a compatibility concern for GPLv2-only combinations. `windows-rs` and rustls themselves offer compatible alternatives, but crypto providers, native code and other dependencies still require inspection. Slint's framework licensing needs a separate decision. [S49, S50, S51, S52]
+Review every transitive license and selected alternative. MIT/Apache dual-licensed dependencies can generally use the MIT option for this plan; Apache-2.0-only code is a compatibility concern for GPLv2-only combinations. `windows-rs` and rustls themselves offer compatible alternatives, but crypto providers, native code and other dependencies still require inspection. OD-11 selects Slint; the applicable framework grant and complete selected graph still require compatibility/admission evidence before dependency adoption. [S49, S50, S51, S52]
 
 Keep a port ledger mapping each translated file/algorithm to exact upstream source, original notices, intentional behavior changes and validation cases. Maintain a narrow upstream-monitoring process for chrony fixes affecting retained behavior. Never label source-by-source translation “clean room.” If a permissive-only implementation is later required, revisit the implementation strategy before porting.
 
@@ -2709,7 +2836,7 @@ This register records research observed on 28 October 2026, not a Cargo.lock or 
 | Candidate and observed version | Owner and intended benefit | Decision, features and limits |
 | --- | --- | --- |
 | Standard library ownership and checked types | Every component; private newtypes, checked arithmetic, explicit enums, bounded slices and OS-resource ownership remove avoidable invalid states without another runtime | Baseline. `OwnedHandle`/`BorrowedHandle` apply only to compatible `CloseHandle` resources; registry, SCM, crypto, windows and registrations need their correct destructors/lifetimes. Ownership is not exclusive OS authority [S72] |
-| Microsoft `windows` 0.62.2 | Role-specific `windows-platform` adapters (section 3.4) and UI-owned native controls; generated Win32/COM/WinRT bindings avoid hand-written ABI declarations | Prototype, matching `windows-core` 0.62.2 generation, explicit required `Win32_*` features. Unsafe validity, ownership, thread affinity and policy remain our responsibility [S71] |
+| Microsoft `windows` 0.62.2 | Role-specific `windows-platform` adapters (section 3.4) and required UI OS integration alongside selected Slint views; generated Win32/COM/WinRT bindings avoid hand-written ABI declarations | Prototype, matching `windows-core` 0.62.2 generation, explicit required `Win32_*` features. This does not select a second Win32 widget UI. Unsafe validity, ownership, thread affinity and policy remain our responsibility [S71] |
 | `windows-sys` 0.61.2 family | Small raw adapters and service-wrapper dependency | Use deliberately where a raw projection suffices; do not implement the same boundary twice or force handles/types across incompatible projection generations. Verify exact package metadata at admission [S71] |
 | Mullvad `windows-service` 0.8.1, singular | Thin lifecycle adapters for the two services; status results, checkpoints, wait hints and typed SCM controls | Preferred prototype, subject to CHECK-27. It does not establish the account, token, service SID, ACLs or safe stop behavior by itself. Choose one SCM dispatcher/owner [S71] |
 | `thiserror` 2.0.21 | Domain, protocol and platform error enums; compiler-checked failure categories reduce ad hoc strings and missed propagation | Prototype; keep public errors typed and bounded. Generated `Display`/`Debug` can still leak fields, so the crate does not provide automatic redaction. An arbitrary error string never selects a recovery policy [S74] |
@@ -3268,7 +3395,7 @@ The current first UI slice is [UI-M0](#165-restricted-first-ui-milestone-ui-m0):
 | S0.2 | Two minimal own-process services under intended accounts; inspect tokens, wrapper status/callback lifetimes and denied/successful clock/handle operations | CHECK-1 and CHECK-27 lifecycle subset pass in a disposable VM; otherwise change the narrow adapter/account topology without broadening to LocalSystem by default |
 | S0.3 | One real status method and one protected method over named pipes, including fake-server and PID-reuse/restart scenarios | CHECK-2 proves bidirectional identity and per-operation authorization; switch to local RPC if the pipe design cannot be proven |
 | S0.4 | Measure read/rate sign, quantization, step, cancel, kill/restart and power behavior with controlled reference time | CHECK-10/11/12 produce actual backend limits; no unsupported finite-expiry guarantee |
-| S0.5 | Representative native window, source list, settings/elevation dialog and tray actions | CHECK-22 establishes UIA/Narrator/keyboard/contrast/scaling viability before toolkit commitment |
+| S0.5 | Qualify the owner-selected Slint UI with representative window, source list, settings/elevation dialog and tray actions at their admitted stages | CHECK-21/22 and licence/graph evidence establish selected toolkit resource/accessibility viability before production qualification; OD-11 already settles toolkit choice, while UI-M0 D1–D3 remain deferred |
 | S0.6 | Qualify MSIX tool/schema and supported provisioning design, then a minimal complete laboratory package containing UI stub, both services and helper; takeover/recovery/repair/Reset/removal with hostile inputs | Exercise CHECK-5/13 and lifecycle/authority subset of CHECK-23, including unavailable recovery and unattended removal; isolated test signing permitted only in the owned lab. Store approval is not a prerequisite for preparing this candidate; execution holds still apply, and retail trust/capability evidence remains P6/CHECK-18 |
 | S0.7 | Review ASVS dispositions, native exception profile, automatic step/date/holdover limits, supported Windows builds and service-account trust/revocation/egress policy; set finite native-work/stop budgets | Explicit owner decisions or blockers, including OPEN-8 bootstrap/current-system-time limits and CHECK-27 admission/escalation contract; no unqualified L3 or Windows-security claim |
 
@@ -3367,7 +3494,7 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-7 | Qualify selected leap mapping/presentation, OS event knowledge/behavior, finite guard/cancellation/recovery and finite-slew failure envelope | §10.5 selects Windows-only explicit events, local reviewed knowledge and guard plus measured-residual recovery; exact event-time claim needs native evidence | Platform/core, S0.4/P4; pure S1.4 cases in NV-LP-001 |
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
-| OPEN-10 | Native UI accessibility and measured resource fit | Win32 controls through audited Rust adapter | UI/accessibility, S0.5 |
+| OPEN-10 | Selected Slint UI accessibility and measured resource fit | OD-11 selects Slint; exact backend/renderer and native resource/accessibility evidence remain open, with narrow reviewed Windows adapters | UI/accessibility, S0.5 |
 | OPEN-11 | Store publisher/package identity, capability/certification outcome, delivered-artifact trust and release-operations readiness | OD-05 selects the complete hardened MSIX submission attempt and David as human release approver. Preparing the candidate requires no prior Store approval; installed-code/helper admission, wrong-clock/offline behavior, actual Store-delivered evidence, approved support terms and rehearsed publishing-authority recovery remain open. Retained MSI signing options require later delivery reconsideration | David/release/security/Store, P0/P6; exact support/release decision at P7 |
 | OPEN-12 | Selected complete MSIX privilege/provisioning/recovery feasibility | Direction is selected; supported pre-start identities/rights, recovery before removal, multi-user lifetime and all section 19.4 release conditions remain unqualified. No external MSI prerequisite or automatic account broadening | Packaging/platform, S0.6/P6; source preparation can proceed under current holds |
 | OPEN-13 | Final runtime/native-work/stop budgets and permitted deliberate chrony deviations | Measure first slice with Windows protections active; keep permits with actual work, no replacement-pool growth, traceable changes | Core/platform/performance/product, P0/P1/P4 |
@@ -3389,7 +3516,7 @@ The supplied repository was read at a pinned commit through authorized read-only
 | plan-threat-model, ASVS applicability | Dataflow to protected effect, concrete threats/residual risk, full standard denominator and separate evidence state | No invented exploit findings or automatic N/A for missing evidence |
 | plan-independent-review | Fresh review of a frozen plan; readiness scope and findings recorded | Review agreement is not runtime verification or risk acceptance |
 | Implementation contract and TypeScript/Zod skills | Strong types, parsed trust boundaries, explicit missing/invalid cases, state ownership, generation/cancellation and contract evolution | No requirement for TS, Zod or parsing every internal typed call |
-| Semantic HTML skill | Use semantic native controls, meaningful accessible names/relationships and real assistive-technology checks | ARIA/DOM attributes are not directly applicable to native Win32 controls |
+| Semantic HTML skill | Use meaningful Slint control semantics, accessible names/relationships and real Windows assistive-technology checks | ARIA/DOM attributes are not directly applicable to Slint widgets; toolkit support alone proves no native accessibility |
 | Security contract and seven security mains | Least privilege, fail-safe admission, dependency scrutiny, bounded resources, redaction, adversarial evidence and documented decisions | CSP, Trusted Types, browser storage, service workers and HTTP headers do not secure a native daemon |
 | 36 testing skill mains and testing contract | Independent expectations, real entry points/protected effects, positive controls, lifecycle/fault/model/property tests, evidence provenance | No empty full-suite rituals, mock-only OS claims or automatic application builds for this document-only task |
 | Dependency-update skill | Pin origins/versions, inspect changes, requalify affected behavior and preserve rollback | No npm/Vitest/Cloudflare commands in the Rust release contract |

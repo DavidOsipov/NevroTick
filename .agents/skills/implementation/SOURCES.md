@@ -78,7 +78,7 @@ Inspected source entrypoints, group router/shared contract; no website edits.
 | implement-typescript | implement-rust | Preserve owner/caller/effect tracing and proportional verification; use Rust ownership, Result, exact newtypes, FFI/async obligations and actual target admission |
 | implement-zod-contracts | implement-rust-contracts | Preserve checked-output consumption, invariant ownership, failure atomicity and valid/invalid controls; replace Zod with the architecture's bounded Serde DTO → fallible private domain construction → current effect guard |
 | evolve-data-contracts | evolve-data-contracts | Preserve semantic compatibility matrices and separate rollout/retirement; cover versioned native IPC, protected policy/journals, mixed generations and MSI rollback |
-| implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use native Win32/UIA/Narrator/DPI and English-first catalog instead of HTML/ARIA/browser assertions or mandatory website locales |
+| implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use Windows UIA/Narrator/DPI evidence for the selected UI toolkit and an English-first catalog instead of HTML/ARIA/browser assertions or mandatory website locales |
 
 Copied no browser/ECMAScript corpus, website examples, npm scripts or website-only
 enforcement helper into Rust project.
@@ -89,7 +89,8 @@ enforcement helper into Rust project.
   reviews and update research do not establish implementation.
 - [Architecture](../../../docs/windows-time-architecture.md), sections 5–6:
   bounded exact representation and separate service authorization; section 16:
-  native Win32 candidate, accessible behavior and English-first locale; sections
+  Slint replacement under [OD-11](../../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
+  accessible behavior and English-first locale; sections
   17–18: bounded work, dependency admission and toolchain policy.
 - [Update assessment](../../../docs/windows-time-update-assessment.md): TUF is
   research, not adopted runtime/updater architecture.
@@ -114,6 +115,12 @@ are dated observations, not pinned artifacts or claims of latest NevroTick depen
 Connected GitHub retrieved serde-rs/json source. windows-rs README file fetches
 returned 404; conclusions rely on none. Microsoft docs/local architecture support
 Win32/UIA guidance. Installed no fallback package/tool.
+
+**Owner amendment, 5 November 2026:** OD-11 selects complete replacement of the
+Win32 UI with Slint. The source observations above retain their original scope;
+they establish no Slint API, backend, licence or accessibility qualification.
+Current Win32 source/evidence remains the pre-migration baseline, and required
+Windows OS adapters remain applicable.
 
 ## Error handling and safe diagnostics
 
@@ -195,3 +202,16 @@ guides. Rust 1.99.0 Context7 examples were reconciled with the 1.99.1 source/doc
 portable SIMD examples grant no nightly/dependency admission. No third-party
 skill code or application implementation was imported. Research and model checks
 do not establish native compatibility, tail-load safety or a useful speedup.
+
+## Slint implementation skill — 5 November 2026
+
+The original local [implement-slint](implement-slint/SKILL.md) workflow supports
+OD-11's selected replacement and S0.5's source/fixture migration. Its
+[source register](implement-slint/SOURCES.md) binds Slint 1.18.1 to immutable
+GitHub source, distinguishes runtime/build features and licensing, and retains
+the native AVIF decoder discrepancy. Rust callbacks, models and lifecycle
+references are original instructional prose, not a copied upstream skill or
+application implementation. Context7/GitHub MCP tools were unavailable in the
+authoring session, including after explicit tags; the actual evidence came
+from official HTTPS documentation and pinned GitHub source. No MCP use,
+dependency adoption or Slint/Windows runtime qualification is claimed.

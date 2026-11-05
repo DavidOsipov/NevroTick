@@ -4,7 +4,7 @@
 **System essentials, under control.**
 
 NevroTick is my personal Rust project for secure timekeeping and, later,
-encrypted DNS. It starts on **Windows 11 x64**, with a small native interface
+encrypted DNS. It starts on **Windows 11 x64**, with a planned Slint interface
 and chrony-derived numerical algorithms.
 
 ## Why I am building this
@@ -22,7 +22,9 @@ integrations are outside the planned timekeeping scope.
 ## What is being built
 
 - **Windows first:** authenticated network time, chrony-derived estimation,
-  source agreement and a lightweight native UI. The planned engine and clock
+  source agreement and a lightweight Slint UI. The selected
+  [Slint migration](docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+  will replace the current Win32 preview. The planned engine and clock
   broker have separate privileges and ship in one complete MSIX. The selected
   [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
   package protections, followed by a Microsoft Store submission with services;
@@ -99,7 +101,7 @@ TOOLING.md also covers dependency checks and Windows cross-builds for
 | --- | --- |
 | Documentation map | [Guide](docs/README.md) |
 | Architecture and decisions | [Architecture](docs/windows-time-architecture.md), [owner decisions](docs/nevrotick-owner-decisions.md) |
-| UI and artwork | [Design v0.2](docs/nevrotick-design-v0.2/README.md), [brand kit](docs/NevroTick-AVIF-kit-v1/README.md) |
+| UI and artwork | [Current design v0.4](docs/nevrotick-design-v0.4/README.md), [interactive preview](docs/nevrotick-design-v0.4/NevroTick-UI-v0.4.html), [brand kit](docs/NevroTick-AVIF-kit-v1/README.md) |
 | Vulnerability reporting | [SECURITY.md](SECURITY.md) |
 | Release support and recovery | [Release policy](docs/release-policy.md): proposed support baseline, approval, withdrawal and incident procedures |
 

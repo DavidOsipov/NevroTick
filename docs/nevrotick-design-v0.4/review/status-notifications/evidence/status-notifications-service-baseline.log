@@ -1,0 +1,30 @@
+[
+  {
+    "file": "index.html",
+    "width": 360,
+    "checks": "cancel + focus; UAC cancel; pre-effect failure; pending dedup/navigation/reset; stop/start/restart/unknown; all evidence pages/export; read-only Start; disconnection; raw fixture preserved",
+    "pageErrors": 0,
+    "externalRequests": 0
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "checks": "cancel + focus; UAC cancel; pre-effect failure; pending dedup/navigation/reset; stop/start/restart/unknown; all evidence pages/export; read-only Start; disconnection; raw fixture preserved",
+    "pageErrors": 0,
+    "externalRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "checks": "cancel + focus; UAC cancel; pre-effect failure; pending dedup/navigation/reset; stop/start/restart/unknown; all evidence pages/export; read-only Start; disconnection; raw fixture preserved",
+    "pageErrors": 0,
+    "externalRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "checks": "cancel + focus; UAC cancel; pre-effect failure; pending dedup/navigation/reset; stop/start/restart/unknown; all evidence pages/export; read-only Start; disconnection; raw fixture preserved",
+    "pageErrors": 0,
+    "externalRequests": 0
+  }
+]

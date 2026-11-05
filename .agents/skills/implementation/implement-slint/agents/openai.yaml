@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Slint UI"
+  short_description: "Build NevroTick Slint views and checked Rust bindings"
+  default_prompt: "Use $implement-slint to implement or review the current NevroTick Slint migration slice against design v0.4, preserve checked Rust state and event-loop ownership, and verify the selected build/profile and applicable fixture or native behavior."

@@ -8,6 +8,15 @@ For material/uncertain protection changes, use [plan-threat-model](../planning/p
 
 Treat user-entered product input and external programmatic input as potentially malicious by default. Cover actual UI typing/paste/control bypass, IPC, peer traffic, files and helper/native results. Local, authenticated, administrator or previously accepted origin proves neither payload safety nor permission for a particular effect. This is an admission assumption, not a claim that every input is hostile; useful legitimate inputs must remain accepted.
 
+The owner's 6 November 2026 clarification explicitly includes **all JSON/CBOR**:
+English and other catalogs, contributor metadata/schemas, generated and
+signed/packaged files still need bounded raw admission. For
+[localization](../../../docs/plans/ui-localization.md), separate the code-owned
+message/checker/action contract from catalog claims; conversion, runtime parsing,
+literal sinks and critical wording approval have different enforcing owners.
+No signature, code review or parser pass alone establishes safe truthful content.
+Admitted immutable domain values remain reusable under unchanged invariants/context.
+
 Preserve relevant raw representation and bound bytes/work before strict inert decoding; require shared garde/domain validation inside private fallible construction, then current trusted-owner authorization/state/budget guards at the sink, serialized effect and actual acknowledgement. Follow [contract enforcement](../implementation/implement-rust-contracts/references/contract-enforcement.md); NTP/NTS retains bounded protocol-specific parsers. Rust type safety/Serde admission prove no endpoint identity, freshness, source independence, UTC truth, clock ownership or permission. Unknown/corrupt mandatory policy fails closed; optional invalid drift priors may follow explicit reacquisition. Never lower authentication/source counts to hide outages.
 
 Challenge actual entry points independently of UI restrictions: malformed and valid-shaped unauthorized/stale inputs, plus repeated individually valid requests that exceed aggregate budgets. Verify bounded redacted errors, cleanup, preserved prior valid state and absence of forbidden effects alongside accepted neighbors. Apply these rules to implemented surfaces without expanding UI-M0 or reviving its deferred work.

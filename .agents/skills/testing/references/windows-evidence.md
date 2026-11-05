@@ -44,7 +44,14 @@ MSI/SignPath/OpenPGP remain conditional fallback/reference if David reconsiders 
 
 ## Native UI, accessibility and presentation
 
-The current candidate is Win32 common controls via windows/windows-sys, not a webview. Use UI Automation properties/control patterns/events with keyboard and actual Narrator output. Prefer available Accessibility Insights for Windows; Inspect is a legacy diagnostic fallback. Do not assert application accessibility solely because controls are native (CHECK-22).
+The checked-in pre-migration candidate uses Win32 common controls via
+windows/windows-sys. OD-11 selects its complete replacement with Slint; qualify
+the replacement's actual backend, UIA provider and control semantics separately,
+retaining UI-M0's D1–D3 deferrals and re-entry triggers. Use UI Automation
+properties/control patterns/events with keyboard and actual Narrator output at
+the applicable stage. Prefer available Accessibility Insights for Windows;
+Inspect is a legacy diagnostic fallback. Neither native-control selection nor
+Slint accessibility support establishes application accessibility (CHECK-22).
 
 Check critical status/source/settings/diagnostics/elevation/tray flows, clear trust/freshness/uncertainty, stale snapshot behavior, accessible error association, tab order, visible focus, Escape/cancel and focus return after dialogs/UAC. Distinguish quitting UI from stopping synchronization; tray-only access must not be required.
 

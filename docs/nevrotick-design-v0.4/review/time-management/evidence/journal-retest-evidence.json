@@ -1,0 +1,50 @@
+[
+  {
+    "file": "index.html",
+    "width": 360,
+    "retainedText": "Retained events · before service operation\n\nEvent ages and status wording are from the previous snapshot; they do not describe current synchronization.\n\nFilter events\nAll events\nNotices, warnings and errors\nINFO\nTime sync active\n2 s old\n\nThree independently operated sources agree. Your clock is being maintained under the current policy.\n\n#204 · Status\nNOTICE\nNo phase correction pending\nEarlier in this fixture\n\nOnly acknowledged effects count as applied correction.\n\n#203 · Time policy\nINFO\nCertificate-time basis\nEarlier in this fixture\n\nSigned Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n\n#202 · Evidence",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "checks": "startup pending/confirmed unchanged; startup after runtime retains history; pre-effect rejection unchanged; ownership pending and completion locally historical; raw event content retained; Windows unverified; no overflow"
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "retainedText": "Retained events · before service operation\n\nEvent ages and status wording are from the previous snapshot; they do not describe current synchronization.\n\nFilter events\nAll events\nNotices, warnings and errors\nINFO\nTime sync active\n2 s old\n\nThree independently operated sources agree. Your clock is being maintained under the current policy.\n\n#204 · Status\nNOTICE\nNo phase correction pending\nEarlier in this fixture\n\nOnly acknowledged effects count as applied correction.\n\n#203 · Time policy\nINFO\nCertificate-time basis\nEarlier in this fixture\n\nSigned Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n\n#202 · Evidence",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "checks": "startup pending/confirmed unchanged; startup after runtime retains history; pre-effect rejection unchanged; ownership pending and completion locally historical; raw event content retained; Windows unverified; no overflow"
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "retainedText": "Retained events · before service operation\n\nEvent ages and status wording are from the previous snapshot; they do not describe current synchronization.\n\nFilter events\nAll events\nNotices, warnings and errors\nINFO\nTime sync active\n2 s old\n\nThree independently operated sources agree. Your clock is being maintained under the current policy.\n\n#204 · Status\nNOTICE\nNo phase correction pending\nEarlier in this fixture\n\nOnly acknowledged effects count as applied correction.\n\n#203 · Time policy\nINFO\nCertificate-time basis\nEarlier in this fixture\n\nSigned Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n\n#202 · Evidence",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "checks": "startup pending/confirmed unchanged; startup after runtime retains history; pre-effect rejection unchanged; ownership pending and completion locally historical; raw event content retained; Windows unverified; no overflow"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "retainedText": "Retained events · before service operation\n\nEvent ages and status wording are from the previous snapshot; they do not describe current synchronization.\n\nFilter events\nAll events\nNotices, warnings and errors\nINFO\nTime sync active\n2 s old\n\nThree independently operated sources agree. Your clock is being maintained under the current policy.\n\n#204 · Status\nNOTICE\nNo phase correction pending\nEarlier in this fixture\n\nOnly acknowledged effects count as applied correction.\n\n#203 · Time policy\nINFO\nCertificate-time basis\nEarlier in this fixture\n\nSigned Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n\n#202 · Evidence",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "checks": "startup pending/confirmed unchanged; startup after runtime retains history; pre-effect rejection unchanged; ownership pending and completion locally historical; raw event content retained; Windows unverified; no overflow"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "retainedText": "Retained events · before service operation\n\nEvent ages and status wording are from the previous snapshot; they do not describe current synchronization.\n\nFilter events\nAll events\nNotices, warnings and errors\nINFO\nTime sync active\n2 s old\n\nThree independently operated sources agree. Your clock is being maintained under the current policy.\n\n#204 · Status\nNOTICE\nNo phase correction pending\nEarlier in this fixture\n\nOnly acknowledged effects count as applied correction.\n\n#203 · Time policy\nINFO\nCertificate-time basis\nEarlier in this fixture\n\nSigned Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n\n#202 · Evidence",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "checks": "startup pending/confirmed unchanged; startup after runtime retains history; pre-effect rejection unchanged; ownership pending and completion locally historical; raw event content retained; Windows unverified; no overflow"
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "retainedText": "Retained events · before service operation\n\nEvent ages and status wording are from the previous snapshot; they do not describe current synchronization.\n\nFilter events\nAll events\nNotices, warnings and errors\nINFO\nTime sync active\n2 s old\n\nThree independently operated sources agree. Your clock is being maintained under the current policy.\n\n#204 · Status\nNOTICE\nNo phase correction pending\nEarlier in this fixture\n\nOnly acknowledged effects count as applied correction.\n\n#203 · Time policy\nINFO\nCertificate-time basis\nEarlier in this fixture\n\nSigned Roughtime date basis. Retained signed date ancestry. Current packets are NTS authenticated; the earlier approximate date remains a separate fact.\n\n#202 · Evidence",
+    "pageErrors": 0,
+    "externalRequests": 0,
+    "checks": "startup pending/confirmed unchanged; startup after runtime retains history; pre-effect rejection unchanged; ownership pending and completion locally historical; raw event content retained; Windows unverified; no overflow"
+  }
+]

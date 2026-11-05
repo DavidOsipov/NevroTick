@@ -1,0 +1,520 @@
+[
+  {
+    "file": "index.html",
+    "width": 360,
+    "cases": [
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "trayScene": "healthy",
+        "result": "pass"
+      },
+      {
+        "trayScene": "observe",
+        "result": "pass"
+      },
+      {
+        "trayScene": "blocked",
+        "result": "pass"
+      },
+      {
+        "trayScene": "outcome-unknown",
+        "result": "pass"
+      },
+      {
+        "trayScene": "service-stopped",
+        "result": "pass"
+      }
+    ],
+    "pageErrors": 0,
+    "unexpectedRemoteRequests": 0
+  },
+  {
+    "file": "index.html",
+    "width": 1280,
+    "cases": [
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "trayScene": "healthy",
+        "result": "pass"
+      },
+      {
+        "trayScene": "observe",
+        "result": "pass"
+      },
+      {
+        "trayScene": "blocked",
+        "result": "pass"
+      },
+      {
+        "trayScene": "outcome-unknown",
+        "result": "pass"
+      },
+      {
+        "trayScene": "service-stopped",
+        "result": "pass"
+      }
+    ],
+    "pageErrors": 0,
+    "unexpectedRemoteRequests": 0
+  },
+  {
+    "file": "index.html",
+    "width": 480,
+    "cases": [
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "trayScene": "healthy",
+        "result": "pass"
+      },
+      {
+        "trayScene": "observe",
+        "result": "pass"
+      },
+      {
+        "trayScene": "blocked",
+        "result": "pass"
+      },
+      {
+        "trayScene": "outcome-unknown",
+        "result": "pass"
+      },
+      {
+        "trayScene": "service-stopped",
+        "result": "pass"
+      }
+    ],
+    "pageErrors": 0,
+    "unexpectedRemoteRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 360,
+    "cases": [
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "trayScene": "healthy",
+        "result": "pass"
+      },
+      {
+        "trayScene": "observe",
+        "result": "pass"
+      },
+      {
+        "trayScene": "blocked",
+        "result": "pass"
+      },
+      {
+        "trayScene": "outcome-unknown",
+        "result": "pass"
+      },
+      {
+        "trayScene": "service-stopped",
+        "result": "pass"
+      }
+    ],
+    "pageErrors": 0,
+    "unexpectedRemoteRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 1280,
+    "cases": [
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "windows-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "close",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "uac-cancelled",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "partial": "product-unavailable",
+        "retry": "failed",
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": true,
+        "result": "pass"
+      },
+      {
+        "trayScene": "healthy",
+        "result": "pass"
+      },
+      {
+        "trayScene": "observe",
+        "result": "pass"
+      },
+      {
+        "trayScene": "blocked",
+        "result": "pass"
+      },
+      {
+        "trayScene": "outcome-unknown",
+        "result": "pass"
+      },
+      {
+        "trayScene": "service-stopped",
+        "result": "pass"
+      }
+    ],
+    "pageErrors": 0,
+    "unexpectedRemoteRequests": 0
+  },
+  {
+    "file": "NevroTick-UI-v0.4.html",
+    "width": 480,
+    "cases": [
+      {
+        "partial": "windows-unavailable",
+        "retry": "uac-cancelled",
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "startupUnknownUnrelatedStopCancel": true,
+        "shown": false,
+        "result": "pass"
+      },
+      {
+        "trayScene": "healthy",
+        "result": "pass"
+      },
+      {
+        "trayScene": "observe",
+        "result": "pass"
+      },
+      {
+        "trayScene": "blocked",
+        "result": "pass"
+      },
+      {
+        "trayScene": "outcome-unknown",
+        "result": "pass"
+      },
+      {
+        "trayScene": "service-stopped",
+        "result": "pass"
+      }
+    ],
+    "pageErrors": 0,
+    "unexpectedRemoteRequests": 0
+  }
+]

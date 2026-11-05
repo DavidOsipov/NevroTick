@@ -21,8 +21,10 @@ plugin; load another skill only for concrete gap.
 2. Read [the documentation guide](docs/README.md), then the relevant authority
    below. Use its [plan and acceptance map](docs/README.md#plans-acceptance-and-execution-evidence)
    to identify the workstream, phase/slice, prerequisites and observable exit.
-3. Reuse the existing task/plan. For current UI work, start at
-   [tasks/ui-m0.md](tasks/ui-m0.md): scope, ownership,
+3. Reuse the existing task/plan. For current UI work, start at the
+   [Slint migration in S0.5](tasks/s0.5-ui-comparison.md) under
+   [OD-11](docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
+   then [tasks/ui-m0.md](tasks/ui-m0.md): fixture scope, ownership,
    [acceptance](tasks/ui-m0.md#acceptance-and-checks),
    [remaining evidence](tasks/ui-m0.md#remaining-evidence-and-next-work) and later
    candidate addenda. For other work, inspect `tasks/` and any `.agents/plans/`
@@ -189,6 +191,14 @@ package integrity, installed identity and native/lifecycle evidence.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
+Localization work: read [OD-12's catalog design](docs/plans/ui-localization.md)
+and architecture §16.4 before the Slint or i18n skills. The selected design uses
+editable JSON → validated CBOR resources → typed Rust presentation → Slint and
+tray/notification/accessibility consumers. Slint has no selected native CBOR
+loader. Keep English fallback, stable codes/arguments and actual adopted-locale
+scope; exact codec/formatter and external user-import admission remain open.
+Source planning is independent; this supplies no native or Core execution waiver.
+
 The current [Cargo workspace](Cargo.toml) contains
 [nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a portable preview model and native
 Windows UI-M0 adapter, and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure inert
@@ -223,29 +233,42 @@ never scaffold product crates merely to pass documentation/tool checks.
 
 ## Current UI milestone
 
+David selected Slint as the complete Win32 UI replacement in
+[OD-11](docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
+The [existing S0.5 task](tasks/s0.5-ui-comparison.md) owns the migration; no further
+toolkit-choice comparison or confirmation is required. Current checked-in UI
+source is still the Win32 baseline until migrated; its results do not qualify
+Slint. Source/licence preparation and admitted fixture UI work can run in
+parallel with Core. Pin and review the actual dependency/licence graph before
+adoption, retaining one Cargo graph/schema owner and existing execution holds.
+
 Apply [architecture §16.5](docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
 before UI/QA skills. UI-M0 is an unelevated, fixture-only native prototype.
 **D1** theme/contrast/text/DPI work, **D2** production freshness/reconnect/policy/
 administrative-result handling and **D3** full keyboard/Narrator/UIA work are
 **Deferred**: do not implement or qualify them now, or make them UI-M0 blockers.
-Retain standard controls' inherited behavior and labels, Rust/FFI quality checks,
+Retain toolkit controls' inherited behavior and labels, Rust/FFI quality checks,
 sample-data labelling, disabled protected actions and native window observations.
 No live network/DNS, production IPC, persistence, services, elevation or clock
 effects. Carry deferred owners/triggers into the backlog and next-stage plan;
 restore them before the integrations/preview claims specified in §16.5.
 UI-M0 does not complete P0 toolkit qualification or constrain other workstreams.
 
-For UI work, use David's [design v0.2 reference](docs/nevrotick-design-v0.2/README.md):
-read the [UI specification](docs/nevrotick-design-v0.2/docs/02-ui-spec.md), then consult
-the [interactive preview](docs/nevrotick-design-v0.2/NevroTick-UI-preview.html) and
-[screen catalogue](docs/nevrotick-design-v0.2/screens/README.md) for composition and
-interaction references. Use the [AVIF brand kit](docs/NevroTick-AVIF-kit-v1/README.md)
+For UI work, use David's current [design v0.4 reference](docs/nevrotick-design-v0.4/README.md):
+read its [guide](docs/nevrotick-design-v0.4/README-RU.md) and
+[tray update](docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md) and
+[status/notification audit](docs/nevrotick-design-v0.4/review/status-notifications/REPORT-RU.md), then consult
+the [interactive preview](docs/nevrotick-design-v0.4/NevroTick-UI-v0.4.html) for composition and
+interaction references. Its dependency-free HTML sources and tests are in the same
+bundle. [Design v0.2](docs/nevrotick-design-v0.2/README.md), its React viewer and
+scene catalogue are historical; their scene IDs are not v0.4 links.
+Use the [AVIF brand kit](docs/NevroTick-AVIF-kit-v1/README.md)
 and its [manifest](docs/NevroTick-AVIF-kit-v1/manifest.json) for mascot, logos,
 wordmarks, icons and background variants; preserve its asset notices separately
 from the code licence. Apply these references within the milestone above. The
-React viewer and archived architecture copies are reference material; current
-canonical contracts govern behavior, and rendered scenes may predate specification
-corrections.
+HTML previews and archived architecture copies are reference material; current
+canonical contracts govern behavior. The richer v0.4 service/notification examples
+are simulated and do not expand native UI-M0 or lift D1–D3 execution holds.
 The archived React tooling has open dependency findings recorded in the
 [UI-M0 task](tasks/ui-m0.md#publication-and-hosted-qualification). Resolve and verify
 them before executing that tooling; the native Rust build does not use it.
@@ -255,7 +278,7 @@ them before executing that tooling; the native Rust build does not use it.
 Read canonical sections for exact limits; preserve these boundaries:
 
 - Separate network-facing engine without clock privilege, narrow privileged
-  clock broker, normal-user Win32 UI, elevated lifecycle helper. Deliver one
+  clock broker, normal-user Slint UI (OD-11; migration pending), elevated lifecycle helper. Deliver one
   complete MSIX under amended OD-05, subject to supported service provisioning
   and complete lifecycle qualification. Older MSI-first summaries are superseded;
   retain MSI-specific mechanics only for a later owner-selected alternative.
@@ -267,6 +290,15 @@ Read canonical sections for exact limits; preserve these boundaries:
   each applicable admission path, then independently check current authority at
   the effect. Preserve raw-input tests, direct-handler bypass cases, valid
   neighboring controls, aggregate budgets and bounded redacted rejection.
+- Every JSON/CBOR input is potentially malicious at raw admission, including
+  contributor/translator data, English, schemas/metadata, generated output and
+  signed/packaged or previously accepted files. Reuse admitted immutable typed
+  values only within their valid context. For localization, an independent
+  code-owned contract/checker controls IDs, types, plural/action rules and semantic
+  approval; catalogs cannot redefine them. Follow [OD-12's threat controls](docs/plans/ui-localization.md)
+  for isolated conversion, bounded decode/format/render, literal sinks and
+  whole critical-group English fallback. Origin/signatures and syntactic validity
+  prove neither payload safety nor truthful translated consent text.
 - Fixed JSON IPC/configuration/persisted-record boundaries: bounded strict Serde
   DTO decoding, adopted shared garde rules invoked inside fallible private
   domain construction, current trusted
@@ -323,6 +355,7 @@ no new report tree or orchestration campaign.
 | Function/module contracts, wire admission and domain invariants | [implement-rust-contracts](.agents/skills/implementation/implement-rust-contracts/SKILL.md). |
 | Wire, persisted-state or semantic compatibility | [evolve-data-contracts](.agents/skills/implementation/evolve-data-contracts/SKILL.md). |
 | Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), then applicable accessibility/DPI checks. |
+| Slint views, Rust models/bindings, layout or toolkit build profile | [implement-slint](.agents/skills/implementation/implement-slint/SKILL.md); follow S0.5/OD-11 and the applicable UI-M0 or P5 boundary. |
 | Trust, privileges, IPC, crypto, logging or packaging | [Security index](.agents/skills/security/README.md), matching boundary owner. |
 | Cargo dependency changes | [dependency-updates](.agents/skills/environment/dependency-updates/SKILL.md). |
 | Windows Sandbox configuration, WSL-to-guest control or disposable lab evidence | [manage-windows-sandbox](.agents/skills/environment/manage-windows-sandbox/SKILL.md); check current task/incident holds before any Windows command. |
