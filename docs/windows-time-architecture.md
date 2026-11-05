@@ -1380,6 +1380,15 @@ Keep stable oscillator compensation separate from transient phase correction. A 
 
 The intended backend uses `GetSystemTimePreciseAsFileTime`, `QueryPerformanceCounter`, `GetSystemTimeAdjustmentPrecise`, `SetSystemTimeAdjustmentPrecise` and policy-authorized `SetSystemTime`. The exact semantics and achievable rate resolution must be qualified on supported Windows builds and hardware. Do not reuse Linux `adjtimex` constants or assume chrony's Linux slew limits transfer. [S07, S22, S23]
 
+The precise API pages do not specify the legacy setter's 100 ns interpretation.
+Preserve raw adjustment, increment, mode and QPC frequency; qualify the sample's
+QPC-scaled conversion, rounding and delivered slope. Neither its 1,000 ppm guard
+nor integer width establishes a maximum or effective quantum. Its restore calls
+always use `FALSE`, irrespective of saved mode, and are not a general restoration
+recipe. `AdjustTokenPrivileges` may report Boolean success with
+`ERROR_NOT_ALL_ASSIGNED`; check the documented result and effective token rather
+than copying the sample's Boolean-only privilege check. [S137]
+
 Model these actuator states explicitly, independently of the numerical adjustment:
 
 | Actuator state | Mode and transition contract |
@@ -1439,6 +1448,19 @@ death. Qualify filesystem write/flush/replacement semantics and retain section
 reservation write and flush, the API call, outcome write and flush, and reply.
 Test duplicate replay and a healthy operation beside every rejected/unknown case.
 
+Durable physical settlement and current model publication have separate owners.
+The broker retains custody of a native operation and reconciles its late actual
+outcome against the original reservation even after engine cancellation,
+generation invalidation, model rejection or loss of Ready. Persisting that old
+effect grants no new actuation authority; any further clock write still requires
+current ownership. Core separately checks current model identity/generation and
+qualified physical mapping before consuming feedback. Stale results cannot
+restore Ready, publish fresh confidence or authorize a correction. Unknown
+effects remain conservatively charged with unsafe follow-on work blocked. The
+existing pure Ready-only fixture receiver is not this durable owner; the
+[preparation handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+reuses its mathematical contract without claiming native or persistent custody.
+
 ### 10.3 Sleep, resume and external steps
 
 QPC includes standby/hibernation time, while `QueryUnbiasedInterruptTimePrecise` excludes sleep. Consequently, elapsed QPC alone is not proof that a temporary frequency correction was actively delivered throughout an interval. Use explicit power events, an active-time domain and measured backend behavior; qualify Modern Standby as well as ordinary sleep. [S22, S24]
@@ -1470,7 +1492,22 @@ neither a new driver nor a specific boot-identifier API. [S114]
 
 The Windows precise-adjustment API has no finite lease argument and does not document automatic reset when the caller exits. The broker can cancel a dead engine's transient plan while it still owns the clock, but it cannot run cleanup after its own abrupt death. Configure SCM recovery and make recovery startup query adjustment state and re-establish current ownership first. Only then may it clear attributable stale transient work and establish a known safe base before accepting proposals. A successor/ambiguous owner means read-only Blocked recovery, not an automatic reset. [S23]
 
-The remaining failure is quantified, not hidden: additional phase error from a retained rate is approximately `abs(transient_ppm) * recovery_seconds / 1,000,000`, plus quantization, scheduling and model uncertainty. For illustration, 500 ppm retained for 10 seconds contributes about 5 ms; this arithmetic is not a measured recovery promise. Set the maximum allowed rate and service-recovery envelope only after kill/restart tests.
+Define residual rate as the difference between the actual retained rate and the
+intended recovery state in the same qualified actuator coordinate; it need not
+always equal the named transient contribution. Additional phase is approximately
+`abs(residual_ppm) * delivered_exposure_seconds / 1,000,000`, with quantization,
+mapping and model uncertainty retained. For illustration, 500 ppm retained for
+10 delivered seconds contributes about 5 ms; neither value is a product limit.
+The bound is conditional on both rate and exposure bounds and qualified delivery
+semantics. A measured maximum, stop target or configured SCM delay establishes no
+all-failures deadline. If recovery can remain unavailable indefinitely, a nonzero
+retained rate has no demonstrated unconditional finite residual ceiling. [S138]
+
+Set production rate and recovery policy only after the relevant bounded native
+evidence and owner decision. Record supported environments, unsuccessful/censored
+attempts, uncertainty and any statistical assumptions; observe product cleanup
+before independent fixture restoration. The [existing S0.4/S0.7/P4 handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+prepares those inputs without selecting a watchdog, lease or production values.
 
 Orderly stop, update and uninstall must restore the policy-approved base/default-owner behavior. Do not restore an arbitrary stale rate from a previous controller. If SCM recovery repeatedly fails, diagnostics must explain that adjustment cleanup is uncertain; an independent kernel-expiring slew guarantee is outside this API's documented contract.
 
@@ -4082,6 +4119,10 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S135 - VBS binding-generation coverage, checked 5 November 2026.** [windows 0.62.2 release-associated cryptography projection](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/windows/src/Windows/Win32/Security/Cryptography/mod.rs), [new ncrypt projection](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/windows/src/Windows/Win32/ncrypt/mod.rs) and [NCryptCreatePersistedKey flag semantics/prerelease notice](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreatepersistedkey). Symbol presence, target-build support and protection of the actual key are separate evidence.
 
 - **S136 - Windows interop helper boundaries, checked 5 November 2026.** Microsoft [thread-pool guidance](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/threading/readme.md), [WinRT futures](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/future/readme.md), [time values](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/time/readme.md), [collections](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/collections/readme.md), [version queries](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/version/readme.md) and [private binding generation](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/bindgen/readme.md). Each applies only at its selected boundary; none establishes portable-core proof, bounded production scheduling or native capability by itself.
+
+- **S137 - Precise adjustment and privilege sample limits, checked 5 November 2026.** Microsoft [legacy setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustment), [precise setter/sample](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [precise getter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise) and [AdjustTokenPrivileges](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges). Legacy units, sample QPC conversion/guard/restoration and documented privilege results have distinct scopes; no sample supplies a tested Windows production envelope.
+
+- **S138 - Recovery observations and conditional bounds, checked 5 November 2026.** Microsoft [precise setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [service status](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setservicestatus), [failure actions](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw) and [queued restart behavior](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w); [NIST stability analysis](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1065.pdf), [NIST tolerance intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc264.htm) and [PNNL upper tolerance limits](https://vsp.pnnl.gov/help/vsample/Design_UTL_Non_Parametric.htm). API configuration, observed maxima and statistical population coverage do not establish an all-failures cleanup deadline. The residual calculation remains conditional on qualified rate, exposure and uncertainty assumptions.
 
 ## Appendix B. Worksheet attribution and use
 

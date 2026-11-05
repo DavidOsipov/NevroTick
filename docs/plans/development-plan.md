@@ -618,6 +618,14 @@ owned disposable Windows environment. Qualify read/rate/step sign, units,
 quantization, achieved correction, cancellation and acknowledgement loss using an
 independent reference. Reconcile ambiguous effects; never repeat a step blindly.
 
+The [clock-limit preparation card](../../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+routes OPEN-5/7/13 through S0.4/S0.7 and W11-W02/04/05: native evidence →
+concrete dependent policy → broker enforcement → qualified Core feedback →
+transition/recovery observations → reference QA and decision. It separates actual
+combined movement and durable late settlement from current model publication.
+All field values, holdover assumptions and recovery exposure remain unresolved;
+source preparation creates no prerequisite for unrelated current Core work.
+
 Acceptance includes cumulative accounting across reconnect/sign change/crash;
 no automatic budget renewal; sole W32Time/controller ownership; transactional
 takeover/restoration; managed-policy refusal; suspend/S3/S4/Modern Standby, manual
@@ -1462,6 +1470,13 @@ This review executed no product or native tests and establishes no implementatio
 default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
+
+**Clock limits, 5 November 2026:** [W11 §4.31](../../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+prepares the field/provenance/measurement/admission matrix for existing
+W11-W02/04/05 and S0.4/S0.7/P4 owners. Pair legitimate drift, recovery and holdover
+with refusal/failure controls; distinguish measured distributions from conditional
+bounds. Production values and OPEN-5/7/13 remain open. Section 7 and every native,
+fuzz and storage hold retain priority and scope.
 
 **Owner request, 3 November 2026:** integrate the completed Microsoft Windows 11
 investigation into maintained documentation, architecture, this plan and agent

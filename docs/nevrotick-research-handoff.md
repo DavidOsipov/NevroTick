@@ -34,6 +34,14 @@ admission; R-08/UI-M0 retain generated-code, Windows/accessibility, resource and
 package qualification. The Win32 reference and historical receipts remain; the
 selection changes no Core priority, UI-M0 deferral or execution hold.
 
+**5 November 2026 clock-limit preparation:** [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+consolidates pinned upstream, Microsoft and protocol/model evidence for
+OPEN-5/7/13 under S0.4/S0.7/P4 and W11-W02/04/05. Its field matrix separates
+policy tolerance, native capability, model assumptions and enforced authority.
+Measurements, production values and decisions remain open; current Core proof
+priority, native/S134 stop, separate fuzz hold, optional-storage pause and
+limited Sandbox scope remain.
+
 ## 1. Assignment and limits
 
 Investigate the unresolved questions below and produce concrete options with evidence. This assignment is research and planning. It does not authorize provider contact, accepting terms, submitting vendor/signing applications, spending money, generating release credentials, public releases or changes to the user's Windows clock/services/trust stores.
@@ -74,6 +82,11 @@ Produce a table of actual proposed Rust/native/build dependencies, exact version
 Escalate a concrete rights conflict or material behavioral deviation to David. Do not ask him to choose a preferred licence label independently of the source he intends to reuse. Do not remove notices to satisfy an installer or signing-provider requirement.
 
 ## 4. R-02 — century-scale authenticated recovery
+
+Use [the clock-limit handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+for supported target-date/era versus local-error fields, one-use step authority,
+durable unknown outcomes and qualified actual feedback. This source preparation
+selects no exceptional quorum, floor-supersession rule or production envelope.
 
 **Future Roughtime coordination:** [NV-TA-001](plans/time-assurance-integration.md)
 and the [shared task](../tasks/time-assurance-integration.md) now retain the
@@ -154,6 +167,11 @@ R-02/R-04 must freeze a decision table naming the majority denominator, configur
 Begin with deterministic simulation and controlled protocol fixtures. Windows execution requires an owned disposable VM, bounded experiment, independent observer and tested restoration. Public time services are not stress-test targets.
 
 ## 5. R-03 — conservative plain-NTP policy
+
+The [5 November preparation matrix](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+adds actual combined-rate accounting, including stable compensation, holdover
+assumptions and conditional recovery exposure. Compare useful drift/recovery with
+malicious repeated movement; upstream constants remain evidence, not adopted limits.
 
 Compare NevroTick's intended behavior with the [Chrony 4.9 manual](https://chrony-project.org/doc/4.9/chrony.conf.html), [FAQ](https://chrony-project.org/faq.html), [NTPsec manual](https://docs.ntpsec.org/latest/ntpd.html) and [pinned NTPsec loop filter](https://github.com/ntpsec/ntpsec/blob/61eaa902b90e374698c1b4e380b0f27ed6632c65/ntpd/ntp_loopfilter.c). Do not translate a sample `makestep` directive into a maximum security bound.
 
@@ -278,6 +296,11 @@ application, paid subscription or OS-protection bypass as a side effect of this
 research. Store-managed updates need the selected complete lifecycle qualification.
 
 ## 9. R-07 and R-08 — exception decisions and remaining platform work
+
+For OPEN-7/13, [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+assigns precise-API conversion/quantization, active-delivery/power mapping and
+actual stop/native-work/recovery evidence to existing owners. Retain censored
+and failed recovery observations; measured maxima do not establish hard expiry.
 
 For every relevant ASVS requirement, separate literal applicability, native adaptation, implementation, observation and unresolved exception. Bring David individual evidence-backed decisions about hardware-backed isolation, authentication/revocation semantics, in-use secrets, logging, delegated retrieval or plain-NTP assurance. No blanket L3 acceptance has been granted.
 

@@ -173,6 +173,10 @@ The [S1.4 task](s1.4-leap-policy.md) owns the pure calendar/guard prerequisites;
 The current Core checkpoint and applicable selection prerequisites remain ahead
 of dependent leap-policy implementation.
 
+**Clock-limit preparation:** [§4.31](#431-clock-correction-limits-preparation--5-november-2026)
+assigns native conversion, actual combined delivery, uncertainty and power/epoch
+evidence to this S0.4/P4 owner. Values and native qualification remain open.
+
 **Work:** preserve UTC, QPC and active-awake meanings. Modern Standby may suspend
 services; a sleep-excluding system clock does not measure broker execution.
 Recheck authoritative deadlines and generations after delayed/coalesced wakes.
@@ -277,6 +281,10 @@ case that preserves local discovery after an intervening administrator edit.
 **Prerequisites:** selected service identities and
 [WSH research](../docs/plans/windows11-integration.md#3-constrain-service-networking-with-a-windows-owned-mechanism).
 
+**Clock-limit preparation:** [§4.31](#431-clock-correction-limits-preparation--5-november-2026)
+requires effective-token/protection evidence beside useful permitted operations
+and engine denial; API samples do not establish clock authority.
+
 **Work:** assess `INetFwServiceRestriction` and its separate WSH rule collection
 before custom WFP. Retain the restricted engine SID profile; sample parameters
 are not product policy. Give broker denial and engine allowances distinct
@@ -309,6 +317,10 @@ retrieval; DNS-C14/17 when the DNS service participates.
 **Owner/stage:** platform/security/lifecycle; P0/P3, P4 cleanup and P6 complete MSIX.
 **Prerequisites:** existing token/object, mitigation, mandatory-state and
 [installation research](../docs/plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
+
+**Clock-limit preparation:** [§4.31](#431-clock-correction-limits-preparation--5-november-2026)
+keeps actual native-job completion, broker cleanup, durable late outcomes and
+conditional recovery exposure with this owner; configured delays prove no expiry.
 
 **Work:** record configured settings, documented activation point, actual token/
 policy and pending restart/reboot separately. Qualify first installation rather
@@ -2343,3 +2355,320 @@ Record configured versus effective state and actual fetch/completion owners in
 this task. Source/API availability, portable fixtures and an interactive user’s
 successful chain do not qualify the installed service. Keep ordinary and
 wrong-date/reused-session evidence separate.
+
+### 4.31 Clock-correction limits preparation — 5 November 2026
+
+**Disposition:** source preparation for OPEN-5/7/13 under existing S0.4/S0.7,
+P4 and W11-W02/04/05. No production value, owner decision, experiment, native
+result or execution permission is adopted. Inspected NevroTick source:
+[`09caf0d3303abafab1edba0064a1c9c117514b70`](https://github.com/DavidOsipov/NevroTick/tree/09caf0d3303abafab1edba0064a1c9c117514b70).
+The bounded upstream/API comparison below supplies definitions and contrary
+evidence; it is not an exhaustive implementation audit or Windows qualification.
+
+Keep four inputs distinct: product tolerances for disruption/error/availability;
+native representation and observed capability; model/environment assumptions;
+and broker-enforced authority. Measurements inform policy but cannot choose it.
+Reuse [architecture §10](../docs/windows-time-architecture.md#10-windows-clock-backend),
+THR-19 and §17.1, [R-02/R-03](../docs/nevrotick-research-handoff.md), and
+[OD-02/04](../docs/nevrotick-owner-decisions.md). All numerical production inputs
+below remain unresolved; the matrix is a worksheet, not a new IPC schema.
+
+#### Field, provenance, measurement and admission matrix
+
+Each future record names units/domain, source revision, supported population,
+evidence basis (documented, assumed, observed or statistical), uncertainty,
+separate approval status, decision owner and exact producer/consumer. Approval
+does not establish physical evidence. Proposed observations are unexecuted.
+
+| Fields | Provenance and existing owner | Proposed measurement | Admission and useful/refused controls |
+| --- | --- | --- | --- |
+| Base/transient/combined rate, base age/change, effective quantum | Raw adjustment/increment/mode/QPC frequency; S0.4/W11-W02 → S4.1/2 broker | Qualify one reference coordinate/sign/conversion; distinguish requested, representable, read-back and independently observed rates. Both signs, zero, adjacent quanta and saturation on declared builds/protections. | Healthy base-only and bounded delivery beside excessive/invalid combined requests with no effect. Numeric read-back proves neither ownership nor slope; retain component and combined ceilings. CHECK-10/25. |
+| Step threshold, magnitude/target-date interval, direction/count, acquisition window, approval expiry | Approved profile and true-date/era evidence; R-02/R-03/S0.7 → S4.2 | Separate local date error, supported calendar/conversion domain and achieved-effect brackets; bind fresh agreement, snapshot/generation and one-use authorization. | Qualified ordinary and large authenticated recovery beside ambiguous era, stale/conflicting evidence, unsupported target or exhausted approval. OD-02's near-century goal remains; twelve hours for plain NTP is unapproved. Lost reply permits no repeat. CHECK-3/7/8/9/10/12. |
+| Absolute movement, signed displacement, step count, windows/renewal, reserved/unknown authority | Actual combined delivery and original durable operation identity; broker/mandatory-state → S4.1/2 | Independent integration over qualified delivered intervals; partial-window allocation, rounding, boot/policy epochs and outcomes. Include legitimate persistent drift and slow base changes. | Useful oscillator discipline beside alternating signs, stable relabelling, cancellation/replacement, reload, reconnect, SCM restart and lost acknowledgement. No delivered-authority refund or silent renewal; unknown remains charged. CHECK-3/10/12/15. |
+| Initial uncertainty, growth model, acceptable error/age, base validity, holdover expiry | Reference/timestamp/path/estimator/oscillator terms and model version; Core/engine/S0.7 → S4.3/5 | Separate shared bias, dependence/coverage assumptions, temperature/load/power strata, accepted-observation age and unknown actuator effects. | Useful bounded historical prediction during source loss beside expired model, correlated delay and resume discontinuity. Quality expires honestly; prediction grants no fresh vote or exceptional-step authority. Fresh reacquisition preserves quorum. CHECK-7/11/14. |
+| Active delivery, elapsed freshness, mapping/boot epochs, finite leap guards | Paired UTC/QPC/unbiased-time brackets, power events and external reference; W11-W02/S0.4 → S4.3 | Cold boot, restart, S3/S4, Modern Standby, Fast Startup and VM restore; qualify actual native delivery and mapping rather than clock labels alone. | Healthy same-segment tracking/reacquisition beside crossing/late observations. Sleeping QPC time is not inferred delivery; ambiguous boot cannot renew budgets. Windows alone executes explicit leaps; fresh post-guard evidence admits only measured residual recovery. CHECK-10/11/25/27. |
+| Stop/wait/native-job lifetime, restart/backoff, recovery exposure, permitted final mode | Actual job custody, current-owner cleanup and mode/trajectory; OPEN-13, W11-W04/05 → S4.4/5 | Separate native completion/resources, engine stop and broker cleanup; record attempts, censored/unrecovered cases and fault/load/power coverage. | Healthy orderly cancellation/owned recovery beside stalled work, broker death, crash loops, queued maintenance restart and successor/ambiguous ownership. Timeout frees no actual-work capacity; no blind reset. Observe product cleanup before harness restoration. CHECK-5/10/12/13/15/21/27. |
+
+#### Actual combined movement and conditional uncertainty
+
+For a precise interpretation to prepare under THR-19, let `c(a)` be the **actual
+combined applied rate contribution**, in seconds/second against one qualified
+actuator reference, and `a` qualified delivered active seconds. For window `W`:
+
+`A_W = Σ |actual_step_i| + ∫_W |c(a)| da`
+
+`D_W = Σ actual_step_i + ∫_W c(a) da`.
+
+Scale ppm by `10^-6`. Use `c_b + c_t` only after establishing both terms are additive
+in this same coordinate; unrelated native values or different ppm denominators
+cannot be added. Chrony's inspected composition is multiplicative in its own
+coordinates. Retain component records and base-change limits, but charge actual
+combined movement, including stable compensation. Signed net movement alone,
+transient-only charging and requested values cannot satisfy THR-19. Window
+membership, partial intervals, rounding and conservative unknown allocation still
+need explicit rules. Finite-window authority proves no permanent UTC-error bound.
+
+A **conditional derived model** is `U(h) ≤ U0 + ∫_0^h b_f(t) dt + U_events(h)`
+when initial error is bounded by `U0` and residual fractional-frequency error by
+`b_f(t)` over the declared environment. `U_events` carries separately bounded
+discontinuity, actuation and mapping error. Statistical estimates need explicit
+coverage/dependence assumptions. Do not double-count drift/temperature or hide
+shared bias through unjustified root-sum-square combination. Candidate holdover
+expiry is the earliest approved age limit, model-validity expiry or uncertainty
+crossing; none is selected here. Independent expected movement/error comes from
+raw reference evidence and separate calculations, not the controller/formatter.
+
+RFC 5905 distinguishes dispersion, jitter and root distance. RFC 8915 §8.6's
+MAXDIST wording must not be mechanically mapped to a field already containing
+dispersion plus half delay: define RTT, dispersion and half-delay first.
+Verified RFC errata coverage was not established for this pass.
+Chrony's linear dispersion and ntpd-rs's variance propagation use different
+assumptions; neither supplies a universal holdover bound. See primary sources below.
+
+#### Late physical settlement and current model publication
+
+The inspected pure chain is retained history → genuine combination →
+`FixtureReferenceInputState` → modeled settlement → existing affine composer.
+Reuse [the rate receiver at the inspected pin](https://github.com/DavidOsipov/NevroTick/blob/09caf0d3303abafab1edba0064a1c9c117514b70/crates/time-core/src/reference_input/rate_delivery.rs)
+and the [existing Core task](s1.3-source-selection-readiness.md), keeping their
+fixture scope. Active and monotonic endpoints are independently ordered; local
+ordinals/mapping/high-water marks survive chart replacement. Completed and
+Cancelled account their delivered portion identically; ProvenNoEffect consumes
+the ordinal, Unknown blocks the cursor, and post-admission arithmetic failure
+cannot refund consumption. Caller tags are not native provenance or durable IDs;
+the `2^53`-nanosecond exact-arithmetic guard is not a production holdover limit.
+Outward arithmetic error is distinct from physical/model uncertainty.
+
+The future **broker/mandatory-state owner** retains native-operation custody and
+settles its actual late outcome against the original durable reservation even
+after cancellation, source/clock-generation invalidation, model rejection or
+loss of Ready. Persist the outcome before successful applied acknowledgement.
+Accounting an old effect grants no new actuation authority; reconciliation that
+needs another clock write still requires current ownership. Unknown effects stay
+conservatively charged and unsafe follow-on effects remain blocked.
+
+The **Core publication owner** separately admits usable feedback against current
+model identity/generation and qualified physical mapping. Stale results restore
+neither Ready nor fresh confidence and authorize no correction; resulting mapping
+uncertainty follows invalidation/reacquisition policy. The Ready-only fixture
+receiver cannot provide late durable custody. Preserve its guard; do not create
+a second ledger or claim an implemented producer. Mandatory full-domain proofs
+remain due at the dependent mathematical gate, separate from physical evidence.
+
+#### Native API and sample limits
+
+Microsoft explicitly gives the legacy adjustment API 100 ns units; the precise
+getter/setter pages do not specify that interpretation. Preserve raw adjustment,
+increment, mode and QPC frequency. Qualify the sample's QPC-scaled conversion,
+rounding and actual slope; integer width, one input unit and the sample's
+1,000 ppm guard establish neither an effective quantum nor a supported maximum.
+The sample restores with `FALSE` irrespective of saved mode, so it is not a
+general restoration recipe. Returning control with `TRUE` is a Windows handover,
+not transient cancellation while retaining product ownership.
+
+`AdjustTokenPrivileges` Boolean success can accompany `ERROR_NOT_ALL_ASSIGNED`;
+it cannot add a missing privilege. Qualify effective tokens, not account names
+or a disabled bit. `SYSTEMTIME` field limits establish no approved target-date
+interval or achieved accuracy; `SetSystemTime` supplies no journal transaction
+or durable effect identity. Repeating an absolute target later can move time
+backward. Reuse selected `windows`/`windows-sys` bindings behind narrow adapters;
+exact SDK/declarations/features remain qualification inputs, not new dependencies.
+
+QPC includes sleep, while unbiased interrupt time excludes it; neither proves
+broker execution. High-precision UTC reads alone establish no external UTC error.
+Keep full read brackets and independent reference uncertainty. Service STOP,
+timer signalling and configured SCM recovery delay establish no rate expiry.
+
+#### Ordered handoff through existing owners
+
+1. **S0.7 with P4/W11 owners:** complete definitions/provenance and explicit
+   unknowns, identifying the next dependent choice through OD-04. Before a later
+   authorized write, freeze candidate/artifact, SDK/bindings, supported build,
+   hardware/power/protection configuration, exact operation/rate/phase/date/
+   duration/count/attempt bounds, observer uncertainty, stop trigger and independent
+   restoration owner. Lab safety limits and production policy are separate;
+   unset lab bounds permit no write.
+2. **S0.4/W11-W02 produces backend evidence:** begin read-only capability and
+   legitimate denial observations. Only an admitted bounded native child measures
+   signed conversion, mode/base, quantum, effect brackets and power delivery.
+   Return qualified/unsupported cells to broker/Core; W11-W04/05 qualify effective
+   tokens, protections and lifecycle authority under the actual configuration.
+3. **S0.7 resolves dependent policy; S4.1/2 implements enforcement:** trace the
+   admitted proposal through current guards, durable reservation, guarded effect,
+   durable known/unknown outcome and acknowledgement. Fault persistence/effect/
+   reply seams; retain original operation identity on duplicates. Observe both
+   the useful accepted neighbor and the refused neighbor at the real effect.
+4. **Core consumes qualified actual feedback:** connect the real producer to
+   current receiving guards and existing numerical owners without refreshing
+   observation age or changing uncertainty meaning. Independently qualify complete
+   and partial-cancel journeys beside stale/unknown/arithmetic-failure controls.
+   Broker settlement survives every model rejection.
+5. **S4.3/4 with W11-W02/05 qualifies transitions:** cancellation/replacement,
+   guard, sleep/resume, engine/broker death, ownership transfer and maintenance.
+   Preserve mandatory records and usable recovery code/rights; retained package
+   files or SCM configuration alone prove no independent recovery. Existing
+   W11-W05/W11-W10 removal questions remain unresolved.
+6. **S4.5/reference QA returns trajectories/distributions to S0.7:** include
+   unsuccessful attempts and observation uncertainty. Compare candidate defaults,
+   hard ceilings, administrative narrowing, legitimate drift/recovery and
+   compromised-engine damage under the same population. OD-04 owns the concrete
+   decision and subsequent validation; this card selects no production profile.
+
+For residual error, compare the retained **actual rate with the intended recovery
+state in the same coordinate**; their difference need not equal a named transient
+term. `|residual_rate| × exposure_time` is conditional on both bounds and delivery
+semantics, with uncertainty retained. Measured maxima, stop targets and configured
+recovery delays supply no all-failures exposure bound. If recovery can remain
+unavailable indefinitely, a nonzero retained rate has no demonstrated unconditional
+finite residual ceiling. Statistical coverage requires representative sampling
+and dependence assumptions; retain censored/unrecovered cases. No watchdog or
+lease mechanism is selected. Observe product cleanup before independent lab
+restoration; the latter is not evidence of product recovery.
+
+#### Remaining inputs and current priority
+
+Open inputs are native conversion/quantum/build/power mapping; ordinary and
+exceptional rate/step/date policy; oscillator/environment bounds; uncertainty
+meaning/coverage/age; windows/renewal/unknown allocation; trustworthy boot epochs;
+durable reservation/outcome representation and filesystem evidence; effective
+current-owner recovery; native-work/stop/restart budgets; and accepted residual
+exposure/availability tradeoffs. Production quorum, fresh-vote/floor-supersession
+and era decisions remain with R-02. Source review closes none of these gates.
+
+[Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+remains first, including the current proof continuation and unresolved public
+era-constructor/held verifier work. Native/S134 stop, separate fuzz no-retry hold,
+optional-storage pause, limited Sandbox scope and UI-M0 D1–D3 deferrals remain.
+Direct-first acquisition, selected Slint and complete MSIX are unchanged. These
+later measurements add no prerequisite to unrelated current Core work.
+
+#### Primary evidence and transfer limits
+
+- **Chrony:** selected [generic driver](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sys_generic.c) and [reference controller](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c); comparison [current driver pin](https://github.com/mlichvar/chrony/blob/c97d8083cf9a9edc64d53236565916d326d8a109/sys_generic.c); [4.9 manual](https://chrony-project.org/doc/4.9/chrony.conf.html). Base/transient separation and driver-return feedback transfer as concepts; startup allowances, callback cleanup and Linux constants supply no durable Windows authority or recovery guarantee.
+- **ntpd-rs v1.9.0:** [controller](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/algorithm/kalman/mod.rs), [variance model](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/algorithm/kalman/source.rs), [clock trait](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/clock.rs). The accumulated counter excludes slews/startup and resets with controller construction; it cannot satisfy THR-19. Source defaults are not product limits.
+- **Microsoft rate/privilege contracts:** [legacy setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustment), [precise setter/sample](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [precise getter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise), [privilege results](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges), [step](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtime) and [SYSTEMTIME](https://learn.microsoft.com/windows/win32/api/minwinbase/ns-minwinbase-systemtime). Sample policy and representation are not tested product bounds.
+- **Windows timing/lifecycle:** [QPC](https://learn.microsoft.com/windows/win32/sysinfo/acquiring-high-resolution-time-stamps), [unbiased time](https://learn.microsoft.com/windows/win32/api/realtimeapiset/nf-realtimeapiset-queryunbiasedinterrupttimeprecise), [service status](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setservicestatus), [failure actions](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw), [queued restart behavior](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w). A finite action array can repeat its final action; configuration and wait completion do not prove bounded cleanup.
+- **Protocol/model:** [RFC 5905 §§7.2/11.2.3](https://www.rfc-editor.org/rfc/rfc5905.html), [RFC 8915 §8.6](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.6), [RFC 8633](https://www.rfc-editor.org/rfc/rfc8633.html), [NIST SP 1065](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1065.pdf). Delay, source dependence, assumed frequency tolerance and stability statistics need explicit interpretation.
+- **Statistical recovery claims:** [NIST tolerance intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc264.htm), [PNNL nonparametric upper tolerance limits](https://vsp.pnnl.gov/help/vsample/Design_UTL_Non_Parametric.htm). Population coverage/confidence under sampling assumptions is not an actuator lease or an all-failures deadline. Primary sources inspected 5 November 2026; no native measurements were executed.
+
+#### Reconciliation and independent review — 5 November 2026
+
+**Completed workflow:** separate GitHub, primary-web and Microsoft Learn research
+lanes supplied a fourth analyst's Markdown synthesis; a fifth agent integrated
+seven existing documents. Initial fresh launches failed with context-window
+errors and supplied no usable role result; one bounded retry per role completed.
+The integrated card retains its primary pins and transfer limits above.
+
+| Obligation or relationship | Reconciliation with the inspected predecessor |
+| --- | --- |
+| Broker authority and actual movement | Existing THR-19, component/combined ceilings, durable reservation and conservative unknown charging remain. The worksheet defines a common qualified rate coordinate without adopting values or an IPC schema. |
+| Late physical outcome and model publication | Broker custody must survive model rejection; current Core admission remains separate. The actual Ready-only fixture contract is retained, with no second ledger or claim of native implementation. |
+| Residual recovery claim | The former illustrative transient-rate expression is narrowed to actual rate relative to the intended recovery state and explicitly conditional rate/exposure bounds. No measured maximum or configured delay is promoted to hard expiry. |
+| Policy and qualification | OPEN-5/7/13, OD-02/04 and existing S0.4/S0.7/P4/W11 owners remain. Physical evidence, model assumptions, tolerances and approval are distinct; later values, effects and decisions remain open. |
+| Current work and settled decisions | Development §7, the native/S134 stop, separate fuzz hold, storage pause, Sandbox/UI scope, Direct-first, selected Slint, complete MSIX and optional enhanced release provenance remain unchanged. |
+
+**Frozen review identity:** upstream base
+`09caf0d3303abafab1edba0064a1c9c117514b70`, full tree
+`c866a9e6bf9ef518142cc0d1a38318749800cac3`; seven changed Markdown files,
+47,732-byte patch, SHA-256
+`b176c6711bbd270fd42e6b6632cad016082fc9558bd9acdb2fc5c546016cd070`.
+The local `231d3e01a3447354a15ce0a7dba0138f0f1a6813` is a synthetic
+partial-snapshot identity, not upstream history or a publishable tree. The
+coordinator matched all seven baseline blobs against the complete remote tree;
+the reviewer independently checked the local patch and candidate file identities.
+
+**Review completion:** `clock_review` received fresh context with
+`fork_turns: none` and read-only bounded scope. The first launch failed before
+producing a review (`not run`); one bounded retry completed the requested review
+(`completed`, `READY` for this documentation handoff). Its separate upstream
+fact-check launch also failed without usable evidence; the reviewer performed
+the primary checks directly. The raw report records actual inputs and limits.
+No material `CLK-R` finding was established, so no finding-resolution cycle was
+needed. Raw-report SHA-256:
+`e3cf4e9fc1ac657190cf3662c8ece4d3175b2a5cd4a2f4a2a58fbdbfb94cc601`.
+
+**Coordinator verification:** all seven files remained frozen throughout review.
+Whitespace checks, 1,101 internal Markdown link occurrences and all 23 scoped
+preservation checks passed. The five architecture Mermaid blocks, canonical
+REQ/BND/DEC/THR/CHECK/OPEN identifiers, 136 earlier source entries, existing task
+history, research obligations and current proof-priority prefix are retained.
+No product, proof, native or fuzz experiment was executed, and no dependency,
+production policy value, clock, service or trust store was changed.
+
+The review verdict covers the frozen preparation patch, not this subsequently
+appended receipt. The complete raw report below, including the reviewer's own
+comprehension paragraphs, is retained verbatim. Its scoped readiness supplies no
+production measurement, mathematical proof, risk acceptance or release approval.
+
+#### Verbatim independent review
+
+> The proposed change prepares the unresolved production clock limits for later decisions and qualification. It puts one field, evidence and control matrix in the existing Windows integration task, connects it to the existing phase owners, and clarifies three relationships: cumulative authority follows actual combined actuation, durable settlement of a physical operation survives rejection by the current model, and holdover or recovery error claims depend on explicit physical and exposure assumptions. It changes documentation and research routing without selecting production numbers or admitting an experiment.
+>
+> The relevant existing implementation is a pure fixture receiver and affine numerical machinery. The receiver accepts modeled terminal events only against its current Ready chart and local cursor; it provides neither Windows effect provenance nor persistent broker custody. A production broker, durable reservation/outcome integration and qualified physical feedback remain planned. Current work remains the Core mathematical-proof continuation; the blocked S134 artifact, separate fuzz hold, optional-storage pause, limited Sandbox authorization and UI-M0 deferrals remain applicable. The selected Windows-only explicit leap executor and the wider authenticated-recovery goal remain requirements awaiting their respective evidence.
+>
+> ## Candidate identity and completion
+>
+> - **Reviewer:** independent `clock_review` reviewer; completed one bounded, read-only documentation-stage review on 5 November 2026.
+> - **Context:** fresh review context containing the bounded request and project instructions. I did not retrieve or use parent discussion, private KB/memory, the analyst report or the candidate author's verdict. A narrowly delegated upstream fact-check attempt failed without a usable result; it contributes no evidence or additional completed review. The primary-source checks below were performed directly by this reviewer.
+> - **Reported real upstream base:** `09caf0d3303abafab1edba0064a1c9c117514b70`; reported full upstream tree `c866a9e6bf9ef518142cc0d1a38318749800cac3`. These are the review packet's upstream identities; I did not independently reconstruct the full remote tree.
+> - **Observed synthetic local HEAD:** `231d3e01a3447354a15ce0a7dba0138f0f1a6813`. This partial materialization is not upstream history, and absent unrelated files are not treated as upstream deletions.
+> - **Frozen patch:** `clock-limits-review-candidate.diff`, SHA-256 `b176c6711bbd270fd42e6b6632cad016082fc9558bd9acdb2fc5c546016cd070`. Both the supplied patch and the current seven-file Git diff produced this hash.
+> - **Scope:** seven Markdown files, 304 insertions and one deletion. Git status showed exactly these seven modified files. All seven SHA-256 values and Git blob identities matched `clock-limits-review-candidate.json`; the final hash check still matched. `git diff --check` returned success with no diagnostics. No product code, dependency or policy value changed.
+>
+> | Reviewed file | Verified SHA-256 |
+> | --- | --- |
+> | `docs/README.md` | `1641fc7e436bcb77cb11b215403b0764c88e7a753e674f7e26cb95daa7b0866c` |
+> | `docs/nevrotick-research-handoff.md` | `279d82b7c068e89e5b126e6e1f7092af18cfe8dd070f390d7fbb22d7bf552474` |
+> | `docs/plans/development-plan.md` | `0d23db72d736243864cdef26931141bbf4905b8d55254bf2f174d5f3f95181f2` |
+> | `docs/windows-time-architecture.md` | `1b7dc029078316ee34c0d423e4028f5c0fc98dee579df580251727b5fea9e3b7` |
+> | `tasks/README.md` | `440ea9aa1c93a95d77b890d17912319cdd951b8aa6dccc03448957b728a85132` |
+> | `tasks/development-backlog.md` | `5bc2e8154898d48ad3b58d28c95bce0093c6ae0e92cb944927f417ae0f380cc1` |
+> | `tasks/windows11-integration.md` | `29428a0a8b696efd3496d44093b2ff2766362c2e3a43422eb630e91cfc7960c9` |
+>
+> ## Inputs actually inspected
+>
+> I read the request and manifest, the complete frozen patch, and the changed text against the following bounded current authorities and source paths:
+>
+> - `AGENTS.md`, `docs/README.md`, `.agents/skills/planning/plan-independent-review/SKILL.md`, `.agents/skills/planning/references/review-and-handoff.md`, `.agents/skills/testing/qa-independent-review/SKILL.md` and `.agents/skills/testing/CONTRACT.md`. The local inventory exposed no nested `AGENTS.md`.
+> - `docs/windows-time-architecture.md` §§5.3, 10.1–10.5, THR-19, §17.1 and the relevant OPEN-5/7/13 records; `docs/nevrotick-owner-decisions.md` OD-02 and OD-04; `docs/nevrotick-research-handoff.md` R-02/R-03, R-07/R-08 and completion criteria.
+> - `docs/plans/development-plan.md` P4, §7's current proof continuation and execution holds, and the changed §8.5 routing; `tasks/development-backlog.md` S0.4/S0.7 and P4; the changed task-index routing; `tasks/windows11-integration.md` authority/scope, W11-W02/04/05, §4.19's Sandbox boundary and the complete new §4.31.
+> - `tasks/s1.3-source-selection-readiness.md` modeled settled active-time delivery contract, the historical four-owner qualification receipt and the current Fraction comparison proof contract. The receipt was read for its declared scope, not re-executed or independently requalified.
+> - `Cargo.toml`, `crates/time-core/Cargo.toml` and `crates/time-domain/Cargo.toml`; the complete `crates/time-core/src/reference_input/rate_delivery.rs`; the current identity/readiness, mapping and feedback owners in `crates/time-core/src/reference_input.rs`; settled-rate effect/composition in `crates/time-core/src/regression/chart.rs`, corresponding conversion/integration/error machinery in `crates/time-core/src/regression/chart/roundoff.rs`, and the guarded integer conversion in `crates/time-core/src/regression/normalization.rs`.
+>
+> Direct primary-source inspection covered the consequential changed claims:
+>
+> | Primary input | Inspected scope |
+> | --- | --- |
+> | Microsoft [precise setter and sample](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [precise getter](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise), [legacy setter](https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustment) and [privilege results](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges) | Parameter/mode documentation, sample QPC conversion and 1,000 ppm guard, fixed-`FALSE` restore calls, Boolean-only sample privilege check, and documented `ERROR_NOT_ALL_ASSIGNED` behavior. |
+> | Microsoft [QPC guidance](https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps), [unbiased time](https://learn.microsoft.com/en-us/windows/win32/api/realtimeapiset/nf-realtimeapiset-queryunbiasedinterrupttimeprecise), [service failure actions](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw) and [queued restart behavior](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w) | Sleep inclusion/exclusion and precision limits; repetition of the final failure action; queued restart after a subsequent manual start/stop. |
+> | Chrony [generic driver](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/sys_generic.c) and [reference controller](https://github.com/mlichvar/chrony/blob/8df4f1263e206585e6c4e61352d042c2dd12916a/reference.c) at the selected immutable pin | `update_slew` composition, driver-return feedback, achieved-slew accounting and callback scheduling; `get_root_dispersion`'s elapsed-time growth terms. |
+> | ntpd-rs [controller](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/algorithm/kalman/mod.rs) and [source model](https://github.com/pendulum-project/ntpd-rs/blob/46ec9bb4d5b6cb24f814f5543d85b9138afb4cba/ntp-proto/src/algorithm/kalman/source.rs) at the cited pin | Startup versus accumulated-step checking, step versus slew branches, construction with default time data, and actual covariance/process-noise propagation. |
+> | [RFC 5905](https://www.rfc-editor.org/rfc/rfc5905.html), [RFC 8915 §8.6](https://www.rfc-editor.org/rfc/rfc8915.html#section-8.6), and [NIST tolerance intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc264.htm) | MAXDIST/root-distance definitions and half-delay interpretation; the difference between observed sample coverage and population coverage/confidence. |
+>
+> The three researcher reports were not needed as review oracles and were not consumed. The analyst report was not opened. Initial direct retrieval failures for some URLs were resolved through English Microsoft pages or the GitHub connector at the exact pins; no failed retrieval was counted as inspected evidence.
+>
+> ## Scoped verdict: READY
+>
+> **Ready as the specified documentation/research handoff. No material CLK-R finding was established in this candidate.** This verdict does not admit implementation, select numerical policy, qualify Windows behavior, establish a product proof, accept residual risk or approve release.
+>
+> The reasons for readiness are tied to the actual changed boundaries:
+>
+> 1. **Aggregate correction authority remains with the broker.** The proposed absolute-movement and signed-displacement definitions in §4.31 preserve architecture §5.3 and THR-19: stable compensation is included; cancellation, sign changes, reloads and restarts cannot refund delivered work. Separate component ceilings survive. The handoff requires a common qualified coordinate before adding rate components. This is necessary given the inspected Chrony composition, which scales the temporary term by the base rate and uses the driver-returned result. Window allocation and unknown outcomes remain explicit unresolved inputs rather than implicit policy defaults.
+>
+> 2. **The physical-outcome and current-model owners are coherently separated.** In the actual source, `settlement_parts` calls `reference_chart_identity` before accepting any event; that guard requires Ready and the exact chart instance. Known events then consume the cursor and invalidate the old model before fallible integration/composition. Unknown blocks the cursor. Architecture §10.2.1 and §4.31 accurately preserve these fixture limits while assigning future late durable settlement to broker/mandatory state. They do not instruct an implementer to weaken the Ready guard, erase a reservation after cancellation, or publish stale confidence. Any reconciliation requiring another write still needs current ownership.
+>
+> 3. **Physical uncertainty is not promoted from arithmetic or upstream statistics.** The `2^53` duration guard is a numerical conversion boundary, and the existing outward bounds concern exact stored operands. The text correctly keeps both separate from production holdover validity, actuator quantization and reference error. Its holdover inequality is expressly conditional on initial error, residual frequency and event bounds. Fresh source votes and exceptional recovery authority are not renewed by prediction, matching R-02 and OD-02. The RFC MAXDIST caution avoids assuming that a root-distance field is the same quantity as round-trip delay.
+>
+> 4. **Native and recovery claims have appropriate limits and paired controls.** The Microsoft sample supports the identified mode-restoration and privilege-check cautions; it supplies no tested product ceiling. The changed residual-rate calculation uses the difference from the intended recovery state, not an assumed transient label. Its finite exposure condition is explicit. SCM configuration and statistical observations are not represented as an all-failures expiry guarantee. Successful cleanup must be observed before fixture restoration, and unsuccessful/censored recovery attempts remain in the proposed evidence. Missing native qualification is an acknowledged later-stage obligation, not a demonstrated product failure.
+>
+> 5. **The handoff has existing producers, consumers and exits without displacing current work.** S0.4/W11-W02 produces qualified backend evidence; W11-W04/05 owns effective security and lifecycle observations; S0.7/OD-04 owns the dependent policy choice; S4.1/2 enforces and settles; Core admits current usable feedback; S4.3/4 and S4.5 provide transitions and independent trajectory evidence. The matrix pairs useful drift/recovery/holdover with refused or failed neighbors. It retains OPEN-5/7/13, R-02's era/quorum/floor choices, package-removal recovery questions and mandatory mathematical proof obligations. The new routing explicitly preserves development §7 and all applicable holds and deferrals.
+>
+> ## Evidence limits and invalidation conditions
+>
+> This was a source and document review, with read-only identity/whitespace checks. I ran no Cargo, native, proof, fuzz, clock, service, package or release campaign and changed no candidate file. I did not audit the full repository, all upstream implementations, every linked reference, all RFC errata, the exact Windows SDK/binding graph or the full remote tree. Historical qualification receipts were not transferred to the current candidate as new execution evidence. No unavailable later-stage measurement is classified as a failed product test.
+>
+> Production rate/step/date values, authority-window renewal/allocation, physical clock mapping, holdover coverage, durable representation and filesystem semantics, supported configurations, effective recovery and native-work budgets remain open. Those gaps do not prevent this handoff because its consumers, required observations and disabling conditions are stated. They do prevent the corresponding production claims or effects until their existing gates are met. A change to the frozen patch, governing owner decisions, receiver semantics or cited primary facts invalidates the affected conclusions and requires scoped reconciliation.
+>
+> ## One permitted next action
+>
+> The coordinator may retain this completed raw review verbatim in the existing `tasks/windows11-integration.md` §4.31 handoff and carry its scoped READY disposition forward, preserving the current development §7 continuation and all later decision/execution gates.

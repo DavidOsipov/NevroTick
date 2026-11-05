@@ -47,6 +47,11 @@ and [architecture §21](../docs/windows-time-architecture.md#21-delivery-phases-
 | S0.5 full UI feasibility / UI/accessibility | Accepted [Slint default, OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) and narrower UI-M0/comparison evidence; consume M0-SL-01/02 source preparation and admitted M0-SL-03–05 candidate evidence from the [existing migration handoff](ui-m0.md#slint-migration-handoff--5-november-2026), then define representative window/source/settings/elevation/tray qualification in its own scope. Restore relevant full-feasibility requirements without expanding UI-M0. | Named keyboard/Narrator/UIA journeys work at required contrast/scales; missing focus/labels or unusable scaling fails feasibility. CHECK-22; UI-M0/comparison success alone cannot close it. |
 | S0.7 decision freeze / architecture/policy/security | Relevant P0 measurements, accepted owner decisions and remaining OPEN issues; prepare the next dependent decision card rather than guessing production limits. | ASVS/native-profile, step/date/holdover, supported-build, service trust/revocation/egress and native-work limits have explicit decisions or blockers. Unsupported alternatives remain blocked; CHECK-4/9/10/16/27 as applicable. |
 
+**S0.4/S0.7 clock-limit preparation:** apply the [existing W11 matrix](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+to field definitions, bounded evidence and the next dependent OD-04 decision.
+Native capability, model assumptions and acceptable policy tolerances remain
+separate; source review adopts no production values or execution permission.
+
 ### Windows component reuse at existing stage entry
 
 **Source findings integrated 5 November 2026; dependent implementation remains
@@ -179,6 +184,12 @@ CHECK-1/2/3/14/15/17/21/25/26/27 apply at their reached boundaries.
 owned disposable fixture/reference/recovery and explicit finite experiment card
 precede real effects. Apply W11-W02, leap child and relevant state/adapter
 refinements. **Exit:** [plan §6/P4](../docs/plans/development-plan.md#p4--windows-clock-integration-ownership-and-recovery).
+
+Use [W11 §4.31](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+for the ordered producer/owner/consumer handoff and paired controls. Account actual
+combined movement and late durable outcomes even when Core rejects publication;
+qualify holdover assumptions and conditional recovery exposure. OPEN-5/7/13 and
+all current holds remain; no parallel clock task or numerical envelope is added.
 
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |

@@ -44,6 +44,11 @@ displace the Core continuation above or lift execution holds.
 | P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then submission/delivered provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; local and Store-delivered exits differ. |
 | P7 | [Final-qualification parent](development-backlog.md#p7-final-qualification); independent QA/release, David approves release | Deferred exact integrated candidate after applicable phase evidence; reconcile CHECK-1–27/AC-01–20, installed bytes, unresolved blockers and actual release-profile trust. |
 
+The [clock-limit preparation card](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+supplies S0.4/S0.7/P4 and W11-W02/04/05 with unresolved fields, evidence provenance,
+paired controls and ordered handoff. It selects no production values, preserves
+current Core priority and lifts no native, fuzz or storage hold.
+
 Every exit also uses the [phase gates](../docs/plans/development-plan.md#6-phase-implementation-and-acceptance-gates),
 [CHECK catalog](../docs/windows-time-architecture.md#202-acceptance-catalog) and
 [AC catalog](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence).
