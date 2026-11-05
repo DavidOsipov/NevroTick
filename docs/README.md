@@ -492,6 +492,7 @@ These preserve first-pass findings and correction checks, not competing specific
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.
 - [verus-assessment.md](supporting-reviews/verus-assessment.md): source-based evaluation, deferred integration, candidate properties, comparison with Kani, proof boundaries and conditions for a future pilot.
+- [hifitime-lessons.md](supporting-reviews/hifitime-lessons.md): critically checked proof-specification, harness-reachability, conversion-anchor and leap-data lessons; current proof-status corrections and bounded adoption through existing domain/leap owners, without a new numerical dependency.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 

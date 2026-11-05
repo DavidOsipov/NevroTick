@@ -101,6 +101,416 @@ class AdmissionControls(unittest.TestCase):
             finally:
                 run.assert_not_called()
 
+    def kani_fixture(self):
+        """Bind a complete tiny Kani/compiler closure, including its real link shape.
+
+        Only fixture pins replace production pins; payload reads/hashes and all
+        inventory/pointer checks remain real. Unselected inventories stay absent.
+        """
+        stable_specification, manifest = self.stable_fixture()
+        (self.base / stable_specification["path"]).unlink()
+        scopes = ["payload/kani-0.68.0",
+                  "rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu"]
+        kani = self.base / "kani"
+        payload, compiler = (kani / scope for scope in scopes)
+        files = {
+            payload / "bin/kani-driver": b"independent fixture Kani driver",
+            payload / "bin/kani-compiler": b"independent fixture Kani compiler",
+            payload / "bin/cbmc": b"independent fixture CBMC and solver",
+            payload / "lib/kani.rlib": b"independent fixture Kani verification library",
+            compiler / "bin/rustc": b"independent fixture private rustc",
+            compiler / "bin/rustdoc": b"independent fixture private rustdoc",
+            compiler / "lib/librustc_driver.so": b"independent fixture compiler library",
+            compiler / "lib/libLLVM.so": b"independent fixture LLVM library",
+        }
+        for path, contents in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(contents)
+            if path.parent.name == "bin":
+                path.chmod(0o500)
+        toolchain = payload / "toolchain"
+        link = "../../" + scopes[1]
+        toolchain.symlink_to(link, target_is_directory=True)
+        entries = {path.relative_to(kani).as_posix(): {
+            "kind": "file", "bytes": len(contents),
+            "sha256": hashlib.sha256(contents).hexdigest()}
+            for path, contents in files.items()}
+        entries[toolchain.relative_to(kani).as_posix()] = {"kind": "symlink", "target": link}
+        inventory = {"schema_version": 1, "analysis_installation_root": str(self.base),
+                     "tool_root": str(kani), "scopes": scopes, "entries": entries}
+        specification = {"name": "kani", "path": "evidence/kani-fixture.json",
+                         "root": "kani", "scopes": scopes}
+        inventory_path = self.base / specification["path"]
+        inventory_path.write_text(json.dumps(inventory))
+        specification["sha256"] = hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+        self.policy["inventories"] = [specification if item["root"] == "kani" else item
+                                      for item in self.policy["inventories"]]
+        self.kani_pin = ("0.68.0", "kani/payload/kani-0.68.0/bin/kani-driver",
+                         hashlib.sha256(files[payload / "bin/kani-driver"]).hexdigest())
+        self.policy["tools"]["kani"]["sha256"] = self.kani_pin[2]
+        self.write_policy()
+        return specification, manifest, files, payload, compiler
+
+    def admit_kani(self):
+        """Run real miniature admission; replace only fixture pin and host helpers."""
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            try:
+                return CHECK.admit_kani_proof(self.checkout, self.pointer)
+            finally:
+                run.assert_not_called()
+
+    def test_kani_proof_admits_complete_selected_closure_and_exact_readonly_roots(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_kani_proof(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+        self.assertEqual([item["root"] for item in admitted["inventories"]], ["kani"])
+        self.assertEqual(admitted["installation_pointer"], str(self.pointer))
+        self.assertEqual(admitted["installation_pointer_sha256"],
+                         hashlib.sha256(self.pointer.read_bytes()).hexdigest())
+        for item in self.policy["inventories"]:
+            if item["root"] != "kani":
+                self.assertFalse((self.base / item["path"]).exists())
+
+    def test_kani_proof_role_cannot_enter_generic_admission_or_cli_profile_choices(self):
+        self.kani_fixture()
+        self.assertEqual(CHECK.ADMISSION_PROFILES, ("full", "stable-core"))
+        with patch.object(CHECK, "check_inventory") as inventories, \
+             self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+            CHECK.admit(self.checkout, self.pointer, profile="kani-proof")
+        inventories.assert_not_called()
+
+    def test_era_codegen_has_distinct_consumer_and_same_complete_kani_closure(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_era_constructor_codegen(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_consumer"], "era-constructor-codegen-v1")
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+        self.assertNotIn("admission_consumer", self.admit_kani())
+
+    def test_era_codegen_tampering_is_rejected_and_cannot_select_generic_lane(self):
+        _, _, files, payload, _ = self.kani_fixture()
+        self.assertEqual(CHECK.ADMISSION_PROFILES, ("full", "stable-core"))
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="era-constructor-codegen-v1")
+            generic.assert_not_called()
+        target = payload / "bin/kani-driver"
+        target.chmod(0o600)
+        target.write_bytes(b"substituted codegen executable")
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            with self.assertRaisesRegex(CHECK.Incomplete, "digest/size mismatch"):
+                CHECK.admit_era_constructor_codegen(self.checkout, self.pointer)
+        run.assert_not_called()
+        target.write_bytes(files[target])
+        target.chmod(0o500)
+        self.admit_kani()
+
+    def test_era_model_inspection_retains_complete_inventory_and_distinct_consumer(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_era_constructor_model_inspection(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["admission_consumer"], "era-constructor-model-inspection-v1")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+
+    def test_era_model_inspection_rejects_tamper_and_generic_selection(self):
+        _, _, _, _, compiler = self.kani_fixture()
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="era-constructor-model-inspection-v1")
+            generic.assert_not_called()
+        library = compiler / "lib/librustc_driver.so"
+        library.chmod(0o600)
+        library.write_bytes(b"substituted transitive compiler library")
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            with self.assertRaisesRegex(CHECK.Incomplete, "digest/size mismatch"):
+                CHECK.admit_era_constructor_model_inspection(self.checkout, self.pointer)
+        run.assert_not_called()
+
+    def test_era_constructor_proof_has_fixed_role_and_complete_kani_roots(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_era_constructor_proof(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_consumer"], "era-constructor-proof-v1")
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+
+    def test_era_constructor_proof_cannot_bypass_helpers_or_generic_role_rejection(self):
+        self.kani_fixture()
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="era-constructor-proof-v1")
+            generic.assert_not_called()
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers", side_effect=CHECK.Incomplete("proof helper denial")), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            with self.assertRaisesRegex(CHECK.Incomplete, "proof helper denial"):
+                CHECK.admit_era_constructor_proof(self.checkout, self.pointer)
+        run.assert_not_called()
+
+    def test_kani_proof_hashes_each_tool_solver_and_transitive_compiler_library(self):
+        _, _, files, _, _ = self.kani_fixture()
+        self.admit_kani()
+        for path, original in files.items():
+            before = path.stat()
+            path.chmod(0o600)
+            path.write_bytes(bytes([original[0] ^ 1]) + original[1:])
+            os.utime(path, ns=(before.st_atime_ns, before.st_mtime_ns))
+            try:
+                with self.subTest(path=path.relative_to(self.base)), \
+                     self.assertRaisesRegex(CHECK.Incomplete, "digest/size mismatch"):
+                    self.admit_kani()
+            finally:
+                path.write_bytes(original)
+                path.chmod(before.st_mode & 0o777)
+            self.admit_kani()
+
+    def test_kani_proof_missing_extra_terminal_directory_and_fifo_are_rejected(self):
+        _, _, files, payload, compiler = self.kani_fixture()
+        target = compiler / "lib/librustc_driver.so"
+        original = files[target]
+        extra = payload / "lib/unlisted-library.so"
+        self.admit_kani()
+        for fault in ("missing", "extra", "terminal-directory", "fifo"):
+            target.unlink()
+            if fault == "extra":
+                target.write_bytes(original)
+                extra.write_bytes(b"unlisted payload")
+            elif fault == "terminal-directory":
+                target.mkdir()
+            elif fault == "fifo":
+                os.mkfifo(target)
+            try:
+                with self.subTest(fault=fault), self.assertRaises(CHECK.Incomplete):
+                    self.admit_kani()
+            finally:
+                if target.is_dir():
+                    target.rmdir()
+                else:
+                    target.unlink(missing_ok=True)
+                target.write_bytes(original)
+                extra.unlink(missing_ok=True)
+            self.admit_kani()
+
+    def test_kani_proof_rejects_library_and_toolchain_link_redirection(self):
+        _, _, files, payload, compiler = self.kani_fixture()
+        library = compiler / "lib/librustc_driver.so"
+        peer = self.scratch / "same-content-compiler-library.so"
+        peer.write_bytes(files[library])
+        library.unlink()
+        library.symlink_to(peer)
+        with self.assertRaises(CHECK.Incomplete):
+            self.admit_kani()
+        library.unlink()
+        library.write_bytes(files[library])
+        self.admit_kani()
+        toolchain = payload / "toolchain"
+        expected = os.readlink(toolchain)
+        toolchain.unlink()
+        toolchain.symlink_to(self.scratch, target_is_directory=True)
+        with self.assertRaises(CHECK.Incomplete):
+            self.admit_kani()
+        toolchain.unlink()
+        toolchain.symlink_to(expected, target_is_directory=True)
+        self.admit_kani()
+
+    def test_kani_proof_scope_alias_with_identical_bytes_is_rejected(self):
+        _, _, _, _, compiler = self.kani_fixture()
+        self.admit_kani()
+        outside = self.scratch / "same-content-private-toolchain"
+        compiler.rename(outside)
+        compiler.symlink_to(outside, target_is_directory=True)
+        with self.assertRaises(CHECK.Incomplete):
+            self.admit_kani()
+        compiler.unlink()
+        outside.rename(compiler)
+        self.admit_kani()
+
+    def test_kani_proof_keeps_all_inventory_descriptions_and_exact_selected_scopes(self):
+        self.kani_fixture()
+        healthy = copy.deepcopy(self.policy)
+        mutations = [lambda p: p["inventories"].pop(),
+                     lambda p: p["inventories"].append(copy.deepcopy(p["inventories"][0])),
+                     lambda p: next(i for i in p["inventories"] if i["root"] == "kani").update(name="renamed"),
+                     lambda p: next(i for i in p["inventories"] if i["root"] == "kani").update(scopes=["payload/kani-0.68.0"]),
+                     lambda p: next(i for i in p["inventories"] if i["root"] == "kani")["scopes"].append("target"),
+                     lambda p: next(i for i in p["inventories"] if i["root"] == "lockbud").update(sha256="invalid"),
+                     lambda p: next(i for i in p["inventories"] if i["root"] == "common").update(path="../outside"),
+                     lambda p: p["tools"]["kani"].update(sha256="0" * 64),
+                     lambda p: p["tools"]["kani"].update(toolchain="unchecked-compiler"),
+                     lambda p: p["profiles"]["kani_flags"].pop()]
+        self.admit_kani()
+        for mutate in mutations:
+            self.policy = copy.deepcopy(healthy)
+            mutate(self.policy)
+            self.write_policy()
+            with self.subTest(mutate=mutate), self.assertRaises(CHECK.Incomplete):
+                self.admit_kani()
+        self.policy = healthy
+        self.write_policy()
+        self.admit_kani()
+
+    def test_kani_proof_keeps_inventory_digest_before_parsing_and_entrypoint_pin(self):
+        specification, _, files, payload, _ = self.kani_fixture()
+        inventory_path = self.base / specification["path"]
+        original_inventory = inventory_path.read_bytes()
+        inventory_path.write_bytes(b"not-json")
+        with self.assertRaisesRegex(CHECK.Incomplete, "Inventory SHA256 mismatch"):
+            self.admit_kani()
+        inventory_path.write_bytes(original_inventory)
+        self.admit_kani()
+
+        # Even a coherently rebound payload inventory cannot change the separate
+        # fixed Kani entrypoint pin without changing the admitted source policy.
+        target = payload / "bin/kani-driver"
+        target.chmod(0o700)
+        target.write_bytes(b"substituted coherent inventory entrypoint")
+        candidate = json.loads(original_inventory)
+        candidate["entries"]["payload/kani-0.68.0/bin/kani-driver"] = {
+            "kind": "file", "bytes": target.stat().st_size,
+            "sha256": hashlib.sha256(target.read_bytes()).hexdigest()}
+        inventory_path.write_text(json.dumps(candidate))
+        specification["sha256"] = hashlib.sha256(inventory_path.read_bytes()).hexdigest()
+        self.write_policy()
+        with self.assertRaisesRegex(CHECK.Incomplete, "Entrypoint is not hash-admitted: kani"):
+            self.admit_kani()
+        target.write_bytes(files[target])
+        target.chmod(0o500)
+        inventory_path.write_bytes(original_inventory)
+        specification["sha256"] = hashlib.sha256(original_inventory).hexdigest()
+        self.write_policy()
+        self.admit_kani()
+
+    def test_kani_proof_keeps_shipping_executable_and_bootstrap_helper_checks(self):
+        _, manifest, _, payload, _ = self.kani_fixture()
+        self.admit_kani()
+        for name in manifest["rust"]["linux_binary_sha256"]:
+            target = self.stable / "bin" / name
+            original = target.read_bytes()
+            target.chmod(0o600)
+            target.write_bytes(bytes([original[0] ^ 1]) + original[1:])
+            try:
+                with self.subTest(name=name), \
+                     self.assertRaisesRegex(CHECK.Incomplete, "Stable compiler executable digest"):
+                    self.admit_kani()
+            finally:
+                target.write_bytes(original)
+                target.chmod(0o500)
+        with patch.object(CHECK.RUNTIME, "_helpers", side_effect=CHECK.Incomplete("fixture helper denial")), \
+             patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             self.assertRaisesRegex(CHECK.Incomplete, "fixture helper denial"):
+            CHECK.admit_kani_proof(self.checkout, self.pointer)
+        driver = payload / "bin/kani-driver"
+        driver.chmod(0o400)
+        with self.assertRaisesRegex(CHECK.Incomplete, "Nonexecutable tool entrypoint: kani"):
+            self.admit_kani()
+        driver.chmod(0o500)
+        self.admit_kani()
+
+    def test_kani_proof_rejects_pointer_drift_during_selected_admission(self):
+        self.kani_fixture()
+        self.admit_kani()
+        original = self.pointer.read_bytes()
+        real_check = CHECK.check_inventory
+
+        def drift(base, specification, stable):
+            result = real_check(base, specification, stable)
+            candidate = json.loads(original)
+            candidate["status"] = "installing"
+            self.pointer.write_text(json.dumps(candidate))
+            return result
+
+        with patch.object(CHECK, "check_inventory", side_effect=drift), \
+             self.assertRaisesRegex(CHECK.Incomplete, "pointer changed during kani-proof"):
+            self.admit_kani()
+        self.pointer.write_bytes(original)
+        self.admit_kani()
+
+    def test_kani_proof_namespace_exposes_selected_link_and_denies_omitted_canaries(self):
+        """Actual Linux namespace; only admitted Python runs, never a fake analyzer.
+
+        A broad mount exposes all canaries. The exact returned roots retain the
+        Kani-to-compiler link while hiding unchecked settings and other stores.
+        """
+        _, _, files, payload, compiler = self.kani_fixture()
+        omitted = [self.base / "common/bin/omitted-canary",
+                   self.base / "lockbud/bin/omitted-canary",
+                   self.stable / "bin/rustc",
+                   self.base / "kani/rustup/settings.toml",
+                   self.base / "kani/cargo-home/config.toml"]
+        for path in omitted:
+            if not path.exists():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"unchecked namespace canary")
+        admitted = self.admit_kani()
+        work = self.scratch / "namespace-work"
+        work.mkdir(mode=0o700)
+        linked_library = payload / "toolchain/lib/librustc_driver.so"
+        library = compiler / "lib/librustc_driver.so"
+        original = files[library]
+        script = ("from pathlib import Path\nimport json\n"
+                  f"assert Path({str(linked_library)!r}).read_bytes() == {original!r}\n"
+                  f"assert Path({str(linked_library)!r}).resolve() == Path({str(library)!r})\n"
+                  f"visible = [p for p in {list(map(str, omitted))!r} if Path(p).exists()]\n"
+                  f"try: Path({str(library)!r}).write_bytes(b'forbidden payload write')\n"
+                  "except OSError: pass\n"
+                  "else: raise SystemExit('selected payload was writable')\n"
+                  "print(json.dumps(visible))\n")
+        python = CHECK.RUNTIME._helpers(self.checkout)["python3"]
+        broad = CHECK.RUNTIME.run(self.checkout, work, [python, "-c", script],
+                                  readonly=(self.base, self.stable), timeout=10)
+        self.assertEqual(json.loads(CHECK.RUNTIME.ENV.require_ok(broad)), list(map(str, omitted)))
+        selected = CHECK.RUNTIME.run(self.checkout, work, [python, "-c", script],
+                                     readonly=admitted["readonly_roots"], timeout=10)
+        self.assertEqual(json.loads(CHECK.RUNTIME.ENV.require_ok(selected)), [])
+        self.assertEqual(library.read_bytes(), original)
+
     def test_stable_core_admits_only_complete_selected_payload_and_pointer_identity(self):
         specification, _ = self.stable_fixture()
         real_check = CHECK.check_inventory

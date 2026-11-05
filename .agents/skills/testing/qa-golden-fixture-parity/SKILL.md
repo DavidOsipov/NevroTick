@@ -13,6 +13,11 @@ Decide contract-derived normalization before comparison. Retain raw output/diff.
 
 Challenge comparator: changed semantic sentinel must fail; permitted harmless variation must pass. Compare actual generated output; same-production-formatter fixture is no oracle.
 
+For complete sequences/bundles, compare cardinality and contractual order/metadata
+as well as paired values. Challenge empty, matching-prefix and appended cases;
+`zip` alone can hide missing or extra records. Use whole-byte equality where the
+contract requires exact output; semantic normalization must retain required facts.
+
 When changing the driver or comparator, use [harness qualification](../references/harness-qualification.md) to bind exact input facts to actual calls and challenge wrong, missing or unexpected observations. A matching rejection category can hide the wrong input.
 
 Review baseline changes as semantic decisions; no tool-update-mode GREEN. Report exact agreeing facts/representations, untested platforms/native effects. See [numerical/protocol truth](../references/numerical-protocol.md).

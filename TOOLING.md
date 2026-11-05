@@ -497,7 +497,7 @@ existing source-owner task before dependent acceptance.
 | cargo-fuzz / libfuzzer-sys | 0.13.2 / 0.4.13 | One-off GNU-target ASan controls observed: 256 healthy runs and the intended signed-byte defect. Product targets still need accepted seeds, independent invariants and target/sanitizer qualification. |
 | Miri | nightly-2026-10-28 | One-off controls observed across four seeds each: healthy execution and use-after-free rejection. Product core tests remain unqualified; this is not Win32/FFI execution. |
 | Loom | 0.7.2 | Isolated library payload, not a Cargo executable. One-off healthy atomic-update control and lost-update counterexample observed. Product models still need instrumented primitives and bounded state space. |
-| Kani | 0.68.0 | One-off healthy/defect controls observed. Product proofs still need explicit harnesses, assumptions, unwind bounds and a non-vacuous reachable property. |
+| Kani | 0.68.0 | Source-bound rounding/valid-window era and named domain/helper proofs have scoped qualified checkpoints in the [current task](tasks/s1.1-time-domain.md). Public Garde-constructor proofs and remaining leap/Core obligations are open; tool controls alone establish no product proof. |
 | Lockbud | a1b5303cdbb1d4d0ad886359cc71418570e7c5fd | One-off healthy/DoubleLock controls observed using experimental nightly-2026-02-07 / Rust 1.95. This older analysis compiler does not change shipping Rust 1.99.1; admit each real source/feature row before relying on diagnostics. |
 | cargo-vet | 0.10.3 | One-off controls observed: std-only healthy exit 0; unreviewed Loom graph exit 255 with missing reviews and no audits/exemptions. Application audit-policy acceptance and real dependency reviews remain pending. |
 
@@ -1167,6 +1167,60 @@ final readmission remain required; unused nightly/optional payloads are neither
 mounted nor claimed verified by this profile. Metadata-only cohort union uses
 its default flag and verifies native receipts' profile against the plan-bound
 policy. This changes no compiler flags, tool versions or shared installation.
+
+**Dedicated Kani admission, 5 November:**
+`check-analysis.admit_kani_proof()` preserves the complete existing Kani payload
+and private compiler inventory, shipping executable/bootstrap checks and pointer
+bookends, while returning exactly two readonly Kani roots. Generic admission
+choices remain `full`/`stable-core`; generic Cargo/analysis consumers cannot select
+this role. The formal runner's explicit `kani-proof` option must use those roots
+and the unchanged Kani flags and resource/source controls. Seventy-five focused
+Python/runtime tests, including actual Linux namespace visibility and tampering
+controls, passed. Native coordinate healthy/three-defect/restored commands and
+final admission also passed, with the actual namespace mounts checked. Mean
+selected admission was 9.36 seconds over five commands, versus 37.30 seconds for
+the preceding full-admission coordinate proof; this is a sequential observation,
+not a general benchmark. Exact receipts and remaining math are in the
+[current proof checkpoint](tasks/s1.1-time-domain.md#exchange-solver-limit-and-admission-checkpoint--5-november-2026).
+No whole-store fallback or shared installation change follows from this profile.
+
+The separate `admit_era_constructor_codegen()` API reuses that complete inventory
+and exact two-root mount closure for the closed `era-constructor-codegen-v1`
+consumer. Its fixed Cargo-mode `--only-codegen` profile is preparation for the
+actual public EraWindow/Garde constructor, not proof execution or generic Cargo
+admission. It requires its separately authenticated selected vendor view,
+immutable offline project/lock/configuration and ordinary runtime custody. The
+proof API's flags and generic `full`/`stable-core` choices remain unchanged.
+All 51 admission helper controls passed after this additive API; source/module
+comparison confirmed every pre-existing admission definition unchanged. Track
+actual compiler execution and generated-code inspection in the
+[existing constructor checkpoint](tasks/s1.1-time-domain.md#remote-s21-handoff-and-public-constructor-preflight--5-november-2026).
+
+`admit_era_constructor_model_inspection()` is another closed consumer over the
+same complete Kani inventory and two readonly tool roots. Only its fixed bundled
+`goto-instrument --dump-c` command, authenticated qualified model copy and
+separate ordinary runtime custody are admitted; it grants no generic tool/flag,
+Cargo or solver surface. All 53 admission helper controls passed. The
+[model-inspection checkpoint](tasks/s1.1-time-domain.md#public-constructor-model-inspection--5-november-2026)
+owns actual extraction and subsequent loop/unwind/proof evidence.
+
+`admit_era_constructor_proof()` reuses the same complete inventory for the closed
+five-job actual-constructor consumer. Its reviewed Cargo profile retains model
+validation, safety checks and sanity, with a provisional unwind of 32. All 55
+admission helper controls passed. The first actual healthy job stopped during
+GOTO model validation, before any solver result, because padded union member
+types disagree with their declared storage types. Do not rerun that candidate
+unchanged or infer a constructor proof from codegen or the readable model.
+The [constructor proof checkpoint](tasks/s1.1-time-domain.md#public-constructor-proof-checkpoint--5-november-2026)
+owns the retained failure, two bounded diagnostic reserves and any separately
+admitted verifier repair. The separate private candidate now has the matching
+`rustc-dev` component and rebuilt compiler: all 46 binding tests and eight
+bounded MEMBER controls qualified, including the intended false-assertion
+failure and restored health. Its complete 7,130-entry inventory changes only
+the compiler. This does not qualify the public constructor; continue its separate
+five-job campaign. Shared tool installation and shipping Rust/LLVM policy are
+unchanged. Runtime admission checks the effective tools and frozen build
+provenance without reopening unused compiler-build source/vendors.
 
 The [later full-admission metadata optimization](tasks/s0.1-protocol-comparison.md#full-tool-admission-metadata-optimization--1-november-2026)
 keeps those scopes and mounts intact. Inventory names schedule terminal checks;

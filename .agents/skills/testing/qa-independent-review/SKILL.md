@@ -22,6 +22,9 @@ or tests that manually validate before calling an unchecked API.
 
 For analyzer-derived claims, separate tool controls from actual product
 harness/database execution and inspect bounds, assumptions and excluded paths.
+For mathematical proof claims, use the [proof workflow](../references/formal-verification.md)
+to challenge semantic strength, actual-operation reachability, constructor/callee
+composition and expected-versus-completed scope independently of harness names.
 Apply [CodeQL data-flow evidence checks](../references/codeql-data-flow.md) when
 paths or empty results support a conclusion: verify source/database/query/model
 identity, real source/sink reachability and guard semantics yourself. A diagram,

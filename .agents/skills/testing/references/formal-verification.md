@@ -102,6 +102,12 @@ about `Ok` results is insufficient when always returning an error would satisfy
 it. Include required success/completeness and rejection behavior. For mutable
 operations distinguish preserved invariants from unchanged state on rejection.
 
+Relate inputs to required answers: a codomain/range, finite-result, normalization
+or no-panic theorem alone can accept a wrong value. For example, a sign operation
+returning zero for a positive input can satisfy a result-in-{-1,0,1} postcondition.
+Challenge a wrong answer that preserves such weaker properties, as well as
+reject-all behavior; use the actual promised relation as the oracle.
+
 Review assumptions against negative values, exact endpoints and transitions.
 Retain concrete reachable valid/error witnesses; these detect some vacuity but
 do not establish specification completeness. A proof assumption about a valid
@@ -147,6 +153,13 @@ solver, command and actual verified functions/obligations. Establish how the
 verified executable body reaches the product build. A separately translated model
 can specify expected results; proving that model does not prove the implementation.
 Preserve private APIs; do not expose unchecked construction for a demonstration.
+
+For custom equality, ordering, hashing, conversion or iteration, trace the proof
+through the actual overloaded/public operation. Comparing extracted integers
+alone cannot prove a custom trait body's laws. A defect confined to that body
+must fail the intended obligation; state which laws and operation sequences are
+covered. Do not invent a custom API or duplicate primitive/derived-comparison
+campaign merely to exercise this check.
 
 Verus ghost/spec code is erased. Its `verus_only` cfg is intended for ghost
 imports and verification attributes; do not select different executable behavior
@@ -210,6 +223,12 @@ failed/skipped/timed-out obligations, assumptions and a small maintenance exerci
 Compare tools only on equivalent properties/domains; an unexecuted alternative
 remains a hypothesis. Retain earlier failures. Bind reuse to unchanged proof,
 implementation, dependency, compiler and configuration inputs.
+
+For automated proof groups, reconcile expected, discovered, selected and completed
+obligations, including contracts used to replace callees. Keep preparation,
+code-generation-only, model inspection, solver completion, defect sensitivity and
+restored health distinct. Missing, skipped or timed-out results remain incomplete
+even when a job is green; a workflow file or harness name proves no execution.
 
 ## Bound claims about floats, termination and platforms
 

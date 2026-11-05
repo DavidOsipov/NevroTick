@@ -108,11 +108,7 @@ fn exchange_contract(t1: i128, t2: i128, t3: i128, t4: i128) {
     let offset = arithmetic.offset().numerator();
     let round_trip = arithmetic.round_trip().numerator();
     assert_eq!(offset, (t2 + t3) - (t1 + t4), "exact phase numerator");
-    assert_eq!(
-        round_trip,
-        (t2 + t4) - (t1 + t3),
-        "exact signed round trip"
-    );
+    assert_eq!(round_trip, (t2 + t4) - (t1 + t3), "exact signed round trip");
     assert!(
         offset >= -RELATIVE_LIMIT && offset <= RELATIVE_LIMIT,
         "phase producer envelope"
@@ -131,6 +127,27 @@ fn exchange_contract(t1: i128, t2: i128, t3: i128, t4: i128) {
     );
 }
 
+/// Observe one concrete witness through the actual checked public APIs.
+/// Error paths fail explicitly and return no fabricated observation.
+fn concrete_exchange_observation(t1: i128, t2: i128, t3: i128, t4: i128) -> (i128, i128) {
+    let arithmetic = match exchange::exchange_arithmetic(
+        admitted_coordinate(t1),
+        admitted_coordinate(t2),
+        admitted_coordinate(t3),
+        admitted_coordinate(t4),
+    ) {
+        Ok(value) => value,
+        Err(_) => {
+            assert!(false, "concrete exchange witness requires success");
+            panic!("concrete exchange observation required")
+        }
+    };
+    (
+        arithmetic.offset().numerator(),
+        arithmetic.round_trip().numerator(),
+    )
+}
+
 #[kani::proof]
 fn exchange_full_domain() {
     let t1 = admitted_ticks();
@@ -138,31 +155,54 @@ fn exchange_full_domain() {
     let t3 = admitted_ticks();
     let t4 = admitted_ticks();
     exchange_contract(t1, t2, t3, t4);
-    kani::cover!(t1 == 0 && t2 == 0 && t3 == 0 && t4 == 0, "zero exchange");
+
+    // The universal contract above still ranges over four independent complete
+    // coordinates. Concrete real calls establish reachable controls without
+    // asking six SAT searches to discover the same literal boundary inputs.
+    let zero = concrete_exchange_observation(0, 0, 0, 0);
+    kani::cover!(zero == (0, 0), "zero exchange");
+    let positive_phase = concrete_exchange_observation(
+        COORDINATE_LOWER,
+        COORDINATE_UPPER,
+        COORDINATE_UPPER,
+        COORDINATE_LOWER,
+    );
     kani::cover!(
-        t1 == COORDINATE_LOWER && t2 == COORDINATE_UPPER
-            && t3 == COORDINATE_UPPER && t4 == COORDINATE_LOWER,
+        positive_phase == (RELATIVE_LIMIT, 0),
         "positive phase endpoint"
     );
+    let negative_phase = concrete_exchange_observation(
+        COORDINATE_UPPER,
+        COORDINATE_LOWER,
+        COORDINATE_LOWER,
+        COORDINATE_UPPER,
+    );
     kani::cover!(
-        t1 == COORDINATE_UPPER && t2 == COORDINATE_LOWER
-            && t3 == COORDINATE_LOWER && t4 == COORDINATE_UPPER,
+        negative_phase == (-RELATIVE_LIMIT, 0),
         "negative phase endpoint"
     );
+    let positive_round_trip = concrete_exchange_observation(
+        COORDINATE_LOWER,
+        COORDINATE_UPPER,
+        COORDINATE_LOWER,
+        COORDINATE_UPPER,
+    );
     kani::cover!(
-        t1 == COORDINATE_LOWER && t2 == COORDINATE_UPPER
-            && t3 == COORDINATE_LOWER && t4 == COORDINATE_UPPER,
+        positive_round_trip == (0, RELATIVE_LIMIT),
         "positive round trip endpoint"
     );
+    let negative_round_trip = concrete_exchange_observation(
+        COORDINATE_UPPER,
+        COORDINATE_LOWER,
+        COORDINATE_UPPER,
+        COORDINATE_LOWER,
+    );
     kani::cover!(
-        t1 == COORDINATE_UPPER && t2 == COORDINATE_LOWER
-            && t3 == COORDINATE_UPPER && t4 == COORDINATE_LOWER,
+        negative_round_trip == (0, -RELATIVE_LIMIT),
         "negative round trip endpoint"
     );
-    kani::cover!(
-        t1 == 0 && t2 == 0 && t3 == 1 && t4 == 0,
-        "odd phase and negative round trip"
-    );
+    let odd_phase = concrete_exchange_observation(0, 0, 1, 0);
+    kani::cover!(odd_phase == (1, -1), "odd phase and negative round trip");
 }
 
 /// Reject-all violates required success without involving extreme arithmetic.

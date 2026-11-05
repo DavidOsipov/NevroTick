@@ -274,6 +274,29 @@ file, downloader or additional trust root is selected. Expiry does not erase
 history or create a synchronization shutdown after the continuous rule applies.
 Neither existing fixture results nor upstream source inspection closes these gates.
 
+### 4.3 Apply the Hifitime verification lessons
+
+The [critical disposition](../supporting-reviews/hifitime-lessons.md) verifies the
+supplied recommendations against pinned upstream bodies and current NevroTick
+owners. Apply its semantic/reachability refinements to existing OD-10 work; keep
+§7's proof-first order, completed proof subscopes and execution holds.
+
+| Existing owner | Disposition and observable next action |
+| --- | --- |
+| S1.1c; CHECK-7/8/25 | Review required input/output/error relationships and actual operation reachability. Close the public constructor and constructor-to-consumer composition through the existing isolated verifier-repair checkpoint; code generation or a valid-window consumer proof cannot close raw admission. Record exact expected/selected/completed proof scope and meaningful source defects/restoration. |
+| S1.4/LP-C01; CHECK-7/8/25 | Reuse the recorded qualified scalar, calendar-helper and coverage-prefix leaves while their proof inputs remain valid. Continue remaining constructor/ledger/traversal/final-interpretation obligations; do not restart closed leaves from the report's older snapshot. |
+| S1.4/LP-C02; CHECK-15/23/25/26 | Preserve complete input/output and metadata comparison plus failed-replacement preservation. Existing suffix/raw-input controls already cover the upstream prefix-comparison weakness; add only a concrete missing behavior. Provenance remains distinct from mathematical/lifecycle proof. |
+| S1.2/S1.3 and later conversion/platform owners; CHECK-7/8/25, CHECK-10 where applicable | Pair inverse/round-trip laws with independent epoch/unit/scale answers and actual machine arithmetic. Reach custom trait/iterator bodies and sequence laws when such semantics exist; no speculative public API or duplicate campaign for derived comparisons. |
+
+The [S1.1c reconciliation](../../tasks/s1.1-time-domain.md#hifitime-recommendation-reconciliation--5-november-2026)
+and [S1.4 reconciliation](../../tasks/s1.4-leap-policy.md#hifitime-recommendation-reconciliation--5-november-2026)
+carry these assignments. Retain exact Q32/Q33, explicit failures, bounded immutable
+leap knowledge and offline import. Integer display decomposition is conditional
+on an actual consumer with a frozen quantization/range/output contract. No
+Hifitime/SOFARS dependency, saturation policy, live provider, astronomical scope,
+new verifier mode or CI gate is selected. UI-M0 deferrals and native qualification
+remain unchanged.
+
 ## 5. Required skill reading and use by phase
 
 The repository's skills supply implementation and verification methods. Reading
@@ -676,13 +699,30 @@ explicit residual populations.
 requires machine-checked product mathematical proofs under
 [architecture §20.1.1](../windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
 and [hardening §9.6.1](../windows-time-development-hardening.md#961-mandatory-product-mathematical-proof-gate--5-november-2026).
-First continue the existing
-[S1.1c rounding/era handoff](../../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026):
-review the source-bound specifications and driver, finish the era defect controls
-and final twelve-job campaign within its retained attempt/resource budget.
-Use completed exact-input proof evidence, not the prepared runner or tool
-bootstrap, to close those named obligations. The coordinator reconciles the
-integrated candidate after the remote sync.
+The existing [S1.1c proof chain](../../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
+now records scoped rounding/valid-window era and named domain/helper
+qualifications, with their controls, restored passes, exact bindings and explicit
+trusted components. These results do not complete P1 mathematics.
+The [leap task](../../tasks/s1.4-leap-policy.md#rust-contract-audit-follow-up--5-november-2026)
+also records a qualified full-typed-domain coverage-prefix proof, with three
+compiled boundary defects and restored health. Its checked-value assumptions,
+trusted view correspondence and omitted constructors/ledger scan remain explicit.
+Next complete the actual public `EraWindow::new`/Garde constructor proof after its
+qualified [Cargo/model preparation](../../tasks/s1.1-time-domain.md#public-constructor-model-inspection--5-november-2026):
+the full raw-input success/error/retention obligations, all safety/unwinding and
+sanity checks, source defects and restored healthy proof must qualify together.
+Use the existing task's finite campaign budget and remaining-proof inventory;
+frontend/IR success and historical incomplete attempts supply no constructor
+theorem. The first attempt stopped before the solver on a reproducible Kani
+padded-union model-type defect. Follow the
+[existing repair checkpoint](../../tasks/s1.1-time-domain.md#public-constructor-proof-checkpoint--5-november-2026)
+for an isolated, separately qualified verifier candidate; do not repeat the
+unchanged campaign or disable model/safety/sanity checks. The coordinator
+reconciles the integrated candidate after remote sync.
+The isolated compiler repair has now passed its 46 binding tests and eight
+bounded verifier controls, including the intended assertion failure and restored
+healthy pass. Continue the separate five-job public-constructor campaign with
+that qualified private candidate; these tool results establish no product theorem.
 
 Carry a per-algorithm remaining-proof inventory into the existing domain,
 exchange, Core and [leap task](../../tasks/s1.4-leap-policy.md#rust-contract-audit-follow-up--5-november-2026)

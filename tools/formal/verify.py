@@ -22,6 +22,18 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 RUSTFLAGS = "--edition=2024 --check-cfg=cfg(test)"
 MAX_JOBS = 12
+TOOL_ADMISSION_PROFILES = ("full", "kani-proof")
+SOLVER_BACKENDS = ("cadical", "z3")
+KANI_BASELINE_FLAGS = (
+    "--default-unwind", "1", "--output-format", "regular", "--solver", "cadical",
+    "-Z", "unstable-options", "--run-sanity-checks", "--harness-timeout", "60s",
+)
+Z3_VERSION = "5.3.3"
+Z3_EXECUTABLE_SHA256 = "fcd0ca765d1c0b4eac776f442ec0f10294b9a6416be91fad4e52fa19012c8d01"
+Z3_INPUTS = ("tools/formal/solver_admission.py", "policy/formal-solvers.json",
+             "tools/crypto-aes-siv-witness/fuzz/input_custody.py")
+KANI_ENTRYPOINT = "kani/payload/kani-0.68.0/bin/kani-driver"
+KANI_COMPILER = "kani/rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu"
 STATUSES = {"Success", "Satisfied", "Failure", "Unreachable", "Unsatisfiable"}
 ROUNDING_COVERS = {
     "zero succeeds", "negative destination endpoint succeeds",
@@ -51,6 +63,11 @@ def module(name: str, path: Path):
     return loaded
 
 
+def additional_suites(source: Path = ROOT):
+    """Load the closed registry from the named, custody-checked source tree."""
+    return module("formal_additional_registry", source / "tools/formal/additional_suites.py")
+
+
 def digest(data: bytes) -> str:
     """Return the SHA256 of exact bytes."""
     return hashlib.sha256(data).hexdigest()
@@ -68,8 +85,21 @@ def serializable(value):
 
 
 def write_json(path: Path, value) -> None:
-    """Create private structured evidence, retaining actual newlines."""
-    path.write_text(json.dumps(serializable(value), indent=2, allow_nan=False) + "\n")
+    """Write owned regular receipts without following or truncating aliases."""
+    if not path.is_absolute() or path.parent != path.parent.resolve(strict=True):
+        raise Incomplete("Artifact parent redirects")
+    payload = json.dumps(serializable(value), indent=2, allow_nan=False) + "\n"
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_nlink != 1:
+            raise Incomplete("Refusing to overwrite an unowned, special or aliased artifact")
+        # Inspect the inode before truncation, including existing hardlink aliases.
+        os.ftruncate(descriptor, 0)
+        with os.fdopen(descriptor, "w", encoding="utf-8", closefd=False) as stream:
+            stream.write(payload)
+    finally:
+        os.close(descriptor)
 
 
 def fresh_output(value: str) -> Path:
@@ -86,8 +116,42 @@ def fresh_output(value: str) -> Path:
     return path
 
 
-def input_names(subject: str) -> list[str]:
+def solver_selection(solver_backend: str, solver_root=None) -> Path | None:
+    """Reject unknown backends and noncanonical/path-splitting solver roots."""
+    if type(solver_backend) is not str or solver_backend not in SOLVER_BACKENDS:
+        raise Incomplete("Unknown proof solver backend")
+    if solver_root is None:
+        return None
+    if solver_backend != "z3" or not isinstance(solver_root, (str, Path)):
+        raise Incomplete("An explicit solver root is permitted only for Z3")
+    path = Path(solver_root)
+    if (not path.is_absolute() or str(path) != str(solver_root)
+            or any(character == os.pathsep or ord(character) < 32 or 127 <= ord(character) <= 159
+                   for character in str(path))):
+        raise Incomplete("Z3 solver root must be a canonical directory safe for one PATH entry")
+    try:
+        if path != path.resolve(strict=True) or not path.is_dir():
+            raise Incomplete("Z3 solver root must be a canonical existing directory")
+    except (OSError, RuntimeError) as error:
+        raise Incomplete("Z3 solver root is unavailable or redirected") from error
+    return path
+
+
+def solver_flags(check, solver_backend: str = "cadical") -> list[str]:
+    """Copy the fixed baseline and replace only the selected solver's value."""
+    solver_selection(solver_backend)
+    flags = check.PROFILES.get("kani_flags")
+    if not isinstance(flags, list) or flags != list(KANI_BASELINE_FLAGS):
+        raise Incomplete("Proof command requires the unchanged fixed Kani flags")
+    selected = list(flags)
+    if solver_backend == "z3":
+        selected[selected.index("--solver") + 1] = "z3"
+    return selected
+
+
+def input_names(subject: str, solver_backend: str = "cadical") -> list[str]:
     """Inventory the original crate, specifications, runners and pinned policies."""
+    solver_selection(solver_backend)
     names = {
         "Cargo.toml", "Cargo.lock", "rust-toolchain.toml",
         "crates/time-domain/Cargo.toml", "policy/analysis-tools.json",
@@ -102,6 +166,10 @@ def input_names(subject: str) -> list[str]:
         names.add("tools/formal/rounding_harness.rs")
     if subject in ("era", "all"):
         names.update(("tools/formal/era_harness.rs", "tools/formal/era_projection.py"))
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage"):
+        names.update(additional_suites().input_names(subject))
+    if solver_backend == "z3":
+        names.update(Z3_INPUTS)
     if (ROOT / ".cargo/config.toml").exists():
         names.add(".cargo/config.toml")
     return sorted(names)
@@ -122,9 +190,10 @@ def freeze_inputs(check, source: Path, names: list[str]) -> dict:
     return records
 
 
-def require_sources(check, source: Path, records: dict, subject: str) -> None:
+def require_sources(check, source: Path, records: dict, subject: str,
+                    solver_backend: str = "cadical") -> None:
     """Reject changed, missing or newly added original inputs and frozen bytes."""
-    if input_names(subject) != sorted(records):
+    if input_names(subject, solver_backend) != sorted(records):
         raise Incomplete("Original source/configuration input inventory changed")
     for name, expected in records.items():
         original = ROOT / name
@@ -138,6 +207,11 @@ def require_sources(check, source: Path, records: dict, subject: str) -> None:
 
 def jobs(subject: str) -> list[dict]:
     """Return the complete fixed schedule, without retries or solver concurrency."""
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage"):
+        result = additional_suites().jobs(subject)
+        if not 1 <= len(result) <= MAX_JOBS:
+            raise Incomplete("Empty or excessive additional proof schedule")
+        return result
     result = []
 
     def add(owner, case, harness, intended=None, restored=False):
@@ -163,8 +237,8 @@ def jobs(subject: str) -> list[dict]:
     return result
 
 
-def selected_jobs(subject: str, start_at: int) -> list[tuple[int, dict]]:
-    """Select a nonempty schedule suffix without claiming omitted jobs ran.
+def selected_jobs(subject: str, start_at: int, only_jobs: list[int] | None = None) -> list[tuple[int, dict]]:
+    """Select fixed indices or a nonempty suffix without qualifying omitted jobs.
 
     This is explicit partial execution, not automatic receipt reuse or campaign
     resumption. The coordinator must separately reconcile any earlier evidence.
@@ -172,6 +246,14 @@ def selected_jobs(subject: str, start_at: int) -> list[tuple[int, dict]]:
     schedule = jobs(subject)
     if type(start_at) is not int or not 1 <= start_at <= len(schedule):
         raise Incomplete("Start index must select a nonempty fixed-schedule suffix")
+    if only_jobs is not None:
+        if start_at != 1:
+            raise Incomplete("Explicit job indices cannot be combined with a schedule suffix")
+        if (type(only_jobs) is not list or not only_jobs
+                or any(type(index) is not int or not 1 <= index <= len(schedule) for index in only_jobs)
+                or len(set(only_jobs)) != len(only_jobs)):
+            raise Incomplete("Explicit jobs must be nonempty unique fixed-schedule indices")
+        return [(index, schedule[index - 1]) for index in sorted(only_jobs)]
     return list(enumerate(schedule, 1))[start_at - 1:]
 
 
@@ -224,8 +306,10 @@ def one_record(report: dict, field: str, harness: str) -> dict:
     return items[0]
 
 
-def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None) -> dict:
+def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None,
+            *, expected_solver: str = "cadical") -> dict:
     """Fail closed on empty, partial, mismatched or unintended Kani outcomes."""
+    solver_selection(expected_solver)
     if not isinstance(report, dict) or not isinstance(native, dict):
         raise Incomplete("Native and Kani results must be objects")
     if (native.get("failure") is not None or type(native.get("exit_code")) is not int
@@ -274,7 +358,7 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
             or not isinstance(tools, dict) or tools.get("kani") != "0.68.0"
             or not isinstance(tools.get("solvers"), list) or len(tools["solvers"]) != 1
             or not isinstance(tools["solvers"][0], dict)
-            or tools["solvers"][0].get("name") != "cadical"):
+            or tools["solvers"][0].get("name") != expected_solver):
         raise Incomplete("JSON tool/target/solver identity differs from the admitted profile")
     harnesses = report.get("harness_metadata")
     if (not isinstance(harnesses, list) or len(harnesses) != 1
@@ -289,17 +373,39 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
         raise Incomplete("Harness metadata differs from the selected ordinary proof")
     cbmc = one_record(report, "cbmc", job["harness"])
     if (not isinstance(cbmc.get("configuration"), dict)
-            or cbmc["configuration"].get("solver") != "cadical"):
+            or cbmc["configuration"].get("solver") != expected_solver):
         raise Incomplete("CBMC did not use the selected solver")
     if not isinstance(cbmc.get("cbmc_stats"), dict):
         raise Incomplete("Missing finite solver timing")
     solver_seconds = cbmc["cbmc_stats"].get("runtime_solver_s")
-    if (isinstance(solver_seconds, bool) or not isinstance(solver_seconds, (int, float))
-            or not math.isfinite(solver_seconds) or solver_seconds < 0):
-        raise Incomplete("Missing finite solver timing")
+    decision_seconds = cbmc["cbmc_stats"].get("runtime_decision_procedure_s")
+
+    def finite_seconds(value):
+        return (not isinstance(value, bool) and isinstance(value, (int, float))
+                and math.isfinite(value) and value >= 0)
+
+    if solver_seconds is None and expected_solver == "z3":
+        if not finite_seconds(decision_seconds):
+            raise Incomplete("Z3 requires finite decision-procedure timing when pure solver timing is absent")
+        timing_field = "runtime_decision_procedure_s"
+        timing_meaning = "reported CBMC decision-procedure time; not isolated solver runtime"
+    else:
+        if not finite_seconds(solver_seconds):
+            raise Incomplete("Missing finite solver timing")
+        timing_field = "runtime_solver_s"
+        timing_meaning = "reported solver runtime"
+    if expected_solver == "z3" and decision_seconds is not None and not finite_seconds(decision_seconds):
+        raise Incomplete("Malformed Z3 decision-procedure timing")
     if job["case"] == "healthy":
-        expected_covers = ROUNDING_COVERS if job["subject"] == "rounding" else ERA_COVERS
-        expected_assertions = ROUNDING_ASSERTIONS if job["subject"] == "rounding" else ERA_ASSERTIONS
+        if job["subject"] == "rounding":
+            expected_covers, expected_assertions = ROUNDING_COVERS, ROUNDING_ASSERTIONS
+        elif job["subject"] == "era":
+            expected_covers, expected_assertions = ERA_COVERS, ERA_ASSERTIONS
+        else:
+            expected_assertions, expected_covers = additional_suites().expected_contract(
+                job["subject"], job["harness"])
+            if not expected_assertions or not expected_covers:
+                raise Incomplete("Additional proofs require nonempty fixed mathematical obligations")
         successful_assertions = {
             item["description"].strip('"') for item in checks
             if item["category"] == "assertion" and item["status"] == "Success"
@@ -331,31 +437,138 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
             raise Incomplete("Defect did not fail exclusively at its intended assertion")
     return {"verification_summary": summary, "checks": len(checks), "status_counts": dict(counts),
             "failed_checks": failures, "covers": covers, "solver_seconds": solver_seconds,
+            "decision_procedure_seconds": decision_seconds if expected_solver == "z3" else None,
+            "timing_field": timing_field, "timing_meaning": timing_meaning,
             "reachability_and_sanity_checks": [item for item in checks
                 if "reach" in item["category"] or "sanity" in item["category"]],
             "tools": tools, "metadata": metadata, "error_details": errors,
+            "expected_solver_backend": expected_solver,
             "property_details": properties, "cbmc": cbmc, "harness_metadata": harnesses}
 
 
-def admission(check, output: Path) -> tuple[dict, dict]:
-    """Perform full payload admission and retain pointer, compiler and pin identity."""
+def proof_readonly_roots(admitted: dict, profile: str) -> tuple[Path, Path]:
+    """Require the selected role's exact canonical read-only payload roots."""
+    if type(profile) is not str or profile not in TOOL_ADMISSION_PROFILES:
+        raise Incomplete("Unknown proof tool-admission profile")
+    if not isinstance(admitted, dict) or admitted.get("admission_profile") != profile:
+        raise Incomplete("Proof tool admission returned a different profile")
+    base, stable = admitted.get("base"), admitted.get("stable")
+    if not isinstance(base, Path) or not isinstance(stable, Path):
+        raise Incomplete("Proof admission requires canonical installation paths")
+    if profile == "kani-proof":
+        kani = admitted.get("policy", {}).get("tools", {}).get("kani", {})
+        if (not isinstance(kani, dict) or kani.get("entrypoint") != KANI_ENTRYPOINT
+                or kani.get("toolchain") != KANI_COMPILER):
+            raise Incomplete("Kani proof admission must retain fixed compiler and entrypoint paths")
+        expected = (base / "kani/payload/kani-0.68.0", base / KANI_COMPILER)
+    else:
+        expected = (base, stable)
+    roots = admitted.get("readonly_roots")
+    if (not isinstance(roots, (tuple, list)) or len(roots) != 2
+            or any(not isinstance(path, Path) for path in roots)
+            or tuple(roots) != expected or len(set(roots)) != 2):
+        raise Incomplete("Proof admission returned different read-only payload roots")
+    for path in roots:
+        if not path.is_absolute() or path != path.resolve(strict=True) or not path.is_dir():
+            raise Incomplete("Proof read-only payload roots must be canonical existing directories")
+    return tuple(roots)
+
+
+def checked_z3_admission(value: dict, admitted: dict, source: Path, *, solver_root=None,
+                          work: Path | None = None) -> dict:
+    """Accept only the policy-pinned solver's one canonical, disjoint closure."""
+    requested = solver_selection("z3", solver_root)
+    if (not isinstance(value, dict) or value.get("name") != "z3" or value.get("version") != Z3_VERSION
+            or value.get("executable_sha256") != Z3_EXECUTABLE_SHA256):
+        raise Incomplete("Z3 admission differs from the fixed solver identity")
+    root = value.get("readonly_root")
+    if not isinstance(root, Path):
+        raise Incomplete("Z3 admission requires one canonical read-only root")
+    root = solver_selection("z3", root)
+    if requested is not None and root != requested:
+        raise Incomplete("Z3 admission returned a different explicitly selected root")
+    executable, path_dir = value.get("executable"), value.get("path_dir")
+    if (not isinstance(executable, Path) or not isinstance(path_dir, Path)
+            or executable != root / "bin/z3" or path_dir != root / "bin"
+            or executable != executable.resolve(strict=True) or not executable.is_file()
+            or path_dir != path_dir.resolve(strict=True) or not path_dir.is_dir()
+            or not os.access(executable, os.X_OK)):
+        raise Incomplete("Z3 executable and PATH must be exactly the admitted root/bin/z3")
+    forbidden = (ROOT, source, admitted["base"], admitted["stable"])
+    if work is not None:
+        forbidden += (work,)
+    if any(root.is_relative_to(path) or path.is_relative_to(root) for path in forbidden):
+        raise Incomplete("Z3 closure must be separate from checkout, work and Kani/stable stores")
+    policy_path = source / "policy/formal-solvers.json"
+    if value.get("policy_path") != policy_path:
+        raise Incomplete("Z3 admission must use the selected frozen solver policy")
+    for field in ("policy_sha256", "manifest_sha256", "executable_sha256"):
+        item = value.get(field)
+        if not isinstance(item, str) or len(item) != 64 or any(character not in "0123456789abcdef" for character in item):
+            raise Incomplete("Z3 admission requires complete policy/manifest/executable hashes")
+    if not isinstance(value.get("inventory"), dict) or not value["inventory"]:
+        raise Incomplete("Z3 admission requires its complete nonempty file inventory")
+    if (not isinstance(value.get("closure"), dict)
+            or value["closure"].get("host_runtime") != "existing-public-host-trusted-base-not-rehashed"
+            or value["closure"].get("per_command_library_hashes_checked") is not False):
+        raise Incomplete("Z3 admission must retain the existing public host-runtime trust boundary")
+    for before, after in (("store_identity_before", "store_identity_after"),
+                          ("ancestor_identity_before", "ancestor_identity_after")):
+        if (not isinstance(value.get(before), dict) or not value[before]
+                or value.get(after) != value[before]):
+            raise Incomplete("Z3 admission requires unchanged complete store and ancestor bookends")
+    return value
+
+
+def admit_z3_solver(admitted: dict, source: Path, *, solver_root=None,
+                    work: Path | None = None) -> dict:
+    """Load the frozen policy helper; it hashes files but never executes Z3."""
+    helper = module("formal_z3_admission", source / "tools/formal/solver_admission.py")
+    value = helper.admit(source, solver_root=solver_root)
+    return checked_z3_admission(value, admitted, source, solver_root=solver_root, work=work)
+
+
+def solver_identity(value: dict) -> dict:
+    """Select stable payload/policy facts for Z3's pre/post-execution bookend."""
+    return {field: value[field] for field in (
+        "name", "version", "readonly_root", "executable", "path_dir", "policy_path",
+        "policy_sha256", "manifest_sha256", "executable_sha256", "inventory", "closure",
+        "store_identity_before", "ancestor_identity_before")}
+
+
+def admission(check, output: Path, *, profile: str = "full", solver_backend: str = "cadical",
+              solver_root=None, source: Path = ROOT, work: Path | None = None) -> tuple[dict, dict]:
+    """Perform explicit-role payload admission and retain exact pointer/tool identity."""
+    if type(profile) is not str or profile not in TOOL_ADMISSION_PROFILES:
+        raise Incomplete("Unknown proof tool-admission profile")
+    requested_solver = solver_selection(solver_backend, solver_root)
+    flags = solver_flags(check, solver_backend)
     pointer = Path.home() / ".local/share/nevrotick/analysis-installation.json"
     started = time.monotonic()
     before = check.read_once(pointer, maximum=4096, private=True)
-    admitted = check.admit(ROOT)
+    admitted = check.admit(ROOT) if profile == "full" else check.admit_kani_proof(ROOT)
     if check.read_once(pointer, maximum=4096, private=True) != before:
-        raise Incomplete("Installation pointer changed during full admission")
-    if admitted.get("admission_profile") != "full":
-        raise Incomplete("Full installation admission is required before every proof")
+        raise Incomplete(f"Installation pointer changed during {profile} admission")
+    readonly = proof_readonly_roots(admitted, profile)
+    solver = None
+    if solver_backend == "z3":
+        solver = admit_z3_solver(admitted, source, solver_root=requested_solver, work=work)
+        readonly += (solver["readonly_root"],)
+        if check.read_once(pointer, maximum=4096, private=True) != before:
+            raise Incomplete("Installation pointer changed during Z3 payload admission")
     kani = admitted["policy"]["tools"]["kani"]
     compiler = admitted["base"] / kani["toolchain"]
     record = {"seconds": time.monotonic() - started, "admitted": admitted,
+              "expected_admission_profile": profile, "readonly_roots": readonly,
+              "solver_backend": solver_backend, "solver_admission": solver,
+              "requested_solver_root": requested_solver,
+              "host_runtime_trust": "existing admitted Python/stdlib and public OS runtime remain unchanged",
               "installation_pointer": str(pointer), "installation_pointer_sha256": digest(before),
               "installation_pointer_record": check.decode(before),
               "kani_executable_sha256": check.digest(admitted["base"] / kani["entrypoint"]),
               "compiler_rustc_sha256": check.digest(compiler / "bin/rustc"),
               "compiler_rustdoc_sha256": check.digest(compiler / "bin/rustdoc"),
-              "profile": {"kani_flags": check.PROFILES["kani_flags"], "rustflags": RUSTFLAGS,
+              "profile": {"kani_flags": flags, "rustflags": RUSTFLAGS,
                           "wall_seconds": 180, "cpu_seconds": 180,
                           "address_space_bytes": 8 * 1024 ** 3, "process_limit": 128,
                           "build_jobs": 2, "solver_workers": 1}}
@@ -363,16 +576,52 @@ def admission(check, output: Path) -> tuple[dict, dict]:
     return admitted, record
 
 
+def audit_retained(check, work: Path, retained: list[dict]) -> None:
+    """Recheck all anchored proof islands and required receipts, never targets."""
+    for item in retained:
+        if check.input_snapshot(work, item["roots"]) != item["snapshot"]:
+            raise Incomplete("An earlier proof input island or retained receipt changed")
+
+
+def retain_artifacts(check, work: Path, retained: list[dict], roots: list[Path]) -> None:
+    """Anchor newly completed coordinator-owned facts without rebasing old ones."""
+    audit_retained(check, work, retained)
+    retained.append({"roots": list(roots), "snapshot": check.input_snapshot(work, roots)})
+
+
+def job_receipts(folder: Path, solver_backend: str, *, required: bool) -> list[Path]:
+    """Select required JSON evidence while excluding disposable compiler targets."""
+    names = ["input-before.json", "admission.json", "input-after.json", "kani.json", "execution.json"]
+    if solver_backend == "z3":
+        names.append("solver-after-admission.json")
+    paths = [folder / name for name in names]
+    if required and any(not path.exists() or path.is_symlink() for path in paths):
+        raise Incomplete("A qualified job is missing a required regular JSON receipt")
+    return paths if required else [path for path in paths if path.exists() or path.is_symlink()]
+
+
 def execute_job(check, work: Path, source: Path, records: dict, subject: str,
-                job: dict, index: int) -> dict:
-    """Prepare, fully admit, run once, preserve observations, and qualify one job."""
+                job: dict, index: int, *, tool_admission_profile: str = "full",
+                solver_backend: str = "cadical", solver_root=None, retained: list[dict] | None = None) -> dict:
+    """Prepare and qualify one command while preserving the campaign's old facts.
+
+    main supplies its cumulative in-memory custody list. A standalone call owns
+    only its frozen source and current job; it establishes no cross-job campaign.
+    """
     started = time.monotonic()
     folder = work / "jobs" / f"{index:02d}-{job['subject']}-{job['case']}-{job['harness']}"
     inputs = folder / "inputs"
     inputs.mkdir(mode=0o700, parents=True)
-    record = {"job": job, "expected_outcome_qualified": False, "output": str(folder)}
+    record = {"job": job, "expected_outcome_qualified": False, "output": str(folder),
+              "expected_admission_profile": tool_admission_profile, "expected_solver_backend": solver_backend}
     try:
-        require_sources(check, source, records, subject)
+        if retained is None:
+            retained = []
+            retain_artifacts(check, work, retained, [source])
+        audit_retained(check, work, retained)
+        requested_solver = solver_selection(solver_backend, solver_root)
+        flags = solver_flags(check, solver_backend)
+        require_sources(check, source, records, subject, solver_backend)
         # Preserve a complete runner/spec/policy/source copy for this individual command.
         for name in records:
             target = inputs / "frozen" / name
@@ -380,10 +629,12 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
             target.write_bytes((source / name).read_bytes())
         if job["subject"] == "rounding":
             prepared = prepare_rounding(source, inputs, job["case"])
-        else:
+        elif job["subject"] == "era":
             projection = module(f"formal_era_projection_{index}", source / "tools/formal/era_projection.py")
             prepared = projection.prepare_era(source, inputs, job["case"],
                                                source / "tools/formal/era_harness.rs")
+        else:
+            prepared = additional_suites(source).prepare(module, source, inputs, job, index)
         entry = prepared["entrypoint"]
         if (not isinstance(entry, Path) or entry != inputs / "proof.rs"
                 or not entry.is_file() or entry != entry.resolve(strict=True)):
@@ -393,17 +644,20 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
         before = check.input_snapshot(work, [inputs])
         record["input_before"] = before
         write_json(folder / "input-before.json", before)
-        admitted, admitted_record = admission(check, folder / "admission.json")
+        solver_options = {} if solver_backend == "cadical" else {
+            "solver_backend": solver_backend, "solver_root": requested_solver, "source": source, "work": work}
+        admitted, admitted_record = admission(check, folder / "admission.json", profile=tool_admission_profile,
+                                              **solver_options)
         record["admission_seconds"] = admitted_record["seconds"]
-        require_sources(check, source, records, subject)
+        require_sources(check, source, records, subject, solver_backend)
         if check.input_snapshot(work, [inputs]) != before:
-            raise Incomplete("Prepared inputs changed during full admission")
-        base, stable = admitted["base"], admitted["stable"]
+            raise Incomplete("Prepared inputs changed during tool admission")
+        base = admitted["base"]
         kani = admitted["policy"]["tools"]["kani"]
         compiler = base / kani["toolchain"]
         namespace_entry = "/work/" + entry.relative_to(work).as_posix()
         command = [str(base / kani["entrypoint"]), namespace_entry,
-                   "--harness", job["harness"], "--exact", *check.PROFILES["kani_flags"],
+                   "--harness", job["harness"], "--exact", *flags,
                    "--export-json", "/work/" + (folder / "kani.json").relative_to(work).as_posix(),
                    "--target-dir", "/work/" + (folder / "target").relative_to(work).as_posix()]
         environment = {"RUSTC": str(compiler / "bin/rustc"),
@@ -411,66 +665,148 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
                        "RUSTUP_HOME": str(base / "kani/rustup"),
                        "RUSTUP_TOOLCHAIN": "nightly-2026-08-21", "RUSTFLAGS": RUSTFLAGS}
         record.update(command=command, explicit_environment=environment)
+        readonly = admitted["readonly_roots"]
+        paths = [base / "kani/payload/kani-0.68.0/bin", compiler / "bin"]
+        if solver_backend == "z3":
+            solver = checked_z3_admission(admitted_record.get("solver_admission"), admitted, source,
+                                           solver_root=requested_solver, work=work)
+            readonly = (*tuple(readonly), solver["readonly_root"])
+            if tuple(admitted_record.get("readonly_roots", ())) != readonly:
+                raise Incomplete("Z3 runtime mounts differ from the exact admitted three roots")
+            paths.insert(0, solver["path_dir"])
+        record.update(runtime_readonly_roots=readonly, runtime_path_dirs=paths)
+        # Preserve the old current-input fields; cumulative custody is separate.
+        audit_retained(check, work, retained)
+        pre_receipts = [folder / name for name in ("input-before.json", "admission.json", "execution.json")]
         write_json(folder / "execution.json", record)
+        if any(not path.exists() or path.is_symlink() for path in pre_receipts):
+            raise Incomplete("A proof command is missing a required pre-execution receipt")
+        current_roots = [inputs, *pre_receipts]
+        summary_path = work / "summary.json"
+        if summary_path.exists() or summary_path.is_symlink():
+            current_roots.append(summary_path)
+        sealed = [path for item in retained for path in item["roots"]] + current_roots
+        record["runtime_sealed_roots"] = sealed
+        write_json(folder / "execution.json", record)
+        # execution.json just gained the actual seal list through the owner.
+        current_snapshot = check.input_snapshot(work, current_roots)
         execute_start = time.monotonic()
-        native = check.RUNTIME.run(ROOT, work, command, readonly=[base, stable],
-            path_dirs=[base / "kani/payload/kani-0.68.0/bin", compiler / "bin"], cwd=inputs,
+        native = check.RUNTIME.run(ROOT, work, command, readonly=readonly,
+            path_dirs=paths, cwd=inputs,
             environment=environment, timeout=180, cpu_seconds=180, build_jobs=2,
-            address_space_bytes=8 * 1024 ** 3, process_limit=128, sealed=[inputs])
+            address_space_bytes=8 * 1024 ** 3, process_limit=128, sealed=sealed)
         record.update(native=native, execute_seconds=time.monotonic() - execute_start)
+        # Close native filesystem authority before ANY coordinator artifact write.
+        check.RUNTIME._owned_work(work, ROOT)
+        audit_retained(check, work, retained)
+        if check.input_snapshot(work, current_roots) != current_snapshot:
+            raise Incomplete("Current inputs, command receipts or checkpoint changed during execution")
         after = check.input_snapshot(work, [inputs])
         record.update(input_after=after, input_unchanged=before == after)
         write_json(folder / "input-after.json", after)
-        require_sources(check, source, records, subject)
+        require_sources(check, source, records, subject, solver_backend)
         if before != after:
             raise Incomplete("Complete proof input tree changed during execution")
+        if solver_backend == "z3":
+            solver_after = admit_z3_solver(admitted, source, solver_root=requested_solver, work=work)
+            write_json(folder / "solver-after-admission.json", solver_after)
+            record["solver_after_admission"] = solver_after
+            if solver_identity(solver_after) != solver_identity(solver):
+                raise Incomplete("Z3 solver policy or payload identity changed during execution")
+            pointer = Path.home() / ".local/share/nevrotick/analysis-installation.json"
+            pointer_after = digest(check.read_once(pointer, maximum=4096, private=True))
+            record["installation_pointer_after_sha256"] = pointer_after
+            if pointer_after != admitted_record.get("installation_pointer_sha256"):
+                raise Incomplete("Installation pointer changed during Z3 proof execution")
         report = check.decode(check.read_once(folder / "kani.json"))
-        observed = qualify(report, native, job, namespace_entry)
+        observed = qualify(report, native, job, namespace_entry, expected_solver=solver_backend)
+        require_sources(check, source, records, subject, solver_backend)
         record.update(observed)
-        record["execute_other_seconds"] = record["execute_seconds"] - observed["solver_seconds"]
+        record["execute_other_seconds"] = (record["execute_seconds"] - observed["solver_seconds"]
+                                           if observed["solver_seconds"] is not None else None)
         record["expected_outcome_qualified"] = True
     except Exception as error:
         record["qualification_error"] = f"{type(error).__name__}: {error}"
     finally:
         record["job_total_seconds"] = time.monotonic() - started
-        write_json(folder / "execution.json", record)
+        try:
+            write_json(folder / "execution.json", record)
+            if retained is not None:
+                receipts = job_receipts(folder, solver_backend, required=record["expected_outcome_qualified"])
+                retain_artifacts(check, work, retained, [inputs, *receipts])
+        except Exception as error:
+            record.update(expected_outcome_qualified=False,
+                          persistence_error=f"{type(error).__name__}: {error}")
+            record.setdefault("qualification_error", "Custody persistence failed: " + record["persistence_error"])
+            # A refused receipt remains unqualified. Return the in-memory
+            # failure so main still accounts for a command that actually ran.
+            try:
+                write_json(folder / "execution.json", record)
+            except Exception as write_error:
+                record["persistence_write_error"] = f"{type(write_error).__name__}: {write_error}"
     return record
 
 
 def main(argv=None) -> int:
-    """Run a finite campaign and perform full final admission even after failure."""
+    """Run finite selected commands and repeat their admission role at closeout."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True,
                         help="fresh canonical absolute private directory outside this checkout")
-    parser.add_argument("--subject", choices=("rounding", "era", "all"), default="all")
+    parser.add_argument("--subject", choices=("rounding", "era", "all", "coordinate-exchange",
+                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage"), default="all",
+                        help="fixed suite; all retains the original twelve-job rounding/era schedule")
     parser.add_argument("--start-at", type=int, default=1,
                         help="execute only this fixed-schedule suffix; omitted jobs are not qualified")
+    parser.add_argument("--only-jobs", type=int, nargs="+",
+                        help="execute sorted unique fixed job indices; omitted jobs are not qualified")
+    parser.add_argument("--tool-admission-profile", choices=TOOL_ADMISSION_PROFILES, default="full",
+                        help="explicit proof payload closure; full preserves the original default")
+    parser.add_argument("--solver-backend", choices=SOLVER_BACKENDS, default="cadical",
+                        help="closed proof solver selection; cadical preserves the original default")
+    parser.add_argument("--solver-root", help="canonical admitted Z3 directory; valid only with --solver-backend z3")
     args = parser.parse_args(argv)
+    try:
+        # Reject invalid selection before creating evidence or admitting tools;
+        # recompute under the frozen source bookends before actual execution.
+        selected_jobs(args.subject, args.start_at, args.only_jobs)
+        requested_solver = solver_selection(args.solver_backend, args.solver_root)
+    except (Incomplete, ValueError) as error:
+        parser.error(str(error))
     os.umask(0o077)
     work = fresh_output(args.output_dir)
     source = work / "source"
     summary = {"status": "incomplete", "subject": args.subject, "jobs": [],
                "maximum_jobs": MAX_JOBS, "root": str(ROOT), "output": str(work),
+               "tool_admission_profile": args.tool_admission_profile,
+               "solver_backend": args.solver_backend, "requested_solver_root": requested_solver,
                "started_unix_ns": time.time_ns(), "retries": 0}
     started = time.monotonic()
     check = None
     records = None
+    retained = []
     try:
         check = module("formal_analysis_admission", ROOT / "scripts/check-analysis.py")
-        records = freeze_inputs(check, source, input_names(args.subject))
-        require_sources(check, source, records, args.subject)
+        records = freeze_inputs(check, source, input_names(args.subject, args.solver_backend))
+        require_sources(check, source, records, args.subject, args.solver_backend)
         write_json(work / "source-manifest.json", {"source_original_manifest": records,
                    "runner_sha256": records["tools/formal/verify.py"]["sha256"]})
-        selection = selected_jobs(args.subject, args.start_at)
+        retain_artifacts(check, work, retained, [source, work / "source-manifest.json"])
+        selection = selected_jobs(args.subject, args.start_at, args.only_jobs)
+        fixed_count = len(jobs(args.subject))
         summary.update(planned_jobs=[job for _, job in selection],
                        selection_start_at=args.start_at,
-                       complete_schedule=args.start_at == 1,
-                       fixed_schedule_jobs=len(jobs(args.subject)),
+                       selection_only_jobs=sorted(args.only_jobs) if args.only_jobs is not None else None,
+                       complete_schedule=[index for index, _ in selection] == list(range(1, fixed_count + 1)),
+                       fixed_schedule_jobs=fixed_count,
                        scope="selected proof commands only; omitted jobs require separate evidence")
         print(json.dumps({"status": "prepared", "jobs": len(selection),
                           "complete_schedule": summary["complete_schedule"], "output": str(work)}), flush=True)
+        write_json(work / "summary.json", summary)
         for index, job in selection:
-            result = execute_job(check, work, source, records, args.subject, job, index)
+            solver_options = {} if args.solver_backend == "cadical" else {
+                "solver_backend": args.solver_backend, "solver_root": requested_solver}
+            result = execute_job(check, work, source, records, args.subject, job, index,
+                                 tool_admission_profile=args.tool_admission_profile, retained=retained, **solver_options)
             compact = {"index": index, "subject": job["subject"], "case": job["case"],
                        "harness": job["harness"], "output": result["output"],
                        "qualified": result["expected_outcome_qualified"],
@@ -478,6 +814,8 @@ def main(argv=None) -> int:
                        "checks": result.get("checks"), "admission_seconds": result.get("admission_seconds"),
                        "execute_seconds": result.get("execute_seconds"),
                        "solver_seconds": result.get("solver_seconds"),
+                       "decision_procedure_seconds": result.get("decision_procedure_seconds"),
+                       "timing_field": result.get("timing_field"), "timing_meaning": result.get("timing_meaning"),
                        "qualification_error": result.get("qualification_error")}
             summary["jobs"].append(compact)
             write_json(work / "summary.json", summary)
@@ -491,18 +829,28 @@ def main(argv=None) -> int:
     finally:
         if check is not None:
             try:
-                _, final = admission(check, work / "final-admission.json")
+                solver_options = {} if args.solver_backend == "cadical" else {
+                    "solver_backend": args.solver_backend, "solver_root": requested_solver,
+                    "source": source, "work": work}
+                _, final = admission(check, work / "final-admission.json", profile=args.tool_admission_profile,
+                                     **solver_options)
                 summary["final_admission_seconds"] = final["seconds"]
                 if records is None:
                     raise Incomplete("No complete original source manifest was frozen")
-                require_sources(check, source, records, args.subject)
+                require_sources(check, source, records, args.subject, args.solver_backend)
+                # retain_artifacts audits every older anchored fact after final
+                # admission, then anchors the new owner-written final receipt.
+                retain_artifacts(check, work, retained, [work / "final-admission.json"])
                 summary["original_and_frozen_inputs_unchanged"] = True
+                if summary["status"] == "passed":
+                    summary["all_proof_inputs_and_required_receipts_unchanged"] = True
             except Exception as error:
                 summary["status"] = "incomplete"
                 summary["final_error"] = f"{type(error).__name__}: {error}"
         summary["total_seconds"] = time.monotonic() - started
         write_json(work / "summary.json", summary)
     print(json.dumps({"status": summary["status"], "completed_jobs": len(summary["jobs"]),
+                      "complete_schedule": summary.get("complete_schedule", False),
                       "summary": str(work / "summary.json"),
                       "error": summary.get("error"), "final_error": summary.get("final_error")}), flush=True)
     return 0 if summary["status"] == "passed" else 1
