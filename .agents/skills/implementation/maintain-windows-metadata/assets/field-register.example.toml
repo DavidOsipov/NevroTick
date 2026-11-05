@@ -1,0 +1,66 @@
+# Illustrative record shape only. Not a complete schema or NevroTick release input.
+# Production validation must reject example_only=true and unresolved required fields.
+schema_version = 1
+example_only = true
+scope = "metadata-field-contract-example"
+
+[[fields]]
+id = "product.display-name"
+component = "product"
+locale = "en-US"
+destination = "PE.StringFileInfo.ProductName"
+value_type = "string"
+status = "populated"
+value = "Example Product"
+authority_kind = "example"
+source_locator = "replace with the accepted product record"
+owner = "packaging/product owner"
+required_at = "artifact-build"
+export = "public-artifact"
+constraint_reference = "destination schema and reviewed product-name policy"
+
+[[fields]]
+id = "component.ui.file-version"
+component = "ui"
+locale = "invariant"
+destination = "PE.VS_FIXEDFILEINFO.FileVersion"
+value_type = "four-u16"
+status = "derived"
+derivation = "replace with the reviewed release-to-file-version mapping"
+inputs = ["approved component version", "approved release channel mapping"]
+authority_kind = "release-policy"
+source_locator = "replace with the source version and mapping revision"
+owner = "build/release owner"
+required_at = "artifact-build"
+export = "public-artifact"
+constraint_reference = "checked four-part Windows version bounds"
+
+[[fields]]
+id = "store.identity.publisher"
+component = "product"
+locale = "invariant"
+destination = "MSIX.Identity.Publisher"
+value_type = "distinguished-name"
+status = "pending"
+authority_kind = "partner-center-assignment"
+source_locator = "pending exact product identity export"
+owner = "release owner"
+next_action = "Obtain and reconcile the assigned publisher for the selected product."
+required_at = "store-submission"
+export = "public-artifact"
+constraint_reference = "exact assigned identity and manifest schema"
+
+[[fields]]
+id = "support.telephone"
+component = "product"
+locale = "invariant"
+destination = "MSI.Property.ARPHELPTELEPHONE"
+value_type = "string"
+status = "not-applicable"
+reason = "Example product provides no public telephone support. Reassess if policy changes."
+authority_kind = "example"
+source_locator = "replace with actual approved support policy"
+owner = "support owner"
+required_at = "conditional-msi-build"
+export = "public-artifact"
+constraint_reference = "optional meaningful support field"

@@ -5,6 +5,25 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Windows metadata workflow — 5 November 2026
+
+[maintain-windows-metadata](maintain-windows-metadata/SKILL.md) is an original
+local workflow for the [existing field contract](../../../docs/plans/windows-package-metadata.md).
+Its four conditional references cover harvest/provenance, authoritative records
+and storage, generation/readback, and [primary sources](maintain-windows-metadata/references/sources.md).
+Two explicitly incomplete TOML/JSON examples illustrate field dispositions and
+observations without inventing a production identity, schema implementation or
+collector. W11-W10/P6 and existing package QA retain acceptance ownership.
+
+Microsoft Learn, GitHub, Context7, Firecrawl and web retrieval supplied research;
+official contracts and pinned Cargo/resource-helper source govern factual claims.
+The new evidence distinguishes Cargo resolution from build units/payload,
+Windows MUI resolution from raw PE content, MSIX parsing from signature trust,
+read-only MSI inspection from installed-state queries, and Win32_Product's
+repair side effects. Reviewed TOML plus separate JSON observations and the
+existing CycloneDX inventory is a project-fit recommendation. No crate/tool,
+native experiment, runtime metadata service or Store publication was adopted.
+
 ## Slint implementation guidance — 5 November 2026
 
 [implement-slint](implement-slint/SKILL.md) is an original local workflow alongside

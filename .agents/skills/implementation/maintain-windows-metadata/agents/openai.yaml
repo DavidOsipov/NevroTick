@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Windows Metadata"
+  short_description: "Harvest, author and verify Windows product metadata"
+  default_prompt: "Use $maintain-windows-metadata to harvest and reconcile NevroTick product metadata, maintain its authoritative sources, generate the selected Windows outputs and verify actual artifacts under W11-W10/P6."

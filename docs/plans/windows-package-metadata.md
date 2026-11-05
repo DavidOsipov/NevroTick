@@ -99,6 +99,10 @@ writer for our executable's `ProductVersion`. [WINDOWS-METADATA] [WINDOWS-VERSIO
 The filename/serialization is a proposal; do not create a second independent
 version authority. The existing Cargo/release versions remain inputs until a
 reviewed release-version policy establishes their relationship.
+The [metadata workflow skill](../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
+and [section 11](#11-harvesting-storage-and-use-workflow--5-november-2026)
+provide the reusable collection, authority, storage and use procedure; this
+document remains the canonical field map.
 
 | Group | Information to maintain | Value origin |
 | --- | --- | --- |
@@ -371,6 +375,65 @@ completeness. No installer, registry, service, certificate or Store account was
 modified in this research; no package build or installation was run. Delegated
 research attempts returned no usable review, so this is coordinator research,
 not independently reviewed implementation evidence.
+
+## 11. Harvesting, storage and use workflow — 5 November 2026
+
+The follow-up research used Microsoft Learn, GitHub, Context7, Firecrawl developer
+search/page extraction and web retrieval. The new
+[maintain-windows-metadata skill](../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
+contains the operational procedure, four conditional references, primary-source
+pins and two clearly marked example records. The recommended architecture is
+**reviewed authored data plus immutable observations, deterministic projections
+and independent artifact readback**. This is an engineering recommendation
+within OD-05 §7.6; no collector or production metadata source is implemented here.
+
+| Stage | Recommended method | Required distinction |
+| --- | --- | --- |
+| Harvest | Repository/Cargo/license/brand records first; admitted frozen Cargo/SBOM tooling; read-only PE/MSIX/MSI interfaces; existing authorized Store exports | Tool-observed or imported values remain candidates until reconciled with the correct field authority |
+| Store intent | Versioned TOML, proposed `packaging/product.toml`, component and locale records; reference existing Cargo/release/license owners | One authority per fact; no duplicate manually edited release versions or implicit Cargo custom-metadata inheritance |
+| Store observations | Versioned JSON in existing candidate evidence, bound to input hashes, collector, time, stage, locale/context, raw value and outcome | Intended, generated, embedded, Windows-resolved, installed, submitted and delivered values are different evidence |
+| Use | Generate per-component RC resources, selected package inputs, localization, About/diagnostics and Store CSV projections | Explicit schemas, destination escaping and version/locale mapping; no invented identities or added capabilities |
+| Verify | Compare independent readers against reviewed expectations, then observe native installed surfaces at their existing gate | Generated inputs, parser success, native display, signature trust and actual Store delivery prove different properties |
+
+Use a small Git-reviewed source instead of introducing a database/service. Keep
+large raw evidence and final artifacts in the existing owned artifact locations,
+with hashes and task pointers. Retain the admitted CycloneDX 1.5 Rust inventory
+and native/asset reconciliation; a product TOML is not a replacement SBOM. Every
+field carries its destination, owner, source/derivation, type/limits, locale,
+required stage and populated/derived/pending/justified-absence disposition.
+Promote harvested changes through a semantic diff; never silently replace a
+reviewed desired value with an erroneous binary's output. Preserve collection
+time separately from stable release/build inputs.
+
+The additional research establishes several concrete failure cases:
+
+- Cargo metadata is a resolution/discovery surface. Its target filtering and
+  package declarations do not prove a complete build-unit feature graph or
+  shipped native/generated payload; its implementation also obtains compiler
+  target information. Use frozen admitted tooling and the existing SBOM owner.
+- Cargo custom metadata tables have tool-defined semantics. Set validation and
+  fallback rules explicitly; arbitrary keys do not populate Windows resources.
+- Windows version APIs can merge fixed data and MUI strings. Even the neutral
+  flag can return MUI text; preserve raw-file and resolved-locale observations.
+- An MSIX package reader validates structure/footprint data, not its digital
+  signature. PRI dumps and actual localized presentation also remain distinct.
+- MSI Property/Summary reads need read-only access and zero summary updates.
+  Installed queries need correct user/context. Avoid Win32_Product: its queries
+  can trigger consistency checks and repairs of installed applications.
+- Resource helpers need explicit value review. At the pinned winresource source,
+  FileDescription's constructor default differs from its documentation table.
+  Explicit RC inputs or setters plus actual emitted-resource checks avoid relying
+  on those defaults; no new helper dependency is selected by this observation.
+
+The skill's [source register](../../.agents/skills/implementation/maintain-windows-metadata/references/sources.md)
+links the official contracts and immutable Cargo/helper code supporting these
+findings. Its [generation reference](../../.agents/skills/implementation/maintain-windows-metadata/references/generation-and-verification.md)
+maps independent controls for version bounds, placeholders, wrong publishers,
+Unicode, unresolved resources, omitted linked resources, denied/truncated reads
+and stale candidates. Example records are illustrative contracts, not an adopted
+schema implementation or passing release evidence. W11-W10/P6 and existing
+CHECK-18/20/23/26/27 retain implementation and verification ownership; all current
+execution holds and optional enhanced-provenance policy remain.
 
 ## Primary sources
 

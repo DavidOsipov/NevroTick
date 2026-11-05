@@ -702,6 +702,11 @@ Apply [the package-metadata contract](windows-package-metadata.md) under OD-05
 applicable PE/package/installed-app/Store fields, explicit version and locale
 mappings, and independent emitted/installed readback. W11-W10 owns this work
 within the existing package checks; MSI mappings remain conditional reference.
+Use [maintain-windows-metadata](../../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
+for the source → observation → reviewed record → generated output → independent
+readback procedure. Its references and example records prepare the method; the
+production record/schema, generator, actual artifacts and native observations
+remain future work under the same W11-W10/P6 owners and execution holds.
 
 Deliver the owner-selected complete hardened MSIX containing UI, engine, broker,
 helper and all required payloads. Follow the [MSIX plan](windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners)

@@ -41,6 +41,11 @@
       "name": "implement-slint",
       "target": "implementation/implement-slint/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "maintain-windows-metadata",
+      "target": "implementation/maintain-windows-metadata/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

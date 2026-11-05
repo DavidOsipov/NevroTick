@@ -1,7 +1,7 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-and eight original NevroTick workflows for the Windows time client in
+and nine original NevroTick workflows for the Windows time client in
 [the documentation guide](../../docs/README.md) and its development host.
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
@@ -27,6 +27,7 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
 | Implement native UI presentation, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
 | Implement or debug Slint components, Rust models, event-loop ownership or resources | [implement-slint](implementation/implement-slint/SKILL.md), alongside native-UI product semantics |
+| Harvest, maintain, generate or reconcile Windows product/package/Store metadata | [maintain-windows-metadata](implementation/maintain-windows-metadata/SKILL.md); [package-artifact QA](testing/qa-package-artifacts/SKILL.md) owns final artifact/native qualification |
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
@@ -109,7 +110,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 64 grouped skills without aliases;
+for precise selection. The pack registers 65 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack

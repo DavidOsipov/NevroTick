@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "example_only": true,
+  "scope": "metadata-observation-contract-example",
+  "candidate": {
+    "source_commit": null,
+    "input_manifest_sha256": null,
+    "component": "ui",
+    "stage": "unsigned-build",
+    "artifact_path": null,
+    "artifact_sha256": null,
+    "companion_inputs": []
+  },
+  "collector": {
+    "name": null,
+    "version": null,
+    "binary_sha256": null,
+    "command": [],
+    "flags": [],
+    "observed_at_utc": null
+  },
+  "context": {
+    "target": "x86_64-pc-windows-msvc",
+    "os_build": null,
+    "locale": null,
+    "resource_qualifiers": {},
+    "installation_context": null,
+    "user_scope": null
+  },
+  "field": {
+    "id": "component.ui.pe.product-name",
+    "surface": "pe-version-api",
+    "raw_value": null,
+    "normalized_value": null,
+    "normalization_rule": null,
+    "expected_source": null,
+    "expected_value": null
+  },
+  "result": {
+    "status": "not-run",
+    "native_error_code": null,
+    "raw_evidence_path": null,
+    "raw_evidence_sha256": null,
+    "detail": "Illustrative shape only; no artifact was collected or checked."
+  },
+  "supersedes": null
+}

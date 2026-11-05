@@ -568,6 +568,27 @@ source binding presence is not dependency or native qualification. Existing
 CHECK-18/20/23/26/27 and W11-W05's service-description/lifecycle ownership apply.
 This source handoff selects no new crate, package tool, identity or release.
 
+**Metadata workflow skill, 5 November 2026 (UTC):**
+[maintain-windows-metadata](../.agents/skills/implementation/maintain-windows-metadata/SKILL.md)
+now supplies the reusable collection, authority/conflict, storage, generation and
+independent-readback procedure. Its four references and illustrative TOML/JSON
+records extend the [contract's workflow recommendation](../docs/plans/windows-package-metadata.md#11-harvesting-storage-and-use-workflow--5-november-2026).
+Use repository-owned values and assigned Store identity, retain raw observations
+separately, and reuse the frozen CycloneDX/package evidence owners. Do not use
+Win32_Product for harvesting, equate Cargo resolution with shipped payloads, or
+treat MSIX reader success as signature verification. This is source preparation;
+the production record/schema, generator, package and native evidence remain open.
+Next W11-W10/P6 action is to populate the current field register and resolve its
+required-stage inputs before implementing the admitted build/readback path.
+The current Core priority and native/fuzz/storage holds remain unchanged.
+
+Skill delivery validation: the package checker passed for 65 registered skills;
+the skill-creator validator and TOML/JSON example parsing passed, and added
+local Markdown paths/heading anchors resolved. No product/native gate was run.
+A bounded fresh-agent use exercise could not start because the agent service
+reported a context-window failure; no independent behavioral evaluation or
+measured instruction-quality improvement is claimed.
+
 The [provisioning refinement](#424-pre-start-service-provisioning-refinement--5-november-2026)
 and separate [independent-removal refinement](#425-independent-removal-with-outstanding-recovery--5-november-2026)
 supply W11-W05/W11-W10's next bounded source/evidence routing. Retention does not
