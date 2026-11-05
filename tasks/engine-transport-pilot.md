@@ -6,6 +6,10 @@ actual Core admission. W11-W01 is partially prepared; the [S1.1c proof-first
 queue](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 remains first. Historical engine receipts below retain their original candidates.
 
+The [address-family continuation](#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
+adds local-path admission and bounded alternative progress to later S2.1/S2.2
+acquisition. Its implementation and native qualification remain pending.
+
 **Status:** [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) is now the
 sixth main workspace member. The S25 114-input candidate passes the
 configured dependency, complete GNU portable and Windows cross-build lanes,
@@ -1447,3 +1451,175 @@ product implementation or the mandatory whole-domain proofs. No product build,
 test, solver, native Windows, clock/service or public-time-server experiment ran
 for this documentation delivery. The full upstream tree remains the publication
 base; the partial synthetic checkout is never published as repository history.
+
+## Address-family admission and bounded acquisition progress — 5 November 2026
+
+**Disposition:** required future acquisition contract; specified, not implemented
+or qualified. This addendum starts from `8a66af924c509e898a9bab9bb3282f11b24fba93`
+and implements the documentation handoff for
+[architecture §7.3](../docs/windows-time-architecture.md#address-family-admission-and-alternative-progress).
+The [S1.1c proof-first queue][s21-development] remains first. The current two-peer
+loopback pilot and its first experimental measurement retain their bounded scope;
+neither gains production DNS, retry, NTS or local-path qualification here.
+
+### Contract and owner handoff
+
+Engine/protocol owns candidate admission, attempt ordering, actual next-send
+guards and source/association state. The Windows platform owner supplies bounded
+local observations and their validity; reuse the
+[network reconciliation contract](../docs/plans/windows11-integration.md#exclusive-loopback-endpoints-and-reconciled-network-changes)
+and current network/resume generations. Configuration's allowed families and
+destination scope remain separate admission rules. Resolve and bound the admitted
+A/AAAA candidate set; multiple addresses of one logical source add no votes.
+
+Before a candidate attempt, distinguish these conceptual dispositions; this table
+does not select Rust types or Windows APIs:
+
+| Local evidence for this candidate | Required decision |
+| --- | --- |
+| Explicitly disabled | Current authoritative interface/family state excludes this local path: skip it. One disabled interface must not exclude another usable interface of that family. |
+| No local path | Current destination-specific route/source-address evidence conclusively establishes no usable admitted local path: skip this candidate until relevant reconciliation. Dormant/on-demand state alone is not such evidence. This is not proof that the peer failed. |
+| Eligible | A current permitted interface, usable source address and destination route support an attempt. Merely enumerated tentative, duplicate or expired addresses do not establish usability; local eligibility does not establish remote reachability, TLS success or usable protected UDP. |
+| Unknown | Missing, failed, incomplete or stale observations do not mean disabled. Refresh or attempt within bounds under current destination policy; inspection success is not a prerequisite, and repeated observation failures cannot indefinitely suppress an otherwise permitted candidate. |
+
+Dormant/on-demand paths may become active through ordinary permitted traffic.
+Retain a bounded attempt or resolution/recovery path where that OS-configured
+activation is applicable; repeatedly inspecting an inactive path must not prevent
+its normal activation. This authorizes no adapter/VPN enablement, configuration
+change or destination-policy bypass.
+
+Bind observations to the relevant configuration/resolution and network/interface/
+route generation, source-address validity and candidate destination. Do not use a
+single machine-wide IPv4/IPv6 Boolean. Cache bounded snapshots outside the packet
+hot path; do not enumerate adapters/routes for each datagram. Initial acquisition,
+network/address/route/VPN changes and resume reconcile actual state through the
+existing coalesced owner. Recheck relevant validity before scheduling/publication;
+old callbacks cannot restore a superseded snapshot or retire a healthy successor.
+An observation failure remains distinguishable from a confirmed unavailable path.
+Treat multi-call native observations as potentially non-atomic. Freeze a bounded
+recheck policy for skipped/unknown candidates even when no new notification
+arrives, so missed notifications cannot make a local exclusion permanent.
+
+A permitted LAN/VPN destination can be usable without general Internet status or
+a default Internet route. Connectivity hints, DNS filtering and address presence
+alone do not prove destination reachability or justify a global family ban.
+Preserve the existing
+[negative-Internet-hint rule](../docs/plans/windows11-integration-follow-up.md#native-ip-helper-hints-may-satisfy-a-narrower-cost-requirement).
+Report a local skip with a bounded reason, without charging it as a failed peer
+exchange or weakening source agreement. Observation work still consumes its own
+resource budget. Enumeration, source/route selection and resolver-filter methods
+remain candidates until their exact SDK bindings, semantics and native behavior
+are qualified; no API choice or new dependency follows from this table.
+
+### Bounded progress and NTS boundaries
+
+Freeze bounded ordering or interleaving, per-attempt deadlines and an acquisition
+progress bound before implementation. Within a permitted round, a stalled first
+address must yield an attempt to another admitted usable alternative within that
+bound; repeated refresh/DNS events cannot restart the first choice indefinitely.
+Unchanged or merely reordered DNS results do not reset alternative progress.
+Cover both A-before-AAAA and AAAA-before-A, including several addresses of one
+family. Unknown local state is not silently removed from recovery consideration.
+Global denial/exhaustion produces bounded diagnosed deferral/unavailability, not
+extra retries. Retain shared earliest-operation, backoff, per-source/aggregate,
+socket/task/byte and native-completion budgets. Select no timeout/race constants,
+full Happy Eyeballs implementation, default parallel race or dependency here.
+
+Track NTS-KE TCP/TLS reachability separately from the negotiated protected-UDP
+destination. A successful handshake cannot indefinitely pin acquisition to an
+unusable UDP path. Each alternative remains bound to the relevant authenticated
+server identity, that transaction's negotiated hostname/port and destination
+policy, current association/key/request bindings and consume-once admission.
+Newly negotiated destinations require current re-admission; no arbitrary
+redirected endpoint or plain-NTP fallback is permitted. Preserve atomic
+replacement and a still-valid old
+association. Only the already-required KE plus authenticated UDP success using
+that transaction's keys/data can reset its backoff. Family/address changes create
+neither independent sources nor fresh accepted measurements by themselves.
+
+### Next implementation sequence and independent controls
+
+After the current S1.1c continuation, follow the existing S2.1 integration order:
+retain the first controlled measurement exit, then freeze this production
+acquisition policy with engine/protocol and platform before dependent DNS/socket
+work. First implement the bounded portable decision/state owner and real sender
+guards; then qualify the selected Windows observation/reconciliation adapter with
+controlled peers when its execution prerequisites permit. S2.2 adds the actual
+KE-to-protected-UDP alternative/replacement path after its existing trust/provider
+gates. Retain required source-bound proofs for any reached mathematical algorithm;
+portable controls do not establish native observation or complete acquisition.
+
+The following expected outcomes come from the contract, not a translated
+implementation. Each defect control must reach its named guard and retain the
+healthy neighbor. These are planned cases, with no execution result recorded:
+
+| Case and healthy/defect pair | Independent expected result | Evidence owner and existing checks, only as reached |
+| --- | --- | --- |
+| Disabled family versus enabled usable interface; same family usable through another interface | No socket attempt on the confirmed disabled path; the admitted usable neighbor can proceed. No peer-failure increment or extra source vote follows from the skip. | Engine/platform: pure admission controls, then actual Windows configuration/attempt observations; CHECK-25/27, CHECK-8 for vote effects. |
+| Permitted dormant/on-demand path versus a genuinely disabled path | Bounded ordinary activity can reach the allowed activation path; preflight-only polling cannot strand it. The genuinely disabled path remains skipped, with no peer-failure charge or application change to adapter/VPN configuration. | Platform/engine: pure classification/activation controls, then actual selected Windows demand-activation behavior; CHECK-25/27. |
+| LAN/VPN route with negative Internet hint versus no admissible local source/route | The permitted reachable peer remains attemptable without public Internet; confirmed local absence suppresses only the affected candidate. | Platform/engine: pure decision pair plus controlled native LAN/VPN route and emitted-attempt evidence; CHECK-25/27. |
+| Fresh evidence versus failed/stale or repeatedly failing inspection while an admitted controlled endpoint works; later current snapshot restores a path | Unknown metadata cannot fabricate disabled state or permanent exclusion. Bounded permitted attempts still reach the working peer without successful inspection; current reconciled evidence restores the corresponding path decision. | Platform/engine: pure transitions plus native inspection failures, actual attempts and change notifications; CHECK-25/27. |
+| Usable source address versus tentative/duplicate/expired address; missed notification versus bounded recheck | Enumeration alone cannot admit an unusable local address; fresh bounded re-observation can restore a recovered path without waiting forever for an event. | Platform/engine: pure validity/refresh controls, then actual selected native observations; CHECK-25/27. |
+| First A/AAAA address blackholes versus a responding alternative, with reversed family/order and same-family alternatives | The alternative receives an attempt within the frozen progress bound; repeated triggers cannot monopolize the first address or enlarge the budget. No promised success when every admitted path fails. | Engine: deterministic scheduling controls, then controlled real traffic; CHECK-21/27 for reached bounds and lifetime, without claiming their full soak exit. |
+| KE succeeds but protected UDP fails versus a working authorized alternative; wrong-key/old-context reply versus current authenticated reply | No false acquisition success or retry reset; permitted alternative recovery preserves identity/key/destination bindings. Invalid replies publish no time/cookies; the current valid reply completes once. | Protocol/platform: pure state controls first, then actual TLS/AEAD/UDP integration; CHECK-6/27, CHECK-9 only where certificate/association recovery is exercised. |
+| Current network snapshot/completion versus route change, resume or cancellation before publication | Old snapshot, attempt and late completion cannot affect the successor; actual native work retains its permits until completion and a fresh neighbor can proceed. | Engine/platform: controlled interleavings plus actual native callback/completion ownership; CHECK-25/27. |
+| Several addresses for one source plus repeated reconnect events versus ordinary healthy acquisition | At most one vote per eligible logical source, with no new freshness from address changes; shared limits contain attempts, snapshots, callbacks and diagnostics, while admitted healthy work and shutdown retain progress. | Engine/core/platform: pure identity/scheduler controls and measured native resources before teardown; CHECK-8/21/27. |
+
+Record future candidate/configuration/tool/fixture identities, actual attempts,
+first failures, cleanup and remaining gaps in this task. Native adapter/resource
+coverage and execution holds remain with their existing Windows/CHECK owners.
+Historical receipts above establish none of these new results; the coordinator's
+documentation review receipt is separate from future implementation acceptance.
+
+### Documentation integration and review receipt
+
+**Candidate:** base `8a66af924c509e898a9bab9bb3282f11b24fba93`, with additive
+changes to architecture §7.3/S126–S127, development-plan P2/next-task routing, this
+task and Windows task §4.27. The corrected contract diff SHA-256 is
+`08f9df6b73d688fe217a3315fe0be17dea13a7b9609f953f4adf6ac98334dfe2`;
+this receipt follows that reviewed contract and records no new product behavior.
+
+**Review completion and context:** `hifitime_practices` completed the bounded
+Microsoft/RFC source review; `hifitime_review_writer` authored this task card.
+The separate read-only `hifitime_algorithms` reviewer completed the integrated
+four-file review with retained prior research context, then verified its scoped
+correction. It is not a fresh-context review. Two explicit fresh-context launches
+(`network_contract_review`, `network_contract_review_v2`) failed with context-limit
+errors and returned no usable review; their review scope is incomplete, with no
+input-read or zero-finding claim. No further retry or cold-review result is claimed.
+
+**Completed reviewer's comprehension, preserved verbatim:**
+
+> The amendment adds local interface/address/route admission and bounded progress across permitted IPv4/IPv6 destinations to the existing acquisition plan. The engine owns scheduling and source identity; a platform adapter supplies observations with explicit validity and unknown outcomes. NTS-KE and protected UDP remain separate stages, while address changes preserve the existing authentication, association, budget and single-vote rules.
+
+> The current engine remains a two-peer controlled-loopback transport pilot with one query per association and no DNS or retry machinery. Its first experimental measurement remains unauthenticated and ineligible for discipline. The new contract belongs to later S2.1/S2.2 integration; it does not implement that behavior, expand the first measurement, advance native qualification or replace the S1.1c proof-first continuation.
+
+**AF-R01 — Medium documentation liveness; closed on the corrected candidate.**
+The initial diff `ea9e44d84fac6f4dd6c7c2f012cb9f51a57bac7ed0f83d016d0da65785a39b8a`
+did not explicitly distinguish dormant/on-demand activation from conclusive local
+unavailability. The reviewer identified that observation-only polling could
+prevent the ordinary network activity needed for activation. The coordinator
+independently checked S126's `IfOperStatusDormant` and
+`NET_IF_CONNECTION_DEMAND` descriptions. Architecture, disposition, paired control
+and plan/Windows routing now preserve bounded ordinary permitted activation while
+retaining genuinely disabled-path skipping and no configuration authority. The
+same reviewer inspected those corrections and returned **READY for documentary
+integration**, reusing its unaffected conclusions. This is no observed runtime
+defect, native pass or implemented recovery claim.
+
+**Documentation checks:** `git diff --check` passed. A focused check resolved
+**570 local link targets** across the four changed files; Markdown fences are
+balanced, all **127** architecture source IDs are unique/contiguous and cited
+source IDs are defined. All historical lines in the four files are preserved.
+The first link-check attempt misread an indented list continuation as a reference
+definition; the scoped checker was corrected and rerun successfully without
+changing repository text for that false positive. The tracked tree contains no
+root `docs/SHA256SUMS.txt`; the unchanged design-kit manifests are outside this
+delta. The coordinator rechecks the receipt and final publication bytes separately.
+
+**Current exit:** the required contract, enforcing owners and nine paired future
+controls are recorded. No product build/test, mathematical proof, native Windows
+operation or public-server probe ran for this documentation change. Complete the
+existing S1.1c continuation first, then freeze the finite acquisition profile at
+its dependent S2.1/S2.2 integration and record actual implementation/native results
+here under the existing checks and execution prerequisites.

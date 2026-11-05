@@ -440,6 +440,17 @@ and its divisor `1.0` do not close the runtime bridge. Both exits retain the
 existing mathematical proof, KoD, DNS, resource and native owners; the first
 measurement alone completes neither S2.1 nor P2.
 
+Before the dependent S2.1/S2.2 acquisition integration, complete the same task's
+[address-family admission and progress card](../../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026).
+It binds the engine's candidate scheduler to current local interface/address/route
+evidence, explicit unknown/excluded outcomes and bounded progress through eligible
+alternatives. The [architecture contract](../windows-time-architecture.md#address-family-admission-and-alternative-progress)
+keeps NTS-KE and protected UDP stages separate. Freeze the finite ordering and
+recheck profile before implementation; pair portable policy controls with later
+actual Windows observations, including permitted on-demand activation versus
+administratively disabled paths. This is later acquisition work, not an expansion of
+the first fixed-peer measurement or a new prerequisite for the proof-first queue.
+
 The existing [protocol comparison follow-up](../../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up)
 owns the RFC 8915 alignment checklist and completed
 [KoD source-to-scheduler review](../../tasks/s0.1-protocol-comparison.md#kod-source-to-scheduler-review).
@@ -464,6 +475,7 @@ not production NTS replay qualification; retain OPEN-5/6's unresolved bounds.
 | Acceptance | Independent observation and valid/fault controls | Mapping |
 | --- | --- | --- |
 | NTP transport and KoD | Controlled IPv4/IPv6 peers exercise correlation, endpoints, eras and generations. Test reviewed RATE backoff, DENY/RSTR cessation, unknown codes, forged/stale/replayed controls and extreme poll claims. Observe sends and source state; KoD never enters time arithmetic/history or lowers agreement policy. A healthy neighboring source remains usable. | CHECK-6/8/27 |
+| Local usability and alternative-address progress — S2.1/S2.2 | Conclusively disabled/no-local-path candidates emit no attempt and incur no peer-failure charge; unknown/stale inspection preserves bounded recovery. A usable LAN/VPN path survives another interface's disabled family or negative Internet hint. Blackholed first-family and KE-success/UDP-failure cases reach a permitted alternative within the frozen bounds; reordering/refresh cannot restart the failed candidate indefinitely or refill budgets. Preserve negotiated identity, one logical vote and native completion custody. | [Engine task card](../../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026); CHECK-6/8/9/21/27, CHECK-25 for reached construction guards |
 | Leap claims and source scale | Preserve authenticated bytes and raw LI through staged admission. All-LI=0 unsmeared UTC peers remain candidates; contradictory observations and smeared/unknown-scale sources cannot acquire discipline authority. Recheck whole exchange span, age and policy/mapping generations after delayed completion; preserve healthy identities. | [S1.4/P2 handoff](../../tasks/s1.4-leap-policy.md), CHECK-6/7/8/11/14/25 |
 | NTS-KE | TLS 1.3 baseline, `ntske/1`, verified identity, complete request flush, bounded framing/cardinality/end rules and offered protocol/AEAD negotiation. Wrong identity, unknown critical records, truncation and unoffered algorithms fail without a usable association. | CHECK-6/9/26 |
 | RFC 8915 and cipher preference | Close the linked checklist with actual entry-point cases for KE errors/warnings/closure, exporter/nonce/AD, cookies, trailing fields, NTS KoD/NAK and retry reset. Observe AES-GCM offer order and negotiated suites; qualify provider acceleration/fallback without raising the CPU floor or admitting a new graph. | CHECK-6/9/17/26 |
@@ -690,6 +702,12 @@ controls. [W11-W01 §4.26](../../tasks/windows11-integration.md#426-s21-timestam
 is partial source preparation. Continue its finite capture/mapping contract and
 dependent uncertainty/Core admission when their owners reach the slice; this
 adds no prerequisite to or replacement for the proof-first continuation above.
+
+The same task's [address-family card](../../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
+is prepared documentation for later S2.1/S2.2 scheduling and platform work. Its
+contract/profile freeze and native controls enter at that dependent integration;
+neither it nor the [Windows routing note](../../tasks/windows11-integration.md#427-address-family-admission-routing--5-november-2026)
+changes the next executable task above.
 
 **Execution holds and later Sandbox scope.** The [Defender incident record](../../tasks/s0.1-crypto-feasibility.md#defender-alert--windows-execution-stopped)
 retains the blocked S134 stager/artifact. David's later [owner-ready Sandbox
