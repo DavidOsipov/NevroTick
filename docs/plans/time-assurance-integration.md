@@ -39,8 +39,11 @@ clock-write envelope; earlier research/review receipts retain their own scope.
 
 Keep the two roadmap sequences distinct:
 
-- **Windows P0–P7 → KHR-C01 disposition → Android.** [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking)
-  remains an evaluation with `ADOPT_LIMITED`, `DEFER` or `REJECT` outcomes.
+- **Windows P0–P7 → KHR-C01 disposition → GEO-C01 disposition → Android.**
+  [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking) and the later
+  [GEO-0 experiment](../../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
+  retain `ADOPT_LIMITED`, `DEFER` or `REJECT` outcomes. The existing catalogue task
+  owns GEO-C01; geography cannot alter a qualified reserve population or sampler.
 - **RGT-0 → CHR-0.** [RGT-0](../../ROADMAP.md#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock)
   retains its own implementation and Windows-recovery exit. Its placement against
   later Android/DNS work remains open.
@@ -484,7 +487,8 @@ Windows evidence and the two roadmap exits. No planned case is marked passed.
 
 The next step for this workstream is the source/contract freeze in TA-W02 when its
 phase is selected. Current product work stays with development-plan §7. KHR-C01
-can close with a documented deferral/rejection; RGT-C01 still requires functioning
+can close with a documented deferral/rejection, then hand off to GEO-0 before
+Android; GEO-C01 does not require GeoIP implementation. RGT-C01 still requires functioning
 qualified bootstrap. The optional watchdog cannot become a hidden prerequisite
 for the RGT-0 → CHR-0 sequence.
 

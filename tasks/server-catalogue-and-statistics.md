@@ -51,6 +51,53 @@ loss records a gap, not a failed server. Restarted hints cannot restore deadline
 current authentication, mandatory restrictions or consumed budgets. No benchmark,
 storage integration or runtime implementation is claimed by this handoff.
 
+### Deferred GeoIP experiment — after Khronos
+
+**Owner instruction, 5 November 2026:** record the geography-assisted source
+ordering experiment after Khronos in the roadmap. [OD-12](../docs/nevrotick-owner-decisions.md#16-od-12--geoip-experiment-after-khronos)
+and [GEO-0 / GEO-C01](../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
+place its evaluation/disposition between KHR-C01 and Android. This task remains
+the evidence owner; the engine acquisition and independent QA/security owners
+supply comparison and control evidence. GeoIP adoption is optional, and any
+implementation is separately scoped. Current Core and Q0/Q-J work are unchanged.
+
+**Next action at that future entry:** freeze the same-source comparison of
+ordinary acquisition/history reuse against optional geography ordering, with
+finite budgets, independent expectations, benefit/non-regression thresholds,
+exact catalogue/data revisions and matched cold/warm network scenarios. Measure
+time to a sufficient policy-eligible independent source set, failures/timeouts,
+diversity, accuracy/uncertainty and resource/maintenance costs. Preserve eligible
+successful paths and all existing admission rules. Geography cannot alter a
+qualified Khronos/Ananke population or sampling distribution.
+
+Reuse DATA-03/04/08/09/10/17 and existing C/R/Q ownership for geography provenance,
+actual NTS endpoints, network-context identity and optional compatible hints.
+Record missing/stale/incorrect data, anycast, DNS changes, IPv4/IPv6 and NAT/VPN/
+proxy-context cases; no new database or default client-IP/location history is
+introduced. GeoLite2-City and optional public-egress geolocation remain candidates;
+review licence/update duties and distribution cost before selecting either.
+Deferred Roughtime/SOCKS5 behavior uses fixtures until its own runtime admission;
+their implementation is not a GEO-C01 prerequisite. Existing proof obligations
+and execution holds apply at their stated scopes.
+
+**Disposition evidence:** retain the actual candidate, recipe, results and
+limitations here. `ADOPT_LIMITED` needs measured benefit under the unchanged
+safety/resource constraints and a bounded later implementation proposal.
+`DEFER`/`REJECT` record reasons and a re-entry trigger; if execution is not viable,
+record the missing evidence explicitly rather than claiming measured benefit.
+Any of these documented dispositions closes GEO-C01 for the Android handoff.
+
+**Documentation review scope:** based on `9a5f630bb95b50e301cc7d6cf65d93bcd565da0f`,
+this amendment records future work only. The coordinator reviewed ordering, storage
+reuse and trust boundaries. A fresh read-only subagent failed before completing
+its review because its context capacity was exhausted; no independent-review pass,
+benchmark, public-server probe or implementation qualification is claimed.
+Independent review of the concrete experiment remains required before execution.
+Scoped documentation checks passed: whitespace/diff checks and inline relative
+link/anchor resolution. Development-plan §7 and all 14 existing fenced blocks in
+the eight changed Markdown files remain byte-identical to that base. These checks
+cover the documentation amendment, not future experiment or runtime acceptance.
+
 ## 3. Next bounded preparation
 
 This section retains the Q0/Q-J statistical-store preparation. The

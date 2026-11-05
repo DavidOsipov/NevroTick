@@ -1534,9 +1534,13 @@ The [product roadmap](../../ROADMAP.md#1-direction-and-authority) owns later
 platform and DNS scope. After completing this Windows P0–P7 plan, the first
 follow-up is [KHR-0](../../ROADMAP.md#khr-0--evaluate-independent-time-cross-checking).
 Record its KHR-C01 evidence and `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition
-before AND-0; this requires evaluation and disposition, not adoption of Khronos.
-An adopted mechanism needs its bounded implementation qualified before Android
-work begins. Neither the reserve calculation nor its source diversity grants clock authority.
+before [GEO-0](../../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering),
+the owner-requested geography-assisted acquisition experiment. GEO-C01 evaluation
+and disposition then precede AND-0; neither experiment requires adoption.
+If Khronos is adopted, qualify its bounded implementation before Android work
+begins. GeoIP implementation is separately scoped if selected and is not an Android
+prerequisite. The [existing catalogue task](../../tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos)
+owns GEO-C01. Neither the reserve calculation nor its source diversity grants clock authority.
 
 Android's local SNTP bridge and device/ADB/lifecycle qualification remain in that
 roadmap. The [future DNS workstream](system-dns-cache-design.md#12-staged-delivery-and-next-action)

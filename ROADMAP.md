@@ -4,6 +4,8 @@
 
 **First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
 
+**Next experiment:** [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering), after Khronos/Ananke and before Android
+
 **Later owner-selected sequence:** [Roughtime bootstrap for a badly wrong clock](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock) → [independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations); future public licence undecided
 
 **Android status:** planned; no Android implementation or handset qualification is established  
@@ -12,8 +14,9 @@
 ## 1. Direction and authority
 
 Finish the current Windows development and acceptance plan first. The first
-follow-up is the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking)
-below, before any Android implementation. Then pursue the Android application
+follow-up is the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking),
+then the [GEO-0 experiment and disposition](#geo-0--evaluate-geography-assisted-source-ordering)
+requested on 5 November 2026. Then pursue the Android application
 David requested: a local time server that redirects Android's existing NTP client
 to it, without root or an always-active VPN interface.
 
@@ -30,7 +33,8 @@ applying time to its own clock.
 | Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, resource use, diagnostics and deferred UI integration. The follow-up adds concrete callback, COM, MSI permission, ETW and partial-replacement cases. Research is recorded; implementation/native evidence and conditional choices remain open at their existing phases. Current priorities and execution holds remain; this is no new predecessor to KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
 | Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks before Android work. |
-| Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01. Future work with device-specific feasibility gates. |
+| Geography-assisted acquisition | [GEO-0](#geo-0--evaluate-geography-assisted-source-ordering): bounded comparison after KHR-C01; the [existing catalogue task](tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) owns GEO-C01. Evaluation and disposition precede Android; GeoIP adoption is optional. |
+| Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01 and GEO-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
 | System-wide Windows DNS | [Planned DoQ feature](#5-planned-dns-over-quic-and-certificate-pinning) and [detailed DNS/cache design](docs/plans/system-dns-cache-design.md): DNS answers for the whole computer and its applications, DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC with hardware acceleration and multiple CPU cores, and an evaluated adaptive cache. Native integration, actual coverage and performance remain to be qualified. |
 | Roughtime bootstrap | [RGT-0](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock): obtain an authenticated approximate-time interval to bootstrap NTS when the local date is badly wrong; provider, trust-policy and Windows qualification remain future work. |
@@ -57,7 +61,7 @@ apply to Android ABIs or impose x86 compiler flags on shared portable code.
 the owner selected a conditional bootstrap-reserve role. No implementation,
 source roster or recovery envelope is qualified.
 
-**Order:** after the current Windows P0–P7 plan, before AND-0.
+**Order:** after the current Windows P0–P7 plan, before GEO-0 and AND-0.
 
 **Owners:** numerical/protocol implementer, with independent security/test review.
 
@@ -134,8 +138,87 @@ expected results, actual outcomes and costs in the [shared task](tasks/time-assu
 `ADOPT_LIMITED`, `DEFER` or `REJECT` with evidence and remaining gaps. An adoption
 must define and qualify its bounded implementation before Android work begins;
 deferral or rejection records the reason and return trigger. Completing this
-evaluation and disposition is the prerequisite to AND-0; it does not require
-adopting Khronos. Research alone proves no protection in the delivered client.
+evaluation and disposition admits GEO-0; both dispositions precede AND-0.
+Neither requires adopting Khronos. Research alone proves no protection in the
+delivered client.
+
+### GEO-0 — evaluate geography-assisted source ordering
+
+**Status:** future experiment requested by David on 5 November 2026 under
+[OD-12](docs/nevrotick-owner-decisions.md#16-od-12--geoip-experiment-after-khronos).
+No GeoIP database, dependency, provider or production selection rule is adopted.
+
+**Order:** Windows P0–P7 → KHR-C01 → GEO-C01 → AND-0. A documented
+`ADOPT_LIMITED`, `DEFER` or `REJECT` disposition closes this experiment; GeoIP
+deployment is not an Android prerequisite. RGT-0 → CHR-0 remains separate.
+
+**Owners and evidence:** catalogue/release owner, engine acquisition owner and
+independent QA/security reviewer, in the
+[existing catalogue task](tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos).
+Reuse DATA-03/04/08/09/10/17, publisher R, delivered catalogue C and the existing
+optional Q/path-hint owners. Create no parallel database, cache or experiment plan.
+
+**Question:** does approximate source location reduce cold-start time and failed
+attempts before obtaining a sufficient, policy-eligible independent source set,
+compared with successful-path reuse and selection by actual measurements alone?
+Geographic distance is a hypothesis about acquisition cost, not a timing guarantee.
+
+- [ ] Freeze a bounded comparison: the same catalogue, source admission,
+  independence/quorum rules, network scenarios and total request/resource budget.
+  Baseline uses existing history and ordinary acquisition without GeoIP; candidate
+  adds geography only to the ordering of new candidates. Keep eligible successful
+  paths first in their current network/policy context. Include a no-location
+  control; unknown or distant sources must remain eligible under existing policy.
+- [ ] Separate operator-declared site/region from an IP-derived estimate. Retain
+  provenance, data revision, observation/review age, uncertainty or accuracy radius
+  when supplied, and explicit unknown/anycast/multisite states. Associate address
+  estimates with the actual resolved endpoint; keep NTS-KE and negotiated UDP
+  destinations distinct. A publisher's DNS observation is not the client's current
+  answer. Country, ASN and distance establish neither authenticity nor independent
+  operators/clocks. Do not enumerate or poll the entire NTP Pool.
+- [ ] Preserve any qualified Khronos/Ananke population and random sampling
+  distribution. GEO-0 covers ordinary acquisition ordering; a geographic change
+  to the reserve sampler would require separate threat analysis and proofs.
+  Neither geography nor a low RTT adds a trust vote, weakens a quorum, grants
+  clock authority or overrides actual protocol quality/uncertainty checks.
+- [ ] Evaluate coarse catalogue metadata first. Treat client public-egress-IP
+  discovery/geolocation as a separate optional comparison arm, not a startup
+  requirement. Bind observations to the selected route/family/proxy context;
+  a local private address or VPN/proxy egress does not identify the user's physical
+  location. Missing lookup results, a wrong local date or a failed HTTPS lookup
+  must not block time acquisition. Retain no client IP/location history by default.
+- [ ] Cover cold/warm start, IPv4/IPv6, asymmetric delay and loss, NAT/VPN/proxy
+  context changes, DNS/delegation churn, anycast, LAN/private/custom sources and
+  missing/stale/incorrect geographic data. Use controlled traces/fixtures first;
+  actual NTP/NTS execution requires its existing admission. Roughtime and deferred
+  SOCKS5 scenarios use fixtures until their own runtime stages permit them; neither
+  future implementation is required for GEO-C01. Keep the existing active-source,
+  resource, service-permission and provider-rate limits across all experiment arms.
+- [ ] Predeclare benefit and non-regression thresholds, matched inputs, independent
+  expected outcomes and finite runs before execution. Compare distributions of time
+  to a sufficient eligible set, requests, failures/timeouts, operator diversity,
+  offset/uncertainty and false acceptance, plus CPU/RAM/network, delivered-data size
+  and update/maintenance cost. Account for unsuccessful and timed-out runs; a single
+  fastest response is not evidence of better synchronization. Freeze production
+  constants only at the applicable later decision; OD-10 proof obligations remain.
+- [ ] Assess [GeoLite2-City](https://github.com/wp-statistics/GeoLite2-City) only as
+  a candidate alongside declared regions and no GeoIP. Before any reuse, review
+  exact input provenance, [MaxMind's licence and update/removal obligations](https://www.maxmind.com/en/geolite/eula),
+  [accuracy limits](https://support.maxmind.com/knowledge-base/articles/maxmind-geolocation-accuracy)
+  and bounded trusted distribution. Shipping the full database is not presumed;
+  publisher extraction does not automatically remove upstream obligations.
+  Use [Chrony's measured-quality and source-selection behavior](https://chrony-project.org/doc/4.9/chrony.conf.html)
+  as comparison evidence, without assuming kilometre distance predicts root distance.
+
+**Exit GEO-C01:** retain exact candidates/data revisions, comparison recipe,
+independent expectations, actual results and limitations in the existing task.
+Record `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption requires demonstrated benefit
+within unchanged trust, diversity, uncertainty and resource constraints. Define
+its bounded proposed scope and remaining implementation/proof/qualification work
+separately. Deferral or rejection records the reason and re-entry trigger, including
+unavailable execution/evidence where applicable, without claiming measured benefit.
+This roadmap entry itself supplies no benchmark result or permission to run
+experiments.
 
 ### RGT-0 — Roughtime bootstrap for a badly wrong clock
 
@@ -144,7 +227,7 @@ on 3 November 2026. No Roughtime implementation, provider selection or Windows
 qualification is established. This stage is distinct from KHR-0.
 
 **Order:** RGT-0 → CHR-0. This later sequence preserves the current
-Windows → KHR-0 → Android prerequisites. Its scheduling against later Android
+Windows → KHR-0 → GEO-0 → Android prerequisites. Its scheduling against later Android
 and DNS work remains open; it creates no new active Windows prerequisite.
 
 **Owners:** protocol implementer, NTS/trust-policy owner, independent security
@@ -300,7 +383,7 @@ verifier, UI and independent security/QA review at their dependent boundaries.
 Reuse the current engine task; do not start a parallel proxy project or database.
 Schedule the stage when a real supported use case and maintenance capacity justify
 it, after Windows delivery. Its place among other future work remains undecided;
-the existing Windows → KHR → Android and RGT → CHR ordering is unchanged.
+the Windows → KHR → GEO → Android and RGT → CHR ordering remains intact.
 
 **First future profile:** the canonical
 [limited SOCKS5 profile](docs/windows-time-architecture.md#limited-socks5-profile--deferred)
@@ -415,8 +498,10 @@ label; it must not be entered automatically on NTS failure.
 
 ## 4. Ordered Android stages
 
-Begin these stages only after KHR-C01 and any adopted cross-check implementation
-have been completed. This ordering leaves the current Windows plan intact.
+Begin these stages only after KHR-C01, any adopted cross-check implementation and
+the GEO-C01 experiment disposition have been completed. GeoIP implementation is
+separately scoped if selected; it is not an Android prerequisite. This ordering
+leaves the current Windows plan intact.
 
 All implementation and runtime checkboxes below are **open**. The current request
 creates the plan; it does not establish a built APK, device test or release.
@@ -838,9 +923,9 @@ UDP tunnel; this design uses local UDP and the companion's own remote transport.
 ## 7. Decision points and evidence discipline
 
 Current implementation follows the Windows development plan. Its first roadmap
-follow-up is **KHR-0**, with KHR-C01 before Android work. The first Android stage
-is then **AND-0**, starting with device identification and read-only capability
-discovery. Dates for later stages are intentionally not promised before those
+follow-up is **KHR-0**, then **GEO-0**; KHR-C01 and GEO-C01 precede Android work.
+The first Android stage is then **AND-0**, starting with device identification and
+read-only capability discovery. Dates for later stages are intentionally not promised before those
 results.
 
 Resolve these choices when the dependent stage is ready, using the existing
@@ -855,6 +940,8 @@ Resolve these choices when the dependent stage is ready, using the existing
 - Whether to add the separately exposed Windows NTS server in AND-6.
 - Any Khronos/Ananke adoption, including pool/sampling parameters, NTS/plain-NTP
   roles and authority on contradiction or unavailable evidence.
+- Any GEO-0 adoption, including measured benefit, data provenance/maintenance,
+  optional client-location handling and its separately scoped implementation.
 - Windows DNS integration/coverage and lifecycle details, resolver bootstrap,
   pin representation, combined leaf/intermediate matching and rotation policy.
 - DNSSEC provider/trust/time policy, qualified acceleration and multicore bounds;
@@ -875,7 +962,7 @@ Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-KHR-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.
