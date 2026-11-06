@@ -2,5 +2,8 @@
 //! Portable controls include the exact local Windows adapter helper source.
 //! This existing GUI test scope exercises no Windows adapter, COM pointer or native effect.
 
+#[path = "../../../third-party/accesskit_windows/src/range_state.rs"]
+mod range_state;
+
 #[path = "../../../third-party/accesskit_windows/src/value_input.rs"]
 mod value_input;

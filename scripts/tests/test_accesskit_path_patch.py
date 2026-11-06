@@ -31,7 +31,7 @@ def accesskit_record():
             "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94",
             "files_sha256": "4" * 64,
             "modified_files_sha256": {name: "5" * 64 for name in
-                ("Cargo.toml", "NEVROTICK-PATCH.md", "src/lib.rs", "src/node.rs", "src/text.rs", "src/value_input.rs")}}
+                ("Cargo.toml", "NEVROTICK-PATCH.md", "src/lib.rs", "src/node.rs", "src/range_state.rs", "src/text.rs", "src/value_input.rs")}}
 
 
 def two_patch_policy():
@@ -79,6 +79,7 @@ class AccessKitPathPatchControls(unittest.TestCase):
             lambda p: p["patched_packages"][1].update(build_script=True),
             lambda p: p["patched_packages"][1].update(checksum="0" * 64),
             lambda p: p["patched_packages"][1]["modified_files_sha256"].pop("src/value_input.rs"),
+            lambda p: p["patched_packages"][1]["modified_files_sha256"].pop("src/range_state.rs"),
         ):
             changed = copy.deepcopy(self.policy)
             mutate(changed)
@@ -205,7 +206,7 @@ class AccessKitPathPatchControls(unittest.TestCase):
                 record["modified_files_sha256"] = {name: files[name] for name in record["modified_files_sha256"]}
 
             refresh()
-            self.assertEqual(len(VERIFY.admit_patched_source(root, record)), 26)
+            self.assertEqual(len(VERIFY.admit_patched_source(root, record)), 27)
             for name in ("LICENSE-MIT", "LICENSE-APACHE", "LICENSE.chromium", "LICENSE-GPL-3.0-only", "Cargo.toml.upstream", "Cargo.lock", "src/adapter.rs"):
                 original = (directory / name).read_bytes()
                 (directory / name).write_bytes(original + b"\nchanged\n")

@@ -5337,13 +5337,14 @@
       "upstream_checksum": "106c2b961215864d1c2e703ee63269c25c4e80a577ffb2c1017b9c17dcdf83a1",
       "upstream_files_sha256": "7b5aa35d98dbf1c4ba0d311f591de9486000b84f97190462de4266542d0306e7",
       "upstream_revision": "c88605b96d04431f9c3c792464a0f2f253480e94",
-      "files_sha256": "b684b3bcb2ba398d57de98a07b6f1e89d6e0cf6dea2a0a1dffcd041a5e339a07",
+      "files_sha256": "168f9f27b274058470317611baddba2f189b7c114684da6f6d88ea8a25b78853",
       "modified_files_sha256": {
         "Cargo.toml": "c33a928d1ab0f806fdbaff7ffac0d4b9e45043c7e059d5e87a4c5eff16e51190",
-        "NEVROTICK-PATCH.md": "cbcd895fae5bac5e925ae5c9ab4f4ffc7ac4ede61efb2481462f1d12232ad98e",
-        "src/lib.rs": "497d3cca5bb308f636e1e779d9b120a33ab99bed8ebcfd0939d3c234181edeeb",
+        "NEVROTICK-PATCH.md": "2fd2dc9da02ccdfd80d03fe24be9f869a5fb44519a8c3c7571750952e3c1fa8d",
+        "src/lib.rs": "3cbee1ab1c8a9f6dc855c83823b30adf50cf2044fa24fef210a7b9b5ed2e3c87",
         "src/node.rs": "ad44d29cc02633cab2b74f5de98ef87f71ebc09b8fe3c9c7558e90f8ba7798a6",
-        "src/text.rs": "1b1373b190a30dcec83f6e3b16b98c861e6c12ea7795c104b742832356badc94",
+        "src/range_state.rs": "4427ab42304e84aa2e428d194f84f1d65183b28ac39404c7160ed63248d93ab1",
+        "src/text.rs": "1ec6e0bee083e51d882fd661d81a36379b8034ee1f649a44826e0ddda16fbf53",
         "src/value_input.rs": "9bc22d48469a09eb482750ef8a1693adf32cbd752a5d9b90e08e6327ed73ada9"
       }
     }

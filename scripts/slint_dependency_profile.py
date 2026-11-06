@@ -53,7 +53,7 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "5c7a74ad33889f1ba2e3abae0bf759eb10cea7569cdd583d68fd91e8cc6ed235"
+REVIEWED_POLICY_SHA256: str | None = "a3a008828e6d8c72b7441c29bafbc67f8aa22a4c9efddbb99e32bf705cfda3f6"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -88,7 +88,7 @@ ACCESSKIT_UPSTREAM = {'name': 'accesskit_windows',
  'upstream_checksum': '106c2b961215864d1c2e703ee63269c25c4e80a577ffb2c1017b9c17dcdf83a1',
  'upstream_files_sha256': '7b5aa35d98dbf1c4ba0d311f591de9486000b84f97190462de4266542d0306e7',
  'upstream_revision': 'c88605b96d04431f9c3c792464a0f2f253480e94'}
-ACCESSKIT_MODIFIED_FILES = {'Cargo.toml', 'NEVROTICK-PATCH.md', 'src/lib.rs', 'src/node.rs', 'src/text.rs', 'src/value_input.rs'}
+ACCESSKIT_MODIFIED_FILES = {'Cargo.toml', 'NEVROTICK-PATCH.md', 'src/lib.rs', 'src/node.rs', 'src/range_state.rs', 'src/text.rs', 'src/value_input.rs'}
 ACCESSKIT_PRESERVED_FILES = {'.cargo_vcs_info.json': '7b556e30d8d54e863f20727b9547512b6955849fc5d6c1819b01301c8a0bd764',
  'CHANGELOG.md': 'a30775fb0f1a725f3e001db5182e8b88a7a39c6b4e4b6c0e07e02cf38432b1e3',
  'Cargo.lock': 'a45d3595200859d8a401238de180c1b2b6f749a7ec8c06ef44c95a5542663bb6',

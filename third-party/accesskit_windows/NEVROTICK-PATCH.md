@@ -36,11 +36,22 @@ allocation, other native entry points and retained IME composition remain open.
 This patch proves no complete native input security, Windows qualification or
 permission to distribute the package.
 
+The range-comparison repair prevents recursive acquisition of one range's state
+read lock. Compare and the same-object CompareEndpoints branch use range_state's
+shared read-pair helper: identical locks supply one guard to both projections;
+distinct locks retain both guards until comparison finishes. This preserves the
+existing context/type checks, endpoint errors and simultaneous distinct-range
+snapshot. It avoids a queued writer blocking a second read while the first read
+prevents that writer from progressing. Portable controls include this exact helper
+in the existing GUI test scope, with a real queued writer and a bounded second-read
+probe. They do not execute COM, qualify Windows scheduling or lift native holds.
+
 Original MIT/Apache and Chromium BSD notices remain intact. LICENSE-MIT,
 LICENSE-APACHE and LICENSE.chromium are retained from the same immutable
 AccessKit revision because they were omitted from the published crate archive.
 The MIT option is selected for original dual-licensed material; Chromium's
-BSD-3-Clause notice is additional. The new original value_input.rs helper is
+BSD-3-Clause notice is additional. The new original value_input.rs and
+range_state.rs helpers are
 GPL-3.0-only and the unmodified GPLv3 text is retained in LICENSE-GPL-3.0-only.
 The composite Cargo license records these distinct components; it does not
 relicense third-party material or withdraw the original Apache alternative.

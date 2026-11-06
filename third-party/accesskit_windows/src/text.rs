@@ -323,7 +323,12 @@ impl ITextRangeProvider_Impl for PlatformRange_Impl {
     fn Compare(&self, other: Ref<ITextRangeProvider>) -> Result<BOOL> {
         let other: &PlatformRange = required_param(&other)?.cast_object_ref::<PlatformRange>()?;
         Ok((self.context.ptr_eq(&other.context)
-            && *self.state.read().unwrap() == *other.state.read().unwrap())
+            && crate::range_state::with_read_pair(
+                &self.state,
+                &other.state,
+                |state, other_state| state == other_state,
+            )
+            .unwrap())
         .into())
     }
 
@@ -339,12 +344,18 @@ impl ITextRangeProvider_Impl for PlatformRange_Impl {
             // safely without upgrading the range. This allows ATs
             // to determine whether an old range is degenerate even if
             // that range is no longer valid.
-            let state = self.state.read().unwrap();
-            let other_state = other.state.read().unwrap();
-            let pos = weak_comparable_position_from_endpoint(&state, endpoint)?;
-            let other_pos = weak_comparable_position_from_endpoint(&other_state, other_endpoint)?;
-            let result = pos.cmp(other_pos);
-            return Ok(result as i32);
+            return crate::range_state::with_read_pair(
+                &self.state,
+                &other.state,
+                |state, other_state| {
+                    let pos = weak_comparable_position_from_endpoint(state, endpoint)?;
+                    let other_pos =
+                        weak_comparable_position_from_endpoint(other_state, other_endpoint)?;
+                    let result = pos.cmp(other_pos);
+                    Ok(result as i32)
+                },
+            )
+            .unwrap();
         }
         self.require_same_context(other)?;
         self.with_tree_state(|tree_state| {

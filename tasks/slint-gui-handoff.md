@@ -75,14 +75,15 @@ patch notices and separate brand/font/Unicode terms. The selected 534 registry
 identities include inert resolution entries; that number is not the runtime
 package count. Distribution obligations remain separate from private checks.
 
-Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Merged lock SHA256:
-`0683420c01ac6af80554100b402be4673628bfb5fca514476cd3585572b9c297`.
-Merged schema3 policy anchor:
-`b76a65d04a7c99f78ba299c87e39a3ee9172e725604f220f43e2677a0ebb0455`.
-The graph adds only main's normal engine→time-domain edge and nine existing
-dependency contexts in each engine package scope. Registry identities/grants,
-patch pins, workspace and other package scopes remain unchanged. The earlier
-GUI41–43 receipts below retain the old graph and cannot qualify this merged one.
+Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Current lock SHA256:
+`56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286`.
+Current schema3 policy anchor:
+`a3a008828e6d8c72b7441c29bafbc67f8aa22a4c9efddbb99e32bf705cfda3f6`.
+The graph includes main's normal engine→time-domain edge and direct engine→garde
+derive/defaults-off edge. Registry identities, features, grants, workspace and
+non-engine package scopes retain their reviewed boundaries. The AccessKit
+derivative pins include the range-lock repair below. The earlier GUI41–43
+receipts retain the old graph and cannot qualify this current candidate.
 
 ## Not implemented or not qualified
 
@@ -416,3 +417,172 @@ the previously passing full read-only-root sandbox capability smoke check and
 kept Fontconfig availability as a separate cleared-environment host preflight;
 the ordinary verifier still owns its complete sandbox and product execution.
 The setup failure remains a failed run, not evidence of product behavior.
+
+## Rust data-flow audit and text-range lock repair — 6 November 2026
+
+This bounded follow-up applies CHECK-19/20/24/25 and preserves CHECK-22's native
+qualification boundary. It uses `qa-data-flow-analysis`, the CodeQL reference,
+`qa-subagent-dispatch` and the concurrency/lifecycle skill. No formal, fuzz or
+Windows product execution is authorized by this receipt.
+
+**Custody and candidates.** Main was actively owned by another AI. The reviewed
+snapshot is committed base `268598191a3a50a41bd51849daa9d0dfda2969b5` plus the
+15 then-current uncommitted files, copied consistently into the isolated
+`codeql-work/fixtures/rust-audit-20261106` worktree. Their SHA-256 identities are
+in the external `codeql-work/results/rust-audit-20261106/candidate.json` receipt.
+The repair is separately prepared on `codex/rust-dataflow-fix-20261106` in
+`/home/david_osipov/NevroTick-rust-dataflow-fix`, based on that same committed
+base. It does not include the other AI's dirty engine/policy work. The main
+checkout/index was not edited, staged, committed, pulled or pushed by this audit.
+
+### Reviewed flows and independent review
+
+Three fresh-context workers performed complementary source reviews; all completed.
+`rust_flow_protocol` covered wire/KE framing, request encoding, association receipt
+and era/arithmetic/rounding. `rust_flow_engine_core` covered the real transport,
+measurement/CLI outputs and Core history, principal/combination transaction,
+readiness and modeled correction/rate receiving seams. `rust_flow_ui` covered
+raw drafts, source submission, catalog publication, clipboard and native callback
+consumers, then the selected AccessKit derivative. Their inspections were
+read-only; they did not independently execute product tests or CodeQL.
+
+- Packet bytes reach inert wire fields and checked numerical outputs. Association
+  receipt refusal precedes pending-slot consumption. The engine has its own
+  direct framing/measurement path: association guards are not barriers for it.
+  The current engine has no runtime Core connection; observations remain
+  unauthenticated and ineligible. No new defect was confirmed in these paths.
+- Raw UI text reaches private bounded `RawText` construction only after field
+  limits and character admission. Source edits check the current raw snapshot,
+  route/modal/editor context and checked source construction. JSON/CBOR catalog
+  admission is bounded/strict, with approval required before atomic publication.
+  No new bypass was demonstrated in these paths. These source reviews do not
+  close native clipboard, marshaling, receiving-service or production gates.
+- A same-range COM comparison reaches the range's state lock twice, while range
+  mutations can wait for that lock exclusively. This inherited dependency defect
+  is corrected below. `rust_flow_protocol` independently reviewed the integrated
+  repair and found no additional actionable defect, including in COM error
+  ordering, distinct-state snapshot semantics, guard cleanup and regression scope.
+
+### Confirmed inherited range-state deadlock
+
+In the retained `accesskit_windows` source, `Compare` could take two read guards
+for the same state when both interfaces identify one range. `CompareEndpoints`
+explicitly recognized that identity and still acquired the same lock twice. A
+writer queued between those reads blocks the second read; the first read prevents
+that writer completing. A waiting range mutation can also retain a tree read
+guard, delaying later tree updates. The pinned Rust 1.99.1 source selects the same
+writer-preferring futex lock for Linux and the selected ordinary Windows target.
+This is the interleaving documented by [Rust's RwLock contract](https://doc.rust-lang.org/std/sync/struct.RwLock.html).
+The pinned COM implementation advertises agility; apartment serialization is not
+an established exclusion. No actual Windows deadlock was executed.
+
+Both native consumers now use the same small `range_state::with_read_pair`
+helper. Identical state owners provide one guard to both comparison operands;
+distinct owners retain both guards throughout comparison and the previous
+left-then-right order. Fallible implementation casting, context checks, invalid
+endpoint errors and comparison of old weak endpoints remain at their original
+owners. Acquisition failures skip comparison and release earlier guards. Native
+callers preserve the existing poison-failure policy. No new COM or action
+authority is supplied by the helper.
+
+The exact helper is included by the existing GUI AccessKit ingress test. The
+queued-writer regression uses real shared locks: it holds the first read, starts
+a writer and observes reader exclusion with a bounded `try_read` probe. An
+erroneous second acquisition returns a failure instead of hanging the runner.
+An isolated helper variant retaining the original two-read sequence compiled and
+passed its healthy comparison control, then failed this regression with two
+acquisitions instead of one (exit 101). The repaired helper passes that same case.
+This is behavioral evidence for the shared acquisition algorithm, not a native
+COM reproduction or an execution of the complete original Windows methods.
+
+Source/licence admission now accounts for the one new original GPL-3.0-only
+helper and 27 derivative files. The original AccessKit revision, archive and
+source-map identities, licences, package graph, features and Windows-only
+normal dependency role remain fixed. The independent missing-helper rejection
+and existing preserved-source/grant rejection controls remain active.
+
+### CodeQL observations and limits
+
+Local admission passed for CLI 2.27.3 and `codeql/rust-all` 0.2.24. A fresh
+`/work/databases/rust-audit-20261106` database extracted the frozen dirty candidate.
+The function inventory selected 2,983 functions in 95 source files across all six
+product crates, including test/inactive-code scope rather than an exclusively
+production denominator. A separate endpoint inventory returned 20 functions;
+archived measurement, raw-draft and AccessKit text source bytes matched the frozen
+files. The default extraction is the host/all-features/test-cfg configuration,
+with dependency signatures, not a Windows or full dependency-body qualification.
+Toolchain-discovery and macro-expansion warnings remain coverage gaps.
+
+The existing interprocedural control query was re-executed on its owned fixture:
+the positive input-to-sink route through `relay` produced one row and the constant
+clean caller produced none. This qualifies that control, not product analysis.
+The product global selector query exceeded its request budget and closed the MCP
+transport. After reconnecting through the same guarded launcher, a narrower
+same-callable selector diagnostic compiled but execution was killed (exit 137;
+cause not established). It produced no admitted selector/path results. Further
+local-flow work was interrupted after that failed prerequisite. A second offline
+extraction with an independently admitted copy of the 534-package vendor cache
+also hit the unchanged 600-second deadline and remains unusable. The temporary
+CodeQL Cargo configuration was restored; tool budgets/policies were not weakened.
+These incomplete stages establish neither absent flow nor absence of defects.
+
+Separately, GitHub's current hosted analysis **2112729222** scans the exact
+committed base `268598191a3a50a41bd51849daa9d0dfda2969b5`, with CodeQL **2.27.4**.
+Its SARIF has **16 Rust results**, all critically inspected against six
+byte-identical frozen/base files. The 15 dirty snapshot files are outside that
+hosted candidate. The live API reports zero open Rust alerts, which describes
+alert disposition and does not erase those results or establish a clean scan.
+The connector lacks scanning-report reads, so the read-only GitHub API supplied
+the analysis/SARIF; no alert disposition or suppression was changed.
+
+| Hosted results | Current source-to-sink assessment |
+| --- | --- |
+| Two AES-SIV hard-coded keys | Public known-answer material inside unit/integration tests; the actual staged API takes its caller's key. No product graph edge to these separate tool workspaces. |
+| CNG AEAD zero-initialized nonce | Test-only Wycheproof storage; all 12 bytes are overwritten from the case nonce before encryption/decryption. |
+| CNG TLS 1.2 zero-initialized nonce | Both contiguous nonce spans are overwritten from the session IV and checked record nonce before `open`; TLS 1.2 is also disabled in the declared lifecycle cohort. No constant nonce reaches the reported sink. |
+| Four state-guidance path results | All are inside `#[cfg(test)]`, from private temporary storage to an exclusively created fixed-name/PID witness and assertion reads. The configured runner enforces private temporary storage; they are not CLI input paths. |
+| Eight engine runtime-boundary path results | Test-only private temporary capture directory; creation must succeed exclusively before ownership, stdout/stderr names are fixed, reads are bounded after child exit and cleanup deletes only those owned files/directory. No peer-provided path or authority crossing was demonstrated. |
+
+No actionable vulnerability was confirmed from these 16 detections under their
+current scopes. The independent source/lock review found the inherited range
+comparison defect above; it was not a CodeQL-reported discovery. Hosted analysis,
+local inventories, fixture controls, failed product flow queries and behavioral
+repair evidence remain separate. Raw SARIF, comparisons, query hashes, BQRS and
+failed execution logs are retained in the external evidence directory.
+
+### Executed verification and remaining work
+
+The admitted pinned compiler ran the exact existing GUI ingress integration-test
+source directly as a focused test binary in the configured read-only, offline
+product sandbox. All 11 tests passed (three range-state and eight existing value
+admission tests), with no ignored cases. The same source passed Clippy with every
+current workspace Rust/Clippy deny rule. This focused direct compilation supplies
+neither a full Cargo workspace pass nor Windows target/COM qualification.
+Python controls passed: 14 AccessKit path-patch, 28 Slint dependency-profile and
+118 product-verifier tests. Rust formatting, exact canonical policy admission,
+all 27 derivative-file hashes and `git diff --check` passed. The UI text gate
+also passed 509/509 active consumers with its unchanged semantic fingerprint.
+
+Retained evidence is outside the skills pack under
+`/home/david_osipov/.local/share/nevrotick/codeql-work/results/rust-audit-20261106/`:
+`range-checks/report.json` records command/tool/source identities and the
+RED/healthy/GREEN results; individual raw outputs remain beside it. The patch
+notice records the helper's purpose, grants and native limitations.
+
+The main AI should integrate only this bounded repair, reconcile the existing
+`policy/ui-m0-dependencies.json` derivative hashes and the canonical policy anchor
+with its concurrent engine graph edits, then run the affected integrated Cargo
+and Windows cross-compilation rows. Native self-comparison/concurrent-mutation
+and continued tree-update cases remain in CHECK-22's existing qualified Windows
+lane. This audit lifts no Windows, fuzz, storage, GUI-integration or release hold.
+
+### Commit integration — 6 November 2026
+
+The owner requested committing this repair into main. Integration is based on
+`cb223c57efb292f3038fc1fd84e1666dcd490a5a`, which already commits the separate nominal-engine
+measurement work. Only the AccessKit derivative inventory/allowlist and the
+canonical policy anchor are reconciled with that newer dependency policy; its
+engine edges, packages, features, grants and manifest/lock identities are retained.
+The initial audit receipts above retain their original candidates and limits.
+Further local CodeQL analysis is a separate continuation, not a retrospective
+pass for the failed product queries. No native Windows or formal execution resumes.
