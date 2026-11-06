@@ -45,11 +45,10 @@ jobs:
               bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
                 --ro-bind /usr /usr --ro-bind /lib /lib --ro-bind /lib64 /lib64 \
                 --ro-bind "${GITHUB_WORKSPACE}" /repo \
-                --size 67108864 --tmpfs /scratch --dir /scratch/home --dir /scratch/tmp \
-                --symlink /scratch/tmp /tmp \
+                --size 67108864 --tmpfs /tmp --dir /tmp/home \
                 --proc /proc --dev /dev --chdir /repo \
-                --setenv PATH /usr/bin:/bin --setenv HOME /scratch/home \
-                --setenv TMPDIR /scratch/tmp --setenv LANG C.UTF-8 \
+                --setenv PATH /usr/bin:/bin --setenv HOME /tmp/home \
+                --setenv TMPDIR /tmp --setenv LANG C.UTF-8 \
                 -- /usr/bin/prlimit --cpu=60 --as=1073741824 --nproc=128 \
                   --nofile=128 --fsize=16777216 -- "$@"
           }

@@ -339,12 +339,17 @@ failed in the new isolated environment-control step: 24 tests ran, with six
 subcase errors in the environment-override test. Clearing the environment removed
 `TMPDIR` before Python's first temporary-directory lookup, while the sandbox had
 no standard `/tmp`. Those errors occurred before the intended policy rejection;
-they are a harness failure, not behavioral RED. The correction maps `/tmp` to
-the existing `/scratch/tmp` inside the same 64 MiB tmpfs. It adds no host mount,
-network access or writable repository path and preserves all resource limits.
-The unchanged override controls must now reach their intended rejection, with
-the existing healthy controls retained. Fresh final-candidate hosted results
-remain authoritative in the PR; this record does not predict a passing rerun.
+they are a harness failure, not behavioral RED. An initial `/tmp` symlink into
+the existing scratch tmpfs let those controls reach their intended rejection,
+but the [second hosted run](https://github.com/DavidOsipov/NevroTick/actions/runs/42282841308)
+then exposed two receipt-fixture path-identity failures: the fixture retained
+`/tmp/...` while the real CLI correctly resolved it to `/scratch/tmp/...`.
+The final harness correction mounts the single 64 MiB scratch tmpfs directly at
+`/tmp`, with its private home at `/tmp/home`. It supplies the standard fallback
+without a path alias. It adds no host mount, network access or writable repository
+path and preserves all resource limits and every test assertion. Fresh
+final-candidate hosted results remain authoritative in the PR; this record does
+not predict a passing rerun.
 
 Local isolation remains unavailable: the resumed bubblewrap preflight failed
 opening `/proc/5/ns/ns` before repository code ran. No unisolated test substitute,
