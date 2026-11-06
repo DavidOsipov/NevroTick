@@ -1326,7 +1326,22 @@ The lossless staged envelope must retain the following facts or their equally lo
 | Current context | Carry configuration, association and clock-mapping generations, relevant policy/calendar identity, allowed trust/scale profile, independent date/era evidence and full possible exchange span. |
 | Checked result | Preserve exact Q33 phase, signed Q32 raw RTT, conversion residual/error, acquisition identity/reference time and age; do not replace them with formatted CLI text. |
 
-[S1.4 §2][s21-leap-task] already owns LI preservation. This continuation extends that handoff to the whole metadata envelope and actual numerical consumer. The present pilot does not retain LI, precision and root/reference fields through staging/reporting. The bounded follow-up resolves the pinned implementations' behavior: Chrony 4.9 and ntpd-rs decode ordinary root delay **and dispersion as unsigned 16.16**; `0xffff0000` represents +65,535 s. The local fixture's signed-format comment disagrees, but its raw `u32` storage loses no bits and establishes no runtime decoder bug. Carry these observed semantics and high-bit controls into the future converter contract; record any legacy-compatibility decision explicitly, without repeating the survey or changing source in this documentation stage. RFC 5905's format and older RFC 4330 wording retain distinct provenance. [Chrony converter][s21-chrony-conversion] and [header calls][s21-chrony-header], [ntpd-rs converter][s21-ntpdrs-conversion] and [header calls][s21-ntpdrs-header], [RFC 5905 §6][s21-rfc-format], [RFC 4330 §4][s21-rfc4330]
+[S1.4 §2][s21-leap-task] owns LI preservation. The original pilot omitted LI,
+precision and root/reference fields after staging; the
+[first measurement implementation](#first-controlled-measurement-source-checkpoint--6-november-2026)
+now retains the complete `RawHeader` through staging/reporting. These remain raw
+claims, with no production quality/scale admission or Core consumer. The bounded
+follow-up resolves the pinned implementations' behavior: Chrony 4.9 and ntpd-rs
+decode ordinary root delay **and dispersion as unsigned 16.16**;
+`0xffff0000` represents +65,535 s. The local fixture's signed-format comment
+disagrees, but its raw `u32` storage loses no bits and establishes no runtime
+decoder bug. Carry these observed semantics and high-bit controls into the future
+converter contract; record any legacy-compatibility decision explicitly, without
+repeating the survey or changing source in this documentation stage. RFC 5905's
+format and older RFC 4330 wording retain distinct provenance.
+[Chrony converter][s21-chrony-conversion] and [header calls][s21-chrony-header],
+[ntpd-rs converter][s21-ntpdrs-conversion] and [header calls][s21-ntpdrs-header],
+[RFC 5905 §6][s21-rfc-format], [RFC 4330 §4][s21-rfc4330]
 
 ### Honest local timestamps and final admission
 
@@ -2922,3 +2937,97 @@ this task's [existing Core bridge](#era-leap-and-checked-core-bridge), S1.2's
 [held integrations](s1.2-regression-readiness.md#held-integrations-review-gate-and-next-action)
 and S1.4's source admission. No new runtime framework or formal campaign is
 required for this source checkpoint.
+
+#### Source-to-receiver reconciliation — 6 November 2026
+
+Three bounded, fresh-context, read-only reviews traced the published `7863076`
+source through actual producer, leap interpretation and statistical receiver
+APIs. All three completed; none ran Cargo, Windows or formal commands. This
+closes the source-ownership investigation, not the operational admission contract
+or production bridge. The implementation-ready contract still needs the named
+reference/physical model, weight derivation and receiving transition settled.
+The original qualified product/helper bytes remain unchanged.
+
+| Required fact | Current owner and meaning | Production admission obligation |
+| --- | --- | --- |
+| Real exchange and captures | `TransportFacts` retains complete raw header, endpoints, socket/request `Arc` lifetime, three software brackets and processing time. | Bind a real logical source and separate configuration/association/clock/mapping generations. The pilot epoch and nonzero fixture tags cannot establish those facts. |
+| Supported dates and scale | `EraWindow` checks numeric bounds/order; `ExperimentalProfile` declares an experimental model; `software_window` is observed nominal min/max. | Require independently supported true-date/era and complete possible exchange intervals, admitted source scale and current calendar/mapping evidence. None can be inferred from host time, authentication, LI=0 or the nominal window. |
+| Leap interpretation | `LeapKnowledge::interpret(window,scope)` returns dataset identity, event and offset knowledge for the entire explicit interval. | Evaluate claim-day LI separately from whole-exchange compatibility and current guards. Preserve useful silent LI=0; unknown future knowledge is not demonstrated conflict. Existing OPEN-5/6/7 owners remain. |
+| Statistical reference | The diagnostic retains receive-capture age at commit. `MonotonicNs` tags a `u64`; it establishes no relation to an engine `Instant` or mapping generation. | Select the actual reference instant and a checked common-origin chart conversion. Keep it separate from original acquisition time, current age and processing deadline. Preserve any half-nanosecond midpoint residual rather than silently flooring. |
+| Nominal arithmetic | Q33 phase and signed Q32 raw RTT retain local decimal-to-Q32 remainders. | Carry representation corrections, physical placement/mapping error and later fit residuals separately. Corrected nominal values generally do not fit a bare `PhaseOffsetQ33`. |
+| Physical quality and root claims | Current raw header fields and declared consistency allowance establish no calibrated accuracy or statistical weight. | Freeze independently justified precision/capture/frequency/asymmetry assumptions, adjusted delay and root/quality checks, finite error envelopes and rejection effects. Zero advertised dispersion and a passing consistency test cannot create perfect confidence. |
+| Current window weights | `FixtureObservation` stores one immutable caller-provided divisor. | Choose and justify the actual production derivation and owner before receiver integration; a fixed incoming scalar cannot silently implement a window-dependent algorithm. |
+| History and fit | `FixtureHistory::try_append` stages normalization and sufficient statistics, then commits complete state once. | Name a real checked production receiver, mandatory construction and final current-context publication guard. No production `ValidatedSample` exists yet and the engine has no `time-core` dependency. |
+
+**Reference and weighting are substantive seams.** The retained Chrony
+`ntp_core.c` at lines 2161–2199 uses midpoint/precision/capture/frequency treatment
+under stated timing assumptions. The retained `sourcestats.c` at lines 528–550
+recomputes squared dimensionless divisors from the current window's peer
+distances, minimum/median and local precision. Their retained bytes were rechecked:
+`ntp_core.c` matches the existing [S0.1 source ledger](s0.1-chrony-ledger.json);
+`sourcestats.c` matches
+the [S1.2 port record](s1.2-regression-readiness.md#exact-primary-sources-and-licence-scope).
+These are adaptation evidence, not selected NevroTick physical thresholds.
+The next statistical contract must preserve that whole-window dependence or
+independently justify a different algorithm; it cannot copy the formula into a
+permanently stored incoming divisor. Do not substitute fixture divisor `1.0`.
+
+For the existing nominal result, if local conversion remainders are `r1,r4`
+over `10^9`, then the exact representation corrections are:
+
+```text
+phase_seconds = [phase_q33 - (r1 + r4)/10^9] / 2^33
+raw_rtt_seconds = [rtt_q32 + (r4 - r1)/10^9] / 2^32
+```
+
+These corrections are known representation effects, not physical uncertainty.
+The divisions in this specification are rational, with no implied integer rounding.
+They also differ from the later ties-even nanosecond residual over `2^33`.
+Retain the original acquisition identity/reference through every transformation;
+later evaluation grows age and rechecks generations without creating freshness.
+
+**Actual receiver behavior to preserve.** `FixtureHistory::try_append` returns
+`Result<(), HistoryError>`, not a ready estimate. The first and second successful
+appends commit observations with `report()==None`. `prepare_fixture_input`
+separately reports insufficient count/reference metadata. At capacity it stages
+the newest 63 previous rows plus the new one; all normalization/statistics work
+precedes the single state assignment. A future production receiver must specify
+whether a failed fit rejects that complete append or adopts another explicit
+transition. Correlated exchange completion is consumed once even when subsequent
+sample admission refuses; no threshold-seeking retry or renewed freshness follows.
+
+The present `FixtureContext`, phase envelope ±1 s, divisors `[1/16,16]`, 3–64
+points, 62.5 ms minimum span and 4096 s window are numerical fixture contracts.
+They supply no product correction limit, large-recovery policy, independent
+source identity or physical uncertainty. Existing direct receiver tests inspect
+every row/count/reference/report on context/order/window refusal and healthy
+retry. The test that manually constructs `HistoryError::Statistics` checks
+diagnostics; it is not an actually reached append/statistics failure control.
+
+Independent controls for the next implementation, before adopting its model:
+
+- In a declared ideal monotonic chart `m(t)=t`, local wall clock
+  `C(t)=(1+epsilon)t`, peer clock `R(t)=t` and zero path delay, exchanges over
+  `[0,2]` and `[4,8]` give phases `-epsilon` and `-6*epsilon`. Midpoint labels
+  1 and 6 yield slope `-epsilon`; receipt labels 2 and 8 incorrectly yield
+  `-5*epsilon/6`. Exact `epsilon=1/1024` gives `-1/1024` versus `-5/6144`.
+  This challenges relabelling; it does not adopt this physical model.
+- Target-representable 100 ns converts to Q32 fraction 429 with remainder
+  496,729,600. Two equal local remainders can coexist with nominal phase zero
+  while its exact nominal correction is `-970175/8388608` ns. Preserve it.
+- For relative times `(-2,-1,0)` s, phases `(-1,0,3)` ms and divisors `(1,1,4)`,
+  the newest-reference intercept is `19/9` ms, slope `5/3` ms/s and weighted
+  SSE `4/9` ms². Scaling every divisor by four preserves coefficients and
+  changes SSE to `1/9` ms². Test inverse-divisor direction independently.
+- Challenge independent era zero/one/multiple outcomes, either date-scope
+  endpoint outside by one tick, LI claim-day versus a short event-free exchange,
+  current/stale context, duplicate completion and actual unchanged receiver state.
+  Keep one/two admitted observations insufficient and actual failure controls
+  distinct from manually constructed diagnostic errors.
+
+The three rational controls above were recalculated with ordinary exact
+`Fraction` arithmetic; they are specification checks, not Rust execution or
+machine-checked product proofs. Existing source/CHECK owners retain all missing
+physical/date/scale evidence and actual receiver tests. Next settle the named
+reference/weighting/model contract in this card; genuine history insertion stays
+held. Formal work remains post-V1 and all existing execution holds remain.
