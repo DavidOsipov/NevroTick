@@ -116,7 +116,7 @@
   ],
   "allowed_set_disjoint_from_hard_denial": true,
   "allowed_set_assigned_noncontrol_in_pinned_UCD": true,
-  "derived_rust_sha256": "307961fd5cb8dda7c0b59a11758be3cbd40c730755aa93d37a9c9d5f59fff85d",
+  "derived_rust_sha256": "88e7b29209ac579404db9c28d796a26c184d78a5769746c88f0adf628117da3a",
   "not_a_future_language_policy": "Every non-listed scalar is rejected; no host classification or automatic Unicode upgrade. ZWJ/ZWNJ remain outside English positivity, with future orthographic exceptions separately reviewed.",
   "recorded_generator": "review/derive_profile.py",
   "recorded_generator_sha256": "e04d193fbff4b49744465d9169513c5dde4e813de0c39bad8c215a826e78d7f3",

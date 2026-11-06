@@ -103,12 +103,11 @@ GUI41–43 receipts below retain the old graph and cannot qualify this merged on
    presence is neither approval nor guaranteed availability in the next cloud.
 5. **Remaining polish/provenance:** scope the service administrator badge to
    changes rather than read-only inspection; explain the consumed session test
-   identity after the first notification attempt. Unicode `derivation.json`
-   retains an earlier generated-Rust hash: current `repertoire.rs` SHA256 is
-   `88e7b29209ac579404db9c28d796a26c184d78a5769746c88f0adf628117da3a`.
-   Independent read-only comparison found all 81 hard ranges consistent with
-   derived data; reconcile that provenance record without changing policy or
-   pretending the stale hash matches current bytes.
+   identity after the first notification attempt. PR #10 review reconciled
+   Unicode `derivation.json` to the current `repertoire.rs` hash after independently
+   rederiving all 81 hard ranges and checking retained source identities and the
+   English positive set. No Rust policy bytes or historical generator claims
+   changed; see the review receipt below.
 
 The existing S134/general native, separate fuzz no-retry and storage experiment
 holds remain. D1/D2/D3 retain canonical re-entry triggers. This PR does not certify
@@ -233,3 +232,100 @@ limits, lints, graph roles or trust to obtain green output.
 
 Keep the worktree for PR iteration. A PR request authorizes branch publication;
 it does not authorize merging, deployment, Store submission or OS/service changes.
+
+## PR #10 detection review and corrections — 6 November 2026
+
+Reviewed PR head `a3640f83b7f97f1062d2adb2fb72f4391699d031` against main
+`b808eb74fd82f91f207fc03b9c890441a73af4fb`, including all 11 inline CodeQL
+findings, the GitGuardian/Socket reports and failed hosted checks. Corrections
+were prepared in the isolated `codex/pr10-audit` worktree. The concurrent staged
+Core work in the main checkout was outside this task and was not modified.
+
+Scope: ordinary source/tooling repair under OD-13/15 and CHECK-19/20/22/24/25/26;
+explicit fixture/native/release limits remain. Expected results were bounded
+file rejection before blocking, exact admitted archive acceptance without a
+general limit increase, useful visible preview fixtures, and secret detection
+outside exact independently checked public-data lines. No formal execution,
+proof-consumer repair, Windows execution or fuzz campaign was selected.
+
+### Reported detections
+
+| Detection | Assessment and disposition |
+| --- | --- |
+| CodeQL #94, `check_structure.py:12` | The developer explicitly selects the local rendered-fixture file. This reference-only checker is not a server or privileged reader; no lower-trust filename is appended to a protected directory. No unauthorized path traversal was established. No scanner suppression or behavioral change. |
+| CodeQL #95–98, generator input/root operations | The CLI selects the repository; the contract/template paths are fixed, symlinks are rejected and complete source identities are checked before code emission. No demonstrated path-injection exploit. A distinct regular-file replacement race was reproduced and repaired below. |
+| CodeQL #99–104, generator output operations | The CLI selects an external output parent; the generator uses a new private directory, a closed basename set and exclusive no-follow creation. Cleanup targets its own new directory. No demonstrated path-injection exploit. No output-policy weakening or suppression. |
+| GitGuardian incident 39281800 | The reported `.gitleaks.toml:55` line is an exact regex for a public unauthenticated u64 test fixture, identical to the reviewed main bytes. It is not a credential; no rotation or history rewrite is warranted. External incident state was not changed. |
+| Gitleaks retained-history/working-tree failure | Both matches are public source digests: native-input Rust token content and FreeType `ftmodapi.h`. The first was recomputed from current Rust; the second exactly matches the public [FreeType VER-2-13-3 header](https://github.com/freetype/freetype/blob/VER-2-13-3/include/freetype/ftmodapi.h). Added rule/path/full-line exceptions with adjacent-secret, same-line-secret and wrong-path controls. Both local scans pass. |
+| Socket reports | Hosted checks report no new dependency alerts. Scores and successful report generation are not independent licence/advisory qualification; exact graph and existing distribution gates remain. |
+| Portable hosted job | Preparation rejects the newly selected `windows 0.62.2` source archive at the old 80 MiB expansion ceiling. Confirmed on the exact cached archive and corrected as below. The local repair is not a hosted build pass. |
+
+These path-warning conclusions apply to current explicit local CLI use and fixed
+source/output contracts. A future remotely driven or privileged caller needs a
+new assessment. GitHub alert/incident dispositions were not silently changed;
+the PR's historical red check results remain distinct from the local corrections.
+The initial missing Rust CodeQL configuration warning cleared when its default
+setup Rust analysis finished successfully; it reported no additional inline
+finding in this review snapshot. Prepared custom CodeQL lanes remain deferred.
+
+### Confirmed corrections
+
+- **PR10-R1 — source-reading denial of service:** replacing a checked regular
+  file with a FIFO blocked codegen, protected JSON reading, source coverage
+  snapshotting and native-input source reading before their checks could reject
+  it. Healthy regular-file controls pass; new regressions against the original
+  sources fail by bounded child timeout. All four readers now share
+  `ui_source_io.read_regular`: nonblocking/no-follow open, descriptor type and
+  identity checks, bounded bytes and post-read custody checks. Existing root,
+  count and aggregate guards remain. The helper enters the verifier source and
+  GUI-tool licence inventories; semantic oracles remain separately owned.
+- **PR10-R2 — fresh dependency preparation fails:** the exact `windows 0.62.2`
+  archive has 114,755,072 tar bytes, 114,212,919 file bytes and 701 regular files.
+  Its archive and file-map identities match policy. Admission now uses those
+  measured limits only for that complete four-field identity. Default limits,
+  aggregate limits, member/type/path checks and final source identity remain.
+  The real cached archive changes from rejection to successful bounded parsing;
+  synthetic controls reject altered identities and exceeded ceilings.
+- **PR10-R3 — standalone source preview is stale:** its three rows did not reach
+  `visible-sources`, and the migrated status projection was empty. The preview
+  now binds visible/selected fixture state and existing status copy while keeping
+  `host-ready: false`. Source review only; no new compiled/rendered preview pass.
+- **PR10-R4 — current design instructions point at the wrong decision:** corrected
+  the v0.4 AGENTS/README UI links from the former unpublished OD-11 to canonical
+  OD-13. Updated only their current manifest entries; imported receipts remain.
+- **PR10-R5 — current Unicode provenance hash is stale:** reconciled the Rust
+  hash after independent checks of all six source identities, the 81 derived
+  hard-denial intervals, the positive English set and its disjointness/assigned
+  noncontrol properties. No Rust/table bytes or historical generator claims
+  changed. This is data provenance, not resumed formal-proof work.
+
+### Independent review and executed checks
+
+All three workers used fresh contexts (`fork_turns: none`) and the named PR/base,
+current contracts and explicit read/write ownership. Their results completed:
+
+| Reviewer | Inspected scope and result |
+| --- | --- |
+| `pr10_rust_contract_review` | Portable Rust model/domain owners, handwritten localization/parsers/formatters/approval, catalog projection, all capture source and selected integration/binding controls. Independently matched 509 active specifications, 596 ordinals, 426 output slots and the exact 46,303-byte CBOR fixture. No new Rust defect confirmed. Subsequently reviewed the final correction delta and ran seven focused controls successfully. |
+| `pr10_native_slint_review` | Active Windows tray/toast/input/lifecycle and host paths, modified AccessKit and complete spin_on repair, maintained Slint pages, HTML build/app and selected model/view/test flows. Found/fixed R3 and independently checked R5. Embedded HTML JavaScript/CSS and CSP hash agree. No further actionable defect confirmed. |
+| `pr10_ci_triage` | Dependency/schema/graph admission, archive identity, patch custody, verifier command/results, CI and changed Core/domain projections. Reproduced/fixed R2, reproduced sibling R1 readers and identified the two secret-scan matches. No formal consumers were executed or repaired. |
+
+Executed Linux Python checks: 14 generator, 78 text-coverage, 14 native-input,
+26 acquisition, 118 verifier, 28 dependency-profile and eight SDK controls pass;
+24 security-helper tests and 25 skill-checker tests pass. The skill inventory
+admits 65 leaves. The real source gate covers 509/509 active text consumers with
+zero errors; all 183 current design-manifest entries match. The pinned secret
+scanner passes its healthy/fault/restored/disposition controls and both retained
+history and working-tree scans. Both workflows pass actionlint, ShellCheck and
+pedantic offline zizmor with two healthy and three rejection controls. The focused reviewer controls are corroboration,
+not additional product coverage. Earlier failed original-source regressions are
+retained as the causal basis, not counted as healthy passes.
+
+Coverage limits: not every assertion, historical screenshot or unchanged vendored
+upstream line was audited. The HTML protocol switch's handling of manually entered
+default ports has no located explicit v0.4 preservation contract and was not
+promoted to a confirmed defect. No Cargo/native/rendered product replay, current
+full dependency/advisory lane, critical-text approval or package/release result
+follows. Historical GUI44 execution receipts retain their original input maps;
+new source/checker bytes require fresh admission at the next configured product
+checkpoint. The archive and secret repairs do not themselves clear hosted checks.

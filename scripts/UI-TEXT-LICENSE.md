@@ -6,6 +6,7 @@ grant. The full licence is [the GUI licence](../crates/nevrotick-ui/LICENSE).
 
 - `check-ui-text.py`, `check_ui_text_coverage.py`, `slint_text_graph.py`
 - `ui_text_bindings.py`, `protected_json.py`
+- `ui_source_io.py`
 - `native_text_graph.py`, `native_input_source.py`
 - `generate-ui-text.py`, `ui_text_codegen.py`
 - `ui-text-templates/projection-header.rs.in`

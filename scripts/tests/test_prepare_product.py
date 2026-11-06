@@ -1,6 +1,7 @@
 """Independent archive/admission controls for product acquisition; no network or Cargo."""
 import contextlib
 import copy
+import gzip
 import hashlib
 import importlib.util
 import io
@@ -122,6 +123,43 @@ class ArchiveControls(unittest.TestCase):
         with patch.object(PREPARE, "MAX_EXPANDED", 4096):
             with self.assertRaisesRegex(ValueError, "budget"):
                 PREPARE.archive_files(data, self.package)
+
+    def test_reviewed_expansion_requires_exact_name_version_and_both_pins(self):
+        data = self.bundle()
+        identity = tuple(self.package[key] for key in ("name", "version", "checksum", "files_sha256"))
+        limits = (len(gzip.decompress(data)), sum(map(len, self.files.values())))
+        with patch.object(PREPARE, "MAX_EXPANDED", 1024), \
+                patch.dict(PREPARE.REVIEWED_EXPANSION_LIMITS, {identity: limits}, clear=True):
+            self.assertEqual(PREPARE.archive_files(data, self.package), self.files)
+            for key, value in (("name", "other"), ("version", "1.0.1"),
+                               ("checksum", "0" * 64), ("files_sha256", "0" * 64)):
+                with self.subTest(changed=key):
+                    changed = dict(self.package, **{key: value})
+                    with self.assertRaisesRegex(ValueError, "identity or size|metadata expansion"):
+                        PREPARE.archive_files(data, changed)
+
+    def test_reviewed_expansion_preserves_tar_payload_and_member_ceilings(self):
+        data = self.bundle()
+        identity = tuple(self.package[key] for key in ("name", "version", "checksum", "files_sha256"))
+        tar_size, payload_size = len(gzip.decompress(data)), sum(map(len, self.files.values()))
+        for limits, members, error in (
+                ((tar_size - 1, payload_size), PREPARE.MAX_MEMBERS, "metadata expansion"),
+                ((tar_size, payload_size - 1), PREPARE.MAX_MEMBERS, "archive expansion"),
+                ((tar_size, payload_size), 1, "member count")):
+            with self.subTest(limits=limits, members=members), \
+                    patch.object(PREPARE, "MAX_EXPANDED", 1024), \
+                    patch.object(PREPARE, "MAX_MEMBERS", members), \
+                    patch.dict(PREPARE.REVIEWED_EXPANSION_LIMITS, {identity: limits}, clear=True):
+                with self.assertRaisesRegex(ValueError, error):
+                    PREPARE.archive_files(data, self.package)
+
+    def test_large_windows_allowance_matches_only_the_current_reviewed_identity(self):
+        policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        package = next(item for item in policy["packages"]
+                       if item["name"] == "windows" and item["version"] == "0.62.2")
+        identity = tuple(package[key] for key in ("name", "version", "checksum", "files_sha256"))
+        self.assertEqual(PREPARE.REVIEWED_EXPANSION_LIMITS,
+                         {identity: (114_755_072, 114_212_919)})
 
     def test_directory_members_count_toward_iteration_budget(self):
         directories = []

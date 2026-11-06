@@ -12,11 +12,11 @@ import os
 from pathlib import Path
 import re
 import shutil
-import stat
 import tempfile
 
 import protected_json
 from ui_text_bindings import binding_definition_errors
+from ui_source_io import read_regular
 
 CONTRACT_PATH = Path('crates/nevrotick-ui/src/localization/contract-source.json')
 TEMPLATE_PATH = Path('scripts/ui-text-templates/projection-header.rs.in')
@@ -33,22 +33,10 @@ class Invalid(ValueError):
 
 def _read_regular(path: Path, maximum: int) -> bytes:
     """Read one retained finite regular file; reject symlinks and changed custody."""
-    before = path.lstat()
-    if not stat.S_ISREG(before.st_mode) or before.st_size > maximum:
-        raise Invalid('A fixed generator input is not a bounded regular file.')
-    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0)
-    descriptor = os.open(path, flags)
-    with os.fdopen(descriptor, 'rb') as stream:
-        opened = os.fstat(stream.fileno())
-        if (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino):
-            raise Invalid('Generator input custody changed.')
-        raw = stream.read(maximum + 1)
-        after = os.fstat(stream.fileno())
-    if (len(raw) > maximum or (opened.st_dev, opened.st_ino, opened.st_size,
-        opened.st_mtime_ns, opened.st_ctime_ns) != (after.st_dev, after.st_ino,
-        after.st_size, after.st_mtime_ns, after.st_ctime_ns)):
-        raise Invalid('Generator input exceeded its bound or changed during reading.')
-    return raw
+    try:
+        return read_regular(path, maximum)
+    except ValueError as error:
+        raise Invalid('Generator input exceeded its bound or changed custody.') from error
 
 
 def _fixed_input(root: Path, relative: Path, maximum: int) -> bytes:

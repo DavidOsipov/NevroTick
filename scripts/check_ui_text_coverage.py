@@ -11,6 +11,7 @@ import protected_json
 import slint_text_graph
 import native_text_graph
 from ui_text_bindings import binding_definition_errors
+from ui_source_io import read_regular
 
 MAX_FILES=256
 MAX_TOTAL=8_000_000
@@ -603,11 +604,7 @@ def snapshot(root):
         relative=str(path.relative_to(root))
         if excluded_source(relative):continue
         budget=min(MAX_FILE_BYTES,MAX_TOTAL-total)
-        if path.stat().st_size>budget:raise ValueError('source byte bound')
-        # The limited read also handles growth after stat without copying
-        # an unbounded repository file before the inventory admission.
-        with path.open('rb') as stream:payload=stream.read(budget+1)
-        if len(payload)>budget:raise ValueError('source byte bound')
+        payload=read_regular(path,budget)
         total+=len(payload)
         files[relative]=payload.decode('utf-8',errors='strict')
     return dict(sorted(files.items()))

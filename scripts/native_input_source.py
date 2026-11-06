@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 import check_ui_text_coverage as source
+from ui_source_io import read_regular
 
 BASE = "crates/nevrotick-ui/src/"
 MAIN = BASE + "main.rs"
@@ -33,8 +34,7 @@ def read_sources(root: Path) -> dict[str, str]:
     for path in sorted((root / BASE).rglob("*.rs")):
         if len(result) >= MAX_FILES or path.is_symlink() or not path.is_file():
             raise ValueError("native input source inventory")
-        with path.open("rb") as stream:
-            raw = stream.read(MAX_FILE_BYTES + 1)
+        raw = read_regular(path, min(MAX_FILE_BYTES, MAX_TOTAL_BYTES - total))
         total += len(raw)
         if len(raw) > MAX_FILE_BYTES or total > MAX_TOTAL_BYTES:
             raise ValueError("native input source byte bound")

@@ -70,6 +70,7 @@ SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml
 CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
                  "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py")
 UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_coverage.py",
+                         "scripts/ui_source_io.py",
                          "scripts/slint_text_graph.py", "scripts/ui_text_bindings.py", "scripts/protected_json.py",
                          "scripts/tests/test_ui_text_coverage.py", "scripts/generate-ui-text.py",
                          "scripts/ui_text_codegen.py", "scripts/ui-text-templates/projection-header.rs.in",

@@ -3,17 +3,13 @@ from pathlib import Path
 import argparse, json, sys
 import check_ui_text_coverage as coverage
 import protected_json
+from ui_source_io import read_regular
 
 def regular(root, relative):
     path = root / relative
     if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(root):
         raise ValueError('regular protected source required')
-    if path.stat().st_size > 1_000_000:
-        raise ValueError('protected source byte bound')
-    with path.open('rb') as stream:
-        payload=stream.read(1_000_001)
-    if len(payload)>1_000_000:
-        raise ValueError('protected source byte bound')
+    payload = read_regular(path, 1_000_000)
     return protected_json.read(payload)
 
 def main():

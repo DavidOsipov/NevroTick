@@ -7,6 +7,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import stat
@@ -124,6 +125,42 @@ class CodeGeneration(unittest.TestCase):
                 with self.assertRaises(GEN.Invalid): GEN.generate(self.repo, self.pin, self.work)
                 target.unlink()
                 target.write_bytes(original)
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'POSIX file replacement control')
+    def test_file_replacement_with_fifo_rejects_without_waiting_for_writer(self):
+        """A real open must reject a raced FIFO before waiting on its writer."""
+        self.assertEqual(GEN._read_regular(self.repo / GEN.CONTRACT_PATH,
+                                           GEN.MAX_CONTRACT_BYTES), self.raw)
+        program = '''
+import os
+from pathlib import Path
+import sys
+from unittest.mock import patch
+sys.path.insert(0, sys.argv[1])
+import ui_text_codegen as gen
+root = Path(sys.argv[2])
+target = root / gen.CONTRACT_PATH
+real_open = os.open
+def replace_then_open(path, flags, *args, **kwargs):
+    if Path(path) == target:
+        target.unlink()
+        os.mkfifo(target)
+    return real_open(path, flags, *args, **kwargs)
+with patch.object(gen.os, 'open', side_effect=replace_then_open):
+    try:
+        gen.generate(root, sys.argv[3], root.parent)
+    except gen.Invalid:
+        raise SystemExit(0)
+raise SystemExit('Replacement was accepted')
+'''
+        try:
+            result = subprocess.run([sys.executable, '-B', '-c', program,
+                                     str(SCRIPTS), str(self.repo), self.pin],
+                                    capture_output=True, timeout=3, check=False)
+        except subprocess.TimeoutExpired:
+            self.fail('Generator waited for a FIFO writer after input replacement')
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(list(self.work.glob('nevrotick-ui-text-*')), [])
 
     def test_template_identity_output_parent_and_aggregate_bounds_reject(self):
         with self.assertRaises(GEN.Invalid): GEN._emit_files(self.raw, self.pin, self.template + b'// substituted')

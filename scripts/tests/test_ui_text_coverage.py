@@ -4,6 +4,8 @@ from contextlib import redirect_stdout
 from unittest.mock import patch
 from pathlib import Path
 import sys
+import os
+import subprocess
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import check_ui_text_coverage as checker
 
@@ -349,11 +351,63 @@ class Coverage(unittest.TestCase):
         specification=importlib.util.spec_from_file_location('ui_text_wrapper',Path(__file__).resolve().parents[1]/'check-ui-text.py')
         wrapper=importlib.util.module_from_spec(specification);specification.loader.exec_module(wrapper)
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);(root/'metadata.json').write_text('{}',encoding='utf-8')
-            with patch.object(Path,'open',return_value=io.BytesIO(b'x'*1_000_001)), \
+            root=Path(directory);target=root/'metadata.json';target.write_text('{}',encoding='utf-8')
+            real_open=os.open
+            def grow_before_open(path,flags,*args,**kwargs):
+                target.write_bytes(b'x'*1_000_001)
+                return real_open(path,flags,*args,**kwargs)
+            with patch.object(os,'open',side_effect=grow_before_open), \
                     patch.object(wrapper.protected_json,'read',side_effect=AssertionError('oversized source must not be decoded')):
-                with self.assertRaisesRegex(ValueError,'protected source byte bound'):
+                with self.assertRaisesRegex(ValueError,'source.*(bound|custody)'):
                     wrapper.regular(root,'metadata.json')
+
+    @unittest.skipUnless(hasattr(os,'mkfifo'),'POSIX file replacement controls')
+    def test_source_readers_reject_fifo_replacement_before_waiting(self):
+        """Exercise each real reader with a healthy neighbor and a raced FIFO."""
+        program='''
+import importlib.util,os,sys
+from pathlib import Path
+from unittest.mock import patch
+sys.path.insert(0,sys.argv[1])
+import check_ui_text_coverage as coverage
+import native_input_source as native
+spec=importlib.util.spec_from_file_location('gate',Path(sys.argv[1])/'check-ui-text.py')
+gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
+root=Path(sys.argv[2]);mode=sys.argv[3]
+relative={'metadata':'metadata.json','snapshot':'crates/nevrotick-ui/build.rs',
+          'native':'crates/nevrotick-ui/src/main.rs'}[mode]
+target=root/relative;target.parent.mkdir(parents=True,exist_ok=True)
+target.write_text('{}' if mode=='metadata' else 'fn main() {}')
+reader={'metadata':lambda:gate.regular(root,relative),
+        'snapshot':lambda:coverage.snapshot(root),
+        'native':lambda:native.read_sources(root)}[mode]
+assert reader() == ({} if mode=='metadata' else {relative:'fn main() {}'})
+real_os_open=os.open;real_path_open=Path.open
+replaced=False
+def swap(path):
+    global replaced
+    if Path(path)==target and not replaced:
+        replaced=True;target.unlink();os.mkfifo(target)
+def os_open(path,*args,**kwargs):
+    swap(path);return real_os_open(path,*args,**kwargs)
+def path_open(path,*args,**kwargs):
+    swap(path);return real_path_open(path,*args,**kwargs)
+with patch.object(os,'open',side_effect=os_open),patch.object(Path,'open',path_open):
+    try:reader()
+    except ValueError:
+        assert replaced
+        raise SystemExit(0)
+raise SystemExit('FIFO was accepted')
+'''
+        for mode in ['metadata','snapshot','native']:
+            with self.subTest(reader=mode),tempfile.TemporaryDirectory() as directory:
+                try:
+                    result=subprocess.run([sys.executable,'-B','-c',program,
+                                           str(Path(__file__).resolve().parents[1]),directory,mode],
+                                          capture_output=True,timeout=3,check=False)
+                except subprocess.TimeoutExpired:
+                    self.fail(mode+' reader waited for a FIFO writer')
+                self.assertEqual(result.returncode,0,result.stderr.decode())
 
     def test_source_snapshot_bounds_bytes_before_reading_or_decoding(self):
         with tempfile.TemporaryDirectory() as directory:

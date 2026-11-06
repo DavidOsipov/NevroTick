@@ -33,6 +33,15 @@ MAX_MEMBERS = 10000
 MAX_PACKAGES = 768
 MAX_TOTAL_ARCHIVE = 256 * 1024 * 1024
 MAX_TOTAL_EXPANDED = 1024 * 1024 * 1024
+# The reviewed generated Windows bindings exceed the ordinary archive ceiling.
+# Bind their measured tar/payload ceilings to both source identities; another
+# version or source map receives the ordinary limits and needs its own review.
+REVIEWED_EXPANSION_LIMITS = {
+    ("windows", "0.62.2",
+     "527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580",
+     "0d6039b4d5fb8873d1272689a5b10347b8c612147d680943966a4756b1926773"):
+        (114_755_072, 114_212_919),
+}
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
 
 
@@ -50,12 +59,14 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
     """Verify archive identity and return bounded regular files below its prefix."""
     if len(data) > MAX_ARCHIVE or sha(data) != package["checksum"]:
         raise ValueError("Crate archive identity or size does not match admission")
+    identity = tuple(package[key] for key in ("name", "version", "checksum", "files_sha256"))
+    tar_limit, payload_limit = REVIEWED_EXPANSION_LIMITS.get(identity, (MAX_EXPANDED, MAX_EXPANDED))
     prefix = f"{package['name']}-{package['version']}"
     files: dict[str, bytes] = {}
     total = 0
     with gzip.GzipFile(fileobj=io.BytesIO(data)) as stream:
-        raw_tar = stream.read(MAX_EXPANDED + 1)
-    if len(raw_tar) > MAX_EXPANDED:
+        raw_tar = stream.read(tar_limit + 1)
+    if len(raw_tar) > tar_limit:
         raise ValueError("Crate archive metadata expansion exceeds budget")
     with tarfile.open(fileobj=io.BytesIO(raw_tar), mode="r:") as archive:
         for count, member in enumerate(archive, 1):
@@ -73,7 +84,7 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
             if relative in files or relative == ".cargo-checksum.json":
                 raise ValueError("Duplicate or reserved crate archive member")
             total += member.size
-            if total > MAX_EXPANDED:
+            if total > payload_limit:
                 raise ValueError("Crate archive expansion exceeds budget")
             stream = archive.extractfile(member)
             if stream is None:

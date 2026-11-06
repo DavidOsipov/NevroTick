@@ -53,3 +53,19 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''(?:^|/)crates/ntp-exchange/tests/association\.rs$''']
 regexes = ['''^\n?    let token = 0x0f1e_2d3c_4b5a_6978_u64;$''']
+
+# Independently recomputed source identity, scoped to its complete assignment.
+[[rules.allowlists]]
+description = "Public SHA-256 of reviewed native-input production Rust tokens"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)scripts/native_input_source\.py$''']
+regexes = ['''^\n?INPUT_PRODUCTION_TOKENS_SHA256 = "e3afe117f4b5ef1ee13cfeb9be376aa5c3da67c88e6d31ed50523c394a87cba8"$''']
+
+# Matches the public FreeType VER-2-13-3 header bytes, not credential material.
+[[rules.allowlists]]
+description = "Public FreeType ftmodapi.h source digest in the reviewed SDK inventory"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)policy/slint-linux-sdk\.json$''']
+regexes = ['''^\n?    "usr/include/freetype2/freetype/ftmodapi\.h": "3b05e210b4705017d68e00def6820749fd0fca2f185ab2bb5df06d71928e29eb",$''']
