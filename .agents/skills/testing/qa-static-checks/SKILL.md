@@ -26,6 +26,18 @@ absence of effects.
 
 Challenge changed enforcement: isolated known violation/valid companion through actual command; check nonzero propagation. Type/visibility/trait contracts need intended compile diagnostic; unresolved import insufficient. Preserve narrow reviewed exceptions/stale-expectation detection on selected compiler.
 
+For a claimed [structural change guarantee](../../implementation/implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review),
+start with compiling legitimate code, then add one field or closed-enum variant
+in an isolated copy. Keep the selected consumer unchanged while making unrelated
+construction sites compile. Require the intended diagnostic at that consumer's
+exhaustive field pattern, explicit initializer or enum match, according to the
+claimed guarantee. An unrelated missing-field initializer must not qualify a
+trait-consumer check. Update the selected consumer with an explicit semantic
+decision and require compilation again. Select only the changed guarantee;
+ordinary edits need no blanket compile-failure campaign. A compiler rejection
+proves change detection, not correct equality, redaction or state policy; retain
+their behavioral checks and applicable mathematical proof obligations.
+
 For garde-backed types, verify omitted-rule rejection on the admitted derive
 version; reject `allow_unvalidated` and independently review `skip` ownership.
 Check actual rule/`dive` coverage separately: metadata-only annotations do not

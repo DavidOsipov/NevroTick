@@ -14,6 +14,16 @@ Read [the security contract](../CONTRACT.md), architecture sections 7–8, 12 an
 5. Keep secrets in association owner with restricted service-SID ACLs and qualified Windows-protected persistence. Machine-scoped DPAPI alone provides no per-service isolation: other machine users with blob access can decrypt under documented scope. Inspect restart/account/machine migration and recovery. Minimize clones/plaintext lifetime; use reviewed redacted wrappers and selected zeroization, claiming no elimination of all prior copies/crash dumps.
 6. Exclude keys, cookies, bearer approvals and raw sensitive packets from `Debug`, errors, traces, diagnostics and exports. Test negative decryption/trust/AEAD cases and valid neighbors without logging test secrets.
 
+Review equality/verification of secret authenticators, tags and bearer evidence
+for secret-dependent timing. Prefer the selected provider's authentication or
+verification API; ordinary equality or a handwritten loop is not a substitute
+where timing independence is required. Identify public/fixed-length assumptions
+and review early returns, length handling and surrounding caller control flow;
+a primitive's guarantee does not automatically cover its caller. Keep functional
+rejection and healthy controls; statistical timing tests alone cannot establish
+constant-time behavior. Preserve [ASVS V11.2.4's unresolved provider/platform scope](../../../../docs/asvs-5.0.0-applicability.md#v500-1124):
+this review admits no new comparison crate or blanket constant-time claim.
+
 For cached associations, keep accepted-observation freshness, cookie receipt,
 directional-key age, original full certificate-authentication age and trust-policy
 revision distinct. Cookie renewal and TLS resumption do not reset full-auth age.

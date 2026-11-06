@@ -2,6 +2,21 @@
 
 Checked 28 October 2026. `docs/windows-time-architecture.md` and explicitly unimplemented verification plans retain authority. Read website working-tree sources without edits. Copied no browser constitution/amendments, implementation paths, test scripts or evidence archives as NevroTick policy.
 
+## Safe Rust pitfalls follow-up — 6 November 2026
+
+[Corrode's safe-Rust article](https://corrode.dev/blog/pitfalls-of-safe-rust/)
+prompted explicit secret-comparison and Windows path-assembly guidance in the
+existing crypto and persistence owners. Primary [PathBuf semantics](https://doc.rust-lang.org/std/path/struct.PathBuf.html#method.push)
+describe rooted and drive-prefixed replacement; path assembly grants no
+handle-based confinement. The [subtle source](https://docs.rs/subtle/2.6.1/src/subtle/lib.rs.html)
+documents unequal-length short-circuiting and best-effort guarantees, illustrating
+why a comparison helper alone establishes no whole-path timing property.
+[ASVS V11.2.4](../../../docs/asvs-5.0.0-applicability.md#v500-1124) retains its
+unresolved applicability/provider/platform scope. No article code was copied;
+no comparison crate, provider, filesystem wrapper or product assurance was adopted.
+
+## Original adaptations
+
 | Website source under `.agents/skills/security/` | NevroTick target | Native adaptation |
 | --- | --- | --- |
 | `security-browser-policy` | `security-windows-privileges` | Effective Windows process/service permissions, protected objects, clock ownership and code-loading policy replace browser-enforced policy. |

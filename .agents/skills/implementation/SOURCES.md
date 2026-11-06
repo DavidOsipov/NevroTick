@@ -5,6 +5,34 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Defensive Rust patterns — 6 November 2026
+
+Reviewed [Corrode's defensive-programming article](https://corrode.dev/blog/defensive-programming/)
+as supporting material for the existing Rust/contract skills. The locally authored
+[structural-change guidance](implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review)
+adopts selective field/variant review and coupled collection access. Rust's
+[privacy rules](https://doc.rust-lang.org/reference/visibility-and-privacy.html),
+[`non_exhaustive` semantics](https://doc.rust-lang.org/reference/attributes/type_system.html#the-non_exhaustive-attribute)
+and [Clippy's actual field-pattern recommendation](https://clippy.rust-lang.org/master/index.html#unneeded_field_pattern)
+qualify the article's constructor and lint claims. No article code was copied.
+This guidance selects no new lint configuration, dependency or product proof;
+existing admission, contract QA and OD-10 obligations keep their owners.
+
+## Production hardening and illegal states follow-up — 6 November 2026
+
+Reviewed [Corrode's production-hardening article](https://corrode.dev/blog/hardening-rust/)
+against [Rust panic-hook semantics](https://doc.rust-lang.org/std/panic/fn.set_hook.html)
+and [Cargo profile settings](https://doc.rust-lang.org/cargo/reference/profiles.html).
+The existing error-handling and execution references now distinguish ordinary
+panic hooks under abort/unwind, termination paths, and effective shipping settings
+from the assertion-enabled `verify-release` profile. Hook cleanup and generic
+debug/release claims supply no recovery or release qualification.
+[Illegal-state guidance](https://corrode.dev/blog/illegal-state/) was also reviewed:
+the existing checked representations, privacy-scope audit, contextual rechecks
+and domain-equivalence rules already cover its useful guarantees. Its illustrative
+date arithmetic and ambient clock reads were not adopted. No example code,
+allocator, deployment framework, dependency or new execution lane was introduced.
+
 ## Windows metadata workflow — 5 November 2026
 
 [maintain-windows-metadata](maintain-windows-metadata/SKILL.md) is an original

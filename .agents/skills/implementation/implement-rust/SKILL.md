@@ -41,6 +41,16 @@ Choose smallest model that makes meaningful mistakes hard to express:
 - Never erase operational failure into `None`, empty results or stale success.
   Redact secrets; retain structured context sufficient to diagnose rejection.
 
+Where a new field or state needs a policy decision, make its addition require
+review through exhaustive field handling, explicit initialization and closed-enum
+matches. Follow [structural change checks](../implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review)
+without banning legitimate defaults or required external wildcard handling.
+Prefer slice patterns, `first`, `split_first` or checked access over separate
+length checks followed by indexing; handle absence under the actual contract.
+Confine initialization mutability to its needed scope. Use named option enums
+when boolean arguments obscure distinct choices; related invalid combinations
+still need a constrained representation or checked construction.
+
 Make changed code readable in the domain's terms: use established names and keep
 decisions, failures and effects traceable. Extract a helper when it names a
 coherent operation or isolates a meaningful rule. Keep related matching, loops
