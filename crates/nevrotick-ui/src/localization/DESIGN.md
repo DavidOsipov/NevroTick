@@ -137,8 +137,12 @@ fallback literals when applying them. Codegen controls retain exact v1 fixtures
 and an additional v2 shallow-carrier fixture.
 
 Source/technical validity is independent of exact human review and packaged/native
-qualification. The v1 portable checkpoint passed in Root's configured lane; the
-new v2/native cohort needs its own configured evidence. UIA/Narrator, installed
-resource custody/tamper/races, native lifecycle and notification behavior retain
-their existing owners and holds. No source gate or catalog grants service,
+qualification. Candidate-specific text-contract-2 source and portable results
+are recorded in [S0.5](../../../../tasks/s0.5-ui-comparison.md) and the
+[current GUI handoff](../../../../tasks/slint-gui-handoff.md); those receipts
+retain their original source and dependency identities and do not qualify a
+later graph automatically. Windows native behavior, UIA/Narrator, installed
+resource custody/tamper/races, native lifecycle, notification behavior and
+independent semantic approval retain their existing owners and holds.
+No source gate or catalog grants service,
 clock, elevation, persistence, OS-locale or arbitrary language-pack authority.

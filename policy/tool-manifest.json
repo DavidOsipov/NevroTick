@@ -114,7 +114,7 @@
         "cyclonedx",
         "--version"
       ],
-      "scope": "Development-only Rust CycloneDX SBOM generator; no runtime license admission or complete MSI/native inventory claim",
+      "scope": "Development-only Rust CycloneDX SBOM generator; no runtime license admission or complete package/native inventory claim",
       "admission": "Pinned published archive and executable identity; explicit --sbom-only installation and version smoke. Real locked graph, target/features, native inventory and release reconciliation remain separate gates.",
       "source": "https://api.github.com/repos/CycloneDX/cyclonedx-rust-cargo/releases/tags/cargo-cyclonedx-0.5.9"
     }

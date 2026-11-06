@@ -7,7 +7,7 @@ edition.workspace = true
 rust-version.workspace = true
 license = "GPL-3.0-only"
 repository.workspace = true
-description = "Unelevated fixture-only NevroTick UI-M0 prototype"
+description = "Fixture-only NevroTick UI-M0 prototype"
 
 [lints]
 workspace = true

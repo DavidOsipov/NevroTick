@@ -28,9 +28,12 @@ partial protected effects. Test handlers directly as well as through UI paths.
 
 Selected baseline: bounded direct `serde`/`serde_json` decoding and shared pure
 `garde` validation invoked obligatorily inside private fallible domain
-construction. The adopted garde candidate is 0.23.0, defaults disabled and only
-`derive` initially; the actual locked feature/license/target graph still needs
-admission. `serde_path_to_error` remains optional; schema generation is not adopted.
+construction. The selected garde baseline is 0.23.0, defaults disabled and only
+`derive`. The [recorded dependency refresh](../../../tasks/s0.1-source-readiness.md#refreshed-graph-and-current-evidence)
+admits its exact locked feature/license/target graph. Verify the current candidate
+against the code-owned policy; any changed graph or feature/target scope requires
+its own admission. A selected version alone is not an admission receipt.
+`serde_path_to_error` remains optional; schema generation is not adopted.
 Read [contract enforcement](implement-rust-contracts/references/contract-enforcement.md)
 for construction, field coverage and function/module obligations. A derive or
 borrowed `validate()` call alone does not make later consumption safe.

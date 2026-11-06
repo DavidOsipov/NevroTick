@@ -1662,6 +1662,15 @@ The applicable documentary checks are current-source/owner reconciliation, local
 
 **Next action:** existing §8.5 still owns catalogue continuation when selected. The new proposal must first settle its stated source-policy/DNS/time-assurance questions at the appropriate checkpoint. Current Core/proof work and all scoped native/fuzz/storage/UI holds retain their order and status.
 
+**Current-routing amendment — 7 November 2026:** the preceding next-action
+sentence records this section's original checkpoint. Current product work follows
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent);
+formal proof obligations and all preparatory/tooling/metadata work follow
+[OD-10 §14.1's post-V1 deferral](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+Catalogue §8.5, the proposal's unresolved questions and native/fuzz/storage/UI
+holds retain their owners. The raw research/review testimony below remains
+historical and is not a current proof-first instruction.
+
 Research input SHA-256 identities:
 
 - `dnssec-catalogue-semantics.md`: `6a9b7acc3fb9cf5f6693c2d9d3e3d9dc0abfd77ce9c0873be76818de57847bdd`.

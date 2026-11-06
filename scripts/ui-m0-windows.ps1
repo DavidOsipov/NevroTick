@@ -1,7 +1,10 @@
 <#
 .SYNOPSIS
-Observe one owned UI-M0 candidate without elevation or machine configuration.
+Observe one owned historical Win32 UI-M0 candidate without elevation or machine configuration.
 .DESCRIPTION
+This helper requires the original Win32 child-control IDs and classes. It does
+not qualify the current Slint UI; use the S0.5 task and Slint GUI handoff for
+current native-observation prerequisites and evidence.
 Launches only the explicit local executable, exercises native controls and normal
 window lifecycle, records bounded in-process resource samples and captures the
 owned foreground window. Requires exclusive desktop interaction for this run.

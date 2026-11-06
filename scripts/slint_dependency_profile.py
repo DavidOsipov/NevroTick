@@ -53,7 +53,7 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "6cf46ae3b59889507f5e78942ea68cd68f0d9c7afe0169d4cd7f04caaa98488b"
+REVIEWED_POLICY_SHA256: str | None = "c1735811cefab5f108906b44c40bb634a18bed3490a253e724bc429c4a6dc5cf"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)

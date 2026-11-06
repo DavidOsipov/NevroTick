@@ -9,7 +9,7 @@ Read [the testing contract](../CONTRACT.md).
 
 Freeze integrated source/configuration/dependencies/fixtures/actual candidate artifacts. Establish expectations before production output. Use real admitted route; protected effects only in owned disposable Windows environment.
 
-Select representative declared-scope known-answer scenarios: analytic clock trajectories/selection, strict input rejection, status/policy persistence, native authority, complete MSI lifecycle. Read-only inspection: actual admitted bytes/resulting status/journals/files/acknowledgements/installed components; verifier report alone insufficient.
+Select representative declared-scope known-answer scenarios: analytic clock trajectories/selection, strict input rejection, status/policy persistence, native authority, and the selected complete package lifecycle. The current route is hardened MSIX with separate submitted/Store-delivered evidence under [package acceptance](../qa-package-artifacts/SKILL.md); MSI remains a later owner-selected alternative. Read-only inspection: actual admitted bytes/resulting status/journals/files/acknowledgements/installed components; verifier report alone insufficient.
 
 Freeze a finite case/fact inventory with independently justified preserve/transform/omit/reject obligations, cardinality and forbidden effects. Include applicable omitted/default options, cold/warm/cache, replay, repeat and restart paths beside explicit healthy controls. Use [case design](../references/case-design.md) for interacting conditions; select from actual production consumers and name unassessed consumers.
 

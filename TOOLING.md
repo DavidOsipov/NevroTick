@@ -1592,8 +1592,17 @@ row can run; copying an unrelated host's inventory or merely hashing unreviewed
 installed inputs does not establish their provenance. Portable verification does
 not require the Windows inventory.
 
-For native observations, use the ordinary Windows account with exclusive desktop
-interaction. Copy [ui-m0-windows.ps1](scripts/ui-m0-windows.ps1) to a local Windows
+Current Slint native preparation and evidence follow
+[S0.5](tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](tasks/slint-gui-handoff.md#not-implemented-or-not-qualified),
+under their existing prerequisites and execution holds. The retained
+`ui-m0-windows.ps1` helper expects historical Win32 child-control IDs and classes;
+it is not a Slint observation harness and must not be used to qualify the current
+Slint executable.
+
+**Historical Win32 UI-M0 recipe:** when reproducing that original candidate
+under its own authorized observation scope, use the ordinary Windows account
+with exclusive desktop interaction. Copy [ui-m0-windows.ps1](scripts/ui-m0-windows.ps1) to a local Windows
 path and verify its SHA-256 matches the repository file; also match the executable
 to the cross-build receipt. This avoids a RemoteSigned rejection of a WSL UNC
 script without changing execution policy. With those local paths:
@@ -1602,8 +1611,9 @@ script without changing execution policy. With those local paths:
 powershell -NoProfile -File 'C:\owned\ui-m0-windows.ps1' -ImagePath 'C:\owned\nevrotick-ui.exe' -OutputDirectory 'C:\owned\new-ui-m0-observations'
 ```
 
-`ImagePath` must identify the owned local executable; `OutputDirectory` must be
-new. The helper observes controls and window lifecycle and records bounded resource
+`ImagePath` must identify the owned historical Win32 executable, bound to its
+original cross-build receipt; `OutputDirectory` must be new. The helper observes
+those controls and window lifecycle and records bounded resource
 samples. Its existence or a cross-build is not a passed native run, accessibility
 qualification, sustained leak/soak result, P0 completion or release evidence.
 Keep TLS/provider, production-license, service/clock laboratory and signing holds.

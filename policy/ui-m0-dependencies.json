@@ -4,7 +4,7 @@
   "lockfile_sha256": "9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e",
   "manifests_sha256": {
     "Cargo.toml": "e200e5e14ffd56653a707939f5a5543c9ac52514693fcf345a71253e1f94f763",
-    "crates/nevrotick-ui/Cargo.toml": "e8359c64b49b24d60f326b69b2dd9e467f206dd46e33288b28c5648fb76ea99c",
+    "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",

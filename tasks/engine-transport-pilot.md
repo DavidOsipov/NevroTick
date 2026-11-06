@@ -21,8 +21,12 @@ The [first source checkpoint](#first-controlled-measurement-source-checkpoint--6
 now implements lossless staged evidence, the explicit experimental model,
 checked mapping/era/arithmetic and bounded diagnostic projection. The subsequent
 [three-owner qualification](#three-owner-measurement-qualification--6-november-2026)
-passes on its current host candidate. Next freeze the
-[observation-to-Core contract](#next-source-checkpoint-observation-to-core-admission), retaining
+passed on its recorded host candidate, without qualifying later source or graphs.
+The [refreshed numerical critical-owner gates](s0.1-source-readiness.md#refreshed-graph-and-current-evidence)
+remain pending. Continue the
+[observation-to-Core contract](#next-source-checkpoint-observation-to-core-admission)
+in [development §7's current order](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
+reconciling those gates before the reference/anchoring bridge and retaining
 `authentication=none eligible=0`. This is no estimator admission or clock effect.
 W11-W01 remains partially prepared; uncertainty, production scheduling and native
 qualification remain later scopes. Older proof-first wording below is historical
