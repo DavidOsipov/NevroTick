@@ -1,8 +1,9 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.15<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment added 6 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.18<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
+**Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
@@ -22,7 +23,7 @@ This record captures David's replies about reuse, correction policy, default ser
 
 Read this alongside the [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md) and [research handoff](nevrotick-research-handoff.md). The accepted changes are integrated into those canonical documents. Use this record to distinguish owner decisions from pending recommendations when reading or changing them. Existing requirements remain in force except where an accepted change below explicitly amends them. Recommendations do not become owner decisions merely because an agent wrote them down.
 
-The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2/D3 deferred at their existing gates. This decision record neither enables live UI integration nor blocks unrelated permitted core/platform work.
+OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localization. The current UI-M0 restriction remains intact: fixture-only, unelevated UI, with D1/D2/D3 deferred at their existing gates. These decisions enable source migration, not live service/clock authority or native qualification, and do not block unrelated permitted product work.
 
 ## 2. Decision summary
 
@@ -40,8 +41,10 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-10 | Defer formal proof work until after the first released software version (V1); require useful product guarantees when it resumes | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; [proof purpose and completion](#142-proof-purpose-and-completion--6-november-2026) governs scope, stopping and honest accounting; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
-| OD-13 | Use Slint as the default UI toolkit after the live-Windows comparison | **Accepted toolkit direction, 5 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
+| OD-13 | Use Slint as the default UI toolkit and complete Win32 replacement; license original GUI code GPL-3.0-only while preserving GPL-2.0-only Core/engine | **Accepted toolkit direction, 5 November; GUI composition clarified 6 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
+
+| OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -748,7 +751,7 @@ reaffirmation of OD-13, not a new performance claim or qualification waiver.
 | Starting configuration | Slint 1.18.1 with explicit winit/software rendering and Fluent-style widgets, as measured. Freeze the exact admitted version/features for the migration; a later renderer/feature change needs its own graph and affected evidence |
 | Evidence and reason | Three live-host Slint trials measured 7.730 MiB visible private memory and 23.629 MiB working set, with no detected CPU-time increment in the selected visible/minimized idle phases. The 228-line UI adapter suggests less UI coding than the 1,432-line Win32 implementation. Different layouts/DPI, short sampling and incomplete interaction/accessibility limit those conclusions |
 | Options and outcome | Retain Win32, select Slint, or continue other toolkit experiments. David selected Slint; agents must not reopen the general toolkit choice because qualification remains pending |
-| Existing implementation | The checked-in `nevrotick-ui` Windows adapter is still Win32. Preserve its shared checked model, behavioral contracts and historical receipts until a separately qualified Slint replacement exists; this documentation decision changes no Rust or Cargo bytes |
+| Existing implementation | The earlier main snapshot retained Win32; this merged candidate contains the Slint fixture host, with the Win32 adapter unexported as historical source. Preserve checked-domain behavior and candidate-specific receipts. Implemented fixture source and portable results do not establish native cutover or live backend qualification |
 | Product boundaries | Ordinary-user UI only. Preserve the engine/broker/helper authority split, fixture-only UI-M0 effects, D1/D2/D3 deferrals and their re-entry triggers, current Core priority and existing execution holds |
 | Required follow-through | Reuse the existing UI-M0/S0.5 task chain for exact dependency/licence admission, generated-code/lint and lifetime ownership, checked validation reuse, native window/editor/lifecycle observations, actual accessibility at its gate, resources and complete MSIX delivery |
 | Revisit trigger | Concrete licensing, target, accessibility, security or resource evidence prevents the selected delivery. Bring that bounded issue under OD-04; no automatic fallback or blanket exception follows |
@@ -761,12 +764,12 @@ behavior and accessibility exposure on Windows; old Win32 passes cannot transfer
 The software renderer is the starting configuration, not a mandate to introduce
 continuous redraw, a browser runtime or a GPU loop.
 
-Slint's GPLv3/royalty-free/commercial grants and the selected Apache-2.0-only
-winit graph remain unresolved against the current GPL-2.0-only codebase. This
-owner instruction selects the toolkit; it grants no relicensing, incompatible
-combined-distribution clearance, paid agreement, publication or release approval.
-A process split alone supplies no licence clearance. Preserve the current licence
-and notices, and resolve the exact graph under the existing dependency owners.
+The original toolkit decision did not settle the GPLv3/Apache-2.0-only
+composition issue. The accepted GUI-specific GPL-3.0-only amendment below now
+resolves the original-code direction, preserving GPL-2.0-only Core/engine. Exact
+source rights, dependency grants, supplemental notices and final distribution
+remain separately reviewed; a process split alone supplies no licence clearance.
+No paid agreement, Core relicensing or release approval is implied.
 
 The private `slint!` prototype also exposed a generated-unsafe/lint boundary:
 Slint-generated allowances conflict with crate-level `forbid(unsafe_code)`.
@@ -775,9 +778,93 @@ than silently relaxing the workspace's unsafe policy. Retain bounded input
 admission, weak callback ownership, UI-thread affinity and deterministic teardown.
 
 The [architecture §16.1](windows-time-architecture.md#161-toolkit-and-interaction-model)
-controls the toolkit contract; the [UI-M0 task](../tasks/ui-m0.md) owns the next
-bounded migration and evidence. This decision records direction, not completion
+controls the toolkit contract; [S0.5](../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../tasks/slint-gui-handoff.md) own current continuation. UI-M0
+retains its original fixture acceptance. This decision records direction, not completion
 of S0.5, CHECK-21/22, P0/P5 or release qualification.
+
+### Complete migration amendment — 6 November 2026
+
+The earlier unpublished GUI decision was called OD-11; its accepted scope is
+now retained under OD-13 without replacing published SOCKS5 OD-11.
+
+
+**Direct owner instruction, 5 November 2026:** David selected Slint as the
+complete replacement for the Win32 UI and explicitly named the
+[S0.5 task](../tasks/s0.5-ui-comparison.md) and this decision record for the change.
+He considers Slint suitable for the interface he needs. This is an accepted
+product direction, not a request to choose between toolkits again.
+
+**Selected outcome:** implement the Rust UI with Slint against the
+[current v0.4 reference](nevrotick-design-v0.4/README.md) and canonical feature,
+state and security contracts. Slint replaces Win32 common controls as the UI
+toolkit; a second product UI or automatic Win32 fallback is not selected.
+Windows platform APIs remain available through narrow reviewed adapters for
+required OS integration. DEC-3 and architecture §16 are amended accordingly.
+
+The existing Win32 source, native observations and closed Win32/egui comparison
+remain historical baseline evidence. The earlier instruction to retain Win32
+and UI-M0's prohibition on a replacement framework are superseded for this
+migration. Those results prove nothing about Slint's memory, accessibility,
+renderer, mitigation compatibility or native lifecycle. The current source candidate contains the Slint fixture implementation; actual
+native qualification and production cutover remain open.
+
+**Execution and ownership:** continue the existing S0.5 record as the bounded
+Slint migration chain. Source and licence review, presentation/fixture contracts
+and admitted fixture-only implementation can proceed in parallel with the
+current ordinary Core/acquisition work; UI work does not require completion of
+unrelated Core tasks. One owner serializes Cargo graph/lockfile changes and
+shared presentation schemas; workers may implement disjoint views after that
+boundary is frozen. Native desktop interaction and shared outputs remain
+serialized. No further confirmation of the toolkit choice or repeat of the
+closed egui comparison is required.
+
+Before admitting Slint dependencies, pin the actual version, Windows
+backend/renderer/features and build/runtime/native graph, and establish a
+compatible licence basis under OPEN-1/CHECK-20/26. This instruction does not
+relicense Chrony-derived code, grant commercial rights or accept licence terms.
+A separate UI process is not automatic legal clearance. Bring any concrete
+incompatible-rights conflict or required resource/security-policy exception to
+David under OD-04; routine work within the selected direction continues.
+
+The first implementation remains unelevated and fixture-only, with visible
+sample-data context, transient checked editing and unavailable protected actions.
+The richer HTML service, ownership, recovery and notification simulations are
+design references, not authority to add live network/IPC, persistence, services,
+elevation or clock effects. D1/D2/D3 keep their existing re-entry triggers;
+production S5.1–S5.4 and actual Windows qualification remain separately gated.
+Retain the proposed resource targets, native execution restrictions, separate
+AES fuzz hold and storage pause. Adoption needs Slint-specific evidence; the
+toolkit decision itself is not a passing build, release or Windows result.
+
+### GUI licence/composition decision — 6 November 2026
+
+**Accepted owner decision, 6 November 2026:** David approved licensing the
+original GUI under **GPL-3.0-only**, preserving Chrony-derived Core/engine under
+**GPL-2.0-only**. Do not ask for this choice again. Apply the GUI-specific grant
+and provenance inventory before admitting the actual Slint runtime/build graph;
+the licence direction does not replace package/feature/security review.
+
+**Conflict that led to this decision:** the workspace declared GPL-2.0-only and
+the UI inherited it. The inspected [Slint 1.18.1 grants](https://github.com/slint-ui/slint/blob/372cf0ee5577c3dfec309a45e7b778ba4e81b734/LICENSE.md)
+offer GPL-3.0-only or separately conditioned royalty-free/commercial grants;
+none inspected establishes a GPL-2.0-only-compatible combined distribution.
+The proposed Windows Winit backend also selects [Apache-2.0-only Winit](https://github.com/rust-windowing/winit/blob/e9809ef54b18499bb4f2cac945719ecc2a61061b/Cargo.toml#L370-L374),
+so a Slint-only exception would not clear all affected inputs. These are exact
+source/grant findings, not an admitted NevroTick Slint dependency graph.
+
+| Concrete direction | Required consequence and remaining evidence |
+| --- | --- |
+| **Selected:** separately license the original GUI as GPL-3.0-only, preserving Chrony-derived engine/Core as GPL-2.0-only | Confirm rights over the GUI/presenter/model and any shared contract code; use a package-specific UI licence rather than changing the whole workspace. Keep the GUI an independently composed program using the defined process protocol, without linking GPL-2.0-only Core/Chrony code. Review actual shared code, runtime/build/transitive graph and notices; process separation alone is insufficient evidence. |
+| Retained alternative, not selected: GPL-2.0-only for the linked GUI | Would require compatible permissions covering Slint and required transitives, or a concrete compatible graph. The public royalty-free/commercial descriptions and a purchase alone supply no such evidence. No supplier contact or purchase is authorized here. |
+
+**Implementation status:** S0.5 records the GUI-specific manifest/licence notices,
+reviewed source inventory and admitted fixture runtime/build graph. Re-admit
+affected graph changes under the selected GPLv3 direction before execution. Keep Core and its GPLv2 inputs independent; formal work remains deferred under
+OD-10 §14.1. No framework reselection, Core relicensing,
+blanket dependency-policy relaxation, automatic Win32 fallback or new release
+permission follows. S0.5 retains candidate-specific graph/rights and remaining distribution checks.
+
 
 ## 18. OD-14 — compact Windows platform scope
 
@@ -814,3 +901,116 @@ First-stable terms remain proposed under the [release policy](release-policy.md)
 Current Core/proof priority, native/S134 stop, separate fuzz hold, optional-storage
 pause, scoped Sandbox permission, UI-M0 D1–D3 deferrals, the Direct network profile,
 Slint and optional enhanced release provenance retain their existing scope.
+
+
+## 19. OD-15 — externalized UI translations and binary catalogs
+
+This GUI decision was called OD-12 in its unpublished branch. Integration
+assigns OD-15 so published GeoIP OD-12 retains its existing identity and scope.
+
+
+**Direct owner instruction, 5 November 2026:** David requested an easy translation
+mechanism using separate files containing translated interface strings, naming
+JSON/XML or other formats and expressing a preference for binary formats such
+as CBOR. This selects the mechanism requirement and binary-delivery preference;
+it does not require translators to edit binary bytes.
+
+The [localization design](plans/ui-localization.md) defines the engineering route:
+editable UTF-8 JSON sources, build-time validation and deterministic CBOR language
+resources, with a typed application-owned Rust catalog projecting text into
+stable Slint properties/models and the tray/notification/accessibility adapters.
+Adding a translation changes catalog data rather than UI layout or business
+logic. Source editing, binary generation and package delivery are separate steps;
+CBOR is a serialization format, not compression or an automatic performance gain.
+
+Slint's built-in PO bundling is a documented alternative, but is not a CBOR
+loader. The inspected Windows Rust path does not establish ordinary gettext/MO
+loading or a stable custom CBOR-to-`@tr` hook. Do not use private Slint internals
+or claim such support to implement this direction. S0.5 now implements the
+fixture codec, typed interfaces, finite bounds and admitted graph. Independent
+critical-meaning approval, new locale adoption and native/package qualification
+remain open in the existing S0.5/P5 chain.
+
+Catalogs cover visible labels, errors, explanations/tooltips, dialogs, tray menu,
+local notifications and accessible names under one language/fallback policy.
+Keep stable error/action IDs and typed arguments; translation changes no wire,
+policy, source identity, numeric-unit/sign or authorization semantics. Preserve
+complete built-in English, check placeholder/plural contracts and display text
+as inert content. A locale change is a per-user presentation operation, never a
+service/clock or Windows-wide locale change.
+
+English remains the only adopted product language. This request adopts no
+complete Russian translation, automatic OS-language selection or arbitrary
+third-party pack import. The initial design reads reviewed packaged resources;
+independent post-install packs need their own explicit loading/trust contract.
+The original design addition changed no implementation. The merged Slint fixture
+now implements the catalog pipeline; S0.5 owns its exact evidence and remaining
+semantic/native qualification.
+Source preparation may parallel Core; native integration, locale qualification,
+D1–D3 re-entry, package integrity, licensing and execution holds retain their
+existing owners and gates.
+
+### Security clarification — 6 November 2026
+
+David explicitly declared all JSON and CBOR potentially unsafe because they
+contain contributor/translator-controlled data, and requested malicious-payload
+defenses. Treat every such input as hostile at each raw-byte admission boundary:
+English source, other locales, schemas/metadata, generated output, previously
+accepted or signed/package-delivered files are not exempt. Review/signing establish
+different provenance/approval facts; they never replace parser/resource/sink checks.
+Immutable privately constructed validated values may still be reused within
+their unchanged context under the existing enforcement contract.
+
+The [localization plan](plans/ui-localization.md) now specifies layered build,
+decode, format, rendering and semantic controls. Message IDs/types/plural policy,
+required facts, action/link/activation IDs and criticality come from a separately
+controlled typed contract, never from catalog declarations. Translation bytes
+cannot change those rules or the checker that admits them. Build conversion is
+isolated from credentials/network/release authority; runtime independently admits
+final bytes. Reject malformed/overbudget candidates atomically and retain the
+last admitted state; invalid English data cannot become its own fallback.
+
+Syntactically valid wording can still deceive. Critical warning/action/accessibility
+groups need independently controlled per-locale semantic approval bound to exact
+content and contract revision. Missing/unreviewed critical groups fall back as a
+whole to admitted, approved English. No catalog field, signature, LLM verdict or
+schema pass proves the truth of a translation. These requirements refine OD-15
+and the existing security boundaries; no extra locale, import mode, dependency,
+validator/runtime implementation, fuzz execution or native/release pass is granted.
+
+David additionally requested strict UTF-8 for original JSON and a strict schema.
+The engineering profile is UTF-8 without BOM, no encoding detection/transcoding
+or lossy repair, and strict JSON escape decoding into Unicode scalar values.
+Valid escaped surrogate pairs remain supported; lone surrogates do not. The
+independently owned versioned schema is closed at every object layer, with exact
+required/allowed fields, types and finite bounds, plus decoded-key duplicate and
+typed semantic checks. No catalog selects or fetches its own schema. These rules
+apply before CBOR generation and equally to English. The merged fixture now
+enforces the complete closed schema and validator; current source/test evidence
+and remaining critical-meaning/native gates belong to S0.5.
+
+### Character repertoire clarification — 6 November 2026
+
+David requires all emoji and unusual symbols in translation input to reject.
+Implement that requirement as a code-owned closed repertoire for each adopted
+locale/field, with hard emoji denial and exact versioned Unicode/UCD/emoji data.
+Literal and escaped spellings are equivalent: inspect every decoded key/string
+in original JSON before generation and independently in runtime CBOR admission.
+No file header, translator exception or text-presentation selector waives it.
+
+The [localization character profile](plans/ui-localization.md#emoji-free-closed-character-repertoires)
+rejects emoji/pictographic forms, their flag/modifier/keycap/variation/tag variants,
+private-use/unassigned/noncharacters, U+FFFD/U+FEFF, authored bidi controls and
+unapproved controls/format/invisible/symbol characters. Plain ASCII digits,
+`#` and `*` remain ordinary text; a blanket Unicode `Emoji` property ban would
+incorrectly reject them. Ordinary letters, marks, punctuation, spaces and units
+need explicit code-owned repertoire membership. Orthographic joining controls
+require a reviewed locale/field/context rule and cannot admit emoji.
+
+This supersedes any earlier example treating literal U+FFFD or an arbitrary
+valid surrogate pair as fully admitted catalog content. Unicode decoding can
+succeed while character admission rejects. English remains the only adopted
+locale; all files reject atomically on a character violation, retaining admitted
+state. The merged fixture implements pinned inventories, tables, budgets and
+receiver enforcement; S0.5 binds its portable results. This clarification adopts
+no extra locale or native result, and never supplies critical-text approval.

@@ -1,0 +1,144 @@
+import { ScrollView } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { Heading, ActionButton } from "components.slint";
+
+// The caller projects open/visible from its private modal owner and fills @children.
+// Focus and pointer containment are presentation behavior, never authorization.
+export component ModalFrame inherits FocusScope {
+    in property <bool> host-ready;
+    in property <bool> open;
+    in property <string> title;
+    in property <string> safe-label;
+    in property <string> second-label;
+    in property <string> third-label;
+    in property <bool> second-visible: true;
+    in property <bool> second-enabled: true;
+    private property <bool> second-available: root.second-visible && root.second-enabled;
+    out property <bool> safe-focused: safe-action.has-focus;
+    out property <bool> second-focused: second-action.has-focus;
+    out property <bool> third-focused: third-action.has-focus;
+    out property <bool> focus-contained: safe-action.has-focus || (root.second-available && second-action.has-focus) || third-action.has-focus;
+    // Presentation-only geometry for keyboard/visual checks, never effect authority.
+    out property <length> body-scroll-y: body-scroll.content-y;
+    out property <length> body-scroll-limit: max(0px, body-scroll.content-height - body-scroll.visible-height);
+    callback safe-requested();
+    callback second-requested();
+    callback third-requested();
+
+    enabled: root.open && root.host-ready;
+    focus-on-click: false;
+    focus-on-tab-navigation: false;
+    forward-focus: safe-action;
+    accessible-role: groupbox;
+    accessible-label: root.title;
+    public function focus-safe() {
+        if root.open && root.host-ready { safe-action.focus(); }
+    }
+    changed open => {
+        if root.open { body-scroll.content-y = 0px; }
+        root.focus-safe();
+    }
+    changed second-available => {
+        if !root.second-available && second-action.has-focus { root.focus-safe(); }
+    }
+    init => { root.focus-safe(); }
+
+    // Capture runs before the focused child can handle a key or mutate a value.
+    capture-key-pressed(event) => {
+        if event.text == Key.Escape {
+            root.safe-requested();
+            return accept;
+        }
+        if event.text == Key.Tab || event.text == Key.Backtab {
+            if event.modifiers.shift || event.text == Key.Backtab {
+                if safe-action.has-focus { third-action.focus(); }
+                else if root.second-available && second-action.has-focus { safe-action.focus(); }
+                else if root.second-available { second-action.focus(); }
+                else { safe-action.focus(); }
+            } else {
+                if safe-action.has-focus && root.second-available { second-action.focus(); }
+                else if safe-action.has-focus || (root.second-available && second-action.has-focus) { third-action.focus(); }
+                else { safe-action.focus(); }
+            }
+            return accept;
+        }
+        // The static message body is a sibling of the action row. Handle its
+        // keyboard scrolling here; the underlay must never receive these keys.
+        if event.text == Key.PageDown {
+            body-scroll.content-y = max(-root.body-scroll-limit, min(0px, body-scroll.content-y - max(1px, body-scroll.visible-height * 0.8)));
+            return accept;
+        }
+        if event.text == Key.PageUp {
+            body-scroll.content-y = max(-root.body-scroll-limit, min(0px, body-scroll.content-y + max(1px, body-scroll.visible-height * 0.8)));
+            return accept;
+        }
+        if event.text == Key.Home {
+            body-scroll.content-y = 0px;
+            return accept;
+        }
+        if event.text == Key.End {
+            body-scroll.content-y = -root.body-scroll-limit;
+            return accept;
+        }
+        return reject;
+    }
+
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: #00000066;
+        TouchArea {
+            width: parent.width;
+            height: parent.height;
+            clicked => { }
+            scroll-event(event) => { return accept; }
+        }
+    }
+    Rectangle {
+        width: min(root.width - 40px, 620px);
+        height: min(root.height - 40px, 550px);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        background: Theme.surface;
+        border-color: Theme.line;
+        border-width: 1px;
+        border-radius: Theme.radius;
+        VerticalLayout {
+            padding: 20px;
+            spacing: 14px;
+            Heading { text: root.title; }
+            body-scroll := ScrollView {
+                horizontal-scrollbar-policy: always-off;
+                content-width: self.visible-width;
+                VerticalLayout {
+                    spacing: 12px;
+                    alignment: start;
+                    @children
+                }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: start;
+                safe-action := ActionButton {
+                    text: root.safe-label;
+                    primary: true;
+                    enabled: root.host-ready && root.open;
+                    clicked => { root.safe-requested(); }
+                }
+                second-action := ActionButton {
+                    text: root.second-visible ? root.second-label : "";
+                    visible: root.second-visible;
+                    min-width: 0px;
+                    max-width: root.second-visible ? 600px : 0px;
+                    enabled: root.host-ready && root.open && root.second-available;
+                    clicked => { if root.second-available { root.second-requested(); } }
+                }
+                third-action := ActionButton {
+                    text: root.third-label;
+                    enabled: root.host-ready && root.open;
+                    clicked => { root.third-requested(); }
+                }
+            }
+        }
+    }
+}

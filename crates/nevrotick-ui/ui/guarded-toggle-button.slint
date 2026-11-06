@@ -1,0 +1,39 @@
+import { ActionButton } from "components.slint";
+
+// The Rust owner projects an accepted bool. The inherited checked property is
+// transient widget state and never chooses whether the controlled panel exists.
+export component GuardedToggleButton inherits ActionButton {
+    in property <bool> accepted-checked;
+    in property <bool> draft-revision;
+    callback edit-requested(bool) -> bool;
+    private property <bool> confirmed-checked: false;
+    checkable: true;
+
+    // This display-only mirror also retains a rejection response when the parent
+    // projection was stale; it is never the controlled panel's visibility owner.
+    function confirm(value: bool) {
+        root.confirmed-checked = value;
+        root.checked = value;
+    }
+    init => { root.confirm(root.accepted-checked); }
+    changed accepted-checked => { root.confirm(root.accepted-checked); }
+    changed draft-revision => { root.confirm(root.accepted-checked); }
+    changed checked => {
+        if root.checked != root.confirmed-checked {
+            root.checked = root.confirmed-checked;
+        }
+    }
+    clicked => {
+        if root.enabled {
+            // Derive intent from the last projection/response, even if native or
+            // direct code previously forged the inherited checked property.
+            root.confirm(root.edit-requested(!root.confirmed-checked));
+        } else {
+            root.checked = root.confirmed-checked;
+        }
+    }
+    accessible-action-default => {
+        if root.enabled { root.clicked(); }
+        else { root.checked = root.confirmed-checked; }
+    }
+}

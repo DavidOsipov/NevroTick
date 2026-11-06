@@ -28,11 +28,15 @@ request is adopted. Source/design selection is separate from implementation,
 native qualification and the existing execution holds.
 
 **5 November 2026 UI amendment:** [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Slint as the default toolkit, with winit/software and Fluent-style widgets
-as the measured starting configuration. R-01 retains exact combined-graph licence
-admission; R-08/UI-M0 retain generated-code, Windows/accessibility, resource and
-package qualification. The Win32 reference and historical receipts remain; the
-selection changes no Core priority, UI-M0 deferral or execution hold.
+selects complete Slint replacement against v0.4, with winit/software and
+Fluent-style widgets as the measured starting configuration. The current Windows
+entry selects that toolkit; the old Win32 adapter remains unexported historical
+source. The [current GUI handoff](../tasks/slint-gui-handoff.md) owns fixture source
+and portable evidence. OD-13's 6 November amendment selects separately
+GPL-3.0-only original GUI composition while preserving GPL-2.0-only Core/engine.
+R-01 retains rights/shared-code/exact graph and distribution review; R-08/UI-M0
+retain generated-code, Windows/accessibility, resource and package qualification.
+No current execution hold or UI-M0 deferral is lifted.
 
 **5 November 2026 clock-limit preparation:** [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
 consolidates pinned upstream, Microsoft and protocol/model evidence for
@@ -48,6 +52,16 @@ x64 and Server 2025 x64 Desktop Experience. R-08 uses the existing
 [two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
 for exact profiles, admission/delivery, fixture availability and native evidence;
 OPEN-2 and all current execution/acceptance gates remain open.
+
+**Controlling proof amendment, 6 November 2026:**
+[OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released version (V1). Earlier
+proof-priority language below is retained as dated context; follow the
+[current development queue](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Missing proofs do not block V1 implementation, acceptance or release. This
+amendment resumes no proof compiler/solver job or verifier/metadata repair and
+lifts no Windows, fuzz or storage hold; ordinary runtime, behavioral, coverage/
+mutation, security, native, package and release gates remain.
 
 ## 1. Assignment and limits
 
@@ -72,21 +86,27 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-07 — concrete owner exceptions | OPEN-5/8/9 and affected clauses | Decision cards with compensating controls and bounded residual risk | Affected behavior or assurance claim |
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
-These tasks do not reopen the [OD-13-selected Slint UI direction](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit), two-service authority split,
+These tasks do not reopen the
+[OD-13 Slint replacement decision](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
+two-service authority split,
 ordinary-user UI, time-only v1 or Windows 11 x64 first. The selected delivery target
 is now one complete hardened MSIX; its supported service provisioning and recovery
 remain to be qualified, with no separate MSI service prerequisite. Retained MSI
-profiles are alternatives for a later owner decision.
+profiles are alternatives for a later owner decision. The old Win32 adapter and
+observations remain historical baseline evidence; current Slint fixture source
+and portable evidence are recorded in the GUI handoff. Exact version/features/
+backend, rights/graph/distribution and native behavior retain their own gates. Toolkit
+selection neither removes required Windows OS adapters nor lifts execution holds.
 
 ## 3. R-01 — source reuse and licence compatibility
 
 David intends to take selected upstream code, test it, and modify it where needed. Do not label this clean-room merely because the implementation language changes or many lines are rewritten.
 
-Start with Chrony **4.9 / `8df4f1263e206585e6c4e61352d042c2dd12916a`**. Inspect every imported file's grant and dependencies, not just the repository's generic COPYING text. Preserve source provenance, attribution, corresponding-source/build obligations and intentional deviation records. Source headers already support the existing GPL-2.0-only constraint; no new GPL-3 permission has been granted by this conversation.
+Start with Chrony **4.9 / `8df4f1263e206585e6c4e61352d042c2dd12916a`**. Inspect every imported file's grant and dependencies, not just the repository's generic COPYING text. Preserve source provenance, attribution, corresponding-source/build obligations and intentional deviation records. Source headers support the existing GPL-2.0-only constraint for Chrony-derived code; OD-13's accepted GPL-3.0-only grant applies to the original GUI and does not relicense Core/engine or upstream inputs. Use the [GUI source/grant inventory](../crates/nevrotick-ui/LICENSING.md) alongside the Core port ledger; actual shared-code rights and complete distribution remain review obligations.
 
 Produce a table of actual proposed Rust/native/build dependencies, exact versions and features, selected alternative licence grants, embedded third-party code and compatibility evidence. Revisit the existing held crypto-provider graphs rather than assuming a crate's top-level licence settles its contents. Changes after bugs or optimization retain their derivation record.
 
-Escalate a concrete rights conflict or material behavioral deviation to David. Do not ask him to choose a preferred licence label independently of the source he intends to reuse. Do not remove notices to satisfy an installer or signing-provider requirement.
+Escalate a concrete rights conflict or material behavioral deviation to David. Do not repeat the accepted separate GUI/Core licence choice; escalate only a concrete unresolved rights/graph issue with the source and grants involved. Do not remove notices to satisfy an installer or signing-provider requirement.
 
 ## 4. R-02 — century-scale authenticated recovery
 

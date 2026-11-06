@@ -1,0 +1,1165 @@
+{
+  "schema_version": 1,
+  "scope": "Reviewed actual typed semantic receiver slots; handwritten Slint forwarding must independently reach a text leaf. Native tray-only definitions remain reserved.",
+  "optional_empty_slots": [
+    "AppWindow.editor-error",
+    "AppWindow.editor-feedback",
+    "AppWindow.interval-error",
+    "AppWindow.interval-feedback",
+    "AppWindow.preference-error",
+    "AppWindow.preference-feedback",
+    "AppWindow.recovery-error",
+    "AppWindow.recovery-feedback",
+    "AppWindow.recovery-back-label",
+    "AppWindow.quit-headline",
+    "AppWindow.quit-consequence",
+    "AppWindow.shell-feedback",
+    "AppWindow.service-feedback",
+    "AppWindow.notification-feedback",
+    "AppWindow.diagnostic-feedback",
+    "AppWindow.policy-error",
+    "AppWindow.source-query-error",
+    "AppWindow.accepted-interval-label",
+    "AppWindow.status-feedback",
+    "AppWindow.tray-feedback",
+    "AppWindow.status-headline",
+    "AppWindow.status-consequence",
+    "AppWindow.status-profile-label",
+    "AppWindow.status-profile",
+    "AppWindow.status-authentication",
+    "AppWindow.status-agreement",
+    "AppWindow.status-freshness",
+    "AppWindow.status-check-label",
+    "AppWindow.status-remedy-label"
+  ],
+  "runtime_sinks": {
+    "ui.diagnostic.correction-open": [
+      [
+        "AppWindow",
+        "status-remedy-label"
+      ]
+    ],
+    "ui.diagnostic.invalid-choice": [
+      [
+        "AppWindow",
+        "diagnostic-feedback"
+      ]
+    ],
+    "ui.diagnostic.unavailable-action": [
+      [
+        "AppWindow",
+        "diagnostic-feedback"
+      ]
+    ],
+    "ui.error.edit-before-select": [
+      [
+        "AppWindow",
+        "editor-error"
+      ]
+    ],
+    "ui.error.editor-closed": [
+      [
+        "AppWindow",
+        "editor-error"
+      ]
+    ],
+    "ui.error.interval-choice": [
+      [
+        "AppWindow",
+        "interval-error"
+      ]
+    ],
+    "ui.error.invalid-custom-minutes": [
+      [
+        "AppWindow",
+        "interval-error"
+      ]
+    ],
+    "ui.error.invalid-host": [
+      [
+        "AppWindow",
+        "preference-error"
+      ]
+    ],
+    "ui.error.invalid-label": [
+      [
+        "AppWindow",
+        "preference-error"
+      ]
+    ],
+    "ui.error.invalid-port": [
+      [
+        "AppWindow",
+        "preference-error"
+      ]
+    ],
+    "ui.error.invalid-selection": [
+      [
+        "AppWindow",
+        "preference-error"
+      ]
+    ],
+    "ui.error.page-unavailable": [
+      [
+        "AppWindow",
+        "preference-error"
+      ]
+    ],
+    "ui.error.tray-required": [
+      [
+        "AppWindow",
+        "preference-error"
+      ]
+    ],
+    "ui.feedback.interval-cancelled": [
+      [
+        "AppWindow",
+        "interval-feedback"
+      ]
+    ],
+    "ui.feedback.no-notification-submitted": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.feedback.preference-updated": [
+      [
+        "AppWindow",
+        "interval-feedback"
+      ]
+    ],
+    "ui.feedback.source-cancelled": [
+      [
+        "AppWindow",
+        "editor-feedback"
+      ]
+    ],
+    "ui.fixture.authentication-value": [
+      [
+        "AppWindow",
+        "status-authentication"
+      ]
+    ],
+    "ui.fixture.no-live-connection": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.fixture.not-evaluated": [
+      [
+        "AppWindow",
+        "status-agreement"
+      ]
+    ],
+    "ui.fixture.runtime-value": [
+      [
+        "AppWindow",
+        "status-profile"
+      ]
+    ],
+    "ui.fixture.sources-tab": [
+      [
+        "AppWindow",
+        "status-remedy-label"
+      ]
+    ],
+    "ui.fixture.sync-now": [
+      [
+        "AppWindow",
+        "status-check-label"
+      ]
+    ],
+    "ui.fixture.sync-unavailable": [
+      [
+        "AppWindow",
+        "status-check-label"
+      ],
+      [
+        "AppWindow",
+        "status-feedback"
+      ]
+    ],
+    "ui.fixture.unavailable": [
+      [
+        "AppWindow",
+        "status-freshness"
+      ]
+    ],
+    "ui.help.invalid-host": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.help.invalid-label": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.help.invalid-port": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.inspection.editor-active": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.inspection.hidden-source": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.inspection.invalid-filter": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.inspection.invalid-query": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.inspection.page-required": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.inspection.roles-unavailable": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.interval.automatic": [
+      [
+        "AppWindow",
+        "accepted-interval-label"
+      ]
+    ],
+    "ui.interval.custom": [
+      [
+        "AppWindow",
+        "accepted-interval-label"
+      ]
+    ],
+    "ui.interval.every": [
+      [
+        "AppWindow",
+        "accepted-interval-label"
+      ]
+    ],
+    "ui.native-notification.test-accepted": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.native-notification.test-coalesced": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.native-notification.test-indeterminate": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.native-observer.stop-failed": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.native-observer.stop-timeout": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.policy.editor-active": [
+      [
+        "AppWindow",
+        "policy-error"
+      ]
+    ],
+    "ui.policy.invalid-choice": [
+      [
+        "AppWindow",
+        "policy-error"
+      ]
+    ],
+    "ui.policy.no-preview-error": [
+      [
+        "AppWindow",
+        "policy-error"
+      ]
+    ],
+    "ui.policy.ntp": [
+      [
+        "AppWindow",
+        "status-authentication"
+      ],
+      [
+        "AppWindow",
+        "status-profile"
+      ]
+    ],
+    "ui.policy.nts": [
+      [
+        "AppWindow",
+        "status-profile"
+      ]
+    ],
+    "ui.policy.observe": [
+      [
+        "AppWindow",
+        "status-profile"
+      ]
+    ],
+    "ui.policy.observe-consequence": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.policy.page-required": [
+      [
+        "AppWindow",
+        "policy-error"
+      ]
+    ],
+    "ui.policy.phase-required": [
+      [
+        "AppWindow",
+        "policy-error"
+      ]
+    ],
+    "ui.raw.character": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "interval-error"
+      ],
+      [
+        "AppWindow",
+        "policy-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.raw.context": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "interval-error"
+      ],
+      [
+        "AppWindow",
+        "policy-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.raw.invalid-option": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "interval-error"
+      ],
+      [
+        "AppWindow",
+        "policy-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.raw.stale": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "interval-error"
+      ],
+      [
+        "AppWindow",
+        "policy-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.raw.too-long": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "interval-error"
+      ],
+      [
+        "AppWindow",
+        "policy-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.raw.unavailable": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "interval-error"
+      ],
+      [
+        "AppWindow",
+        "policy-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.rust.back-about": [
+      [
+        "AppWindow",
+        "recovery-back-label"
+      ]
+    ],
+    "ui.rust.back-diagnostics": [
+      [
+        "AppWindow",
+        "recovery-back-label"
+      ]
+    ],
+    "ui.rust.back-settings": [
+      [
+        "AppWindow",
+        "recovery-back-label"
+      ]
+    ],
+    "ui.rust.back-sources": [
+      [
+        "AppWindow",
+        "recovery-back-label"
+      ]
+    ],
+    "ui.rust.back-statistics": [
+      [
+        "AppWindow",
+        "recovery-back-label"
+      ]
+    ],
+    "ui.rust.back-status": [
+      [
+        "AppWindow",
+        "recovery-back-label"
+      ]
+    ],
+    "ui.rust.close-restore-failed": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.close-restored": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.duplicate-source": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.rust.exit-restore-failed": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.exit-restored": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.helper-count": [
+      [
+        "AppWindow",
+        "recovery-error"
+      ]
+    ],
+    "ui.rust.helper-preview-discarded": [
+      [
+        "AppWindow",
+        "recovery-feedback"
+      ]
+    ],
+    "ui.rust.helper-preview-edit": [
+      [
+        "AppWindow",
+        "recovery-feedback"
+      ]
+    ],
+    "ui.rust.helper-preview-retained": [
+      [
+        "AppWindow",
+        "recovery-feedback"
+      ]
+    ],
+    "ui.rust.helper-raw-discarded": [
+      [
+        "AppWindow",
+        "recovery-feedback"
+      ]
+    ],
+    "ui.rust.notification-os-unconfirmed": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.rust.notification-preference-updated": [
+      [
+        "AppWindow",
+        "preference-feedback"
+      ]
+    ],
+    "ui.rust.notifications-blocked": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.rust.notifications-native-unavailable": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.rust.notifications-off": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.rust.observer-unconfirmed": [
+      [
+        "AppWindow",
+        "notification-feedback"
+      ]
+    ],
+    "ui.rust.protocol-choice": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.rust.quit-cancelled": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.quit-partial-consequence": [
+      [
+        "AppWindow",
+        "quit-consequence"
+      ]
+    ],
+    "ui.rust.quit-partial-title": [
+      [
+        "AppWindow",
+        "quit-headline"
+      ]
+    ],
+    "ui.rust.quit-pending-consequence": [
+      [
+        "AppWindow",
+        "quit-consequence"
+      ]
+    ],
+    "ui.rust.quit-pending-title": [
+      [
+        "AppWindow",
+        "quit-headline"
+      ]
+    ],
+    "ui.rust.quit-review-required": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.quit-running-consequence": [
+      [
+        "AppWindow",
+        "quit-consequence"
+      ]
+    ],
+    "ui.rust.quit-running-title": [
+      [
+        "AppWindow",
+        "quit-headline"
+      ]
+    ],
+    "ui.rust.quit-show-cleanup-failed": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.quit-show-failed": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.quit-stopped-consequence": [
+      [
+        "AppWindow",
+        "quit-consequence"
+      ]
+    ],
+    "ui.rust.quit-stopped-title": [
+      [
+        "AppWindow",
+        "quit-headline"
+      ]
+    ],
+    "ui.rust.quit-unknown-title": [
+      [
+        "AppWindow",
+        "quit-headline"
+      ]
+    ],
+    "ui.rust.recovery-edit-required": [
+      [
+        "AppWindow",
+        "recovery-error"
+      ]
+    ],
+    "ui.rust.recovery-leave-required": [
+      [
+        "AppWindow",
+        "recovery-error"
+      ]
+    ],
+    "ui.rust.recovery-page-required": [
+      [
+        "AppWindow",
+        "recovery-error"
+      ]
+    ],
+    "ui.rust.recovery-review-required": [
+      [
+        "AppWindow",
+        "recovery-error"
+      ]
+    ],
+    "ui.rust.service-action": [
+      [
+        "AppWindow",
+        "service-feedback"
+      ]
+    ],
+    "ui.rust.service-unavailable": [
+      [
+        "AppWindow",
+        "service-feedback"
+      ]
+    ],
+    "ui.rust.settings-section": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.rust.sign-in-preference-updated": [
+      [
+        "AppWindow",
+        "preference-feedback"
+      ]
+    ],
+    "ui.rust.source-capacity": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.rust.source-choice": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.rust.source-discarded": [
+      [
+        "AppWindow",
+        "editor-feedback"
+      ]
+    ],
+    "ui.rust.source-id-exhausted": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "recovery-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.rust.source-operation-updated": [
+      [
+        "AppWindow",
+        "editor-feedback"
+      ]
+    ],
+    "ui.rust.source-preview-updated": [
+      [
+        "AppWindow",
+        "editor-feedback"
+      ]
+    ],
+    "ui.rust.source-review-only": [
+      [
+        "AppWindow",
+        "editor-feedback"
+      ]
+    ],
+    "ui.rust.tray-preference-updated": [
+      [
+        "AppWindow",
+        "preference-feedback"
+      ]
+    ],
+    "ui.rust.tray-unavailable": [
+      [
+        "AppWindow",
+        "shell-feedback"
+      ]
+    ],
+    "ui.shell.diagnose-power": [
+      [
+        "AppWindow",
+        "status-remedy-label"
+      ]
+    ],
+    "ui.shell.manage-service": [
+      [
+        "AppWindow",
+        "status-remedy-label"
+      ]
+    ],
+    "ui.shell.unknown-consequence": [
+      [
+        "AppWindow",
+        "quit-consequence"
+      ]
+    ],
+    "ui.source.empty-review": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.source.list-required": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.source.page-required": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.source.review-required": [
+      [
+        "AppWindow",
+        "editor-error"
+      ],
+      [
+        "AppWindow",
+        "source-query-error"
+      ]
+    ],
+    "ui.status.action.context-required": [
+      [
+        "AppWindow",
+        "status-feedback"
+      ]
+    ],
+    "ui.status.check.sources": [
+      [
+        "AppWindow",
+        "status-check-label"
+      ]
+    ],
+    "ui.status.detail.date-recovery": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.holdover": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.rate-limited": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.review": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.stopped": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.tracking": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.unavailable": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.uncertain-result": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.waiting": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.windows-managed": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.detail.withheld": [
+      [
+        "AppWindow",
+        "status-consequence"
+      ]
+    ],
+    "ui.status.evidence.agreement-satisfied": [
+      [
+        "AppWindow",
+        "status-agreement"
+      ]
+    ],
+    "ui.status.evidence.authenticated": [
+      [
+        "AppWindow",
+        "status-authentication"
+      ]
+    ],
+    "ui.status.evidence.current-estimate": [
+      [
+        "AppWindow",
+        "status-freshness"
+      ]
+    ],
+    "ui.status.evidence.historical": [
+      [
+        "AppWindow",
+        "status-agreement"
+      ],
+      [
+        "AppWindow",
+        "status-authentication"
+      ],
+      [
+        "AppWindow",
+        "status-freshness"
+      ]
+    ],
+    "ui.status.headline.acquiring": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.blocked": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.conflict": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.correction-pending": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.date-recovery": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.expired": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.holdover": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.initializing": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.leap-guard": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.observe-only": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.rate-limited": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.reacquiring": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.service-stopped": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.tracking": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.uncertain-result": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.unknown": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.headline.windows-managed": [
+      [
+        "AppWindow",
+        "status-headline"
+      ]
+    ],
+    "ui.status.profile.label": [
+      [
+        "AppWindow",
+        "status-profile-label"
+      ]
+    ]
+  }
+}

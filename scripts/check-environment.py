@@ -47,6 +47,7 @@ FORBIDDEN_PREFIXES = (
     "NEXTEST_", "CARGO_MUTANTS_", "CARGO_LLVM_COV_",
 )
 MAX_OUTPUT = 2 * 1024 * 1024
+MAX_REQUESTED_OUTPUT = 8 * 1024 * 1024
 
 
 class Incomplete(RuntimeError):
@@ -73,8 +74,11 @@ def overridden_names(environment: dict[str, str]) -> list[str]:
     return sorted(name for name in environment if name in FORBIDDEN_ENV or name.startswith(FORBIDDEN_PREFIXES))
 
 
-def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None, stdin=None) -> dict:
+def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None, stdin=None,
+        max_output: int = MAX_OUTPUT) -> dict:
     """Bound wall time/output and reject surviving children of the owned group."""
+    if type(max_output) is not int or not 0 < max_output <= MAX_REQUESTED_OUTPUT:
+        raise Incomplete("Unadmitted command-output budget.")
     process = subprocess.Popen(
         command, cwd=cwd, env=environment, stdin=stdin, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT, start_new_session=True,
@@ -93,7 +97,7 @@ def run(command: list[str], *, cwd: Path, timeout: float = 30, environment=None,
                     chunk = os.read(key.fileobj.fileno(), 65536)
                     if not chunk:
                         selector.unregister(key.fileobj)
-                    elif len(output) + len(chunk) > MAX_OUTPUT:
+                    elif len(output) + len(chunk) > max_output:
                         failure = "output budget exceeded"
                         break
                     else:

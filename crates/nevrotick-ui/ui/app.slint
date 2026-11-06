@@ -1,0 +1,597 @@
+import { UiCopy, LocalizationCopy } from "localization-copy.slint";
+export { UiCopy, LocalizationCopy }
+import { RawCopy } from "raw-copy.slint";
+import { SourceCopy } from "source-copy.slint";
+import { PolicyCopy } from "policy-copy.slint";
+import { InspectionCopy } from "inspection-copy.slint";
+import { ScrollView } from "std-widgets.slint";
+import { Page, SourceRow, SourceChangeRow } from "types.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { Theme } from "theme.slint";
+import { ShellCopy } from "shell-copy.slint";
+import { QuitWarning } from "quit-warning.slint";
+import { BodyText, SecondaryText, Badge, NavigationButton, Rule, ActionButton } from "components.slint";
+import { StatusPage } from "status.slint";
+import { SourcesPage } from "sources.slint";
+import { StatisticsPage } from "statistics.slint";
+import { DiagnosticsPage } from "diagnostics.slint";
+import { SettingsPage } from "settings.slint";
+import { AboutPage } from "about.slint";
+import { RecoveryPage } from "recovery.slint";
+import { RecoveryCopy } from "recovery-copy.slint";
+import { ModalFrame } from "modal-frame.slint";
+export { Page, SourceRow, SourceChangeRow, PolicyCopy, InspectionCopy, SourceCopy, RawCopy }
+
+// AppWindow only projects accepted host values and forwards narrow requests.
+// In-properties are not domain guards. The host must validate every callback.
+export component AppWindow inherits Window {
+    in property <bool> catalog-failure: false;
+    in property <string> fixture-tray-feedback: "";
+    out property <string> tray-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[416] : root.fixture-tray-feedback;
+    title: FixtureCopy.window-title;
+    preferred-width: 1080px;
+    preferred-height: 780px;
+    min-width: 640px;
+    min-height: 600px;
+    background: Theme.surface;
+    default-font-family: "Segoe UI";
+    default-font-size: 14px;
+
+    in property <bool> raw-revision: false;
+    callback raw-text-edited(int, string) -> string;
+    callback raw-action-permitted(int, int) -> bool;
+    callback raw-menu-key(string, bool) -> bool;
+    callback raw-choice-edited(int, int) -> int;
+    raw-action-permitted(field, action) => { return false; }
+    // No host classifier: consume keys rather than opening the private stock menu.
+    raw-menu-key(text, shift) => { return true; }
+    raw-text-edited(field, value) => {
+        if field == 0 { return root.draft-label; }
+        if field == 1 { return root.draft-host; }
+        if field == 2 { return root.draft-port; }
+        if field == 3 { return root.draft-source-query; }
+        if field == 4 { return root.draft-custom-minutes; }
+        if field == 5 { return root.draft-recovery-first; }
+        if field == 6 { return root.draft-recovery-second; }
+        return "";
+    }
+    raw-choice-edited(field, value) => {
+        if field == 0 { return root.draft-interval-choice; }
+        if field == 1 { return root.draft-recovery-count; }
+        if field == 2 { return root.draft-protocol-choice; }
+        if field == 3 { return root.draft-policy-choice; }
+        return -1;
+    }
+    in-out property <length> page-scroll-y: 0px;
+    in property <[SourceRow]> sources;
+    in property <[SourceRow]> visible-sources;
+    in property <bool> selected-source-visible;
+    in property <bool> source-search-open: false;
+    callback source-search-requested(bool) -> bool;
+    source-search-requested(requested) => { return root.source-search-open; }
+    in property <string> draft-source-query;
+    in property <string> accepted-source-query;
+    in property <string> fixture-source-query-error: "";
+    out property <string> source-query-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[413] : root.fixture-source-query-error;
+    in property <bool> inspection-detail-open;
+    in property <bool> inspection-detail-hidden;
+    in property <SourceRow> inspection-detail-source;
+    in property <int> policy-phase;
+    in property <bool> policy-has-preview;
+    in property <int> policy-accepted-choice;
+    in property <int> draft-policy-choice;
+    in property <string> fixture-policy-error: "";
+    out property <string> policy-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[412] : root.fixture-policy-error;
+    callback source-query-requested(string);
+    callback source-query-clear-requested();
+    callback source-filter-requested(int);
+    callback source-details-requested(int);
+    callback source-details-close-requested();
+    callback policy-edit-requested();
+    callback policy-review-requested(int);
+    callback policy-cancel-requested();
+    callback policy-open-review-requested();
+    callback policy-keep-requested();
+    callback policy-discard-requested();
+    in property <[SourceChangeRow]> source-changes;
+    in property <bool> review-open: false;
+    in property <bool> editor-adding: false;
+    in property <int> selected-source: 0;
+    in property <Page> current-page: Page.status;
+    in property <bool> power-mode: false;
+    in property <bool> editor-open: false;
+    in property <bool> host-ready: false;
+    in property <string> fixture-status-headline: "";
+    out property <string> status-headline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[417] : root.fixture-status-headline;
+    in property <string> fixture-status-consequence: "";
+    out property <string> status-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[418] : root.fixture-status-consequence;
+    in property <string> fixture-status-profile-label: "";
+    out property <string> status-profile-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[419] : root.fixture-status-profile-label;
+    in property <string> fixture-status-profile: "";
+    out property <string> status-profile: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[420] : root.fixture-status-profile;
+    in property <string> fixture-status-authentication: "";
+    out property <string> status-authentication: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[421] : root.fixture-status-authentication;
+    in property <string> fixture-status-agreement: "";
+    out property <string> status-agreement: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[422] : root.fixture-status-agreement;
+    in property <string> fixture-status-freshness: "";
+    out property <string> status-freshness: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[423] : root.fixture-status-freshness;
+    in property <string> fixture-status-check-label: "";
+    out property <string> status-check-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[424] : root.fixture-status-check-label;
+    in property <string> fixture-status-remedy-label: "";
+    out property <string> status-remedy-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[425] : root.fixture-status-remedy-label;
+    in property <string> fixture-status-feedback: "";
+    out property <string> status-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[415] : root.fixture-status-feedback;
+    callback status-check-requested();
+    callback status-remedy-requested();
+    in property <string> draft-label;
+    in property <string> draft-host;
+    in property <string> draft-port;
+    in property <int> draft-protocol-choice: 0;
+    in property <string> fixture-editor-error: "";
+    out property <string> editor-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[397] : root.fixture-editor-error;
+    in property <string> fixture-editor-feedback: "";
+    out property <string> editor-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[398] : root.fixture-editor-feedback;
+    in property <int> draft-interval-choice: 0;
+    in property <string> draft-custom-minutes: "1";
+    in property <string> fixture-accepted-interval-label: "";
+    out property <string> accepted-interval-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[414] : root.fixture-accepted-interval-label;
+    in property <string> fixture-preference-error: "";
+    out property <string> preference-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[401] : root.fixture-preference-error;
+    in property <string> fixture-preference-feedback: "";
+    out property <string> preference-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[402] : root.fixture-preference-feedback;
+    in property <int> preference-feedback-section: -1;
+    in property <string> fixture-interval-error: "";
+    out property <string> interval-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[399] : root.fixture-interval-error;
+    in property <string> fixture-interval-feedback: "";
+    out property <string> interval-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[400] : root.fixture-interval-feedback;
+    in property <bool> notifications-enabled: true;
+    in property <bool> native-notifications-available: false;
+    in property <bool> native-notification-test-available: false;
+    in property <int> windows-notification-setting: 0;
+    in property <int> notification-observer-state: 0;
+    in property <bool> native-tray-available: false;
+    in property <bool> tray-enabled: false;
+    in property <bool> sign-in-enabled: false;
+    in property <int> draft-recovery-count: 0;
+    in property <string> draft-recovery-first;
+    in property <string> draft-recovery-second;
+    in property <[string]> recovery-preview-hosts;
+    in property <bool> recovery-review-open: false;
+    in property <bool> recovery-leave-open: false;
+    in property <string> fixture-recovery-back-label: RecoveryCopy.back;
+    out property <string> recovery-back-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[405] : root.fixture-recovery-back-label;
+    in property <string> fixture-recovery-error: "";
+    out property <string> recovery-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[403] : root.fixture-recovery-error;
+    in property <string> fixture-recovery-feedback: "";
+    out property <string> recovery-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[404] : root.fixture-recovery-feedback;
+    in property <int> diagnostic-view: 0;
+    in property <int> diagnostic-scope: 0;
+    in property <int> diagnostic-duration: 0;
+    in property <string> fixture-diagnostic-feedback: "";
+    out property <string> diagnostic-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[411] : root.fixture-diagnostic-feedback;
+    callback diagnostic-view-requested(int);
+    callback diagnostic-collection-requested(int, int);
+    callback diagnostic-action-requested(int);
+    callback recovery-open-requested();
+    callback recovery-back-requested();
+    callback recovery-update-requested(int, string, string);
+    callback recovery-cancel-requested();
+    callback recovery-keep-editing-requested();
+    callback recovery-discard-requested();
+    callback recovery-leave-keep-requested();
+    callback recovery-leave-discard-requested();
+    callback recovery-leave-stay-requested();
+    in property <bool> quit-warning-open: false;
+    in property <bool> emergency-quit-warning: false;
+    in property <string> fixture-quit-headline: "";
+    out property <string> quit-headline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[406] : root.fixture-quit-headline;
+    in property <string> fixture-quit-consequence: ShellCopy.unknown-consequence;
+    out property <string> quit-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[407] : root.fixture-quit-consequence;
+    in property <bool> ui-exit-requested: false;
+    in property <string> fixture-shell-feedback: "";
+    out property <string> shell-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[408] : root.fixture-shell-feedback;
+    in property <int> settings-section: 0;
+    in property <string> fixture-service-feedback: "";
+    out property <string> service-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[409] : root.fixture-service-feedback;
+    in property <string> fixture-notification-feedback: "";
+    out property <string> notification-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[410] : root.fixture-notification-feedback;
+    out property <bool> recovery-content-focused: main-content.has-focus && root.current-page == Page.recovery && !root.recovery-leave-open && !root.quit-warning-open;
+    out property <bool> source-inspection-focused: main-content.has-focus && root.current-page == Page.sources && root.power-mode && !root.quit-warning-open && !root.recovery-leave-open;
+    out property <bool> service-section-focused: main-content.has-focus && root.current-page == Page.settings && root.settings-section == 1;
+    out property <bool> settings-section-focused: main-content.has-focus && root.current-page == Page.settings && root.settings-section >= 0 && root.settings-section <= 4 && (root.settings-section != 3 || root.power-mode) && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested;
+    out property <bool> quit-keep-open-focused: root.quit-warning-open && quit-dialog.keep-open-focused;
+    out property <bool> quit-manage-focused: root.quit-warning-open && quit-dialog.manage-focused;
+    out property <bool> quit-confirm-focused: root.quit-warning-open && quit-dialog.confirm-focused;
+    out property <bool> quit-focus-contained: root.quit-warning-open && quit-dialog.focus-contained;
+    out property <length> quit-body-scroll-y: quit-dialog.body-scroll-y;
+    out property <length> quit-body-scroll-limit: quit-dialog.body-scroll-limit;
+    out property <bool> quit-trigger-focused: !root.quit-warning-open && !root.ui-exit-requested && quit-trigger.has-focus;
+    callback navigate(Page);
+    callback mode-requested(bool);
+    callback source-selected(int);
+    callback edit-requested();
+    callback update-requested(string, string, int, string);
+    callback add-requested();
+    callback remove-requested(int);
+    callback undo-requested(int);
+    callback review-requested();
+    callback review-close-requested();
+    callback discard-requested();
+    callback protocol-requested(int);
+    callback port-edited();
+    callback cancel-requested();
+    callback interval-save-requested(int, string);
+    callback interval-cancel-requested();
+    callback notifications-requested(bool) -> bool;
+    notifications-requested(value) => { return root.notifications-enabled; }
+    callback tray-requested(bool) -> bool;
+    tray-requested(value) => { return root.tray-enabled; }
+    callback sign-in-requested(bool) -> bool;
+    sign-in-requested(value) => { return root.sign-in-enabled; }
+    callback quit-requested();
+    callback quit-confirm-requested();
+    callback quit-cancel-requested();
+    callback manage-service-requested();
+    callback window-close-requested() -> bool;
+    callback settings-section-requested(int);
+    callback service-power-requested();
+    callback diagnose-service-requested();
+    callback service-command-requested(int);
+    callback notification-test-requested();
+    callback repository-permitted() -> bool;
+    callback repository-requested() -> bool;
+    window-close-requested => { return false; }
+    repository-requested => {
+        if !root.repository-permitted() { return false; }
+        // This target is code-owned. Translation text cannot select a URI.
+        return Platform.open-url("https://github.com/DavidOsipov/NevroTick");
+    }
+
+    // These presentation functions never change an accepted route or lifecycle.
+    public function focus-source-details() {
+        if root.current-page == Page.sources && root.power-mode && !root.quit-warning-open && !root.recovery-leave-open {
+            root.page-scroll-y = 0px;
+            main-content.focus();
+        }
+    }
+    public function focus-settings-section() {
+        if root.host-ready && root.current-page == Page.settings && root.settings-section >= 0 && root.settings-section <= 4 && (root.settings-section != 3 || root.power-mode) && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested {
+            root.page-scroll-y = 0px;
+            main-content.focus();
+        }
+    }
+    public function focus-service() {
+        if root.current-page == Page.settings && root.settings-section == 1 && !root.quit-warning-open && !root.recovery-leave-open {
+            root.page-scroll-y = 0px;
+            main-content.focus();
+        }
+    }
+    public function focus-recovery-content() {
+        if root.host-ready && root.current-page == Page.recovery && root.power-mode && !root.recovery-leave-open && !root.quit-warning-open && !root.ui-exit-requested {
+            main-content.focus();
+        }
+    }
+    public function reveal-recovery-form() {
+        if root.host-ready && root.current-page == Page.recovery && root.power-mode && !root.recovery-leave-open && !root.quit-warning-open && !root.ui-exit-requested {
+            // Focus may scroll on its own; apply the final form reveal afterward.
+            main-content.focus();
+            root.page-scroll-y = -max(0px, scroll.content-height - scroll.visible-height);
+        }
+    }
+    public function focus-quit-warning() {
+        quit-dialog.focus-keep-open();
+    }
+    public function focus-after-quit() {
+        if root.host-ready && !root.quit-warning-open && !root.ui-exit-requested { quit-trigger.focus(); }
+    }
+    application-scope := FocusScope {
+        width: root.width;
+        height: root.height;
+        // Intercept before a stale underlay focus can edit a two-way widget.
+        capture-key-pressed(event) => {
+            if root.recovery-leave-open && !root.recovery-leave-focus-contained {
+                root.focus-recovery-leave-safe();
+                return accept;
+            }
+            if root.quit-warning-open && !root.quit-focus-contained {
+                root.focus-quit-warning();
+                return accept;
+            }
+            return reject;
+        }
+        capture-key-released(event) => {
+            if root.recovery-leave-open && !root.recovery-leave-focus-contained {
+                root.focus-recovery-leave-safe();
+                return accept;
+            }
+            if root.quit-warning-open && !root.quit-focus-contained {
+                root.focus-quit-warning();
+                return accept;
+            }
+            return reject;
+        }
+        VerticalLayout {
+        width: root.width;
+        height: root.height;
+        spacing: 0px;
+        if root.catalog-failure: BodyText {
+            text: "The interface encountered an internal error. Close and reopen NevroTick.";
+            color: Theme.red;
+            vertical-stretch: 0;
+        }
+        Rectangle {
+            vertical-stretch: 0;
+            background: Theme.surface;
+            HorizontalLayout {
+                padding-left: 28px;
+                padding-right: 28px;
+                padding-top: 17px;
+                padding-bottom: 17px;
+                spacing: 18px;
+                BodyText { text: FixtureCopy.brand; font-size: 25px; font-weight: 650; color: Theme.blue; vertical-alignment: center; }
+                Rectangle { horizontal-stretch: 1; }
+                Badge { text: FixtureCopy.sample-label; }
+                HorizontalLayout {
+                    spacing: 4px;
+                    NavigationButton { text: FixtureCopy.simple-mode; active: !root.power-mode; activated => { root.mode-requested(false); } }
+                    NavigationButton { text: FixtureCopy.power-mode; active: root.power-mode; activated => { root.mode-requested(true); } }
+                }
+            }
+        }
+        Rectangle {
+            background: Theme.soft;
+            vertical-stretch: 0;
+            GridLayout {
+                padding-left: 24px;
+                padding-right: 24px;
+                padding-top: 3px;
+                spacing: 4px;
+                NavigationButton { row: 0; col: 0; text: FixtureCopy.status-tab; active: root.current-page == Page.status; activated => { root.navigate(Page.status); } }
+                if root.power-mode: NavigationButton { row: 0; col: 1; text: FixtureCopy.sources-tab; active: root.current-page == Page.sources; activated => { root.navigate(Page.sources); } }
+                if root.power-mode: NavigationButton { row: 0; col: 2; text: FixtureCopy.statistics-tab; active: root.current-page == Page.statistics; activated => { root.navigate(Page.statistics); } }
+                if root.power-mode: NavigationButton { row: 0; col: 3; text: FixtureCopy.diagnostics-tab; active: root.current-page == Page.diagnostics; activated => { root.navigate(Page.diagnostics); } }
+                NavigationButton { row: 0; col: root.power-mode ? 4 : 1; text: FixtureCopy.settings-tab; active: root.current-page == Page.settings; activated => { root.navigate(Page.settings); } }
+                NavigationButton { row: 0; col: root.power-mode ? 5 : 2; text: FixtureCopy.about-tab; active: root.current-page == Page.about; activated => { root.navigate(Page.about); } }
+            }
+        }
+        Rule { }
+        if root.shell-feedback != "": SecondaryText { text: root.shell-feedback; color: Theme.amber; }
+        if root.ui-exit-requested: SecondaryText { text: ShellCopy.exit-requested; color: Theme.amber; }
+        scroll := ScrollView {
+            horizontal-scrollbar-policy: always-off;
+            content-y <=> root.page-scroll-y;
+            content-width: self.visible-width;
+            HorizontalLayout {
+                alignment: center;
+                main-content := FocusScope {
+                    width: min(scroll.visible-width - 56px, root.power-mode ? 1020px : 680px);
+                    vertical-stretch: 0;
+                    focus-on-click: false;
+                    focus-on-tab-navigation: false;
+                    accessible-role: main;
+                    accessible-label: root.current-page == Page.sources && root.inspection-detail-open ? InspectionCopy.details-heading : root.current-page == Page.sources && root.review-open ? SourceCopy.review-heading : root.current-page == Page.sources && root.editor-open ? (root.editor-adding ? SourceCopy.add-title : SourceCopy.edit-title) : root.current-page == Page.settings ? (root.settings-section == 1 ? ShellCopy.background-service : root.settings-section == 2 ? ShellCopy.notifications : root.settings-section == 3 && root.power-mode ? ShellCopy.time-policy : root.settings-section == 4 ? ShellCopy.personal-preferences : ShellCopy.synchronization-settings) : root.current-page == Page.recovery ? RecoveryCopy.title : ShellCopy.main-content;
+                    Rectangle {
+                        width: parent.width;
+                        height: parent.height;
+                        background: transparent;
+                        border-color: root.settings-section-focused || root.service-section-focused || root.recovery-content-focused || root.source-inspection-focused ? Theme.blue : transparent;
+                        border-width: 1px;
+                        border-radius: 4px;
+                    }
+                    VerticalLayout {
+                    spacing: 20px;
+                    padding-top: root.power-mode ? 26px : 34px;
+                    padding-bottom: 30px;
+                    alignment: start;
+                    if root.current-page == Page.status: StatusPage {
+                        power-mode: root.power-mode;
+                        host-ready: root.host-ready;
+                        headline: root.status-headline;
+                        consequence: root.status-consequence;
+                        profile-label: root.status-profile-label;
+                        profile: root.status-profile;
+                        authentication: root.status-authentication;
+                        agreement: root.status-agreement;
+                        freshness: root.status-freshness;
+                        check-label: root.status-check-label;
+                        remedy-label: root.status-remedy-label;
+                        feedback: root.status-feedback;
+                        check-requested => { root.status-check-requested(); }
+                        remedy-requested => { root.status-remedy-requested(); }
+                    }
+                    if root.current-page == Page.sources && root.power-mode: SourcesPage {
+                        sources: root.visible-sources;
+                        all-source-count: root.sources.length;
+                        selected-source-visible: root.selected-source-visible;
+                        search-open: root.source-search-open;
+                        search-requested(requested) => { return root.source-search-requested(requested); }
+                        draft-query: root.draft-source-query;
+                        accepted-query: root.accepted-source-query;
+                        query-error: root.source-query-error;
+                        detail-open: root.inspection-detail-open;
+                        detail-hidden: root.inspection-detail-hidden;
+                        detail-source: root.inspection-detail-source;
+                        query-requested(raw) => { root.source-query-requested(raw); }
+                        query-clear-requested => { root.source-query-clear-requested(); }
+                        filter-requested(raw) => { root.source-filter-requested(raw); }
+                        details-requested(id) => { root.source-details-requested(id); }
+                        details-close-requested => { root.source-details-close-requested(); }
+                        recovery-open-requested => { root.recovery-open-requested(); }
+                        source-changes: root.source-changes;
+                        review-open: root.review-open;
+                        editor-adding: root.editor-adding;
+                        selected-source: root.selected-source;
+                        editor-open: root.editor-open;
+                        host-ready: root.host-ready && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested;
+                        raw-revision: root.raw-revision;
+                        raw-text-edited(field, value) => { return root.raw-text-edited(field, value); }
+                        raw-action-permitted(field, action) => { return root.raw-action-permitted(field, action); }
+                        raw-menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+                        raw-choice-edited(field, value) => { return root.raw-choice-edited(field, value); }
+                        draft-label: root.draft-label;
+                        draft-host: root.draft-host;
+                        draft-port: root.draft-port;
+                        draft-protocol-choice: root.draft-protocol-choice;
+                        editor-error: root.editor-error;
+                        editor-feedback: root.editor-feedback;
+                        source-selected(index) => { root.source-selected(index); }
+                        edit-requested => { root.edit-requested(); }
+                        update-requested(label, host, protocol, port) => { root.update-requested(label, host, protocol, port); }
+                        add-requested => { root.add-requested(); }
+                        remove-requested(id) => { root.remove-requested(id); }
+                        undo-requested(id) => { root.undo-requested(id); }
+                        review-requested => { root.review-requested(); }
+                        review-close-requested => { root.review-close-requested(); }
+                        discard-requested => { root.discard-requested(); }
+                        cancel-requested => { root.cancel-requested(); }
+                    }
+                    if root.current-page == Page.statistics && root.power-mode: StatisticsPage { sources: root.sources; }
+                    if root.current-page == Page.diagnostics && root.power-mode: DiagnosticsPage {
+                        raw-revision: root.raw-revision;
+                        host-ready: root.host-ready && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested;
+                        view: root.diagnostic-view;
+                        collection-scope: root.diagnostic-scope;
+                        collection-duration: root.diagnostic-duration;
+                        feedback: root.diagnostic-feedback;
+                        view-requested(choice) => { root.diagnostic-view-requested(choice); }
+                        collection-requested(scope, duration) => { root.diagnostic-collection-requested(scope, duration); }
+                        service-open-requested => { root.service-power-requested(); }
+                        recovery-open-requested => { root.recovery-open-requested(); }
+                    }
+                    if root.current-page == Page.recovery && root.power-mode: RecoveryPage {
+                        host-ready: root.host-ready && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested;
+                        raw-revision: root.raw-revision;
+                        raw-text-edited(field, value) => { return root.raw-text-edited(field, value); }
+                        raw-action-permitted(field, action) => { return root.raw-action-permitted(field, action); }
+                        raw-menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+                        raw-choice-edited(field, value) => { return root.raw-choice-edited(field, value); }
+                        review-open: root.recovery-review-open;
+                        leave-open: root.recovery-leave-open;
+                        back-label: root.recovery-back-label;
+                        preview-hosts: root.recovery-preview-hosts;
+                        helper-count: root.draft-recovery-count;
+                        first-helper: root.draft-recovery-first;
+                        second-helper: root.draft-recovery-second;
+                        error: root.recovery-error;
+                        feedback: root.recovery-feedback;
+                        back-requested => { root.recovery-back-requested(); }
+                        update-requested(count, first, second) => { root.recovery-update-requested(count, first, second); }
+                        cancel-requested => { root.recovery-cancel-requested(); }
+                        keep-editing-requested => { root.recovery-keep-editing-requested(); }
+                        discard-requested => { root.recovery-discard-requested(); }
+                    }
+                    if root.current-page == Page.settings: SettingsPage {
+                        viewport-height: scroll.visible-height;
+                        recovery-open-requested => { root.recovery-open-requested(); }
+                        host-ready: root.host-ready && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested;
+                        raw-revision: root.raw-revision;
+                        raw-text-edited(field, value) => { return root.raw-text-edited(field, value); }
+                        raw-action-permitted(field, action) => { return root.raw-action-permitted(field, action); }
+                        raw-menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+                        raw-choice-edited(field, value) => { return root.raw-choice-edited(field, value); }
+                        power-mode: root.power-mode;
+                        settings-section: root.settings-section;
+                        source-editor-open: root.editor-open;
+                        policy-phase: root.policy-phase;
+                        policy-has-preview: root.policy-has-preview;
+                        policy-accepted-choice: root.policy-accepted-choice;
+                        draft-policy-choice: root.draft-policy-choice;
+                        policy-error: root.policy-error;
+                        policy-edit-requested => { root.policy-edit-requested(); }
+                        policy-review-requested(raw) => { root.policy-review-requested(raw); }
+                        policy-cancel-requested => { root.policy-cancel-requested(); }
+                        policy-open-review-requested => { root.policy-open-review-requested(); }
+                        policy-keep-requested => { root.policy-keep-requested(); }
+                        policy-discard-requested => { root.policy-discard-requested(); }
+                        service-feedback: root.service-feedback;
+                        notification-feedback: root.notification-feedback;
+                        native-notifications-available: root.native-notifications-available;
+                        native-notification-test-available: root.native-notification-test-available;
+                        windows-notification-setting: root.windows-notification-setting;
+                        notification-observer-state: root.notification-observer-state;
+                        native-tray-available: root.native-tray-available;
+                        draft-interval-choice: root.draft-interval-choice;
+                        draft-custom-minutes: root.draft-custom-minutes;
+                        accepted-interval-label: root.accepted-interval-label;
+                        preference-error: root.preference-error;
+                        preference-feedback: root.preference-feedback;
+                        preference-feedback-section: root.preference-feedback-section;
+                        interval-error: root.interval-error;
+                        interval-feedback: root.interval-feedback;
+                        notifications-enabled: root.notifications-enabled;
+                        tray-enabled: root.tray-enabled;
+                        sign-in-enabled: root.sign-in-enabled;
+                        interval-save-requested(choice, raw) => { root.interval-save-requested(choice, raw); }
+                        interval-cancel-requested => { root.interval-cancel-requested(); }
+                        notifications-requested(value) => { return root.notifications-requested(value); }
+                        tray-requested(value) => { return root.tray-requested(value); }
+                        sign-in-requested(value) => { return root.sign-in-requested(value); }
+                        settings-section-requested(section) => { root.settings-section-requested(section); }
+                        service-power-requested => { root.service-power-requested(); }
+                        diagnose-service-requested => { root.diagnose-service-requested(); }
+                        service-command-requested(command) => { root.service-command-requested(command); }
+                        notification-test-requested => { root.notification-test-requested(); }
+                    }
+                    if root.current-page == Page.about: AboutPage {
+                        repository-requested => { return root.repository-requested(); }
+                    }
+                    }
+                }
+            }
+        }
+        Rule { }
+        Rectangle {
+            vertical-stretch: 0;
+            background: Theme.soft;
+            HorizontalLayout {
+                padding-left: 28px;
+                padding-right: 28px;
+                padding-top: 11px;
+                padding-bottom: 11px;
+                spacing: 16px;
+                VerticalLayout {
+                    spacing: 4px;
+                    SecondaryText { text: FixtureCopy.sample-label; font-weight: 600; }
+                    SecondaryText { text: FixtureCopy.local-boundary; font-size: 11px; }
+                }
+                quit-trigger := ActionButton {
+                    text: ShellCopy.quit-ui;
+                    enabled: root.host-ready && !root.quit-warning-open && !root.ui-exit-requested;
+                    clicked => { root.quit-requested(); }
+                }
+            }
+        }
+    }
+    recovery-leave-modal := ModalFrame {
+        width: parent.width;
+        height: parent.height;
+        visible: root.recovery-leave-open;
+        open: root.recovery-leave-open;
+        host-ready: root.host-ready;
+        title: RecoveryCopy.leave-title;
+        safe-label: RecoveryCopy.leave-stay;
+        second-label: RecoveryCopy.leave-keep;
+        third-label: RecoveryCopy.leave-discard;
+        safe-requested => { root.recovery-leave-stay-requested(); }
+        second-requested => { root.recovery-leave-keep-requested(); }
+        third-requested => { root.recovery-leave-discard-requested(); }
+        BodyText { text: RecoveryCopy.leave-description; }
+    }
+    quit-dialog := QuitWarning {
+        width: root.width;
+        height: root.height;
+        visible: root.quit-warning-open;
+        open: root.quit-warning-open;
+        emergency: root.emergency-quit-warning;
+        host-ready: root.host-ready;
+        service-headline: root.quit-headline;
+        service-consequence: root.quit-consequence;
+        keep-open-requested => { root.quit-cancel-requested(); }
+        manage-service-requested => { root.manage-service-requested(); }
+        confirm-requested => { root.quit-confirm-requested(); }
+    }
+    }
+    out property <bool> recovery-leave-safe-focused: recovery-leave-modal.safe-focused;
+    out property <bool> recovery-leave-focus-contained: recovery-leave-modal.focus-contained;
+    public function focus-recovery-leave-safe() { recovery-leave-modal.focus-safe(); }
+}

@@ -54,12 +54,14 @@ Start with the [skills index](.agents/skills/README.md) for ideas to adapt.
 **Early development — the current software does not synchronize your clock.**
 
 [Slint is the owner-selected default](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit).
-The checked-in sample-data UI still uses Win32; its [Slint migration](tasks/ui-m0.md)
-needs exact dependency/licence admission and candidate-specific Windows evidence.
+The checked-in sample-data GUI uses Slint and the [current v0.4 design](docs/nevrotick-design-v0.4/README.md).
+Its [handoff](tasks/slint-gui-handoff.md) records the implemented fixture workflows,
+original GUI GPL-3.0-only grant, branch checks and remaining backend, native and
+critical-text approval gaps. Combined-tree qualification remains separate.
 
 The workspace contains a sample-data Windows UI, portable protocol/numerical
-fixtures and a bounded, unauthenticated two-peer loopback observer. Its
-observations are ineligible for clock control. Production NTP/NTS acquisition,
+fixtures and bounded, unauthenticated experimental acquisition with controlled
+measurement qualification. Its observations remain ineligible for clock control. Production NTP/NTS acquisition,
 installed services, clock changes, Android, DoQ, pinning and the complete
 installer remain future work.
 See the [current implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
@@ -79,7 +81,7 @@ proposed first-stable baseline and the preparation required for bad-release reco
 | [time-domain](crates/time-domain/) | Checked timestamp, era, offset and elapsed-time arithmetic. |
 | [ntp-exchange](crates/ntp-exchange/) | Unauthenticated fixture association and deterministic scenarios. |
 | [time-core](crates/time-core/) | Pure time-estimation, source-selection/combination and modeled correction fixtures. |
-| [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated loopback observation pilot; no production service or clock authority. |
+| [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated experimental acquisition and controlled measurements; no production service or clock authority. |
 
 ## Getting started with development
 
@@ -106,7 +108,7 @@ TOOLING.md also covers dependency checks and Windows cross-builds for
 | --- | --- |
 | Documentation map | [Guide](docs/README.md) |
 | Architecture and decisions | [Architecture](docs/windows-time-architecture.md), [owner decisions](docs/nevrotick-owner-decisions.md) |
-| UI and artwork | [Design v0.2](docs/nevrotick-design-v0.2/README.md), [brand kit](docs/NevroTick-AVIF-kit-v1/README.md) |
+| UI and artwork | [Current design v0.4](docs/nevrotick-design-v0.4/README.md), [interactive preview](docs/nevrotick-design-v0.4/NevroTick-UI-v0.4.html), [brand kit](docs/NevroTick-AVIF-kit-v1/README.md) |
 | Vulnerability reporting | [SECURITY.md](SECURITY.md) |
 | Release support and recovery | [Release policy](docs/release-policy.md): proposed support baseline, approval, withdrawal and incident procedures |
 
@@ -130,9 +132,13 @@ at [david-osipov.vision](https://david-osipov.vision/).
 
 ## License and acknowledgements
 
-**License:** [GNU GPL v2.0 only](crates/ntp-wire/COPYING), SPDX identifier
+**Core and inherited workspace license:** [GNU GPL v2.0 only](crates/ntp-wire/COPYING), SPDX identifier
 [`GPL-2.0-only`](https://spdx.org/licenses/GPL-2.0-only.html), as declared in
 [Cargo.toml](Cargo.toml).
+
+Original GUI source in `nevrotick-ui` uses [GNU GPL v3.0 only](crates/nevrotick-ui/LICENSE),
+SPDX `GPL-3.0-only`. Its [licensing and provenance record](crates/nevrotick-ui/LICENSING.md)
+keeps that grant separate from Chrony-derived Core code and third-party material.
 
 Chrony-derived code retains its upstream notices and
 [provenance requirements](docs/nevrotick-owner-decisions.md#3-od-01--source-derived-port-with-independent-verification).

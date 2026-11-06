@@ -21,8 +21,11 @@ plugin; load another skill only for concrete gap.
 2. Read [the documentation guide](docs/README.md), then the relevant authority
    below. Use its [plan and acceptance map](docs/README.md#plans-acceptance-and-execution-evidence)
    to identify the workstream, phase/slice, prerequisites and observable exit.
-3. Reuse the existing task/plan. For current UI work, start at
-   [tasks/ui-m0.md](tasks/ui-m0.md): scope, ownership,
+3. Reuse the existing task/plan. For current UI work, start with the
+   [Slint GUI handoff](tasks/slint-gui-handoff.md) and
+   [S0.5 migration task](tasks/s0.5-ui-comparison.md) under
+   [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
+   then [tasks/ui-m0.md](tasks/ui-m0.md) for the original fixture scope, ownership,
    [acceptance](tasks/ui-m0.md#acceptance-and-checks),
    [remaining evidence](tasks/ui-m0.md#remaining-evidence-and-next-work) and later
    candidate addenda. For other work, inspect `tasks/` and any `.agents/plans/`
@@ -202,9 +205,21 @@ package integrity, installed identity and native/lifecycle evidence.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
+Localization work: read [OD-15](docs/nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs),
+[the catalog design](docs/plans/ui-localization.md)
+and architecture §16.4 before the Slint or i18n skills. The selected design uses
+editable JSON → validated CBOR resources → typed Rust presentation → Slint and
+tray/notification/accessibility consumers. Slint has no selected native CBOR
+loader. Keep English fallback, stable codes/arguments and actual adopted-locale
+scope. Current codec/formatter, generated resources and loader evidence belong
+to S0.5 and the GUI handoff; arbitrary external user-import admission remains
+unselected. The application-owned catalog is not a native Slint CBOR facility.
+This supplies no native or Core execution waiver.
+
 The current [Cargo workspace](Cargo.toml) contains
-[nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a portable preview model and native
-Windows UI-M0 adapter, and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure inert
+[nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a checked portable presentation
+model and the Slint Windows adapter, with native/backend qualification still open,
+and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure inert
 wire owner under [S1.1a qualification](tasks/s1.1-header.md) and
 [S1.1b framing qualification](tasks/s1.1-framing.md). It provides structural
 framing without exchange, era, authentication or sample admission.
@@ -239,19 +254,29 @@ never scaffold product crates merely to pass documentation/tool checks.
 ## Current UI milestone
 
 [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects **Slint as the default UI toolkit**, starting with the measured
-winit/software renderer and Fluent-style widgets. The checked-in Win32 adapter
-is a reference implementation pending the migration in [UI-M0](tasks/ui-m0.md).
-Do not reopen toolkit selection or treat historical Win32 receipts as Slint
-qualification. Resolve the exact dependency/licence graph and generated-code
-unsafe/lint boundary; retain the existing validation, lifecycle, accessibility,
-resource and package gates. Selection grants no licence or execution waiver.
+selects Slint as the default UI toolkit and the complete Win32 UI replacement.
+The [existing S0.5 task](tasks/s0.5-ui-comparison.md) owns the complete migration
+against design v0.4; start with its current addenda and the
+[Slint GUI handoff](tasks/slint-gui-handoff.md). The checked-in Windows entrypoint
+now selects Slint; the unexported Win32 adapter is retained historical source.
+Portable rendering, model tests and Windows-target checks retain their recorded
+scopes; native/backend, accessibility/resources and independent critical-text
+approval remain open. Historical Win32 receipts do not qualify Slint.
+
+David approved GPL-3.0-only for the original GUI while Chrony-derived Core/engine
+remains GPL-2.0-only. Do not reopen this choice or toolkit selection. Apply the
+GUI-specific grant and exact runtime/build/asset provenance inventory; that
+licence direction does not replace graph, composition, generated-code unsafe/lint,
+security, native or package review. Source preparation and admitted fixture UI
+work may parallel Core; retain one Cargo graph/schema owner and all execution holds.
 
 Apply [architecture §16.5](docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
-before UI/QA skills. UI-M0 is an unelevated, fixture-only native prototype.
+before UI/QA skills. The original UI-M0 is an unelevated, fixture-only native
+prototype; current S0.5 addenda own the complete GUI source scope. Within UI-M0,
 **D1** theme/contrast/text/DPI work, **D2** production freshness/reconnect/policy/
 administrative-result handling and **D3** full keyboard/Narrator/UIA work are
-**Deferred**: do not implement or qualify them now, or make them UI-M0 blockers.
+**Deferred**: preserve their existing task triggers and do not make them UI-M0
+blockers. A later admitted source slice does not establish native qualification.
 Retain toolkit-provided basic keyboard/editing behavior and meaningful labels,
 Rust/FFI quality checks, sample-data labelling, disabled protected actions and
 native window observations. Slint widgets inherit no Win32-control accessibility pass.
@@ -260,17 +285,21 @@ effects. Carry deferred owners/triggers into the backlog and next-stage plan;
 restore them before the integrations/preview claims specified in §16.5.
 UI-M0 does not complete P0 toolkit qualification or constrain other workstreams.
 
-For UI work, use David's [design v0.2 reference](docs/nevrotick-design-v0.2/README.md):
-read the [UI specification](docs/nevrotick-design-v0.2/docs/02-ui-spec.md), then consult
-the [interactive preview](docs/nevrotick-design-v0.2/NevroTick-UI-preview.html) and
-[screen catalogue](docs/nevrotick-design-v0.2/screens/README.md) for composition and
-interaction references. Use the [AVIF brand kit](docs/NevroTick-AVIF-kit-v1/README.md)
+For UI work, use David's current [design v0.4 reference](docs/nevrotick-design-v0.4/README.md):
+read its [guide](docs/nevrotick-design-v0.4/README-RU.md) and
+[tray update](docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md) and
+[status/notification audit](docs/nevrotick-design-v0.4/review/status-notifications/REPORT-RU.md), then consult
+the [interactive preview](docs/nevrotick-design-v0.4/NevroTick-UI-v0.4.html) for composition and
+interaction references. Its dependency-free HTML sources and tests are in the same
+bundle. [Design v0.2](docs/nevrotick-design-v0.2/README.md), its React viewer and
+scene catalogue are historical; their scene IDs are not v0.4 links.
+Use the [AVIF brand kit](docs/NevroTick-AVIF-kit-v1/README.md)
 and its [manifest](docs/NevroTick-AVIF-kit-v1/manifest.json) for mascot, logos,
 wordmarks, icons and background variants; preserve its asset notices separately
 from the code licence. Apply these references within the milestone above. The
-React viewer and archived architecture copies are reference material; current
-canonical contracts govern behavior, and rendered scenes may predate specification
-corrections.
+HTML previews and archived architecture copies are reference material; current
+canonical contracts govern behavior. The richer v0.4 service/notification examples
+are simulated and do not expand native UI-M0 or lift D1–D3 execution holds.
 The archived React tooling has open dependency findings recorded in the
 [UI-M0 task](tasks/ui-m0.md#publication-and-hosted-qualification). Resolve and verify
 them before executing that tooling; the native Rust build does not use it.
@@ -292,6 +321,15 @@ Read canonical sections for exact limits; preserve these boundaries:
   each applicable admission path, then independently check current authority at
   the effect. Preserve raw-input tests, direct-handler bypass cases, valid
   neighboring controls, aggregate budgets and bounded redacted rejection.
+- Every JSON/CBOR input is potentially malicious at raw admission, including
+  contributor/translator data, English, schemas/metadata, generated output and
+  signed/packaged or previously accepted files. Reuse admitted immutable typed
+  values only within their valid context. For localization, an independent
+  code-owned contract/checker controls IDs, types, plural/action rules and semantic
+  approval; catalogs cannot redefine them. Follow [OD-15's threat controls](docs/plans/ui-localization.md)
+  for isolated conversion, bounded decode/format/render, literal sinks and
+  whole critical-group English fallback. Origin/signatures and syntactic validity
+  prove neither payload safety nor truthful translated consent text.
 - Fixed JSON IPC/configuration/persisted-record boundaries: bounded strict Serde
   DTO decoding, adopted shared garde rules invoked inside fallible private
   domain construction, current trusted
@@ -330,7 +368,8 @@ Read canonical sections for exact limits; preserve these boundaries:
 - Keep unsafe code in narrow reviewed Windows adapters, preserve useful errors,
   redact secrets from events/exports. UI status accurately distinguishes
   authentication, agreement, freshness, readiness, applied effects.
-- Preserve chrony source provenance and GPL-2.0-only obligations. Qualify exact
+- Preserve Chrony-derived Core/engine GPL-2.0-only provenance and the original
+  GUI's approved GPL-3.0-only grant. Qualify exact
   dependency/features/license graphs and held crypto-provider choices before
   adoption. Keep `Cargo.lock` versionable; exclude `target/` from Git/search indexes.
 
@@ -349,6 +388,7 @@ no new report tree or orchestration campaign.
 | Wire, persisted-state or semantic compatibility | [evolve-data-contracts](.agents/skills/implementation/evolve-data-contracts/SKILL.md). |
 | Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), [implement-slint](.agents/skills/implementation/implement-slint/SKILL.md) for toolkit mechanisms, then applicable accessibility/DPI checks. |
 | Trust, privileges, IPC, crypto, logging or packaging | [Security index](.agents/skills/security/README.md), matching boundary owner. |
+| Windows product/package/Store metadata | [maintain-windows-metadata](.agents/skills/implementation/maintain-windows-metadata/SKILL.md); package QA retains artifact/native qualification. |
 | Cargo dependency changes | [dependency-updates](.agents/skills/environment/dependency-updates/SKILL.md). |
 | Windows Sandbox configuration, WSL-to-guest control or disposable lab evidence | [manage-windows-sandbox](.agents/skills/environment/manage-windows-sandbox/SKILL.md); check current task/incident holds before any Windows command. |
 | Verification, failure triage or commit preparation | [Testing index](.agents/skills/testing/README.md), [testing contract](.agents/skills/testing/CONTRACT.md); smallest relevant evidence layer. |

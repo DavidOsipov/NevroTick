@@ -78,3 +78,8 @@ strip = "none"
 [profile.verify-release]
 inherits = "release"
 debug-assertions = true
+
+# Bound generated Slint test-harness debug information within the 4GiB sandbox.
+# Ordinary test-profile debug assertions and arithmetic checks remain enabled.
+[profile.test.package.nevrotick-ui]
+debug = 0

@@ -71,17 +71,42 @@ The pinned website guidance at commit `6530d3a8d44cbe4f829b1e09edd3a1c90cffc087`
 
 ### 2.1 Restricted first UI milestone applicability
 
-[Architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) incorporates the owner's NV-UI-M0-001 scope decision. [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint for UI-M0 migration from the existing Win32 reference. UI-M0 remains an unelevated native prototype with deterministic checked-in sample data, Status/Sources/Settings, source details and an ephemeral source-edit preview. Keep the sample-data label visible; local validation, **Update preview** and Cancel affect only in-memory state discarded on exit. Sync now is disabled with an explanation; protected actions are disabled or omitted. No live status, production IPC, NTP/NTS/DNS traffic, service operations, policy persistence, UAC, Apply or clock effects are permitted in this UI slice.
+[Architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) incorporates the owner's NV-UI-M0-001 scope decision. [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects complete replacement of the Win32 UI with Slint; the old Win32 adapter and observations remain historical baseline evidence. The current Windows entry selects Slint/Winit/software against v0.4, while native Windows qualification remains open. UI-M0 retains its unelevated, fixture-only scope with deterministic checked-in sample data, Status/Sources/Settings, source details and an ephemeral source-edit preview. Keep the sample-data label visible; local validation, **Update preview** and Cancel affect only in-memory state discarded on exit. Sync now is disabled with an explanation; protected actions are disabled or omitted. No live status, production IPC, NTP/NTS/DNS traffic, service operations, policy persistence, UAC, Apply or clock effects are permitted in this UI slice. The toolkit decision grants no dependency, native, packaging or release qualification and lifts no execution hold.
 
-D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, policy drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator/UIA qualification) are **Deferred**, not Passed, Removed or N/A. Agents must not implement or qualify them or block UI-M0 on them. Retain toolkit-provided basic keyboard/editing behavior and meaningful labels in one documented reference display configuration; Slint widgets supply no inherited Win32-control accessibility pass. Carry the canonical deferral ledger and triggers into the backlog/next-stage record: restore the relevant D2 rules before live status or real policy/protected commands, and D1/D3 before general-user preview/release or earlier support/qualification claims.
+D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, policy drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator/UIA qualification) are **Deferred**, not Passed, Removed or N/A. Agents must not implement or qualify them or block UI-M0 on them. Retain toolkit-provided basic keyboard/editing behavior and meaningful labels in one documented reference display configuration; Slint widgets do not inherit Win32 child-control accessibility. Carry the canonical deferral ledger and triggers into the backlog/next-stage record: restore the relevant D2 rules before live status or real policy/protected commands, and D1/D3 before general-user preview/release or earlier support/qualification claims.
 
-Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker/binding direction. One owner controls the Slint event loop/view/callback state and narrow native adapters; serialize desktop interaction and build outputs. Admit the exact licence/feature/renderer graph and explicitly review generated-code unsafe/lint boundaries without silently relaxing workspace policy. Win32 results remain reference evidence and cannot qualify the migrated Slint candidate. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or package qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
+Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker direction. Preserve exact Slint version/features/backend, generated-code safety/lint boundaries, licence and runtime/build/transitive graph admission under the accepted separately GPL-3.0-only GUI direction; Core/engine stay GPL-2.0-only and the toolkit choice is settled. One owner controls shared schemas/Cargo graph, Slint event loop/view/callback state, weak references and Windows OS adapters; serialize shared desktop interaction and build outputs. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or package qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
+
+The [current GUI handoff](../tasks/slint-gui-handoff.md) and
+[S0.5 source/evidence record](../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+own the later complete-v0.4 fixture additions, including Simple/Power views,
+bounded local policy/recovery previews and opt-in tray/sample-notification source.
+Portable source/rendering checks do not establish actual Windows behavior or
+re-enter D1–D3. Preserve weak callback/native lifetime ownership and the distinction
+between original M0 receipts, current fixture evidence and later production gates.
 
 ## 3. Development threat model and execution boundaries
 
 ### 3.1 Assets, actors and failure paths
 
 Protect source and requirement integrity, maintainer credentials, dependency provenance, release artifacts, signing authority, test evidence and the clocks/services of development machines. Consider both malicious inputs and an agent making a plausible but incorrect change.
+
+**Contributor catalog clarification, 6 November 2026:** every JSON/CBOR input,
+including English, generated output and signed/package-delivered data, remains
+untrusted at admission. Use the [localization threat controls](plans/ui-localization.md)
+for raw-file custody, strict bounded decoding/formatting, literal sinks and
+semantic review. Translation-only checks execute an independently admitted
+validator/typed contract; candidate changes cannot redefine their own authority.
+Keep candidate-code tests in a separately constrained lane. Use short-lived
+credential-free offline conversion with enforced resource/filesystem/process
+bounds, task-owned outputs and atomic successful publication. Do not execute PR
+artifacts or promote their executable caches into release. Runtime independently
+checks final catalog bytes; package signing supplies no parser or wording proof.
+These are required design controls; this requirement text supplies no runtime or
+qualification evidence. The [current GUI handoff](../tasks/slint-gui-handoff.md)
+and S0.5 record own implemented catalog loaders, repertoire guards and hostile-
+payload checks with their exact scope. Production semantic approval remains
+separate; source checks establish no complete CI isolation or native Windows pass.
 
 | Threat | Concrete failure path | Required control and remaining limit |
 | --- | --- | --- |
@@ -381,7 +406,7 @@ section 9.11's packaging cases for actual enforcement and repair observations;
 manifest text alone does not close CHECK-16/18/23/26. [C39]
 
 Qualify the engine and broker's headless/leaf restrictions against their actual
-SCM launch and provider graph. Give the Slint Windows UI and elevated helper
+SCM launch and provider graph. Give the normal-user Slint Windows UI and elevated helper
 separate profiles that preserve their narrowly permitted activation, callbacks
 and maintenance work. Do not copy a headless profile to the GUI, set every flag
 blindly, or change a shared installer host's policy. A required-control failure

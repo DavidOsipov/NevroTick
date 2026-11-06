@@ -9,8 +9,10 @@ Read [implement-native-ui](../implement-native-ui/SKILL.md) for product semantic
 then use this leaf for Slint mechanisms. Apply
 [OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
 [architecture §16.5](../../../../docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
-and the current [UI-M0 task](../../../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026)
-before implementing or selecting checks. Toolkit selection does not admit a
+and the current [S0.5 task](../../../../tasks/s0.5-ui-comparison.md) and
+[Slint GUI handoff](../../../../tasks/slint-gui-handoff.md) before implementing
+or selecting checks. [UI-M0](../../../../tasks/ui-m0.md) retains the baseline
+fixture boundary and deferred owners. Toolkit selection does not admit a
 dependency graph, lift an execution hold or complete a native observation.
 
 The researched starting point is **Slint 1.18.1, winit/software rendering and
@@ -18,7 +20,13 @@ Fluent style**. References pin upstream commit
 `372cf0ee5577c3dfec309a45e7b778ba4e81b734`, checked on 5 November 2026.
 Reconcile it with the actual task, manifests, lockfile and generated code; do not
 copy newer rolling documentation into an older candidate. Source links establish
-API evidence, not an admitted NevroTick product configuration.
+API evidence; current task receipts and actual source establish the admitted
+NevroTick configuration and its narrower completed checks. The Windows entrypoint
+now selects Slint; the retained Win32 adapter is historical source. David approved
+GPL-3.0-only for the original GUI while Chrony-derived Core/engine remains
+GPL-2.0-only. Keep exact graph/composition and native qualification separate.
+Use [design v0.4](../../../../docs/nevrotick-design-v0.4/README.md), its current
+audits and brand kit for composition within the admitted task scope.
 
 ## Keep the active milestone explicit
 
@@ -31,11 +39,10 @@ API evidence, not an admitted NevroTick product configuration.
   until their existing task triggers. Preserve basic widget keyboard/editing
   behavior and meaningful labels now. Reference coverage of a future feature
   does not activate that feature.
-- Use M0-SL-01/02 for source-only graph and contract preparation. Implement the
-  adapter only when M0-SL-03's predecessors and task activation are satisfied;
-  use M0-SL-04/05 for the corresponding compiler/behavior/native evidence.
-  Preserve the checked Win32 preview model and historical receipts until a
-  separately qualified replacement exists.
+- The M0-SL-01–05 chain records the original migration gates. Current S0.5
+  addenda and the GUI handoff own the implemented Slint adapter, portable/native
+  scope and remaining dependencies. Retain historical receipts at their exact
+  source/configuration; no portable result closes Windows qualification.
 
 ## Load the reference matching the change
 
@@ -51,6 +58,9 @@ load the whole architecture and reference corpus for a bounded Slint question.
 | Dependency/features/licence admission, fonts, AVIF assets or embedding | [Dependencies and assets](references/dependencies-and-assets.md) |
 | Behavioral tests, visual checks, native evidence, developer MCP or performance | [Testing and performance](references/testing-and-performance.md) |
 | Find a relevant example, real application or current primary source | [Examples and source research](references/examples-and-sources.md) |
+| Detailed checked-editor, navigation or catalog boundary | [Rust and view boundary](references/rust-ui.md) |
+| Explicit Windows feature/resource profile and lifecycle evidence | [Windows profile](references/windows-profile.md) and [pinned local source register](SOURCES.md) |
+| Translation catalogs, language changes or binary resources | [OD-15 localization design](../../../../docs/plans/ui-localization.md) and the Rust/view reference; preserve hostile-catalog admission and exact-content approval |
 
 ## Procedure
 

@@ -161,7 +161,9 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_new_analysis_files_are_outside_the_current_product_census(self):
         _, identity = MODULE.PRODUCT.admit_product(ROOT)
-        self.assertEqual(len(identity), 168)
+        # Current source census includes the Slint fixture and both new engine
+        # measurement files. Historical campaign-policy counts remain separate.
+        self.assertEqual(len(identity), 367)
         self.assertIn("crates/nevrotick-engine/src/measurement.rs", identity)
         for name in ["scripts/verify-engine-analysis.py", "scripts/tests/test_verify_engine_analysis.py",
                      "policy/engine-analysis.json"]:
@@ -226,7 +228,7 @@ class EngineAnalysisTests(unittest.TestCase):
         """No product or equivalence-admission mocks stand in for the healthy control."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); policy, _ = self.equivalence_fixture(root)
-            self.assertEqual(len(MODULE.PRODUCT.admit_product(root)[1]), 168)
+            self.assertEqual(len(MODULE.PRODUCT.admit_product(root)[1]), 367)
             self.assertEqual(MODULE.read_policy(root), policy)
             self.assertEqual(MODULE.COMMON.admit_mutation_equivalences(root, MODULE.SCOPE, policy),
                              policy["mutation_equivalences"])

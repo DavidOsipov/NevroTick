@@ -1019,6 +1019,12 @@ scope; a compiler accepting an option establishes no performance benefit.
 
 ## Starting implementation
 
+The current HTML design reference is [v0.4](docs/nevrotick-design-v0.4/README.md).
+Its local build and model tests use `node build.cjs` and
+`node --test tests/*.test.cjs` from that bundle, without npm dependencies.
+These HTML checks are separate from the Rust/native verifier below; the historical
+v0.2 React tooling is not needed to build or inspect v0.4.
+
 Start with [docs/README.md](docs/README.md) and the selected task. UI work uses
 architecture §16.5 and [the UI-M0 task record](tasks/ui-m0.md); pure wire work
 uses [S1.1a](tasks/s1.1-header.md) and [S1.1b](tasks/s1.1-framing.md);
@@ -1052,9 +1058,16 @@ The sixth member, [nevrotick-engine](crates/nevrotick-engine/Cargo.toml), owns t
 timeout. This experiment has no production profile, eligible samples,
 authentication, clock effects or UI integration. Tokio remains engine-only.
 
-The exact [lockfile](Cargo.lock), manifest/feature identities, selected grants
-and source-file maps are recorded in
-[the dependency policy](policy/ui-m0-dependencies.json). Its schema 2 distinguishes
+The current Slint fixture integration uses schema3 in
+[the dependency policy](policy/ui-m0-dependencies.json), with534 retained registry
+identities (selected and inert) and separately pinned local Spin/AccessKit
+derivatives. Follow the [GUI handoff](tasks/slint-gui-handoff.md) and current
+[S0.5 evidence](tasks/s0.5-ui-comparison.md) for exact inputs and the optional
+portable SDK/capture row. Existing Windows, native, backend and release gates remain.
+
+**Historical pre-Slint schema2 graph:** the exact [lockfile](Cargo.lock),
+manifest/feature identities, selected grants and source-file maps were recorded
+in the dependency policy. That schema2 baseline distinguishes
 twenty-three packages selected across the two targets from two metadata-only
 resolution sources (`r-efi` and `wasi`). All twenty-five are needed for offline
 lock resolution; those two gain no runtime, build-script or selected-license

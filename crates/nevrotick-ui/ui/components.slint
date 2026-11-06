@@ -1,0 +1,116 @@
+import { Button, Palette } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+
+export component BodyText inherits Text {
+    color: Theme.ink;
+    font-size: 14px;
+    wrap: word-wrap;
+    vertical-stretch: 0;
+}
+
+export component SecondaryText inherits BodyText {
+    color: Theme.muted;
+    font-size: 12px;
+}
+
+// Tooltip content remains plain text; catalogs never become Markdown or markup.
+export component HelpText inherits Text {
+    color: Palette.foreground;
+    font-size: 12px;
+    max-width: 340px;
+    wrap: word-wrap;
+}
+
+export component Heading inherits BodyText {
+    font-size: 26px;
+    font-weight: 650;
+}
+
+export component SectionHeading inherits BodyText {
+    font-size: 16px;
+    font-weight: 650;
+}
+
+export component Rule inherits Rectangle {
+    height: 1px;
+    background: Theme.line;
+    vertical-stretch: 0;
+}
+
+export component Panel inherits Rectangle {
+    in property <brush> panel-background: Theme.surface;
+    background: root.panel-background;
+    border-color: Theme.line;
+    border-width: 1px;
+    border-radius: Theme.radius;
+    vertical-stretch: 0;
+    VerticalLayout {
+        padding: Theme.panel-padding;
+        spacing: 14px;
+        @children
+    }
+}
+
+export component Badge inherits Rectangle {
+    in property <string> text;
+    background: Theme.blue-soft;
+    border-color: Theme.line;
+    border-width: 1px;
+    border-radius: 4px;
+    horizontal-stretch: 0;
+    vertical-stretch: 0;
+    HorizontalLayout {
+        padding-left: 9px;
+        padding-right: 9px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        Text { text: root.text; color: Theme.blue; font-size: 11px; font-weight: 600; }
+    }
+}
+
+export component PageHeading inherits VerticalLayout {
+    in property <string> kicker;
+    in property <string> title;
+    in property <string> description;
+    spacing: 8px;
+    vertical-stretch: 0;
+    if root.kicker != "": SecondaryText { text: root.kicker; font-size: 10px; font-weight: 650; }
+    Heading { text: root.title; }
+    if root.description != "": SecondaryText { text: root.description; font-size: 13px; }
+}
+
+export component FactRow inherits VerticalLayout {
+    in property <string> label;
+    in property <string> value;
+    in property <string> note;
+    spacing: 5px;
+    vertical-stretch: 0;
+    SecondaryText { text: root.label; }
+    BodyText { text: root.value; font-weight: 600; }
+    if root.note != "": SecondaryText { text: root.note; font-size: 11px; }
+}
+
+export component ActionButton inherits Button {
+    min-height: 37px;
+    horizontal-stretch: 0;
+}
+
+export component NavigationButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> active;
+    callback activated();
+    vertical-stretch: 0;
+    min-height: 43px;
+    VerticalLayout {
+        spacing: 0px;
+        Button {
+            text: root.text;
+            min-height: 40px;
+            clicked => { root.activated(); }
+        }
+        Rectangle {
+            height: 3px;
+            background: root.active ? Theme.blue : transparent;
+        }
+    }
+}

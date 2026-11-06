@@ -29,19 +29,29 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Prepare the Linux sandbox capability
+      - name: Prepare the Linux sandbox and host Fontconfig prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends bubblewrap apparmor-profiles
+          sudo apt-get install --yes --no-install-recommends bubblewrap apparmor-profiles pkg-config libfontconfig-dev
           sudo apparmor_parser -r /usr/share/apparmor/extra-profiles/bwrap-userns-restrict
           bwrap --version
           bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
             --ro-bind / / -- /usr/bin/true
+          env -i PATH=/usr/bin:/bin /usr/bin/pkg-config --exists fontconfig
       - name: Challenge product admission and result accounting
         run: |
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_verify.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_coverage.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_codegen.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_ui_text_native.py -v
+          python3 -X dev -Werror -B scripts/check-ui-text.py --root .
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_slint_dependency_profile.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_accesskit_path_patch.py -v
+          python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_slint_linux_sdk.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_prepare_product.py -v
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_refresh_product_advisories.py -v
+      - name: Check native keyboard and IME source custody
+        run: python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_native_input_source.py -v
       - name: Acquire the pinned compiler in private runner storage
         run: python3 -B .github/security/prepare_rust.py
       - name: Acquire the reviewed vendor bytes without executing package code

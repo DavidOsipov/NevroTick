@@ -14,22 +14,29 @@ all existing Windows/fuzz/storage/UI holds remain in force. Current product work
 follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 
-## Current UI direction — 5 November 2026
+## Current UI direction — integrated Slint continuation
 
-David selected **Slint as the default UI toolkit** under
-[OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-and amended architecture DEC-3/§16.1. The measured Slint 1.18.1
-winit/software-renderer, Fluent-style configuration is the migration starting
-point. The current checked-in adapter and the receipts below remain Win32;
-this documentation change supplies no migrated executable or transferred pass.
-The [S0.5 Slint result](s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026)
-records the narrower private pilot and exact resource observations.
+**Current Slint continuation — 6 November 2026:** the [GUI handoff](slint-gui-handoff.md)
+and [S0.5 active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+own the implemented fixture GUI, GPL-3.0-only original GUI grant, bounded graph
+admission and GUI42/43 evidence. The checked-in Windows entrypoint selects Slint;
+Win32 is retained historical source. Backend/native qualification, independent
+critical-text approval and the planned hardening handoff remain open. Earlier
+M0-SL preparation states below are historical and do not require repeating their
+completed source stages. Main's Slint/iced measurements and reaffirmation remain
+retained, with no toolkit-choice rerun. One owner serializes shared graph/schema
+changes; branch receipts do not qualify the merged candidate. Live P5 and D1–D3
+retain their existing prerequisites and re-entry gates.
 
-The toolkit choice is accepted. Product dependency/licence admission, the
-Slint/winit GPL-2.0-only compatibility questions, native lifecycle and the
-required accessibility/display evidence remain open. The pilot's omitted
-accessibility feature is not a product exemption. Core priority, execution holds,
-fixture-only UI-M0 effects and D1–D3 re-entry triggers remain in force.
+This UI-M0 record retains **Win32 implementation and exact-candidate history**,
+plus the separately recorded HTML import and main's 5 November migration queue.
+Its unexecuted full AppVerifier/PageHeap gap remains on that old Win32 candidate;
+Slint needs its own reached-native-path, lifecycle, cleanup and resource evidence.
+M0-01–M0-08, sample labelling, shared checked editing and disabled protected effects
+carry into the fixture GUI. D1/D3 return before general-user preview/release or a
+corresponding claim; D2 returns before live status and real settings/commands.
+The pilot's omitted accessibility feature is no product exemption. Existing
+native/fuzz/storage holds and scoped Sandbox admission remain binding.
 
 ## Scope and custody
 
@@ -39,10 +46,11 @@ Architecture §16.5 and M0-01–M0-08 control acceptance. This task record is ou
 the maintained documentation bundle.
 
 Retained Win32 reference status: the coding foundation and functional prototype
-are implemented and observed. The Slint migration below is not implemented.
-Required full native-memory instrumentation for the retained candidate remains incomplete;
+are implemented and observed. The successor Slint fixture GUI is implemented in
+the separate S0.5 evidence chain; merged-candidate and native qualification remain
+open. Required full native-memory instrumentation for the retained Win32 candidate remains incomplete;
 the narrower debugger and functional results below do not close that gap.
-The latest candidate and results are in the
+The latest UI-M0 Win32 candidate and results are in the
 [design-reference adaptation](#design-reference-adaptation-29-october-2026) below.
 
 Deliver a fixture-only, unelevated native Windows UI, its minimal real Cargo
@@ -55,9 +63,10 @@ a new hosted Rust gate after that check is available on the branch.
 
 ## Ownership and paths
 
-The table describes the checked-in Win32 reference. M0-SL-02 below must freeze
-the successor adapter and generated-code ownership before implementation; old
-path names grant no Slint acceptance or automatic module layout.
+The table describes the historical Win32 reference. The current Slint adapter,
+generated-code and input/text/native owners are recorded in the GUI handoff;
+the retained M0-SL-02 table describes their earlier preparation. Old path names
+grant no Slint acceptance or automatic module layout.
 
 | Owner | Writable scope | Input → output |
 | --- | --- | --- |
@@ -265,9 +274,16 @@ observed successfully after publication before making it required.
 
 ### Slint migration handoff — 5 November 2026
 
+**Historical main planning queue:** the table and next-action wording below
+record main before this branch's fixture GUI implementation. The current
+[S0.5 goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+and [GUI handoff](slint-gui-handoff.md) supersede completed source stages. Keep
+the original row identities, research concerns and still-open native/product
+gates; do not rerun completed stages or transfer branch receipts to this merge.
+
 **Owner:** UI with dependency/security, accessibility and Windows QA owners.
-**Disposition:** Slint selection accepted; migration not started. The current
-The product continuation in development plan §7 remains the primary task.
+**Historical disposition:** Slint selection accepted; migration not started on
+that dated main candidate. The product continuation in development plan §7 remains the primary task.
 This update defines work; it does not execute a Rust migration or native campaign.
 
 M0-SL-01–M0-SL-05 are **task-local work labels**, not replacements for canonical
@@ -552,3 +568,90 @@ not `Cargo.lock`. Current workflows do not install or run that npm prototype.
 Its Vite server binds `0.0.0.0`; repair and qualify its dependency graph before
 running/exposing that server or processing untrusted build input. These findings
 remain open and are not suppressed by the native product checks.
+
+
+## HTML design-reference replacement, 5 November 2026
+
+David explicitly requested replacing the repository prototype with the latest
+reviewed HTML design from this session. The current reference is now
+[design v0.4](../docs/nevrotick-design-v0.4/README.md), including its sources,
+original AVIF assets, tests, generated entry points and bounded review evidence.
+Top-level agent/docs/development guidance points to v0.4. The v0.2 React viewer,
+43-scene links and dated evidence remain historical and are not installed or run.
+Only its README history marker and that manifest's corresponding entry changed.
+
+Imported production source: `62aa9713548f8bfefc7ea087a01d788bc6f39c10`;
+browser-test revision: `bcbd4fc30becad3c0dd5109b7df93c3bc21c0099`;
+standalone SHA-256:
+`4d8c3d211ec19ddea21a4b37d6b164f453a8ab8352cca6c554c8c8ac28370f86`.
+The 176 delivered files were compared byte-for-byte before adding repository
+instructions. `IMPORTED-SHA256SUMS.txt` retains the imported manifest;
+the current manifest also covers the added README/AGENTS and import receipt.
+
+Owner: repository integration; independent reviewer: read-only prototype-import
+reviewer. Requirement/evidence scope: M0-08 reference identity and fixture-only
+boundaries, not new native acceptance. Independent expected result: the reviewed
+standalone bytes remain unchanged after import/rebuild; local links reach the
+current design; all imported asset/source receipts validate. Selected checks:
+197 existing Node tests, deterministic build, structural/CSP/AVIF checks, current
+and imported manifests, focused repository-path Chromium preview and changed
+Markdown links.
+
+Executed import checks in this Linux cloud checkout:
+
+- `node build.cjs`: deterministic rebuild, 30 scenes, 822403-byte standalone;
+  SHA-256 remains the exact imported value above.
+- `node --test tests/*.test.cjs`: 197/197 pass, no skipped or failed tests.
+- `node tests/render-fixtures.cjs /tmp/nevrotick-repo-v04-views.json` and
+  `python3 tests/check_structure.py /tmp/nevrotick-repo-v04-views.json`:
+  1247 documents, zero structural errors, matching final-script CSP, no external
+  standalone dependencies and original AVIF bytes preserved.
+- Imported/current v0.4 manifests and the maintained v0.2 manifest pass.
+  Independent review also compared all 175 originally covered source/assets/
+  documentation files byte-for-byte and the imported receipt itself.
+- 742 relative Markdown link targets in the changed guidance/documents exist;
+  external URL/mailto links were excluded from the local-path check.
+- Chromium 155 from the actual repository URL, both HTML entry points at
+  360/1280: Simple About, Notifications details in Power user, master preference
+  and in-page test notification pass; no page errors, unexpected remote requests
+  or horizontal overflow. The repository-path screenshot was inspected.
+- Read-only independent import review: no material findings. `git diff --check`
+  passes. Full prior browser/semantic audits remain attributed to the imported
+  exact candidate; no native/Cargo qualification is claimed for this import.
+
+No Rust/native code, dependencies, services, actual Windows notifications, clock,
+machine configuration or publication is changed. The v0.4 simulations do not
+close UI-M0's native-memory gap or re-enter deferred D1/D2/D3 work. Current Core
+priority and the existing native/analysis/storage holds remain unchanged.
+
+## HTML tray design extension, 5 November 2026
+
+David requested a concrete tray icon/menu design and then required a warning
+before tray exit, explaining continued background-service operation and the
+route to stop/disable it. Updated the current v0.4 HTML source/model/styles,
+generated entries, guide, tests and [review](../docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md).
+F-10 and architecture §16.1 record the user-visible exit contract. This amends
+the design reference; the earlier imported-file identity above remains historical.
+
+The outside-window Windows-area sample, contextual status icon/tooltip and menu
+retain opt-in defaults and separate sign-in preference. Quit opens a confirmation;
+Manage background service navigates to Power Settings without issuing a command.
+Only explicit Quit UI only marks the sample presenter absent; service state,
+clock owner, history and preferences remain unchanged. Cancel preserves the observer.
+Unknown/stopped service wording is conditional, and no menu-opening action grants
+service/clock authority. Modal forms are protected from replacement.
+
+Scope: M0-08 design custody and later F-10/AC-18 composition, not native M0/P5
+acceptance. Final standalone SHA-256 is
+`a363c40201f4e238a49523bc7fb45c1a789f37114fe5c7e53f5fb56627c9b9fb`
+(865972 bytes). Actual checks: 207 Node tests, 1427 structural variants, six
+Chromium tray journeys plus 60 scene views, the existing 360 Status/12 About
+layout matrix and four notification-entry/width matrices. Final screenshots
+were inspected. Independent status/focus review passed after corrections.
+Detailed limits and source-bound evidence are in the linked report; logs remain
+under `/tmp/nevrotick-tray-*`. Original AVIF bytes and imported receipt are preserved;
+the current manifest covers intentional source/generated/test/guide additions.
+
+No Rust/Cargo, native Slint/Windows, host settings, service, clock, notification
+delivery or publishing work is performed. D1–D3 and existing holds retain their
+owners/triggers. Later native tray work remains under S5.3/S5.4 and its re-entry gates.

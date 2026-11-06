@@ -1,0 +1,42 @@
+import { LocalizationCopy } from "localization-copy.slint";
+// Maintained engineering copy pending the complete typed localization bridge.
+export global DiagnosticCopy {
+    out property <string> back: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[345] : "Back to diagnostics";
+    out property <string> problem: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[346] : "Time status cannot be checked";
+    out property <string> effect: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[347] : "This window is not connected to the background service. It cannot confirm the clock state or a correction.";
+    out property <string> remedy: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[348] : "Review Background service settings. Wait for confirmed service state and fresh measurements before assuming synchronization.";
+    out property <string> service: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[349] : "Open Background service settings";
+    out property <string> events-empty: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[350] : "No event stream is connected";
+    out property <string> events-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[351] : "No live events, last failure or event order have been received. An empty view does not establish that the service is healthy.";
+    out property <string> report-open: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[352] : "Preview diagnostic report";
+    out property <string> report-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[353] : "Diagnostic report preview";
+    out property <string> report-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[354] : "Read-only sample of the available GUI facts. No live report has been requested, copied, saved or uploaded.";
+    out property <string> report-content: "NevroTick GUI: engineering build\nConnection: unavailable\nService runtime: unknown\nService startup: unknown\nClock owner: unknown\nSynchronization: unverified\nTime measurement: unavailable\nCorrection result: unknown\nPrivate endpoints and usernames: excluded\nCredentials, NTS cookies and keys: excluded";
+    out property <string> copy: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[355] : "Copy summary";
+    out property <string> export: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[356] : "Export diagnostics";
+    out property <string> export-reason: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[357] : "Copy and file export are unavailable until a bounded redacted report and an ordinary-user output adapter are connected. There is no automatic upload.";
+    out property <string> collection-open: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[358] : "Temporary troubleshooting collection";
+    out property <string> collection-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[359] : "Temporary diagnostic collection";
+    out property <string> collection-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[360] : "Choose an illustrative scope and duration. These choices stay in this window and do not change logging or collect data. Example durations are not production limits.";
+    out property <string> scope: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[361] : "Collection scope";
+    out property <[string]> scopes: LocalizationCopy.value.catalog-ready ? [LocalizationCopy.value.texts[362], LocalizationCopy.value.texts[363], LocalizationCopy.value.texts[364]] : ["UI only", "Service only", "UI and service"];
+    out property <string> duration: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[365] : "Example duration";
+    out property <[string]> durations: LocalizationCopy.value.catalog-ready ? [LocalizationCopy.value.texts[382], LocalizationCopy.value.texts[383], LocalizationCopy.value.texts[384]] : ["5 minutes", "15 minutes", "30 minutes"];
+    out property <string> collection-state: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[366] : "Not started";
+    out property <string> effective-scope: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[367] : "Effective collection";
+    out property <string> remaining: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[368] : "Remaining duration";
+    out property <string> unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[369] : "Unavailable";
+    out property <string> collection-reason: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[370] : "The collection adapter is not connected. UI collection needs no elevation; service collection requires separate administrator authorization. Combined collection must report each component independently.";
+    out property <string> required-events: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[371] : "Required security and service events remain independent of optional verbosity. Closing this view does not stop an active collection session.";
+    out property <string> start: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[372] : "Start collection";
+    out property <string> stop: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[373] : "Stop collection";
+    out property <string> correction-open: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[374] : "Review clock-correction availability";
+    out property <string> correction-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[375] : "Clock-correction review";
+    out property <string> correction-empty: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[376] : "No correction proposal has been received";
+    out property <string> correction-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[377] : "Direction, magnitude, reference interval, evidence age and proposal validity are unavailable. No clock change or authorization is implied.";
+    out property <string> correction-rule: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[378] : "A real proposal must be bound to fresh authenticated evidence, agreement, current policy and clock generation. An expired or changed proposal cannot be approved. Moving the clock can affect timestamps and running applications.";
+    out property <string> approve: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[379] : "Approve once";
+    out property <string> unavailable-action: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[380] : "This operation is unavailable. No collection, clipboard, file, administrator or clock operation was performed.";
+    out property <string> invalid-choice: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[381] : "Choose one of the available diagnostic options.";
+    out property <string> status-help: "What can I do?";
+}

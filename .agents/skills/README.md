@@ -47,12 +47,17 @@ authorization/effect checks. All function/module interfaces follow
 [contract enforcement](implementation/implement-rust-contracts/references/contract-enforcement.md),
 including checked transformations and explicit failure/effect obligations.
 The normal-user Slint UI, unprivileged network engine, privileged clock broker,
-administrative helper and complete package have distinct owners. [OD-13](../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Slint as the default; the checked-in Win32 UI remains the reference until
-migration. The measured winit/software-renderer configuration is a starting point,
-with licensing and the complete product feature/target graph still unqualified.
-Prototype crates require dependency qualification. Retained TUF research adopts no updater or second
-release. Future-version work must name changed architecture decisions.
+administrative helper and complete package have distinct owners.
+[OD-13](../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default and complete Win32 UI replacement. The checked-in
+entrypoint now selects Slint; retained Win32 source and receipts are historical.
+[S0.5](../../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../../tasks/slint-gui-handoff.md) own current source, evidence and gaps.
+The original GUI uses David's approved GPL-3.0-only direction; Chrony-derived
+Core/engine retains GPL-2.0-only. Exact graph/composition, native and package
+qualification remain distinct. Prototype crates require dependency qualification.
+Retained TUF research adopts no updater or second release. Future-version work
+must name changed architecture decisions.
 
 The current [OD-05 delivery decision](../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
 selects one complete hardened MSIX for David's Store submission attempt,

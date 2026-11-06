@@ -21,10 +21,13 @@ Keep upstream version evidence separate from the admitted NevroTick version.
 Recheck newer work against the selected source and resolved graph.
 
 Start with [OD-13](../../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
-the [UI-M0 handoff](../../../../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026)
-and the actual manifests/source. Use the [design specification](../../../../../docs/nevrotick-design-v0.2/docs/02-ui-spec.md)
-for composition within the current milestone; archived screenshots and HTML
-behavior do not supersede canonical technical contracts.
+the current [S0.5 task](../../../../../tasks/s0.5-ui-comparison.md),
+[GUI handoff](../../../../../tasks/slint-gui-handoff.md) and actual manifests/source.
+Use [design v0.4](../../../../../docs/nevrotick-design-v0.4/README.md), its current
+audits and brand kit for composition within the admitted milestone; historical
+v0.2 screenshots and HTML behavior do not supersede canonical technical contracts.
+The M0-SL rows below describe the original fixture stages; current S0.5 addenda
+own later admitted GUI source and its remaining native/text-approval dependencies.
 
 | Workstream | How an example may help |
 | --- | --- |

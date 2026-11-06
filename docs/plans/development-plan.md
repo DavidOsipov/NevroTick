@@ -1,8 +1,8 @@
 # NevroTick development and acceptance plan
 
-**Created:** 29 October 2026; **documentation reconciliation:** 4 November 2026
+**Created:** 29 October 2026; **documentation reconciliation:** 5 November 2026
 
-**Status:** P0–P7 remain open; current portable work is in P1
+**Status:** P0–P7 remain open; the current product continuation is bounded S2.1 observation-to-Core admission; the Slint fixture GUI has separate integration/native/backend/text-approval gaps
 
 **Original planning baseline:** `f7ba1e7724a41cc846b1df6b9ddb20f095988b7a`
 
@@ -15,6 +15,18 @@ acceptance or release. [Section 7](#7-next-executable-task-for-a-development-age
 supersedes the historical proof-first queue; all runtime/test/security/native/
 package/release requirements and existing execution holds remain.
 
+**Current Slint continuation — 6 November 2026:** the [GUI handoff](../../tasks/slint-gui-handoff.md)
+and [S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+own the implemented fixture GUI, GPL-3.0-only original GUI grant, bounded graph
+admission and GUI42/43 evidence. The checked-in Windows entrypoint selects Slint;
+Win32 is retained historical source. Backend/native qualification, independent
+critical-text approval and the planned hardening handoff remain open. Earlier
+M0-SL preparation states below are historical and do not require repeating their
+completed source stages. Main's Slint/iced measurements and reaffirmation remain
+retained, with no toolkit-choice rerun. One owner serializes shared graph/schema
+changes; branch receipts do not qualify the merged candidate. Live P5 and D1–D3
+retain their existing prerequisites and re-entry gates.
+
 **Proof-purpose amendment — 6 November 2026:** [OD-10 §14.2](../nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026)
 requires a named product guarantee, actual source/composition coverage,
 independent semantic controls and a bounded stopping rule before choosing proof
@@ -23,13 +35,14 @@ records what remains and how each guarantee closes. Completed helpers and green
 tooling do not complete their parent algorithm; this amendment schedules no
 pre-V1 formal work and changes no current product acceptance gate.
 
-**Immediate priority:** finish the existing pure-leap nonformal qualification, then continue bounded Core and secure NTP/NTS acquisition.
+**Immediate priority:** freeze the existing S2.1 observation-to-Core admission contract under section 7; pure-leap qualification and three-owner controlled-measurement qualification retain their completed bounded scopes.
 
-**Current Core checkpoint:** [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure leap knowledge/interpretation owner](../../tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026) is already implemented; its final new-owner mutation cohorts and integrated-candidate reconciliation are the next product action. Do not repeat its completed finite contract freeze or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
+**Current Core checkpoint:** [modeled settled active-time delivery](../../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture qualification on the sealed 158-input V8 product: portable, contracts, coverage, four mutation cohorts and exact union passed. Its task retains exact bindings, original failures and evidence limits. The [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) and [three-owner controlled-measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) complete their recorded bounded scopes; section 7 now selects observation-to-Core admission. Do not repeat completed finite contract or qualification stages or infer production date policy. The preceding [S1.4c modeled achieved-phase checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14c-final-qualification--one-selected-owner) retains its completed selected Linux-fixture gates on the sealed 156-input preimage. The [S1.4b composition checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14b-final-qualification--three-selected-owners) retains its completed selected Linux-fixture gates on the preceding 156-input candidate. The [S1.4a reference-input checkpoint](../../tasks/s1.3-source-selection-readiness.md#s14a-final-qualification--one-selected-owner) retains its completed 154-input scope. The [S158 nine-owner checkpoint](../../tasks/s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners), [S157](../../tasks/s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete), [S155](../../tasks/s1.2-regression-readiness.md#s155-selected-linux-fixture-checkpoint--complete) and [S156](../../tasks/s1.2-regression-readiness.md#s156-four-lint-compiler-cohort--complete) retain their earlier exact candidates and completed scopes; full S1.4/P1 remains open. [Section 7](#7-next-executable-task-for-a-development-agent) owns current routing; linked tasks retain historical candidates and detailed results.
 
-The [engine checkpoint](../../tasks/engine-transport-pilot.md#s43-complete-current-engine-mutation-checkpoint)
-records a bounded, unauthenticated two-peer loopback observer, not production
-acquisition. The [CNG cleanup checkpoint](../../tasks/s0.1-crypto-feasibility.md#s56s58-scoped-cleanup-correction-and-native-green--2-november-2026)
+The [engine controlled-measurement checkpoint](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
+records bounded, unauthenticated experimental acquisition and controlled host
+qualification. Observations remain ineligible for estimator voting or clock
+control; production acquisition and native qualification remain open. The [CNG cleanup checkpoint](../../tasks/s0.1-crypto-feasibility.md#s56s58-scoped-cleanup-correction-and-native-green--2-november-2026)
 retains its scoped native results; complete TLS/provider adoption and native
 memory/lifecycle qualification remain open. The [later owner-ready Sandbox
 disposition](../../tasks/windows11-integration.md#419-owner-ready-sandbox-scope--3-november-2026)
@@ -73,15 +86,16 @@ that workstream's experiment pause or select its product default.
 | Area | Observed repository state | Consequence for the next agent |
 | --- | --- | --- |
 | Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml) and bounded [engine](../../crates/nevrotick-engine/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source and loopback acquisition do not establish the complete core or production acquisition. |
-| UI | `main` → current Win32 adapter → checked fixture model → Win32 controls. Preview edits are transient. [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint for the successor adapter; migration and product graph admission are pending. | Keep UI-M0 isolated; no network, production IPC, persistence, service, elevation or clock effects. |
-| UI evidence | [UI-M0 task](../../tasks/ui-m0.md), including later candidate addenda, records portable, cross-build and native observations. Full required native-memory instrumentation remains incomplete. | Historical results belong to their exact candidates. Short interaction/resource observations do not establish CHECK-21 soak or full UI qualification. |
-| Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and a two-peer loopback engine exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
-| Dependencies | The six-owner workspace retains the reviewed UI-M0/garde cohort and adds the admitted minimal Tokio/getrandom engine graph. Exchange and core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | The [engine dependency checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) owns its selected graph rows. Integrated checks apply to their recorded source/features. |
+| UI | `main` → `slint_host` → checked fixture/presentation/native-input owners → v0.4 Slint views. The original GUI is GPL-3.0-only; Core/engine retains GPL-2.0-only. Win32 is retained historical source. | Follow the [GUI handoff](../../tasks/slint-gui-handoff.md) and [S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui). Keep backend effects unavailable until their actual owners/contracts; reconcile the combined candidate before reusing branch receipts. One Slint product UI, no automatic Win32 fallback. |
+| UI evidence | [S0.5](../../tasks/s0.5-ui-comparison.md) records GUI42 portable/capture and GUI43 affected source controls. [UI-M0](../../tasks/ui-m0.md) retains exact Win32 history and its incomplete native-memory instrumentation. | Branch-only passes qualify their recorded inputs; merged-candidate, actual Windows lifecycle/resources/accessibility and independent critical-text approval remain open. The old Win32 instrumentation gap does not qualify or block independent Slint source work. |
+| Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and bounded experimental engine acquisition/measurements exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
+| Dependencies | The workspace combines the branch Slint GUI GPL3 graph and retained engine Tokio/getrandom graph. Exchange and Core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | Preserve both owners' exact feature/grant/source constraints and the compatible compiler repair; qualify the combined graph/configuration separately. Branch receipts and the [engine checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) apply only to their recorded inputs. |
 | Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.3](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |
 | Windows 11 integration research | [Completed Microsoft-source investigation](windows11-integration.md) and [bounded agent assignments](../../tasks/windows11-integration.md) refine existing platform, DNS, lifecycle and resource owners. | Source-only follow-up is ready when its slice is assigned; documentation establishes no implemented mechanism, native support or installed-package result. Current task ordering and the native-experiment pause remain. |
 
 Keep one evidence chain: this plan records phase readiness and links to concrete
-task evidence; existing UI work stays in `tasks/ui-m0.md`. New development tasks
+task evidence; historical UI-M0 evidence stays in `tasks/ui-m0.md`, while the
+selected Slint migration stays in `tasks/s0.5-ui-comparison.md`. New development tasks
 may have bounded records under `tasks/`, linked here, without duplicating the
 architecture. Raw generated logs/builds belong in owned external output locations
 or the architecture's phase evidence location, not in the maintained design bundle.
@@ -335,7 +349,7 @@ restart a repository-wide library survey for each slice.
 | S0.2/S0.3, P2–P4; W11 platform/IPC/network/clock owners | At the next dependent adapter, consume [W11 task §4.29](../../tasks/windows11-integration.md#429-windows-component-reuse-routing--5-november-2026). Map generated APIs and compatible wrappers before considering handwritten bindings. | Exact API/type/error/lifetime coverage and remaining product owner are explicit; CHECK-26/27 admission and the relevant native CHECK remain open until exercised. Microsoft plural services stays held; Mullvad stays a candidate. |
 | ST-W01/ST-W04; storage/dependency/security | Before the VBS-dependent construction/provider freeze, resolve the absent REQUIRE/PREFER flags in the planned 0.62.2 projection via [storage task §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026). | Source/API coverage card identifies compatible published binding or bounded pinned generation, then separate actual-key/native support evidence; no silent software fallback, probe execution or storage-pause release. |
 | Concrete registry consumer; platform or UI owner | Compare `windows-registry` only when that existing settings/state slice needs it. | A smaller admitted adapter preserves access/DACL, value-size bounds and recoverable effects; otherwise retain the narrow current-binding approach. No generic registry layer is scheduled. |
-| S0.5/P5; UI/dependency/accessibility | Follow [the conditional toolkit record](../../tasks/s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026) only for a concrete issue preventing OD-13-selected Slint delivery and its bounded revisit decision. The UI-M0 M0-SL chain remains current. | Reuse the retained Reactor/Slint pilot observations; any changed candidate still needs equivalent fixture, lifecycle/error, accessibility, runtime/MSIX and mitigation evidence. No automatic Reactor/window migration or general toolkit reselection. |
+| S0.5/P5; UI/dependency/accessibility | Follow [the conditional toolkit record](../../tasks/s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026) only for a concrete issue preventing OD-13-selected Slint delivery and its bounded revisit decision. The current S0.5/GUI handoff supersedes completed preparation in the historical UI-M0 M0-SL queue. | Reuse the retained Reactor/Slint pilot observations; any changed candidate still needs equivalent fixture, lifecycle/error, accessibility, runtime/MSIX and mitigation evidence. No automatic Reactor/window migration or general toolkit reselection. |
 | S5.3; UI/diagnostics | At export implementation, use [UI reuse handoff](../../tasks/ui-m0.md#windows-component-reuse-handoff--5-november-2026) and recheck actual `windows-pickers` publication. | Selected ordinary-UI picker preserves cancellation/errors, redaction and safe bounded writes; the reviewed placeholder release provides no implementation evidence. |
 
 The [grouped backlog](../../tasks/development-backlog.md#windows-component-reuse-at-existing-stage-entry)
@@ -398,10 +412,13 @@ and again at closeout when relevant evidence has changed.
 | **P6 — hardened complete package** | [security-build-deployment], [security-windows-privileges], [security-local-ipc], [security-crypto-secrets], [dependency-updates], [evolve-data-contracts] for version/migration/rollback; [security-privacy-logging] for packaged event resources; signing and mitigation authorities. | [qa-package-artifacts], [qa-security-boundaries], [qa-integration-tests], [qa-e2e-tests], [qa-fault-recovery], [qa-state-concurrency-lifecycle], [qa-static-checks], [qa-performance-resources], [qa-black-box-acceptance]. |
 | **P7 — exact release candidate** | [security-build-deployment] and the affected security owners; [qa-test-orchestrator] reconciles the full matrix. Re-read changed contracts/decisions, not the whole pack indiscriminately. | [qa-coverage-gap-analysis], [qa-regression-selection], [qa-mutation-testing], [qa-static-checks], [qa-e2e-tests], [qa-package-artifacts], [qa-performance-resources], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-black-box-acceptance], [qa-independent-review], [qa-final-qualification]. Reuse unchanged qualified evidence with an explicit identity argument. |
 
-UI-M0 stays on its existing task: [implement-native-ui], section 3 Rust/contracts,
+UI-M0 history stays on its existing task; the selected Slint migration uses the
+existing [S0.5 amendment](../../tasks/s0.5-ui-comparison.md#ordered-work-and-observable-exits): [implement-native-ui], section 3 Rust/contracts,
 applicable [qa-component-tests]/[qa-contract-tests]/[qa-static-checks], native
 memory guidance and M0 observations. Full P5 reading/testing does not activate
-D1–D3 early merely because an agent is working on the fixture UI.
+D1–D3 early merely because an agent is working on the fixture UI. Read
+[dependency-updates] for the newly selected Slint graph; apply full
+accessibility/display qualification at the existing claim/re-entry checkpoints.
 
 ### Conditional skills and references
 
@@ -456,6 +473,12 @@ IPC operation exercise allowed/denied callers and fake endpoints (CHECK-2).
 Clock experiments establish measured limits (CHECK-10/11/12). UI feasibility
 uses CHECK-22; laboratory package uses CHECK-5/13/23. Review CHECK-4 applicability
 and current OPEN decisions without claiming compliance.
+
+For S0.5, the owner has selected Slint under OD-13 and the v0.4 fixture GUI is
+implemented. Follow its current handoff for combined-candidate reconciliation,
+remaining native/backend/text-approval and hardening obligations. Historical
+graph/licence and source stages remain recorded; no fresh toolkit-choice
+comparison is a prerequisite. Full feasibility stays open at D1/D3 re-entry.
 
 For optional storage, P0 can prepare the exact design/provider/account/profile
 row in [section 8.4](#84-protected-optional-storage-design-and-qualification).
@@ -668,23 +691,50 @@ performance/lifetime evidence includes the applicable CHECK-21 measurements.
 ### P5 — truthful, accessible production UI
 
 **Default toolkit — 5 November 2026:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Rust/Slint, starting from the measured winit/software-renderer and
-Fluent-style pilot. Consume the [existing UI-M0 migration handoff](../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026):
-exact product graph/licence admission, generated-code/unsafe-policy reconciliation,
-shared checked validation, native lifecycle and D1–D3 re-entry evidence remain
-required. Existing Win32 code and receipts are a reference candidate, not a
-completed Slint migration. This selection does not displace current Core work.
+selects Rust/Slint and incorporates the accepted local fixture migration and
+separate original GUI GPL-3.0-only scope. The measured winit/software/Fluent
+pilot and subsequent Slint/iced reaffirmation remain historical inputs. The
+[S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+and [GUI handoff](../../tasks/slint-gui-handoff.md) own the implemented v0.4 fixture
+GUI, bounded graph evidence and remaining merged-candidate/backend/native/text/
+hardening work. Retain the source concerns in main's [UI-M0 queue](../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026)
+against the actually reached candidate; completed source stages need no rerun.
+Live P5 remains deferred until its actual service/IPC/policy prerequisites.
 
-Use the [design specification](../nevrotick-design-v0.2/docs/02-ui-spec.md),
-[interactive preview](../nevrotick-design-v0.2/NevroTick-UI-preview.html),
-[screen catalogue](../nevrotick-design-v0.2/screens/README.md) and
+[OD-15's localization design](ui-localization.md) separates translator-editable
+JSON sources, generated CBOR resources and a shared typed Rust presentation
+catalog feeding Slint/tray/local-notification/accessibility consumers. S0.5
+records the implemented strict producer/loaders and text-contract2 source controls;
+existing S5 children integrate and qualify their reached production consumers/locales. English stays the initial adopted
+language; catalog data changes neither wire/policy IDs nor service/clock authority.
+The format choice supplies no blanket codec/formatter or user-pack admission.
+The actual selected GUI graph and source controls retain their exact receipts;
+independent user-import mode, deferred D1/D3 and current Core priority are unchanged.
+
+The [6 November hostile-catalog amendment](ui-localization.md#hostile-catalogs-security-amendment--6-november-2026-asiatbilisi)
+requires bounded admission of every raw JSON/CBOR input, including English and
+signed/generated resources. Protect the independent typed/semantic contract and
+checker, isolate conversion and preserve exact file/output custody. Critical
+wording requires independent exact-content approval or whole English-group
+fallback; formatting, sinks and overlapping work need finite bounds. S0.5
+records the implemented strict profile and affected source controls on its branch
+candidates. Independent critical-text approval, combined-candidate verification
+and actual native/P5 protections remain open.
+
+Use the [current design v0.4](../nevrotick-design-v0.4/README.md),
+[interactive preview](../nevrotick-design-v0.4/NevroTick-UI-v0.4.html),
+[usage/scenes](../nevrotick-design-v0.4/README-RU.md) and
 [brand kit](../NevroTick-AVIF-kit-v1/README.md). Keep asset notices separate from
-code licensing. Reference scenes are not behavioral authority. Do not execute
+code licensing. The [retained v0.2 specification](../nevrotick-design-v0.2/docs/02-ui-spec.md)
+and its scene catalogue are historical references. Reference scenes are not
+behavioral authority and richer simulated flows do not expand UI-M0. Do not execute
 the archived React tooling before resolving its recorded dependency findings.
 
-- **UI-M0:** preserve M0-01–M0-08, sample labels, disabled protected actions,
-  transient checked editing and native window behavior; keep its current
-  instrumentation gap visible. It does not complete P0/S0.5 or P5.
+- **Fixture replacement:** preserve M0-01–M0-08, sample labels, disabled protected
+  actions, transient shared checked editing and native window behavior in Slint.
+  The legacy Win32 instrumentation gap remains on that old candidate; Slint
+  supplies its own native/cleanup/resource evidence. Neither historical UI-M0
+  results nor the fixture port complete P0/S0.5 or P5.
 - **D2 re-entry:** restore freshness/reconnect/generation semantics before any
   live read-only status. Restore policy revisions, receiver authorization and
   confirmed/failed/unknown results before real settings/protected commands.
@@ -1117,6 +1167,15 @@ property open. Continue independent authorized work without claiming the affecte
 phase complete. Runtime, behavioral, native and release gates, all execution
 holds, and optional enhanced release provenance retain their separate status.
 
+**Parallel ready Slint source lane:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+authorizes complete replacement; the existing
+[S0.5 source card](../../tasks/s0.5-ui-comparison.md#first-ready-source-card-and-retained-boundaries)
+owns the source/lifecycle map, selected Windows backend/features and concrete
+licence/distribution analysis before pinned graph admission. It can progress
+alongside this proof-first Core continuation, with one graph/schema integration
+owner and disjoint writable scopes. Preserve all execution holds; source
+readiness grants no Windows run or completed Slint/P5 qualification.
+
 **Prepared S2.1 source work:** the [engine integration card](../../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 records the runtime-to-measurement gap, existing fixture consumer and independent
 controls. [W11-W01 §4.26](../../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
@@ -1285,7 +1344,8 @@ At each bounded checkpoint:
 
 | Owner / existing workstream | Disposition and next action |
 | --- | --- |
-| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Pure checked knowledge/interpretation and offline generation are implemented with an initial portable pass; complete the current new-owner qualification. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) preserve completed predecessor scopes. Route protocol admission and native mapping/recovery to their later owners; do not require all production S1.3/Windows work for static calendar construction. No execution hold is lifted. |
+| UI/dependency/licence, [current S0.5 goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui) and [GUI handoff](../../tasks/slint-gui-handoff.md) | Reconcile the implemented v0.4 fixture GUI and original GUI GPL3 graph against the combined candidate. Retain exact branch receipts, main's pilots/reaffirmation and the planned P3/P5/P6 hardening handoff; native/backend/critical-text approval and release gaps remain. No additional toolkit selection or legacy Win32 instrumentation prerequisite; live P5 and D1–D3 retain their triggers. Serialize shared graph/schema changes; native/fuzz/storage holds remain. |
+| Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Pure checked knowledge/interpretation and offline generation have completed their recorded final host qualification; preserve those receipts and route the current product continuation through section 7. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) preserve completed predecessor scopes. Route protocol admission and native mapping/recovery to their later owners; do not require all production S1.3/Windows work for static calendar construction. No execution hold is lifted. |
 | Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | Required baseline-admission work remains at its owned configuration checkpoint. Coordinate shared inputs with the lint/Core owner; generic admitted flags do not establish v3 or measured AVX-512 qualification. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | ST-W01 is ready source-only: prepare one construction/outcome/ownership handoff or exact blockers in the existing storage task. Other contracts apply before their dependent adapters; implementation admission and native pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01 has [partial source preparation](../../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026) linked to the engine integration card. Finish the selected capture/mapping profile and SDK/backend questions before dependent implementation; reuse completed research, without a broad survey or native probe. |

@@ -1,0 +1,96 @@
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /stopped · Disabled/. Input:
+
+'Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n' +
+  '\n' +
+  'Time manager: Windows Time · Windows synchronization not yet verified\n' +
+  '\n' +
+  'SETTINGS\n' +
+  'Settings\n' +
+  '\n' +
+  'Synchronization, source policy and personal preferences.\n' +
+  '\n' +
+  'Synchronization\n' +
+  'Background service\n' +
+  'Time policy\n' +
+  'Your preferences\n' +
+  '\n' +
+  'Applies to NevroTick; Windows Time keeps its existing settings.\n' +
+  '\n' +
+  'Background service\n' +
+  '\n' +
+  'Manage NevroTick background synchronization as one product.\n' +
+  '\n' +
+  'Administrator required\n' +
+  '\n' +
+  'Administrator permission is required. This prototype shows sample responses.\n' +
+  '\n' +
+  'Service observation\n' +
+  'Both services stopped · confirmed sample\n' +
+  'Sample evidence only; no Windows service query is performed.\n' +
+  'Clock ownership\n' +
+  'Windows Time\n' +
+  'Every real clock effect would still require a current ownership check.\n' +
+  'Synchronization\n' +
+  'Windows synchronization not yet verified\n' +
+  'Service availability and time synchronization are separate facts.\n' +
+  'Time manager\n' +
+  'Windows Time\n' +
+  'Windows synchronization is not yet verified.\n' +
+  'Start automatically with Windows\n' +
+  'Off\n' +
+  'Time measurements: Disabled. Clock control: Disabled.\n' +
+  'Windows Time\n' +
+  'running · Manual · trigger-start\n' +
+  'Synchronization not yet verified. Existing time settings preserved.\n' +
+  'Enable and start\n' +
+  'Stop\n' +
+  'Restart\n' +
+  'Diagnose\n' +
+  '\n' +
+  'Start runs NevroTick for observation. Stop and Restart affect only NevroTick; Windows Time continues to manage time.\n' +
+  '\n' +
+  'Start automatically with Windows\n' +
+  '\n' +
+  'Applies to both NevroTick services. Changing this setting does not start or stop them, or change who manages time.\n' +
+  '\n' +
+  'Off\n' +
+  'Time management\n' +
+  '\n' +
+  'Windows Time · Windows synchronization not yet verified\n' +
+  '\n' +
+  'Choose a time manager explicitly. Start and autostart never take control from another time manager.\n' +
+  '\n' +
+  'Use Windows Time\n' +
+  'Use NevroTick\n' +
+  'Fully disable\n' +
+  '\n' +
+  'Stop both NevroTick services, disable startup and settle only their owned clock work. Settings and history are retained.\n' +
+  '\n' +
+  'Disable NevroTick\n' +
+  'Configuration and time management · sample\n' +
+  'Windows Time manages time\n' +
+  '\n' +
+  'Release and the new Windows Time owner are independently confirmed. NevroTick is stopped with startup disabled and recovery restarts inhibited. Windows Time is running; Windows synchronization is not yet verified.\n' +
+  '\n' +
+  'About these controls\n' +
+  '\n' +
+  'Prototype — sample data. Changes affect this preview only.'
+
+    at /workspace/nevrotick-ui-audit/ownership-work/final-qa/independent-probe.cjs:34:89 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 'Service command sample. Source measurements, authentication and recovery events are retained history. No fresh time agreement has been supplied after this operation.\n' +
+    '\n' +
+    'Time manager: Windows Time · Windows synchronization not yet verified\n' +
+    '\n' +
+    'SETTINGS\n' +
+    'Settings\n' +
+    '\n' +
+    'Synchronization, source policy and personal preferences.\n' +
+    '\n' +
+    'Synchronization\n' +
+    '...',
+  expected: /stopped · Disabled/,
+  operator: 'match',
+  diff: 'simple'
+}

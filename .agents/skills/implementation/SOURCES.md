@@ -16,7 +16,8 @@ adopts selective field/variant review and coupled collection access. Rust's
 and [Clippy's actual field-pattern recommendation](https://clippy.rust-lang.org/master/index.html#unneeded_field_pattern)
 qualify the article's constructor and lint claims. No article code was copied.
 This guidance selects no new lint configuration, dependency or product proof;
-existing admission, contract QA and OD-10 obligations keep their owners.
+existing admission and contract QA keep their owners. OD-10 formal obligations
+remain post-V1 under its first-release deferral.
 
 ## Production hardening and illegal states follow-up — 6 November 2026
 
@@ -71,7 +72,10 @@ no-pixel versus rendered/native evidence. The Windows tray broadcast discrepancy
 is a source-level recovery concern for later native qualification, not a
 reproduced defect or a new UI-M0 blocker. No upstream implementation, dependency,
 font or asset is vendored; source notices remain with their owners. The
-[existing UI task](../../../tasks/ui-m0.md) retains admission and execution gates.
+[existing UI task](../../../tasks/ui-m0.md) retains its baseline gates;
+[S0.5](../../../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../../../tasks/slint-gui-handoff.md) own current migration scope,
+recorded evidence and remaining native/text-approval gaps.
 
 ## Preserving established invariants — 4 November 2026
 
@@ -263,3 +267,16 @@ guides. Rust 1.99.0 Context7 examples were reconciled with the 1.99.1 source/doc
 portable SIMD examples grant no nightly/dependency admission. No third-party
 skill code or application implementation was imported. Research and model checks
 do not establish native compatibility, tail-load safety or a useful speedup.
+
+## Additional local Slint source register — 5 November 2026
+
+The canonical [implement-slint](implement-slint/SKILL.md) workflow retains a
+companion source register for OD-13's selected replacement and S0.5 migration. Its
+[source register](implement-slint/SOURCES.md) binds Slint 1.18.1 to immutable
+GitHub source, distinguishes runtime/build features and licensing, and retains
+the native AVIF decoder discrepancy. Rust callbacks, models and lifecycle
+references are original instructional prose, not a copied upstream skill or
+application implementation. Context7/GitHub MCP tools were unavailable in the
+authoring session, including after explicit tags; the actual evidence came
+from official HTTPS documentation and pinned GitHub source. No MCP use,
+dependency adoption or Slint/Windows runtime qualification is claimed.

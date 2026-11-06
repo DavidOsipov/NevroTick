@@ -1,0 +1,128 @@
+import { GuardedLineEdit } from "guarded-line-edit.slint";
+import { GuardedComboBox } from "guarded-combo-box.slint";
+import { Theme } from "theme.slint";
+import { RecoveryCopy } from "recovery-copy.slint";
+import { Panel, PageHeading, SectionHeading, BodyText, SecondaryText, FactRow, ActionButton } from "components.slint";
+
+// Inputs remain raw drafts. Only the Rust owner accepts a helper preview.
+export component RecoveryPage inherits VerticalLayout {
+    in property <bool> raw-revision;
+    callback raw-text-edited(int, string) -> string;
+    callback raw-action-permitted(int, int) -> bool;
+    callback raw-menu-key(string, bool) -> bool;
+    callback raw-choice-edited(int, int) -> int;
+    in property <bool> host-ready;
+    in property <bool> review-open;
+    in property <bool> leave-open;
+    in property <string> back-label: RecoveryCopy.back;
+    in property <[string]> preview-hosts;
+    in property <string> error;
+    in property <string> feedback;
+    in property <int> helper-count: 0;
+    in property <string> first-helper;
+    in property <string> second-helper;
+    private property <bool> path-expanded: false;
+    private property <int> shown-helper-count: root.review-open ? root.preview-hosts.length : root.helper-count;
+    callback back-requested();
+    callback update-requested(int, string, string);
+    callback cancel-requested();
+    callback keep-editing-requested();
+    callback discard-requested();
+
+    spacing: 18px;
+    vertical-stretch: 0;
+    PageHeading { title: RecoveryCopy.title; description: RecoveryCopy.description; }
+    ActionButton { text: root.back-label; enabled: root.host-ready && !root.leave-open; clicked => { root.back-requested(); } }
+    Panel {
+        SectionHeading { text: RecoveryCopy.roughtime-title; }
+        BodyText { text: RecoveryCopy.roughtime-description; }
+        SecondaryText { text: RecoveryCopy.no-effect; }
+        SecondaryText { text: RecoveryCopy.unavailable; color: Theme.amber; }
+        GridLayout {
+            spacing: 16px;
+            FactRow { row: 0; col: 0; label: RecoveryCopy.signatures; value: RecoveryCopy.unobserved; }
+            FactRow { row: 0; col: 1; label: RecoveryCopy.date; value: RecoveryCopy.no-date; }
+            FactRow { row: 1; col: 0; colspan: 2; label: RecoveryCopy.handoff; value: RecoveryCopy.unobserved; }
+        }
+        ActionButton {
+            text: root.path-expanded ? RecoveryCopy.hide-path : RecoveryCopy.show-path;
+            clicked => { root.path-expanded = !root.path-expanded; }
+        }
+        if root.path-expanded: VerticalLayout {
+            spacing: 10px;
+            SecondaryText { text: RecoveryCopy.retained-step; }
+            SecondaryText { text: RecoveryCopy.date-step; }
+            SecondaryText { text: RecoveryCopy.nts-step; }
+            SecondaryText { text: RecoveryCopy.agreement-step; }
+            SecondaryText { text: RecoveryCopy.authority-step; }
+        }
+    }
+    Panel {
+        // Keep feedback children instantiated so the first reveal sees their height.
+        VerticalLayout {
+            spacing: 0px;
+            SectionHeading { text: root.review-open ? RecoveryCopy.review-title : RecoveryCopy.helpers-title; }
+            Rectangle {
+                height: root.error == "" ? 0px : 14px + error-text.preferred-height;
+                vertical-stretch: 0;
+                error-text := SecondaryText {
+                    y: 14px;
+                    width: parent.width;
+                    text: root.error;
+                    color: Theme.red;
+                    visible: root.error != "";
+                }
+            }
+            Rectangle {
+                height: root.feedback == "" ? 0px : 14px + feedback-text.preferred-height;
+                vertical-stretch: 0;
+                feedback-text := SecondaryText {
+                    y: 14px;
+                    width: parent.width;
+                    text: root.feedback;
+                    color: Theme.blue;
+                    visible: root.feedback != "";
+                }
+            }
+        }
+        BodyText { text: RecoveryCopy.helpers-description; }
+        if root.shown-helper-count == 1: SecondaryText { text: RecoveryCopy.one-helper-warning; color: Theme.amber; }
+        if root.shown-helper-count == 2: SecondaryText { text: RecoveryCopy.two-helper-warning; color: Theme.amber; }
+        if !root.review-open: VerticalLayout {
+            spacing: 10px;
+            SecondaryText { text: RecoveryCopy.count-label; color: Theme.ink; }
+            GuardedComboBox { accessible-label: RecoveryCopy.count-label; model: RecoveryCopy.counts; draft-index: root.helper-count; draft-revision: root.raw-revision; enabled: root.host-ready && !root.leave-open; edit-requested(value) => { return root.raw-choice-edited(1, value); } }
+            if root.helper-count >= 1: VerticalLayout {
+                spacing: 7px;
+                SecondaryText { text: RecoveryCopy.first-label; color: Theme.ink; }
+                GuardedLineEdit { field-id: 5; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); } input-label: RecoveryCopy.first-label; draft-value: root.first-helper; draft-revision: root.raw-revision; enabled: root.host-ready && !root.leave-open; edit-requested(value) => { return root.raw-text-edited(5, value); } }
+            }
+            if root.helper-count >= 2: VerticalLayout {
+                spacing: 7px;
+                SecondaryText { text: RecoveryCopy.second-label; color: Theme.ink; }
+                GuardedLineEdit { field-id: 6; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); } input-label: RecoveryCopy.second-label; draft-value: root.second-helper; draft-revision: root.raw-revision; enabled: root.host-ready && !root.leave-open; edit-requested(value) => { return root.raw-text-edited(6, value); } }
+            }
+            SecondaryText { text: RecoveryCopy.host-help; }
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: start;
+                ActionButton { text: RecoveryCopy.preview; enabled: root.host-ready && !root.leave-open; clicked => { root.update-requested(root.helper-count, root.first-helper, root.second-helper); } }
+                ActionButton { text: RecoveryCopy.cancel; enabled: root.host-ready && !root.leave-open; clicked => { root.cancel-requested(); } }
+            }
+        }
+        if root.review-open: VerticalLayout {
+            spacing: 12px;
+            if root.preview-hosts.length == 0: BodyText { text: RecoveryCopy.off; }
+            for identity in root.preview-hosts: BodyText { text: identity; }
+            SecondaryText { text: RecoveryCopy.boundary; }
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: start;
+                ActionButton { text: RecoveryCopy.keep-editing; enabled: root.host-ready && !root.leave-open; clicked => { root.keep-editing-requested(); } }
+                ActionButton { text: RecoveryCopy.discard; enabled: root.host-ready && !root.leave-open; clicked => { root.discard-requested(); } }
+            }
+            ActionButton { text: RecoveryCopy.apply; enabled: false; }
+            SecondaryText { text: RecoveryCopy.apply-unavailable; }
+        }
+    }
+}

@@ -2,14 +2,15 @@
 
 Read before proposing Cargo, compiler, renderer, codec, font or bundled-asset
 changes. Follow [dependency admission](../../../environment/dependency-updates/SKILL.md)
-and the [UI migration task](../../../../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026).
+and the current [S0.5 migration task](../../../../../tasks/s0.5-ui-comparison.md)
+and [GUI handoff](../../../../../tasks/slint-gui-handoff.md).
 This guide supplies source evidence; it admits no product dependency or licence route.
 
 ## Contents
 
 - [Establish the candidate](#establish-the-candidate)
 - [Separate dependency graphs](#separate-dependency-graphs)
-- [Preserve the licence hold](#preserve-the-licence-hold)
+- [Preserve the selected licence and admission gates](#preserve-the-selected-licence-and-admission-gates)
 - [Choose an asset path deliberately](#choose-an-asset-path-deliberately)
 - [Select embedding and fonts](#select-embedding-and-fonts)
 - [Review the resulting candidate](#review-the-resulting-candidate)
@@ -24,8 +25,9 @@ on 21 September 2026. Recheck the selected version when doing future work;
 
 [OD-13](../../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Slint and the measured winit/software/Fluent starting configuration.
-M0-SL-01 still owns exact graph and licence admission. Source preparation can
-record a concrete blocker; that does not unblock M0-SL-03 implementation.
+The original M0-SL-01–05 gates remain baseline history; current S0.5 addenda
+record the implemented adapter, actual graph checks and remaining native/text
+approval gaps. Source evidence alone does not close those gaps.
 
 Inspect the real UI manifest, lockfile, toolchain, build script and current
 task before changing versions. Keep `slint` and `slint-build` on the same selected
@@ -64,7 +66,8 @@ therefore does not express the selected minimal winit/software profile.
 - Keep accessibility selection with its current owner. D3 is deferred, and the
   pilot's omitted accessibility feature is not permanent product policy.
 - `system-tray` already enables Slint's `SystemTrayIcon`; choose it only when
-  the admitted milestone needs a tray. It does not authorize tray behavior now.
+  the admitted milestone needs a tray. Current S0.5 addenda own the integrated
+  tray source and remaining native evidence; the feature alone authorizes no behavior.
 - Add `raw-window-handle-06` only for an actual reviewed native adapter need.
   Window handles retain their platform and lifetime obligations.
 
@@ -87,7 +90,7 @@ lists software-renderer limits involving item transforms, shadows, rounded
 clipping, text outlining and text scripts. Verify the required design and glyphs
 on the selected candidate; do not infer support from a browser or GPU demo.
 
-## Preserve the licence hold
+## Preserve the selected licence and admission gates
 
 Read the exact [licence map](https://github.com/slint-ui/slint/blob/372cf0ee5577c3dfec309a45e7b778ba4e81b734/LICENSE.md),
 selected grants, per-file headers and REUSE metadata. Framework, example and
@@ -95,7 +98,7 @@ asset licences are separate; a repository badge cannot qualify the binary.
 
 | Material or route | Source-grounded obligation to resolve |
 | --- | --- |
-| Slint framework | Select and record an applicable GPL-3.0-only, Royalty-free 2.0 or Software 3.0 grant; selection is not implicit. |
+| Slint framework | Record the selected GPL-3.0-only route for the original GUI and its exact obligations under OD-13; other offered grants are not implicitly accepted. |
 | Documentation/examples | Generally MIT at this revision; inspect copied files and retain required notices. |
 | Third-party source/assets | Follow their own headers/REUSE metadata and transitive licence inventory. |
 | NevroTick brand assets | Preserve their proprietary asset notices independently of the application's code licence. |
@@ -107,11 +110,13 @@ widget must be reachable as described by that grant; the alternative public
 badge route has its own placement requirement. Also inspect its limitations
 on standalone redistribution, exposed APIs and retained notices.
 
-Keep M0-SL-01's Slint and Apache-2.0-only winit compatibility questions unresolved
-until the exact route is admitted against retained chrony/GPL-2.0-only
-obligations. A framework grant, source-file MIT header, process split or owner
-toolkit preference is not a blanket compatibility finding. Record a concrete
-OD-04 blocker/card where needed; infer no paid agreement or licence exception.
+David approved GPL-3.0-only for the original GUI under OD-13, while
+Chrony-derived Core/engine remains GPL-2.0-only. Do not ask for this choice again.
+Apply the GUI-specific grant/provenance inventory and current S0.5 graph evidence;
+the selected direction does not supply blanket combined-distribution clearance
+or replace exact Slint/winit/build/native/asset checks. A framework grant,
+source-file MIT header or process split is not an automatic composition finding.
+Record a concrete OD-04 blocker where needed; infer no paid agreement or exception.
 
 ## Choose an asset path deliberately
 

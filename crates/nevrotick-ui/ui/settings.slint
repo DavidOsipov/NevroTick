@@ -1,0 +1,334 @@
+import { GuardedLineEdit } from "guarded-line-edit.slint";
+import { GuardedComboBox } from "guarded-combo-box.slint";
+import { PolicyPanel } from "policy-panel.slint";
+import { PolicyCopy } from "policy-copy.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { PreferencesCopy } from "preferences-copy.slint";
+import { RecoveryCopy } from "recovery-copy.slint";
+import { GuardedCheckBox } from "guarded-check-box.slint";
+import { Theme } from "theme.slint";
+import { ShellCopy } from "shell-copy.slint";
+import { Panel, BodyText, SecondaryText, SectionHeading, PageHeading, Heading, Badge, FactRow, Rule, ActionButton, HelpText } from "components.slint";
+
+// Both modes use the same host-owned accepted preferences and raw draft fields.
+// Widget values are presentation only; each callback requires a checked host.
+export component SettingsPage inherits VerticalLayout {
+    in property <bool> raw-revision;
+    callback raw-text-edited(int, string) -> string;
+    callback raw-action-permitted(int, int) -> bool;
+    callback raw-menu-key(string, bool) -> bool;
+    callback raw-choice-edited(int, int) -> int;
+    in property <bool> host-ready: false;
+    in property <bool> power-mode: false;
+    in property <length> viewport-height: 1000px;
+    private property <bool> compact: root.viewport-height < 480px;
+    in property <int> settings-section: 0;
+    in property <string> service-feedback;
+    in property <string> notification-feedback;
+    // Native observations are projections. Direct actions recheck the Rust owner.
+    in property <bool> native-notifications-available: false;
+    in property <bool> native-notification-test-available: false;
+    // Closed values: 0 unknown, 1 allowed, 2 user blocked, 3 policy, 4 unsupported.
+    in property <int> windows-notification-setting: 0;
+    // Closed values: 0 unknown, 1 running, 2 stopped.
+    in property <int> notification-observer-state: 0;
+    private property <int> shown-section: root.settings-section >= 0 && root.settings-section <= 4 && (root.settings-section != 3 || root.power-mode) ? root.settings-section : 0;
+    in property <int> draft-interval-choice: 0;
+    in property <string> draft-custom-minutes: "1";
+    in property <string> accepted-interval-label: PreferencesCopy.interval-options[0];
+    in property <string> preference-error;
+    in property <string> preference-feedback;
+    in property <int> preference-feedback-section: -1;
+    in property <string> interval-error;
+    in property <string> interval-feedback;
+    in property <bool> notifications-enabled: true;
+    in property <bool> tray-enabled: false;
+    in property <bool> native-tray-available: false;
+    in property <bool> sign-in-enabled: false;
+    in property <bool> source-editor-open;
+    in property <int> policy-phase;
+    in property <bool> policy-has-preview;
+    in property <int> policy-accepted-choice;
+    in property <int> draft-policy-choice;
+    in property <string> policy-error;
+    callback policy-edit-requested();
+    callback policy-review-requested(int);
+    callback policy-cancel-requested();
+    callback policy-open-review-requested();
+    callback policy-keep-requested();
+    callback policy-discard-requested();
+    callback recovery-open-requested();
+    callback interval-save-requested(int, string);
+    callback interval-cancel-requested();
+    callback notifications-requested(bool) -> bool;
+    callback tray-requested(bool) -> bool;
+    callback sign-in-requested(bool) -> bool;
+    callback settings-section-requested(int);
+    callback service-power-requested();
+    callback diagnose-service-requested();
+    callback service-command-requested(int);
+    callback notification-test-requested();
+
+    private property <string> section-title: root.shown-section == 1 ? FixtureCopy.service-heading : root.shown-section == 2 ? PreferencesCopy.notifications-heading : root.shown-section == 3 ? ShellCopy.time-policy : root.shown-section == 4 ? ShellCopy.personal-preferences : FixtureCopy.schedule-heading;
+    spacing: root.compact ? 8px : 20px;
+    vertical-stretch: 0;
+    if !root.compact: PageHeading {
+        title: root.section-title;
+        description: root.shown-section == 1 ? ShellCopy.service-description : root.shown-section == 2 ? PreferencesCopy.observer-help : root.shown-section == 3 ? ShellCopy.time-policy-description : root.shown-section == 4 ? ShellCopy.personal-preferences-description : FixtureCopy.settings-description;
+    }
+    if root.compact: Heading { text: root.section-title; font-size: 20px; }
+    GridLayout {
+        spacing: root.compact ? 4px : 8px;
+        ActionButton {
+            row: 0; col: 0;
+            text: ShellCopy.synchronization-settings;
+            horizontal-stretch: 1;
+            enabled: root.host-ready && root.shown-section != 0;
+            clicked => { root.settings-section-requested(0); }
+        }
+        ActionButton {
+            row: 0; col: 1;
+            text: ShellCopy.background-service;
+            horizontal-stretch: 1;
+            enabled: root.host-ready && root.shown-section != 1;
+            clicked => { root.settings-section-requested(1); }
+        }
+        ActionButton {
+            row: 0; col: 2;
+            text: ShellCopy.notifications;
+            horizontal-stretch: 1;
+            enabled: root.host-ready && root.shown-section != 2;
+            clicked => { root.settings-section-requested(2); }
+        }
+        ActionButton {
+            row: 1; col: 0;
+            text: ShellCopy.personal-preferences;
+            horizontal-stretch: 1;
+            enabled: root.host-ready && root.shown-section != 4;
+            clicked => { root.settings-section-requested(4); }
+        }
+        if root.power-mode: ActionButton {
+            row: 1; col: 1;
+            text: ShellCopy.time-policy;
+            horizontal-stretch: 1;
+            enabled: root.host-ready && root.shown-section != 3;
+            clicked => { root.settings-section-requested(3); }
+        }
+    }
+    if root.shown-section == root.preference-feedback-section && root.preference-feedback != "": SecondaryText { text: root.preference-feedback; color: Theme.blue; }
+    if root.shown-section == root.preference-feedback-section && root.preference-error != "": SecondaryText { text: root.preference-error; color: Theme.red; }
+    if root.shown-section == 0: Panel {
+        if !root.compact: BodyText { text: PreferencesCopy.schedule-description; font-size: 13px; }
+        VerticalLayout {
+            spacing: 7px;
+            SecondaryText { text: FixtureCopy.interval-label; color: Theme.ink; }
+            GuardedComboBox {
+                accessible-label: FixtureCopy.interval-label;
+                model: PreferencesCopy.interval-options;
+                draft-index: root.draft-interval-choice;
+                draft-revision: root.raw-revision;
+                edit-requested(value) => { return root.raw-choice-edited(0, value); }
+                enabled: root.host-ready;
+                min-height: 37px;
+                Tooltip { HelpText { text: PreferencesCopy.scheduling-note; } }
+            }
+            if root.draft-interval-choice == 4: VerticalLayout {
+                spacing: 7px;
+                SecondaryText { text: PreferencesCopy.custom-label; color: Theme.ink; }
+                GuardedLineEdit { field-id: 4; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+                    input-label: PreferencesCopy.custom-label;
+                    draft-value: root.draft-custom-minutes;
+                    draft-revision: root.raw-revision;
+                    edit-requested(value) => { return root.raw-text-edited(4, value); }
+                    enabled: root.host-ready;
+                    Tooltip { HelpText { text: PreferencesCopy.custom-help; } }
+                }
+            }
+        }
+        if root.interval-error != "": SecondaryText { text: root.interval-error; color: Theme.red; }
+        if root.interval-feedback != "": SecondaryText { text: root.interval-feedback; color: Theme.blue; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton {
+                text: FixtureCopy.update-preview;
+                enabled: root.host-ready;
+                clicked => { root.interval-save-requested(root.draft-interval-choice, root.draft-custom-minutes); }
+            }
+            ActionButton {
+                text: FixtureCopy.cancel;
+                enabled: root.host-ready;
+                clicked => { root.interval-cancel-requested(); }
+            }
+        }
+        if !root.compact: FactRow { label: PreferencesCopy.accepted-interval; value: root.accepted-interval-label; }
+        if root.compact: HorizontalLayout {
+            spacing: 12px;
+            alignment: start;
+            SecondaryText { text: PreferencesCopy.accepted-interval; }
+            BodyText { text: root.accepted-interval-label; font-weight: 600; }
+        }
+        if root.compact: BodyText { text: PreferencesCopy.schedule-description; font-size: 13px; }
+        if root.draft-interval-choice == 4: SecondaryText { text: PreferencesCopy.custom-help; }
+        SecondaryText { text: PreferencesCopy.scheduling-note; }
+        SecondaryText { text: PreferencesCopy.preferences-boundary; }
+        if !root.host-ready: SecondaryText { text: PreferencesCopy.host-unavailable; color: Theme.amber; }
+    }
+    if root.shown-section == 1: Panel {
+        Badge { text: FixtureCopy.admin-required; }
+        SecondaryText { text: ShellCopy.service-unavailable; color: Theme.amber; }
+        if root.service-feedback != "": SecondaryText { text: root.service-feedback; color: Theme.amber; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: FixtureCopy.start-service; enabled: false; clicked => { root.service-command-requested(0); } }
+            ActionButton { text: FixtureCopy.stop-service; enabled: false; clicked => { root.service-command-requested(1); } }
+            ActionButton { text: FixtureCopy.restart-service; enabled: false; clicked => { root.service-command-requested(2); } }
+        }
+        ActionButton {
+            text: root.power-mode ? ShellCopy.diagnose : ShellCopy.diagnose-power;
+            enabled: root.host-ready;
+            clicked => { root.diagnose-service-requested(); }
+        }
+        SecondaryText { text: FixtureCopy.service-protected-note; }
+        SecondaryText { text: ShellCopy.diagnose-note; }
+        Rule { }
+        SecondaryText { text: FixtureCopy.service-description; font-size: 13px; }
+        GridLayout {
+            spacing: 22px;
+            FactRow { row: 0; col: 0; label: FixtureCopy.runtime-label; value: FixtureCopy.runtime-value; }
+            FactRow { row: 0; col: 1; label: FixtureCopy.startup-label; value: FixtureCopy.startup-value; }
+            FactRow { row: 1; col: 0; label: FixtureCopy.owner-label; value: FixtureCopy.owner-value; }
+            FactRow { row: 1; col: 1; label: FixtureCopy.synchronization-label; value: FixtureCopy.synchronization-value; }
+        }
+        Rule { }
+        SectionHeading { text: ShellCopy.startup-title; }
+        SecondaryText { text: ShellCopy.startup-note; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: ShellCopy.autostart-on; enabled: false; clicked => { root.service-command-requested(3); } }
+            ActionButton { text: ShellCopy.autostart-off; enabled: false; clicked => { root.service-command-requested(4); } }
+        }
+        ActionButton { text: FixtureCopy.disable-service; enabled: false; clicked => { root.service-command-requested(5); } }
+        SecondaryText { text: ShellCopy.disable-note; }
+        SecondaryText { text: FixtureCopy.lifecycle-note; }
+        Rule { }
+        SectionHeading { text: ShellCopy.time-manager-title; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: ShellCopy.use-windows; enabled: false; clicked => { root.service-command-requested(6); } }
+            ActionButton { text: ShellCopy.use-nevrotick; enabled: false; clicked => { root.service-command-requested(7); } }
+        }
+        SecondaryText { text: ShellCopy.handover-note; }
+    }
+    if root.shown-section == 2: Panel {
+        GuardedCheckBox {
+            text: PreferencesCopy.notifications-label;
+            accepted-checked: root.notifications-enabled;
+            draft-revision: root.raw-revision;
+            enabled: root.host-ready;
+            edit-requested(value) => { return root.notifications-requested(value); }
+            Tooltip { HelpText { text: PreferencesCopy.notifications-help; } }
+        }
+        ActionButton {
+            text: PreferencesCopy.test-notification;
+            enabled: root.host-ready && root.native-notifications-available && root.native-notification-test-available;
+            clicked => { root.notification-test-requested(); }
+        }
+        if root.notification-feedback != "": SecondaryText { text: root.notification-feedback; color: Theme.amber; }
+        SecondaryText { text: PreferencesCopy.notification-test-unavailable; }
+        SecondaryText { text: PreferencesCopy.notifications-help; }
+        FactRow {
+            label: PreferencesCopy.windows-availability;
+            value: root.windows-notification-setting == 1 ? PreferencesCopy.notification-windows-allowed : root.windows-notification-setting == 2 || root.windows-notification-setting == 3 ? PreferencesCopy.notification-windows-blocked : PreferencesCopy.unknown-availability;
+            note: PreferencesCopy.availability-help;
+        }
+        FactRow {
+            label: PreferencesCopy.observer-label;
+            value: root.notification-observer-state == 1 ? PreferencesCopy.notification-observer-running : PreferencesCopy.observer-unavailable;
+            note: PreferencesCopy.observer-help;
+        }
+        SecondaryText { text: PreferencesCopy.preferences-boundary; }
+        Rule { }
+        SectionHeading { text: PreferencesCopy.incidents-heading; }
+        SecondaryText { text: PreferencesCopy.incidents-unavailable; }
+    }
+    if root.shown-section == 4: Panel {
+        SectionHeading { text: PreferencesCopy.preferences-heading; }
+        GuardedCheckBox {
+            text: PreferencesCopy.tray-label;
+            accepted-checked: root.tray-enabled;
+            draft-revision: root.raw-revision;
+            enabled: root.host-ready;
+            edit-requested(value) => { return root.tray-requested(value); }
+            Tooltip { HelpText { text: PreferencesCopy.tray-help; } }
+        }
+        SecondaryText { text: PreferencesCopy.tray-help; }
+        GuardedCheckBox {
+            text: PreferencesCopy.sign-in-label;
+            accepted-checked: root.sign-in-enabled;
+            draft-revision: root.raw-revision;
+            enabled: root.host-ready && root.tray-enabled;
+            edit-requested(value) => { return root.sign-in-requested(value); }
+            Tooltip { HelpText { text: PreferencesCopy.sign-in-help; } }
+        }
+        SecondaryText { text: PreferencesCopy.sign-in-help; }
+        SecondaryText { text: root.native-tray-available ? PreferencesCopy.tray-ready-note : PreferencesCopy.tray-adapter-unavailable; }
+        SecondaryText { text: PreferencesCopy.preferences-boundary; }
+    }
+    if root.shown-section == 0 && !root.power-mode: Panel {
+        SectionHeading { text: ShellCopy.background-service; }
+        SecondaryText { text: ShellCopy.service-summary; }
+        ActionButton {
+            text: root.power-mode ? ShellCopy.manage-service : ShellCopy.manage-power;
+            enabled: root.host-ready;
+            clicked => {
+                if root.power-mode { root.settings-section-requested(1); }
+                else { root.service-power-requested(); }
+            }
+        }
+    }
+    if root.shown-section == 0 && !root.power-mode: Panel {
+        SectionHeading { text: ShellCopy.time-policy; }
+        SecondaryText { text: ShellCopy.time-policy-description; }
+        FactRow { label: PolicyCopy.baseline; value: PolicyCopy.nts; }
+        FactRow {
+            label: PolicyCopy.preview;
+            value: !root.policy-has-preview ? PolicyCopy.no-preview : root.policy-accepted-choice == 0 ? PolicyCopy.nts : root.policy-accepted-choice == 1 ? PolicyCopy.ntp : PolicyCopy.observe;
+        }
+        ActionButton {
+            text: ShellCopy.time-policy-power;
+            enabled: root.host-ready;
+            clicked => { root.settings-section-requested(3); }
+        }
+    }
+    if root.shown-section == 3 && root.power-mode: PolicyPanel {
+        host-ready: root.host-ready;
+        source-editor-open: root.source-editor-open;
+        phase: root.policy-phase;
+        has-preview: root.policy-has-preview;
+        accepted-choice: root.policy-accepted-choice;
+        draft-choice: root.draft-policy-choice;
+        raw-revision: root.raw-revision;
+        raw-choice-edited(field, value) => { return root.raw-choice-edited(field, value); }
+        error: root.policy-error;
+        edit-requested => { root.policy-edit-requested(); }
+        review-requested(raw) => { root.policy-review-requested(raw); }
+        cancel-requested => { root.policy-cancel-requested(); }
+        open-review-requested => { root.policy-open-review-requested(); }
+        keep-requested => { root.policy-keep-requested(); }
+        discard-requested => { root.policy-discard-requested(); }
+    }
+    if root.shown-section == 3 && root.power-mode: Panel {
+        SectionHeading { text: RecoveryCopy.title; }
+        SecondaryText { text: RecoveryCopy.settings-description; }
+        SecondaryText { text: RecoveryCopy.unavailable; }
+        ActionButton { text: RecoveryCopy.open-details; enabled: root.host-ready; clicked => { root.recovery-open-requested(); } }
+    }
+    if root.shown-section == 4: Panel {
+        FactRow { label: PreferencesCopy.language-label; value: "English"; }
+        SecondaryText { text: PreferencesCopy.language-help; }
+    }
+}

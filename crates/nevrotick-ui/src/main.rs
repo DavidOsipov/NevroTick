@@ -1,4 +1,4 @@
-//! Native fixture UI entry point; no production effects are available.
+//! Unelevated Windows observer entry; backend/service/clock effects stay unavailable.
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 /// Launch the unelevated fixture window, propagating startup and lifetime errors.
@@ -7,8 +7,8 @@
 /// Returns the native adapter's startup, control or message-loop failure after
 /// releasing its owned resources.
 #[cfg(windows)]
-fn main() -> Result<(), nevrotick_ui::native::NativeError> {
-    nevrotick_ui::native::run()
+fn main() -> Result<(), nevrotick_ui::slint_host::HostError> {
+    nevrotick_ui::slint_host::run_native()
 }
 
 /// Reject execution on unsupported hosts; portable model tests remain available.

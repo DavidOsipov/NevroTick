@@ -1,0 +1,30 @@
+{
+  "candidate": "ed523ef5aff4e6d04619419398dfaba7c60f6005",
+  "scope": "fresh baseline status browser audit; before notifications",
+  "status_captures": 240,
+  "cross_view_surfaces": 180,
+  "lifecycle_surfaces": 88,
+  "separate_windows_observer_unknown_widths": [
+    360,
+    1280
+  ],
+  "build_text_parity_checks": 120,
+  "page_errors": 0,
+  "unexpected_remote_requests": 0,
+  "document_overflow": 0,
+  "findings": [
+    {
+      "id": "V01",
+      "severity": "P2",
+      "topic": "primary Sync now on unavailable/unknown runtime"
+    },
+    {
+      "id": "V02",
+      "severity": "P2",
+      "source_match": "P2-S02",
+      "topic": "Nv observer lostACK loses independent Windows manager"
+    }
+  ],
+  "native_windows_effects": false,
+  "source_edits": false
+}

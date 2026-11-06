@@ -1,0 +1,15 @@
+// Generated protected identifiers only; one immutable complete publication.
+export struct UiCopy {
+    catalog-ready: bool,
+    revision: string,
+    texts: [string],
+}
+
+export global LocalizationCopy {
+    in property <UiCopy> value;
+}
+
+export global GuiFacts {
+    out property <string> build-version: "2";
+    out property <string> text-contract-version: "2";
+}

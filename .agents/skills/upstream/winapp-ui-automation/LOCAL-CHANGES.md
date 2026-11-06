@@ -15,8 +15,10 @@ Local changes:
 - Quoted frontmatter name/description, narrowed automatic routing to qualified
   native UIA command use, and recorded the MIT license.
 - Added NevroTick scope: project-owned accessibility/E2E requirements remain
-  authoritative; retain native Win32 and the selected complete-MSI architecture.
-  The skill does not adopt WinUI, .NET, Windows App SDK or MSIX.
+  authoritative. The original Win32/MSI scope wording is superseded by OD-13's
+  selected Slint UI and amended OD-05's complete MSIX direction. On 5 November
+  2026 the local scope was reconciled: qualify actual Slint UIA providers/patterns;
+  this skill itself adopts no toolkit, runtime dependency or package format.
 - Required a qualified Windows/CLI environment, approved isolated test session
   and explicitly scoped application/HWND. Loading the skill does not authorize
   installation, elevation, Sandbox enablement, DevTools attachment/injection,

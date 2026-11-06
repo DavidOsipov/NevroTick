@@ -6258,18 +6258,70 @@ REGISTRY = "registry+https://github.com/rust-lang/crates.io-index"
 
 
 def registry_blocks(text):
-    """Retain original reviewed registry blocks with no dependency-edge rewriting."""
+    """Retain exact-version registry blocks; unrelated GUI versions do not merge."""
     result = {}
     for raw in text.split("[[package]]")[1:]:
         block = "[[package]]\n" + raw.strip() + "\n"
         item = tomllib.loads(block)["package"][0]
         if "source" not in item:
             continue
-        name = item["name"]
-        if name in result or item.get("source") != REGISTRY:
+        key = (item.get("name"), item.get("version"))
+        if (any(type(value) is not str or not value for value in key)
+                or key in result or item.get("source") != REGISTRY):
             raise Incomplete("Ambiguous or unreviewed locked registry identity.")
-        result[name] = (item, block)
+        result[key] = (item, block)
     return result
+
+
+def resolve_registry_dependency(reference, blocks):
+    """Resolve a Cargo lock label to one exact admitted registry identity.
+
+    Bare names require one version; explicit version/source qualifiers may only
+    select the same reviewed registry. No source, version or ambiguity fallback
+    can expand the pure owner's dependency closure.
+    """
+    match = (re.fullmatch(r"([A-Za-z0-9_-]+)(?: ([^\s()]+)(?: \(([^\s()]+)\))?)?", reference)
+             if type(reference) is str else None)
+    if match is None or match[3] not in (None, REGISTRY):
+        raise Incomplete("Malformed or unreviewed locked registry dependency reference.")
+    candidates = [key for key in blocks if key[0] == match[1] and (match[2] is None or key[1] == match[2])]
+    if len(candidates) != 1:
+        raise Incomplete("Ambiguous or incomplete Garde locked dependency closure.")
+    return candidates[0]
+
+
+def project_registry_block(entry, blocks, reached):
+    """Remove only redundant dependency qualifiers within a proven pure closure.
+
+    Resolve every original label before projection, require one reached version
+    per name and reparse to prove no other package field changes. Original fuzz
+    control blocks are never passed through this projection.
+    """
+    item, block = entry
+    dependencies = item.get("dependencies", [])
+    if type(dependencies) is not list:
+        raise Incomplete("Malformed Garde locked dependency labels.")
+    keys = [resolve_registry_dependency(value, blocks) for value in dependencies]
+    if any(key not in reached for key in keys) or len(set(keys)) != len(keys):
+        raise Incomplete("Pure lock projection changed or duplicated its reached dependency identities.")
+    labels = [key[0] for key in keys]
+    if labels == dependencies:
+        return entry
+    fields = list(re.finditer(r"(?m)^dependencies\s*=\s*\[([^\]]*)\]", block))
+    if len(fields) != 1:
+        raise Incomplete("Pure lock projection lacks its exact dependency field.")
+    field = fields[0]
+    contents = field[1]
+    for before, after in zip(dependencies, labels, strict=True):
+        literal = json.dumps(before)
+        if contents.count(literal) != 1:
+            raise Incomplete("Pure lock projection has ambiguous dependency string bytes.")
+        contents = contents.replace(literal, json.dumps(after), 1)
+    projected = block[:field.start(1)] + contents + block[field.end(1):]
+    parsed = tomllib.loads(projected)["package"][0]
+    if parsed != dict(item, dependencies=labels):
+        raise Incomplete("Pure lock projection changed an unrelated registry field.")
+    return parsed, projected
 
 
 
@@ -6284,24 +6336,32 @@ def reviewed_fuzz_lock(product_text, control_text):
             or any(item.get("source") or item.get("version") != "0.0.0"
                    or item.get("dependencies") != expected_local[item["name"]] for item in local)):
         raise Incomplete("The actual checked core/domain local graph is absent or changed.")
-    selected, pending = {}, ["garde"]
+    selected, names, pending = {}, {}, [resolve_registry_dependency("garde", product)]
     while pending:
-        name = pending.pop()
-        if name in selected:
+        key = pending.pop()
+        if key in selected:
             continue
-        if name not in product:
-            raise Incomplete("Garde locked dependency closure is incomplete.")
-        selected[name] = product[name]
-        pending.extend(value.split(" ")[0] for value in product[name][0].get("dependencies", []))
-    for name, entry in original.items():
-        if name in selected and selected[name][0] != entry[0]:
+        if key[0] in names and names[key[0]] != key:
+            raise Incomplete("The pure Garde closure contains conflicting versions of one registry name.")
+        names[key[0]] = key
+        selected[key] = product[key]
+        dependencies = product[key][0].get("dependencies", [])
+        if type(dependencies) is not list:
+            raise Incomplete("Malformed Garde locked dependency labels.")
+        pending.extend(resolve_registry_dependency(value, product) for value in dependencies)
+    selected = {key: project_registry_block(entry, product, selected) for key, entry in selected.items()}
+    for key, entry in original.items():
+        shared = names.get(key[0])
+        if shared is not None and selected[shared][0] != entry[0]:
             raise Incomplete("Shared product/fuzz registry identity or dependency edges disagree.")
-        selected.setdefault(name, entry)
-    blocks = {name: entry[1] for name, entry in selected.items()}
+        # Original controls retain their literal bytes, including a shared block.
+        selected[key] = entry
+        names[key[0]] = key
+    blocks = {key: entry[1] for key, entry in selected.items()}
     # These are actual new local identities, not a renamed control package.
-    blocks["time-core"] = '[[package]]\nname = "time-core"\nversion = "0.0.0"\ndependencies = ["garde", "time-domain"]\n'
-    blocks["time-domain"] = '[[package]]\nname = "time-domain"\nversion = "0.0.0"\ndependencies = ["garde"]\n'
-    blocks["time-core-fuzz"] = ('[[package]]\nname = "time-core-fuzz"\nversion = "0.0.0"\n'
+    blocks[("time-core", "0.0.0")] = '[[package]]\nname = "time-core"\nversion = "0.0.0"\ndependencies = ["garde", "time-domain"]\n'
+    blocks[("time-domain", "0.0.0")] = '[[package]]\nname = "time-domain"\nversion = "0.0.0"\ndependencies = ["garde"]\n'
+    blocks[("time-core-fuzz", "0.0.0")] = ('[[package]]\nname = "time-core-fuzz"\nversion = "0.0.0"\n'
                                   'dependencies = ["libfuzzer-sys", "time-core", "time-domain"]\n')
     return "version = 4\n\n" + "\n".join(blocks[name] for name in sorted(blocks))
 
@@ -6805,7 +6865,8 @@ def fuzz(session, selected, report):
             copied = PRODUCT.inventory(destination)
             checksum = json.loads((destination / ".cargo-checksum.json").read_text())
             copied.pop(".cargo-checksum.json")
-            admitted = next(entry for entry in session.dependency_policy["packages"] if entry["name"] == item["name"])
+            admitted = next(entry for entry in session.dependency_policy["packages"]
+                            if (entry["name"], entry["version"]) == (item["name"], item["version"]))
             if (checksum.get("package") != item["checksum"] or checksum.get("files") != copied
                     or PREPARE.files_digest(copied) != admitted["files_sha256"]):
                 raise Incomplete("Copied product dependency no longer matches its admitted archive map.")

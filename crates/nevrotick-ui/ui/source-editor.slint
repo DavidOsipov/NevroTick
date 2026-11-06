@@ -1,0 +1,80 @@
+import { GuardedLineEdit } from "guarded-line-edit.slint";
+import { GuardedComboBox } from "guarded-combo-box.slint";
+import { Theme } from "theme.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { SourceCopy } from "source-copy.slint";
+import { Panel, SecondaryText, SectionHeading, Rule, ActionButton } from "components.slint";
+
+// Raw fields remain outside accepted state; the checked host owns Add/Edit target.
+export component SourceEditor inherits Panel {
+    in property <bool> raw-revision;
+    callback raw-text-edited(int, string) -> string;
+    callback raw-action-permitted(int, int) -> bool;
+    callback raw-menu-key(string, bool) -> bool;
+    callback raw-choice-edited(int, int) -> int;
+    in property <bool> host-ready: false;
+    in property <bool> adding: false;
+    in property <string> draft-label;
+    in property <string> draft-host;
+    in property <string> draft-port;
+    in property <int> draft-protocol-choice: 0;
+    in property <string> error;
+    callback update-requested(string, string, int, string);
+    callback cancel-requested();
+
+    panel-background: Theme.soft;
+    SectionHeading { text: root.adding ? SourceCopy.add-title : SourceCopy.edit-title; }
+    // Keep rejection visible before every field, inside the initial viewport.
+    if root.error != "": SecondaryText { text: root.error; color: Theme.red; }
+    SecondaryText { text: FixtureCopy.editor-description; }
+    Rule { }
+    VerticalLayout {
+        spacing: 5px;
+        SecondaryText { text: FixtureCopy.display-name; color: Theme.ink; }
+        GuardedLineEdit { field-id: 0; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); } input-label: FixtureCopy.display-name; draft-value: root.draft-label; draft-revision: root.raw-revision; enabled: root.host-ready; edit-requested(value) => { return root.raw-text-edited(0, value); } }
+        SecondaryText { text: FixtureCopy.label-help; font-size: 11px; }
+    }
+    VerticalLayout {
+        spacing: 5px;
+        SecondaryText { text: FixtureCopy.server-identity; color: Theme.ink; }
+        GuardedLineEdit { field-id: 1; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); } input-label: FixtureCopy.server-identity; draft-value: root.draft-host; draft-revision: root.raw-revision; enabled: root.host-ready; edit-requested(value) => { return root.raw-text-edited(1, value); } }
+        SecondaryText { text: FixtureCopy.host-help; font-size: 11px; }
+    }
+    VerticalLayout {
+        spacing: 5px;
+        SecondaryText { text: FixtureCopy.protocol-label; color: Theme.ink; }
+        GuardedComboBox {
+            accessible-label: FixtureCopy.protocol-label;
+            model: SourceCopy.protocols;
+            draft-index: root.draft-protocol-choice;
+            draft-revision: root.raw-revision;
+            enabled: root.host-ready;
+            edit-requested(value) => { return root.raw-choice-edited(2, value); }
+        }
+        if root.draft-protocol-choice == 1: SecondaryText { text: SourceCopy.ntp-warning; color: Theme.amber; }
+        SecondaryText { text: SourceCopy.protocol-help; font-size: 11px; }
+    }
+    VerticalLayout {
+        spacing: 5px;
+        SecondaryText { text: root.draft-protocol-choice == 1 ? SourceCopy.ntp-port : FixtureCopy.nts-port; color: Theme.ink; }
+        GuardedLineEdit { field-id: 2; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+            input-label: root.draft-protocol-choice == 1 ? SourceCopy.ntp-port : FixtureCopy.nts-port;
+            draft-value: root.draft-port;
+            draft-revision: root.raw-revision;
+            enabled: root.host-ready;
+            edit-requested(value) => { return root.raw-text-edited(2, value); }
+        }
+        SecondaryText { text: SourceCopy.port-help; font-size: 11px; }
+    }
+    if !root.host-ready: SecondaryText { text: FixtureCopy.editor-unavailable; color: Theme.amber; }
+    HorizontalLayout {
+        spacing: 10px;
+        alignment: start;
+        ActionButton { text: FixtureCopy.cancel; clicked => { root.cancel-requested(); } }
+        ActionButton {
+            text: FixtureCopy.update-preview;
+            enabled: root.host-ready;
+            clicked => { root.update-requested(root.draft-label, root.draft-host, root.draft-protocol-choice, root.draft-port); }
+        }
+    }
+}

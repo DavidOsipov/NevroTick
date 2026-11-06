@@ -1,0 +1,71 @@
+import { FixtureCopy } from "fixture-copy.slint";
+import { DiagnosticCopy } from "diagnostic-copy.slint";
+import { DiagnosticDetails } from "diagnostic-details.slint";
+import { RecoveryCopy } from "recovery-copy.slint";
+import { Theme } from "theme.slint";
+import { Panel, SecondaryText, SectionHeading, PageHeading, Badge, FactRow, Rule, ActionButton } from "components.slint";
+
+export component DiagnosticsPage inherits VerticalLayout {
+    in property <bool> host-ready: false;
+    in property <bool> raw-revision;
+    in property <int> view;
+    in property <int> collection-scope;
+    in property <int> collection-duration;
+    in property <string> feedback;
+    callback view-requested(int);
+    callback collection-requested(int, int);
+    callback service-open-requested();
+    callback recovery-open-requested();
+    spacing: 20px;
+    vertical-stretch: 0;
+    if root.view != 0: DiagnosticDetails {
+        raw-revision: root.raw-revision;
+        host-ready: root.host-ready;
+        view: root.view;
+        scope: root.collection-scope;
+        duration: root.collection-duration;
+        feedback: root.feedback;
+        view-requested(choice) => { root.view-requested(choice); }
+        collection-requested(scope, duration) => { root.collection-requested(scope, duration); }
+    }
+    if root.view == 0: VerticalLayout {
+    spacing: 20px;
+    PageHeading { kicker: FixtureCopy.diagnostics-tab; title: FixtureCopy.diagnostics-heading; description: FixtureCopy.diagnostics-description; }
+    VerticalLayout {
+        spacing: 8px;
+        ActionButton { text: DiagnosticCopy.report-open; enabled: root.host-ready; clicked => { root.view-requested(1); } }
+        ActionButton { text: DiagnosticCopy.collection-open; enabled: root.host-ready; clicked => { root.view-requested(2); } }
+        ActionButton { text: DiagnosticCopy.correction-open; enabled: root.host-ready; clicked => { root.view-requested(3); } }
+    }
+    Panel {
+        panel-background: Theme.blue-soft;
+        SectionHeading { text: DiagnosticCopy.problem; }
+        SecondaryText { text: DiagnosticCopy.effect; }
+        SecondaryText { text: DiagnosticCopy.remedy; }
+        ActionButton { text: DiagnosticCopy.service; enabled: root.host-ready; clicked => { root.service-open-requested(); } }
+        Badge { text: FixtureCopy.no-live-connection; }
+        SecondaryText { text: FixtureCopy.observation-description; font-size: 13px; }
+    }
+    Panel {
+        SectionHeading { text: FixtureCopy.freshness-heading; }
+        SecondaryText { text: FixtureCopy.freshness-note; }
+        FactRow { label: FixtureCopy.last-reply; value: FixtureCopy.not-measured; }
+        Rule { }
+        FactRow { label: FixtureCopy.qualified-label; value: FixtureCopy.unavailable; }
+        Rule { }
+        FactRow { label: FixtureCopy.applied-label; value: FixtureCopy.no-correction; }
+        Rule { }
+        FactRow { label: FixtureCopy.snapshot-label; value: FixtureCopy.fixture-snapshot; }
+    }
+    Panel {
+        SectionHeading { text: FixtureCopy.diagnostics-events; }
+        SecondaryText { text: DiagnosticCopy.events-empty; }
+        SecondaryText { text: DiagnosticCopy.events-note; }
+    }
+    Panel {
+        SectionHeading { text: RecoveryCopy.title; }
+        SecondaryText { text: RecoveryCopy.context-description; }
+        ActionButton { text: RecoveryCopy.open-details; enabled: root.host-ready; clicked => { root.recovery-open-requested(); } }
+    }
+    }
+}

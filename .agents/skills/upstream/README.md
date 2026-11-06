@@ -17,10 +17,10 @@ Each leaf's `LOCAL-CHANGES.md` records project scope, metadata normalization, pi
 
 UIA skill requires a qualified Windows environment with matching `winapp ui`
 interface when used. Current [OD-13](../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Slint as the default UI toolkit. The pinned leaf's Win32-only project
-preface and historical MSI wording predate current owner decisions; preserve that
-import/provenance and use the current architecture for Slint and complete-MSIX
-requirements. Do not assume HWND/child-control keyboard delivery or UIA exposure
+selects Slint as the default UI toolkit. The local preface follows current owner
+decisions; retained historical MSI wording is superseded by the complete-MSIX
+architecture. Preserve original import/provenance and use the current architecture
+for Slint and package requirements. Do not assume HWND/child-control keyboard delivery or UIA exposure
 for Slint-drawn widgets; qualify the actual candidate and chosen transport. This
 instruction changes no packaging, service, privilege or execution authorization.
 Rust examples describe upstream compiler versions; they select no NevroTick

@@ -1,0 +1,10 @@
+locator.getAttribute: Target page, context or browser has been closed
+Call log:
+[2m  - waiting for locator('.windows-toast [data-action="notification-open"]')[22m
+
+    at toastId (/workspace/nevrotick-ui-audit/notifications-work/final-qa/independent-notifications-probe.cjs:33:87)
+    at /workspace/nevrotick-ui-audit/notifications-work/final-qa/independent-notifications-probe.cjs:99:193 {
+  log: [
+    `  - waiting for locator('.windows-toast [data-action="notification-open"]')`
+  ]
+}

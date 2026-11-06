@@ -149,6 +149,12 @@ David Osipov's 2026 authorship/MIT grant was inspected in [the pinned notice](ht
 
 Online sources were read through the web tool and public upstream GitHub connector. No application compilation, native Windows check, property/mutation/fuzz campaign or release qualification was executed as part of authoring this testing pack.
 
+**Owner amendment, 5 November 2026:** [OD-13](../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects complete replacement of the Win32 UI with Slint. Retained Microsoft
+sources explain Windows observation requirements, not Slint API/backend support
+or a successful migration. Existing Win32 receipts remain pre-migration evidence;
+D1–D3 triggers, execution holds and actual Windows qualification remain separate.
+
 ## EGM review coordination adaptation — 29 October 2026
 
 The [review and handoff reference](../planning/references/review-and-handoff.md)

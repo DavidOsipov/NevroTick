@@ -1,0 +1,11 @@
+locator.getAttribute: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('.windows-toast [data-action="notification-open"]')[22m
+
+    at toastId (/workspace/nevrotick-ui-audit/notifications-work/final-qa/independent-notifications-probe.cjs:34:87)
+    at /workspace/nevrotick-ui-audit/notifications-work/final-qa/independent-notifications-probe.cjs:100:193 {
+  log: [
+    `  - waiting for locator('.windows-toast [data-action="notification-open"]')`
+  ],
+  name: 'TimeoutError'
+}

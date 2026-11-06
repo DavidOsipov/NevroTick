@@ -1,0 +1,41 @@
+✔ 23 named fixtures are independent; a caller cannot mutate the source catalogue (1.157196ms)
+✔ large forward proposal is consistent with the three agreeing source observations (0.729711ms)
+✔ positive and negative offset signs explain Windows behind/ahead independently (0.234674ms)
+✔ NTS authentication does not create a majority when two groups of two conflict (0.209797ms)
+✔ explicit NTP contains no authenticated source or mixed NTS vote (0.268916ms)
+✔ lost status and confirmed stopped service remain different observations (0.432753ms)
+✔ expiry and resume do not reuse current-looking measurements (0.433244ms)
+✔ future recovery helpers add no ordinary NTS votes or clock authority (0.306783ms)
+✔ unknown leap coverage keeps healthy tracking; guarded event has no invented correction (0.264659ms)
+✔ unknown effect does not claim failure, applied success, or automatic retry (0.301005ms)
+✔ host admission rejects URLs, injection, oversize and malformed addresses but admits useful neighbors (0.75568ms)
+✔ invalid direct model input preserves active sources and all previously accepted drafts (0.617121ms)
+✔ local add/edit/removal never changes active membership, agreement or evidence ages (1.475165ms)
+✔ duplicate identity comparison normalizes case and trailing dot and allows editing same identity (0.204338ms)
+✔ navigation preserves drafts; explicit scenario reset discards them (0.238259ms)
+✔ search and filters select actual active rows without editing state (0.260933ms)
+✔ printable hostile labels are rendered literally, never as HTML (0.457791ms)
+✔ every scenario renders all seven Power pages and applicable dialogs with fixture labelling (47.921808ms)
+✔ diagnostic summary uses fixture data only and redacts endpoint identities (0.204428ms)
+✔ expired correction, signed conflict, observation mode and logging retain their separate meanings (0.585934ms)
+✔ current conflicting replies are distinct from an old aggregate estimate and recovery references claim no healthy NTS (0.43779ms)
+✔ editing an added draft and a name-only diff is visible without creating a duplicate (0.408025ms)
+✔ Simple is the default and exposes two navigation destinations and one status section (1.284278ms)
+✔ mode switching preserves scenario, source drafts, filters, settings and unsaved cadence (0.456859ms)
+✔ shared Settings stays open across modes and Simple cannot navigate silently to a detailed page (0.206471ms)
+✔ a presentation switch cannot rerender and destroy a partially edited modal (0.231919ms)
+✔ preview cadence saves and cancels locally without changing any fixture timing or authority (0.279532ms)
+✔ invalid cadence has no configuration effect and a prior manual preference survives Automatic (0.157477ms)
+✔ review scenario changes keep the mode and cadence; explicit reset clears previews only (0.189536ms)
+✔ Simple retains the consequence of each material degraded state without live-looking old values (1.450598ms)
+✔ statistics separates current conflicting observations, stale snapshots and retained model estimates (0.476949ms)
+✔ policy guidance opens Time policy even when Synchronization was last selected (0.355437ms)
+✔ schedule details do not claim a known active schedule for unavailable service state (0.273132ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 166.761465

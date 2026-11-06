@@ -1,0 +1,64 @@
+{
+  "source_commit": "62aa9713548f8bfefc7ea087a01d788bc6f39c10",
+  "browser_test_commit": "bcbd4fc30becad3c0dd5109b7df93c3bc21c0099",
+  "standalone_sha256": "4d8c3d211ec19ddea21a4b37d6b164f453a8ab8352cca6c554c8c8ac28370f86",
+  "index_sha256": "56dd8d34876ce44dc28fc3137ae4803d4fd41d6f55ec411f0e4f8bc568c1c0e2",
+  "canonical_repository_commit": "8a66af924c509e898a9bab9bb3282f11b24fba93",
+  "scenes": 30,
+  "model_view_tests": {
+    "pass": 197,
+    "fail": 0,
+    "skipped": 0,
+    "previous_tests_retained": 175,
+    "added_tests": 22
+  },
+  "structural_documents": {
+    "checked": 1247,
+    "errors": 0,
+    "CSP": "matches final bundled script",
+    "original_AVIF_bytes": "preserved",
+    "external_dependencies": 0
+  },
+  "dedicated_final_browser": {
+    "build_width_combinations": 4,
+    "scene_policy_checks": 120,
+    "widths_px": [
+      360,
+      1280
+    ],
+    "page_errors": 0,
+    "unexpected_remote_requests": 0,
+    "browser_notification_calls": 0
+  },
+  "independent_browser": {
+    "verdict": "pass",
+    "parent_full_matrix_cases": 6,
+    "parent_workflow_groups": 80,
+    "parent_scene_checks": 60,
+    "final_bounded_cases": 90,
+    "widths_px": [
+      360,
+      480,
+      1280
+    ],
+    "open_findings": [],
+    "details": "browser-verification.json"
+  },
+  "independent_semantic": {
+    "scope": "Independent source/model/view assertions; not browser/native qualification",
+    "root": "/tmp/nevrotick-notifications-review-62aa971",
+    "checks": {
+      "matrix": 1440,
+      "dedup": 120,
+      "activation": 32,
+      "overlays": 32,
+      "cancelScope": 22,
+      "status": 33
+    },
+    "findings": []
+  },
+  "native_Windows_operations": false,
+  "direct_file_URL": "blocked by managed Chromium policy; local HTTP used",
+  "source_review": "SOURCE-REVIEW-RU.md",
+  "browser_review": "BROWSER-QA-RU.md"
+}

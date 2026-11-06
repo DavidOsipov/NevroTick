@@ -1,0 +1,45 @@
+{
+  "source_commit": "c6e08010ee98e354ef6d01342449e057a06eba1a",
+  "parent_full_review_source": "2435ea21417964803cfae471d56cd0e4a48f200c",
+  "canonical_repository_commit": "8a66af924c509e898a9bab9bb3282f11b24fba93",
+  "standalone_sha256": "5970857e19b26f467c67e35a84f5b22dac91a1310939b445418afcd3e28328bb",
+  "index_sha256": "837677ac278a8c9a01297387dfbe7415d78f8d4052769bf80bfe62b66794b7ef",
+  "model_view_tests": {
+    "pass": 175,
+    "fail": 0,
+    "skipped": 0,
+    "baseline_retained": 155
+  },
+  "structural_documents": {
+    "checked": 1088,
+    "errors": 0,
+    "CSP": "matches final bundled script",
+    "external_dependencies": 0,
+    "original_AVIF_bytes": "preserved"
+  },
+  "scenes": 30,
+  "final_dedicated_chromium_cases": 4,
+  "final_dedicated_widths_px": [
+    360,
+    1280
+  ],
+  "independent_browser": {
+    "verdict": "pass",
+    "final_bounded_journal_cases": 6,
+    "final_bounded_widths_px": [
+      360,
+      480,
+      1280
+    ],
+    "previous_broad_suite_logs": "evidence/",
+    "artifacts": "browser-verification.json",
+    "resolved_P2": "Diagnostics event-local history scope",
+    "open_findings": []
+  },
+  "page_errors": 0,
+  "unexpected_remote_requests": 0,
+  "direct_file_URL_test": "blocked by managed Chromium administrative policy; interactive/visual acceptance uses local HTTP",
+  "native_service_effects": "none; HTML prototype only",
+  "source_review": "SOURCE-REVIEW-RU.md",
+  "browser_review": "BROWSER-QA-RU.md"
+}

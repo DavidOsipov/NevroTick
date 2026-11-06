@@ -30,7 +30,18 @@ SPEC.loader.exec_module(VERIFY)
 MAX_ARCHIVE = 16 * 1024 * 1024
 MAX_EXPANDED = 80 * 1024 * 1024
 MAX_MEMBERS = 10000
-MAX_PACKAGES = 25
+MAX_PACKAGES = 768
+MAX_TOTAL_ARCHIVE = 256 * 1024 * 1024
+MAX_TOTAL_EXPANDED = 1024 * 1024 * 1024
+# The reviewed generated Windows bindings exceed the ordinary archive ceiling.
+# Bind their measured tar/payload ceilings to both source identities; another
+# version or source map receives the ordinary limits and needs its own review.
+REVIEWED_EXPANSION_LIMITS = {
+    ("windows", "0.62.2",
+     "527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580",
+     "0d6039b4d5fb8873d1272689a5b10347b8c612147d680943966a4756b1926773"):
+        (114_755_072, 114_212_919),
+}
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
 
 
@@ -48,12 +59,14 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
     """Verify archive identity and return bounded regular files below its prefix."""
     if len(data) > MAX_ARCHIVE or sha(data) != package["checksum"]:
         raise ValueError("Crate archive identity or size does not match admission")
+    identity = tuple(package[key] for key in ("name", "version", "checksum", "files_sha256"))
+    tar_limit, payload_limit = REVIEWED_EXPANSION_LIMITS.get(identity, (MAX_EXPANDED, MAX_EXPANDED))
     prefix = f"{package['name']}-{package['version']}"
     files: dict[str, bytes] = {}
     total = 0
     with gzip.GzipFile(fileobj=io.BytesIO(data)) as stream:
-        raw_tar = stream.read(MAX_EXPANDED + 1)
-    if len(raw_tar) > MAX_EXPANDED:
+        raw_tar = stream.read(tar_limit + 1)
+    if len(raw_tar) > tar_limit:
         raise ValueError("Crate archive metadata expansion exceeds budget")
     with tarfile.open(fileobj=io.BytesIO(raw_tar), mode="r:") as archive:
         for count, member in enumerate(archive, 1):
@@ -71,7 +84,7 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
             if relative in files or relative == ".cargo-checksum.json":
                 raise ValueError("Duplicate or reserved crate archive member")
             total += member.size
-            if total > MAX_EXPANDED:
+            if total > payload_limit:
                 raise ValueError("Crate archive expansion exceeds budget")
             stream = archive.extractfile(member)
             if stream is None:
@@ -94,7 +107,7 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
 def acquisition_records(policy: dict) -> list[dict]:
     """Precheck every source identity before I/O; do not merge its admission role.
 
-    The CLI invokes the shared strict schema2 owner first. Small archive controls
+    The CLI invokes the shared strict schema owner first. Small archive controls
     may use a selected-only envelope, while this lower boundary always bounds
     names, non-prerelease SemVer/build metadata, pins, duplicate identities and
     total work. Metadata-only records remain source inputs, never selected grants
@@ -140,13 +153,20 @@ def acquire(vendor: Path, policy: dict) -> None:
     vendor.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".ui-m0-acquire-", dir=vendor.parent))
     try:
+        total_archive = total_expanded = 0
         for package in packages:
             name, version = package["name"], package["version"]
             url = f"https://static.crates.io/crates/{name}/{name}-{version}.crate"
             request = urllib.request.Request(url, headers={"User-Agent": "NevroTick-UI-M0-admission"})
             with urllib.request.urlopen(request, timeout=60) as response:
                 data = response.read(MAX_ARCHIVE + 1)
+            total_archive += len(data)
+            if total_archive > MAX_TOTAL_ARCHIVE:
+                raise ValueError("Aggregate crate archive bytes exceed budget")
             files = archive_files(data, package)
+            total_expanded += sum(map(len, files.values()))
+            if total_expanded > MAX_TOTAL_EXPANDED:
+                raise ValueError("Aggregate extracted crate bytes exceed budget")
             directory = temporary / f"{name}-{version}"
             directory.mkdir()
             for relative, contents in files.items():

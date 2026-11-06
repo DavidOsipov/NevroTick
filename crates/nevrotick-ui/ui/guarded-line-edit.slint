@@ -1,0 +1,123 @@
+import { LineEdit } from "std-widgets.slint";
+import { LineEditContextMenuArea } from "line-edit-context-menu.slint";
+
+// Compose the public stock control: LineEdit itself has no @children slot.
+// Only the inner stock control is an accessibility text-input/focus target.
+// Native preallocation and retained IME limits remain separate qualification.
+export component GuardedLineEdit inherits Rectangle {
+    in property <int> field-id: -1;
+    in property <string> draft-value;
+    in property <bool> draft-revision;
+    in property <bool> enabled: true;
+    in property <bool> read-only: false;
+    in property <string> placeholder-text;
+    in property <string> input-label;
+    out property <bool> has-focus: editor.has-focus;
+    callback accepted(string);
+    callback edit-requested(string) -> string;
+    callback action-permitted(int, int) -> bool;
+    callback menu-key(string, bool) -> bool;
+
+    accessible-role: none;
+    forward-focus: editor;
+    vertical-stretch: 0;
+    horizontal-stretch: 1;
+    min-width: editor.min-width;
+    min-height: editor.min-height;
+    preferred-height: editor.min-height;
+
+    // Check current Root permission immediately before public clipboard/history
+    // operations. No translated label or transient text chooses an action.
+    function perform-action(action: int) {
+        if !root.enabled { return; }
+        if root.read-only && (action == 0 || action == 1 || action == 2 || action == 4) { return; }
+        if !root.action-permitted(root.field-id, action) { return; }
+        if action == 0 { editor.undo(); }
+        else if action == 1 { editor.redo(); }
+        else if action == 2 { editor.cut(); }
+        else if action == 3 { editor.copy(); }
+        else if action == 4 { editor.paste(); }
+        else if action == 5 { editor.select-all(); }
+    }
+
+    editor := LineEdit {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        enabled: root.enabled;
+        read-only: root.read-only;
+        placeholder-text: root.placeholder-text;
+        accessible-label: root.input-label;
+        accepted(value) => { root.accepted(value); }
+        // Both native edited (including Clear) and accessibility SetValue assign
+        // only the entire receiver return; equal-parent rejection still restores.
+        edited(value) => {
+            if root.enabled && !root.read-only {
+                editor.text = root.edit-requested(value);
+            } else {
+                editor.text = root.draft-value;
+            }
+        }
+        accessible-action-set-value(value) => {
+            if root.enabled && !root.read-only {
+                editor.text = root.edit-requested(value);
+            } else {
+                editor.text = root.draft-value;
+            }
+        }
+        key-pressed(event) => {
+            // Consume both paths to the private stock menu so only reviewed labels
+            // are shown. show(Point) is public and relative to this overlay.
+            if root.menu-key(event.text, event.modifiers.shift) {
+                if root.enabled && root.action-permitted(root.field-id, 6) {
+                    context-menu.show({ x: 0px, y: root.height });
+                }
+                return accept;
+            }
+            // The public callback runs before TextInput's shortcut handling. Denial
+            // consumes known shortcuts; admission preserves toolkit/platform behavior.
+            if event.modifiers.control && !event.modifiers.shift {
+                if event.text == "z" && !root.action-permitted(root.field-id, 0) { return accept; }
+                if event.text == "y" && !root.action-permitted(root.field-id, 1) { return accept; }
+                if event.text == "x" && !root.action-permitted(root.field-id, 2) { return accept; }
+                if event.text == "c" && !root.action-permitted(root.field-id, 3) { return accept; }
+                if event.text == "v" && !root.action-permitted(root.field-id, 4) { return accept; }
+                if event.text == "a" && !root.action-permitted(root.field-id, 5) { return accept; }
+            }
+            if event.modifiers.control && event.modifiers.shift && (event.text == "z" || event.text == "Z")
+                && !root.action-permitted(root.field-id, 1) { return accept; }
+            return reject;
+        }
+
+        key-released(event) => {
+            // Stock ContextMenu handles Menu/F10 independent of press/release type;
+            // consume release too, otherwise its private menu would reopen here.
+            if root.menu-key(event.text, event.modifiers.shift) {
+                return accept;
+            }
+            return reject;
+        }
+    }
+
+    // Current consumers add only Tooltip, which is lowered as a popup rather
+    // than an input overlay. Keep the right-button menu last physical sibling.
+    @children
+    context-menu := LineEditContextMenuArea {
+        x: 0px;
+        y: 0px;
+        width: root.width;
+        height: root.height;
+        enabled: root.enabled;
+        editable: root.enabled && !root.read-only;
+        has-text: !editor.text.is-empty;
+        action-requested(action) => { root.perform-action(action); }
+    }
+
+    init => { editor.text = root.draft-value; }
+    changed draft-value => { editor.text = root.draft-value; }
+    changed draft-revision => { editor.text = root.draft-value; }
+    changed enabled => {
+        if !root.enabled { context-menu.close(); }
+    }
+}

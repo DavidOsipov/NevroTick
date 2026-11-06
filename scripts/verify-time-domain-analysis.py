@@ -49,10 +49,59 @@ def registry_blocks(text):
         item = tomllib.loads(block)["package"][0]
         if "source" not in item:
             continue
-        name = item["name"]
-        if name in result or item.get("source") != REGISTRY:
+        key = (item.get("name"), item.get("version"))
+        if (any(type(value) is not str or not value for value in key)
+                or key in result or item.get("source") != REGISTRY):
             raise Incomplete("Ambiguous or unreviewed locked registry identity.")
-        result[name] = (item, block)
+        result[key] = (item, block)
+    return result
+
+
+def resolve_registry_dependency(reference, blocks):
+    """Resolve exact Cargo lock references; a bare name must have one version."""
+    match = (re.fullmatch(r"([A-Za-z0-9_-]+)(?: ([^\s()]+)(?: \(([^\s()]+)\))?)?", reference)
+             if type(reference) is str else None)
+    if match is None or match[3] not in (None, REGISTRY):
+        raise Incomplete("Malformed or unreviewed registry dependency reference.")
+    candidates = [key for key in blocks if key[0] == match[1]
+                  and (match[2] is None or key[1] == match[2])]
+    if len(candidates) != 1:
+        raise Incomplete("Garde locked dependency closure is missing or ambiguous.")
+    return candidates[0]
+
+
+def projected_registry_blocks(selected):
+    """Drop only redundant pure-scope labels after proving identical exact edges.
+
+    The standalone closure has one version per name. Qualified references needed
+    only by the surrounding GUI graph are therefore redundant here; preserve all
+    other block bytes and independently reparse to detect unintended rewrites.
+    """
+    identities = {(item["name"], item["version"]): (item, block) for item, block in selected.values()}
+    result = {}
+    for name, (item, block) in selected.items():
+        references = item.get("dependencies", [])
+        keys = [resolve_registry_dependency(reference, identities) for reference in references]
+        if len(set(keys)) != len(keys):
+            raise Incomplete("Pure dependency projection may not duplicate an exact dependency edge.")
+        dependencies = [key[0] for key in keys]
+        projected = dict(item)
+        if references != dependencies:
+            match = re.search(r"(?m)^[ \t]*dependencies[ \t]*=[ \t]*(\[[\s\S]*?\])", block)
+            if match is None:
+                raise Incomplete("Pure dependency projection cannot locate its retained edge array.")
+            edges = match[1]
+            for reference, dependency in zip(references, dependencies, strict=True):
+                if reference != dependency:
+                    before = json.dumps(reference)
+                    if edges.count(before) != 1:
+                        raise Incomplete("Pure dependency projection cannot preserve its source block.")
+                    edges = edges.replace(before, json.dumps(dependency), 1)
+            block = block[:match.start(1)] + edges + block[match.end(1):]
+            projected["dependencies"] = dependencies
+            if tomllib.loads(block)["package"][0] != projected:
+                raise Incomplete("Pure dependency projection changed more than exact edge labels.")
+        result[name] = (projected, block)
     return result
 
 
@@ -64,13 +113,20 @@ def domain_registry_closure(product_text):
         raise Incomplete("The actual checked product-local owner is absent.")
     selected, pending = {}, ["garde"]
     while pending:
-        name = pending.pop()
+        key = resolve_registry_dependency(pending.pop(), product)
+        name = key[0]
         if name in selected:
+            if selected[name][0]["version"] != key[1]:
+                raise Incomplete("The pure Garde closure may not select multiple versions of one name.")
             continue
-        if name not in product:
-            raise Incomplete("Garde locked dependency closure is incomplete.")
-        selected[name] = product[name]
-        pending.extend(value.split(" ")[0] for value in product[name][0].get("dependencies", []))
+        selected[name] = product[key]
+        dependencies = product[key][0].get("dependencies", [])
+        if type(dependencies) is not list:
+            raise Incomplete("Malformed pure registry dependency list.")
+        resolved = [resolve_registry_dependency(reference, product) for reference in dependencies]
+        if len(set(resolved)) != len(resolved):
+            raise Incomplete("The pure Garde closure contains duplicate exact dependency edges.")
+        pending.extend(dependencies)
     return selected
 
 
@@ -85,14 +141,15 @@ def admitted_domain_products(product_text, policy):
         records = PRODUCT.validated_dependency_records(policy, include_metadata=False)
     except PRODUCT.ENV.Incomplete as error:
         raise Incomplete(str(error)) from error
-    admitted = {item["name"]: item for item in records}
+    admitted = {(item["name"], item["version"]): item for item in records}
     if len(admitted) != len(records):
         raise Incomplete("Selected product source admission contains duplicate identities.")
     result = {}
     for name, (locked, _block) in selected.items():
-        if name not in admitted:
+        key = (name, locked["version"])
+        if key not in admitted:
             raise Incomplete("A reached pure dependency is not a selected admitted source.")
-        item = admitted[name]
+        item = admitted[key]
         if any(locked.get(key) != item[key] for key in ("version", "checksum")):
             raise Incomplete("A reached pure dependency differs from its selected source admission.")
         result[name] = item
@@ -101,12 +158,12 @@ def admitted_domain_products(product_text, policy):
 
 def reviewed_fuzz_lock(product_text, control_text):
     """Preserve Garde's reviewed closure and all original libFuzzer registry blocks."""
-    selected = domain_registry_closure(product_text)
+    selected = projected_registry_blocks(domain_registry_closure(product_text))
     original = registry_blocks(control_text)
-    for name, entry in original.items():
+    for (name, _version), entry in original.items():
         if name in selected and selected[name][0] != entry[0]:
             raise Incomplete("Shared product/fuzz registry identity or dependency edges disagree.")
-        selected.setdefault(name, entry)
+        selected[name] = entry
     blocks = {name: entry[1] for name, entry in selected.items()}
     # These are actual new local identities, not a renamed control package.
     blocks["time-domain"] = '[[package]]\nname = "time-domain"\nversion = "0.0.0"\ndependencies = ["garde"]\n'
@@ -560,7 +617,8 @@ def fuzz(session, selected, report):
             copied = PRODUCT.inventory(destination)
             checksum = json.loads((destination / ".cargo-checksum.json").read_text())
             copied.pop(".cargo-checksum.json")
-            admitted = next(entry for entry in session.dependency_policy["packages"] if entry["name"] == item["name"])
+            admitted = next(entry for entry in session.dependency_policy["packages"]
+                            if (entry["name"], entry["version"]) == (item["name"], item["version"]))
             if (checksum.get("package") != item["checksum"] or checksum.get("files") != copied
                     or PREPARE.files_digest(copied) != admitted["files_sha256"]):
                 raise Incomplete("Copied product dependency no longer matches its admitted archive map.")

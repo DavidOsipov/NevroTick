@@ -2,19 +2,25 @@
 
 **Date:** 30 October 2026, Asia/Tbilisi
 
-**Historical disposition, 30 October:** comparison closed; retain Win32.
-**Current direction, 5 November:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Slint as the default after the later live-host experiment. The historical
-results below remain unchanged; they supply no Slint qualification.
+**Historical disposition, 30 October 2026:** comparison closed; retain Win32.
+
+**Current direction, 5 November 2026:**
+[OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects complete replacement of the Win32 product UI with Slint and supersedes
+the retain-Win32 direction. The existing
+[S0.5 task amendment](../../tasks/s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
+owns the replacement and qualification chain, with current source/evidence in the [GUI handoff](../../tasks/slint-gui-handoff.md). This report retains the exact
+Win32/egui experiment and rejection; it supplies no Slint licence, resource,
+accessibility or native-lifecycle qualification. No toolkit-choice rerun is
+required, and no dual product UI or automatic Win32 fallback is selected.
 
 **Execution record:** [S0.5 comparison task](../../tasks/s0.5-ui-comparison.md).
 
 ## Decision
 
-David rejected the tested egui configuration because approximately **145 MiB of
-private memory is unacceptable for this simple UI**. Keep the existing Win32
-implementation and resource targets at that date. The toolkit-default decision
-is now superseded by OD-13. Reduced application code and styling/testing
+On 30 October 2026 David rejected the tested egui configuration because approximately **145 MiB of
+private memory is unacceptable for this simple UI**. The decision at that time
+was to keep the existing Win32 implementation and resource targets; OD-13 later superseded that toolkit default. Reduced application code and styling/testing
 benefits do not authorize a larger memory budget or further egui experiments in
 the current task.
 
@@ -158,7 +164,9 @@ contains exact artifact identities, ZIP/source-map hashes and original temporary
 and Windows paths. The ZIP SHA-256 is
 `eeb4869556097643cd79581569cd26752a08bb783d554204444bff1ff1f84e7d`.
 
-Use these results for the recorded configuration and historical decision. Follow
-OD-13 and the [UI-M0 migration](../../tasks/ui-m0.md) for current Slint work; retain
-the Win32 reference until replacement qualification. Any future egui investigation needs a new explicit task and
+Use these results for the recorded configuration and historical decision. The
+Win32 continuation recorded at closeout is superseded by OD-13; follow the
+existing S0.5 Slint replacement record and [current GUI handoff](../../tasks/slint-gui-handoff.md).
+The old Win32 adapter remains unexported historical source; its receipts cannot
+qualify the implemented Slint fixture or actual Windows behavior. Any future egui investigation needs a new explicit task and
 must address the owner's footprint requirement and the actual dependency graph.

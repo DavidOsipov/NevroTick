@@ -1,0 +1,93 @@
+//! Generated protected output slots; no catalog text can generate source.
+use crate::localization::feedback::{FeedbackSlot, PreparedFeedback};
+use crate::localization::{Error, MessageId, PlainText, Snapshot};
+use slint::{Model, ModelRc, ModelTracker, SharedString};
+use std::num::NonZeroU64;
+
+/// Maximum retained UTF-8 bytes across one complete copy publication.
+const PROJECTION_BYTES: usize = 131_072;
+/// Maximum retained UTF-16 units across one complete copy publication.
+const PROJECTION_UTF16: usize = 65_536;
+
+/// One shared output budget, independent of string/model representation.
+#[derive(Default)]
+struct OutputBudget {
+    /// All static, feedback and revision UTF-8 bytes.
+    bytes: usize,
+    /// All static, feedback and revision UTF-16 units.
+    utf16: usize,
+}
+impl OutputBudget {
+    /// Charge both limits before mutating either counter.
+    ///
+    /// # Errors
+    /// Rejects checked arithmetic or aggregate exhaustion before retention.
+    fn charge(&mut self, text: &str) -> Result<(), Error> {
+        let bytes = self.bytes.checked_add(text.len())
+            .filter(|value| *value <= PROJECTION_BYTES).ok_or(Error::Bounds)?;
+        let utf16 = self.utf16.checked_add(text.encode_utf16().count())
+            .filter(|value| *value <= PROJECTION_UTF16).ok_or(Error::Bounds)?;
+        self.bytes = bytes;
+        self.utf16 = utf16;
+        Ok(())
+    }
+
+    /// Retain an already checked literal only after complete output accounting.
+    ///
+    /// # Errors
+    /// Rejects aggregate output exhaustion before allocating toolkit text.
+    fn retain(&mut self, text: &PlainText) -> Result<SharedString, Error> {
+        self.charge(text.as_str())?;
+        Ok(text.as_str().into())
+    }
+}
+
+/// One static preparation borrows a single immutable catalog generation.
+struct CopyPreparation<'a, 'catalog> {
+    /// Every protected message comes from the same snapshot.
+    snapshot: &'a Snapshot<'catalog>,
+    /// One counter pair spans the complete publication.
+    budget: OutputBudget,
+}
+impl CopyPreparation<'_, '_> {
+    /// Render one checked argument-free message through the shared budget.
+    ///
+    /// # Errors
+    /// Rejects message-kind mismatch or bounded rendering/output failure.
+    fn text(&mut self, id: MessageId) -> Result<SharedString, Error> {
+        self.budget.retain(&self.snapshot.text(id)?)
+    }
+
+    /// Render only a positive code-owned minute choice.
+    ///
+    /// # Errors
+    /// Rejects zero, wrong arguments or bounded rendering/output failure.
+    fn minutes(&mut self, id: MessageId, value: u64) -> Result<SharedString, Error> {
+        let minutes = NonZeroU64::new(value).ok_or(Error::Arguments)?;
+        self.budget.retain(&self.snapshot.minutes(id, minutes)?)
+    }
+}
+
+/// Immutable shared rows make generated property getters shallow and cheap.
+/// No mutable cell, model notification or retained window exists in this owner.
+#[derive(Debug)]
+struct ImmutableCopyModel {
+    /// Fixed code-owned slot order; the model is replaced as a whole.
+    rows: Box<[SharedString]>,
+}
+impl Model for ImmutableCopyModel {
+    /// Each bounded row is inert text, never an action or identity selector.
+    type Data = SharedString;
+
+    /// Report the fixed shape of this fully prepared immutable generation.
+    fn row_count(&self) -> usize { self.rows.len() }
+
+    /// Clone only the requested reference-counted string, not the whole catalog.
+    fn row_data(&self, row: usize) -> Option<Self::Data> { self.rows.get(row).cloned() }
+
+    /// Public model writes cannot mutate approved or privately retained copy.
+    fn set_row_data(&self, _row: usize, _data: Self::Data) {}
+
+    /// Constant rows have no mutation tracker; replacing the carrier invalidates bindings.
+    fn model_tracker(&self) -> &dyn ModelTracker { &() }
+}

@@ -71,12 +71,70 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+class TextContractControls(unittest.TestCase):
+    def test_actual_coverage_result_requires_complete_nonempty_both_direction_success(self):
+        healthy = {"status": "passed", "active_ids": 497, "used_ids": 497, "errors": []}
+        self.assertEqual(VERIFY.validate_text_coverage_result(json.dumps(healthy)), healthy)
+        for changed in ({**healthy, "status": "failed"}, {**healthy, "errors": ["missing"]},
+                        {**healthy, "used_ids": 496}, {**healthy, "active_ids": 0, "used_ids": 0},
+                        {**healthy, "active_ids": True, "used_ids": True},
+                        {**healthy, "active_ids": 497.0}, {}, [], "passed"):
+            with self.subTest(changed=changed), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.validate_text_coverage_result(json.dumps(changed))
+        for output in ("", "not JSON", " " * 65537):
+            with self.subTest(length=len(output)), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.validate_text_coverage_result(output)
+
+    def test_text_contract_rows_use_frozen_source_and_executed_controls(self):
+        expected = [
+            ("ui-text-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                  "discover", "-s", "scripts/tests", "-p", "test_ui_text_coverage.py", "-v"]),
+            ("ui-text-codegen-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                          "discover", "-s", "scripts/tests", "-p", "test_ui_text_codegen.py", "-v"]),
+            ("ui-text-native-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                          "discover", "-s", "scripts/tests", "-p", "test_ui_text_native.py", "-v"]),
+            ("ui-text-coverage", ["python3", "-X", "dev", "-Werror", "-B",
+                                  "scripts/check-ui-text.py", "--root", "/work/fixture"]),
+        ]
+        for lane in ("portable", "windows", "dependencies"):
+            self.assertEqual(VERIFY.text_contract_commands(lane, schema_version=3), expected)
+            self.assertEqual(VERIFY.text_contract_commands(lane, schema_version=2), [])
+        for schema in (True, 0, 4):
+            with self.subTest(schema=schema), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.text_contract_commands("portable", schema_version=schema)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.text_contract_commands("unselected", schema_version=3)
+
+    def test_native_input_row_is_separate_frozen_and_all_schema3_lanes(self):
+        expected = [("ui-native-input-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                                  "discover", "-s", "scripts/tests", "-p", "test_native_input_source.py", "-v"])]
+        self.assertEqual(VERIFY.UI_NATIVE_INPUT_CHECKER_FILES,
+                         ("scripts/native_input_source.py", "scripts/tests/test_native_input_source.py"))
+        for lane in ("portable", "windows", "dependencies"):
+            self.assertEqual(VERIFY.native_input_control_commands(lane, schema_version=3), expected)
+            self.assertEqual(VERIFY.native_input_control_commands(lane, schema_version=2), [])
+            self.assertNotIn("ui-native-input-controls", dict(VERIFY.text_contract_commands(lane, schema_version=3)))
+        for schema in (True, 0, 4):
+            with self.subTest(schema=schema), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.native_input_control_commands("portable", schema_version=schema)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.native_input_control_commands("unselected", schema_version=3)
+
+    def test_text_control_result_cannot_pass_with_zero_skipped_or_absent_tests(self):
+        self.assertEqual(VERIFY.validate_text_control_result("Ran 29 tests in 0.1s\n\nOK\n"), 29)
+        for output in ("", "Ran 0 tests in 0.1s\n\nOK\n", "Ran 29 tests in 0.1s\n\nOK (skipped=1)\n",
+                       "Ran 29 tests in 0.1s\n\nOK (expected failures=1)\n", "Ran 29 tests in 0.1s\n\nFAILED\n"):
+            with self.subTest(output=output), self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.validate_text_control_result(output)
+
+
 class ProductAdmissionTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="product-admission-control-")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        for name in (*VERIFY.SOURCE_FILES, *VERIFY.STRICT.CONFIG_FILES, *VERIFY.CHECKER_FILES):
+        for name in (*VERIFY.SOURCE_FILES, *VERIFY.STRICT.CONFIG_FILES, *VERIFY.CHECKER_FILES,
+                     *VERIFY.UI_TEXT_CHECKER_FILES, *VERIFY.UI_NATIVE_INPUT_CHECKER_FILES):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             if (ROOT / name).is_file():
@@ -88,12 +146,22 @@ class ProductAdmissionTests(unittest.TestCase):
             shutil.copyfile(ROOT / "policy" / name, self.root / "policy" / name)
         (self.root / "Cargo.toml").write_text(
             '[workspace]\n' + EXPECTED_MEMBERS + '\n' +
+            '[workspace.package]\nlicense="GPL-2.0-only"\n' +
             (ROOT / "policy/rust-workspace.toml").read_text())
         for package, directory in EXPECTED_PACKAGES.items():
             member = self.root / directory
             (member / "src").mkdir(parents=True, exist_ok=True)
             (member / "Cargo.toml").write_text(
-                f'[package]\nname="{package}"\nversion="0.0.0"\n[lints]\nworkspace=true\n')
+                f'[package]\nname="{package}"\nversion="0.0.0"\n' +
+                ('license="GPL-3.0-only"\n' if package == "nevrotick-ui" else 'license.workspace=true\n') +
+                '[lints]\nworkspace=true\n')
+            if package == "nevrotick-ui":
+                with (member / "Cargo.toml").open("a") as stream:
+                    stream.write('[dependencies]\ngarde={version="=0.23.0",default-features=false,features=["derive"]}\n'
+                                 '[target.\'cfg(windows)\'.dependencies]\n'
+                                 'windows-sys={version="=0.61.2",default-features=false,features=['
+                                 '"Win32_Foundation","Win32_Graphics_Gdi","Win32_System_LibraryLoader",'
+                                 '"Win32_UI_WindowsAndMessaging","Win32_UI_Controls"]}\n')
             if package in {"time-domain", "time-core"}:
                 with (member / "Cargo.toml").open("a") as stream:
                     stream.write('[dependencies]\ngarde={version="=0.23.0",default-features=false,features=["derive"]}\n')
@@ -134,6 +202,14 @@ class ProductAdmissionTests(unittest.TestCase):
     def write_policy(self):
         (self.root / "policy/ui-m0-dependencies.json").write_text(json.dumps(self.policy))
 
+    def test_gui_test_debug_budget_is_scoped_and_retains_arithmetic_checks(self):
+        policy = tomllib.loads((ROOT / "policy/rust-workspace.toml").read_text())["profile"]
+        self.assertEqual(policy.get("test"), {"package": {"nevrotick-ui": {"debug": 0}}})
+        self.assertTrue(policy["release"]["overflow-checks"])
+        self.assertTrue(policy["verify-release"]["debug-assertions"])
+        self.assertEqual(policy["release"]["debug"], "limited")
+        self.assertNotIn("dev", policy)
+
     def test_build_rows_keep_twelve_jobs_except_bounded_test_linking(self):
         for lane in ("portable", "windows"):
             for label, command in VERIFY.commands(lane):
@@ -142,7 +218,7 @@ class ProductAdmissionTests(unittest.TestCase):
                 with self.subTest(lane=lane, row=label):
                     flag = "--build-jobs" if "nextest" in command else "--jobs"
                     expected = ("6" if lane == "portable" and label in (
-                        "product-tests:time-core", "optimized-tests:time-core",
+                        "product-tests:nevrotick-ui", "product-tests:time-core", "optimized-tests:time-core",
                         "product-tests:ntp-wire", "product-tests:time-domain",
                         "optimized-tests:time-domain") else "12")
                     self.assertEqual(command[command.index(flag) + 1], expected)
@@ -175,6 +251,299 @@ class ProductAdmissionTests(unittest.TestCase):
             run.assert_not_called()
         for directory in EXPECTED_PACKAGES.values():
             self.assertIn(directory + "/src/lib.rs", files)
+
+    def test_first_party_license_roles_are_exact_even_with_refreshed_pins(self):
+        paths = [self.root / "Cargo.toml", *(self.root / directory / "Cargo.toml"
+                                            for directory in EXPECTED_PACKAGES.values())]
+        for path in paths:
+            healthy = path.read_text()
+            if path == self.root / "Cargo.toml":
+                changes = [('license="GPL-2.0-only"', 'license="GPL-3.0-only"'),
+                           ('license="GPL-2.0-only"', 'license="GPL-2.0-or-later"'),
+                           ('license="GPL-2.0-only"', 'license-file="LICENSE"'),
+                           ('license="GPL-2.0-only"', 'license="GPL-2.0-only"\nlicense-file="LICENSE"')]
+            elif path.parent.name == "nevrotick-ui":
+                changes = [('license="GPL-3.0-only"', 'license.workspace=true'),
+                           ('license="GPL-3.0-only"', 'license="GPL-2.0-only"'),
+                           ('license="GPL-3.0-only"', 'license="GPL-3.0-or-later"'),
+                           ('license="GPL-3.0-only"', 'license-file="LICENSE"'),
+                           ('license="GPL-3.0-only"', 'license="GPL-3.0-only"\nlicense-file="LICENSE"')]
+            else:
+                changes = [('license.workspace=true', 'license="GPL-3.0-only"'),
+                           ('license.workspace=true', 'license="GPL-2.0-only"'),
+                           ('license.workspace=true', 'license.workspace=1'),
+                           ('license.workspace=true', 'license.workspace=false'),
+                           ('license.workspace=true', ''),
+                           ('license.workspace=true', 'license.workspace=true\nlicense-file="LICENSE"')]
+            for before, after in changes:
+                with self.subTest(path=path.relative_to(self.root), declaration=after):
+                    path.write_text(healthy.replace(before, after))
+                    self.policy["manifests_sha256"][str(path.relative_to(self.root))] = VERIFY.sha256(path)
+                    self.write_policy()
+                    with patch.object(VERIFY.ENV, "run") as run:
+                        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "license"):
+                            VERIFY.admit_product(self.root)
+                        run.assert_not_called()
+            path.write_text(healthy)
+            self.policy["manifests_sha256"][str(path.relative_to(self.root))] = VERIFY.sha256(path)
+            self.write_policy()
+        VERIFY.admit_product(self.root)
+
+    def test_ui_baseline_dependencies_are_exact_even_with_refreshed_pins(self):
+        path = self.root / "crates/nevrotick-ui/Cargo.toml"
+        healthy = path.read_text()
+        variants = [healthy.replace('version="=0.23.0"', 'version="=0.23.1"'),
+                    healthy.replace('version="=0.61.2"', 'version="=0.61.1"'),
+                    healthy.replace('default-features=false', 'default-features=true'),
+                    healthy.replace('default-features=false', 'default-features=0'),
+                    healthy.replace('default-features=false,', ''),
+                    healthy.replace('features=["derive"]', 'features=["derive","serde"]'),
+                    healthy.replace('"Win32_UI_Controls"', '"Win32_Networking_WinSock"'),
+                    healthy.replace('garde={', 'validation={package="garde",'),
+                    healthy.replace('windows-sys={', 'os={package="windows-sys",'),
+                    healthy.replace("cfg(windows)", "cfg(unix)"),
+                    healthy.replace('version="0.0.0"', 'version="0.0.1"')]
+        variants.extend(healthy + extra for extra in (
+            '\n[features]\nunreviewed=[]\n',
+            '\n[dev-dependencies]\nextra="=1.0.0"\n',
+            '\n[build-dependencies]\nslint-build="=1.18.1"\n',
+            '\n[target.\'cfg(unix)\'.dependencies]\nextra="=1.0.0"\n'))
+        variants.append(healthy.replace('[dependencies]\n', '[dependencies]\nslint="=1.18.1"\n'))
+        for text in variants:
+            with self.subTest(text=text):
+                path.write_text(text)
+                self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(path)
+                self.write_policy()
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI.*reviewed"):
+                    VERIFY.admit_product(self.root)
+        path.write_text(healthy)
+        self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(path)
+        self.write_policy()
+        VERIFY.admit_product(self.root)
+
+    def test_schema3_admits_only_pinned_ui_build_and_exact_slint_profile(self):
+        """Reach real product admission with inert source/lock controls, never Cargo."""
+        ui = self.root / "crates/nevrotick-ui/Cargo.toml"
+        ui.write_text(ui.read_text().replace("[dependencies]\n", '[dependencies]\n'
+            'serde={version="=1.0.229",default-features=false,features=["std"]}\n'
+            'serde_json={version="=1.0.154",default-features=false,features=["std"]}\n').replace("[target.'cfg(windows)'.dependencies]\n", "[target.'cfg(windows)'.dependencies]\n"
+            'slint={version="=1.18.1",default-features=false,features=["std","backend-winit","renderer-software","accessibility","compat-1-18","unstable-winit-030"]}\n'
+            'windows={version="=0.62.2",default-features=false,features=["ApplicationModel","Data_Xml_Dom","Foundation","UI_Notifications","Win32_System_Com","Win32_System_WinRT"]}\n').replace(
+                '"Win32_UI_WindowsAndMessaging","Win32_UI_Controls"]',
+                '"Win32_UI_WindowsAndMessaging","Win32_UI_Controls","Win32_UI_Shell"]') +
+            '\n[target.\'cfg(not(windows))\'.dependencies]\nslint={version="=1.18.1",default-features=false,features=["std","renderer-software","compat-1-18"]}\n' +
+            'i-slint-core={version="=1.18.1",default-features=false,features=["image-decoders","svg"]}\n' +
+            '\n[build-dependencies]\nslint-build={version="=1.18.1",default-features=false,features=["compat-1-18"]}\n')
+        build = ui.parent / "build.rs"
+        build.write_text('// Inert admission control; never compiled.\nfn main() {}\n')
+        self.policy["schema_version"] = 3
+        self.policy["first_party_build_scripts"] = {"crates/nevrotick-ui/build.rs": VERIFY.sha256(build)}
+        macro_names = {"garde_derive", "rustversion", "tokio-macros"}
+        for record in self.policy["packages"]:
+            record.update(proc_macro=record["name"] in macro_names, links=None)
+        for name in ("slint", "slint-build"):
+            record = {"name": name, "version": "1.18.1", "checksum": digest((name + "@1.18.1").encode()),
+                      "license": "GPL-3.0-only", "selected_license": "GPL-3.0-only", "build_script": False,
+                      "proc_macro": False, "links": None, "files_sha256": "f" * 64, "upstream_revision": None}
+            self.policy["packages"].append(record)
+            with (self.root / "Cargo.lock").open("a") as stream:
+                stream.write('[[package]]\nname="' + name + '"\nversion="1.18.1"\n'
+                             'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + record["checksum"] + '"\n')
+        self.policy["packages"].sort(key=lambda record: record["name"] + "@" + record["version"])
+        for target, old in list(self.policy["rows"].items()):
+            features = {key: {"host" if key.split("@")[0] in macro_names else "target": [values]}
+                        for key, values in old["features"].items()}
+            runtime = (["accessibility", "backend-winit", "compat-1-18", "renderer-software", "std", "unstable-winit-030"]
+                       if target == "x86_64-pc-windows-msvc" else ["compat-1-18", "renderer-software", "std"])
+            features.update({"slint@1.18.1": {"target": [runtime]},
+                             "slint-build@1.18.1": {"host": [["compat-1-18"]]}})
+            local_closures = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"},
+                              "time-domain": {"time-domain"}, "time-core": {"time-core", "time-domain"},
+                              "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"},
+                              "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"}}
+            self.policy["rows"][target] = {
+                "features": features,
+                "local_features": {name + "@0.0.0": {"target": [[]]} for name in EXPECTED_PACKAGES},
+                "metadata_features": {key: sorted({value for sets in roles.values() for values in sets for value in values})
+                                      for key, roles in features.items()},
+                "allowed_build_scripts": sorted(old["allowed_build_scripts"] + ["nevrotick-ui@0.0.0"]),
+                "allowed_proc_macros": sorted(key for key in features if key.split("@")[0] in macro_names),
+                "duplicate_exceptions": [],
+                "package_scopes": {name: {"features": {key: roles for key, roles in features.items()
+                                                       if name == "nevrotick-ui" or not key.startswith("slint")},
+                                           "local_features": {member + "@0.0.0": {"target": [[]]} for member in local}}
+                                   for name, local in local_closures.items()},
+            }
+        self.policy["lockfile_sha256"] = VERIFY.sha256(self.root / "Cargo.lock")
+        self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+        # An unrelated platform package makes Cargo qualify this exact engine
+        # edge. The pure engine's selected version remains 0.4.3.
+        self.policy["metadata_only_packages"].insert(0, {
+            "name": "getrandom", "version": "0.3.4", "checksum": "a" * 64,
+            "license": "MIT", "files_sha256": "b" * 64, "role": "metadata-only"})
+        lock = self.root / "Cargo.lock"
+        unqualified = 'dependencies=["getrandom","ntp-wire","time-domain","tokio"]'
+        self.assertIn(unqualified, lock.read_text())
+        lock.write_text(lock.read_text().replace(unqualified,
+                                               'dependencies=["getrandom 0.4.3","ntp-wire","time-domain","tokio"]') +
+                        '\n[[package]]\nname="getrandom"\nversion="0.3.4"\n'
+                        'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + 'a' * 64 + '"\n')
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        self.write_policy()
+        with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+            _, inputs = VERIFY.admit_product(self.root)
+            self.assertIn("crates/nevrotick-ui/build.rs", inputs)
+            for checker in VERIFY.UI_NATIVE_INPUT_CHECKER_FILES:
+                self.assertIn(checker, inputs)
+                path = self.root / checker
+                original = path.read_bytes()
+                path.unlink()
+                with self.subTest(missing_checker=checker), patch.object(VERIFY.ENV, "run") as run:
+                    with self.assertRaises(VERIFY.ENV.Incomplete):
+                        VERIFY.admit_product(self.root)
+                    run.assert_not_called()
+                path.write_bytes(original)
+            VERIFY.admit_product(self.root)
+            build.write_text('// Modified after admission.\nfn main() {}\n')
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI build script"):
+                VERIFY.admit_product(self.root)
+            build.write_text('// Inert admission control; never compiled.\nfn main() {}\n')
+            pure_build = self.root / "crates/time-core/build.rs"
+            pure_build.write_text('fn main() {}\n')
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unadmitted first-party build"):
+                VERIFY.admit_product(self.root)
+            pure_build.unlink()
+        healthy = ui.read_text()
+        for changed in (healthy.replace('features=["compat-1-18"]', 'features=["compat-1-18","renderer-software"]'),
+                        healthy.replace('version="=1.18.1"', 'version="=1.18.2"'),
+                        healthy.replace('default-features=false', 'default-features=true'),
+                        healthy.replace('features=["std","renderer-software","compat-1-18"]',
+                                        'features=["std","backend-winit","renderer-software","compat-1-18"]')):
+            ui.write_text(changed)
+            self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+            self.write_policy()
+            with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI.*reviewed"):
+                    VERIFY.admit_product(self.root)
+        # Challenge the receiving Windows Slint declaration alone; unrelated
+        # Garde/build/native defaults are deliberately left valid.
+        winit_slint = ('slint={version="=1.18.1",default-features=false,features=['
+                       '"std","backend-winit","renderer-software","accessibility",'
+                       '"compat-1-18","unstable-winit-030"]}')
+        self.assertIn(winit_slint, healthy)
+        winit_alternatives = (
+            winit_slint.replace('default-features=false', 'default-features=true'),
+            winit_slint.replace('default-features=false', 'default-features=0'),
+            winit_slint.replace('default-features=false,', ''),
+            winit_slint.replace(',"unstable-winit-030"', ''),
+            winit_slint.replace('"unstable-winit-030"]', '"unstable-winit-030","unstable-winit-030"]'),
+            winit_slint.replace('"unstable-winit-030"]', '"unstable-winit-030","system-testing"]'),
+            winit_slint[:-1] + ',optional=true}',
+            'renamed_' + winit_slint[:-1] + ',package="slint"}',
+        )
+        changed_winit = [healthy.replace(winit_slint, alternative) for alternative in winit_alternatives]
+        changed_winit += [
+            healthy.replace(winit_slint + '\n', '').replace('[dependencies]\n', '[dependencies]\n' + winit_slint + '\n', 1),
+            healthy.replace('features=["std","renderer-software","compat-1-18"]',
+                            'features=["std","renderer-software","compat-1-18","unstable-winit-030"]'),
+            healthy + '\n[target.\'cfg(unix)\'.dependencies]\n' + winit_slint + '\n',
+        ]
+        for changed in changed_winit:
+            with self.subTest(winit_manifest=changed), patch.object(VERIFY.ENV, "run") as run:
+                self.assertNotEqual(changed, healthy)
+                ui.write_text(changed)
+                self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+                self.write_policy()
+                with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI.*reviewed"):
+                        VERIFY.admit_product(self.root)
+                run.assert_not_called()
+        ui.write_text(healthy)
+        self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+        self.write_policy()
+        with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+            VERIFY.admit_product(self.root)
+        # This is an inert strict-manifest control, not observed Cargo resolution.
+        native = ('windows={version="=0.62.2",default-features=false,features=['
+                  '"ApplicationModel","Data_Xml_Dom","Foundation","UI_Notifications",'
+                  '"Win32_System_Com","Win32_System_WinRT"]}')
+        self.assertIn(native, healthy)
+        native_alternatives = (
+            native.replace('version="=0.62.2"', 'version="=0.63.0"'),
+            native.replace('default-features=false', 'default-features=true'),
+            native.replace('default-features=false', 'default-features=0'),
+            native.replace('features=[', 'features=["Networking",'),
+            native.replace(',"Win32_System_WinRT"', ''),
+            native.replace('features=["ApplicationModel"', 'features=["ApplicationModel","ApplicationModel"'),
+            native.replace('features=["ApplicationModel","Data_Xml_Dom","Foundation","UI_Notifications","Win32_System_Com","Win32_System_WinRT"]', 'features=false'),
+            native[:-1] + ',optional=true}',
+            'renamed_' + native[:-1] + ',package="windows"}',
+            '',
+        )
+        changed_native = [healthy.replace(native, item) for item in native_alternatives]
+        changed_native += [
+            healthy.replace(',"Win32_UI_Shell"', ''),
+            healthy.replace(native + '\n', '').replace('[dependencies]\n', '[dependencies]\n' + native + '\n', 1),
+            healthy.replace(native + '\n', '').replace("[target.'cfg(not(windows))'.dependencies]\n",
+                "[target.'cfg(not(windows))'.dependencies]\n" + native + '\n'),
+            healthy + '\n[target.\'cfg(unix)\'.dependencies]\n' + native + '\n',
+        ]
+        for changed in changed_native:
+            with self.subTest(native_manifest=changed), patch.object(VERIFY.ENV, "run") as run:
+                self.assertNotEqual(changed, healthy)
+                ui.write_text(changed)
+                self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+                self.write_policy()
+                with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+                    with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI.*reviewed"):
+                        VERIFY.admit_product(self.root)
+                run.assert_not_called()
+        ui.write_text(healthy)
+        self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+        core = self.root / "crates/time-core/Cargo.toml"
+        core_healthy = core.read_text()
+        core.write_text(core_healthy + '\n[target.\'cfg(windows)\'.dependencies]\n' + native + '\n')
+        self.policy["manifests_sha256"]["crates/time-core/Cargo.toml"] = VERIFY.sha256(core)
+        self.write_policy()
+        with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)), \
+                patch.object(VERIFY.ENV, "run") as run:
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "time-core member requires"):
+                VERIFY.admit_product(self.root)
+            run.assert_not_called()
+        core.write_text(core_healthy)
+        self.policy["manifests_sha256"]["crates/time-core/Cargo.toml"] = VERIFY.sha256(core)
+        self.write_policy()
+        for name, version in (("serde", "1.0.229"), ("serde_json", "1.0.154")):
+            exact = f'{name}={{version="={version}",default-features=false,features=["std"]}}'
+            alternatives = (
+                exact.replace('default-features=false', 'default-features=true'),
+                exact.replace('default-features=false', 'default-features=0'),
+                exact.replace('features=["std"]', 'features=[]'),
+                exact.replace('features=["std"]', 'features=["std","derive"]'),
+                exact.replace('features=["std"]', 'features=["std","raw_value"]'),
+                exact.replace('features=["std"]', 'features=["std","unbounded_depth"]'),
+                exact.replace('features=["std"]', 'features=["std","preserve_order"]'),
+                exact.replace('features=["std"]', 'features=["std","arbitrary_precision"]'),
+                exact.replace(f'version="={version}"', 'version="=1.0.1"'),
+                exact[:-1] + ',optional=true}',
+                'renamed_' + exact[:-1] + f',package="{name}"}}',
+                '',
+            )
+            for alternative in alternatives:
+                with self.subTest(serde_dependency=name, alternative=alternative):
+                    changed = healthy.replace(exact, alternative)
+                    self.assertNotEqual(changed, healthy)
+                    ui.write_text(changed)
+                    self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+                    self.write_policy()
+                    with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+                        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI.*reviewed"):
+                            VERIFY.admit_product(self.root)
+        ui.write_text(healthy)
+        self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(ui)
+        self.write_policy()
+        with patch.object(VERIFY.SLINT, "REVIEWED_POLICY_SHA256", VERIFY.SLINT.canonical_policy_sha256(self.policy)):
+            VERIFY.admit_product(self.root)
 
     def test_prior_five_members_cannot_hide_engine(self):
         path = self.root / "Cargo.toml"
@@ -244,7 +613,7 @@ class ProductAdmissionTests(unittest.TestCase):
         for declaration in ('tokio={version="=1.54.1"}',
                             'clock-runtime={package="tokio",version="=1.54.1"}',
                             'nevrotick-engine={version="=0.0.0",path="../nevrotick-engine"}'):
-            path.write_text(healthy + '\n[dependencies]\n' + declaration + '\n')
+            path.write_text(healthy.replace('[dependencies]\n', '[dependencies]\n' + declaration + '\n'))
             self.policy["manifests_sha256"]["crates/nevrotick-ui/Cargo.toml"] = VERIFY.sha256(path)
             self.write_policy()
             with self.subTest(declaration=declaration), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "only to the engine"):
@@ -255,7 +624,7 @@ class ProductAdmissionTests(unittest.TestCase):
         workspace.write_text(workspace.read_text() + '\n[workspace.dependencies]\n'
                              'clock-runtime={package="tokio",version="=1.54.1",default-features=false,features=["rt","net","time","sync","macros"]}\n')
         member = self.root / "crates/nevrotick-ui/Cargo.toml"
-        member.write_text(member.read_text() + '\n[dependencies]\nclock-runtime={workspace=true}\n')
+        member.write_text(member.read_text().replace('[dependencies]\n', '[dependencies]\nclock-runtime={workspace=true}\n'))
         lock = self.root / "Cargo.lock"
         lock.write_text(lock.read_text().replace('name="nevrotick-ui"\nversion="0.0.0"',
                                                 'name="nevrotick-ui"\nversion="0.0.0"\ndependencies=["tokio"]'))
@@ -424,7 +793,7 @@ class ProductAdmissionTests(unittest.TestCase):
     def test_feature_change_cannot_reuse_an_unchanged_lock_admission(self):
         path = self.root / VERIFY.MEMBER / "Cargo.toml"
         path.write_text(path.read_text() + '\n[features]\nunreviewed = []\n')
-        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "manifest/features differ"):
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "UI.*reviewed"):
             VERIFY.admit_product(self.root)
 
     def test_new_local_package_requires_explicit_admission(self):
@@ -733,9 +1102,31 @@ class DependencyPolicyTests(unittest.TestCase):
         self.assertEqual(result["bans"]["build"]["allow-build-scripts"],
                          ["getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107", "quote@1.0.47", "rustversion@1.0.23"])
         self.assertEqual(set(result["licenses"]["allow"]), {"GPL-2.0-only", "MIT", "BSL-1.0", "Unicode-3.0"})
+        self.assertEqual(result["licenses"]["exceptions"],
+                         [{"crate": "nevrotick-ui@0.0.0", "allow": ["GPL-3.0-only"]}])
         result["licenses"]["allow"] = original["licenses"]["allow"]
+        result["licenses"]["exceptions"] = original["licenses"]["exceptions"]
         result["bans"]["build"]["allow-build-scripts"] = original["bans"]["build"]["allow-build-scripts"]
         self.assertEqual(result, original)
+
+    def test_gui_license_exception_is_exact_on_both_targets(self):
+        for target in ("x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"):
+            with self.subTest(target=target):
+                result = tomllib.loads(VERIFY.product_deny(self.base, self.policy, target))
+                self.assertNotIn("GPL-3.0-only", result["licenses"]["allow"])
+                self.assertEqual(result["licenses"]["exceptions"],
+                                 [{"crate": "nevrotick-ui@0.0.0", "allow": ["GPL-3.0-only"]}])
+
+    def test_gui_exception_does_not_admit_a_broadened_bootstrap(self):
+        for replacement in (
+            'exceptions = [{crate="nevrotick-ui@0.0.0",allow=["GPL-3.0-only"]}]',
+            'exceptions = [{crate="time-core@0.0.0",allow=["GPL-3.0-only"]}]',
+            'exceptions = [{crate="nevrotick-ui",allow=["GPL-3.0-only"]}]',
+        ):
+            with self.subTest(replacement=replacement):
+                base = self.base.replace("exceptions = []", replacement)
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpectedly broadened"):
+                    VERIFY.product_deny(base, self.policy, "x86_64-unknown-linux-gnu")
 
     def test_windows_build_allowance_excludes_linux_script_and_keeps_old_three(self):
         result = tomllib.loads(VERIFY.product_deny(self.base, self.policy, "x86_64-pc-windows-msvc"))
@@ -790,13 +1181,15 @@ class DependencyPolicyTests(unittest.TestCase):
             VERIFY.product_deny(self.base, self.policy, "x86_64-unknown-linux-gnu")
 
     def test_new_license_and_broadened_bootstrap_are_rejected(self):
-        self.policy["packages"][0]["selected_license"] = "Apache-2.0"
-        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed policy change"):
-            VERIFY.product_deny(self.base, self.policy, "x86_64-unknown-linux-gnu")
+        for grant in ("Apache-2.0", "GPL-3.0-only"):
+            self.policy["packages"][0]["selected_license"] = grant
+            with self.subTest(grant=grant), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed policy change"):
+                VERIFY.product_deny(self.base, self.policy, "x86_64-unknown-linux-gnu")
         self.policy["packages"][0]["selected_license"] = "MIT"
-        base = self.base.replace('allow = ["GPL-2.0-only"]', 'allow = ["GPL-2.0-only", "MIT"]')
-        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpectedly broadened"):
-            VERIFY.product_deny(base, self.policy, "x86_64-unknown-linux-gnu")
+        for extra in ("MIT", "GPL-3.0-only"):
+            base = self.base.replace('allow = ["GPL-2.0-only"]', 'allow = ["GPL-2.0-only", "' + extra + '"]')
+            with self.subTest(extra=extra), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpectedly broadened"):
+                VERIFY.product_deny(base, self.policy, "x86_64-unknown-linux-gnu")
 
 
 class ExecutionAccountingTests(unittest.TestCase):
@@ -1027,7 +1420,7 @@ class ExecutionAccountingTests(unittest.TestCase):
             return command
 
         report = {}
-        with patch.object(VERIFY, "admit_product", return_value=({}, identity)), \
+        with patch.object(VERIFY, "admit_product", return_value=({"schema_version": 2}, identity)), \
                 patch.object(VERIFY, "admit_vendor", return_value={}), \
                 patch.object(VERIFY, "admit_tools", return_value={}), \
                 patch.object(VERIFY, "commands", return_value=[("host-engine-build", ["simulated-owned-build"])]), \
@@ -1418,6 +1811,237 @@ class WindowsLibraryAdmissionTests(unittest.TestCase):
         self.receipt.write_text(json.dumps(record))
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "different acquisition receipt"):
             VERIFY.windows_libraries(self.root, self.toolchain, self.config, self.work, self.receipt)
+
+
+class SlintCaptureControls(unittest.TestCase):
+    """Capture opt-in and binary image custody controls; no renderer executes."""
+
+    def test_capture_uses_one_fixed_dev_ui_debug_override_without_test_mode(self):
+        expected = ["cargo", "--config", "profile.dev.package.nevrotick-ui.debug=0", "rustc",
+                    "--frozen", "--offline", "--jobs", "6", "--package", "nevrotick-ui",
+                    "--example", "capture", "--", "-C", "strip=debuginfo"]
+        self.assertEqual(VERIFY.slint_capture_build_command(), expected)
+        self.assertNotIn("--profile", expected)
+        self.assertNotIn("--test", expected)
+
+    def test_capture_debug_override_never_leaks_into_ordinary_build_rows(self):
+        for lane in ("portable", "windows", "dependencies"):
+            for schema, patches in ((2, ()), (3, ("spin_on", "accesskit_windows"))):
+                rows = VERIFY.commands(lane, schema_version=schema, patched_packages=patches)
+                for label, command in rows:
+                    with self.subTest(lane=lane, schema=schema, label=label):
+                        self.assertFalse(any("profile.dev.package.nevrotick-ui.debug" in arg for arg in command))
+                        self.assertNotIn("strip=debuginfo", command)
+                        self.assertNotIn("debuginfo=0", command)
+
+    def test_capture_requires_explicit_portable_sdk_and_external_output(self):
+        args = argparse.Namespace(lane="portable",linux_sdk_dir=Path("/owned/sdk"),
+                                  output_dir=Path("/owned/new-output"),capture_slint=True)
+        self.assertTrue(VERIFY.require_slint_capture(args,{"schema_version":3}))
+        for name,value in (("lane","windows"),("linux_sdk_dir",None),("output_dir",None),
+                           ("capture_slint",1)):
+            before = getattr(args,name)
+            setattr(args,name,value)
+            with self.subTest(field=name),self.assertRaises(VERIFY.ENV.Incomplete):
+                VERIFY.require_slint_capture(args,{"schema_version":3})
+            setattr(args,name,before)
+        with self.assertRaises(VERIFY.ENV.Incomplete):
+            VERIFY.require_slint_capture(args,{"schema_version":2})
+        args.capture_slint = False
+        self.assertFalse(VERIFY.require_slint_capture(args,{"schema_version":2}))
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.work = Path(temporary.name)
+        self.source = self.work / "slint-captures"
+        self.source.mkdir()
+        self.output = self.work / "output"
+        self.output.mkdir()
+        # Independent expected matrix, not supplied by the production helper.
+        self.expected = {f"{mode}-{page}-{width}.ppm":width
+            for width in (640,1080)
+            for mode,pages in (("simple",("status","settings","about")),
+                              ("power",("status","sources","statistics","diagnostics","settings","about")))
+            for page in pages}
+        self.expected.update({"source-invalid-1080.ppm":1080,"interval-invalid-1080.ppm":1080,
+                              "interval-invalid-640.ppm":640,"source-add-ntp-1080.ppm":1080,
+                              "source-review-1080.ppm":1080,"source-empty-640.ppm":640,
+                              "source-empty-1080.ppm":1080})
+        self.expected = {name:(width,780) for name,width in self.expected.items()}
+        self.expected.update({"recovery-640.ppm":(640,780), "recovery-1080.ppm":(1080,780),
+            "recovery-invalid-640.ppm":(640,780), "recovery-leave-640x600.ppm":(640,600),
+            "recovery-invalid-640x600.ppm":(640,600),
+            "interval-invalid-640x600.ppm":(640,600),
+            "notifications-simple-640x600.ppm":(640,600),
+            "personal-simple-640x600.ppm":(640,600),
+            "quit-warning-top-640x600.ppm":(640,600), "quit-warning-bottom-640x600.ppm":(640,600),
+            "quit-warning-long-top-640x600.ppm":(640,600), "quit-warning-long-bottom-640x600.ppm":(640,600),
+            "service-simple-640.ppm":(640,780), "service-power-640x600.ppm":(640,600),
+            "diagnostic-report-640.ppm":(640,780), "diagnostic-report-1080.ppm":(1080,780),
+            "diagnostic-collection-640x600.ppm":(640,600), "diagnostic-correction-640x600.ppm":(640,600),
+            "policy-ntp-review-640x600.ppm":(640,600), "policy-ntp-review-1080x780.ppm":(1080,780),
+            "policy-observe-review-640x600.ppm":(640,600), "policy-observe-review-1080x780.ppm":(1080,780),
+            "sources-query-640x600.ppm":(640,600), "sources-no-match-640x600.ppm":(640,600),
+            "source-details-640x600.ppm":(640,600)})
+        for name,(width,height) in self.expected.items():
+            with (self.source/name).open("wb") as stream:
+                stream.write(f"P6\n{width} {height}\n255\n".encode("ascii"))
+                stream.truncate(len(f"P6\n{width} {height}\n255\n")+width*height*3)
+
+    def test_exact_selected_frame_set_exports_with_bound_dimensions_and_hashes(self):
+        report = VERIFY.export_slint_captures(self.work,self.output)
+        self.assertEqual(set(report["files"]),set(self.expected))
+        for name,record in report["files"].items():
+            self.assertEqual((record["width"],record["height"]),self.expected[name])
+            self.assertEqual(record["sha256"],VERIFY.sha256(self.output/"slint-captures"/name))
+
+    def test_extra_truncated_or_linked_frame_rejects_before_export(self):
+        extra = self.source/"unexpected.ppm"
+        extra.write_bytes(b"Unlisted data")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete,"inventory"):
+            VERIFY.export_slint_captures(self.work,self.output)
+        extra.unlink()
+        target = self.source/"simple-status-640.ppm"
+        before = target.read_bytes()
+        target.write_bytes(before[:-1])
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete,"truncated"):
+            VERIFY.export_slint_captures(self.work,self.output)
+        target.unlink()
+        target.symlink_to(self.source/"simple-about-640.ppm")
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete,"linked"):
+            VERIFY.export_slint_captures(self.work,self.output)
+        self.assertFalse((self.output/"slint-captures").exists())
+
+
+class SlintSdkExecutionControls(unittest.TestCase):
+    """SDK lane/custody integration controls; no subprocess or library executes."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.project = self.root / "project"
+        self.project.mkdir()
+        names = ("Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
+                 *VERIFY.UI_TEXT_CHECKER_FILES, *VERIFY.UI_NATIVE_INPUT_CHECKER_FILES)
+        for name in names:
+            path = self.project / name
+            path.parent.mkdir(parents=True,exist_ok=True)
+            if (ROOT / name).is_file():
+                shutil.copyfile(ROOT / name,path)
+            else:
+                path.write_text("Inert mocked text checker; never executed")
+        (self.project / VERIFY.SDK.POLICY).parent.mkdir(exist_ok=True)
+        (self.project / VERIFY.SDK.POLICY).write_text("Inert mocked SDK policy; never parsed")
+        self.identity = {name:VERIFY.sha256(self.project / name) for name in names}
+        for name in ("vendor","toolchain","scratch","sdk"):
+            (self.root / name).mkdir()
+        self.args = argparse.Namespace(lane="portable",vendor_dir=self.root/"vendor",
+            toolchain_dir=self.root/"toolchain",scratch_root=self.root/"scratch",
+            nextest=None,deny=None,output_dir=None,linux_sdk_dir=self.root/"sdk")
+
+    def invoke(self,policy):
+        with patch.object(VERIFY,"admit_product",return_value=(policy,dict(self.identity))), \
+                patch.object(VERIFY,"admit_vendor",return_value={}), \
+                patch.object(VERIFY,"admit_tools",return_value={}), \
+                patch.object(VERIFY,"commands",return_value=[]), \
+                patch.object(VERIFY,"text_contract_commands",return_value=[]), \
+                patch.object(VERIFY,"native_input_control_commands",return_value=[]), \
+                patch.object(VERIFY,"boundary_control"), \
+                patch.object(VERIFY,"summarize_test_counts",return_value={}), \
+                patch.object(VERIFY.ENV,"run") as subprocess:
+            try:
+                VERIFY.execute(self.project,self.args,{})
+            finally:
+                subprocess.assert_not_called()
+
+    def test_sdk_wrong_lane_or_legacy_profile_rejects_before_native_input(self):
+        for lane,schema in (("windows",3),("dependencies",3),("portable",2)):
+            self.args.lane = lane
+            with self.subTest(lane=lane,schema=schema),patch.object(VERIFY.SDK,"admit") as native:
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete,"only to portable Slint"):
+                    self.invoke({"schema_version":schema})
+                native.assert_not_called()
+
+    def test_sdk_drift_rejects_and_omitted_sdk_preserves_default_execution(self):
+        with patch.object(VERIFY.SDK,"admit",side_effect=[{"fixture":"before"},{"fixture":"after"}]) as native:
+            with self.assertRaisesRegex(VERIFY.ENV.Incomplete,"SDK inputs changed"):
+                self.invoke({"schema_version":3})
+            self.assertEqual(native.call_count,2)
+        self.args.linux_sdk_dir = None
+        with patch.object(VERIFY.SDK,"admit") as native:
+            self.invoke({"schema_version":2})
+            native.assert_not_called()
+
+
+class NativeInputExecutionControls(unittest.TestCase):
+    """Reach actual pre-Cargo dispatch with an explicitly simulated runner."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="native-input-row-control-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.project = self.root / "project"
+        self.project.mkdir()
+        names = ("Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
+                 *VERIFY.UI_TEXT_CHECKER_FILES, *VERIFY.UI_NATIVE_INPUT_CHECKER_FILES)
+        for name in names:
+            path = self.project / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, path)
+        self.identity = {name: VERIFY.sha256(self.project / name) for name in names}
+        for name in ("vendor", "toolchain", "scratch"):
+            (self.root / name).mkdir()
+        self.args = argparse.Namespace(lane="portable", vendor_dir=self.root / "vendor",
+            toolchain_dir=self.root / "toolchain", scratch_root=self.root / "scratch",
+            nextest=None, deny=None, output_dir=None)
+
+    def invoke(self, output, report, *, accepted):
+        simulated = []
+        def runner(command, **_kwargs):
+            simulated.append(command)
+            return {"exit_code": 0, "failure": None,
+                    "output": output if command[0] == "python3" else ""}
+        with patch.object(VERIFY, "admit_product", return_value=({"schema_version": 3}, dict(self.identity))), \
+                patch.object(VERIFY, "admit_vendor", return_value={}), \
+                patch.object(VERIFY, "admit_tools", return_value={}), \
+                patch.object(VERIFY, "commands", return_value=[("format", ["SIMULATED-CARGO-NEVER-EXECUTED"])]) as cargo, \
+                patch.object(VERIFY, "text_contract_commands", return_value=[]), \
+                patch.object(VERIFY, "boundary_control"), \
+                patch.object(VERIFY, "summarize_test_counts", return_value={}), \
+                patch.object(VERIFY, "sandbox", side_effect=lambda *_args: _args[4]), \
+                patch.object(VERIFY.ENV, "run", side_effect=runner):
+            if accepted:
+                VERIFY.execute(self.project, self.args, report)
+                self.assertEqual(len(simulated), 2)
+                self.assertEqual(simulated[-1], ["SIMULATED-CARGO-NEVER-EXECUTED"])
+                cargo.assert_called_once()
+            else:
+                with self.assertRaises(VERIFY.ENV.Incomplete):
+                    VERIFY.execute(self.project, self.args, report)
+                self.assertEqual(len(simulated), 1)
+                cargo.assert_not_called()
+        self.assertEqual(simulated[0], VERIFY.native_input_control_commands("portable", schema_version=3)[0][1])
+
+    def test_empty_zero_skipped_or_failed_native_input_controls_stop_before_cargo(self):
+        for output in ("", "Ran 0 tests in 0.1s\n\nOK\n",
+                       "Ran 1 test in 0.1s\n\nOK (skipped=1)\n",
+                       "Ran 1 test in 0.1s\n\nFAILED\n"):
+            report = {}
+            with self.subTest(output=output):
+                self.invoke(output, report, accepted=False)
+                self.assertEqual([row["lane"] for row in report["lanes"]], ["ui-native-input-controls"])
+                self.assertNotIn("executed_controls", report["lanes"][0])
+                self.assertNotEqual(report.get("status"), "passed")
+
+    def test_nonempty_native_input_result_is_recorded_before_simulated_cargo(self):
+        report = {}
+        self.invoke("Ran 2 tests in 0.1s\n\nOK\n", report, accepted=True)
+        self.assertEqual(report["lanes"][0]["executed_controls"], 2)
+        self.assertEqual(report["status"], "passed")
+        for name in VERIFY.UI_NATIVE_INPUT_CHECKER_FILES:
+            self.assertEqual(report["checker_sha256"][name], self.identity[name])
 
 
 if __name__ == "__main__":

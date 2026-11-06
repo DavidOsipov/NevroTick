@@ -6,7 +6,7 @@ license: "MIT"
 
 ## NevroTick scope
 
-Use alongside project-owned `qa-accessibility` and `qa-e2e-tests`; their requirements and canonical architecture control assessment. Native Win32 UIA supported. Selects no WinUI, .NET, Windows App SDK or MSIX for NevroTick.
+Use alongside project-owned `qa-accessibility` and `qa-e2e-tests`; their requirements and canonical architecture control assessment. OD-13 selects Slint for NevroTick; qualify the actual Windows target's UIA provider and patterns rather than assuming classic Win32 control behavior. This skill selects no toolkit, .NET or Windows App SDK dependency, or package format.
 
 Run only on qualified Windows test machine with already available `winapp` CLI and approved isolated application/test session. Record OS, CLI version, candidate and target identity; check installed help/JSON shapes before using examples. Retained JSON reference describes features added in v0.3.1 and v0.6.3+, not verified compatibility with every later CLI.
 
@@ -22,7 +22,7 @@ Verify each action through target's resulting UIA state, screenshot or keyboard/
 - Verifying UI state during development or testing
 - Automating UI workflows without Playwright or Selenium
 - Debugging WinUI 3, WPF, WinForms, Win32, or Electron app UIs by what the user sees and can operate
-- For a separately scoped WinUI 3 application's XAML internals, see the optional upstream [winui-devtools skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winui-devtools/SKILL.md); it is not required for NevroTick's Win32 UI.
+- For a separately scoped WinUI 3 application's XAML internals, see the optional upstream [winui-devtools skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winui-devtools/SKILL.md); it is not required for NevroTick's Slint UI.
 
 ## Prerequisites
 For separately scoped WinUI 3 application, optional upstream [winui-devtools skill](https://github.com/microsoft/winappCli/blob/31fc2ac52b9340846d9b5baa0b9be634ca77a8d1/plugins/winapp/skills/winui-devtools/SKILL.md) and `winapp devtools` cover XAML source/tree, bindings and dependency properties. Requires attached target or explicit injection authorization for `--attach`; PID alone is not consent. AutomationId selectors work in both tools; generated slugs do not transfer to DevTools. Use `winapp ui` for cross-framework actions, screenshots, waits and accessibility.

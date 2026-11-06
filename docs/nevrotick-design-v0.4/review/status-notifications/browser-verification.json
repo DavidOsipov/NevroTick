@@ -1,0 +1,43 @@
+{
+  "verdict": "pass",
+  "scope": "Independent Chromium HTML browser acceptance; no native Windows qualification",
+  "baseline_full_probe": {
+    "source": "7f0a933c381f1092fde563fdd9c64c71f9f0d41e",
+    "standalone_sha256": "6c916c8b2ee7d0833b736641e27206b992727401018236485b3f5c1812c32cd0",
+    "matrix_cases": 6,
+    "workflow_groups": 80,
+    "initial_scene_classification_checks": 60,
+    "results": "independent-notifications-results.json"
+  },
+  "final_source": "62aa9713548f8bfefc7ea087a01d788bc6f39c10",
+  "final_artifacts": {
+    "index.html": "56dd8d34876ce44dc28fc3137ae4803d4fd41d6f55ec411f0e4f8bc568c1c0e2",
+    "NevroTick-UI-v0.4.html": "4d8c3d211ec19ddea21a4b37d6b164f453a8ab8352cca6c554c8c8ac28370f86"
+  },
+  "final_bounded_probe": {
+    "matrix_cases": 6,
+    "detailed_cases": 90,
+    "durable_partial_retry_cases": 50,
+    "startup_unknown_unrelated_stop_cancel_cases": 10,
+    "tray_semantics_aria_cases": 30,
+    "results": "final-bounded-results.json"
+  },
+  "widths_px": [
+    360,
+    1280,
+    480
+  ],
+  "page_errors": 0,
+  "unexpected_remote_requests": 0,
+  "broad_native_notification_api_calls": 0,
+  "open_findings": [],
+  "resolved_source_finding": "Current partial handover incident retained across close/UAC/rejection before effects; startup incident retained across unrelated runtime cancellation",
+  "source_edits_by_QA": false,
+  "real_Windows_operations": false,
+  "snapshot_identity": "src/assets read from exact git objects; generated standalone SHA verified before browsing; server serves detached snapshots",
+  "limitations": [
+    "No OS toast/SCM/clock/registration/activation or permission operations executed",
+    "Full unmodified UI logic accepted on 7f; final model delta and selected final visuals accepted on 62aa",
+    "No native Narrator/accessibility compliance claim"
+  ]
+}

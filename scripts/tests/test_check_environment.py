@@ -112,6 +112,40 @@ class GuardTests(unittest.TestCase):
 
 
 class ProcessTests(unittest.TestCase):
+    def test_invalid_output_budget_rejects_before_launch(self):
+        for budget in (0, -1, True, None, "8", ENV.MAX_REQUESTED_OUTPUT + 1):
+            with self.subTest(budget=budget), patch.object(ENV.subprocess, "Popen") as launch:
+                with self.assertRaisesRegex(ENV.Incomplete, "output budget"):
+                    ENV.run([sys.executable, "-c", "print('unreached')"],
+                            cwd=Path.cwd(), max_output=budget)
+                launch.assert_not_called()
+
+    def test_explicit_output_budget_admits_exact_bound_and_rejects_next_byte(self):
+        for size, failure in ((8, None), (9, "output budget exceeded")):
+            with self.subTest(size=size):
+                result = ENV.run([sys.executable, "-c", f"print('x'*{size}, end='')"],
+                                 cwd=Path.cwd(), max_output=8)
+                self.assertEqual(result["failure"], failure)
+                if failure is None:
+                    self.assertEqual(result["exit_code"], 0)
+                    self.assertEqual(result["output"], "x" * 8)
+        healthy = ENV.run([sys.executable, "-c", "print('ok')"], cwd=Path.cwd())
+        self.assertEqual(healthy["exit_code"], 0)
+        self.assertIsNone(healthy["failure"])
+        self.assertEqual(healthy["output"], "ok\n")
+
+    def test_larger_metadata_budget_is_per_call_and_default_remains_two_mib(self):
+        self.assertEqual(ENV.MAX_OUTPUT, 2 * 1024 * 1024)
+        size = ENV.MAX_OUTPUT + 1
+        command = [sys.executable, "-c", f"print('x'*{size}, end='')"]
+        admitted = ENV.run(command, cwd=Path.cwd(), max_output=3 * 1024 * 1024)
+        self.assertEqual(admitted["exit_code"], 0)
+        self.assertIsNone(admitted["failure"])
+        self.assertEqual(len(admitted["output"]), size)
+        rejected = ENV.run(command, cwd=Path.cwd())
+        self.assertEqual(rejected["failure"], "output budget exceeded")
+        self.assertLessEqual(len(rejected["output"]), ENV.MAX_OUTPUT)
+
     def test_failed_predecessors_preserve_same_parent_runner_and_pipe_cleanup(self):
         """Independent commands share a runner parent, not scenario state."""
         children = []

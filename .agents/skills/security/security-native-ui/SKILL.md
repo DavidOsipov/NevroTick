@@ -9,6 +9,18 @@ Read [the security contract](../CONTRACT.md), architecture sections 4.2, 5, 8.3,
 
 Apply architecture section 16.5 first: UI-M0 remains fixture-only, with D1/D2/D3 deferred. The production IPC/effect requirements below apply when their integrations exist; this skill adds no input surface or milestone blocker.
 
+For localization, apply the [hostile-catalog boundary](../../../../docs/plans/ui-localization.md#hostile-catalogs-security-amendment--6-november-2026-asiatbilisi).
+All JSON/CBOR, including English/generated/signed bytes, is untrusted input.
+Catalogs cannot select actions, routes, severity, icons or accessibility state.
+Use bounded literal text with each sink's escaping; no automatic markup, fetch or
+URI activation. Critical visible/spoken/action wording needs independent
+exact-content review or complete admitted English-group fallback. Review meaning
+with the owner's closed emoji-free repertoire and narrowly admitted Unicode
+controls; no blanket non-ASCII/RTL ban or unrestricted joining-control allowance.
+Check decoded catalog text at JSON and CBOR admission, retaining fixed actions
+and the last admitted state. Schema/signature
+success and the HTML design establish no truthful wording or native UIA result.
+
 1. Treat product user input as potentially malicious with the same care as external programmatic input. Cover typing, paste and direct handler/control bypass, plus displayed service/helper/native results at implemented surfaces. Local, authenticated, administrator or previously accepted origin proves neither payload safety nor current permission. Trace original representation → bounded admission → mandatory shared garde/private domain construction → current trusted-owner guard → IPC/effect. Normal UI stays `asInvoker`; closing/hiding leaves background synchronization running. Enabled controls, signed UI binaries or client-side validation grant no service authority. Receiving trusted service independently validates/authorizes every protected request.
 2. Use Slint widgets with explicit semantic exposure and bounded literal text. Separate untrusted server names/errors/source labels from format strings, shell arguments, command identifiers and filesystem/URI effects. Reuse typed action/target policy; construct no shell commands. [OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint, with narrow Windows adapters; drawn widgets provide no automatic Win32 accessibility or authority guarantee. Toolkit selection waives no dependency/licence or native qualification gate. This UI introduces no WebView, HTML sanitizer or browser policy.
 3. Distinguish authentication, certificate-time basis, agreement, freshness, uncertainty and current correction state. Service liveness alone proves no synchronized time. Bootstrap text states unauthenticated date estimate is checking secure servers; system clock has not changed. Never label two hints secure quorum or NTS absolute accuracy guarantee.

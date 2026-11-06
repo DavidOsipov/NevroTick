@@ -1,6 +1,7 @@
 """Independent archive/admission controls for product acquisition; no network or Cargo."""
 import contextlib
 import copy
+import gzip
 import hashlib
 import importlib.util
 import io
@@ -123,6 +124,43 @@ class ArchiveControls(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "budget"):
                 PREPARE.archive_files(data, self.package)
 
+    def test_reviewed_expansion_requires_exact_name_version_and_both_pins(self):
+        data = self.bundle()
+        identity = tuple(self.package[key] for key in ("name", "version", "checksum", "files_sha256"))
+        limits = (len(gzip.decompress(data)), sum(map(len, self.files.values())))
+        with patch.object(PREPARE, "MAX_EXPANDED", 1024), \
+                patch.dict(PREPARE.REVIEWED_EXPANSION_LIMITS, {identity: limits}, clear=True):
+            self.assertEqual(PREPARE.archive_files(data, self.package), self.files)
+            for key, value in (("name", "other"), ("version", "1.0.1"),
+                               ("checksum", "0" * 64), ("files_sha256", "0" * 64)):
+                with self.subTest(changed=key):
+                    changed = dict(self.package, **{key: value})
+                    with self.assertRaisesRegex(ValueError, "identity or size|metadata expansion"):
+                        PREPARE.archive_files(data, changed)
+
+    def test_reviewed_expansion_preserves_tar_payload_and_member_ceilings(self):
+        data = self.bundle()
+        identity = tuple(self.package[key] for key in ("name", "version", "checksum", "files_sha256"))
+        tar_size, payload_size = len(gzip.decompress(data)), sum(map(len, self.files.values()))
+        for limits, members, error in (
+                ((tar_size - 1, payload_size), PREPARE.MAX_MEMBERS, "metadata expansion"),
+                ((tar_size, payload_size - 1), PREPARE.MAX_MEMBERS, "archive expansion"),
+                ((tar_size, payload_size), 1, "member count")):
+            with self.subTest(limits=limits, members=members), \
+                    patch.object(PREPARE, "MAX_EXPANDED", 1024), \
+                    patch.object(PREPARE, "MAX_MEMBERS", members), \
+                    patch.dict(PREPARE.REVIEWED_EXPANSION_LIMITS, {identity: limits}, clear=True):
+                with self.assertRaisesRegex(ValueError, error):
+                    PREPARE.archive_files(data, self.package)
+
+    def test_large_windows_allowance_matches_only_the_current_reviewed_identity(self):
+        policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        package = next(item for item in policy["packages"]
+                       if item["name"] == "windows" and item["version"] == "0.62.2")
+        identity = tuple(package[key] for key in ("name", "version", "checksum", "files_sha256"))
+        self.assertEqual(PREPARE.REVIEWED_EXPANSION_LIMITS,
+                         {identity: (114_755_072, 114_212_919)})
+
     def test_directory_members_count_toward_iteration_budget(self):
         directories = []
         for i in range(10):
@@ -194,6 +232,31 @@ class AcquisitionIdentityControls(unittest.TestCase):
         self.root = Path(temporary.name)
         self.vendor = self.root / "vendor"
 
+    def test_large_source_inventory_is_finite_and_prechecked(self):
+        template, _, _ = admission_archive("bounded-control", "1.0.0")
+        packages = [dict(template, name=f"package-{index}") for index in range(537)]
+        self.assertEqual(len(PREPARE.acquisition_records({"packages": packages})), 537)
+        oversized = [dict(template, name=f"package-{index}") for index in range(769)]
+        with patch.object(PREPARE.urllib.request, "urlopen") as network:
+            with self.assertRaisesRegex(ValueError, "bound"):
+                PREPARE.acquire(self.vendor, {"packages": oversized})
+            network.assert_not_called()
+
+    def test_aggregate_archive_and_source_budgets_leave_no_partial_vendor(self):
+        first, data, files = admission_archive("first", "1.0.0")
+        second, other_data, _ = admission_archive("second", "1.0.0")
+        for budget_name, budget in (("MAX_TOTAL_ARCHIVE", len(data)),
+                                    ("MAX_TOTAL_EXPANDED", sum(map(len, files.values())))):
+            vendor = self.root / budget_name
+            with self.subTest(budget=budget_name), \
+                    patch.object(PREPARE, budget_name, budget, create=True), \
+                    patch.object(PREPARE.urllib.request, "urlopen",
+                                 side_effect=[io.BytesIO(data), io.BytesIO(other_data)]):
+                with self.assertRaisesRegex(ValueError, "Aggregate"):
+                    PREPARE.acquire(vendor, {"packages": [first, second]})
+                self.assertFalse(vendor.exists())
+                self.assertFalse(list(self.root.glob(".ui-m0-acquire-*")))
+
     def test_metadata_build_version_is_acquired_without_a_selected_grant(self):
         package, data, files = admission_archive("wasi", "0.11.1+wasi-snapshot-preview1")
         package["role"] = "metadata-only"
@@ -249,7 +312,7 @@ class CompletePolicyAcquisitionControls(unittest.TestCase):
         self.checkout = self.directory / "checkout"
         (self.checkout / "policy").mkdir(parents=True)
         self.vendor = self.directory / "vendor"
-        self.policy = json.loads((ROOT / "policy/ui-m0-dependencies.json").read_text())
+        self.policy = json.loads((ROOT / "scripts/tests/fixtures/ui-m0-schema2.json").read_text())
         self.assertEqual(self.policy["schema_version"], 2)
         self.responses = {}
         self.sources = {}

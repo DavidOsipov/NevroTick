@@ -2,9 +2,10 @@
 name = "nevrotick-ui"
 version = "0.0.0"
 publish = false
+build = "build.rs"
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license = "GPL-3.0-only"
 repository.workspace = true
 description = "Unelevated fixture-only NevroTick UI-M0 prototype"
 
@@ -13,9 +14,26 @@ workspace = true
 
 [dependencies]
 garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
+serde = { version = "=1.0.229", default-features = false, features = ["std"] }
+serde_json = { version = "=1.0.154", default-features = false, features = ["std"] }
 
 [target.'cfg(windows)'.dependencies]
+slint = { version = "=1.18.1", default-features = false, features = ["std", "backend-winit", "renderer-software", "accessibility", "compat-1-18", "unstable-winit-030"] }
 windows-sys = { version = "=0.61.2", default-features = false, features = [
     "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_LibraryLoader",
-    "Win32_UI_WindowsAndMessaging", "Win32_UI_Controls",
+    "Win32_UI_WindowsAndMessaging", "Win32_UI_Controls", "Win32_UI_Shell",
 ] }
+windows = { version = "=0.62.2", default-features = false, features = [
+    "ApplicationModel", "Data_Xml_Dom", "Foundation", "UI_Notifications",
+    "Win32_System_Com", "Win32_System_WinRT",
+] }
+
+[target.'cfg(not(windows))'.dependencies]
+slint = { version = "=1.18.1", default-features = false, features = ["std", "renderer-software", "compat-1-18"] }
+# Feature carrier for the public custom-platform tests: EmbedFiles uses Fluent
+# SVG icons, whose narrow loaders are not exposed by the public slint features.
+# No internal Rust API is called and no Linux desktop backend is selected.
+i-slint-core = { version = "=1.18.1", default-features = false, features = ["image-decoders", "svg"] }
+
+[build-dependencies]
+slint-build = { version = "=1.18.1", default-features = false, features = ["compat-1-18"] }

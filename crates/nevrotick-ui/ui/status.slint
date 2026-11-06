@@ -1,0 +1,74 @@
+import { Theme } from "theme.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { BodyText, SecondaryText, Heading, SectionHeading, PageHeading, Panel, Badge, FactRow, Rule, ActionButton } from "components.slint";
+
+export component StatusPage inherits VerticalLayout {
+    in property <bool> power-mode;
+    in property <bool> host-ready;
+    in property <string> headline;
+    in property <string> consequence;
+    in property <string> profile-label;
+    in property <string> profile;
+    in property <string> authentication;
+    in property <string> agreement;
+    in property <string> freshness;
+    in property <string> check-label;
+    in property <string> remedy-label;
+    in property <string> feedback;
+    callback check-requested();
+    callback remedy-requested();
+    spacing: 22px;
+    vertical-stretch: 0;
+
+    if !root.power-mode: VerticalLayout {
+        spacing: 22px;
+        Badge { text: FixtureCopy.preview-badge; }
+        Heading { text: root.headline; }
+        BodyText { text: root.consequence; color: Theme.muted; }
+        SecondaryText { text: root.profile-label + ": " + root.profile; }
+        SecondaryText { text: FixtureCopy.status-qualifier; }
+        VerticalLayout {
+            spacing: 6px;
+            padding-top: 10px;
+            SecondaryText { text: FixtureCopy.difference-label; }
+            Heading { text: FixtureCopy.unavailable; font-size: 31px; }
+            SecondaryText { text: FixtureCopy.difference-note; }
+        }
+        Rule { }
+        ActionButton { text: root.check-label; enabled: false; clicked => { root.check-requested(); } }
+        SecondaryText { text: FixtureCopy.sync-unavailable; }
+        ActionButton { text: root.remedy-label; enabled: root.host-ready; clicked => { root.remedy-requested(); } }
+        if root.feedback != "": SecondaryText { text: root.feedback; color: Theme.amber; }
+    }
+
+    if root.power-mode: VerticalLayout {
+        spacing: 20px;
+        PageHeading { kicker: FixtureCopy.status-kicker; title: FixtureCopy.status-heading; }
+        Panel {
+            panel-background: Theme.blue-soft;
+            HorizontalLayout {
+                spacing: 16px;
+                SectionHeading { text: root.headline; horizontal-stretch: 1; vertical-alignment: center; }
+                ActionButton { text: root.check-label; enabled: false; clicked => { root.check-requested(); } }
+            }
+            SecondaryText { text: root.consequence; }
+            HorizontalLayout {
+                spacing: 12px;
+                SecondaryText { text: root.profile-label + ": " + root.profile; horizontal-stretch: 1; vertical-alignment: center; }
+                ActionButton { text: root.remedy-label; enabled: root.host-ready; clicked => { root.remedy-requested(); } }
+            }
+            SecondaryText { text: FixtureCopy.sync-unavailable; }
+            if root.feedback != "": SecondaryText { text: root.feedback; color: Theme.amber; }
+        }
+        Panel {
+            GridLayout {
+                spacing: 16px;
+                FactRow { row: 0; col: 0; label: FixtureCopy.difference-label; value: FixtureCopy.not-measured; note: FixtureCopy.difference-note; }
+                FactRow { row: 0; col: 1; label: FixtureCopy.uncertainty-label; value: FixtureCopy.unavailable; note: FixtureCopy.uncertainty-note; }
+                FactRow { row: 1; col: 0; label: FixtureCopy.authentication-label; value: root.authentication; note: FixtureCopy.authentication-note; }
+                FactRow { row: 1; col: 1; label: FixtureCopy.agreement-label; value: root.agreement; note: FixtureCopy.agreement-note; }
+                FactRow { row: 2; col: 0; colspan: 2; label: FixtureCopy.qualified-label; value: root.freshness; }
+            }
+        }
+    }
+}

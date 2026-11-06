@@ -1,0 +1,19 @@
+import { RawCopy } from "raw-copy.slint";
+
+// Maintained labels and code-owned action identities, retaining the public
+// ContextMenuArea input and popup implementation. The sender rechecks permission
+// at activation time; enabled/menu text never authorizes an editor operation.
+export component LineEditContextMenuArea inherits ContextMenuArea {
+    in property <bool> editable;
+    in property <bool> has-text;
+    callback action-requested(int);
+    Menu {
+        MenuItem { title: RawCopy.action-undo; enabled: root.editable; activated => { root.action-requested(0); } }
+        MenuItem { title: RawCopy.action-redo; enabled: root.editable; activated => { root.action-requested(1); } }
+        MenuSeparator { }
+        MenuItem { title: RawCopy.action-cut; enabled: root.editable; activated => { root.action-requested(2); } }
+        MenuItem { title: RawCopy.action-copy; enabled: root.has-text; activated => { root.action-requested(3); } }
+        MenuItem { title: RawCopy.action-paste; enabled: root.editable; activated => { root.action-requested(4); } }
+        MenuItem { title: RawCopy.action-select-all; enabled: root.has-text; activated => { root.action-requested(5); } }
+    }
+}

@@ -15,23 +15,27 @@ During UI-M0 use a fixture-only, unelevated UI, sample-data labels and disabled
 protected actions. Keep D1 display, D2 production state/policy and D3 full
 keyboard/Narrator/UIA work Deferred with owners/re-entry triggers; do not implement
 or qualify them as UI-M0 prerequisites. Preserve labels and the milestone's native
-observations. Existing Win32 controls retain their inherited behavior while that
-reference implementation remains in use; its evidence does not transfer to Slint.
+observations. The retained Win32 adapter is historical source; its inherited
+control behavior and evidence do not transfer to the current Slint adapter.
+Read current [S0.5](../../../../tasks/s0.5-ui-comparison.md) addenda and the
+[GUI handoff](../../../../tasks/slint-gui-handoff.md) for the admitted migration
+scope, actual source and remaining native/text-approval dependencies.
 
 [OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-and architecture section 16 select **Slint as the default UI toolkit**. The measured
-Slint 1.18.1 winit/software-renderer, Fluent-style configuration is the starting
-configuration for migration; it is not a product dependency or feature-graph pass.
-The checked-in Win32 UI remains the reference until replaced by a qualified Slint
-candidate. Keep `windows`/`windows-sys` in narrow OS adapters where needed. Slint
-widgets are drawn by Slint, not inherited Win32 child controls; qualify actual
-accessibility integration when D3 re-enters. The pilot's omitted accessibility
-feature is no permanent product policy. Slint's licence choices and the selected
-Apache-2.0-only winit dependency remain unresolved against GPL-2.0-only distribution.
-Selection waives no licence, security, resource, native or packaging gate. Preserve
-Core priority and current execution holds; this instruction authorizes no migration
-or Windows execution beyond the current task. Translating website HTML skills does
-not justify a webview or another toolkit selection.
+and architecture section 16 select Slint as the default and complete Win32 UI
+replacement. The Slint 1.18.1 winit/software-renderer, Fluent-style configuration
+is the researched starting point; inspect the actual admitted manifest and graph.
+The checked-in Windows entrypoint selects Slint; the old Win32 adapter is retained
+historical source. Keep `windows`/`windows-sys` in narrow OS adapters where needed.
+Slint widgets are drawn by Slint, not inherited Win32 child controls; qualify actual
+accessibility integration at its task trigger. The pilot's omitted accessibility
+feature is no permanent product policy. David approved GPL-3.0-only for the
+original GUI while Chrony-derived Core/engine remains GPL-2.0-only. Do not reopen
+that choice; apply the exact grant/provenance inventory and remaining composition,
+feature, security, resource, native and package checks. Source preparation and
+admitted fixture work may parallel Core; retain execution holds and one shared
+graph/schema owner. Translating website HTML skills adds no webview or toolkit
+selection requirement.
 
 Review Slint-generated Rust and its unsafe/lint boundary with the selected compiler
 and features. The pilot's `deny(unsafe_code)` accommodation for macro-owned

@@ -27,11 +27,18 @@ This document translates [architecture revision 1.4](windows-time-architecture.m
 
 ### Current UI entry milestone: UI-M0
 
-The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). Use the OD-13-selected Slint toolkit for the unelevated native fixture-only prototype; the existing Win32 candidate remains a reference pending migration: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice.
+The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects complete replacement of the Win32 UI with Slint against v0.4. The checked-in Windows entry now selects Slint/Winit/software; the old Win32 adapter and receipts remain historical. Preserve the original unelevated fixture-only milestone: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice.
 
 D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator and UI Automation qualification) are **Deferred**. Agents must not implement or qualify them during UI-M0 or make them completion prerequisites. Retain toolkit-provided basic keyboard/editing behavior and meaningful labels; do not assume Slint widgets inherit Win32 child-control accessibility. Restore the relevant D2 rules before each live-status, real-policy or protected-command integration; restore D1/D3 before general-user preview/release or earlier support/qualification claims. The UI owner carries their triggers into the backlog and next-stage record.
 
-Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one owner for the Slint UI/event loop and narrow native adapters. Qualify the exact dependency/licence graph and generated-code safety/lint boundary before product migration; existing Win32 evidence does not transfer. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
+Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one owner for the Slint UI/event loop and narrow native adapters. Preserve the exact dependency/licence graph and generated-code safety/lint boundary under OD-13's accepted separately GPL-3.0-only GUI direction, keeping Core/engine GPL-2.0-only; existing Win32 evidence does not qualify the current Slint candidate. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
+
+The [current GUI handoff](../tasks/slint-gui-handoff.md) and
+[S0.5 record](../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+retain the later complete-v0.4 fixture source, including Simple/Power views,
+bounded policy/recovery previews and opt-in tray/sample-notification source.
+Source and portable rendering evidence do not qualify native Windows behavior,
+production integration or D1–D3. Protected actions and live effects remain gated.
 
 ### The ten basic capabilities
 
@@ -228,9 +235,30 @@ Use event ordering that remains intelligible when wall time is wrong. Full/unava
 
 Use one small Slint main window with Sources, Settings and Diagnostics. Toolkit widgets, qualified Windows accessibility exposure, system visual preferences and progressive disclosure support familiarity and resource efficiency. English is the initial language; typed localized messages and stable reason codes prepare for later locales without requiring them now.
 
+**Translation mechanism, [OD-15](nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs):** the [localization design](plans/ui-localization.md)
+separates editable JSON translation sources from generated binary CBOR resources.
+One typed Rust catalog supplies window/dialog/error/help text, tray/menu/local
+notifications and accessible names through the selected Slint bridge. A new
+language changes data rather than UI logic. Future per-user Language selection
+belongs with personal preferences and remains accessible in both UI modes;
+only adopted, validated available languages are offered, with English as the
+initial default/fallback. Specific additional locales and independent user-pack
+imports are not adopted by the mechanism request.
+
 Every critical action must work with keyboard and Narrator and expose correct UI Automation semantics. Support contrast themes, text scaling, at least 200% display scaling, multi-monitor DPI changes, visible focus, cancellation and focus restoration. Do not reorder focused source rows or announce every changing offset. Microsoft's accessibility guidance and WCAG2ICT inform the native evaluation; neither a framework nor this document establishes conformance. [R3, R4]
 
-Provide an **opt-in tray mode**, off by default: keep a small UI observer when the window closes, show an accessible status indicator, and offer Open, Sync now and Quit UI under the same permissions. A separate opt-in starts that tray observer at sign-in; enabling it does not alter service startup. Quit UI leaves synchronization running. All critical flows remain accessible from the main window.
+Provide an **opt-in tray mode**, off by default: keep a small UI observer when the window closes, show an accessible status indicator, and offer Open, contextual Sync now/Check sources, Diagnostics, Settings, About and Quit UI under the same permissions. A separate opt-in starts that tray observer at sign-in; enabling it does not alter service startup. Quit UI leaves service state unchanged; running background services keep running. All critical flows remain accessible from the main window.
+
+**Owner clarification, 5 November 2026:** quitting through the tray requires a
+confirmation explaining that the app/tray closes while background services keep
+running. If services are stopped or their state is unknown, say that instead.
+Offer **Manage background service**, opening **Settings → Background service**
+without quitting or issuing a service command. Explain **Stop** for a temporary
+stop and **Disable NevroTick** to prevent future starts; each retains its own
+confirmation/authorization. Cancel keeps the observer open. Confirmed Quit closes
+only the user observer, preserves tray/sign-in preferences and changes no clock
+owner. New local alerts require an active observer. These are UI contracts for
+the reached tray slice, not new UI-M0/native service execution authority.
 
 The tray is a visibility preference, not an extra clock controller or independent watchdog. Its memory/wakeup budget and actual accessibility must qualify before shipping. Rich notifications and historical charts are deferred.
 

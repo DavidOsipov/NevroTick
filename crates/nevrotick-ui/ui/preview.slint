@@ -1,0 +1,43 @@
+import { AppWindow, Page, SourceRow } from "app.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+
+// Standalone source-tool fixture. It is not a product entrypoint or validator.
+// Navigation may change local presentation; accepted source rows never change.
+export component PreviewWindow inherits AppWindow {
+    sources: [
+        { view-id: 1, label: "Sample North", host: "north.example.invalid", port: "4460", protocol-choice: 0, protocol-label: "NTS preview", port-label: "NTS-KE port", draft-kind: "Baseline", show-draft-badge: false, change-choice: 0 },
+        { view-id: 2, label: "Sample South", host: "south.example.invalid", port: "4460", protocol-choice: 0, protocol-label: "NTS preview", port-label: "NTS-KE port", draft-kind: "Baseline", show-draft-badge: false, change-choice: 0 },
+        { view-id: 3, label: "Sample West", host: "west.example.invalid", port: "4460", protocol-choice: 0, protocol-label: "NTS preview", port-label: "NTS-KE port", draft-kind: "Baseline", show-draft-badge: false, change-choice: 0 },
+    ];
+    visible-sources: root.sources;
+    host-ready: false;
+    selected-source: 1;
+    selected-source-visible: true;
+    fixture-status-headline: FixtureCopy.no-live-connection;
+    fixture-status-consequence: FixtureCopy.observation-description;
+    fixture-status-profile-label: FixtureCopy.protocol-label;
+    fixture-status-profile: FixtureCopy.nts-preview;
+    fixture-status-authentication: FixtureCopy.authentication-value;
+    fixture-status-agreement: FixtureCopy.not-evaluated;
+    fixture-status-freshness: FixtureCopy.not-measured;
+    fixture-status-check-label: FixtureCopy.sync-now;
+    fixture-status-remedy-label: FixtureCopy.settings-tab;
+    private property <Page> remembered-power-page: Page.status;
+
+    navigate(page) => {
+        root.current-page = page;
+        if root.power-mode { root.remembered-power-page = page; }
+    }
+    mode-requested(power) => {
+        if !power && root.power-mode {
+            root.remembered-power-page = root.current-page;
+            if root.current-page == Page.sources || root.current-page == Page.statistics || root.current-page == Page.diagnostics || root.current-page == Page.recovery {
+                root.current-page = Page.status;
+            }
+        }
+        if power && !root.power-mode && root.current-page == Page.status {
+            root.current-page = root.remembered-power-page;
+        }
+        root.power-mode = power;
+    }
+}

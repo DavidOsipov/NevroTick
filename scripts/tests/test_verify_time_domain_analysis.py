@@ -23,6 +23,108 @@ PURE_REGISTRY_NAMES = frozenset({
 })
 
 
+class DomainRegistryIdentityTests(unittest.TestCase):
+    """Unrelated GUI versions cannot change the admitted pure projection."""
+
+    @staticmethod
+    def block(name, version, dependencies=(), *, source=MODULE.REGISTRY):
+        """Independently spell inert Cargo registry blocks; no package source is used."""
+        text = ('[[package]]\nname=' + json.dumps(name) + '\nversion=' + json.dumps(version) +
+                '\nsource=' + json.dumps(source) + '\nchecksum=' +
+                json.dumps(hashlib.sha256((name + "@" + version).encode()).hexdigest()) + '\n')
+        if dependencies:
+            text += 'dependencies=' + json.dumps(list(dependencies)) + '\n'
+        return text
+
+    def product(self):
+        """Match the actual new syn2/syn3 ambiguity, with explicit pure references."""
+        return ('version=4\n[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n' +
+                self.block("garde", "0.23.0", ["garde_derive"]) +
+                self.block("garde_derive", "0.23.0", ["syn 2.0.119"]) +
+                self.block("syn", "2.0.119", ["proc-macro2 1.0.107 (" + MODULE.REGISTRY + ")"]) +
+                self.block("proc-macro2", "1.0.107") +
+                self.block("syn", "3.0.9", ["gui-only-not-a-pure-dependency"]) +
+                self.block("windows-sys", "0.52.0") + self.block("windows-sys", "0.61.2"))
+
+    def test_registry_identity_keeps_unrelated_versions_distinct(self):
+        blocks = MODULE.registry_blocks(self.product())
+        self.assertIn(("syn", "2.0.119"), blocks)
+        self.assertIn(("syn", "3.0.9"), blocks)
+        reached = MODULE.domain_registry_closure(self.product())
+        self.assertEqual(set(reached), {"garde", "garde_derive", "syn", "proc-macro2"})
+        self.assertEqual(reached["syn"][0]["version"], "2.0.119")
+
+    def test_reached_ambiguity_duplicate_versions_and_source_substitution_reject(self):
+        healthy = self.product()
+        variants = (
+            healthy.replace('"syn 2.0.119"', '"syn"'),
+            healthy.replace('["syn 2.0.119"]', '["syn 2.0.119","syn 3.0.9"]'),
+            healthy.replace('["syn 2.0.119"]', '["syn 2.0.119","syn 2.0.119"]'),
+            healthy.replace('"syn 2.0.119"', '"syn 2.0.120"'),
+            healthy.replace('"syn 2.0.119"', '"syn 2.0.119 (registry+https://unreviewed.invalid)"'),
+            healthy.replace('"syn 2.0.119"', '"syn 2.0.119 extra"'),
+            healthy + self.block("syn", "2.0.119"),
+            healthy.replace(MODULE.REGISTRY, "git+https://unreviewed.invalid"),
+        )
+        for index, text in enumerate(variants):
+            with self.subTest(index=index), self.assertRaises(MODULE.Incomplete):
+                MODULE.domain_registry_closure(text)
+
+    def test_selected_source_lookup_uses_exact_version_despite_gui_duplicate_order(self):
+        text = self.product()
+        locked = [tomllib.loads('[[package]]' + raw)["package"][0]
+                  for raw in text.split('[[package]]')[1:]
+                  if "source" in tomllib.loads('[[package]]' + raw)["package"][0]]
+        records = list(reversed(locked))
+        with patch.object(MODULE.PRODUCT, "validated_dependency_records", return_value=records) as validation:
+            selected = MODULE.admitted_domain_products(text, {})
+        validation.assert_called_once_with({}, include_metadata=False)
+        self.assertEqual(selected["syn"]["version"], "2.0.119")
+        for changed in ([record for record in records if (record["name"], record["version"]) != ("syn", "2.0.119")],
+                        records + [dict(records[-1])],
+                        [{**record, "checksum": "f" * 64} if record["name"] == "syn" else record for record in records]):
+            with patch.object(MODULE.PRODUCT, "validated_dependency_records", return_value=changed):
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.admitted_domain_products(text, {})
+
+    def test_projection_changes_only_resolved_dependency_labels(self):
+        text = self.product().replace('dependencies=["syn 2.0.119"]',
+                                     'unchanged_note="syn 2.0.119"\ndependencies=["syn 2.0.119"]')
+        closure = MODULE.domain_registry_closure(text)
+        projected = MODULE.projected_registry_blocks(closure)
+        before = closure["garde_derive"][0]
+        after, block = projected["garde_derive"]
+        self.assertEqual(after, {**before, "dependencies": ["syn"]})
+        self.assertIn('unchanged_note="syn 2.0.119"', block)
+        self.assertEqual(tomllib.loads(block)["package"][0], after)
+        self.assertEqual(projected["syn"][0]["dependencies"], ["proc-macro2"])
+
+    def test_projection_preserves_the_existing_full_fuzz_lock_bytes(self):
+        expected = (ROOT / "policy/time-domain-fuzz.lock").read_text()
+        original = json.loads((ROOT / "policy/ntp-wire-analysis.json").read_text())["coverage_guided_fuzzing"]
+        control_names = {item["name"] for item in original["locked_registry_packages"]}
+        pure, control = [], []
+        for raw in expected.split('[[package]]')[1:]:
+            block = '[[package]]\n' + raw.strip() + '\n'
+            item = tomllib.loads(block)["package"][0]
+            if item["name"] in PURE_REGISTRY_NAMES:
+                if item["name"] == "garde_derive":
+                    block = block.replace('"syn"', '"syn 2.0.119"')
+                pure.append(block)
+            if item["name"] in control_names:
+                control.append(block)
+        product = ('version=4\n[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n' +
+                   '\n'.join(pure) + self.block("syn", "3.0.9") + self.block("windows-sys", "0.52.0") +
+                   self.block("windows-sys", "0.61.2"))
+        control_text = 'version = 4\n\n' + '\n'.join(control)
+        self.assertEqual(MODULE.reviewed_fuzz_lock(product, control_text), expected)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.reviewed_fuzz_lock(product, control_text + self.block("syn", "3.0.9"))
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.reviewed_fuzz_lock(product, control_text + self.block("other-control", "1.0.0") +
+                                     self.block("other-control", "2.0.0"))
+
+
 class DomainAnalysisTests(unittest.TestCase):
     """Valid neighbors discriminate missing graph checks and meaningless seeds."""
 
@@ -94,6 +196,14 @@ class DomainAnalysisTests(unittest.TestCase):
         selected["locked_registry_packages"] = [item for item in tomllib.loads(expected_text)["package"] if "source" in item]
         session = SimpleNamespace(base=base, vendor=Path(temporary.name) / "vendor",
                                   dependency_policy=product_policy, vendor_identity={"qualified-vendor": "a" * 64})
+        if product_policy["schema_version"] == 3:
+            # This fixture deliberately replaces archive/file pins with owned
+            # inert bytes. Approve only that synthetic policy in the test's
+            # independently controlled anchor; the real ROOT pin is unchanged.
+            anchor = patch.object(MODULE.PRODUCT.SLINT, "REVIEWED_POLICY_SHA256",
+                                  MODULE.PRODUCT.SLINT.canonical_policy_sha256(product_policy))
+            anchor.start()
+            self.addCleanup(anchor.stop)
         return root, session, selected, original
 
     def test_source_parity_keeps_unrelated_runtime_and_original_control_independent(self):

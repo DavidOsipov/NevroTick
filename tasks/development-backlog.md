@@ -1,6 +1,10 @@
 # Deferred development parents
 
-**Status:** DEFERRED / not ready for implementation. This single grouped record
+**Status:** grouped future parents are DEFERRED. The existing
+[S0.5 Slint continuation](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+now owns the implemented v0.4 fixture GUI and its separate remaining
+backend/native/text-approval and integration gates. Earlier source-only queue
+states are historical. This single grouped record
 fills parent-task gaps in [the task map](README.md); it does not replace the
 [development plan](../docs/plans/development-plan.md), existing active children
 or canonical architecture. Unless explicitly marked active, rows below are future
@@ -339,7 +343,7 @@ and [architecture §21](../docs/windows-time-architecture.md#21-delivery-phases-
 | S0.2 service tokens / platform/security | Intended account topology, admitted wrapper/graph, disposable Windows fixture and current native gates; prepare one two-service token/lifecycle experiment. Clock-writing subcase also needs the canonical temporary experiment card. | Intended broker operation succeeds within policy while engine/UI clock and broker-injection access fail; real callback/stop ownership remains bounded. CHECK-1/27 subset. |
 | S0.3 mutual IPC / IPC/security | Relevant S0.2 identity evidence and §5.4 endpoint/caller-lifetime contract; specify one real status method plus one protected method and their allowed/denied principals. | Correct caller/server pair succeeds; fake server, wrong/revoked role, old session and restart/PID-reuse cases cannot gain effects. CHECK-2 subset; retain the canonical local-RPC alternative if pipe proof fails. |
 | S0.4 backend semantics / clock/platform | Owned guest, controlled reference, current owner, independent recovery and predeclared operation/phase/rate/duration/attempt bounds; apply W11-W02/leap child and begin read-only/denied calls. | Measured sign/units/quantization and delivered/cancelled effects match independent time; kill/restart/power and ambiguous outcomes do not imply a finite-expiry guarantee. CHECK-10/11/12. Unset write bounds mean no write. |
-| S0.5 full UI feasibility / UI/accessibility | Accepted [Slint default, OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) and narrower UI-M0/comparison evidence; consume M0-SL-01/02 source preparation and admitted M0-SL-03–05 candidate evidence from the [existing migration handoff](ui-m0.md#slint-migration-handoff--5-november-2026), then define representative window/source/settings/elevation/tray qualification in its own scope. Restore relevant full-feasibility requirements without expanding UI-M0. | Named keyboard/Narrator/UIA journeys work at required contrast/scales; missing focus/labels or unusable scaling fails feasibility. CHECK-22; UI-M0/comparison success alone cannot close it. |
+| S0.5 Slint replacement and full UI feasibility / UI/accessibility + dependency/licence | Accepted [Slint default, OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) and the [current GUI handoff](slint-gui-handoff.md). Consume the implemented v0.4 fixture GUI, compatible original GUI GPL3 scope and exact branch evidence; reconcile the merged candidate and remaining backend/native/text/hardening gaps before dependent work. Full window/source/settings/elevation/tray feasibility retains its own scope and D1/D3 triggers. No new toolkit selection or Win32 fallback. | Named keyboard/Narrator/UIA journeys work at required contrast/scales; missing focus/labels or unusable scaling fails feasibility. CHECK-22; historical Win32/private-pilot or portable fixture success alone cannot close it. |
 | S0.7 decision freeze / architecture/policy/security | Relevant P0 measurements, accepted owner decisions and remaining OPEN issues; prepare the next dependent decision card rather than guessing production limits. | ASVS/native-profile, step/date/holdover, supported-build, service trust/revocation/egress and native-work limits have explicit decisions or blockers. Unsupported alternatives remain blocked; CHECK-4/9/10/16/27 as applicable. |
 
 **S0.4/S0.7 clock-limit preparation:** apply the [existing W11 matrix](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
@@ -366,7 +370,7 @@ workstream or an instruction to evaluate every Windows crate now.
 | S0.2/S0.3, S2.1, S3.1–S3.4, S4.1; platform/network/IPC/clock | Before the next dependent native adapter, map its operation to a selected published binding/wrapper, version/features/SDK symbols and remaining product contract in W11 §4.29. | API coverage and compatible ownership/error/callback behavior; subsequent native controls under existing holds. Retain Mullvad candidate and Microsoft plural service hold. |
 | S2.3 and reached protected-storage consumers; ST-W01/ST-W04 | Before VBS-dependent implementation, complete storage §6.7's binding/SDK coverage card and reconcile the missing flags. | Compatible generated/source-pinned API plus separate actual-key/OS evidence; REQUIRE semantics and policy-controlled fallback preserved. Native storage experiments remain paused. |
 | Existing settings/state adapter; platform/UI | A concrete registry operation justifies comparing `windows-registry`. | Exact rights/DACL, bounded values and failure recovery preserved; no unconditional dependency or move of authoritative state into the registry. |
-| S0.5/S5.1–S5.4; UI | OD-13 selects Slint and the existing M0-SL chain owns migration from the Win32 reference. A concrete issue preventing selected delivery and the bounded revisit procedure precede any alternative. | Preserve equivalent fixture, resource/lifecycle/error, accessibility, package/runtime and mitigation evidence. Retain the existing Reactor/Slint measurements; no general toolkit reselection or assumption that `windows-window` can own Slint's event loop. |
+| S0.5/S5.1–S5.4; UI | OD-13 selects Slint; the current S0.5/GUI handoff owns the implemented fixture GUI and remaining qualification, with the old M0-SL queue retained historically. A concrete issue preventing selected delivery and the bounded revisit procedure precede any alternative. | Preserve equivalent fixture, resource/lifecycle/error, accessibility, package/runtime and mitigation evidence. Retain the existing Reactor/Slint measurements; no general toolkit reselection or assumption that `windows-window` can own Slint's event loop. |
 | S5.3; UI/diagnostics | Export needs a native picker: recheck working published `windows-pickers` or use the admitted OS dialog path. | Cancellation and error remain distinct, output stays bounded/redacted and written by the ordinary UI; no service arbitrary-path write. |
 
 Retain [UI handoff](ui-m0.md#windows-component-reuse-handoff--5-november-2026),
@@ -632,14 +636,15 @@ all current holds remain; no parallel clock task or numerical envelope is added.
 ## P5 production UI
 
 **Owner:** UI/accessibility with service/security/lifecycle owners.
-**Status:** deferred; [UI-M0](ui-m0.md) remains its own restricted milestone.
-[OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
-selects Slint as the default, with the measured winit/software configuration as
-the starting point. Product graph/licence admission and exact-candidate
-qualification remain open in the existing UI-M0 migration handoff: M0-SL-01/02
-are source-preparation rows; M0-SL-03–05 remain held on their named prerequisites.
-Consume those exact-candidate results without repeating the pilot; no new toolkit
-selection round or implicit transfer of Win32 evidence is required.
+**Status:** live P5 remains deferred. [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint; the [S0.5 active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+and [GUI handoff](slint-gui-handoff.md) own the delivered v0.4 fixture implementation,
+original GUI GPL-3.0-only grant and exact branch evidence. The earlier UI-M0
+M0-SL-01–05 queue is historical planning input, superseded where source stages
+have been completed. Merged-candidate reconciliation, actual backend/native
+qualification, independent critical-text approval and the planned P3/P5/P6
+hardening handoff remain open. Retain main's Slint/iced pilots and reaffirmation;
+no fresh toolkit-choice comparison or transfer of Win32 evidence is required.
 Restore D2 freshness/reconnect/generation semantics before any live read-only
 status, then revision/authorization/confirmed-failed-unknown results before
 protected commands. Restore D1/D3 before general-user preview/release or an
@@ -654,7 +659,29 @@ earlier corresponding qualification claim. **Exit:** [plan §6/P5](../docs/plans
 
 ### Production UI contract handoff
 
-Before each relevant S5 child, read the maintained
+For externalized translations, follow [OD-15's catalog design](../docs/plans/ui-localization.md).
+S0.5 records the implemented source/interface profile and exact branch source-control evidence; merged-candidate and semantic approval remain separate. S5.1/S5.2 project stable codes and typed
+arguments into localized status/settings/errors without changing authorization;
+S5.3 uses the same catalog for tray and local notifications; S5.4 owns adopted
+locale, placeholder/plural, long-text/RTL and actual accessibility observations.
+Language is a per-user preference available in both UI modes; English is the
+initial adopted/default/fallback language. Separate source/binary files alone
+adopt neither additional locales nor arbitrary user-imported packs. This adds
+no current native UI-M0 or Core prerequisite.
+
+The [6 November 2026 threat amendment](../docs/plans/ui-localization.md#hostile-catalogs-security-amendment--6-november-2026-asiatbilisi)
+treats every raw JSON/CBOR input as malicious until bounded admission, including
+English and generated/signed files. Independent code-owned contracts/approval,
+isolated conversion and exact file/output custody are required. Critical content
+uses reviewed whole-group English fallback; ordinary valid omissions may fall
+back per message. S0.5 records finite limits and independent attack/healthy
+source controls for the strict producer/loaders. Preserve those exact-candidate
+results without inferring native, fuzz, semantic approval or combined-tree success.
+
+Before each relevant S5 child, read the
+current [design v0.4](../docs/nevrotick-design-v0.4/README.md) and
+[latest HTML audit](../docs/nevrotick-design-v0.4/review/tray/REPORT-RU.md).
+Use the retained v0.2
 [UI specification](../docs/nevrotick-design-v0.2/docs/02-ui-spec.md),
 [source editor contract](../docs/nevrotick-design-v0.2/docs/03-server-configuration.md),
 [state/acceptance matrix](../docs/nevrotick-design-v0.2/docs/04-states-and-acceptance.md)

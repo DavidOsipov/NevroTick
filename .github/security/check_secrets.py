@@ -111,6 +111,12 @@ def main(argv=None):
                  '",'),
                 ("crates/ntp-exchange/tests/association.rs",
                  "    let to" + "ken = 0x0f1e_2d3c_4b5a_6978_u64;"),
+                ("scripts/native_input_source.py",
+                 'INPUT_PRODUCTION_TO' + 'KENS_SHA256 = "'
+                 'e3afe117f4b5ef1ee13cfeb9be376aa5c3da67c88e6d31ed50523c394a87cba8"'),
+                ("policy/slint-linux-sdk.json",
+                 '    "usr/include/freetype2/freetype/ft' + 'modapi.h": "'
+                 '3b05e210b4705017d68e00def6820749fd0fca2f185ab2bb5df06d71928e29eb",'),
             )
             for relative, text in reviewed_cases:
                 reviewed = control / relative
@@ -132,7 +138,7 @@ def main(argv=None):
                 reviewed.unlink()
                 unrelated.write_text(text + "\n")
                 if run(command, environment, timeout=30) != 1:
-                    raise ValueError("Public-text exception escaped its exact path.")
+                    raise ValueError(f"Public-text exception escaped its exact path: {relative}.")
                 unrelated.unlink()
                 reviewed.write_text(text + "\n")
                 if run(command, environment, timeout=30) != 0:

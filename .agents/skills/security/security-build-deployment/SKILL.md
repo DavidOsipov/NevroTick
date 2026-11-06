@@ -27,6 +27,15 @@ reinspect the final PE and bind package/signing records to its exact bytes.
 
 For packaged event-provider resources/channels or product Firewall/WFP policy, read [Windows host integration](../references/windows-host-integration.md): immutable payload/installed-resource receipts, actual service access/traffic observations, ownership-aware rollback/repair/removal.
 
+Contributor translation files use the [hostile-catalog chain](../../../../docs/plans/ui-localization.md#contributor-bytes-to-package-and-runtime).
+All JSON/CBOR remains potentially malicious, even English/generated/signed bytes.
+A future data-only lane must use an independently protected validator/contract,
+fixed admitted tools and pinned bounded inputs, enforced offline credential-free
+isolation, fixed output paths and atomic complete publication. Candidate scripts,
+configuration, artifacts and executable caches cannot replace that checker or
+run in a signing/secret job. Re-admit final resources at runtime; provenance alone
+proves no parser safety or truthful wording. This adds no workflow or execution.
+
 1. Trace source/config/lockfile/features/toolchain → host build scripts/proc macros/native tools → linked Windows binaries → complete local/submitted MSIX → actual Store-delivered artifact → installed services/UI/helper. Keep source, submitted and delivered identities/qualification distinct; Store processing can change bytes. `Cargo.lock` stays versionable; `target/` excluded. Lockfile reproducibility proves no origin trust or sandboxing.
 2. Inspect build-time execution and target/host distinction. Isolate untrusted builds; signing credentials/privileged runners must never execute untrusted PR source or poisoned artifacts. Constrain CI token permissions; inspect third-party action origins/immutable revisions and cache/artifact trust. Skill discussion alone grants no workflow additions or dependency pins.
 3. Verify final package-integrity declarations, immutable executable paths, selected PE/process mitigations, actual DLL/import/load paths, protected data ACLs and effective service tokens. Bind package/catalog identity and approved release to helper authorization; an unrelated Store-signed image remains unauthorized even if CIG admits its signer class. Rust crates linked into a binary are not separate runtime DLLs. Compiler flags/manifests are inputs, not effective proof; match the actual package, launch path and native dependencies. Linux builds cannot qualify these boundaries.

@@ -1,0 +1,16 @@
+{
+  "prototype_version": "0.4",
+  "source_commit": "8a66af924c509e898a9bab9bb3282f11b24fba93",
+  "model_tests": {
+    "passed": 33,
+    "failed": 0,
+    "skipped": 0
+  },
+  "serialized_view_documents": 370,
+  "default_mode": "Simple",
+  "scenarios": 23,
+  "source_review": "UX and architecture; listed findings resolved",
+  "standalone_sha256": "de5afa0fde4bbc7f30926302b1ef9fabf4a930ab16170b3615e125ab7e0c4a5a",
+  "browser_validation": "Not performed: local access blocked by environment policy",
+  "public_repo_changed": false
+}

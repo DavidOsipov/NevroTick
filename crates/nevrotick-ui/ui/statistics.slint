@@ -1,0 +1,28 @@
+import { SourceRow } from "types.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { SourceCopy } from "source-copy.slint";
+import { Theme } from "theme.slint";
+import { Panel, SecondaryText, SectionHeading, PageHeading, Badge, FactRow, Rule } from "components.slint";
+
+export component StatisticsPage inherits VerticalLayout {
+    in property <[SourceRow]> sources;
+    spacing: 20px;
+    vertical-stretch: 0;
+    PageHeading { kicker: FixtureCopy.statistics-tab; title: FixtureCopy.statistics-heading; description: FixtureCopy.statistics-description; }
+    Panel {
+        panel-background: Theme.soft;
+        Badge { text: FixtureCopy.one-snapshot; }
+        SectionHeading { text: FixtureCopy.statistics-empty-title; }
+        SecondaryText { text: SourceCopy.statistics-description; font-size: 13px; }
+    }
+    for source in root.sources: Panel {
+        SectionHeading { text: source.label; }
+        SecondaryText { text: source.host; }
+        GridLayout {
+            spacing: 22px;
+            FactRow { row: 0; col: 0; label: FixtureCopy.offset-label; value: FixtureCopy.not-measured; }
+            FactRow { row: 0; col: 1; label: FixtureCopy.uncertainty-label; value: FixtureCopy.unavailable; }
+        }
+    }
+    SecondaryText { text: FixtureCopy.positive-offset-note; }
+}

@@ -1,0 +1,34 @@
+{
+  "verdict": "pass",
+  "scope": "HTML prototype Chromium browser QA; no native Windows qualification",
+  "baseline": "351c1f2",
+  "initialSource": "2435ea21417964803cfae471d56cd0e4a48f200c",
+  "finalSource": "c6e08010ee98e354ef6d01342449e057a06eba1a",
+  "finalArtifacts": {
+    "index.html": "837677ac278a8c9a01297387dfbe7415d78f8d4052769bf80bfe62b66794b7ef",
+    "NevroTick-UI-v0.4.html": "5970857e19b26f467c67e35a84f5b22dac91a1310939b445418afcd3e28328bb"
+  },
+  "resolvedFindings": [
+    {
+      "severity": "P2",
+      "area": "Diagnostics event-local history scope",
+      "before": "screenshots/standalone-events-window-360.png",
+      "after": "screenshots/standalone-journal-fixed-360.png",
+      "fixedIn": "c6e08010ee98e354ef6d01342449e057a06eba1a"
+    }
+  ],
+  "openFindings": [],
+  "testLogs": [
+    "startup-ownership.browser.log",
+    "service-controls.browser.log",
+    "navigation-reset.browser.log",
+    "roughtime.browser.log",
+    "service-recovery-history.browser.log",
+    "independent-probe.log",
+    "journal-retest.log"
+  ],
+  "finalJournalMatrixCases": 6,
+  "screenshotsInspected": "See REPORT-RU.md; both HTML 360/1280 plus selected480; final journal+WindowsStatus360/Settings1280 recaptured and inspected",
+  "sourceEditsByQA": false,
+  "realWindowsOperations": false
+}

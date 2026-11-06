@@ -28,6 +28,12 @@ SPEC.loader.exec_module(ENV)
 STRICT_SPEC = importlib.util.spec_from_file_location("product_strict", ROOT / "scripts/check-strict.py")
 STRICT = importlib.util.module_from_spec(STRICT_SPEC)
 STRICT_SPEC.loader.exec_module(STRICT)
+SLINT_SPEC = importlib.util.spec_from_file_location("slint_dependency_profile", ROOT / "scripts/slint_dependency_profile.py")
+SLINT = importlib.util.module_from_spec(SLINT_SPEC)
+SLINT_SPEC.loader.exec_module(SLINT)
+SDK_SPEC = importlib.util.spec_from_file_location("slint_linux_sdk", ROOT / "scripts/slint_linux_sdk.py")
+SDK = importlib.util.module_from_spec(SDK_SPEC)
+SDK_SPEC.loader.exec_module(SDK)
 PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
 PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
@@ -48,7 +54,7 @@ BUILD_SCRIPTS = {"getrandom@0.4.3", "libc@0.2.191", "proc-macro2@1.0.107",
 # Bound concurrent LLVM test-binary links within the ordinary128-task sandbox.
 # Test execution and ten-worker mutation scheduling have separate policies.
 TEST_BUILD_JOBS = 6
-BOUNDED_TEST_BUILD_PACKAGES = {"time-core", "ntp-wire", "time-domain"}
+BOUNDED_TEST_BUILD_PACKAGES = {"nevrotick-ui", "time-core", "ntp-wire", "time-domain"}
 OPTIMIZED_DISCRIMINATORS = {
     "time-domain": "release_build_preserves_checked_admission",
     "ntp-exchange": "release_build_preserves_exchange_admission",
@@ -56,11 +62,29 @@ OPTIMIZED_DISCRIMINATORS = {
     "nevrotick-engine": "prepare_rejects_entered_runtime_before_native_startup",
 }
 ENGINE_PROCESSING_GUARD = "processing_guard_tests::processing_uses_fresh_deadline_and_current_control"
+PATCH_TEST_CASES = {"tests::ready", "tests::count",
+                    "non_unpin_future_keeps_its_address_and_drops_once_after_pending_polls"}
 POINTER = Path.home() / ".local/share/nevrotick/ui-m0.json"
 SOURCE_FILES = ("Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "rustfmt.toml", "clippy.toml",
                 "deny.toml", ".cargo/config.toml", ".config/nextest.toml")
-CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py")
+CHECKER_FILES = ("scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
+                 "scripts/slint_dependency_profile.py", "scripts/slint_linux_sdk.py")
+UI_TEXT_CHECKER_FILES = ("scripts/check-ui-text.py", "scripts/check_ui_text_coverage.py",
+                         "scripts/ui_source_io.py",
+                         "scripts/slint_text_graph.py", "scripts/ui_text_bindings.py", "scripts/protected_json.py",
+                         "scripts/tests/test_ui_text_coverage.py", "scripts/generate-ui-text.py",
+                         "scripts/ui_text_codegen.py", "scripts/ui-text-templates/projection-header.rs.in",
+                         "scripts/tests/test_ui_text_codegen.py",
+                         "scripts/tests/fixtures/ui-text-codegen-contract.json",
+                         "scripts/tests/fixtures/ui-text-codegen-output-sha256.json",
+                         "scripts/tests/fixtures/ui-text-codegen-contract-v2.json",
+                         "scripts/tests/fixtures/ui-text-codegen-output-v2-sha256.json",
+                         "scripts/native_text_graph.py", "scripts/tests/test_ui_text_native.py",
+                         "scripts/tests/fixtures/ui-text-native-source-v2.json")
 
+
+UI_NATIVE_INPUT_CHECKER_FILES = ("scripts/native_input_source.py",
+                                 "scripts/tests/test_native_input_source.py")
 
 def sha256(path: Path) -> str:
     """Hash a regular input without loading its complete content."""
@@ -91,8 +115,8 @@ def read_dependency_policy(path: Path) -> dict:
     if path.is_symlink() or not path.is_file():
         raise ENV.Incomplete("Missing regular dependency admission.")
     with path.open("rb") as stream:
-        payload = stream.read(512 * 1024 + 1)
-    if len(payload) > 512 * 1024:
+        payload = stream.read(SLINT.MAX_POLICY_BYTES + 1)
+    if len(payload) > SLINT.MAX_POLICY_BYTES:
         raise ENV.Incomplete("Dependency admission exceeds its byte bound.")
 
     def unique_fields(pairs):
@@ -108,15 +132,23 @@ def read_dependency_policy(path: Path) -> dict:
 
     try:
         policy = json.loads(payload.decode("utf-8"), object_pairs_hook=unique_fields, parse_constant=invalid_number)
-    except (UnicodeError, json.JSONDecodeError) as error:
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as error:
         raise ENV.Incomplete("Invalid dependency admission JSON.") from error
     if type(policy) is not dict:
         raise ENV.Incomplete("Dependency admission must be an object.")
+    if policy.get("schema_version") != 3 and len(payload) > 512 * 1024:
+        raise ENV.Incomplete("Legacy dependency admission exceeds its byte bound.")
     return policy
 
 
 def validate_dependency_policy(policy: dict) -> None:
     """Admit exact selected/metadata roles and two bounded target feature rows."""
+    if type(policy) is dict and policy.get("schema_version") == 3:
+        try:
+            SLINT.validate_policy(policy)
+        except SLINT.Incomplete as error:
+            raise ENV.Incomplete(str(error)) from error
+        return
     required = {"schema_version", "scope", "lockfile_sha256", "manifests_sha256",
                 "packages", "metadata_only_packages", "rows"}
     if (type(policy) is not dict or set(policy) != required or type(policy["schema_version"]) is not int
@@ -190,6 +222,11 @@ def validated_dependency_records(policy: dict, *, include_metadata: bool = False
 def validate_dependency_metadata(target: str, output: str, policy: dict) -> dict:
     """Compare actual frozen Cargo target identities/features with admitted policy."""
     validate_dependency_policy(policy)
+    if policy["schema_version"] == 3:
+        try:
+            return SLINT.validate_metadata(target, output, policy)
+        except SLINT.Incomplete as error:
+            raise ENV.Incomplete(str(error)) from error
     if target not in policy["rows"] or len(output.encode("utf-8")) > ENV.MAX_OUTPUT:
         raise ENV.Incomplete("Unadmitted or oversized dependency metadata row.")
     try:
@@ -238,6 +275,65 @@ def validate_dependency_metadata(target: str, output: str, policy: dict) -> dict
     return {"target": target, "external_packages": sorted(selected), "features": selected}
 
 
+def admit_patched_source(root: Path, record: dict) -> dict[str, str]:
+    """Freeze only exact reviewed local derivatives and their preserved source rights."""
+    try:
+        SLINT.validate_path_patch(record)
+    except SLINT.Incomplete as error:
+        raise ENV.Incomplete(str(error)) from error
+    is_spin = record["name"] == SLINT.PATCH_NAME
+    path = record["path"]
+    directory = root / path
+    if any(path.is_symlink() for path in (root / "third-party", directory)):
+        raise ENV.Incomplete("Linked patched-source ancestors are not admitted.")
+    files = inventory(directory)
+    preserved = SLINT.PATCH_PRESERVED_FILES if is_spin else SLINT.ACCESSKIT_PRESERVED_FILES
+    expected_files = (SLINT.PATCH_MODIFIED_FILES | set(preserved) | {".gitignore", "Makefile.toml", "README.md"}
+                      if is_spin else SLINT.ACCESSKIT_MODIFIED_FILES | set(preserved))
+    digest = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if (set(files) != expected_files or digest != record["files_sha256"]
+            or any(files.get(name) != value for name, value in record["modified_files_sha256"].items())
+            or any(files.get(name) != value for name, value in preserved.items())):
+        raise ENV.Incomplete("Patched source bytes, exact file set or preserved upstream rights changed.")
+    manifest = tomllib.loads((directory / "Cargo.toml").read_text())
+    if not is_spin:
+        upstream = tomllib.loads((directory / "Cargo.toml.upstream").read_text())
+        upstream["package"]["license"] = SLINT.ACCESSKIT_UPSTREAM["license"]
+        if manifest != upstream:
+            raise ENV.Incomplete("The AccessKit manifest may only change its exact composite source licence.")
+    else:
+        if (set(manifest) != {"package"} or manifest["package"].get("name") != SLINT.PATCH_NAME
+                or manifest["package"].get("version") != "0.1.1"
+                or manifest["package"].get("license") != SLINT.PATCH_UPSTREAM["license"]
+                or "build" in manifest["package"] or "links" in manifest["package"]
+                or "license-file" in manifest["package"]):
+            raise ENV.Incomplete("The reviewed path patch must remain a dependency/feature/build-free library.")
+        if tomllib.loads((directory / "Cargo.lock").read_text()) != {
+            "version": 4, "package": [{"name": SLINT.PATCH_NAME, "version": "0.1.1"}]
+        }:
+            raise ENV.Incomplete("Standalone path-patch lock must contain only its real local identity.")
+    return {path + "/" + name: value for name, value in files.items()}
+
+
+def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
+    """Bind local substitution to exact lock identities and unchanged normal edges."""
+    try:
+        SLINT.patch_names({"patched_packages": patches})
+        for record in patches:
+            SLINT.validate_path_patch(record)
+    except SLINT.Incomplete as error:
+        raise ENV.Incomplete(str(error)) from error
+    expected = {SLINT.PATCH_NAME: {"name": SLINT.PATCH_NAME, "version": "0.1.1"},
+                SLINT.ACCESSKIT_NAME: {"name": SLINT.ACCESSKIT_NAME, "version": "0.34.0",
+                    "dependencies": ["accesskit", "accesskit_consumer", "hashbrown 0.16.1",
+                                     "static_assertions", "windows", "windows-core"]}}
+    names = {record["name"] for record in patches}
+    actual = [package for package in packages if package["name"] in names]
+    if (len(actual) != len(names) or {package["name"] for package in actual} != names
+            or any(package != expected[package["name"]] for package in actual)):
+        raise ENV.Incomplete("A local path patch acquired a checksum, origin or unreviewed dependency edge.")
+
+
 def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     """Admit six reviewed members, explicit engine effects and the exact locked graph."""
     try:
@@ -254,6 +350,18 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
     if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):
         raise ENV.Incomplete("Expected exactly the reviewed UI-M0, wire, domain, exchange, core and engine workspace members.")
+    policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
+    validate_dependency_policy(policy)
+    slint_profile = policy["schema_version"] == 3
+    patches = policy.get("patched_packages", [])
+    expected_patch = {"crates-io": {record["name"]: {"path": record["path"]} for record in patches}} if patches else {}
+    if (workspace.get("patch", {}) != expected_patch or "replace" in workspace
+            or workspace["workspace"].get("exclude", []) != [record["path"] for record in patches]):
+        raise ENV.Incomplete("Unadmitted patch routing, replacement or workspace exclusion.")
+    workspace_package = workspace["workspace"].get("package", {})
+    if (workspace_package.get("license") != "GPL-2.0-only"
+            or "license-file" in workspace_package):
+        raise ENV.Incomplete("The shared workspace license must remain GPL-2.0-only.")
     if (workspace["workspace"].get("lints") != fragment["workspace"]["lints"]
             or workspace.get("profile") != fragment["profile"]):
         raise ENV.Incomplete("Workspace lint/profile policy differs from its owner.")
@@ -263,7 +371,19 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
         if (member.get("package", {}).get("name") != package
                 or member.get("lints") != {"workspace": True}):
             raise ENV.Incomplete("A member identity or inherited lints are missing.")
-        if member["package"].get("build") not in (None, False) or (root / directory / "build.rs").exists():
+        license_declaration = member["package"].get("license")
+        if package == PACKAGE:
+            license_admitted = license_declaration == "GPL-3.0-only"
+        else:
+            license_admitted = (license_declaration == {"workspace": True}
+                                and type(license_declaration.get("workspace")) is bool)
+        if not license_admitted or "license-file" in member["package"]:
+            raise ENV.Incomplete("First-party license roles require explicit UI GPL-3.0-only and inherited GPL-2.0-only elsewhere.")
+        if package == PACKAGE and slint_profile:
+            if (member["package"].get("build") not in (None, "build.rs")
+                    or sha256(root / SLINT.UI_BUILD) != policy["first_party_build_scripts"][SLINT.UI_BUILD]):
+                raise ENV.Incomplete("The UI build script differs from its exact reviewed source.")
+        elif member["package"].get("build") not in (None, False) or (root / directory / "build.rs").exists():
             raise ENV.Incomplete("An unadmitted first-party build script is present.")
         if package == PACKAGE:
             tables = [member, *member.get("target", {}).values()]
@@ -275,6 +395,48 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                         identity = declaration.get("package", name) if isinstance(declaration, dict) else name
                         if identity in {"tokio", "tokio-macros", "getrandom", "nevrotick-engine"}:
                             raise ENV.Incomplete("Runtime and transport dependencies belong only to the engine.")
+            required = {"garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]}}
+            required_target = {"cfg(windows)": {"dependencies": {
+                "windows-sys": {"version": "=0.61.2", "default-features": False, "features": [
+                    "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_System_LibraryLoader",
+                    "Win32_UI_WindowsAndMessaging", "Win32_UI_Controls",
+                ]},
+            }}}
+            required_keys = {"package", "lints", "dependencies", "target"}
+            if slint_profile:
+                required.update({
+                    "serde": {"version": "=1.0.229", "default-features": False, "features": ["std"]},
+                    "serde_json": {"version": "=1.0.154", "default-features": False, "features": ["std"]},
+                })
+                required_target["cfg(windows)"]["dependencies"]["windows-sys"]["features"].append("Win32_UI_Shell")
+                required_target["cfg(windows)"]["dependencies"]["windows"] = {
+                    "version": "=0.62.2", "default-features": False,
+                    "features": ["ApplicationModel", "Data_Xml_Dom", "Foundation", "UI_Notifications",
+                                 "Win32_System_Com", "Win32_System_WinRT"]}
+                required_target["cfg(windows)"]["dependencies"]["slint"] = {
+                    "version": "=1.18.1", "default-features": False,
+                    "features": ["std", "backend-winit", "renderer-software", "accessibility", "compat-1-18", "unstable-winit-030"]}
+                required_target["cfg(not(windows))"] = {"dependencies": {"slint": {
+                    "version": "=1.18.1", "default-features": False,
+                    "features": ["std", "renderer-software", "compat-1-18"]},
+                    "i-slint-core": {"version": "=1.18.1", "default-features": False,
+                                     "features": ["image-decoders", "svg"]}}}
+                required_keys.add("build-dependencies")
+                if (member.get("build-dependencies") != {"slint-build": {"version": "=1.18.1", "default-features": False,
+                                                                          "features": ["compat-1-18"]}}
+                        or type(member["build-dependencies"]["slint-build"].get("default-features")) is not bool
+                        or any(type(member.get("target", {}).get(condition, {}).get("dependencies", {}).get("slint", {}).get("default-features")) is not bool
+                               for condition in ("cfg(windows)", "cfg(not(windows))"))):
+                    raise ENV.Incomplete("The UI requires its exact reviewed Slint runtime/build profile.")
+            if (set(member) != required_keys
+                    or member["package"].get("version") != "0.0.0"
+                    or member.get("dependencies") != required
+                    or member.get("target") != required_target
+                    or any(type(member["dependencies"][name].get("default-features")) is not bool
+                           for name in required)
+                    or type(member["target"]["cfg(windows)"]["dependencies"]["windows-sys"].get("default-features")) is not bool
+                    or slint_profile and type(member["target"]["cfg(windows)"]["dependencies"]["windows"].get("default-features")) is not bool):
+                raise ENV.Incomplete("The UI requires only its exact reviewed baseline dependencies, defaults and target features.")
         if package == "ntp-wire" and set(member) != {"package", "lints"}:
             raise ENV.Incomplete("The pure NTP-wire member may not add dependencies, features or targets.")
         if package in {"time-domain", "time-core"}:
@@ -313,7 +475,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     or member.get("bin") != [{"name": "nevrotick-observe", "path": "src/bin/nevrotick-observe.rs"}]):
                 raise ENV.Incomplete("The engine requires its exact reviewed runtime/wire/domain dependencies and observe entrypoint.")
         local_packages.add((package, member["package"]["version"]))
-    policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
+    local_packages.update((record["name"], record["version"]) for record in patches)
     if policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
         raise ENV.Incomplete("The product lockfile differs from its dependency admission.")
     manifests = {name: sha256(root / name)
@@ -325,6 +487,10 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     if not expected or len(expected) != len(admitted):
         raise ENV.Incomplete("Dependency admission must contain unique nonempty packages.")
     packages = tomllib.loads((root / "Cargo.lock").read_text()).get("package", [])
+    # Cargo qualifies edges when the entire lock contains several versions,
+    # including versions inactive in this package's selected feature scope.
+    engine_random = ("getrandom 0.4.3" if sum(p["name"] == "getrandom" for p in packages) > 1
+                     else "getrandom")
     external = {(p["name"], p["version"], p.get("checksum")) for p in packages if "source" in p}
     local = [p for p in packages if "source" not in p]
     if (external != expected or len([p for p in packages if "source" in p]) != len(expected)
@@ -335,12 +501,15 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
             or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
-            or any(p.get("dependencies") != ["getrandom", "ntp-wire", "time-domain", "tokio"] for p in local if p["name"] == "nevrotick-engine")
+            or any(p.get("dependencies") != [engine_random, "ntp-wire", "time-domain", "tokio"] for p in local if p["name"] == "nevrotick-engine")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):
         raise ENV.Incomplete("Unadmitted dependency origin.")
+    validate_patched_lock(packages, patches)
     inputs = {name: sha256(root / name) for name in SOURCE_FILES}
+    for record in patches:
+        inputs.update(admit_patched_source(root, record))
     for member in PACKAGES.values():
         for name, digest in inventory(root / member).items():
             if (name.endswith("Cargo.toml") and name != "Cargo.toml") or ".cargo" in Path(name).parts:
@@ -353,6 +522,9 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             raise ENV.Incomplete("The required engine entrypoint or runtime-boundary suite is absent.")
     for name in (*STRICT.CONFIG_FILES, *CHECKER_FILES, "policy/ui-m0-dependencies.json", "policy/tool-manifest.json"):
         inputs[name] = sha256(root / name)
+    if slint_profile:
+        for name in (*UI_TEXT_CHECKER_FILES, *UI_NATIVE_INPUT_CHECKER_FILES):
+            inputs[name] = sha256(root / name)
     return policy, inputs
 
 
@@ -362,6 +534,51 @@ def product_deny(base: str, policy: dict, target: str) -> str:
     validate_dependency_policy(policy)
     if target not in policy["rows"]:
         raise ENV.Incomplete("Unadmitted dependency policy target.")
+    if policy["schema_version"] == 3:
+        if (parsed["licenses"]["allow"] != ["GPL-2.0-only"] or parsed["licenses"]["exceptions"]
+                or parsed["bans"]["build"]["allow-build-scripts"] or parsed["bans"]["skip"]
+                or "bypass" in parsed["bans"]["build"]):
+            raise ENV.Incomplete("Bootstrap dependency policy was unexpectedly broadened.")
+        records = SLINT.selected_records(policy)
+        row = policy["rows"][target]
+        exceptions = [{"crate": key, "allow": records[key]["selected_license"].split(" AND ")}
+                      for key in sorted(row["features"])]
+        exceptions.append({"crate": "nevrotick-ui@0.0.0", "allow": ["GPL-3.0-only"]})
+        duplicates = [{"crate": key, "reason": "Reviewed exact Slint software-profile duplicate; source identity pinned."}
+                      for key in row["duplicate_exceptions"]]
+        exception_text = "[" + ", ".join("{ crate = " + json.dumps(item["crate"]) + ", allow = "
+                                           + json.dumps(item["allow"]) + " }" for item in exceptions) + "]"
+        duplicate_text = "[" + ", ".join("{ crate = " + json.dumps(item["crate"]) + ", reason = "
+                                           + json.dumps(item["reason"]) + " }" for item in duplicates) + "]"
+        replacements = {"exceptions = []": "exceptions = " + exception_text,
+                        "allow-build-scripts = []": "allow-build-scripts = " + json.dumps(row["allowed_build_scripts"]),
+                        "skip = []": "skip = " + duplicate_text}
+        result = base
+        for before, after in replacements.items():
+            if base.count(before) != 1:
+                raise ENV.Incomplete("Dependency policy generation anchors changed.")
+            result = result.replace(before, after, 1)
+        parsed["licenses"]["exceptions"] = exceptions
+        parsed["bans"]["build"]["allow-build-scripts"] = row["allowed_build_scripts"]
+        parsed["bans"]["skip"] = duplicates
+        bypasses = {}
+        for entry in policy.get("archive_file_bypasses", []):
+            if entry["package"] in row["features"]:
+                bypasses.setdefault(entry["package"], []).append({"path": entry["path"], "checksum": entry["sha256"]})
+        if bypasses:
+            generated = []
+            for key, paths in sorted(bypasses.items()):
+                paths.sort(key=lambda item: item["path"])
+                generated.append({"crate": key, "allow": paths})
+                result += "\n[[bans.build.bypass]]\ncrate = " + json.dumps(key) + "\nallow = [" + ", ".join(
+                    "{ path = " + json.dumps(item["path"]) + ", checksum = " + json.dumps(item["checksum"]) + " }"
+                    for item in paths) + "]\n"
+            # No build-script/required-features/allow-globs shortcut: those may
+            # bypass the complete package scan rather than this exact file.
+            parsed["bans"]["build"]["bypass"] = generated
+        if tomllib.loads(result) != parsed:
+            raise ENV.Incomplete("Product policy generation changed an unrelated dependency rule.")
+        return result
     expressions = {entry["selected_license"] for entry in policy["packages"]}
     if expressions != {"BSL-1.0", "MIT", "MIT AND Unicode-3.0"}:
         raise ENV.Incomplete("The product license/build-script admission needs a reviewed policy change.")
@@ -371,15 +588,21 @@ def product_deny(base: str, policy: dict, target: str) -> str:
     # cargo-deny 0.20.2 PackageSpec uses '@' for an exact version. '=' alone
     # remains part of the crate name and would reject the reviewed scripts.
     builds = policy["rows"][target]["allowed_build_scripts"]
-    if parsed["licenses"]["allow"] != ["GPL-2.0-only"] or parsed["bans"]["build"]["allow-build-scripts"]:
+    if (parsed["licenses"]["allow"] != ["GPL-2.0-only"] or parsed["licenses"]["exceptions"]
+            or parsed["bans"]["build"]["allow-build-scripts"]):
         raise ENV.Incomplete("Bootstrap dependency policy was unexpectedly broadened.")
     before = 'allow = ["GPL-2.0-only"]'
     build_before = "allow-build-scripts = []"
-    if base.count(before) != 1 or base.count(build_before) != 1:
+    exception_before = "exceptions = []"
+    if base.count(before) != 1 or base.count(build_before) != 1 or base.count(exception_before) != 1:
         raise ENV.Incomplete("Dependency policy generation anchors changed.")
+    exceptions = [{"crate": "nevrotick-ui@0.0.0", "allow": ["GPL-3.0-only"]}]
     result = base.replace(before, "allow = " + json.dumps(["GPL-2.0-only", *licenses]), 1)
     result = result.replace(build_before, "allow-build-scripts = " + json.dumps(builds), 1)
+    result = result.replace(exception_before,
+                            'exceptions = [{ crate = "nevrotick-ui@0.0.0", allow = ["GPL-3.0-only"] }]', 1)
     parsed["licenses"]["allow"] = ["GPL-2.0-only", *licenses]
+    parsed["licenses"]["exceptions"] = exceptions
     parsed["bans"]["build"]["allow-build-scripts"] = builds
     if tomllib.loads(result) != parsed:
         raise ENV.Incomplete("Product policy generation changed an unrelated dependency rule.")
@@ -420,6 +643,15 @@ def admit_vendor(directory: Path, policy: dict) -> dict[str, str]:
         map_hash = hashlib.sha256(json.dumps(files, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if admission.get("files_sha256") != map_hash:
             raise ENV.Incomplete("Vendor checksum map differs from the reviewed archive extraction.")
+    for bypass in policy.get("archive_file_bypasses", []):
+        identity = bypass["package"]
+        matched = next((record for record in policy["packages"]
+                        if record["name"] + "@" + record["version"] == identity), None)
+        relative = bypass["path"]
+        if (matched is None or not re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", relative)
+                or any(part in {".", ".."} for part in relative.split("/"))
+                or sha256(directory / (matched["name"] + "-" + matched["version"]) / relative) != bypass["sha256"]):
+            raise ENV.Incomplete("An exact archive-file bypass does not match the admitted source bytes.")
     return inventory(directory)
 
 
@@ -449,11 +681,114 @@ def admit_tools(root: Path, toolchain: Path, extension: Path | None, lane: str) 
     return identities
 
 
-def commands(lane: str) -> list[tuple[str, list[str]]]:
+def text_contract_commands(lane: str, *, schema_version: int) -> list[tuple[str, list[str]]]:
+    """Check source-to-text coverage and its fault controls inside the frozen row."""
+    if type(schema_version) is not int or schema_version not in (2, 3):
+        raise ENV.Incomplete("Unknown text-contract verification schema.")
+    if lane not in ("portable", "windows", "dependencies"):
+        raise ENV.Incomplete("Unknown text-contract verification row.")
+    if schema_version == 2:
+        return []
+    return [
+        ("ui-text-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                              "discover", "-s", "scripts/tests", "-p", "test_ui_text_coverage.py", "-v"]),
+        ("ui-text-codegen-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                      "discover", "-s", "scripts/tests", "-p", "test_ui_text_codegen.py", "-v"]),
+        ("ui-text-native-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                      "discover", "-s", "scripts/tests", "-p", "test_ui_text_native.py", "-v"]),
+        ("ui-text-coverage", ["python3", "-X", "dev", "-Werror", "-B",
+                              "scripts/check-ui-text.py", "--root", "/work/fixture"]),
+    ]
+
+
+def native_input_control_commands(lane: str, *, schema_version: int) -> list[tuple[str, list[str]]]:
+    """Run the frozen UI native-input source guard and controls before Cargo."""
+    if type(schema_version) is not int or schema_version not in (2, 3):
+        raise ENV.Incomplete("Unknown native-input verification schema.")
+    if lane not in ("portable", "windows", "dependencies"):
+        raise ENV.Incomplete("Unknown native-input verification row.")
+    if schema_version == 2:
+        return []
+    return [("ui-native-input-controls", ["python3", "-X", "dev", "-Werror", "-B", "-m", "unittest",
+                                          "discover", "-s", "scripts/tests", "-p", "test_native_input_source.py", "-v"])]
+
+
+def validate_text_control_result(output: str) -> int:
+    """Require actual nonempty unittest execution without ignored fault controls."""
+    counts = re.findall(r"^Ran ([1-9][0-9]*) tests? in [^\n]+$", output, re.MULTILINE)
+    if len(counts) != 1 or output.rstrip().splitlines()[-1:] != ["OK"]:
+        raise ENV.Incomplete("UI text controls require nonempty unskipped passing execution.")
+    return int(counts[0])
+
+
+def validate_text_coverage_result(output: str) -> dict:
+    """Retain explicit complete forward/reverse coverage, never an empty success."""
+    if len(output.encode("utf-8")) > 65536:
+        raise ENV.Incomplete("UI text coverage summary exceeds its byte budget.")
+    try:
+        result = json.loads(output)
+    except (ValueError, RecursionError) as error:
+        raise ENV.Incomplete("UI text coverage did not return a JSON summary.") from error
+    if (type(result) is not dict or result.get("status") != "passed" or result.get("errors") != []
+            or type(result.get("active_ids")) is not int or result["active_ids"] <= 0
+            or type(result.get("used_ids")) is not int or result["used_ids"] != result["active_ids"]):
+        raise ENV.Incomplete("UI text coverage requires nonempty complete forward/reverse success.")
+    return result
+
+
+def commands(lane: str, *, schema_version: int = 2,
+             patched_packages: tuple[str, ...] = ()) -> list[tuple[str, list[str]]]:
     """Select explicit product commands; never replace execution by bootstrap controls."""
+    if type(schema_version) is not int or schema_version not in (2, 3):
+        raise ENV.Incomplete("Unknown product dependency schema.")
+    if (type(patched_packages) is not tuple or patched_packages not in SLINT.PATCH_NAME_SETS
+            or patched_packages and schema_version != 3):
+        raise ENV.Incomplete("Unknown patched package verification scope.")
     cargo = ["cargo", "--config", 'source.crates-io.replace-with="reviewed"',
              "--config", 'source.reviewed.directory="/vendor"']
     base = ["--workspace", "--frozen", "--jobs", "12"]
+    if schema_version == 3:
+        targets = (HOST_TARGET, ENV.WINDOWS_TARGET) if lane == "dependencies" else (
+            (HOST_TARGET,) if lane == "portable" else (ENV.WINDOWS_TARGET,) if lane == "windows" else ())
+        if not targets:
+            raise ENV.Incomplete("Unknown product verification row.")
+        preflight = []
+        for target in targets:
+            preflight.extend([
+                ("dependency-metadata-" + target, [*cargo, "metadata", "--frozen", "--offline",
+                                                   "--format-version", "1", "--filter-platform", target]),
+                ("dependency-tree-" + target, [*cargo, "tree", "--frozen", "--offline", "--target", target,
+                                               "--workspace", "--edges", "normal,build", "--prefix", "indent",
+                                               "--charset", "ascii", "--format", "{p}|{f}"]),
+            ])
+            for package in (*PACKAGES, *((SLINT.PATCH_NAME,) if SLINT.PATCH_NAME in patched_packages else ())):
+                preflight.append(("dependency-tree-" + package + "-" + target,
+                                  [*cargo, "tree", "--frozen", "--offline", "--target", target,
+                                   "--package", package, "--edges", "normal,build,dev", "--prefix", "indent",
+                                   "--charset", "ascii", "--format", "{p}|{f}"]))
+            if lane == "dependencies":
+                preflight.append(("dependency-" + target, ["/tools/cargo-deny", "--frozen", "--target", target,
+                                                           "--metadata-path", "/work/selected-metadata-" + target + ".json",
+                                                           "check", "--deny", "warnings"]))
+        if lane == "dependencies":
+            return preflight
+        patch_checks = []
+        if SLINT.PATCH_NAME in patched_packages:
+            manifest = "/work/fixture/" + SLINT.PATCH_PATH + "/Cargo.toml"
+            compiler = [*cargo, "check", "--manifest-path", manifest, "--frozen", "--jobs", "6", "--all-targets"]
+            if lane == "windows":
+                compiler.extend(["--target", ENV.WINDOWS_TARGET])
+            patch_checks.append(("patch-compiler", compiler))
+            if lane == "portable":
+                patch_checks.extend([
+                    ("product-tests:spin_on", [*cargo, "nextest", "run", "--manifest-path", manifest,
+                                               "--frozen", "--build-jobs", "6", "--lib", "--tests",
+                                               "--config-file", "/work/fixture/.config/nextest.toml",
+                                               "--user-config-file", "none", "--no-tests=fail"]),
+                    ("doctests:spin_on", [*cargo, "test", "--manifest-path", manifest,
+                                          "--frozen", "--jobs", "6", "--doc"]),
+                ])
+        return preflight + patch_checks + commands(lane)
     if lane == "portable":
         return [
             ("format", ["cargo", "fmt", "--all", "--", "--check"]),
@@ -562,12 +897,102 @@ def export_host_engine_artifact(work: Path, output: Path) -> dict:
             "target": HOST_TARGET, "binary_name": "nevrotick-observe"}
 
 
+def require_slint_capture(args, policy: dict) -> bool:
+    """Admit optional offscreen capture only with explicit portable SDK/output."""
+    requested = getattr(args, "capture_slint", False)
+    if type(requested) is not bool:
+        raise ENV.Incomplete("Slint capture requires an explicit boolean opt-in.")
+    if requested and (args.lane != "portable" or policy.get("schema_version") != 3
+                      or getattr(args, "linux_sdk_dir", None) is None
+                      or getattr(args, "output_dir", None) is None):
+        raise ENV.Incomplete("Slint capture requires portable schema 3, the admitted SDK and new output.")
+    return requested
+
+
+def slint_capture_sizes() -> dict[str, tuple[int, int]]:
+    """Return the exact 50-frame matrix, including grouped preferences and modals."""
+    names = {f"{mode}-{page}-{width}.ppm": width
+             for width in (640, 1080)
+             for mode, pages in (("simple", ("status", "settings", "about")),
+                                 ("power", ("status", "sources", "statistics", "diagnostics", "settings", "about")))
+             for page in pages}
+    names |= {"source-invalid-1080.ppm": 1080, "interval-invalid-1080.ppm": 1080,
+                    "interval-invalid-640.ppm": 640, "source-add-ntp-1080.ppm": 1080,
+                    "source-review-1080.ppm": 1080, "source-empty-640.ppm": 640,
+                    "source-empty-1080.ppm": 1080}
+    sizes = {name: (width, 780) for name, width in names.items()}
+    sizes.update({"recovery-640.ppm": (640, 780), "recovery-1080.ppm": (1080, 780),
+                  "recovery-invalid-640.ppm": (640, 780),
+                  "recovery-invalid-640x600.ppm": (640, 600),
+                  "interval-invalid-640x600.ppm": (640, 600),
+                  "notifications-simple-640x600.ppm": (640, 600),
+                  "personal-simple-640x600.ppm": (640, 600),
+                  "recovery-leave-640x600.ppm": (640, 600),
+                  "quit-warning-top-640x600.ppm": (640, 600),
+                  "quit-warning-bottom-640x600.ppm": (640, 600),
+                  "quit-warning-long-top-640x600.ppm": (640, 600),
+                  "quit-warning-long-bottom-640x600.ppm": (640, 600),
+                  "service-simple-640.ppm": (640, 780),
+                  "service-power-640x600.ppm": (640, 600),
+                  "diagnostic-report-640.ppm": (640, 780),
+                  "diagnostic-report-1080.ppm": (1080, 780),
+                  "diagnostic-collection-640x600.ppm": (640, 600),
+                  "diagnostic-correction-640x600.ppm": (640, 600),
+                  "policy-ntp-review-640x600.ppm": (640, 600),
+                  "policy-ntp-review-1080x780.ppm": (1080, 780),
+                  "policy-observe-review-640x600.ppm": (640, 600),
+                  "policy-observe-review-1080x780.ppm": (1080, 780),
+                  "sources-query-640x600.ppm": (640, 600),
+                  "sources-no-match-640x600.ppm": (640, 600),
+                  "source-details-640x600.ppm": (640, 600)})
+    return sizes
+
+
+def slint_capture_build_command() -> list[str]:
+    """Bound debug information only for this developer capture invocation.
+
+    The fixed global config keeps ordinary dev compilation while suppressing UI
+    package debug data in its library and capture example. Final-only stripping
+    also keeps the linked capture small. Manifest profiles, assertions, overflow
+    checks and sandbox limits stay unchanged; other build rows get no override.
+    """
+    return ["cargo", "--config", "profile.dev.package.nevrotick-ui.debug=0", "rustc",
+            "--frozen", "--offline", "--jobs", "6",
+            "--package", PACKAGE, "--example", "capture", "--", "-C", "strip=debuginfo"]
+
+
+def export_slint_captures(work: Path, output: Path) -> dict:
+    """Validate the entire bounded frame set before exporting any capture."""
+    source = work / "slint-captures"
+    expected = slint_capture_sizes()
+    if (source.is_symlink() or not source.is_dir()
+            or {path.name for path in source.iterdir()} != set(expected)):
+        raise ENV.Incomplete("Slint capture needs its exact selected frame inventory.")
+    records = {}
+    for name, (width, height) in expected.items():
+        path = source / name
+        header = f"P6\n{width} {height}\n255\n".encode("ascii")
+        if path.is_symlink() or not path.is_file() or path.stat().st_size != len(header) + width * height * 3:
+            raise ENV.Incomplete("Slint capture is linked, truncated or has an unselected size.")
+        with path.open("rb") as stream:
+            if stream.read(len(header)) != header:
+                raise ENV.Incomplete("Slint capture has an unselected PPM header.")
+        records[name] = {"sha256": sha256(path), "width": width, "height": height}
+    destination = output / "slint-captures"
+    destination.mkdir(mode=0o700)
+    for name, record in records.items():
+        shutil.copyfile(source / name, destination / name)
+        if sha256(destination / name) != record["sha256"]:
+            raise ENV.Incomplete("Slint capture changed during export.")
+    return {"scope": "Public software platform on Linux; no native Windows observation", "files": records}
+
+
 def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
     """Reject empty, wrong-package or skipped behavior despite a zero runner exit."""
     kind, _, package = lane.partition(":")
     if kind not in {"product-tests", "doctests", "optimized-tests"}:
         return None
-    if package not in PACKAGES:
+    if package not in {*PACKAGES, SLINT.PATCH_NAME}:
         raise ENV.Incomplete("Test accounting identifies an unreviewed package.")
     if kind == "optimized-tests" and package not in OPTIMIZED_DISCRIMINATORS:
         raise ENV.Incomplete("Optimized test accounting identifies an unreviewed package/profile.")
@@ -586,6 +1011,8 @@ def validate_test_result(lane: str, output: str, work: Path) -> dict | None:
         names = [case.get("name") for case in cases]
         if package == "nevrotick-engine" and ENGINE_PROCESSING_GUARD not in names:
             raise ENV.Incomplete("Engine tests did not execute the processing guard unit.")
+        if package == SLINT.PATCH_NAME and not PATCH_TEST_CASES <= set(names):
+            raise ENV.Incomplete("Patched spin_on tests did not execute its unit and non-Unpin/drop regression controls.")
         if kind == "optimized-tests" and OPTIMIZED_DISCRIMINATORS[package] not in names:
             raise ENV.Incomplete("Optimized tests did not execute the release admission discriminator.")
         return {"package": package, "executed": len(cases), "test_names": names}
@@ -606,9 +1033,13 @@ def clear_test_report(lane: str, work: Path) -> None:
         report.unlink(missing_ok=True)
 
 
-def summarize_test_counts(records: list[dict]) -> dict:
+def summarize_test_counts(records: list[dict], *, patched_packages: tuple[str, ...] = ()) -> dict:
     """Require ordinary, doctest and selected optimized evidence before aggregating."""
-    counts = {package: {} for package in PACKAGES}
+    if type(patched_packages) is not tuple or patched_packages not in SLINT.PATCH_NAME_SETS:
+        raise ENV.Incomplete("Unknown patched test-accounting owner.")
+    # AccessKit is selected only by the Windows GUI graph, never a standalone test owner.
+    standalone = (SLINT.PATCH_NAME,) if SLINT.PATCH_NAME in patched_packages else ()
+    counts = {package: {} for package in (*PACKAGES, *standalone)}
     for record in records:
         kind, _, package = record["lane"].partition(":")
         if kind not in {"product-tests", "doctests", "optimized-tests"}:
@@ -631,7 +1062,7 @@ def summarize_test_counts(records: list[dict]) -> dict:
 
 def sandbox(toolchain: Path, work: Path, source: Path, vendor: Path,
             command: list[str], extension: Path | None, libraries: Path | None = None,
-            extension_name: str = "cargo-nextest") -> list[str]:
+            extension_name: str = "cargo-nextest", linux_sdk: Path | None = None) -> list[str]:
     """Mount only reviewed inputs and owned output; keep the source snapshot read-only."""
     invocation = ENV.sandbox_command(toolchain, work, command)
     index = invocation.index("--")
@@ -641,6 +1072,8 @@ def sandbox(toolchain: Path, work: Path, source: Path, vendor: Path,
         extra += ["--ro-bind", str(extension), "/tools/" + extension_name]
     if libraries:
         extra += ["--ro-bind", str(libraries), "/xwin"]
+    if linux_sdk:
+        extra += SDK.sandbox_arguments(linux_sdk)
     return invocation[:index] + extra + invocation[index:]
 
 
@@ -749,6 +1182,24 @@ def execute(root: Path, args, report: dict) -> None:
     report["tools"] = admit_tools(root, toolchain, extension, args.lane)
     report["source_sha256"] = source_identity
     report["lanes"] = []
+    capture_requested = require_slint_capture(args, policy)
+    if capture_requested:
+        capture_output = args.output_dir.resolve()
+        if (capture_output == root or capture_output.is_relative_to(root)
+                or args.output_dir.exists() or args.output_dir.is_symlink()):
+            raise ENV.Incomplete("Slint capture output must be new and outside the checkout.")
+    sdk_directory = getattr(args, "linux_sdk_dir", None)
+    sdk_inputs = None
+    if sdk_directory is not None:
+        if args.lane != "portable" or policy["schema_version"] != 3:
+            raise ENV.Incomplete("The optional Linux SDK belongs only to portable Slint checks.")
+        sdk_directory = sdk_directory.resolve(strict=True)
+        try:
+            sdk_inputs = SDK.admit(sdk_directory, root / SDK.POLICY)
+        except (SDK.Incomplete, OSError, ValueError) as error:
+            raise ENV.Incomplete(str(error)) from error
+        report["linux_sdk"] = sdk_inputs
+        source_identity[SDK.POLICY] = sha256(root / SDK.POLICY)
     scratch = args.scratch_root.resolve(strict=True)
     if scratch == root or scratch.is_relative_to(root):
         raise ENV.Incomplete("Product scratch must be outside the checkout.")
@@ -793,7 +1244,10 @@ def execute(root: Path, args, report: dict) -> None:
         else:
             report["effective_deny_sha256"] = sha256(source / "deny.toml")
         report["effective_nextest_sha256"] = sha256(source / ".config/nextest.toml")
-        report["checker_sha256"] = {name: source_identity[name] for name in CHECKER_FILES}
+        checker_names = (*CHECKER_FILES, *UI_TEXT_CHECKER_FILES, *UI_NATIVE_INPUT_CHECKER_FILES) if policy["schema_version"] == 3 else CHECKER_FILES
+        report["checker_sha256"] = {name: source_identity[name] for name in checker_names}
+        metadata_outputs = {}
+        tree_outputs = {}
         def run(label, command):
             target: str | None = None
             if label.startswith("dependency-"):
@@ -802,29 +1256,74 @@ def execute(root: Path, args, report: dict) -> None:
                 (source / "deny.toml").write_text(product_deny(deny_base, policy, target))
                 report.setdefault("effective_deny_sha256_by_target", {})[target] = sha256(source / "deny.toml")
             clear_test_report(label, work)
+            output_budget = ({"max_output": SLINT.MAX_METADATA_BYTES}
+                             if policy["schema_version"] == 3 and label.startswith("dependency-metadata-") else {})
             result = ENV.run(sandbox(toolchain, work, source, vendor, command, extension, libraries,
-                                    "cargo-deny" if args.lane == "dependencies" else "cargo-nextest"),
+                                    "cargo-deny" if args.lane == "dependencies" else "cargo-nextest", sdk_directory),
                              cwd=root, timeout=300,
-                             environment={"PATH": "/usr/bin:/bin", "NEVROTICK_SYNTHETIC_CREDENTIAL": "synthetic-control"})
+                             environment={"PATH": "/usr/bin:/bin", "NEVROTICK_SYNTHETIC_CREDENTIAL": "synthetic-control"},
+                             **output_budget)
             record = {"lane": label, "command": command, "exit_code": result["exit_code"],
                       "failure": result["failure"], "output": result["output"]}
             report["lanes"].append(record)
             output = ENV.require_ok(result)
+            if label in {"ui-text-controls", "ui-text-codegen-controls", "ui-text-native-controls", "ui-native-input-controls"}:
+                record["executed_controls"] = validate_text_control_result(output)
+            if label == "ui-text-coverage":
+                record["text_coverage"] = validate_text_coverage_result(output)
             if label.startswith("dependency-metadata-"):
                 if target is None:
                     raise ENV.Incomplete("Dependency metadata lacks its selected target.")
                 record["dependency_metadata"] = validate_dependency_metadata(target, output, policy)
+                if policy["schema_version"] == 3:
+                    metadata_outputs[target] = output
+                    tree_outputs[target] = {}
+            if label.startswith("dependency-tree-"):
+                if target not in metadata_outputs:
+                    raise ENV.Incomplete("Selected tree needs its preceding validated metadata row.")
+                try:
+                    scope = command[command.index("--package") + 1] if "--package" in command else "workspace"
+                    record["dependency_tree"] = SLINT.validate_tree(target, output, policy, scope=scope)
+                    tree_outputs[target][scope] = output
+                    scopes = SLINT.package_scopes(policy)
+                    complete = set(tree_outputs[target]) == {"workspace", *scopes}
+                    projection = (SLINT.selected_metadata(
+                        target, metadata_outputs[target], tree_outputs[target]["workspace"], policy,
+                        package_trees={package: tree_outputs[target][package] for package in scopes})
+                        if complete else None)
+                except SLINT.Incomplete as error:
+                    raise ENV.Incomplete(str(error)) from error
+                if projection is not None:
+                    projected = work / ("selected-metadata-" + target + ".json")
+                    projected.write_text(json.dumps(projection, sort_keys=True, separators=(",", ":")))
+                    record["selected_metadata_sha256"] = sha256(projected)
             counts = validate_test_result(label, output, work)
             if counts:
                 record["tests"] = counts
             print(f"PASSED: {label}", flush=True)
             return output
         boundary_control(run)
-        for label, command in commands(args.lane):
+        for label, command in native_input_control_commands(args.lane, schema_version=policy["schema_version"]):
             run(label, command)
+        for label, command in text_contract_commands(args.lane, schema_version=policy["schema_version"]):
+            run(label, command)
+        patched_names = tuple(record["name"] for record in policy.get("patched_packages", []))
+        for label, command in commands(args.lane, schema_version=policy["schema_version"], patched_packages=patched_names):
+            run(label, command)
+        if capture_requested:
+            run("slint-capture-build", slint_capture_build_command())
+            run("slint-capture", ["/work/target/debug/examples/capture"])
         if args.lane == "portable":
-            report["test_counts"] = summarize_test_counts(report["lanes"])
-        if admit_product(root)[1] != source_identity or admit_vendor(vendor, policy) != vendor_identity:
+            report["test_counts"] = summarize_test_counts(report["lanes"], patched_packages=patched_names)
+        final_source = admit_product(root)[1]
+        if sdk_inputs:
+            final_source[SDK.POLICY] = sha256(root / SDK.POLICY)
+            try:
+                if SDK.admit(sdk_directory, root / SDK.POLICY) != sdk_inputs:
+                    raise ENV.Incomplete("Native SDK inputs changed during verification.")
+            except (SDK.Incomplete, OSError, ValueError) as error:
+                raise ENV.Incomplete(str(error)) from error
+        if final_source != source_identity or admit_vendor(vendor, policy) != vendor_identity:
             raise ENV.Incomplete("Source or dependency inputs changed during product verification.")
         if library_inputs and (library_inventory(libraries) != library_inputs[1]
                                or sha256(args.xwin_inventory) != report["xwin_inventory_sha256"]
@@ -845,6 +1344,8 @@ def execute(root: Path, args, report: dict) -> None:
                 report["artifact"] = export_windows_artifacts(work, output)
             elif args.lane == "portable":
                 report["engine_artifact"] = export_host_engine_artifact(work, output)
+                if capture_requested:
+                    report["slint_captures"] = export_slint_captures(work, output)
             (output / "verification.json").write_text(json.dumps(report, indent=2) + "\n")
 
 
@@ -852,8 +1353,9 @@ def main(argv=None) -> int:
     """Resolve explicit/default paths without installing or fetching anything."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("portable", "windows", "dependencies"), default="portable")
+    parser.add_argument("--capture-slint", action="store_true")
     for name in ("vendor-dir", "scratch-root", "toolchain-dir", "nextest", "deny", "xwin-config", "xwin-inventory",
-                 "advisory-receipt", "output-dir", "json"):
+                 "advisory-receipt", "output-dir", "json", "linux-sdk-dir"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
     report = {"scope": f"UI-M0, wire, domain, exchange, synthetic regression and controlled-loopback engine pilot {args.lane} verification", "status": "incomplete",
