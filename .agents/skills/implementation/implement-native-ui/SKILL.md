@@ -1,36 +1,54 @@
 ---
 name: "implement-native-ui"
-description: "Implement or review NevroTick native Windows controls, status presentation, keyboard and focus behavior, accessibility and localization."
+description: "Implement or review NevroTick Slint UI, Windows adapters, status presentation, keyboard and focus behavior, accessibility and localization."
 ---
 
 # Implement native UI
 
-Apply canonical architecture section 16.5 before the general guidance below.
-During UI-M0 use fixture-only, unelevated Slint views, sample-data labels and
-disabled protected actions. Keep D1 display, D2 production state/policy and D3
-full keyboard/Narrator/UIA work Deferred with owners/re-entry triggers; do not
-implement or qualify them as UI-M0 prerequisites. Retain inherited toolkit
-control behavior, accessible labels and the milestone's native observations.
+For Slint-specific code and build work, also use
+[implement-slint](../implement-slint/SKILL.md). Its conditional references cover
+Rust integration, language/models, Windows lifecycle, dependencies/assets,
+testing and source examples; this skill retains product interaction semantics.
 
-Use canonical architecture section 16 and
-[OD-11](../../../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
-For Slint components, models, callbacks, layouts and the toolkit build profile,
-use the [Slint implementation skill](../implement-slint/SKILL.md) and only its
-task-relevant references; this leaf owns the shared native UI requirements.
-Slint is the selected complete replacement for Win32 common controls. The
-[existing S0.5 task](../../../../tasks/s0.5-ui-comparison.md) owns the migration;
-do not ask for toolkit selection again. Pin and admit the actual Slint licence,
-backend/renderer/features and dependency graph before adoption. Keep narrow
-Windows adapters for required OS integration. Checked-in Win32 source and
-historical measurements remain the pre-migration baseline, not Slint evidence.
-Source preparation and admitted fixture implementation may parallel Core; retain
-native execution holds and one owner for shared schemas/Cargo graph. Translating
-the HTML reference does not justify webviews or live-service integration.
+Apply canonical architecture section 16.5 before the general guidance below.
+During UI-M0 use a fixture-only, unelevated UI, sample-data labels and disabled
+protected actions. Keep D1 display, D2 production state/policy and D3 full
+keyboard/Narrator/UIA work Deferred with owners/re-entry triggers; do not implement
+or qualify them as UI-M0 prerequisites. Preserve labels and the milestone's native
+observations. The retained Win32 adapter is historical source; its inherited
+control behavior and evidence do not transfer to the current Slint adapter.
+Read current [S0.5](../../../../tasks/s0.5-ui-comparison.md) addenda and the
+[GUI handoff](../../../../tasks/slint-gui-handoff.md) for the admitted migration
+scope, actual source and remaining native/text-approval dependencies.
+
+[OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+and architecture section 16 select Slint as the default and complete Win32 UI
+replacement. The Slint 1.18.1 winit/software-renderer, Fluent-style configuration
+is the researched starting point; inspect the actual admitted manifest and graph.
+The checked-in Windows entrypoint selects Slint; the old Win32 adapter is retained
+historical source. Keep `windows`/`windows-sys` in narrow OS adapters where needed.
+Slint widgets are drawn by Slint, not inherited Win32 child controls; qualify actual
+accessibility integration at its task trigger. The pilot's omitted accessibility
+feature is no permanent product policy. David approved GPL-3.0-only for the
+original GUI while Chrony-derived Core/engine remains GPL-2.0-only. Do not reopen
+that choice; apply the exact grant/provenance inventory and remaining composition,
+feature, security, resource, native and package checks. Source preparation and
+admitted fixture work may parallel Core; retain execution holds and one shared
+graph/schema owner. Translating website HTML skills adds no webview or toolkit
+selection requirement.
+
+Review Slint-generated Rust and its unsafe/lint boundary with the selected compiler
+and features. The pilot's `deny(unsafe_code)` accommodation for macro-owned
+allowances grants no blanket product lint or unsafe-code waiver. Record generated
+unsafe scopes, handwritten adapter contracts and any narrowly justified allowance
+before product admission. Keep callbacks and views on their required UI thread;
+use weak component handles where ownership cycles are possible, and observe
+last-window close, event-loop shutdown and actual resource release.
 
 Trace user task, control relationships, current status owner and effect path.
-Choose Slint controls and Windows UI Automation patterns expressing actual action,
-value and selection semantics. Toolkit accessibility support alone proves no
-keyboard/screen-reader behavior on the selected Windows backend.
+Choose Slint widgets and their Windows accessibility integration to express actual
+action, value and selection semantics. Verify the resulting UI Automation patterns;
+widget names or source declarations alone prove no keyboard/screen-reader behavior.
 
 Preserve these product semantics:
 
@@ -68,7 +86,7 @@ production Apply, persistence, service policy or other D2 behavior.
 
 Select Rust/FFI format, compiler/Clippy and focused checks through the
 [configured-tool workflows](../../testing/references/configured-tooling.md),
-using the UI crate's actual Windows target and selected toolkit/binding features. Keep dependency
+using the UI crate's actual Windows target and binding features. Keep dependency
 admission separate from fixture behavior. During UI-M0 retain those engineering
 checks and M0 native observations; apply the full accessibility guidance below
 only at its re-entry trigger.

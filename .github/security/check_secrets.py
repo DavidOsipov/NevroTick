@@ -87,7 +87,58 @@ def main(argv=None):
             unrelated.write_text(prose + "\n")
             if run(command, environment, timeout=30) != 1:
                 raise ValueError("Prose exception escaped its document scope.")
-            print("Gitleaks: healthy, synthetic-secret, restored and exact-prose disposition controls passed.")
+            unrelated.unlink()
+            # Independently reviewed public prose, a recomputed source digest,
+            # and a public u64 wire fixture are not credentials. Construct the
+            # trigger words in pieces so these definitions do not become new
+            # scanner findings; the complete payload is challenged below.
+            reviewed_cases = (
+                ("tasks/s0.5-ui-comparison.md",
+                 "Independent audit recomputed every selected statistic, "
+                 "sample admission, " + "to" + "ken,\n"
+                 "geometry/focus and identity check. All six selected trials "
+                 "closed normally with"),
+                ("docs/windows-time-architecture.md",
+                 "For a later selected OpenPGP MSI alternative, admission "
+                 "also needs current trusted-" + "ke" + "y distribution, "
+                 "revocation/expiry"),
+                ("docs/windows-time-architecture.md",
+                 "OpenPGP admission also needs current trusted-" + "ke" +
+                 "y distribution, revocation/expiry"),
+                ("tasks/s1.2-worker-concurrency-pilot.json",
+                 '    ".github/security/check_' + "se" + 'crets.py": "'
+                 "80994c615da3f41d24596f5b6af6ba52733f6aec711314ea171fcf4e585b0d0d"
+                 '",'),
+                ("crates/ntp-exchange/tests/association.rs",
+                 "    let to" + "ken = 0x0f1e_2d3c_4b5a_6978_u64;"),
+            )
+            for relative, text in reviewed_cases:
+                reviewed = control / relative
+                reviewed.parent.mkdir(parents=True, exist_ok=True)
+                for prefix in ("", "Heading\n"):
+                    reviewed.write_text(prefix + text + "\n")
+                    if run(command, environment, timeout=30) != 0:
+                        raise ValueError("Reviewed public-text disposition did not match.")
+                lines = text.splitlines()
+                challenges = [text + "\n" + generic_secret]
+                for index in range(len(lines)):
+                    modified = lines.copy()
+                    modified[index] += " " + generic_secret
+                    challenges.append("\n".join(modified))
+                for challenge in challenges:
+                    reviewed.write_text(challenge + "\n")
+                    if run(command, environment, timeout=30) != 1:
+                        raise ValueError("Public-text exception hid an adjacent or same-line token.")
+                reviewed.unlink()
+                unrelated.write_text(text + "\n")
+                if run(command, environment, timeout=30) != 1:
+                    raise ValueError("Public-text exception escaped its exact path.")
+                unrelated.unlink()
+                reviewed.write_text(text + "\n")
+                if run(command, environment, timeout=30) != 0:
+                    raise ValueError("Restored public-text disposition control failed.")
+                reviewed.unlink()
+            print("Gitleaks: healthy, synthetic-secret, restored and exact-text disposition controls passed.")
             if not args.controls_only:
                 for name, invocation in (
                     ("full retained history", [str(binary), "git", "--log-opts=--all", *flags, str(ROOT)]),

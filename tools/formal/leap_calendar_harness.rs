@@ -102,8 +102,8 @@ fn january_oracle(seconds: u64) -> bool {
         return false;
     }
     // u64::MAX / 86400 + 693595 = 213503983028196, so this cannot overflow.
-    let day = ((seconds / 86_400 + NTP_EPOCH_ORDINAL_ZERO_BASED)
-        % u64::from(CALENDAR_CYCLE_DAYS)) as u32;
+    let day =
+        ((seconds / 86_400 + NTP_EPOCH_ORDINAL_ZERO_BASED) % u64::from(CALENDAR_CYCLE_DAYS)) as u32;
     let year = january_year(day);
     let ordinal = day - cycle_year_start(year);
     let leap = gregorian_leap(year + 1);
@@ -144,7 +144,10 @@ fn leap_calendar_full_domain() {
         seconds == 12_622_780_802_272_060_800 && observed,
         "month start above signed-i64 is covered"
     );
-    kani::cover!(seconds == u64::MAX && !observed, "raw u64 maximum is covered");
+    kani::cover!(
+        seconds == u64::MAX && !observed,
+        "raw u64 maximum is covered"
+    );
 }
 
 /// Check the oracle's forward Gregorian laws, including arbitrary cycle counts.
@@ -155,7 +158,11 @@ fn leap_calendar_oracle_laws() {
     let cycles = kani::any::<u64>();
     let leap = gregorian_leap(year + 1);
     let year_days = cycle_year_start(year + 1) - cycle_year_start(year);
-    assert_eq!(year_days, 365 + u32::from(leap), "Gregorian year recurrence");
+    assert_eq!(
+        year_days,
+        365 + u32::from(leap),
+        "Gregorian year recurrence"
+    );
     let next_month = if month == 11 {
         year_days
     } else {
@@ -167,11 +174,14 @@ fn leap_calendar_oracle_laws() {
         "Gregorian month recurrence"
     );
     assert_eq!(january_month_start(0, leap), 0, "January begins the year");
-    assert_eq!(cycle_year_start(400), CALENDAR_CYCLE_DAYS, "400-year period length");
+    assert_eq!(
+        cycle_year_start(400),
+        CALENDAR_CYCLE_DAYS,
+        "400-year period length"
+    );
     assert_eq!(
         forward_year_start(400 * u128::from(cycles) + u128::from(year)),
-        u128::from(CALENDAR_CYCLE_DAYS) * u128::from(cycles)
-            + u128::from(cycle_year_start(year)),
+        u128::from(CALENDAR_CYCLE_DAYS) * u128::from(cycles) + u128::from(cycle_year_start(year)),
         "arbitrary-cycle forward correspondence"
     );
     assert_eq!(
@@ -187,7 +197,10 @@ fn leap_calendar_oracle_laws() {
     kani::cover!(year == 3 && leap, "ordinary leap year is covered");
     kani::cover!(year == 99 && !leap, "non-400 century is covered");
     kani::cover!(year == 399 && leap, "400-year leap century is covered");
-    kani::cover!(cycles == u64::MAX, "arbitrary cycle-count maximum is covered");
+    kani::cover!(
+        cycles == u64::MAX,
+        "arbitrary cycle-count maximum is covered"
+    );
 }
 
 #[kani::proof]

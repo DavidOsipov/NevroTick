@@ -44,14 +44,7 @@ MSI/SignPath/OpenPGP remain conditional fallback/reference if David reconsiders 
 
 ## Native UI, accessibility and presentation
 
-The checked-in pre-migration candidate uses Win32 common controls via
-windows/windows-sys. OD-11 selects its complete replacement with Slint; qualify
-the replacement's actual backend, UIA provider and control semantics separately,
-retaining UI-M0's D1–D3 deferrals and re-entry triggers. Use UI Automation
-properties/control patterns/events with keyboard and actual Narrator output at
-the applicable stage. Prefer available Accessibility Insights for Windows;
-Inspect is a legacy diagnostic fallback. Neither native-control selection nor
-Slint accessibility support establishes application accessibility (CHECK-22).
+[OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint as the default and complete Win32 UI replacement. The checked-in Windows entrypoint selects Slint; retained Win32 source and receipts are historical. [S0.5](../../../../tasks/s0.5-ui-comparison.md) and the [GUI handoff](../../../../tasks/slint-gui-handoff.md) own current scope/evidence and remaining native dependencies. The measured winit/software/Fluent pilot does not qualify a product feature graph. Identify the actual Slint accessibility feature/bridge and inspect UI Automation properties/control patterns/events with keyboard and actual Narrator output. Prefer available Accessibility Insights for Windows; Inspect is a legacy diagnostic fallback. Slint-drawn widgets provide no inherited Win32 child-control accessibility pass (CHECK-22). The pilot's disabled accessibility feature is not the product policy; preserve UI-M0's D1/D2/D3 deferrals until their existing task re-entry gates.
 
 Check critical status/source/settings/diagnostics/elevation/tray flows, clear trust/freshness/uncertainty, stale snapshot behavior, accessible error association, tab order, visible focus, Escape/cancel and focus return after dialogs/UAC. Distinguish quitting UI from stopping synchronization; tray-only access must not be required.
 

@@ -18,13 +18,13 @@ exists. Keep the current GPL/TLS-provider/CNG admission holds in
 [section 18.7](../../../../../docs/windows-time-architecture.md#187-tls-nts-and-windows-trust-decisions);
 portable numerical success does not clear them.
 
-Chrony-derived mathematical algorithms also require the
-[mandatory proof workflow](../../../testing/references/formal-verification.md)
-under OD-10 and architecture §20.1.1. Prove the actual Rust implementation's full
-admitted success/error and machine/rounding contract before its mathematical
-acceptance. Upstream proofs, differential parity and simulator examples alone
-cannot close local obligations; inventory unproved helpers/callers and reuse
-only evidence bound to unchanged relevant inputs.
+Chrony-derived mathematics follows [OD-10’s first-release deferral](../../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+Continue required independent/differential/simulator/stress checks and runtime
+invariants; missing formal proofs do not block V1 acceptance. Retain exact
+historical proof scope and unproved obligations in the existing tasks for
+post-V1 work. Formal jobs, verifier extensions and pending proof metadata repairs
+remain deferred. Use the [proof workflow](../../../testing/references/formal-verification.md)
+on resumption; upstream proofs or parity do not establish a new local proof.
 
 ## Slice inputs and reviewable outputs
 

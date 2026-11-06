@@ -1,0 +1,24 @@
+# Private CARGO_HOME template. Tokens are JSON-quoted absolute paths.
+target-applies-to-host = false
+
+[net]
+offline = true
+
+[source.crates-io]
+replace-with = "private-registry"
+
+[source.private-registry]
+directory = @REGISTRY_VENDOR_JSON@
+
+[source."git+https://github.com/Nadrieril/tracing-tree"]
+git = "https://github.com/Nadrieril/tracing-tree"
+replace-with = "private-git"
+
+[source.private-git]
+directory = @GIT_VENDOR_JSON@
+
+[host]
+linker = @CC_JSON@
+
+[target.x86_64-unknown-linux-gnu]
+linker = @CC_JSON@

@@ -7,6 +7,7 @@ and native outcome accounting. No acquisition, new graph or profile exception.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import importlib.util
 import json
 import math
@@ -31,6 +32,7 @@ TESTS = "scripts/tests/test_verify_engine_analysis.py"
 SUBJECTS = {
     "library": "crates/nevrotick-engine/src/lib.rs",
     "cli": "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
+    "measurement": "crates/nevrotick-engine/src/measurement.rs",
 }
 SCOPE = COMMON.Scope("nevrotick-engine", tuple(SUBJECTS.items()), POLICY)
 CONTRACT_SCOPE = COMMON.Scope(
@@ -38,7 +40,7 @@ CONTRACT_SCOPE = COMMON.Scope(
 FIXED_CONTRACT_POLICY = {
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",
-    "package": "nevrotick-engine", "source_file_count": 166,
+    "package": "nevrotick-engine", "source_file_count": 168,
     "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
     "tool_admission_profile": "stable-core",
     "contracts_wall_seconds": 300, "jobs": 6, "test_threads": 1,
@@ -51,6 +53,7 @@ BOUND_INPUTS = (
     "crates/nevrotick-engine/tests/execute_entered.rs",
     "crates/nevrotick-engine/tests/private/processing_guards.rs",
     "crates/nevrotick-engine/tests/private/argument_guards.rs",
+    "crates/nevrotick-engine/tests/private/measurement.rs",
     "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
     "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
 )
@@ -71,6 +74,28 @@ REQUIRED_TESTS = frozenset({
     "processing_guard_tests::selected_read_accounting_survives_retirement_and_typed_oversize",
     "processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor",
     "processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error",
+    "processing_guard_tests::staged_reply_cannot_cross_socket_owner_or_commit_twice",
+    "processing_guard_tests::complete_header_survives_actual_staging_and_terminal_projection",
+    "processing_guard_tests::real_udp_measurement_matches_independent_captured_coordinates",
+    "processing_guard_tests::measurement_refusal_consumes_the_correlated_request_once",
+    "measurement::tests::exact_dyadic_results_ignore_the_wire_token",
+    "measurement::tests::peer_shift_changes_sign_without_changing_rtt",
+    "measurement::tests::negative_raw_rtt_and_half_q32_phase_are_preserved",
+    "measurement::tests::fractional_conversion_residuals_reconstruct_nominal_values",
+    "measurement::tests::pre_unix_and_post_unix_100_ns_have_literal_residuals",
+    "measurement::tests::absent_profile_is_a_distinct_transport_only_reason",
+    "measurement::tests::declared_coherence_limit_has_an_exact_healthy_neighbor",
+    "measurement::tests::nonzero_capture_intervals_keep_inside_and_outside_neighbors",
+    "measurement::tests::reversed_brackets_and_processing_are_not_ages",
+    "measurement::tests::out_of_scope_local_coordinate_is_not_rebased",
+    "measurement::tests::send_after_outside_scope_cannot_hide_between_valid_endpoints",
+    "measurement::tests::era_zero_and_multiple_candidates_remain_distinct",
+    "measurement::tests::inert_header_does_not_bypass_the_time_reply_guard",
+    "measurement::tests::profile_bounds_and_maximum_allowance_are_checked",
+    "measurement::tests::fresh_owner_age_stamp_preserves_the_actual_arithmetic",
+    "measurement::tests::refusal_codes_and_display_remain_literal_and_redacted",
+    "measurement::tests::software_window_retains_each_local_and_peer_extremum",
+    "measurement::tests::coherence_helper_rejects_each_reversed_bracket",
     "prepare_outside_runtime_owns_and_releases_standard_sockets",
     "prepare_rejects_entered_runtime_before_native_startup",
     "execute_rejects_entered_runtime_without_nested_runtime_creation",
@@ -79,6 +104,7 @@ REQUIRED_TESTS = frozenset({
     "argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure",
     "argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows",
     "argument_guard_tests::argument_text_rejects_unix_nontext_in_both_roles",
+    "argument_guard_tests::decimal_profile_fields_preserve_raw_digit_boundaries",
 })
 FIXED_POLICY = {
     "schema_version": 1, "package": "nevrotick-engine",
@@ -129,7 +155,7 @@ def inventory_bindings(policy: dict, *, required: bool = False) -> dict:
     if not bindings and not required:
         return {}
     if set(bindings) != set(SUBJECTS):
-        raise Incomplete("Campaign requires reviewed nonempty inventories for both engine files.")
+        raise Incomplete("Campaign requires reviewed nonempty inventories for all three engine files.")
     for binding in bindings.values():
         if (not isinstance(binding, dict) or set(binding) != {"count", "sha256"}
                 or type(binding["count"]) is not int or not 0 < binding["count"] <= policy["maximum_mutants"]
@@ -139,15 +165,44 @@ def inventory_bindings(policy: dict, *, required: bool = False) -> dict:
     return bindings
 
 
+def validate_equivalence_scope(entries: object) -> None:
+    """Permit no E or only both reviewed coherence-equality cases, without skips.
+
+    Shared admission still binds each complete descriptor, candidate, source and
+    independent-review artifact. This scope check supplies no semantic verdict.
+    """
+    replacements = {"ENGINE-COHERENCE-LOWER-EQUALITY": "<=",
+                    "ENGINE-COHERENCE-UPPER-EQUALITY": ">="}
+    if type(entries) is not list:
+        raise Incomplete("Engine equivalences require an exact list.")
+    if not entries:
+        return
+    if (len(entries) != 2 or any(type(entry) is not dict for entry in entries)
+            or any(type(entry.get("id")) is not str for entry in entries)
+            or {entry.get("id") for entry in entries} != set(replacements)):
+        raise Incomplete("Engine equivalences require both exact reviewed coherence equality IDs.")
+    for entry in entries:
+        mutant, proof = entry.get("mutant"), entry.get("proof")
+        if (type(mutant) is not dict or type(mutant.get("function")) is not dict
+                or mutant.get("file") != SUBJECTS["measurement"]
+                or mutant["function"].get("function_name") != "coherence_residual"
+                or mutant.get("genre") != "BinaryOperator"
+                or mutant.get("replacement") != replacements[entry["id"]]
+                or type(proof) is not dict
+                or proof.get("path") != "tasks/engine-analysis-equivalences.md"):
+            raise Incomplete("Engine equivalence leaves its exact coherence owner or review artifact.")
+
+
 def read_policy(root: Path) -> dict:
     """Bind the fixed engine scope to the actual whole product and protected helpers."""
     policy = read_json(root / POLICY)
     extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "scope", "external_contracts"}
     if (set(policy) != set(FIXED_POLICY) | extras
             or any(type(policy.get(key)) is not type(value) or policy.get(key) != value
-                   for key, value in FIXED_POLICY.items())
+                   for key, value in FIXED_POLICY.items() if key != "mutation_equivalences")
             or not isinstance(policy["scope"], str) or not 0 < len(policy["scope"]) <= 2048):
         raise Incomplete("Unreviewed engine analysis scope, threshold, budget or profile.")
+    validate_equivalence_scope(policy["mutation_equivalences"])
     validate_contract_policy(policy["external_contracts"])
     _, identity = PRODUCT.admit_product(root)
     if (not isinstance(policy["candidate_sha256"], str)
@@ -228,8 +283,9 @@ def contract_examples() -> dict:
     examples = {
         "legal": {"statement": legal, "code": None, "tokens": [], "success_marker": marker},
         "config_construction": {
-            "statement": "let _ = Config { peers: [peers[0], peers[0]], timeout: Duration::ZERO };",
-            "code": "E0451", "tokens": ["peers", "timeout", "private"]},
+            "statement": "let _ = Config { peers: [peers[0], peers[0]], timeout: Duration::ZERO, "
+                         "experimental_profile: None };",
+            "code": "E0451", "tokens": ["peers", "timeout", "experimental_profile", "private"]},
         "schedule_construction": {
             "statement": "let _ = ControlSchedule { stop_after: Some(Duration::from_secs(31)), "
                          "invalidate_after: Some(Duration::from_secs(31)) };",
@@ -422,10 +478,21 @@ def validate_test_execution(text: str, *, doctests: bool) -> dict:
             or not REQUIRED_TESTS <= set(records)):
         raise Incomplete("Engine execution omits required actual passing unit/integration records or complete summaries.")
     docs = [name for name in records if re.fullmatch(
-        r"(?:[^\r\n]+/)?lib\.rs - (?:Config|ControlSchedule)::new \(line [1-9][0-9]*\)", name)]
-    if doctests and (len(docs) != 2 or not all(any(" - " + owner + "::new " in name for name in docs)
-                                            for owner in ("Config", "ControlSchedule"))):
-        raise Incomplete("Engine mutation baseline omits its two actual construction doctests.")
+        r"[^\r\n]+\.rs - [^\r\n]+ \(line [1-9][0-9]*\)(?: - compile fail)?", name)]
+    doc_pattern = re.compile(
+        r"(?:[^\r\n]+/)?crates/nevrotick-engine/src/(lib|measurement)\.rs - "
+        r"(Config::new|ControlSchedule::new|measurement::ExperimentalProfile|"
+        r"measurement::ExperimentalMeasurement) \(line [1-9][0-9]*\)( - compile fail)?")
+    signatures = Counter((match[1], match[2], bool(match[3]))
+                         for name in docs if (match := doc_pattern.fullmatch(name)) is not None)
+    expected = Counter({("lib", "Config::new", False): 1,
+                        ("lib", "ControlSchedule::new", False): 1,
+                        ("measurement", "measurement::ExperimentalProfile", False): 1,
+                        ("measurement", "measurement::ExperimentalProfile", True): 4,
+                        ("measurement", "measurement::ExperimentalMeasurement", False): 1,
+                        ("measurement", "measurement::ExperimentalMeasurement", True): 4})
+    if doctests and (signatures != expected or len(docs) != sum(expected.values())):
+        raise Incomplete("Engine mutation baseline omits its actual construction/privacy doctests.")
     if not doctests and docs:
         raise Incomplete("Coverage selection unexpectedly includes doctests.")
     return {"tests_executed": len(records), "required_tests": sorted(REQUIRED_TESTS), "doctests": len(docs)}

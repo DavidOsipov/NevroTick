@@ -27,6 +27,42 @@ events; no source vote, global leap-setting change or synthetic ±1-second broke
 request is adopted. Source/design selection is separate from implementation,
 native qualification and the existing execution holds.
 
+**5 November 2026 UI amendment:** [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects complete Slint replacement against v0.4, with winit/software and
+Fluent-style widgets as the measured starting configuration. The current Windows
+entry selects that toolkit; the old Win32 adapter remains unexported historical
+source. The [current GUI handoff](../tasks/slint-gui-handoff.md) owns fixture source
+and portable evidence. OD-13's 6 November amendment selects separately
+GPL-3.0-only original GUI composition while preserving GPL-2.0-only Core/engine.
+R-01 retains rights/shared-code/exact graph and distribution review; R-08/UI-M0
+retain generated-code, Windows/accessibility, resource and package qualification.
+No current execution hold or UI-M0 deferral is lifted.
+
+**5 November 2026 clock-limit preparation:** [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+consolidates pinned upstream, Microsoft and protocol/model evidence for
+OPEN-5/7/13 under S0.4/S0.7/P4 and W11-W02/04/05. Its field matrix separates
+policy tolerance, native capability, model assumptions and enforced authority.
+Measurements, production values and decisions remain open; current Core proof
+priority, native/S134 stop, separate fuzz hold, optional-storage pause and
+limited Sandbox scope remain.
+
+**5 November 2026 platform amendment:** [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope)
+supersedes the generic Windows-11-x64-first wording below with Windows 11 26H2
+x64 and Server 2025 x64 Desktop Experience. R-08 uses the existing
+[two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+for exact profiles, admission/delivery, fixture availability and native evidence;
+OPEN-2 and all current execution/acceptance gates remain open.
+
+**Controlling proof amendment, 6 November 2026:**
+[OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released version (V1). Earlier
+proof-priority language below is retained as dated context; follow the
+[current development queue](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Missing proofs do not block V1 implementation, acceptance or release. This
+amendment resumes no proof compiler/solver job or verifier/metadata repair and
+lifts no Windows, fuzz or storage hold; ordinary runtime, behavioral, coverage/
+mutation, security, native, package and release gates remain.
+
 ## 1. Assignment and limits
 
 Investigate the unresolved questions below and produce concrete options with evidence. This assignment is research and planning. It does not authorize provider contact, accepting terms, submitting vendor/signing applications, spending money, generating release credentials, public releases or changes to the user's Windows clock/services/trust stores.
@@ -51,27 +87,33 @@ Return findings in Markdown. Each conclusion must say whether it is an observed 
 | R-08 — remaining native feasibility | OPEN-2/3/4/7/10/12/13/14 | Measured/verified options at the relevant phase | Dependent native integrations and release claims |
 
 These tasks do not reopen the
-[OD-11 Slint replacement decision](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
+[OD-13 Slint replacement decision](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
 two-service authority split,
 ordinary-user UI, time-only v1 or Windows 11 x64 first. The selected delivery target
 is now one complete hardened MSIX; its supported service provisioning and recovery
 remain to be qualified, with no separate MSI service prerequisite. Retained MSI
-profiles are alternatives for a later owner decision. Current Win32 source and
-observations remain the pre-migration baseline; Slint version/features/backend,
-licensing, dependencies and native behavior still need qualification. Toolkit
+profiles are alternatives for a later owner decision. The old Win32 adapter and
+observations remain historical baseline evidence; current Slint fixture source
+and portable evidence are recorded in the GUI handoff. Exact version/features/
+backend, rights/graph/distribution and native behavior retain their own gates. Toolkit
 selection neither removes required Windows OS adapters nor lifts execution holds.
 
 ## 3. R-01 — source reuse and licence compatibility
 
 David intends to take selected upstream code, test it, and modify it where needed. Do not label this clean-room merely because the implementation language changes or many lines are rewritten.
 
-Start with Chrony **4.9 / `8df4f1263e206585e6c4e61352d042c2dd12916a`**. Inspect every imported file's grant and dependencies, not just the repository's generic COPYING text. Preserve source provenance, attribution, corresponding-source/build obligations and intentional deviation records. Source headers already support the existing GPL-2.0-only constraint; no new GPL-3 permission has been granted by this conversation.
+Start with Chrony **4.9 / `8df4f1263e206585e6c4e61352d042c2dd12916a`**. Inspect every imported file's grant and dependencies, not just the repository's generic COPYING text. Preserve source provenance, attribution, corresponding-source/build obligations and intentional deviation records. Source headers support the existing GPL-2.0-only constraint for Chrony-derived code; OD-13's accepted GPL-3.0-only grant applies to the original GUI and does not relicense Core/engine or upstream inputs. Use the [GUI source/grant inventory](../crates/nevrotick-ui/LICENSING.md) alongside the Core port ledger; actual shared-code rights and complete distribution remain review obligations.
 
 Produce a table of actual proposed Rust/native/build dependencies, exact versions and features, selected alternative licence grants, embedded third-party code and compatibility evidence. Revisit the existing held crypto-provider graphs rather than assuming a crate's top-level licence settles its contents. Changes after bugs or optimization retain their derivation record.
 
-Escalate a concrete rights conflict or material behavioral deviation to David. Do not ask him to choose a preferred licence label independently of the source he intends to reuse. Do not remove notices to satisfy an installer or signing-provider requirement.
+Escalate a concrete rights conflict or material behavioral deviation to David. Do not repeat the accepted separate GUI/Core licence choice; escalate only a concrete unresolved rights/graph issue with the source and grants involved. Do not remove notices to satisfy an installer or signing-provider requirement.
 
 ## 4. R-02 — century-scale authenticated recovery
+
+Use [the clock-limit handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+for supported target-date/era versus local-error fields, one-use step authority,
+durable unknown outcomes and qualified actual feedback. This source preparation
+selects no exceptional quorum, floor-supersession rule or production envelope.
 
 **Future Roughtime coordination:** [NV-TA-001](plans/time-assurance-integration.md)
 and the [shared task](../tasks/time-assurance-integration.md) now retain the
@@ -152,6 +194,11 @@ R-02/R-04 must freeze a decision table naming the majority denominator, configur
 Begin with deterministic simulation and controlled protocol fixtures. Windows execution requires an owned disposable VM, bounded experiment, independent observer and tested restoration. Public time services are not stress-test targets.
 
 ## 5. R-03 — conservative plain-NTP policy
+
+The [5 November preparation matrix](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+adds actual combined-rate accounting, including stable compensation, holdover
+assumptions and conditional recovery exposure. Compare useful drift/recovery with
+malicious repeated movement; upstream constants remain evidence, not adopted limits.
 
 Compare NevroTick's intended behavior with the [Chrony 4.9 manual](https://chrony-project.org/doc/4.9/chrony.conf.html), [FAQ](https://chrony-project.org/faq.html), [NTPsec manual](https://docs.ntpsec.org/latest/ntpd.html) and [pinned NTPsec loop filter](https://github.com/ntpsec/ntpsec/blob/61eaa902b90e374698c1b4e380b0f27ed6632c65/ntpd/ntp_loopfilter.c). Do not translate a sample `makestep` directive into a maximum security bound.
 
@@ -276,6 +323,11 @@ application, paid subscription or OS-protection bypass as a side effect of this
 research. Store-managed updates need the selected complete lifecycle qualification.
 
 ## 9. R-07 and R-08 — exception decisions and remaining platform work
+
+For OPEN-7/13, [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+assigns precise-API conversion/quantization, active-delivery/power mapping and
+actual stop/native-work/recovery evidence to existing owners. Retain censored
+and failed recovery observations; measured maxima do not establish hard expiry.
 
 For every relevant ASVS requirement, separate literal applicability, native adaptation, implementation, observation and unresolved exception. Bring David individual evidence-backed decisions about hardware-backed isolation, authentication/revocation semantics, in-use secrets, logging, delegated retrieval or plain-NTP assurance. No blanket L3 acceptance has been granted.
 

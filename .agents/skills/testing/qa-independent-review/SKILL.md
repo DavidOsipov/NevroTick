@@ -22,6 +22,22 @@ or tests that manually validate before calling an unchecked API.
 
 For analyzer-derived claims, separate tool controls from actual product
 harness/database execution and inspect bounds, assumptions and excluded paths.
+For mathematical proof claims, use the [proof workflow](../references/formal-verification.md)
+to challenge semantic strength, actual-operation reachability, constructor/callee
+composition and expected-versus-completed scope independently of harness names.
+Identify the named useful product-operation guarantee and independent specification.
+Check that each helper closes a real requirement or a necessary declared dependency,
+with a credible route through the remaining composition. Preserve useful local
+results while keeping the product guarantee open; do not require a discovered bug
+as proof of value. Reconcile total preparation/tooling/solver effort and stopped
+attempts; reject an unrelated easy theorem or green infrastructure as completion.
+Check report consumers against genuine emitted fixtures or the pinned exporter
+schema, not mutually confirming mocks. Separate attempted/completed/qualified jobs,
+unique guarantees, semantic controls and tool-only checks. A historical fixed
+campaign is not a repeatable current-candidate regression gate. Retain gaps in the
+[post-V1 debt record](../../../../tasks/development-backlog.md#product-guarantees-still-open);
+review grants no execution or consumer-repair exception to the V1 deferral.
+
 Apply [CodeQL data-flow evidence checks](../references/codeql-data-flow.md) when
 paths or empty results support a conclusion: verify source/database/query/model
 identity, real source/sink reachability and guard semantics yourself. A diagram,

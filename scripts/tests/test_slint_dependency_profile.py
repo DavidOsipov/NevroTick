@@ -22,7 +22,8 @@ MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core
 RUNTIME_FEATURES = ["accessibility", "backend-winit", "compat-1-18", "renderer-software", "std", "unstable-winit-030"]
 HOST_FEATURES = ["compat-1-18", "renderer-software", "std"]
 LOCAL_CLOSURES = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"}, "time-domain": {"time-domain"},
-                  "time-core": {"time-core", "time-domain"}, "nevrotick-engine": {"nevrotick-engine", "ntp-wire"},
+                  "time-core": {"time-core", "time-domain"},
+                  "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"},
                   "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"}}
 
 
@@ -122,7 +123,7 @@ def fixture_package_trees(target=HOST):
     return {"nevrotick-ui": fixture_tree(target).split("ntp-wire v0.0.0")[0],
             "ntp-wire": root("ntp-wire"), "time-domain": root("time-domain"),
             "time-core": root("time-core") + "`-- " + root("time-domain"),
-            "nevrotick-engine": root("nevrotick-engine") + "`-- " + root("ntp-wire"),
+            "nevrotick-engine": root("nevrotick-engine") + "|-- " + root("ntp-wire") + "`-- " + root("time-domain"),
             "ntp-exchange": root("ntp-exchange") + "|-- " + root("ntp-wire") + "`-- " + root("time-domain") +
                             "[dev-dependencies]\n`-- " + root("time-core") + "    `-- " + root("time-domain")}
 
@@ -186,6 +187,7 @@ def fixture_metadata(policy, target=HOST):
     edge(ui, "skia-bindings@1.0.0", optional=True)
     edge("time-core@0.0.0", "time-domain@0.0.0")
     edge("nevrotick-engine@0.0.0", "ntp-wire@0.0.0")
+    edge("nevrotick-engine@0.0.0", "time-domain@0.0.0")
     edge("ntp-exchange@0.0.0", "ntp-wire@0.0.0")
     edge("ntp-exchange@0.0.0", "time-domain@0.0.0")
     edge("ntp-exchange@0.0.0", "time-core@0.0.0", "dev")
@@ -429,6 +431,102 @@ class SlintProfileControls(unittest.TestCase):
                         output.replace("[dev-dependencies]", "[dev-dependencies]\n[dev-dependencies]")):
             with self.subTest(changed=changed), self.assertRaises(PROFILE.Incomplete):
                 PROFILE.validate_tree(HOST, changed, self.policy, scope="ntp-exchange")
+
+    def test_engine_scope_requires_exact_time_domain_closure_on_both_targets(self):
+        expected = {name + "@0.0.0": {"target": [[]]}
+                    for name in ("nevrotick-engine", "ntp-wire", "time-domain")}
+        for target in (HOST, WINDOWS):
+            with self.subTest(target=target):
+                scope = self.policy["rows"][target]["package_scopes"]["nevrotick-engine"]
+                self.assertEqual(scope["local_features"], expected)
+                PROFILE.validate_policy_shape(self.policy)
+                PROFILE.validate_tree(target, fixture_package_trees(target)["nevrotick-engine"],
+                                      self.policy, scope="nevrotick-engine")
+            for variant in ("missing", "extra", "version", "feature", "host", "boolean-feature"):
+                changed = copy.deepcopy(self.policy)
+                local = changed["rows"][target]["package_scopes"]["nevrotick-engine"]["local_features"]
+                if variant == "missing":
+                    del local["time-domain@0.0.0"]
+                elif variant == "extra":
+                    local["time-core@0.0.0"] = {"target": [[]]}
+                elif variant == "version":
+                    local["time-domain@0.0.1"] = local.pop("time-domain@0.0.0")
+                elif variant == "feature":
+                    local["time-domain@0.0.0"] = {"target": [["default"]]}
+                elif variant == "host":
+                    local["time-domain@0.0.0"] = {"host": [[]]}
+                else:
+                    local["time-domain@0.0.0"] = {"target": [[True]]}
+                with self.subTest(target=target, variant=variant), self.assertRaisesRegex(
+                        PROFILE.Incomplete, "Package scope"):
+                    PROFILE.validate_policy_shape(changed)
+
+    def test_engine_normal_time_domain_edge_survives_projection_on_both_targets(self):
+        expected_edge = {"parent": "nevrotick-engine@0.0.0", "parent_features": [],
+                         "parent_role": "target", "child": "time-domain@0.0.0", "child_features": [],
+                         "child_role": "target", "kind": "normal"}
+        for target in (HOST, WINDOWS):
+            with self.subTest(target=target):
+                trees = fixture_package_trees(target)
+                observed = PROFILE.validate_tree(target, trees["nevrotick-engine"], self.policy,
+                                                 scope="nevrotick-engine", include_edges=True)
+                self.assertIn(expected_edge, observed["dependency_edges"])
+                data = fixture_metadata(self.policy, target)
+                projected = PROFILE.selected_metadata(target, json.dumps(data), fixture_tree(target), self.policy,
+                                                      package_trees=trees)
+                engine = next(package for package in projected["packages"] if package["name"] == "nevrotick-engine")
+                domain = next(package for package in projected["packages"] if package["name"] == "time-domain")
+                declaration = next(dep for dep in engine["dependencies"] if dep["name"] == "time-domain")
+                self.assertEqual(declaration, {"name": "time-domain", "rename": None, "req": "=0.0.0",
+                                               "kind": None, "target": None, "optional": False,
+                                               "uses_default_features": False, "features": []})
+                node = next(node for node in projected["resolve"]["nodes"] if node["id"] == engine["id"])
+                self.assertIn({"name": "time_domain", "pkg": domain["id"],
+                               "dep_kinds": [{"kind": None, "target": None}]}, node["deps"])
+
+    def test_engine_tree_refuses_domain_source_role_and_feature_drift_on_both_targets(self):
+        domain = "`-- time-domain v0.0.0 (/work/fixture/crates/time-domain)|\n"
+        for target in (HOST, WINDOWS):
+            healthy = fixture_package_trees(target)["nevrotick-engine"]
+            self.assertEqual(healthy.count(domain), 1)
+            PROFILE.validate_tree(target, healthy, self.policy, scope="nevrotick-engine")
+            variants = {
+                "missing": healthy.replace(domain, ""),
+                "build": healthy.replace(domain, "[build-dependencies]\n" + domain),
+                "version": healthy.replace(domain, domain.replace("v0.0.0", "v0.0.1")),
+                "source": healthy.replace(domain, domain.replace("crates/time-domain", "crates/time-core")),
+                "extra": healthy + "`-- time-core v0.0.0 (/work/fixture/crates/time-core)|\n",
+                "feature": healthy.replace(domain, domain.replace("|\n", "|default\n")),
+            }
+            for variant, output in variants.items():
+                with self.subTest(target=target, variant=variant), self.assertRaises(PROFILE.Incomplete):
+                    PROFILE.validate_tree(target, output, self.policy, scope="nevrotick-engine")
+
+    def test_engine_projection_refuses_domain_dev_and_build_kinds_on_both_targets(self):
+        domain = "`-- time-domain v0.0.0 (/work/fixture/crates/time-domain)|\n"
+        for target in (HOST, WINDOWS):
+            healthy = fixture_metadata(self.policy, target)
+            trees = fixture_package_trees(target)
+            PROFILE.selected_metadata(target, json.dumps(healthy), fixture_tree(target), self.policy,
+                                      package_trees=trees)
+            for kind in ("dev", "build"):
+                for variant in ("tree", "declaration", "resolved"):
+                    data, changed_trees = copy.deepcopy(healthy), copy.deepcopy(trees)
+                    engine = next(package for package in data["packages"] if package["name"] == "nevrotick-engine")
+                    declaration = next(dep for dep in engine["dependencies"] if dep["name"] == "time-domain")
+                    node = next(node for node in data["resolve"]["nodes"] if node["id"] == engine["id"])
+                    edge = next(edge for edge in node["deps"] if edge["name"] == "time_domain")
+                    if variant == "tree":
+                        changed_trees["nevrotick-engine"] = trees["nevrotick-engine"].replace(
+                            domain, "[" + kind + "-dependencies]\n" + domain)
+                    elif variant == "declaration":
+                        declaration["kind"] = kind
+                    else:
+                        edge["dep_kinds"] = [{"kind": kind, "target": None}]
+                    with self.subTest(target=target, kind=kind, variant=variant), self.assertRaisesRegex(
+                            PROFILE.Incomplete, "exact Cargo declaration|lost an observed dependency edge|target/host features"):
+                        PROFILE.selected_metadata(target, json.dumps(data), fixture_tree(target), self.policy,
+                                                  package_trees=changed_trees)
 
     def test_selected_tree_rejects_metadata_promotion_role_feature_and_source_drift(self):
         healthy = fixture_tree()

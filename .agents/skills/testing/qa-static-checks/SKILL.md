@@ -26,6 +26,18 @@ absence of effects.
 
 Challenge changed enforcement: isolated known violation/valid companion through actual command; check nonzero propagation. Type/visibility/trait contracts need intended compile diagnostic; unresolved import insufficient. Preserve narrow reviewed exceptions/stale-expectation detection on selected compiler.
 
+For a claimed [structural change guarantee](../../implementation/implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review),
+start with compiling legitimate code, then add one field or closed-enum variant
+in an isolated copy. Keep the selected consumer unchanged while making unrelated
+construction sites compile. Require the intended diagnostic at that consumer's
+exhaustive field pattern, explicit initializer or enum match, according to the
+claimed guarantee. An unrelated missing-field initializer must not qualify a
+trait-consumer check. Update the selected consumer with an explicit semantic
+decision and require compilation again. Select only the changed guarantee;
+ordinary edits need no blanket compile-failure campaign. A compiler rejection
+proves change detection, not correct equality, redaction or state policy; retain
+their behavioral checks and applicable mathematical proof obligations.
+
 For garde-backed types, verify omitted-rule rejection on the admitted derive
 version; reject `allow_unvalidated` and independently review `skip` ownership.
 Check actual rule/`dive` coverage separately: metadata-only annotations do not
@@ -36,17 +48,13 @@ a valid consumer. These controls prove field/API restrictions only: use
 checked transformations and release-active failure behavior.
 
 For static lock defects, select the guarded experimental Lockbud lane only on
-source/features compatible with its separate compiler. For existing or new
-product mathematical algorithms, apply OD-10's
-[mandatory proof workflow](../references/formal-verification.md): require
-actual-source proofs of the full admitted domain, required success/error outcomes,
-machine/rounding semantics and invariants with reviewed assumptions and meaningful
-controls. New mathematics, changed semantics or invalidated evidence reopen
-affected obligations; reuse valid unchanged proofs. Missing proofs leave the
-owning CHECK acceptance incomplete. Kani is one verifier option, subject to
-admission; this gate selects no new tool installation. Miri, Loom and cargo-fuzz
-answer different execution/model questions; route those gaps through
-[Rust techniques](../references/rust-techniques.md), not a static-pass label.
+source/features compatible with its separate compiler. Product mathematics
+follows [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal jobs, verifier
+extensions and pending proof admission/metadata repairs resume after V1. Missing
+proofs do not block V1 acceptance; retain historical exact-scope evidence and
+post-V1 obligations in the existing tasks. Miri, Loom and cargo-fuzz retain their
+separate execution/model roles through [Rust techniques](../references/rust-techniques.md).
+The [proof workflow](../references/formal-verification.md) applies after V1.
 
 For source-to-sink or taint questions, use
 [CodeQL data-flow analysis](../references/codeql-data-flow.md). Admit the actual

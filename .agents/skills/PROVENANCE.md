@@ -84,7 +84,7 @@ registers the leaf. Links to Rust and processor specifications grant no new
 runtime dependency or product licence permission.
 
 The original local [implement-slint](implementation/implement-slint/SKILL.md)
-workflow, added 5 November 2026, is authored for OD-11 and the existing S0.5
+workflow, added 5 November 2026, was authored under local OD-11 (now canonical OD-13) and the existing S0.5
 migration. Its [source register](implementation/implement-slint/SOURCES.md)
 identifies official documentation and immutable Slint/image source references;
 it vendors no upstream skill, framework code, fonts, brand assets or runtime.

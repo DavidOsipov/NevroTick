@@ -5,6 +5,10 @@ description: "Implement or review NevroTick Cargo and CI trust, final Windows bi
 
 # Preserve trust through the complete Windows package
 
+Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+
 Read [the security contract](../CONTRACT.md), architecture sections 11, 15, 18–20 and applicable release instructions. Route dependencies to [dependency-updates](../../environment/dependency-updates/SKILL.md). The selected target is one complete hardened MSIX for David's Store submission attempt, including services, under [architecture §19.4](../../../../docs/windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership). Direction is selected; supported provisioning, implementation, Store acceptance and native qualification remain separate unresolved results.
 
 Use [MSIX plan §3](../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) for explicit package integrity, immutable code, exact Store-compatible CIG and per-role mitigations. Follow [§7's stages](../../../../docs/plans/windows-msix-store.md#7-bounded-continuation-and-existing-acceptance-owners): source/design preparation → locally built/test-signed mechanics when prerequisites permit → David's Store trial → actual delivered-byte qualification before broad release. Do not require prior Store approval or a Store signature to prepare the first submission. Local trust substitutions prove no Store signer-category admission; keep those final-artifact cases unexecuted until that artifact exists. Current Core priority, Windows execution stop, separate fuzz hold and storage pause remain.

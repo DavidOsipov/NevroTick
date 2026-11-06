@@ -1,53 +1,60 @@
-# Prove mathematical Rust contracts
+# Post-V1 mathematical Rust proofs
 
-Use for mandatory product mathematical proofs and when evaluating a verifier.
-Read the
-[testing contract](../CONTRACT.md) and [configured analysis lanes](configured-tooling.md#additional-rust-analysis).
+**Current disposition, 6 November 2026:** [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released software version (V1).
+Do not initiate formal compiler/solver/proof jobs, author proofs, extend verifiers
+or repair pending proof admission/metadata consumers before V1. Missing,
+invalidated or model-only proofs do not block V1 implementation, acceptance or
+release. Continue ordinary product development and all nonformal gates.
+
+Keep completed proofs and failed/incomplete receipts within their exact
+historical scope; maintain unfinished/newly affected obligations under existing
+source/CHECK owners as post-V1 work. Source changes do not extend old evidence.
+The sections below describe normal bounded post-V1 resumption, not permission
+to restart the former proof-first queue. No extra release or owner-approval gate
+is introduced here. Runtime validation, garde/private invariants, checked
+arithmetic, independent behavioral/property/boundary checks, coverage/mutation,
+security, native/package/release evidence and all existing holds remain.
+
+Read the [testing contract](../CONTRACT.md) and
+[configured analysis lanes](configured-tooling.md#additional-rust-analysis).
 This reference admits no new tool, dependency, compiler, CI gate or product claim.
 Keep candidate-specific decisions/results in the existing task record.
 
-## Mandatory mathematical proof acceptance — 5 November 2026
+## Source-bound acceptance on post-V1 resumption
 
-[OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-requires machine-checked proofs for product mathematical algorithms. Apply
-[architecture §20.1.1](../../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
-and its existing CHECK owners. This supersedes earlier optional-proof guidance;
-choice or adoption of a particular verifier remains conditional. Deferring a tool
-leaves its required product proof open; it does not waive the property.
+Apply [OD-10 §14.2](../../../../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026).
+Start from one named useful guarantee at a bounded product-operation boundary,
+with an independent specification and an existing requirement/CHECK owner. Trace
+admitted input through actual validation/construction and computation to the
+observable result, state or effect. Define required success, exact error behavior,
+preserved state, lifecycle and machine/rounding semantics where applicable. This
+can be a small operation; it need not prove the whole program at once.
 
-For each algorithm, record the independently specified theorem, full admitted
-input domain, required success and error outcomes, machine representation and
-rounding/error semantics, invariants and promised termination/work bounds. Bind
-completed nonempty proof results and meaningful healthy/defect controls to the
-actual implementation and its dependency/configuration/tool/solver inputs.
-Inventory assumptions, trusted components, source correspondence and unproved
-constructors/callers. A bounded input subset or a translated model proves only
-that subset/model until its missing obligations are discharged.
+Select a helper theorem when it closes a named real requirement or supplies a
+necessary premise of that guarantee. Record its consuming operation, remaining
+constructor/callee/composition obligations and a credible bounded route to their
+completion in the existing task. Do not substitute an easier unrelated helper
+for a blocked product guarantee. Preserve useful local proofs, but do not promote
+them to the containing operation's assurance while its dependencies remain open.
+Finding an actual product bug is not a condition of useful proof work; reducing
+material uncertainty or closing the named guarantee is the purpose.
 
-Maintain remaining obligations in the existing owning task. The rounding/era
-handoff in [S1.1c](../../../../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
-is the first continuation, not proof of the rest of domain, leap, exchange or
-Core mathematics. Preserve runtime guards, behavioral/property/fuzz checks,
-coverage/mutation gates and native evidence. Enhanced release-build provenance
-remains separately optional under OD-05 §7.5.
+Reconcile the existing algorithm inventory with this full admitted domain,
+invariants, work bounds and executable correspondence. Review assumptions and
+unproved constructors/callers. Require nonempty completed results, independent
+healthy/error/compiled-defect controls and restored health before claiming a new
+proof. Subset/model proofs retain only their stated scope. Changed relevant
+source/specification/dependencies/configuration/tool inputs invalidate evidence
+unless reviewed as irrelevant; reuse unaffected historical proofs and source
+hashes. Keep open guarantees under their existing owners and the
+[post-V1 debt record](../../../../tasks/development-backlog.md#product-guarantees-still-open).
 
-The inventory must identify each algorithm/function and its CHECK/source owner,
-the independent contract/domain, theorem-to-executable correspondence, proof
-status and exact evidence, remaining obligations and next action. Include existing
-algorithms as well as new work. A valid-input theorem leaves raw-input admission
-and any omitted constructor proofs open with their owners. Do not silently narrow
-the admitted domain to fit the verifier or count a promise of future proof as
-acceptance. Missing evidence blocks the dependent mathematical acceptance;
-independent authorized work can continue.
+A deferred obligation is not completed assurance or a permanent waiver. The
+remaining proof-acceptance methodology applies after V1; it creates no current
+first-release proof prerequisite.
 
-At each affected qualification checkpoint, reconcile the inventory with the
-candidate. Changed source, specification, assumptions, correspondence, dependencies,
-features, compiler/verifier/solver or proof configuration invalidate evidence
-unless an explicit reviewed argument establishes that the change is irrelevant
-to that theorem. Reuse valid unaffected proofs. This is a required acceptance
-policy, not a claim of an automated workspace-wide CI proof gate.
-
-## Select an adequate verifier; evaluate additional tools before integration
+## After V1, select an adequate verifier and evaluate additional tools
 
 The proof requirement is already adopted. The benefit evaluation below concerns
 adding or replacing a verifier; it is not an option to omit a required proof
@@ -102,6 +109,12 @@ about `Ok` results is insufficient when always returning an error would satisfy
 it. Include required success/completeness and rejection behavior. For mutable
 operations distinguish preserved invariants from unchanged state on rejection.
 
+Relate inputs to required answers: a codomain/range, finite-result, normalization
+or no-panic theorem alone can accept a wrong value. For example, a sign operation
+returning zero for a positive input can satisfy a result-in-{-1,0,1} postcondition.
+Challenge a wrong answer that preserves such weaker properties, as well as
+reject-all behavior; use the actual promised relation as the oracle.
+
 Review assumptions against negative values, exact endpoints and transitions.
 Retain concrete reachable valid/error witnesses; these detect some vacuity but
 do not establish specification completeness. A proof assumption about a valid
@@ -148,6 +161,13 @@ verified executable body reaches the product build. A separately translated mode
 can specify expected results; proving that model does not prove the implementation.
 Preserve private APIs; do not expose unchecked construction for a demonstration.
 
+For custom equality, ordering, hashing, conversion or iteration, trace the proof
+through the actual overloaded/public operation. Comparing extracted integers
+alone cannot prove a custom trait body's laws. A defect confined to that body
+must fail the intended obligation; state which laws and operation sequences are
+covered. Do not invent a custom API or duplicate primitive/derived-comparison
+campaign merely to exercise this check.
+
 Verus ghost/spec code is erased. Its `verus_only` cfg is intended for ghost
 imports and verification attributes; do not select different executable behavior
 for verification and production. Ordinary `cargo build` runs no Verus proof.
@@ -155,6 +175,20 @@ for verification and production. Ordinary `cargo build` runs no Verus proof.
 proof rechecks. Inspect selected functions/crates and relevant dependency proof identities
 before claiming the whole declared scope passed. The upstream Cargo commands are
 capability documentation, not admitted NevroTick execution entry points.
+
+Audit frozen proof inputs without executing them when source/AST/JSON reads suffice.
+For a necessary Python import, inspect import-time effects and disable bytecode
+writes **before** loading any frozen module: use `python3 -B` or, in Context-mode
+Python, begin with `import sys; sys.dont_write_bytecode = True`. A read-only intent
+or importlib loader does not prevent `__pycache__` writes. Suppression covers only
+bytecode, not other module effects. Preserve and report any observer-created drift;
+never delete it or rewrite receipts to turn an incomplete campaign into a pass.
+A native readonly namespace does not protect its host-side observers. Where a
+consumer hardens outer input trees, keep generated outputs outside them and
+check exact ownership, modes, types and link identities separately: a content
+snapshot alone does not establish that permissions stayed unchanged. Validate
+compatibility before adopting hardening in another consumer; existing qualified
+receipts are not retroactively given this protection.
 
 Inventory project-added `assume`, axioms, `external_body`, external specifications,
 ignored relevant items/implementations, stubs and environment/type assumptions.
@@ -181,11 +215,22 @@ Any production refactor needs its own behavioral/API/performance review and chec
 
 ## Challenge and bound the pilot
 
-Choose one subject. Set integration/solver time, memory, attempts and worker limits
-before tool acquisition or expensive execution, preserving the adopted limits and
-shipping compiler. Unsupported syntax/macros, setup failure and timeout are
-incomplete evidence, not counterexamples or proof failures about product behavior.
-Do not migrate unrelated modules to make a small pilot work.
+Choose the named product guarantee. Set one finite time/attempt/worker budget
+covering source review, specification and harness preparation, acquisition and
+admission, consumer/framework work, compilation, solver jobs, controls, review
+and cleanup before starting the pilot. Keep memory and other adopted limits,
+the original budget clock and shipping compiler. Record costs in the existing
+task; do not add a new accounting framework for this rule.
+
+At timeout, unsupported mechanism, unqualified result or budget exhaustion, stop
+dispatch and mark the guarantee open. Preserve the failure and consumed budget.
+Unused budget alone permits no retry. Do not reset the clock, split one attempt
+across new cards to regain time, switch to unrelated easy proofs, repair a
+toolchain or extend a verification framework as an automatic continuation.
+Any later attempt needs a changed relevant condition and a finite plan explaining
+how it can close the same useful guarantee; a new budget alone is not that change.
+If no credible route remains, record the debt and return to the product queue.
+All such formal work remains post-V1 under the current deferral.
 
 Classify a non-passing proof before changing tools. Check the exact failed
 obligation and admitted domain: a real implementation/contract counterexample
@@ -197,9 +242,22 @@ Retain confirmed counterexamples across comparisons; a passing alternative must
 explain them under equivalent assumptions and obligations, not hide them through
 weaker inputs, scope or required-success guarantees.
 
+Validate report/schema consumers against genuine emitted fixtures from the pinned
+tool or its documented exporter schema, recording the source identity. Distinguish
+internal compiler metadata from fields actually exported in the consumed report.
+Synthetic and mutated fixtures supplement this evidence; do not invent fields
+that make mocks and consumers agree. Missing required metadata leaves integration
+unqualified, even when those mocks pass.
+
 Require a healthy actual implementation and two or three compiled, non-equivalent
 defects violating distinct promised properties. Each defect needs an admitted
 witness/reason, the intended failed obligation and a restored healthy pass.
+Choose plausible defects from the independent contract and actual data/state
+flow before tailoring them to the harness. For a composed guarantee, include a
+producer or caller defect that correct helpers alone would not reject. A surviving
+semantic defect exposes a specification, reachability or composition gap; repair
+that gap without weakening the contract. A source-hash rejection is custody
+evidence, not a semantic kill.
 Always-error, incorrect signed-boundary arithmetic and wrong outcome classification
 are useful controls only when the chosen contract must reject them. Syntax errors,
 unsupported calls and deletion of a postcondition are not sensitivity controls.
@@ -210,6 +268,32 @@ failed/skipped/timed-out obligations, assumptions and a small maintenance exerci
 Compare tools only on equivalent properties/domains; an unexecuted alternative
 remains a hypothesis. Retain earlier failures. Bind reuse to unchanged proof,
 implementation, dependency, compiler and configuration inputs.
+
+For proof groups, reconcile expected, discovered, selected, attempted, completed
+and qualified jobs, including contracts used to replace callees. Report unique
+product guarantees separately from helper lemmas, repeated/restored runs, defect
+controls, covers and tool-consumer tests. A timeout is an attempted unqualified
+job; its presence in a summary does not make it completed. Keep preparation,
+code generation, model inspection, solver completion, defect sensitivity and
+restored health distinct. Missing, skipped or timed-out obligations remain open
+even when other jobs are green. Infrastructure success supplies no product proof;
+a workflow file or harness name proves no execution.
+
+### Fresh candidates and historical receipts
+
+On post-V1 resumption, maintain a repeatable invocation for each newly reviewed
+candidate: explicit source/configuration/dependency/tool identity, selected
+obligations, current finite budget and fresh output. Keep immutable historical
+receipts separate. Do not reset expired campaign clocks, overwrite old evidence
+or reuse an old summary as a new proof. Source-hash guards remain necessary, but
+rejecting every changed candidate is not semantic regression protection.
+
+Use the maintenance exercise to establish that the reviewed invocation can check
+a fresh candidate and that a compiled semantic defect reaches and fails its
+intended proof obligation. Reuse existing runners where adequate; add no generic
+framework or parallel receipt system without a concrete gap in this guarantee.
+Claim automatic regression protection only for the configured candidate-specific
+proofs actually run; otherwise report manual or historical evidence explicitly.
 
 ## Bound claims about floats, termination and platforms
 

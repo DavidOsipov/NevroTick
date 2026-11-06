@@ -1,7 +1,7 @@
 # NevroTick skills
 
 52 David Osipov website workflow adaptations, four selected upstream specialists
-and eight original NevroTick workflows for the Windows time client in
+and nine original NevroTick workflows for the Windows time client in
 [the documentation guide](../../docs/README.md) and its development host.
 Select smallest task-matching set. Names/descriptions support discovery; load
 full instructions/conditional references when needed. Index navigates; never
@@ -25,8 +25,9 @@ product acceptance IDs and native qualification gates do not apply to that work.
 | Enforce function/module contracts, IPC/configuration admission or domain invariants | [implement-rust-contracts](implementation/implement-rust-contracts/SKILL.md) |
 | Implement numerical kernels or adapt upstream algorithm semantics | [Numerical procedure](implementation/implement-rust/references/numerical-kernels.md) and [Chrony caller-path extraction](implementation/implement-rust/references/chrony-port-simulator.md) under `implement-rust` |
 | Change wire, persisted or domain compatibility | [evolve-data-contracts](implementation/evolve-data-contracts/SKILL.md) |
-| Implement native controls, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
-| Implement or review Slint views, Rust bindings/models, layout or build profile | [implement-slint](implementation/implement-slint/SKILL.md); native UI guidance retains milestone/accessibility contracts |
+| Implement native UI presentation, interactions or status | [implement-native-ui](implementation/implement-native-ui/SKILL.md) |
+| Implement or debug Slint components, Rust models, event-loop ownership or resources | [implement-slint](implementation/implement-slint/SKILL.md), alongside native-UI product semantics |
+| Harvest, maintain, generate or reconcile Windows product/package/Store metadata | [maintain-windows-metadata](implementation/maintain-windows-metadata/SKILL.md); [package-artifact QA](testing/qa-package-artifacts/SKILL.md) owns final artifact/native qualification |
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
@@ -45,14 +46,18 @@ shared garde rules inside fallible private domain construction, and current
 authorization/effect checks. All function/module interfaces follow
 [contract enforcement](implementation/implement-rust-contracts/references/contract-enforcement.md),
 including checked transformations and explicit failure/effect obligations.
-The normal-user UI, selected for complete replacement with Slint under
-[OD-11](../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
-unprivileged network engine, privileged clock broker, administrative helper
-and the complete package have distinct owners. Prototype crates require
-dependency qualification; existing Win32 source/evidence is the pre-migration
-baseline, and required Windows OS adapters remain applicable. Retained TUF
-research adopts no updater or second release. Future-version work must name
-changed architecture decisions.
+The normal-user Slint UI, unprivileged network engine, privileged clock broker,
+administrative helper and complete package have distinct owners.
+[OD-13](../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default and complete Win32 UI replacement. The checked-in
+entrypoint now selects Slint; retained Win32 source and receipts are historical.
+[S0.5](../../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../../tasks/slint-gui-handoff.md) own current source, evidence and gaps.
+The original GUI uses David's approved GPL-3.0-only direction; Chrony-derived
+Core/engine retains GPL-2.0-only. Exact graph/composition, native and package
+qualification remain distinct. Prototype crates require dependency qualification.
+Retained TUF research adopts no updater or second release. Future-version work
+must name changed architecture decisions.
 
 The current [OD-05 delivery decision](../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership)
 selects one complete hardened MSIX for David's Store submission attempt,
@@ -79,18 +84,19 @@ native observation or release qualification. UI-M0's D1/D2/D3 deferrals remain.
 When selecting existing compiler, lint, test, security or inventory commands, use
 [configured tool execution](testing/references/configured-tooling.md). It maps
 changed guarantees to current entry points and their execution/evidence limits.
-Select Miri, cargo-fuzz, Loom, Kani, Lockbud or cargo-vet only for their relevant
-memory, input, concurrency, proof or dependency-review obligation. For uncertain
+Select Miri, cargo-fuzz, Loom, Lockbud or cargo-vet only for their relevant
+memory, input, concurrency or dependency-review obligation. Kani/formal proof
+work follows the post-V1 deferral below. For uncertain
 source-to-sink propagation, use the data-flow skill and its local CodeQL MCP
 profile. Installed tools and fixture controls establish no product qualification;
 hosted CodeQL scanning remains deferred.
 
-Product mathematical algorithms require machine-checked proofs under
-[OD-10](../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs).
-Use the [proof workflow](testing/references/formal-verification.md) during planning,
-implementation and qualification. Preserve the full admitted success/error and
-machine-arithmetic contract; missing or invalidated proofs block dependent
-mathematical acceptance. Tool choice and other analysis lanes remain scoped.
+Apply [OD-10’s first-release deferral](../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal proof work,
+verifier extensions and pending proof admission/metadata repairs resume after V1.
+Missing proofs do not block V1 implementation, acceptance or release. Continue
+the ordinary product plan and all nonformal gates; keep proof obligations in
+the existing post-V1 backlog and historical evidence within its exact scope.
+The [proof workflow](testing/references/formal-verification.md) applies on resumption.
 
 ## Adaptation and research
 
@@ -110,7 +116,7 @@ dated primary sources:
 
 Canonical files live once here. Keep normal implicit discovery; no global skill/
 tool installation needed. Explicit invocation, e.g. `$implement-rust-contracts`,
-for precise selection. The pack registers 64 grouped skills without aliases;
+for precise selection. The pack registers 65 grouped skills without aliases;
 inventory validation and current-host discovery are separate checks.
 
 ## Maintaining the pack

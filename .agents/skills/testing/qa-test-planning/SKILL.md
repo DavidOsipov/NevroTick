@@ -17,13 +17,20 @@ output checks through [contract QA](../qa-contract-tests/SKILL.md), including a
 compiling external control for claimed privacy/type restrictions. Garde field
 annotations and wrapper names alone cannot discharge the obligation.
 
-For existing or future mathematical algorithms, plan the mandatory
-[source-bound proofs](../references/formal-verification.md) under OD-10, including
-full admitted domain and success/error contracts, machine/rounding semantics,
-invariants, promised work bounds, independent review and healthy/defect controls.
-Assign each obligation and receipt to its existing source task/CHECK owner.
-Missing or invalidated proof evidence blocks dependent mathematical acceptance;
-tool evaluation and behavioral tests cannot close it.
+For product mathematics, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal work and pending proof admission/metadata repairs resume after V1.
+Missing or invalidated proofs do not block V1 acceptance or release. Record
+remaining obligations under the existing source/CHECK owners as post-V1 work;
+retain completed evidence only within its exact historical scope. Continue
+independent behavioral/property/boundary checks and all nonformal gates.
+Use the [proof workflow](../references/formal-verification.md) on post-V1 resumption.
+For each selected [product proof debt](../../../../tasks/development-backlog.md#product-guarantees-still-open),
+plan an independent complete contract and a plausible defect in the actual
+operation or caller that the contract must reject. Do not select only defects
+already tailored to a helper harness. Track constructor/callee assumptions and
+composition explicitly; a source-hash rejection is a custody control, not a
+semantic kill. Reuse ordinary tests and completed exact-scope lemmas; neither
+their count nor a tool-consumer mock closes the remaining product guarantee.
 
 Use [case design](../references/case-design.md) for potentially hidden optional/default/state/interacting-rule cases. Record feasible combinations/independent decision-table outcomes; directly cover known higher-order interactions. Pairwise/count-based coverage proves no completeness.
 
@@ -33,7 +40,7 @@ For multiple profiles, candidates, fault controls or replay runs, use [campaign 
 
 Use [configured analysis](../references/configured-tooling.md#additional-rust-analysis)
 to select Miri for reached portable memory behavior, cargo-fuzz for hostile
-parser inputs, Loom for instrumented schedules, Kani for finite properties,
+parser inputs, Loom for instrumented schedules, Kani for finite properties after V1,
 Lockbud for compiler-compatible static lock screening, or cargo-vet for actual
 dependency-review obligations. Name a concrete missing observation before adding
 a lane; tool controls and product harness execution are distinct plan items.

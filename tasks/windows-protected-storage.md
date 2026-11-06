@@ -80,6 +80,23 @@ Only load the leaves needed by that item's changed guarantee.
 
 ## 2. Next source-only assignment
 
+**5 November proxy-credential scope:** consume the
+[conditional-purpose handoff](../docs/plans/windows-protected-storage.md#2-owners-data-classes-and-restoration)
+when ST-W01 reaches authenticated proxy support.
+[OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+defers proxy support beyond first Windows delivery; only a later authenticated
+SOCKS5 extension needs this purpose. The first future loopback/no-auth/local-DNS
+subset does not, and this handoff is not a current ST-W01 or Direct prerequisite.
+For that authenticated extension, reuse the existing engine storage manager;
+freeze purpose/key/epoch isolation, bounded credential references,
+authorized input/readers, replacement and missing-secret behavior before enabling
+it. The NTS/DNS allowlists and continuation matrix do not already qualify this
+purpose. Map malformed/old/wrong-purpose state, unavailable root, partial replace,
+unattended restart, late credential readers and redacted exports to existing
+ST-T03/05/07/10/14/17 and engine PATH-14/18, with healthy supported controls.
+No new ST-W item, provider choice, secret file/database or native execution is
+created; source-only preparation and the storage pause retain their scope.
+
 ### ST-W01 Prepare one construction and failure contract
 
 **Owner:** storage lead, with bounded platform/security review.  
@@ -536,3 +553,44 @@ The mandatory-state owner stays separate; DoQ-only and one complete MSI policies
 UI-M0 deferrals, Windows stop, separate fuzz no-retry hold and storage pause are
 unchanged. No source card, provider/build/account/profile row or conditional
 reserve has been executed or selected by this acknowledgement.
+
+### 6.7 Windows binding coverage and reuse — 5 November 2026
+
+**Scope/status:** source finding integrated against NevroTick
+`e82f3f6b352fde88beceece4d3084862d8778338`; provider construction, dependency
+admission and native experiments remain unexecuted/held. Read
+[architecture §18.6.2/S135](../docs/windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+and [storage plan §5](../docs/plans/windows-protected-storage.md#5-platform-admission-failure-classification-and-privacy).
+The inspected `windows` 0.62.2 projection lacks REQUIRE/PREFER VBS flags although
+the reviewed new upstream ncrypt projection has them. A function's availability
+or per-boot constant does not establish the missing flags or actual VBS support.
+
+**ST-W01 next source-only action, storage/dependency/platform owners:** before
+the affected construction row is frozen, enumerate required NCrypt functions,
+flags, structures and status semantics; record selected published version,
+checksum/source, features/target and SDK/metadata provenance. Resolve the gap
+through a compatible binding or narrowly pinned generated surface. Record
+coverage and unsupported cases without magic constants, mixed projection types
+or a provider probe. Check package/source parity before executing build inputs.
+
+**Independent exit:** the chosen source exposes every symbol/signature needed
+by the selected row and preserves required flags/error distinctions; the old
+projection and a missing-symbol/changed-generation case are discriminating
+controls. Subsequent admitted target compilation proves only build compatibility.
+Keep unknown provider/build/account/hardware behavior explicit. This is an
+existing CHECK-26 engineering freeze, not another approval or global release gate.
+
+**ST-W04 follow-on, CNG/crypto/native QA:** only after its construction and native
+entry conditions, qualify create/open/use/teardown on actual roots with healthy
+VBS and supported unavailable/denied/unsupported neighbors. REQUIRE must not
+become PREFER/software fallback; document the prerelease/build qualification and
+actual mode. Existing ST-T01/02/05/12/13/16/18 and CHECK-26/27 own the result.
+Selecting generated bindings does not complete these native observations.
+
+For a reached registry consumer, compare the focused wrapper only if it removes
+concrete work while retaining rights/DACL, pre-allocation limits and recovery.
+No authoritative-state relocation or cross-resource transaction is inferred.
+Preserve the current complete-MSIX direction, separate mandatory-state owner,
+VBS -> policy-authorised fresh TPM -> NoPersistentCache optional-state policy,
+Core priority and Windows/fuzz/storage holds. This entry refines ST-W01/ST-W04;
+it starts no new storage workstream or experiment.

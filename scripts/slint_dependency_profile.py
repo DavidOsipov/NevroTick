@@ -53,7 +53,7 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "a903246efd5377ce2e21798544f610df90294e72e8bfdffac799dc4decb9f184"
+REVIEWED_POLICY_SHA256: str | None = "b76a65d04a7c99f78ba299c87e39a3ee9172e725604f220f43e2677a0ebb0455"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
@@ -133,7 +133,7 @@ LOCAL_IDENTITIES = {name + "@0.0.0" for name in MEMBERS}
 LOCAL_SCOPE_MEMBERS = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"},
                        "time-domain": {"time-domain"}, "time-core": {"time-core", "time-domain"},
                        "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"},
-                       "nevrotick-engine": {"nevrotick-engine", "ntp-wire"}}
+                       "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"}}
 UI_BUILD = "crates/nevrotick-ui/build.rs"
 REGISTRY = "registry+https://github.com/rust-lang/crates.io-index"
 MAX_POLICY_BYTES = 2 * 1024 * 1024

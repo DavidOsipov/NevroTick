@@ -7,6 +7,11 @@ description: "Verify emitted NevroTick binaries, complete MSIX contents, metadat
 
 Read [the testing contract](../CONTRACT.md).
 
+For field inventory, provenance, source storage and generation/readback details,
+use [maintain-windows-metadata](../../implementation/maintain-windows-metadata/SKILL.md).
+Keep this workflow as the final artifact/native qualification owner; authored
+records and metadata parsing alone do not prove a complete or trusted package.
+
 Identify frozen source/configuration/toolchain/dependency/feature inputs, actual final binary/package hashes. Inspect emitted PE/runtime protections, architecture, versions, manifests/resources, DLL loading dependencies, expected component/service inventory.
 
 The selected target is one complete hardened MSIX with UI/engine/broker/administration helper for David's Store trial, under [architecture §19.4](../../../../docs/windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](../../../../docs/nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership). Compare actual payloads/installed results; source selection proves no package or qualified implementation. Check package/catalog and project-specific identity, tamper controls, clean-machine operation, one product lifecycle and source/SBOM/provenance obligations. Use [MSIX plan §3](../../../../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) for integrity, immutable code and the actual per-role DLL/mitigation profile.

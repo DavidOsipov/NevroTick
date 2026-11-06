@@ -6,17 +6,44 @@ P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
 **Current continuation:** use [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the latest [Core task status](s1.3-source-selection-readiness.md). Historical
+and the engine's [next source checkpoint](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
+The [pure-leap qualification](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
+is its completed predecessor. Historical
 checkpoint numbers and passes never replace the current candidate or next action.
 **Deferred** below means a recorded parent, not ready for implementation; expand
 only its next activated child under the [grouped backlog](development-backlog.md).
 Role owners identify engineering responsibility, not assigned people.
 
-**Parallel ready source work:** [OD-11's Slint replacement amendment](s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
-owns source/dependency/licence preparation alongside Core. The Rust UI still
-uses Win32 until migration; graph admission, fixture-port evidence and native
-qualification remain separate. One integration owner serializes shared graph
-and schema changes.
+**Current owner amendment — 6 November 2026:** [OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. Retain the proof receipts and incomplete obligations below; their older
+“next”, “mandatory before acceptance” and proof-first directions do not authorize
+pre-V1 work or block first-version implementation, phase acceptance or release.
+No new solver/compiler proof campaign, verifier extension, formal source
+preparation or proof-metadata consumer repair is scheduled before V1. Resume
+through normal bounded planning after that release. Runtime validation, checked
+arithmetic, independent tests, property/boundary cases, 90% security-primitive
+coverage, 95% critical-file mutation, security/native/package/release gates and
+all existing Windows/fuzz/storage/UI holds remain in force. Current product work
+follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+For formal coverage and resumption, use the consolidated
+[product-guarantee debt and completion criteria](development-backlog.md#product-guarantees-still-open)
+under [OD-10 §14.2](../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026).
+Keep detailed receipts with the existing source owners below; a local helper or
+tooling pass does not close its parent algorithm.
+
+**Current Slint continuation — 6 November 2026:** the [GUI handoff](slint-gui-handoff.md)
+and [S0.5 active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+own the implemented fixture GUI, GPL-3.0-only original GUI grant, bounded graph
+admission and GUI42/43 evidence. The checked-in Windows entrypoint selects Slint;
+Win32 is retained historical source. Backend/native qualification, independent
+critical-text approval and the planned hardening handoff remain open. Earlier
+M0-SL preparation states below are historical and do not require repeating their
+completed source stages. Main's Slint/iced measurements and reaffirmation remain
+retained, with no toolkit-choice rerun. One owner serializes shared graph/schema
+changes; branch receipts do not qualify the merged candidate. Live P5 and D1–D3
+retain their existing prerequisites and re-entry gates.
 
 ## Phase and stage ownership
 
@@ -26,21 +53,31 @@ and schema changes.
 | P0 S0.2 | [Platform parent](development-backlog.md#p0-platform-and-policy); platform/security | Deferred service-token/lifecycle experiment; intended accounts, admitted adapter and disposable fixture precede actual allowed/denied CHECK-1/27 observations. |
 | P0 S0.3 | [Platform parent](development-backlog.md#p0-platform-and-policy); IPC/security | Deferred mutual-identity experiment after token/endpoint contracts; real permitted/denied status/protected calls and fake endpoints establish CHECK-2 subset. |
 | P0 S0.4 | [Platform parent](development-backlog.md#p0-platform-and-policy), [W11-W02](windows11-integration.md#w11-w02-reconcile-sleep-timers-and-clock-presentation); clock/platform | Deferred measured backend experiment; bounded owned guest/reference/recovery precede sign/rate/step/power/cancel CHECK-10/11/12 observations. |
-| P0 S0.5 | [Slint migration and retained comparison](s0.5-ui-comparison.md#ordered-work-and-observable-exits); UI/accessibility + dependency/licence | OD-11 selects complete Win32 replacement. Ready source/licence/profile work → pinned reviewed graph → fixture-only v0.4 port → admitted native qualification and single-UI cutover. Full CHECK-22 feasibility retains D1/D3 triggers; Win32/egui history and UI-M0 passes do not qualify Slint. |
+| P0 S0.5 | [Slint GUI continuation](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui), [handoff](slint-gui-handoff.md); UI/accessibility + dependency/licence | OD-13 selects Slint. The v0.4 fixture GUI, original GUI GPL3 grant and branch portable/capture/source-control evidence are delivered; merged-candidate, backend/native, critical-text approval and hardening work remain open. Full CHECK-22 feasibility retains D1/D3 triggers; historical Win32/toolkit results do not transfer. |
 | P0 S0.6 | [W11-W05](windows11-integration.md#w11-w05-observe-effective-scm-maintenance-and-process-policy), [W11-W10](windows11-integration.md#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need); packaging/platform/security | Existing owner for selected complete MSIX laboratory mechanics; provisioning/recovery and admitted guest gates precede CHECK-5/13/23 subset. No duplicate package task. |
 | P0 S0.7 | [Platform parent](development-backlog.md#p0-platform-and-policy); architecture/policy/security | Deferred finite decision freeze after relevant evidence; explicit decisions or dependent blockers, including native-work and supported-environment limits. |
 | P1 S1.1a–b | [Header](s1.1-header.md), [framing](s1.1-framing.md); protocol | Existing inert `ntp-wire` tasks; candidate-specific framing/admission evidence, not acquisition/authentication/sample authority. |
-| P1 S1.1c–e | [Time domain](s1.1-time-domain.md), [exchange](s1.1-exchange-association.md), [deterministic harness](s1.1-deterministic-harness.md); domain/protocol/QA | Existing checked numerical and fixture-association children; frozen contracts plus independent valid/rejected CHECK-6/7/25 cases. |
+| P1 S1.1c–e | [Time domain](s1.1-time-domain.md), [exchange](s1.1-exchange-association.md), [deterministic harness](s1.1-deterministic-harness.md); domain/protocol/QA | Existing checked numerical and fixture-association children. [RequestTiming proof](s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed five full-domain/defect/restored jobs and158 selected Python checks, with34 inputs/nine executed Python sources bound. Constructor arithmetic only; lifecycle/native/P1 gates remain open. |
 | P1 S1.2 | [Regression/history](s1.2-regression-readiness.md); numerical Core | Existing task; retain selected-owner receipts, remaining scope and independent trajectory/critical-file gates. |
-| P1 S1.3 | [Selection/principal/combination](s1.3-source-selection-readiness.md); numerical Core | Current work and detailed follow-ups remain here. Full selection/eligibility/P1 closure is broader than qualified inert owners. |
-| P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | Deferred abstract discipline/holdover parent. Current reference/achieved-effect/rate-delivery consumers stay in S1.3; the separate leap child follows the current Core checkpoint and its finite date/data/import freeze. Its entry distinguishes completed predecessors from later production/native dependencies. |
+| P1 S1.3 | [Selection/principal/combination](s1.3-source-selection-readiness.md); numerical Core | [Actual source-counter invariant](s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks;32 inputs/nine executed Python sources bound. Earlier ordinal/append-depth/rational evidence remains preserved. [Complete constructor source preparation](s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) now has six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review; zero compiler/proof commands, execution unready. Source-specific admission/target/allocator/drop/unwinding/constructor proof, transactional lifecycle, prefix/depth/topology/whole-selection, held fraction models/bridge/import/addition, Garde admission, `EndpointParts`, complete enclosure and Core/P1 remain open. All holds and the full P0–P7 objective remain. |
+| P1 S1.4 | [Core completion parent](development-backlog.md#p1-core-completion), [leap entry table](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint); Core/domain | Abstract discipline/holdover parent remains deferred. The separate pure-leap owner has completed its recorded final host qualification; preserve current receipts and continue with the observation-to-Core contract under plan §7. Formal obligations are post-V1. Later protocol/native scopes remain open. |
 | P1 S1.5 | [Core completion / verifier maintenance](development-backlog.md#p1-core-completion); tooling/dependency/QA | Cross-cutting verification and eventual phase closure; existing actual gates remain mandatory. Deferred maintenance is not a new implementation prerequisite. |
-| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition); engine/protocol/security | Deferred real UDP/DNS → NTS → qualified reuse/recovery → adversarial closure. Reuse the [engine pilot](engine-transport-pilot.md), protocol and crypto owners without inheriting production qualification. |
+| P2 S2.1–S2.4 | [Acquisition parent](development-backlog.md#p2-acquisition); engine/protocol/security | Deferred real UDP/DNS → NTS → qualified reuse/recovery → adversarial closure. The [ordinary S2.2 card](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) prepares fresh KE/protected UDP/actual Core composition; graph/trust/contracts and implementation evidence remain open. Reuse the engine, protocol and crypto owners without inheriting production qualification. |
 | P3 S3.1–S3.4 | [Service-boundary parent](development-backlog.md#p3-service-boundary); platform/IPC/security/Core | Deferred final services → authenticated handlers → mandatory state → simulated-backend integration. W11/ST-W assignments refine these owners; optional storage retains its separate pause. |
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
-| P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred live Slint status → settings/helper → diagnostics/tray → accessibility/resources after the selected replacement chain. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
+| P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
 | P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then submission/delivered provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; local and Store-delivered exits differ. |
 | P7 | [Final-qualification parent](development-backlog.md#p7-final-qualification); independent QA/release, David approves release | Deferred exact integrated candidate after applicable phase evidence; reconcile CHECK-1–27/AC-01–20, installed bytes, unresolved blockers and actual release-profile trust. |
+
+The [clock-limit preparation card](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+supplies S0.4/S0.7/P4 and W11-W02/04/05 with unresolved fields, evidence provenance,
+paired controls and ordered handoff. It selects no production values, preserves
+current Core priority and lifts no native, fuzz or storage hold.
+
+The [two-family platform matrix](windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+records OD-14's Windows 11 26H2/Server 2025 direction at the same S0.4/S0.7,
+W11-W02/04/05/10 and P4/P6/P7 owners. Exact profiles, delivery and actual
+qualification remain open; no new task chain or native authorization follows.
 
 Every exit also uses the [phase gates](../docs/plans/development-plan.md#6-phase-implementation-and-acceptance-gates),
 [CHECK catalog](../docs/windows-time-architecture.md#202-acceptance-catalog) and
@@ -56,17 +93,34 @@ parents; it creates no second execution sequence.
 
 ## Retained research dispositions
 
+The [Windows component reuse handoff](../docs/plans/development-plan.md#44-apply-windows-component-reuse)
+is routed through the [existing-stage backlog](development-backlog.md#windows-component-reuse-at-existing-stage-entry),
+[W11 §4.29](windows11-integration.md#429-windows-component-reuse-routing--5-november-2026),
+[storage §6.7](windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
+and [UI handoff](ui-m0.md#windows-component-reuse-handoff--5-november-2026).
+It records generated API reuse, the VBS binding gap and conditional registry/UI
+candidates. Publication/source coverage does not admit a dependency, activate a
+native experiment or reopen the closed egui comparison; current holds and Core
+priority remain with plan §7.
+
 | Source / record | Disposition and re-entry owner |
 | --- | --- |
-| [Win32/egui comparison](../docs/supporting-reviews/ui-toolkit-comparison.md), [task](s0.5-ui-comparison.md) | The 30 October experiment/rejection is closed and retained exactly. [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) supersedes its retain-Win32 direction; the existing task now owns the Slint migration. Resource targets remain, no comparison rerun or Win32 fallback is selected, and no Slint admission/qualification follows from historical results. |
+| [Win32/egui comparison](../docs/supporting-reviews/ui-toolkit-comparison.md), [task](s0.5-ui-comparison.md) | Historical egui comparison closed; the later Slint pilot led to accepted [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit), superseding retain-Win32 direction. Keep resource limits and candidate-specific receipts; use the current S0.5/GUI handoff for remaining merged-candidate, native/backend and package qualification. |
 | [State-guided fuzzing experiment](../docs/supporting-reviews/state-guided-fuzzing-experiment.md), [harness task](s1.1-deterministic-harness.md) | Closed; reuse its strict oracle, corpus and targeted lifecycle lessons. Reopen only for a concrete uncovered transition, changed input model or demonstrated search gap. |
-| [Verus assessment](../docs/supporting-reviews/verus-assessment.md), [time-domain task](s1.1-time-domain.md#verus-proposal-assessment--1-november-2026) | DEFER integration; a named valuable contract and testable benefit hypothesis may justify one bounded comparison. No scheduled pilot or mandatory gate is added. |
+| [Verus assessment](../docs/supporting-reviews/verus-assessment.md), [time-domain task](s1.1-time-domain.md#verus-proposal-assessment--1-november-2026) | The 1 November assessment deferred integration and scheduled no pilot. **5 November:** the addition timeout justified the [bounded Core pilot](s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026); its three readiness commands are now complete and the candidate is DEFER because required `u64::checked_shl` is unsupported. Zero product-proof commands ran. Return only after official support for the unchanged API and a newly reviewed finite checkpoint; broader adoption remains deferred. No global CI gate or phase blocker is added. |
 | [Update assessment](../docs/windows-time-update-assessment.md) and retained TUF reviews | TUF and a bespoke privileged updater remain unadopted. W11-W10 owns the selected MSIX delivery; a materially different update design requires its existing decision process. |
 | [Enhanced build provenance](../docs/plans/release-provenance.md) | Optional under OD-05 §7.5: attestations, independent rebuilds and public source-to-Store evidence add no release blocker or P6/P7 prerequisite. W11-W10 retains the existing required custody, SBOM/licence, trust and installed-payload checks. |
 
 [Future roadmap parents](development-backlog.md#future-roadmap-parents) now retain
-DNS, Android and Chrony-replacement ownership explicitly. Their staged contracts
-remain in the linked plans; none becomes a prerequisite to current Core work.
+DNS, Android, Chrony-replacement, deferred SOCKS5 and the post-Khronos GeoIP
+experiment ownership explicitly. The [existing catalogue task](server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos)
+owns GEO-C01 evaluation/disposition before Android; GeoIP adoption remains optional.
+The future workstream contracts stay in the linked plans; none becomes a prerequisite
+to current Core work.
+Under [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+Direct family/interface/path-history work stays in P2/P5; proxy-specific work is
+outside first Windows delivery. The [existing engine task](engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+owns its limited future profile and SOCKS-C01 checks.
 
 Preserve [current execution holds and scoped Sandbox permission](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
 Core priority and UI-M0 deferrals. The blocked S134 artifact, general host Windows

@@ -17,7 +17,7 @@
 **Recorded:** 5 November 2026. **Status:** design/source handoff; no implementation.
 **Security amendment:** 6 November 2026 (Asia/Tbilisi); proposed controls and qualification only.
 **Character refinement:** emoji-free, closed translation repertoires required by the owner; design only.
-[OD-12](../nevrotick-owner-decisions.md#16-od-12--externalized-ui-translations-and-binary-catalogs)
+[OD-15](../nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs)
 requires separate translation files and prefers binary delivery for the Slint UI.
 This refines [DEC-17/architecture §16.4](../windows-time-architecture.md#164-localization-and-presentation); [S0.5](../../tasks/s0.5-ui-comparison.md) owns preparation.
 English remains initial; no extra locales, translator/provider services or user-pack imports are adopted.
@@ -491,7 +491,8 @@ and updating new OS messages. Later native qualification observes long/expanded
 text, bidi/non-ASCII IDs, keyboard/Narrator/UIA and actual packaged resources.
 Record exact candidate/locales and skipped gaps.
 
-The [current P1/proof-first priority](development-plan.md#7-next-executable-task-for-a-development-agent),
+The [ordinary product queue](development-plan.md#7-next-executable-task-for-a-development-agent),
+[OD-10 post-V1 proof deferral](../nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026),
 native execution holds, separate fuzz hold and storage pause remain. UI-M0 stays
 fixture-only; [D1/D3](../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
 return before general-user preview/release or corresponding claims, D2 freshness

@@ -9,7 +9,7 @@ Read [the testing contract](../CONTRACT.md).
 
 Inspect actual locale policy/typed message catalog. Initial scope English; Russian only when adopted. Missing unadopted locale is no product defect; no automatic website bilingual baseline.
 
-For OD-12, read the [catalog design](../../../../docs/plans/ui-localization.md):
+For OD-15, read the [catalog design](../../../../docs/plans/ui-localization.md):
 translator-editable JSON and generated CBOR are separate artifacts. Check the
 actual selected loader/formatter and every reached Slint/tray/notification/
 accessible-name consumer; native `@tr` support proves no CBOR or Windows MO path.

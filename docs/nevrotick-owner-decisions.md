@@ -1,9 +1,9 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.17<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 Slint replacement and OD-12 translation catalogs added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.18<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
-**Security clarification:** 6 November 2026, Asia/Tbilisi — every JSON/CBOR input is potentially malicious, including contributor/translator catalogs and packaged/generated/English data.<br>
+**Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
@@ -23,10 +23,7 @@ This record captures David's replies about reuse, correction policy, default ser
 
 Read this alongside the [architecture](windows-time-architecture.md), [feature plan](windows-time-features.md), [signing guide](windows-time-signing-guide.md) and [research handoff](nevrotick-research-handoff.md). The accepted changes are integrated into those canonical documents. Use this record to distinguish owner decisions from pending recommendations when reading or changing them. Existing requirements remain in force except where an accepted change below explicitly amends them. Recommendations do not become owner decisions merely because an agent wrote them down.
 
-OD-11 replaces the earlier Win32 toolkit choice with Slint. The fixture-only,
-unelevated UI boundary and D1/D2/D3 deferrals retain their existing gates. Toolkit
-selection enables the bounded migration work recorded below; it neither enables
-live UI integration nor blocks unrelated permitted Core/platform work.
+OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localization. The current UI-M0 restriction remains intact: fixture-only, unelevated UI, with D1/D2/D3 deferred at their existing gates. These decisions enable source migration, not live service/clock authority or native qualification, and do not block unrelated permitted product work.
 
 ## 2. Decision summary
 
@@ -41,9 +38,13 @@ live UI integration nor blocks unrelated permitted Core/platform work.
 | OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
-| OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
-| OD-11 | Completely replace the Win32 UI with Slint, using the current documentation and v0.4 prototype | **Accepted toolkit and migration direction, 5 November 2026** | Pinned Slint version/backend/renderer/features and compatible licence/dependency graph; fixture implementation, actual Windows resource/lifecycle/accessibility evidence and later secured integration. Toolkit choice is settled; implementation and qualification remain open |
-| OD-12 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
+| OD-10 | Defer formal proof work until after the first released software version (V1); require useful product guarantees when it resumes | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; [proof purpose and completion](#142-proof-purpose-and-completion--6-november-2026) governs scope, stopping and honest accounting; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
+| OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
+| OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
+| OD-13 | Use Slint as the default UI toolkit and complete Win32 replacement; license original GUI code GPL-3.0-only while preserving GPL-2.0-only Core/engine | **Accepted toolkit direction, 5 November; GUI composition clarified 6 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
+| OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
+
+| OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -344,6 +345,23 @@ No complete reproducible release or source-to-delivered-byte proof is claimed.
 Neither signing, attestation nor matching rebuilds prove that approved source,
 dependencies or build infrastructure contain no malicious behavior.
 
+### 7.6 Extensive, correct product and package metadata — 5 November 2026
+
+David requires the maximum useful, correct metadata whether the selected
+delivery is MSIX or a later MSI route. The
+[metadata contract](plans/windows-package-metadata.md) maps executable resources,
+installer/package and installed-app information, Store fields, localization,
+versions and source-of-value rules. Populate applicable supported fields and
+record justified absence; do not invent identities, support contacts or shipped
+capabilities, or enable package behavior merely to fill optional fields.
+
+W11-W10/P6 own the shared record, generated outputs and actual artifact/readback
+checks under existing CHECK-18/20/23/26/27. The field/generation design is source
+preparation, not implemented metadata or a qualified package. The selected
+complete-MSIX direction, possible later MSI reconsideration, Core priority and
+execution holds remain; enhanced public build provenance stays optional under
+§7.5.
+
 ## 8. OD-06 — future research and decision queue
 
 The [research handoff](nevrotick-research-handoff.md) is the bounded assignment for another AI. It separates protocol/platform findings from choices that require David and from provider decisions nobody on the project can grant.
@@ -521,6 +539,8 @@ needs no repeated design permission; material exceptions still follow OD-04.
 
 ## 14. OD-10 — mandatory mathematical proofs
 
+**Current disposition:** the [6 November first-release deferral](#141-first-release-deferral--6-november-2026) supersedes the proof-first execution and acceptance requirements below. The 5 November instruction and receipts are retained as historical policy.
+
 **Direct owner instruction, 5 November 2026:** David stated that formal proofs
 are now mandatory, supplied the source-bound rounding/era proof handoff and
 instructed the main development agent to synchronize the repository and continue.
@@ -550,7 +570,224 @@ The choice and admission of additional proof tools remains evidence-led. This
 requirement is distinct from optional enhanced release/build provenance in
 OD-05 §7.5, and grants no publication or release approval.
 
-## 15. OD-11 — replace the Win32 UI with Slint
+**Conditional tool direction, 5 November 2026:** David asked to use Verus if it
+is better and to document justified work in the plan, backlog, tasks and relevant
+docs. The [bounded Core addition pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+records the current evidence-led evaluation, finite gates and acceptance.
+This instruction preserves the source-bound proof requirement and conditional
+adoption: a justified pilot is not demonstrated superiority, general verifier
+selection or a weaker mathematical acceptance rule.
+
+### 14.1 First-release deferral — 6 November 2026
+
+**Explicit owner instruction:** David directed the agent to finalize, commit and
+push the current work, defer formal proofs until after the first released
+software version (V1), document the decision, adjust the existing tasks and
+continue product development. This amends OD-10's 5 November proof-first policy;
+formal proof completion is no longer a V1 prerequisite, acceptance blocker or
+release gate. The whole-product objective continues.
+
+**Owner-reported rationale:** this proof work took more than one day without a
+new demonstrated product mathematical defect. This is the owner's account of
+this work, not a measured assurance claim or a claim that the product has no
+software defects. Deliberately injected semantic mutants and defects in proof
+tooling or harnesses remain distinct from demonstrated product defects.
+
+**Current execution:** defer formal compiler/solver/proof jobs, proof authoring,
+verifier/tool extensions, admission/metadata work and the pending metadata-consumer
+repair until after V1. Do not restart them automatically because an old task,
+skill, verifier capability or missing theorem says proof comes first. Continue
+the ordinary product plan and its applicable nonformal acceptance. Ordinary
+product compilation and testing are unaffected by this formal-work deferral.
+
+Retain existing proofs, failed/incomplete receipts and unproved obligations in
+their current task/evidence chain. Completed proofs retain only their exact
+historical source/domain/configuration scope; neither this decision nor changed
+source extends them. Track unfinished and newly affected obligations as post-V1
+work, not permanently waived work or completed mathematical assurance. After V1,
+resume through normal bounded planning and reconcile the source-bound contracts,
+controls and candidate identity before claiming new proof acceptance.
+
+Runtime validation, garde-backed private construction and invariants, checked
+arithmetic, independent behavioral/property/boundary tests, security checks,
+90% security-primitive executable-line coverage, 95% per-critical-file mutation,
+native Windows, packaging and release requirements remain unchanged. Existing
+Windows execution, fuzz, protected-storage and UI-M0 holds/deferrals remain.
+Amended OD-05's complete hardened MSIX direction and David's release authority
+remain canonical; this amendment grants no native execution, publication-account
+action or release approval.
+
+### 14.2 Proof purpose and completion — 6 November 2026
+
+**Explicit owner instruction:** after the scoped review of the existing formal
+proofs, David asked to make the agent skills prevent low-value proof activity and
+to document the product guarantees that still need coverage. This amendment
+changes planning, review and accounting; §14.1's post-V1 execution deferral stays
+in force. It neither discards useful existing proofs nor asserts that their
+author fabricated results or that the product contains a demonstrated new bug.
+
+**Required behavior:** choose a meaningful product-operation contract before a
+verifier, harness or convenient helper. Record its required success/errors,
+admitted domain, actual constructor/callee/caller chain, independent expected
+relation, plausible semantic defects and finite completion/stop budget. A local
+lemma is useful when it closes a named requirement or a necessary dependency of
+that contract. Its pass never closes omitted callers, validation, state effects
+or a parent algorithm. A sound proof need not discover a previously unknown bug;
+its value is the precise guarantee established and its demonstrated sensitivity
+to relevant incorrect behavior.
+
+When a pilot exhausts its budget or cannot establish the selected property,
+record the incomplete obligation and blocker. Do not continue by silently
+changing the target to easy helpers, restarting clocks, repeating an unchanged
+failed approach or expanding proof infrastructure. Any later attempt must name
+the diagnosed cause, material change, expected path to closure and bounded cost
+in the same task. Infrastructure work must unblock that selected guarantee; it
+is not product-proof progress by itself. Reconcile reports by distinct completed
+product guarantees, remaining assumptions and unproved scope, separately from
+attempted/qualified jobs, controls and tooling checks.
+
+The [existing post-V1 backlog](../tasks/development-backlog.md#product-guarantees-still-open)
+owns the consolidated debt and closure criteria; existing S1.1/S1.2/S1.3/S1.4
+tasks retain detailed source/evidence ownership. The
+[formal-proof workflow](../.agents/skills/testing/references/formal-verification.md)
+owns operational guidance for planning, independent semantic review, real
+verifier-output compatibility and reusable future invocation. Updating these
+instructions and recording debt is authorized now; formal proof authoring,
+execution and deferred consumer/toolchain repairs remain post-V1.
+
+## 15. OD-11 — SOCKS5 scope and deferral
+
+**Direct owner instruction, 5 November 2026:** David asked for a concrete working
+proxy profile and its checks, proposed supporting only SOCKS5, and authorized
+moving the functionality to `ROADMAP.md` if it would create disproportionate
+implementation and maintenance work. He did not authorize a weaker routing,
+authentication or storage guarantee.
+
+**Assessment and disposition:** implementing only a TCP SOCKS handshake would
+not support NTP/NTS. A usable profile also needs the UDP relay/control lifecycle,
+cross-stage endpoint identity, strict route preservation, service-context recovery
+and defensible timing evidence. The source-based assessment in the
+[existing engine task](../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+therefore selects deferral under the owner's conditional instruction. This is an
+engineering judgement about scope, not a measured schedule estimate or a claim
+that SOCKS5 is infeasible. Implementing it during current P2/P5 was considered;
+its additional qualification and support duties are not justified for first
+delivery. Deferral retains a concrete next stage instead of promising partial
+TCP-only support.
+
+**Scope now:** first Windows delivery uses Direct. Current direct-family/interface
+policy, upstream-failure recovery and successful-path reuse stay with their
+existing P2/P5 owners. Unsupported proxy configuration, including an imported
+newer profile, must be rejected explicitly; it cannot be silently erased or
+interpreted as Direct. Existing shared policy cutover, storage and security
+requirements remain. This does not reorder the ordinary product plan or future KHR/Android and
+RGT/CHR sequences; formal work follows the [first-release deferral](#141-first-release-deferral--6-november-2026).
+
+**Proposed first future subset:** manual numeric loopback SOCKS5, method 0x00
+only, explicitly local DNS, admitted numeric targets, NTS TCP CONNECT and a
+separate monitored UDP ASSOCIATE owner. The
+[architecture](windows-time-architecture.md#limited-socks5-profile--deferred)
+owns exact semantics; [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition)
+owns timing and SOCKS-C01. No password input or new secret purpose is needed for
+this subset. Remote proxies, authentication and proxy DNS are later SOCKS5
+extensions with their own qualification; other proxy protocol families and
+automatic browser/system import are outside the selected direction.
+
+**Revisit:** after first Windows delivery, when a real use case and maintenance
+capacity justify the bounded stage. Keep independent review and exact-candidate
+portable/native/interoperability evidence open until executed. No implementation,
+dependency, protected-storage experiment, host reconfiguration or production
+proxy support is approved or established by this documentation decision.
+
+## 16. OD-12 — GeoIP experiment after Khronos
+
+**Direct owner instruction, 5 November 2026:** David asked to place the discussed
+experiment in `ROADMAP.md` after Khronos. The discussion proposed locating time
+sources and optionally the client's public egress to test geographically favorable
+server selection, with GeoLite2-City as a possible input.
+
+**Roadmap integration:** [GEO-0](../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering)
+sits between KHR-C01 and Android. Its GEO-C01 comparison/disposition belongs to the
+[existing catalogue task](../tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos),
+reusing catalogue and advisory-history owners. `ADOPT_LIMITED`, `DEFER` or `REJECT`
+all close the experiment; production GeoIP implementation is separately scoped
+and is not an Android prerequisite. An adopted Khronos implementation retains its
+existing qualification requirement before Android. Current Windows P0–P7 and the
+separate RGT-0 → CHR-0 order remain intact.
+
+**Engineering experiment boundary:** geography may order ordinary acquisition
+candidates but cannot grant trust, replace actual measurements, weaken independent
+agreement or change a qualified Khronos/Ananke sampler. The roadmap defines
+comparison controls, missing/incorrect-location cases and cost evidence. No
+GeoIP database, mandatory client-IP lookup, additional persistent store or public
+probe is selected or authorized by this planning instruction. Data/licence/update
+review, exact experiment admission and independent review remain future work;
+the instruction establishes no measured performance benefit.
+
+
+## 17. OD-13 — Slint as the default UI toolkit
+
+**Accepted owner decision, 5 November 2026, Asia/Tbilisi.** After the
+[live-Windows Slint experiment](../tasks/s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026),
+David instructed: “We'll use it as default! Put this decision in all docs.”
+The unpublished local draft called this OD-11; integration with published
+SOCKS5 OD-11 and GeoIP OD-12 renumbers the Slint decision to OD-13 without
+changing its accepted scope.
+Slint is the default for subsequent NevroTick UI work. This supersedes DEC-3's
+Win32-common-controls toolkit selection and the 30 October instruction to retain
+Win32 as the default. It does not erase the earlier candidates or their evidence.
+
+**Reaffirmed after the iced comparison, 5 November 2026.** After the reported
+iced experiment, upstream source review and development/community assessment,
+David explicitly decided to continue with Slint. The consolidated
+[Slint/iced assessment](supporting-reviews/slint-iced-assessment-2026-11-05.md)
+retains the evidence, competing strengths and unresolved source concerns.
+The reported measurements show no clear runtime-resource winner; this is a
+reaffirmation of OD-13, not a new performance claim or qualification waiver.
+
+| Decision card | Accepted direction and remaining qualification |
+| --- | --- |
+| Related owners | DEC-3, OPEN-10, S0.5, UI-M0, CHECK-21/22; OPEN-1/13 and CHECK-20/26 own dependency/licence admission |
+| Starting configuration | Slint 1.18.1 with explicit winit/software rendering and Fluent-style widgets, as measured. Freeze the exact admitted version/features for the migration; a later renderer/feature change needs its own graph and affected evidence |
+| Evidence and reason | Three live-host Slint trials measured 7.730 MiB visible private memory and 23.629 MiB working set, with no detected CPU-time increment in the selected visible/minimized idle phases. The 228-line UI adapter suggests less UI coding than the 1,432-line Win32 implementation. Different layouts/DPI, short sampling and incomplete interaction/accessibility limit those conclusions |
+| Options and outcome | Retain Win32, select Slint, or continue other toolkit experiments. David selected Slint; agents must not reopen the general toolkit choice because qualification remains pending |
+| Existing implementation | The earlier main snapshot retained Win32; this merged candidate contains the Slint fixture host, with the Win32 adapter unexported as historical source. Preserve checked-domain behavior and candidate-specific receipts. Implemented fixture source and portable results do not establish native cutover or live backend qualification |
+| Product boundaries | Ordinary-user UI only. Preserve the engine/broker/helper authority split, fixture-only UI-M0 effects, D1/D2/D3 deferrals and their re-entry triggers, current Core priority and existing execution holds |
+| Required follow-through | Reuse the existing UI-M0/S0.5 task chain for exact dependency/licence admission, generated-code/lint and lifetime ownership, checked validation reuse, native window/editor/lifecycle observations, actual accessibility at its gate, resources and complete MSIX delivery |
+| Revisit trigger | Concrete licensing, target, accessibility, security or resource evidence prevents the selected delivery. Bring that bounded issue under OD-04; no automatic fallback or blanket exception follows |
+
+**Selection is separate from admission.** The private pilot disabled accessibility
+and tray features; that does not remove the product's keyboard/UIA/Narrator or
+optional-tray requirements at their existing gates. Slint draws its Fluent-style
+widgets rather than inheriting Win32 child-control semantics. Qualify actual
+behavior and accessibility exposure on Windows; old Win32 passes cannot transfer.
+The software renderer is the starting configuration, not a mandate to introduce
+continuous redraw, a browser runtime or a GPU loop.
+
+The original toolkit decision did not settle the GPLv3/Apache-2.0-only
+composition issue. The accepted GUI-specific GPL-3.0-only amendment below now
+resolves the original-code direction, preserving GPL-2.0-only Core/engine. Exact
+source rights, dependency grants, supplemental notices and final distribution
+remain separately reviewed; a process split alone supplies no licence clearance.
+No paid agreement, Core relicensing or release approval is implied.
+
+The private `slint!` prototype also exposed a generated-unsafe/lint boundary:
+Slint-generated allowances conflict with crate-level `forbid(unsafe_code)`.
+The product migration must define and review that boundary explicitly rather
+than silently relaxing the workspace's unsafe policy. Retain bounded input
+admission, weak callback ownership, UI-thread affinity and deterministic teardown.
+
+The [architecture §16.1](windows-time-architecture.md#161-toolkit-and-interaction-model)
+controls the toolkit contract; [S0.5](../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../tasks/slint-gui-handoff.md) own current continuation. UI-M0
+retains its original fixture acceptance. This decision records direction, not completion
+of S0.5, CHECK-21/22, P0/P5 or release qualification.
+
+### Complete migration amendment — 6 November 2026
+
+The earlier unpublished GUI decision was called OD-11; its accepted scope is
+now retained under OD-13 without replacing published SOCKS5 OD-11.
+
 
 **Direct owner instruction, 5 November 2026:** David selected Slint as the
 complete replacement for the Win32 UI and explicitly named the
@@ -569,13 +806,13 @@ The existing Win32 source, native observations and closed Win32/egui comparison
 remain historical baseline evidence. The earlier instruction to retain Win32
 and UI-M0's prohibition on a replacement framework are superseded for this
 migration. Those results prove nothing about Slint's memory, accessibility,
-renderer, mitigation compatibility or native lifecycle. The current checkout
-still contains the Win32 implementation until the migration is implemented.
+renderer, mitigation compatibility or native lifecycle. The current source candidate contains the Slint fixture implementation; actual
+native qualification and production cutover remain open.
 
 **Execution and ownership:** continue the existing S0.5 record as the bounded
 Slint migration chain. Source and licence review, presentation/fixture contracts
 and admitted fixture-only implementation can proceed in parallel with the
-current Core proof/acquisition work; UI work does not require completion of
+current ordinary Core/acquisition work; UI work does not require completion of
 unrelated Core tasks. One owner serializes Cargo graph/lockfile changes and
 shared presentation schemas; workers may implement disjoint views after that
 boundary is frozen. Native desktop interaction and shared outputs remain
@@ -621,14 +858,56 @@ source/grant findings, not an admitted NevroTick Slint dependency graph.
 | **Selected:** separately license the original GUI as GPL-3.0-only, preserving Chrony-derived engine/Core as GPL-2.0-only | Confirm rights over the GUI/presenter/model and any shared contract code; use a package-specific UI licence rather than changing the whole workspace. Keep the GUI an independently composed program using the defined process protocol, without linking GPL-2.0-only Core/Chrony code. Review actual shared code, runtime/build/transitive graph and notices; process separation alone is insufficient evidence. |
 | Retained alternative, not selected: GPL-2.0-only for the linked GUI | Would require compatible permissions covering Slint and required transitives, or a concrete compatible graph. The public royalty-free/commercial descriptions and a purchase alone supply no such evidence. No supplier contact or purchase is authorized here. |
 
-**Next integration:** apply the GUI-specific manifest/licence notices and
-independently reviewed source inventory, then admit the exact Slint product
-runtime/build graph under the selected GPLv3 direction. Keep Core proofs and
-their GPLv2 inputs independent. No framework reselection, Core relicensing,
+**Implementation status:** S0.5 records the GUI-specific manifest/licence notices,
+reviewed source inventory and admitted fixture runtime/build graph. Re-admit
+affected graph changes under the selected GPLv3 direction before execution. Keep Core and its GPLv2 inputs independent; formal work remains deferred under
+OD-10 §14.1. No framework reselection, Core relicensing,
 blanket dependency-policy relaxation, automatic Win32 fallback or new release
-permission follows. S0.5 rows 1–2 own the remaining graph/rights checks.
+permission follows. S0.5 retains candidate-specific graph/rights and remaining distribution checks.
 
-## 16. OD-12 — externalized UI translations and binary catalogs
+
+## 18. OD-14 — compact Windows platform scope
+
+**Direct owner direction, 5 November 2026:** David limited the initial intended
+OS scope to **Windows 11 26H2 and a corresponding Windows Server**, delegating
+the other parameters. This supersedes the generic Windows-11-only direction for
+platform preparation; it establishes no supported stable release or native pass.
+
+**Researched mapping:** Microsoft's dated release records identify Windows 11
+26H2 as GAC/build family **26300** and Windows Server **2025** as current
+LTSC/build family **26100**. The engineering counterpart is Server 2025, not a
+Server release called “26H2” or a promise of identical builds/features/servicing.
+[Client release information](https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information)
+and [Server release information](https://learn.microsoft.com/en-us/windows/release-health/windows-server-release-info)
+were checked on 5 November 2026.
+
+**Engineering fixtures:** start with Windows 11 26H2 **Pro x64** and Windows
+Server 2025 **Standard x64 with Desktop Experience**, using the MSVC target and
+OD-07's intended v3 baseline. These edition/install choices keep the complete
+desktop UI/services product concrete; they are not David's separate edition
+instructions or all-edition support promises. Exact UBR/KB, hardware, effective
+protections and availability remain inputs. Current generic binaries are not
+v3-qualified. Server Core and further editions are outside these first fixtures.
+
+The [existing W11 task §4.32](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+owns two rows and shared controls under existing CHECK/P0/P4/P6/P7 owners.
+OPEN-2 remains open. Qualify package applicability, product OS-family admission,
+safe CPU preflight, Server acquisition/update applicability and actual delivered
+bytes separately; one complete MSIX and David's Store attempt retain OD-05's
+owners. Managed-domain observation and administrator-authorized takeover retain
+architecture §1.2; DC/PDC time service remains outside the product.
+
+First-stable terms remain proposed under the [release policy](release-policy.md).
+Current Core/proof priority, native/S134 stop, separate fuzz hold, optional-storage
+pause, scoped Sandbox permission, UI-M0 D1–D3 deferrals, the Direct network profile,
+Slint and optional enhanced release provenance retain their existing scope.
+
+
+## 19. OD-15 — externalized UI translations and binary catalogs
+
+This GUI decision was called OD-12 in its unpublished branch. Integration
+assigns OD-15 so published GeoIP OD-12 retains its existing identity and scope.
+
 
 **Direct owner instruction, 5 November 2026:** David requested an easy translation
 mechanism using separate files containing translated interface strings, naming
@@ -647,9 +926,10 @@ CBOR is a serialization format, not compression or an automatic performance gain
 Slint's built-in PO bundling is a documented alternative, but is not a CBOR
 loader. The inspected Windows Rust path does not establish ordinary gettext/MO
 loading or a stable custom CBOR-to-`@tr` hook. Do not use private Slint internals
-or claim such support to implement this direction. Exact codec/formatter,
-generated interfaces, finite bounds and dependency admission remain implementation
-work in the existing S0.5/P5 chain.
+or claim such support to implement this direction. S0.5 now implements the
+fixture codec, typed interfaces, finite bounds and admitted graph. Independent
+critical-meaning approval, new locale adoption and native/package qualification
+remain open in the existing S0.5/P5 chain.
 
 Catalogs cover visible labels, errors, explanations/tooltips, dialogs, tray menu,
 local notifications and accessible names under one language/fallback policy.
@@ -663,7 +943,9 @@ English remains the only adopted product language. This request adopts no
 complete Russian translation, automatic OS-language selection or arbitrary
 third-party pack import. The initial design reads reviewed packaged resources;
 independent post-install packs need their own explicit loading/trust contract.
-The HTML prototype and current Win32 source remain unchanged by this design.
+The original design addition changed no implementation. The merged Slint fixture
+now implements the catalog pipeline; S0.5 owns its exact evidence and remaining
+semantic/native qualification.
 Source preparation may parallel Core; native integration, locale qualification,
 D1–D3 re-entry, package integrity, licensing and execution holds retain their
 existing owners and gates.
@@ -692,7 +974,7 @@ Syntactically valid wording can still deceive. Critical warning/action/accessibi
 groups need independently controlled per-locale semantic approval bound to exact
 content and contract revision. Missing/unreviewed critical groups fall back as a
 whole to admitted, approved English. No catalog field, signature, LLM verdict or
-schema pass proves the truth of a translation. These requirements refine OD-12
+schema pass proves the truth of a translation. These requirements refine OD-15
 and the existing security boundaries; no extra locale, import mode, dependency,
 validator/runtime implementation, fuzz execution or native/release pass is granted.
 
@@ -703,8 +985,9 @@ Valid escaped surrogate pairs remain supported; lone surrogates do not. The
 independently owned versioned schema is closed at every object layer, with exact
 required/allowed fields, types and finite bounds, plus decoded-key duplicate and
 typed semantic checks. No catalog selects or fetches its own schema. These rules
-apply before CBOR generation and equally to English; the complete schema and
-validator implementation remain existing S0.5 work.
+apply before CBOR generation and equally to English. The merged fixture now
+enforces the complete closed schema and validator; current source/test evidence
+and remaining critical-meaning/native gates belong to S0.5.
 
 ### Character repertoire clarification — 6 November 2026
 
@@ -728,5 +1011,6 @@ This supersedes any earlier example treating literal U+FFFD or an arbitrary
 valid surrogate pair as fully admitted catalog content. Unicode decoding can
 succeed while character admission rejects. English remains the only adopted
 locale; all files reject atomically on a character violation, retaining admitted
-state. Exact inventories/tables/budgets and actual enforcement remain S0.5 work;
-this adopts no runtime, extra locale, new dependency or application/native result.
+state. The merged fixture implements pinned inventories, tables, budgets and
+receiver enforcement; S0.5 binds its portable results. This clarification adopts
+no extra locale or native result, and never supplies critical-text approval.

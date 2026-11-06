@@ -1,0 +1,74 @@
+# Primary sources
+
+Reviewed 5 November 2026 (UTC). This is an original local workflow: no upstream
+implementation or third-party skill is vendored. Research used Microsoft Learn,
+GitHub, Context7, Firecrawl developer search/page extraction and web search/open.
+Indexed snippets and generated extraction answers were discovery aids; current
+official contracts and pinned implementation resolve material claims. Tool
+availability and source inspection are not dependency/native qualification.
+
+## Cargo and build records
+
+| Primary source | What it supports |
+| --- | --- |
+| [cargo metadata](https://doc.rust-lang.org/cargo/commands/cargo-metadata.html) | JSON format/compatibility, opaque IDs, no-deps, filter-platform and locked/offline flags |
+| [Cargo metadata implementation at 5a8f8937](https://github.com/rust-lang/cargo/blob/5a8f8937cb8c6da49714b3ad826f0a9a85d3fa95/src/ops/cargo_metadata.rs) | Entire-workspace resolution, target-information construction, dev-unit inclusion and graph traversal; main-branch source, not the project's admitted Cargo version |
+| [Cargo unit graph](https://doc.rust-lang.org/cargo/reference/unstable.html#unit-graph) | Why metadata cannot completely represent feature relationships between different build-unit/dependency kinds; unstable tooling is not automatically admitted |
+| [Package metadata](https://doc.rust-lang.org/cargo/reference/manifest.html#the-metadata-table), [workspace metadata](https://doc.rust-lang.org/cargo/reference/workspaces.html#the-metadata-table) | Custom tables are tool-defined; external tools choose fallback semantics |
+| [Build scripts](https://doc.rust-lang.org/cargo/reference/build-scripts.html), [environment variables](https://doc.rust-lang.org/cargo/reference/environment-variables.html) | Host execution, target context, OUT_DIR, rerun declarations and Cargo package values |
+
+The source pin is a research anchor. Before implementation, inspect the actually
+admitted Cargo version/configuration. Do not copy a main-branch-only option into
+the project's command line or treat metadata collection as arbitrary-code-safe.
+
+## Windows readers and resource tools
+
+| Primary source | What it supports |
+| --- | --- |
+| [GetFileVersionInfoExW](https://learn.microsoft.com/windows/win32/api/winver/nf-winver-getfileversioninfoexw) | MUI involvement for localized and neutral modes, matching size-query flags, full paths and truncation |
+| [VERSIONINFO](https://learn.microsoft.com/windows/win32/menurc/versioninfo-resource) | Fixed numeric fields, string/resource structure; complete field mapping remains in the canonical plan |
+| [Resource files](https://learn.microsoft.com/windows/win32/menurc/about-resource-files), [.res linker inputs](https://learn.microsoft.com/cpp/build/reference/dot-res-files-as-linker-input?view=msvc-170) | RC script → resource compilation → link into the executable |
+| [CreatePackageReader](https://learn.microsoft.com/windows/win32/api/appxpackaging/nf-appxpackaging-iappxfactory-createpackagereader) | Read-only package reader validates structure/footprint; does not validate the digital signature |
+| [MakePri options](https://learn.microsoft.com/windows/uwp/app-resources/makepri-exe-command-options) | PRI dumps, detailed output and external schema for schema-free resource packs |
+| [Manifest/UI localization](https://learn.microsoft.com/windows/uwp/app-resources/localize-strings-ui-manifest) | Resource references and locale-dependent values |
+| [MsiOpenDatabaseW](https://learn.microsoft.com/windows/win32/api/msiquery/nf-msiquery-msiopendatabasew) | Read-only database mode and handle lifetime |
+| [MsiGetSummaryInformationW](https://learn.microsoft.com/windows/win32/api/msiquery/nf-msiquery-msigetsummaryinformationw), [Database.SummaryInformation](https://learn.microsoft.com/windows/win32/msi/database-summaryinformation) | Separate Summary Information and zero requested updates for a read-only inspection |
+| [MsiGetProductInfoExW](https://learn.microsoft.com/windows/win32/api/msi/nf-msi-msigetproductinfoexw) | Installed instance/user/context distinctions, access requirements and buffer-length rules |
+| [Windows Installer consistency-check side effects](https://learn.microsoft.com/troubleshoot/windows-server/admin-development/windows-installer-reconfigured-all-applications) | Win32_Product queries can initiate validation/repair of installed applications |
+| [MSI ProductVersion](https://learn.microsoft.com/windows/win32/msi/productversion), [summary meanings](https://learn.microsoft.com/windows/win32/msi/summary-property-descriptions) | Different numeric version and summary-property semantics; avoid generic field-count assumptions |
+| [Store identity](https://learn.microsoft.com/windows/apps/publish/view-app-identity-details), [listing import/export](https://learn.microsoft.com/windows/apps/publish/publish-your-app/import-and-export-store-listings?pivots=store-installer-msix) | Externally assigned technical identity and locale-specific CSV authoring surfaces |
+
+The [canonical windows-rs map](../../../../../docs/plans/windows-package-metadata.md#3-where-windows-rs-helps)
+retains release-associated `windows` 0.62.2 source at
+`32c3144490c016fe496a0aed769bce60987a2e9d`, while the actual UI graph uses
+`windows-sys` 0.61.2 at the inspected baseline. Its pinned modules cover PE,
+Appx/MSIX, MSI and WinRT package APIs. A readback tool still needs its own exact
+feature/target/lifetime review; do not add the typed crate to every product role.
+
+## Resource-helper source review
+
+| Pinned source | Observed mechanism and limit |
+| --- | --- |
+| [winresource implementation](https://github.com/benjaminri/winresource/blob/7ff4f7fd9b7e655a6805b7e1441d71d3e79b60fe/lib.rs) | WindowsResource constructor uses Cargo package version/name defaults; its FileDescription initialization differs from the nearby documentation table. Explicit setters/readback are necessary for reviewed product values |
+| [embed-resource README](https://github.com/nabijaczleweli/rust-embed-resource/blob/0d183985c33096a658c3fd8ba19d7eec6cee1dba/README.md) | Compile/link an owned RC file and route resources to selected binaries; require intended resources and review rerun/error behavior. The elevation example is not a product-policy recommendation |
+
+These alternatives were inspected as source; neither is selected or added to
+NevroTick. A helper name or README example does not qualify exact emitted fields,
+cross-compilation, Unicode, license compatibility or a native build. No framework
+performance claim follows from this research.
+
+## Standards and local owners
+
+| Source | Use and limit |
+| --- | --- |
+| [SOURCE_DATE_EPOCH specification](https://reproducible-builds.org/specs/source-date-epoch/) | Stable source timestamp interchange; separate from actual collection time and full reproducible-build proof |
+| [CycloneDX 1.5 JSON reference](https://cyclonedx.org/docs/1.5/json/) | Existing admitted inventory format, component identity and relationships; product authoring and artifact observations remain separate |
+| [SBOM policy](../../../../../policy/sbom.toml), [wrapper](../../../../../scripts/generate-sbom.py) | Current frozen crate-inventory owner, target/features/custody and known completeness limits |
+| [Metadata field contract](../../../../../docs/plans/windows-package-metadata.md), [package QA](../../../testing/qa-package-artifacts/SKILL.md) | Full field map and independent final artifact/native validation |
+| [Release provenance policy](../../../../../docs/plans/release-provenance.md) | Enhanced public attestations/reproducibility remain optional under OD-05 §7.5 |
+
+Engineering recommendations in this skill include TOML for reviewed intent,
+JSON for observations, field-specific authority, semantic-diff promotion and
+separate deterministic generation/readback. These are project-fit conclusions,
+not requirements imposed by Microsoft or Cargo. Reuse existing equivalent
+owners; keep the recommended storage filenames distinct from implemented files.

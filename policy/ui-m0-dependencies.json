@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "scope": "PROPOSED private source-only second local AccessKit ingress patch; no admission, graph observation, Windows/native execution or distribution clearance. Slint 1.18.1 fixture GUI: Windows 11 x64 software/Winit/accessibility; Linux public custom-platform portable tests only. Exact local compatible spin_on pinning repair, with original archive/source and modified file pins distinguished. No advisory ignore or distribution/native qualification. Inert locked sources confer no execution or licence grant; exact archive-file exceptions do not grant script/DLL execution. Supplemental notices remain in S0.5.",
-  "lockfile_sha256": "1d22a9bd5de6e4c46ee2c634f531dde7553fb65e74fedc23652ebb2a3f7df9cb",
+  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on and Windows AccessKit source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all 534 registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy.",
+  "lockfile_sha256": "0683420c01ac6af80554100b402be4673628bfb5fca514476cd3585572b9c297",
   "manifests_sha256": {
     "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
     "crates/nevrotick-ui/Cargo.toml": "e8359c64b49b24d60f326b69b2dd9e467f206dd46e33288b28c5648fb76ea99c",
@@ -9,7 +9,7 @@
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
     "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
-    "crates/nevrotick-engine/Cargo.toml": "8399d79a18b2746d2a93aa5299df631fd4297f146b880831a84b3b6b2abd42e1"
+    "crates/nevrotick-engine/Cargo.toml": "0664748e86df5ccedc3cd9e3e69b7c97bf122f87a596632128ee4a49ef268447"
   },
   "first_party_build_scripts": {
     "crates/nevrotick-ui/build.rs": "52bc9b540e36beca77e7586e09449aaf013e035d8137ced2c949b9af0ee50431"
@@ -11760,12 +11760,41 @@
         },
         "nevrotick-engine": {
           "features": {
+            "castaway@0.2.4": {
+              "target": [
+                [
+                  "alloc"
+                ]
+              ]
+            },
             "cfg-if@1.0.5": {
               "target": [
                 []
               ]
             },
+            "compact_str@0.9.1": {
+              "target": [
+                []
+              ]
+            },
+            "garde@0.23.0": {
+              "target": [
+                [
+                  "derive"
+                ]
+              ]
+            },
+            "garde_derive@0.23.0": {
+              "host": [
+                []
+              ]
+            },
             "getrandom@0.4.3": {
+              "target": [
+                []
+              ]
+            },
+            "itoa@1.0.18": {
               "target": [
                 []
               ]
@@ -11800,11 +11829,31 @@
                 ]
               ]
             },
+            "rustversion@1.0.23": {
+              "host": [
+                []
+              ]
+            },
+            "ryu@1.0.23": {
+              "target": [
+                []
+              ]
+            },
+            "smallvec@1.16.4": {
+              "target": [
+                []
+              ]
+            },
             "socket2@0.6.5": {
               "target": [
                 [
                   "all"
                 ]
+              ]
+            },
+            "static_assertions@1.1.0": {
+              "target": [
+                []
               ]
             },
             "syn@2.0.119": {
@@ -11818,6 +11867,11 @@
                   "printing",
                   "proc-macro"
                 ]
+              ]
+            },
+            "tokio-macros@2.7.1": {
+              "host": [
+                []
               ]
             },
             "tokio@1.54.1": {
@@ -11834,11 +11888,6 @@
                   "tokio-macros",
                   "windows-sys"
                 ]
-              ]
-            },
-            "tokio-macros@2.7.1": {
-              "host": [
-                []
               ]
             },
             "unicode-ident@1.0.27": {
@@ -11885,6 +11934,11 @@
               ]
             },
             "ntp-wire@0.0.0": {
+              "target": [
+                []
+              ]
+            },
+            "time-domain@0.0.0": {
               "target": [
                 []
               ]
@@ -17722,12 +17776,41 @@
         },
         "nevrotick-engine": {
           "features": {
+            "castaway@0.2.4": {
+              "target": [
+                [
+                  "alloc"
+                ]
+              ]
+            },
             "cfg-if@1.0.5": {
               "target": [
                 []
               ]
             },
+            "compact_str@0.9.1": {
+              "target": [
+                []
+              ]
+            },
+            "garde@0.23.0": {
+              "target": [
+                [
+                  "derive"
+                ]
+              ]
+            },
+            "garde_derive@0.23.0": {
+              "host": [
+                []
+              ]
+            },
             "getrandom@0.4.3": {
+              "target": [
+                []
+              ]
+            },
+            "itoa@1.0.18": {
               "target": [
                 []
               ]
@@ -17770,11 +17853,31 @@
                 ]
               ]
             },
+            "rustversion@1.0.23": {
+              "host": [
+                []
+              ]
+            },
+            "ryu@1.0.23": {
+              "target": [
+                []
+              ]
+            },
+            "smallvec@1.16.4": {
+              "target": [
+                []
+              ]
+            },
             "socket2@0.6.5": {
               "target": [
                 [
                   "all"
                 ]
+              ]
+            },
+            "static_assertions@1.1.0": {
+              "target": [
+                []
               ]
             },
             "syn@2.0.119": {
@@ -17788,6 +17891,11 @@
                   "printing",
                   "proc-macro"
                 ]
+              ]
+            },
+            "tokio-macros@2.7.1": {
+              "host": [
+                []
               ]
             },
             "tokio@1.54.1": {
@@ -17805,11 +17913,6 @@
                 ]
               ]
             },
-            "tokio-macros@2.7.1": {
-              "host": [
-                []
-              ]
-            },
             "unicode-ident@1.0.27": {
               "host": [
                 []
@@ -17823,6 +17926,11 @@
               ]
             },
             "ntp-wire@0.0.0": {
+              "target": [
+                []
+              ]
+            },
+            "time-domain@0.0.0": {
               "target": [
                 []
               ]

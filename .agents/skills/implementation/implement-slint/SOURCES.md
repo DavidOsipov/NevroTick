@@ -2,10 +2,17 @@
 
 Reviewed 5 November 2026 for original local instructions. No upstream skill,
 implementation or example code is copied. The selected framework comes from
-[OD-11](../../../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint);
+[OD-13](../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit);
 [S0.5](../../../../tasks/s0.5-ui-comparison.md) owns migration, graph admission
 and candidate evidence. These references establish neither dependency adoption
 nor licence clearance, application behavior or native qualification.
+
+**Current owner amendment:** OD-13 includes David's approved GPL-3.0-only
+licence direction for the original GUI, with Chrony-derived Core/engine retained
+under GPL-2.0-only. The inspected source observations below retain their dated
+scope. Current graph/composition and execution evidence belongs to S0.5 and the
+[GUI handoff](../../../../tasks/slint-gui-handoff.md); the source register supplies
+no blanket package, native or release clearance.
 
 ## Retrieval and immutable baseline
 
@@ -40,7 +47,7 @@ keep live-document retrieval separate from dependency or native qualification.
 
 ## Translation catalogs
 
-OD-12's [catalog design](../../../../docs/plans/ui-localization.md) uses an
+OD-15's [catalog design](../../../../docs/plans/ui-localization.md) uses an
 application-owned Rust boundary for separate CBOR resources; that is a design,
 not a native Slint file format or an implemented loader. The following additional
 HTTPS source checks use the same immutable 1.18.1 revision:
@@ -130,8 +137,9 @@ The [listed grant choices][licence-choices] are GPL-3.0-only, Slint Royalty-free
 uses as part of desktop/mobile/web applications, sets attribution alternatives,
 and restricts standalone distribution, embedded use and exposing Slint APIs.
 Source licence notices must remain intact. These are reported source terms;
-they settle no compatibility question for Chrony-derived GPL-2.0-only code,
-separate processes or the exact runtime/build/transitive distribution graph.
+they do not relicense Chrony-derived GPL-2.0-only code or qualify a process split
+or the exact runtime/build/transitive distribution graph. The approved original
+GUI grant and remaining composition checks are recorded above and in OD-13.
 
 Raw-file SHA-256 values below identify inspected bytes; they are not Cargo archive
 checksums, downloaded-package verification or a complete provenance inventory.

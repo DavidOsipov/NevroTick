@@ -1152,7 +1152,7 @@ def require_engine_contract_role(scope: Scope, policy: dict) -> None:
     """Admit current inert constructor probes, without historical engine gates."""
     facts = {
         "schema_version": 1, "admission_status": "admitted-engine-external-contracts-only",
-        "package": "nevrotick-engine", "source_file_count": 166,
+        "package": "nevrotick-engine", "source_file_count": 168,
         "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
         "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
         "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},

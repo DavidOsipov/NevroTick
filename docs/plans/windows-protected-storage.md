@@ -96,6 +96,34 @@ rules; optional-cache recovery cannot replace their qualification.
 
 DNS demand history is optional private optimization state. Loss may produce an empty learning model; it cannot relax DoQ, certificate pins, DNSSEC or routing policy. Ordinary DNS service remains independent of statistics persistence.
 
+**Conditional proxy-credential handoff, 5 November 2026:** the
+[network profile](../windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners)
+must reuse this engine storage manager and its qualified mechanisms rather than
+introducing a password database or an implicit Windows credential fallback.
+Under [OD-11](../nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+this purpose activates only for a later authenticated SOCKS5 extension. Direct
+first delivery and SOCKS-0's first loopback/no-auth/local-DNS subset require no
+proxy credential or extra storage gate. Keep this handoff conditional; it does
+not expand the present ST-W01 assignment or lift the storage pause.
+This is a proposed new **purpose**, not an expansion of the admitted NTS/DNS
+payloads. Before enabling it, ST-W01 freezes its bounded schema, authorized
+input/readers, independent purpose/key/epoch binding, credential reference/revision,
+intended proxy identity/endpoint and authentication/channel profile,
+replace/delete/restart outcomes and actual provider/service identity. Reuse the
+existing exact-envelope, namespace, outcome, redaction and lifetime rules where
+applicable. Do not assume NTS/DNS root sharing or copy secrets into machine policy,
+Q/H, user preferences, diagnostics or the broker.
+
+A configured authenticated proxy may require its credential for any useful
+acquisition. Therefore `ContinueWithoutRestore` does not mean that a missing
+credential can be regenerated like NTS state or replaced with no authentication,
+another proxy or Direct. Until an authorized qualified credential is available,
+that profile remains unavailable; any separately qualified still-admissible live
+session keeps its own lifetime rules. A nonpersistent credential-input mode, if
+later selected, must expose its unattended-restart limitation. The existing
+NTS/DNS policy matrix and native experiment pause remain unchanged; no proxy
+secret provider, authentication method or product default is admitted here.
+
 Use two nonsecret durable control records. The lifecycle owner's **installation witness** distinguishes `Provisioning(transaction-id)`, `Initialized` and explicitly authorized `Recovery(transaction-id)`. Matching initial catalogue publication is acknowledged durably and consumes that provisioning authority; an interruption reconciles the same transaction. Missing expected catalogue/key in an initialized installation means recovery, while a missing optional snapshot may simply mean fresh acquisition.
 
 The sensitive-state owner's **catalogue** binds installation/store/purpose, actual provider and key identities, public fingerprints, generated/imported origin, use/export policy, evidence category, policy/privacy revisions and active/prepared/retired disposition. It admits no enumerated “newest” key or envelope-supplied verification identity. Copying its assertions into broker storage would not make them attested.
@@ -205,6 +233,26 @@ failure case under ST-T06/07/10/16/17; no new flush/commit sequence is selected.
 ## 5. Platform admission, failure classification and privacy
 
 Qualify finite API/phase/build/provider/algorithm/profile rows. Required-VBS creation uses `NCRYPT_REQUIRE_VBS_FLAG`; `PREFER_VBS` may fall back to software. Provider-wide properties, names and unrelated probe keys do not prove protection of the actual key. Microsoft's example uses Microsoft Software KSP for required-VBS keys; the provider name alone proves neither outcome. `NCryptOpenKey` documents no REQUIRE_VBS reopen flag. Controlled origin, bound public identity and supported cross-boot reopen evidence must establish both actual roots; otherwise report Unknown/RecoveryRequired. [P1–P5]
+
+**Binding coverage refinement, 5 November 2026:** [architecture §18.6.2 and S135](../windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+record that the release-associated `windows` 0.62.2 cryptography projection
+contains the per-boot flag but lacks REQUIRE/PREFER VBS flags; the inspected
+new upstream generation has them under a different module layout. ST-W01's
+source freeze must inventory the actual required symbols, selected published
+package/checksum/source/features and SDK/metadata provenance. Choose a compatible
+binding or narrow reviewed generation before dependent implementation; do not
+copy unverified constants, silently mix projection generations or treat source
+presence as a supported Windows build. Microsoft's VBS-flag prerelease notice
+and REQUIRE/PREFER distinction remain part of that evidence.
+
+The [existing storage task §6.7](../../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026)
+separates source coverage, target compilation and later ST-W04 actual-key/native
+qualification. The first card is source-only and does not resume the storage
+experiment. Reuse CNG and file APIs while retaining authenticated-record,
+ownership, resource and uncertain-outcome contracts. If a concrete registry
+consumer warrants `windows-registry`, independently retain DACL/access and
+value-allocation bounds; its transactions do not replace cross-resource recovery
+or relocate authoritative state. No new storage dependency/backend is adopted.
 
 | Failure class | Treatment |
 | --- | --- |

@@ -5,6 +5,78 @@ conditional reference, not whole file. Repository architecture outranks external
 examples. Documentation adaptation performed no Cargo graph, Rust build, parser
 experiment or Windows UI execution.
 
+## Defensive Rust patterns — 6 November 2026
+
+Reviewed [Corrode's defensive-programming article](https://corrode.dev/blog/defensive-programming/)
+as supporting material for the existing Rust/contract skills. The locally authored
+[structural-change guidance](implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review)
+adopts selective field/variant review and coupled collection access. Rust's
+[privacy rules](https://doc.rust-lang.org/reference/visibility-and-privacy.html),
+[`non_exhaustive` semantics](https://doc.rust-lang.org/reference/attributes/type_system.html#the-non_exhaustive-attribute)
+and [Clippy's actual field-pattern recommendation](https://clippy.rust-lang.org/master/index.html#unneeded_field_pattern)
+qualify the article's constructor and lint claims. No article code was copied.
+This guidance selects no new lint configuration, dependency or product proof;
+existing admission and contract QA keep their owners. OD-10 formal obligations
+remain post-V1 under its first-release deferral.
+
+## Production hardening and illegal states follow-up — 6 November 2026
+
+Reviewed [Corrode's production-hardening article](https://corrode.dev/blog/hardening-rust/)
+against [Rust panic-hook semantics](https://doc.rust-lang.org/std/panic/fn.set_hook.html)
+and [Cargo profile settings](https://doc.rust-lang.org/cargo/reference/profiles.html).
+The existing error-handling and execution references now distinguish ordinary
+panic hooks under abort/unwind, termination paths, and effective shipping settings
+from the assertion-enabled `verify-release` profile. Hook cleanup and generic
+debug/release claims supply no recovery or release qualification.
+[Illegal-state guidance](https://corrode.dev/blog/illegal-state/) was also reviewed:
+the existing checked representations, privacy-scope audit, contextual rechecks
+and domain-equivalence rules already cover its useful guarantees. Its illustrative
+date arithmetic and ambient clock reads were not adopted. No example code,
+allocator, deployment framework, dependency or new execution lane was introduced.
+
+## Windows metadata workflow — 5 November 2026
+
+[maintain-windows-metadata](maintain-windows-metadata/SKILL.md) is an original
+local workflow for the [existing field contract](../../../docs/plans/windows-package-metadata.md).
+Its four conditional references cover harvest/provenance, authoritative records
+and storage, generation/readback, and [primary sources](maintain-windows-metadata/references/sources.md).
+Two explicitly incomplete TOML/JSON examples illustrate field dispositions and
+observations without inventing a production identity, schema implementation or
+collector. W11-W10/P6 and existing package QA retain acceptance ownership.
+
+Microsoft Learn, GitHub, Context7, Firecrawl and web retrieval supplied research;
+official contracts and pinned Cargo/resource-helper source govern factual claims.
+The new evidence distinguishes Cargo resolution from build units/payload,
+Windows MUI resolution from raw PE content, MSIX parsing from signature trust,
+read-only MSI inspection from installed-state queries, and Win32_Product's
+repair side effects. Reviewed TOML plus separate JSON observations and the
+existing CycloneDX inventory is a project-fit recommendation. No crate/tool,
+native experiment, runtime metadata service or Store publication was adopted.
+
+## Slint implementation guidance — 5 November 2026
+
+[implement-slint](implement-slint/SKILL.md) is an original local workflow alongside
+the native-UI adaptation. Its six conditional references contain the reusable
+API, source, Windows, testing, asset and example evidence; start at
+[examples and source research](implement-slint/references/examples-and-sources.md).
+The inspected Slint release is 1.18.1 at
+[`372cf0ee5577c3dfec309a45e7b778ba4e81b734`](https://github.com/slint-ui/slint/tree/372cf0ee5577c3dfec309a45e7b778ba4e81b734).
+Runtime/build manifests and immutable implementation qualify rolling-doc examples.
+Microsoft Learn governs the referenced Windows contracts. Public application
+repositories provide use cases, not inherited performance or security results.
+
+The references distinguish property-binding replacement, checked model mutation,
+UI-thread/lifetime ownership, precise time projection, feature/licence admission,
+AVIF encoder-versus-decoder support, developer control-server features and
+no-pixel versus rendered/native evidence. The Windows tray broadcast discrepancy
+is a source-level recovery concern for later native qualification, not a
+reproduced defect or a new UI-M0 blocker. No upstream implementation, dependency,
+font or asset is vendored; source notices remain with their owners. The
+[existing UI task](../../../tasks/ui-m0.md) retains its baseline gates;
+[S0.5](../../../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../../../tasks/slint-gui-handoff.md) own current migration scope,
+recorded evidence and remaining native/text-approval gaps.
+
 ## Preserving established invariants — 4 November 2026
 
 The [Parse, don't validate explanation](implement-rust-contracts/references/contract-enforcement.md#parse-dont-validate-preserve-established-invariants)
@@ -78,7 +150,7 @@ Inspected source entrypoints, group router/shared contract; no website edits.
 | implement-typescript | implement-rust | Preserve owner/caller/effect tracing and proportional verification; use Rust ownership, Result, exact newtypes, FFI/async obligations and actual target admission |
 | implement-zod-contracts | implement-rust-contracts | Preserve checked-output consumption, invariant ownership, failure atomicity and valid/invalid controls; replace Zod with the architecture's bounded Serde DTO → fallible private domain construction → current effect guard |
 | evolve-data-contracts | evolve-data-contracts | Preserve semantic compatibility matrices and separate rollout/retirement; cover versioned native IPC, protected policy/journals, mixed generations and MSI rollback |
-| implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use Windows UIA/Narrator/DPI evidence for the selected UI toolkit and an English-first catalog instead of HTML/ARIA/browser assertions or mandatory website locales |
+| implement-semantic-html | implement-native-ui | Preserve semantic controls, relationships, keyboard/focus and real-consumer evidence; use Slint/Windows UIA/Narrator/DPI and English-first catalog under current OD-13 instead of HTML/ARIA/browser assertions or mandatory website locales |
 
 Copied no browser/ECMAScript corpus, website examples, npm scripts or website-only
 enforcement helper into Rust project.
@@ -89,8 +161,7 @@ enforcement helper into Rust project.
   reviews and update research do not establish implementation.
 - [Architecture](../../../docs/windows-time-architecture.md), sections 5–6:
   bounded exact representation and separate service authorization; section 16:
-  Slint replacement under [OD-11](../../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
-  accessible behavior and English-first locale; sections
+  Slint default under [OD-13](../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit), accessible behavior and English-first locale; sections
   17–18: bounded work, dependency admission and toolchain policy.
 - [Update assessment](../../../docs/windows-time-update-assessment.md): TUF is
   research, not adopted runtime/updater architecture.
@@ -115,12 +186,6 @@ are dated observations, not pinned artifacts or claims of latest NevroTick depen
 Connected GitHub retrieved serde-rs/json source. windows-rs README file fetches
 returned 404; conclusions rely on none. Microsoft docs/local architecture support
 Win32/UIA guidance. Installed no fallback package/tool.
-
-**Owner amendment, 5 November 2026:** OD-11 selects complete replacement of the
-Win32 UI with Slint. The source observations above retain their original scope;
-they establish no Slint API, backend, licence or accessibility qualification.
-Current Win32 source/evidence remains the pre-migration baseline, and required
-Windows OS adapters remain applicable.
 
 ## Error handling and safe diagnostics
 
@@ -203,10 +268,10 @@ portable SIMD examples grant no nightly/dependency admission. No third-party
 skill code or application implementation was imported. Research and model checks
 do not establish native compatibility, tail-load safety or a useful speedup.
 
-## Slint implementation skill — 5 November 2026
+## Additional local Slint source register — 5 November 2026
 
-The original local [implement-slint](implement-slint/SKILL.md) workflow supports
-OD-11's selected replacement and S0.5's source/fixture migration. Its
+The canonical [implement-slint](implement-slint/SKILL.md) workflow retains a
+companion source register for OD-13's selected replacement and S0.5 migration. Its
 [source register](implement-slint/SOURCES.md) binds Slint 1.18.1 to immutable
 GitHub source, distinguishes runtime/build features and licensing, and retains
 the native AVIF decoder discrepancy. Rust callbacks, models and lifecycle

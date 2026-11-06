@@ -41,6 +41,16 @@ Choose smallest model that makes meaningful mistakes hard to express:
 - Never erase operational failure into `None`, empty results or stale success.
   Redact secrets; retain structured context sufficient to diagnose rejection.
 
+Where a new field or state needs a policy decision, make its addition require
+review through exhaustive field handling, explicit initialization and closed-enum
+matches. Follow [structural change checks](../implement-rust-contracts/references/contract-enforcement.md#make-structural-changes-require-review)
+without banning legitimate defaults or required external wildcard handling.
+Prefer slice patterns, `first`, `split_first` or checked access over separate
+length checks followed by indexing; handle absence under the actual contract.
+Confine initialization mutability to its needed scope. Use named option enums
+when boolean arguments obscure distinct choices; related invalid combinations
+still need a constrained representation or checked construction.
+
 Make changed code readable in the domain's terms: use established names and keep
 decisions, failures and effects traceable. Extract a helper when it names a
 coherent operation or isolates a meaningful rule. Keep related matching, loops
@@ -53,14 +63,13 @@ thresholds, use [numerical kernels](references/numerical-kernels.md). Separate
 independent mathematical results from rounded execution controls; freeze the
 supported conditioning/range envelope and comparison semantics before coding.
 
-For existing or new product mathematical algorithms, apply OD-10 through the
-[mandatory proof workflow](../../testing/references/formal-verification.md).
-Require actual-source proofs of the full admitted domain, required success/error
-outcomes, machine/rounding semantics and invariants. New algorithms, changed
-semantics or invalidated proof inputs reopen the affected obligations; reuse
-valid unchanged proofs. Record remaining obligations under the existing task's
-CHECK owners; missing proofs leave their mathematical acceptance incomplete.
-Preserve runtime guards, tests and native Windows evidence.
+For product mathematics, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+continue ordinary implementation and nonformal qualification; missing proofs do
+not block V1. Keep unproved or invalidated obligations in the existing task for
+post-V1 work and retain exact historical proof scopes. Do not initiate formal
+jobs, verifier extensions or pending proof admission/metadata repairs before V1.
+Preserve runtime guards, checked arithmetic and independent tests. The
+[proof workflow](../../testing/references/formal-verification.md) applies after V1.
 
 When changing error types/propagation, error-to-output mappings, retry/recovery,
 fallible cleanup or panic boundaries, read and apply
@@ -113,8 +122,7 @@ application workspace. Preserve target mitigation flags and narrow expectations.
 For a concrete memory/ownership gap, select admitted Miri on reached portable
 tests. For synchronization changes, select an instrumented bounded Loom model;
 use experimental Lockbud only after the real source/features compile on its
-separate admitted compiler. Kani is one verifier option for mathematical proofs
-or selected state invariants under its admitted profile;
+separate admitted compiler. Kani proof work is deferred until after V1 under OD-10;
 hostile parser/conversion inputs may suit cargo-fuzz. Use the guide's guarded
 analysis lane and then qualify the real harness; bootstrap controls alone test
 no product path. Keep shipping Rust and native Windows observations separate.

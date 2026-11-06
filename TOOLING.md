@@ -1,5 +1,25 @@
 # Rust development environment
 
+**Current owner instruction — 6 November 2026:** [OD-10 §14.1](docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers all formal-proof work until after the first released software version
+(V1). Do not run the Kani/Verus proof recipes or continue proof source, admission,
+metadata-consumer or verifier work before then. Their descriptions below retain
+historical candidate evidence, not current V1 gates or execution authority.
+The supporter-label v1 attempt ended in a60,118ms verification timeout with zero
+checks; its exported-unwind-field expectation is known unfinished tooling.
+Keep that correction post-V1. Resume [pure-leap product qualification](tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026)
+with the ordinary Rust/test/coverage/mutation/security/native/package controls;
+all existing execution holds remain.
+
+**UI toolkit decision, 5 November 2026:**
+[OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint with the measured winit/software and Fluent-style starting
+configuration. Current repository UI commands still check the Win32 reference
+implementation; they establish no Slint qualification. The [UI-M0 task](tasks/ui-m0.md)
+owns exact graph/licence admission, generated-code/lint-boundary review and the
+migrated candidate's checks. No toolchain, Cargo graph or native execution
+authority changes through this documentation amendment.
+
 Prepared on 28 October 2026 for the initial NevroTick development stage.
 The repository pin is Rust **1.99.1**, the current stable release checked against
 its official distribution manifest. Rustup is **1.29.2**. The same compiler and
@@ -327,7 +347,7 @@ jobs; deferral is never reported as successful SAST.
 | [Rust preparation](.github/security/prepare_rust.py) and [admission](.github/security/check_rust_policy.py) | The new product workflow uses the private pinned-toolchain preparation; the CodeQL admission/extraction path remains inactive. Product admission and isolated execution use `scripts/verify.py`. Rust extraction can execute build scripts/proc macros even with `build-mode: none`; retained CodeQL preparation is not an ordinary local setup command. |
 | [SARIF gate](.github/security/check_sarif.py) | Retained report-policy controls reject all findings, including suppressed/baseline findings, plus missing/malformed/oversized reports, failed invocations and empty source/line evidence. Its helper tests do not supply a CodeQL execution or application SAST result. |
 | [Workflow checker](.github/security/check_workflows.py) and [pins](.github/security/workflow-tool-pins.json) | actionlint 1.7.12, ShellCheck 0.11.0 with optional checks, and zizmor 1.30.1 in pedantic offline mode. All reported severities fail; ignores and user configuration are disabled. Acquisition verifies archive and executable SHA-256 and copies only a bounded regular archive member. |
-| [Gitleaks checker](.github/security/check_secrets.py) and [configuration](.gitleaks.toml) | Pinned executable, redaction, default detection rules, full retained-history and working-tree scans. No finding baseline or inline suppression bypass. One independently reviewed exact ASVS prose line in two documentation locations is the only project exception; token-shaped test values in those same documents remain blocking. |
+| [Gitleaks checker](.github/security/check_secrets.py) and [configuration](.gitleaks.toml) | Pinned executable, redaction, default detection rules, full retained-history and working-tree scans. No finding baseline or inline suppression bypass. Independently reviewed exceptions constrain the generic rule to exact paths and complete public ASVS/UI/OpenPGP prose, one historical source digest and one public wire-test constant. Controls require real tokens on the same or adjacent lines to remain blocking, and reject the exempted text at unrelated paths. |
 
 Run the local configuration/control checks with:
 
@@ -492,12 +512,39 @@ not a workspace-wide proof gate. Tool admission or its bootstrap controls alone
 cannot close the per-algorithm obligations. Missing proofs remain open in the
 existing source-owner task before dependent acceptance.
 
+**Verus candidate, 5 November 2026:** the
+[bounded Core addition pilot](tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+was justified after Kani's recorded zero-check timeout. The private official
+release `0.2026.11.02.8bf68ee` was acquired and admitted for bounded readiness
+using existing Rust 1.99.1 and bundled Z3 4.16.0. **Candidate DEFER:** its final
+compatibility command rejected the required `u64::checked_shl` call before SMT.
+Exactly three preparation commands ran; no product proof ran or adoption followed.
+The source guards and controls are in `tools/formal/verus_pilot*.py`; payload,
+licences and raw receipts remain in the private directory named by the Core task.
+The redundant archive was deleted. No global rustup/PATH/SDK or analysis-policy
+change occurred. The frozen command used an offline namespace, read-only SDK,
+one verifier thread, a real SMT timeout and `--no-cheating`. Do not restart the
+exhausted trial or add an assumed specification/runtime rewrite. Reconsider only
+after supported actual APIs and a separate finite checkpoint. Existing Kani
+entrypoints and scoped evidence remain in force.
+
+The separate [6 November Kani contract-mode pilot](tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+also ended **DEFER** at its first primitive checker: bundled CBMC aborted on a
+closure-symbol type inconsistency, with zero checks, product proof commands or
+callee certificates. The dedicated source consumer is unadopted; ordinary Kani
+flags and the SDK are unchanged. Keep this candidate terminal and do not retry or
+patch the tool under its closed card. Full-domain addition remains open.
+
+**Latest Core proof checkpoint, 6 November 2026:** [actual lifecycle source-counter qualification](tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks. The fixed `verify_lifecycle_source_fields.py` attempt is closed; preserve its root without rerunning. Four immutable captured-wrapper-selected records retain each cohort's original root/clock/jobs/reserve. Current/frozen32 inputs and nine actual Python modules bind the actual constants/predicate/From/min theorem. Role-specific cleanup removed five targets and retained about4.35MiB including directories. Earlier ordinal/rational/append-depth evidence remains preserved. Later [constructor source preparation](tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) adds only a source-only projector/harness/tests: six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review. It adds no fifth role or compiler/proof command; source-specific admission/target/allocator/drop/unwinding/constructor proof remain open. Transactional lifecycle, caller prefix/depth/topology/whole-selection, fraction models/bridge/import/addition and Core/P1 remain open. No SDK, profile or Windows hold changed.
+
+**Independent RequestTiming proof:** [five ordinary Kani jobs](tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed full raw-pair admission, three semantic defects and restored health. Its158-check/34-input/nine-executed-Python frozen candidate remains intact; later shared runner/registry/test changes have separate291-check compatibility evidence, not a native rerun. The fixed `verify_request_timing.py` attempt is closed. All four dedicated cohorts use captured current Python with frozen data; other generic defaults/receipts gain no retroactive guarantee. The retained timing root is about4.25MiB. Ordinary Kani0.68/Cadical/kani-proof flags/two tool roots remain; no toolchain modification or certificate import.
+
 | Tool | Installed pin | Qualification and intended use |
 | --- | --- | --- |
 | cargo-fuzz / libfuzzer-sys | 0.13.2 / 0.4.13 | One-off GNU-target ASan controls observed: 256 healthy runs and the intended signed-byte defect. Product targets still need accepted seeds, independent invariants and target/sanitizer qualification. |
 | Miri | nightly-2026-10-28 | One-off controls observed across four seeds each: healthy execution and use-after-free rejection. Product core tests remain unqualified; this is not Win32/FFI execution. |
 | Loom | 0.7.2 | Isolated library payload, not a Cargo executable. One-off healthy atomic-update control and lost-update counterexample observed. Product models still need instrumented primitives and bounded state space. |
-| Kani | 0.68.0 | One-off healthy/defect controls observed. Product proofs still need explicit harnesses, assumptions, unwind bounds and a non-vacuous reachable property. |
+| Kani | 0.68.0 | Source-bound rounding/valid-window era and named domain/helper proofs have scoped qualified checkpoints in the [current task](tasks/s1.1-time-domain.md). Public Garde-constructor proofs and remaining leap/Core obligations are open; tool controls alone establish no product proof. |
 | Lockbud | a1b5303cdbb1d4d0ad886359cc71418570e7c5fd | One-off healthy/DoubleLock controls observed using experimental nightly-2026-02-07 / Rust 1.95. This older analysis compiler does not change shipping Rust 1.99.1; admit each real source/feature row before relying on diagnostics. |
 | cargo-vet | 0.10.3 | One-off controls observed: std-only healthy exit 0; unreviewed Loom graph exit 255 with missing reviews and no audits/exemptions. Application audit-policy acceptance and real dependency reviews remain pending. |
 
@@ -1011,9 +1058,16 @@ The sixth member, [nevrotick-engine](crates/nevrotick-engine/Cargo.toml), owns t
 timeout. This experiment has no production profile, eligible samples,
 authentication, clock effects or UI integration. Tokio remains engine-only.
 
-The exact [lockfile](Cargo.lock), manifest/feature identities, selected grants
-and source-file maps are recorded in
-[the dependency policy](policy/ui-m0-dependencies.json). Its schema 2 distinguishes
+The current Slint fixture integration uses schema3 in
+[the dependency policy](policy/ui-m0-dependencies.json), with534 retained registry
+identities (selected and inert) and separately pinned local Spin/AccessKit
+derivatives. Follow the [GUI handoff](tasks/slint-gui-handoff.md) and current
+[S0.5 evidence](tasks/s0.5-ui-comparison.md) for exact inputs and the optional
+portable SDK/capture row. Existing Windows, native, backend and release gates remain.
+
+**Historical pre-Slint schema2 graph:** the exact [lockfile](Cargo.lock),
+manifest/feature identities, selected grants and source-file maps were recorded
+in the dependency policy. That schema2 baseline distinguishes
 twenty-three packages selected across the two targets from two metadata-only
 resolution sources (`r-efi` and `wasi`). All twenty-five are needed for offline
 lock resolution; those two gain no runtime, build-script or selected-license
@@ -1173,6 +1227,69 @@ final readmission remain required; unused nightly/optional payloads are neither
 mounted nor claimed verified by this profile. Metadata-only cohort union uses
 its default flag and verifies native receipts' profile against the plan-bound
 policy. This changes no compiler flags, tool versions or shared installation.
+
+**Dedicated Kani admission, 5 November:**
+`check-analysis.admit_kani_proof()` preserves the complete existing Kani payload
+and private compiler inventory, shipping executable/bootstrap checks and pointer
+bookends, while returning exactly two readonly Kani roots. Generic admission
+choices remain `full`/`stable-core`; generic Cargo/analysis consumers cannot select
+this role. The formal runner's explicit `kani-proof` option must use those roots
+and the unchanged Kani flags and resource/source controls. Seventy-five focused
+Python/runtime tests, including actual Linux namespace visibility and tampering
+controls, passed. Native coordinate healthy/three-defect/restored commands and
+final admission also passed, with the actual namespace mounts checked. Mean
+selected admission was 9.36 seconds over five commands, versus 37.30 seconds for
+the preceding full-admission coordinate proof; this is a sequential observation,
+not a general benchmark. Exact receipts and remaining math are in the
+[current proof checkpoint](tasks/s1.1-time-domain.md#exchange-solver-limit-and-admission-checkpoint--5-november-2026).
+No whole-store fallback or shared installation change follows from this profile.
+
+The separate `admit_era_constructor_codegen()` API reuses that complete inventory
+and exact two-root mount closure for the closed `era-constructor-codegen-v1`
+consumer. Its fixed Cargo-mode `--only-codegen` profile is preparation for the
+actual public EraWindow/Garde constructor, not proof execution or generic Cargo
+admission. It requires its separately authenticated selected vendor view,
+immutable offline project/lock/configuration and ordinary runtime custody. The
+proof API's flags and generic `full`/`stable-core` choices remain unchanged.
+All 51 admission helper controls passed after this additive API; source/module
+comparison confirmed every pre-existing admission definition unchanged. Track
+actual compiler execution and generated-code inspection in the
+[existing constructor checkpoint](tasks/s1.1-time-domain.md#remote-s21-handoff-and-public-constructor-preflight--5-november-2026).
+
+`admit_era_constructor_model_inspection()` is another closed consumer over the
+same complete Kani inventory and two readonly tool roots. Only its fixed bundled
+`goto-instrument --dump-c` command, authenticated qualified model copy and
+separate ordinary runtime custody are admitted; it grants no generic tool/flag,
+Cargo or solver surface. All 53 admission helper controls passed. The
+[model-inspection checkpoint](tasks/s1.1-time-domain.md#public-constructor-model-inspection--5-november-2026)
+owns actual extraction and subsequent loop/unwind/proof evidence.
+
+`admit_era_constructor_proof()` reuses the same complete inventory for the closed
+five-job actual-constructor consumer. Its reviewed Cargo profile retains model
+validation, safety checks and sanity, with a provisional unwind of 32. All 55
+admission helper controls passed. The first actual healthy job stopped during
+GOTO model validation, before any solver result, because padded union member
+types disagree with their declared storage types. Do not rerun that candidate
+unchanged or infer a constructor proof from codegen or the readable model.
+The [constructor proof checkpoint](tasks/s1.1-time-domain.md#public-constructor-proof-checkpoint--5-november-2026)
+owns the retained failure, two bounded diagnostic reserves and any separately
+admitted verifier repair. The separate private candidate now has the matching
+`rustc-dev` component and rebuilt compiler: all 46 binding tests and eight
+bounded MEMBER controls qualified, including the intended false-assertion
+failure and restored health. That historical 7,130-entry inventory changed only
+the compiler. The current private 7,131-entry inventory also contains one exact
+copy of its existing LLVM library in the target `rustlib` directory, required by
+the nested Cargo/rustc loader. The installed library is 207,996,272 bytes,
+SHA-256 `559bc1644a9b1124bf62bf11cb022c8c385cb53dc940893a8a87b44241f9a77d`;
+the extension and original entries qualified separately. Constructor compilation
+now reaches CBMC; its latest fixed 120-second attempt timed out without returning
+checks. The public constructor proof remains incomplete; follow its existing
+checkpoint's source-only hold. The follow-on target-refinement and raw-property-ID
+driver patches are unbuilt and unadopted; no new driver is installed. The reusable
+[compiler repair source kit](tools/formal/kani-padded-union/README.md) belongs in
+Git; generated toolchains and campaign outputs remain external. Shared tool installation and shipping
+Rust/LLVM policy are unchanged. Runtime admission checks the effective tools and frozen build
+provenance without reopening unused compiler-build source/vendors.
 
 The [later full-admission metadata optimization](tasks/s0.1-protocol-comparison.md#full-tool-admission-metadata-optimization--1-november-2026)
 keeps those scopes and mounts intact. Inventory names schedule terminal checks;

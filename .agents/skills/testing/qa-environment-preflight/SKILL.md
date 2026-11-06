@@ -5,6 +5,10 @@ description: "Establish tool, Cargo, target, Windows-machine and fixture readine
 
 # Check verification readiness
 
+Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+
 Read [the testing contract](../CONTRACT.md).
 
 Inspect current repository instructions/manifest/toolchain/lockfile/actual command expansion/targets/features/selected test identities. Verify absolute checkout path. Documentation-only tree has no Cargo gate; do not create one for green preflight.

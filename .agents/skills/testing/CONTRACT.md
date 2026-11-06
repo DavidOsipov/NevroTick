@@ -17,7 +17,7 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 - Freeze relevant source/configuration/lockfile/fixture/candidate artifact identity, including dirty changes; HEAD alone insufficient. Preserve existing staged/unstaged/untracked work. No stage/commit/push/receipt replacement without task authorization.
 - Before execution inspect actual Cargo manifests, selected features/targets, test discovery, runner/tool versions, setup, effects. Assume no Cargo workspace/Windows runner/optional tool. Initial repository documentation-only; verify current state before relying on observation.
 - When selecting configured compiler, lint, runner, scanner or artifact commands, use [configured tool execution](references/configured-tooling.md). Apply only the checks needed for the changed guarantee; retain tool-admission, application execution and native/package evidence as separate layers.
-- Select Miri, cargo-fuzz, Loom, Kani, Lockbud or cargo-vet only for a named evidence gap and admitted source/harness/graph. Respect separate analysis compilers, bounds, assumptions and store custody. Successful tool controls do not execute an application gate.
+- Select Miri, cargo-fuzz, Loom, Lockbud or cargo-vet only for a named evidence gap and admitted source/harness/graph. Kani/formal work is deferred until after V1 under the product-specific policy below. Respect separate analysis compilers, bounds, assumptions and store custody. Successful tool controls do not execute an application gate.
 - For sanitizer or memory-detection claims, use [sanitizer selection and controls](references/sanitizers.md). Separate semantic assertions from detector-specific faults; retain exact instrumentation/platform coverage and independent resource-lifecycle evidence.
 - Native heap/handle/FFI or resource-lifecycle changes require an explicit coverage decision through [Windows memory diagnostics](references/windows-memory.md). Select reached Application Verifier/PageHeap checks and CDB fault capture where applicable; measure retained allocations, handles, GUI objects and tasks separately. Own per-image configuration and restoration, run the candidate with its intended token, and report missing coverage or restoration as incomplete. A clean debugger exit proves neither absence of faults nor absence of leaks.
 - For uncertain Rust data propagation, use [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) and its [CodeQL reference](references/codeql-data-flow.md). Tie paths to actual extracted source/target/features and query/model identity; challenge reachable healthy/faulty controls. AST/CFG, query compilation and empty results prove no complete data-flow or authorization claim. Local MCP use leaves hosted CodeQL deferral unchanged.
@@ -70,18 +70,26 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 
 ## Product-specific evidence
 
-Product mathematical algorithms require machine-checked proofs under
-[OD-10](../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-and [architecture §20.1.1](../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
-Use the [proof workflow](references/formal-verification.md): inventory existing
-and future algorithms, full admitted domains, success/error completeness,
-machine/rounding semantics and invariants in their existing tasks. Require
-independently reviewed specifications, actual-source correspondence, nonempty
-completed results, reachable healthy/error and compiled defect controls, and
-restored healthy passes. Missing, stale, subset-only or model-only evidence leaves
-the omitted obligations open and blocks dependent mathematical acceptance.
-Verifier choice remains conditional; proof completion is required. Preserve the
-other evidence layers and reuse proofs only while their relevant inputs match.
+Apply [OD-10’s first-release deferral](../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal proof work resumes
+after the first released software version (V1). Missing or invalidated proofs do
+not block V1 implementation, acceptance or release. Keep proof gaps under the
+existing source/CHECK owners as post-V1 work; preserve historical evidence only
+for its exact source/domain/configuration. Do not execute formal compiler/solver/
+proof jobs, extend verifiers or repair pending proof admission/metadata consumers
+before V1. Continue the ordinary product plan and all required nonformal checks.
+The [proof workflow](references/formal-verification.md) governs post-V1 resumption.
+
+For proof planning/review, apply
+[OD-10 §14.2](../../../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026):
+start with an independently specified useful product-operation guarantee. A helper
+must close a named requirement or have an explicit dependency and completion route
+to that guarantee. Bound all preparation/tooling/solver/control effort together;
+an incomplete attempt stays open and stops, without automatically retrying,
+switching to unrelated easy proofs or repairing the verifier. Preserve scoped
+historical proofs; finding a bug is not required. Report unique guarantees,
+qualified jobs, semantic controls and tool-only checks separately; retain debt in the
+[post-V1 debt record](../../../tasks/development-backlog.md#product-guarantees-still-open).
+This policy change activates no formal work or V1 gate.
 
 Use [numerical and protocol truth](references/numerical-protocol.md) for time models, packets and strict contracts; [Windows evidence](references/windows-evidence.md) for OS/UI/package claims; and [Rust techniques](references/rust-techniques.md) when selecting runner, property, fuzz, model or mutation tooling. Load only the relevant reference.
 

@@ -1,30 +1,42 @@
 # UI-M0 implementation task
 
-## Current routing — Slint replacement, 5 November 2026
+**Current owner amendment — 6 November 2026:** [OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. Retain the proof receipts and incomplete obligations below; their older
+“next”, “mandatory before acceptance” and proof-first directions do not authorize
+pre-V1 work or block first-version implementation, phase acceptance or release.
+No new solver/compiler proof campaign, verifier extension, formal source
+preparation or proof-metadata consumer repair is scheduled before V1. Resume
+through normal bounded planning after that release. Runtime validation, checked
+arithmetic, independent tests, property/boundary cases, 90% security-primitive
+coverage, 95% critical-file mutation, security/native/package/release gates and
+all existing Windows/fuzz/storage/UI holds remain in force. Current product work
+follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
-[OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
-selects complete replacement of the Win32 product UI with Slint. The
-[existing S0.5 amendment](s0.5-ui-comparison.md#current-amendment--complete-slint-replacement-5-november-2026)
-owns source/licence preparation, pinned graph admission, the fixture-only v0.4
-port, admitted native qualification and product cutover. Start its ready
-source-only card alongside independent Core work; no toolkit-choice rerun or
-renewed owner selection is needed. Live P5 remains deferred at its existing
-service/IPC and D1–D3 re-entry gates. There is no dual product UI or automatic
-Win32 fallback target.
+
+## Current UI direction — integrated Slint continuation
+
+**Current Slint continuation — 6 November 2026:** the [GUI handoff](slint-gui-handoff.md)
+and [S0.5 active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+own the implemented fixture GUI, GPL-3.0-only original GUI grant, bounded graph
+admission and GUI42/43 evidence. The checked-in Windows entrypoint selects Slint;
+Win32 is retained historical source. Backend/native qualification, independent
+critical-text approval and the planned hardening handoff remain open. Earlier
+M0-SL preparation states below are historical and do not require repeating their
+completed source stages. Main's Slint/iced measurements and reaffirmation remain
+retained, with no toolkit-choice rerun. One owner serializes shared graph/schema
+changes; branch receipts do not qualify the merged candidate. Live P5 and D1–D3
+retain their existing prerequisites and re-entry gates.
 
 This UI-M0 record retains **Win32 implementation and exact-candidate history**,
-plus the separately recorded HTML import. The Rust entrypoint still uses Win32;
-no Slint implementation or qualification is claimed. Its unexecuted full
-AppVerifier/PageHeap instrumentation gap remains on the old Win32 candidate.
-Do not close it by transferring old passes to Slint or require finishing the
-retiring adapter before independent migration source work. The replacement
-needs its own reached-native-path, lifecycle, cleanup and resource evidence.
-M0-01–M0-08, sample labelling, shared checked editing, disabled protected actions
-and the fixture-only boundary carry into the port. D1/D3 return before a
-general-user preview/release or corresponding claim; D2 status returns before
-live status and D2 authorization/result contracts before real settings/commands.
-All remain Deferred in the fixture port. Existing native/fuzz/storage holds and
-scoped Sandbox admission remain binding.
+plus the separately recorded HTML import and main's 5 November migration queue.
+Its unexecuted full AppVerifier/PageHeap gap remains on that old Win32 candidate;
+Slint needs its own reached-native-path, lifecycle, cleanup and resource evidence.
+M0-01–M0-08, sample labelling, shared checked editing and disabled protected effects
+carry into the fixture GUI. D1/D3 return before general-user preview/release or a
+corresponding claim; D2 returns before live status and real settings/commands.
+The pilot's omitted accessibility feature is no product exemption. Existing
+native/fuzz/storage holds and scoped Sandbox admission remain binding.
 
 ## Scope and custody
 
@@ -33,8 +45,10 @@ Authorized by David's “Do it” after the agent-readiness recommendations on
 Architecture §16.5 and M0-01–M0-08 control acceptance. This task record is outside
 the maintained documentation bundle.
 
-Legacy Win32 status: the coding foundation and functional prototype are implemented and
-observed. Required full native-memory instrumentation remains incomplete;
+Retained Win32 reference status: the coding foundation and functional prototype
+are implemented and observed. The successor Slint fixture GUI is implemented in
+the separate S0.5 evidence chain; merged-candidate and native qualification remain
+open. Required full native-memory instrumentation for the retained Win32 candidate remains incomplete;
 the narrower debugger and functional results below do not close that gap.
 The latest UI-M0 Win32 candidate and results are in the
 [design-reference adaptation](#design-reference-adaptation-29-october-2026) below.
@@ -48,6 +62,11 @@ IPC/network/persistence, or establish P0/P5/release qualification. Only require
 a new hosted Rust gate after that check is available on the branch.
 
 ## Ownership and paths
+
+The table describes the historical Win32 reference. The current Slint adapter,
+generated-code and input/text/native owners are recorded in the GUI handoff;
+the retained M0-SL-02 table describes their earlier preparation. Old path names
+grant no Slint acceptance or automatic module layout.
 
 | Owner | Writable scope | Input → output |
 | --- | --- | --- |
@@ -96,6 +115,71 @@ before general-user preview/release or earlier corresponding claims. D2 freshnes
 reconnect/generations returns before live status; policy/authorization/result
 contracts return before real settings or protected commands. All remain Deferred.
 The disposable service/clock/MSI laboratory remains a later prerequisite.
+
+### Network settings handoff — 5 November 2026
+
+Before real settings/P5 re-entry, consume the planned
+[Network connection controls](../docs/windows-time-features.md#331-time-network-settings--5-november-2026)
+and the engine's [network-profile card](engine-transport-pilot.md#network-path-history-and-user-routing--5-november-2026).
+Under [OD-11](../docs/nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral),
+first Windows delivery exposes Direct interface/family controls. Every proxy
+control and proxy-specific case below is deferred to
+[SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition); authentication
+and proxy DNS require later extensions beyond its first loopback/no-auth/local-DNS
+subset. Do not enable a proxy editor or discard unsupported imported proxy state
+into Direct. These cases are future acceptance, not new UI-M0/P5 blockers.
+Provide a reachable Settings entry and source-detail link; preserve requested
+versus effective state, hard versus preferred family policy, direct/proxy leg
+labels, resolver choice and unavailable-adapter/UDP-relay remedies. A local
+proxy's onward interface and a proxy-resolved target family are not client-known
+facts. Reject unsupported combinations through the shared domain/IPC owner,
+including raw-handler bypass cases, and apply only an authorized current revision.
+
+Keep saved policy and effective acquisition revision separate through pending,
+blocked and successful activation; stale completions cannot update current UI.
+Use the existing machine-policy/secret/history owners, not per-user network
+configuration or direct Q access. Explain cold path learning after initial
+service restart, unavailable optional history and missing proxy credentials
+without promising durable cache support or silent direct/no-authentication fallback.
+
+This is a full-product handoff under F-06/07/09/10 and AC-21/22, not an implemented
+widget or M0 pass. UI-M0 retains deterministic fixtures, no live probes/settings
+effects and its existing D1–D3 deferrals. No HTML prototype or branding asset was
+changed by this documentation amendment.
+
+## Windows component reuse handoff — 5 November 2026
+
+**Source-only continuation:** read
+[architecture §18.6.2](../docs/windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage).
+The inspected UI at `e82f3f6b352fde88beceece4d3084862d8778338` already uses
+`windows-sys` 0.61.2. Retain that Win32 adapter as reference evidence while
+OD-13 and M0-SL-01–05 govern its Slint successor. Preserve M0-07/M0-08 lifecycle
+contract. `windows-window` covers the top-level window/loop, not controls or
+layout; its inspected `run()` does not expose the `GetMessageW` -1 error branch
+that this adapter distinguishes. This is a source-fit concern, not a reproduced
+crash or permission to replace/refactor the current UI.
+
+Before a later window-wrapper replacement, the UI owner must show a concrete
+maintenance benefit and preserve error/quit/message distinctions, borrowed HWND
+and callback state through destruction/reentrancy, close-versus-tray behavior
+and relevant USER/GDI/handle observations. Follow
+[the conditional toolkit record](s0.5-ui-comparison.md#conditional-windows-toolkit-candidates--5-november-2026)
+for retained Reactor observations and any bounded revisit of selected Slint
+delivery. This source handoff does not select another toolkit/runtime or put a
+`windows-window` loop around Slint.
+
+At S5.3/F-09 export implementation, the UI/dependency owner first rechecks a
+working published picker package and its exact source/graph. The inspected
+`windows-pickers` index contains only 0.0.0; useful API in main does not qualify
+a Cargo dependency. A selected OS dialog must preserve cancellation versus
+failure, UI-thread/apartment/owner lifetime and bounded ordinary-UI output.
+Pair a valid redacted export with cancellation, denied/unavailable destination
+and stale/replaced-path cases; never forward a caller-selected filename to a
+privileged writer. The dialog's returned path is not an already opened safe file.
+
+**Disposition:** deferred at existing S0.5/P5 triggers and CHECK-17/21/22/26/27
+owners. No new UI-M0 acceptance, live export/persistence, dependency or native
+experiment is introduced; D1/D2/D3 and current execution holds remain intact.
 
 ## Implementation and evidence
 
@@ -187,6 +271,172 @@ CodeQL requirement. Ruleset IDs: `26069359` (existing protection), `26110199`
 observed successfully after publication before making it required.
 
 ## Remaining evidence and next work
+
+### Slint migration handoff — 5 November 2026
+
+**Historical main planning queue:** the table and next-action wording below
+record main before this branch's fixture GUI implementation. The current
+[S0.5 goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+and [GUI handoff](slint-gui-handoff.md) supersede completed source stages. Keep
+the original row identities, research concerns and still-open native/product
+gates; do not rerun completed stages or transfer branch receipts to this merge.
+
+**Owner:** UI with dependency/security, accessibility and Windows QA owners.
+**Historical disposition:** Slint selection accepted; migration not started on
+that dated main candidate. The product continuation in development plan §7 remains the primary task.
+This update defines work; it does not execute a Rust migration or native campaign.
+
+M0-SL-01–M0-SL-05 are **task-local work labels**, not replacements for canonical
+M0/CHECK IDs. Ready means the named preparation can run when the UI owner takes
+this work; it is not a completed result, admitted product dependency or Windows
+permission. Keep one candidate/evidence chain here and in S0.5. M0-SL-01 preparation may
+finish with an unresolved blocker; that records **admission held**, not a pass
+that unblocks M0-SL-03.
+
+The [Slint/iced assessment](../docs/supporting-reviews/slint-iced-assessment-2026-11-05.md)
+records David's subsequent reaffirmation of Slint and the source-review inputs
+for this same queue. M0-SL-01/02 must disposition its unconfirmed SR-1 generic
+weak-handle and SR-2 future-destruction concerns against the exact admitted
+version and reachable application paths. These are local research labels, not
+confirmed product defects or new canonical gates; owner selection does not
+resolve them. The report's activity figures and private idle results grant no
+licence, generated-code, native or accessibility pass.
+
+| Work item / role owner | Current state and predecessors | Concrete output and observable exit |
+| --- | --- | --- |
+| **M0-SL-01 — exact graph and licence route** / dependency/security with UI | **Ready: source-only preparation.** Use OD-13 and the retained Slint 1.18.1 winit/software/Fluent pilot inputs; do not reopen general toolkit selection. Product graph adoption remains held. | Inventory exact runtime/build/proc-macro/native dependencies, selected grants/features and Windows/runtime payloads. Resolve the Slint and Apache-2.0-only winit questions against retained GPL-2.0-only obligations; produce an admitted route or a concrete OD-04 blocker/card. Freeze the candidate graph/build inputs before Cargo adoption. OPEN-1/13, CHECK-20/26; no clearance or paid agreement may be inferred. |
+| **M0-SL-02 — safety, input and lifecycle contract** / UI/Rust-contracts with security/reviewer | **Ready: source-only preparation**, using the retained candidate; recheck the result against M0-SL-01's final graph. | Map the real fixture → widget → callback → shared checked model → view path and module/write ownership. Inventory generated unsafe code and resolve its `allow` versus workspace `forbid` conflict without a silent policy relaxation. Specify UI-thread affinity, weak handles, editor/raw-field and aggregate bounds, error preservation, last-window/event-loop shutdown and actual resource release. Independently review these source-bound contracts, including allocation before handler guards. M0-04/06/07/08. |
+| **M0-SL-03 — fixture adapter migration** / UI with domain/build owners | **Held** until positive product graph/licence admission from M0-SL-01, the reviewed M0-SL-02 contract, and activation of the UI implementation slice under current priorities. | Implement the selected Slint adapter in the real UI crate, reusing the checked preview model. Status/Sources/Settings, sample labels, source details, checked Update preview/Cancel and disabled protected actions preserve the existing fixture semantics. No network/DNS/IPC/persistence/service/elevation/clock paths enter the slice. Freeze source, generated code, graph/configuration and executable identity; keep the Win32 reference receipts unchanged. M0-01/03/04/05/06/07. |
+| **M0-SL-04 — compiler, contracts and preview behavior** / Rust/contract QA with independent reviewer | **Held** on the frozen M0-SL-03 candidate and admitted graph/check inputs. | Run applicable configured format/compiler/Clippy/docs/dependency checks. Exercise actual model/adapter test seams admitted by the test graph: valid neighboring edit accepted, invalid/oversized and direct-call bypass rejected with prior state preserved, Cancel discards unaccepted text, fresh model construction resets fixtures; actual Windows GUI editing/restart remains M0-SL-05; retain legal-use controls for compile-fail claims. Review generated/native ownership and useful redacted errors. Record exact executed/failed/skipped scope; source annotations alone do not pass. M0-01/04/05/06/07/08. |
+| **M0-SL-05 — native UI-M0 and resource checkpoint** / Windows QA/UI with independent reviewer | **Held** on M0-SL-04, an admitted Windows candidate/fixture and the applicable execution authorization. Earlier live-host pilot permission/results qualify only that bounded experiment. | Observe ordinary token, all three pages/sample labels, valid/rejected editor controls, Cancel/restart, resizing, minimize/restore and normal close. Measure private/working-set bytes, CPU and USER/GDI/kernel handles through repeated use and before exit, with actual cleanup/retention and reached native-memory coverage recorded. Freeze workload/duration/repeats, controls, helper and cleanup before execution. Record remaining D1/D2/D3 and CHECK-21/22 gaps rather than claim full feasibility or release. M0-02/03/04/05/06/08; CHECK-21/22 subset only. |
+
+#### Next UI action — M0-SL-01
+
+Inspect the already retained pilot manifests/lockfile, exact upstream grants,
+Windows selected-feature tree and native payload inventory. The independent
+expected outcome is a precise permitted product graph or a reproducible,
+bounded licence/admission blocker with its dependent action identified. Record
+that result here; a framework-level grant or process split alone cannot close it.
+This first preparation writes only the existing task/admission record, performs
+no Windows command and adds no dependency or licence-policy exception. In parallel,
+M0-SL-02 may prepare contracts from the same pinned source, then reconcile any
+M0-SL-01 graph change before its own exit.
+
+The private pilot is reference input, not production code to copy wholesale:
+its raw widget allocations, omitted accessibility feature and generated-unsafe
+accommodation still need the named owners above. Retain shared mandatory garde
+construction and UI-M0 field/domain rules. This migration changes no numerical
+algorithm by design; if a conversion or mathematical contract does change,
+record its actual-source proof obligation with the existing OD-10/CHECK-7/8/25
+owner for after V1; it is not a first-version acceptance blocker. Retain checked
+conversions and independent behavioral/boundary checks.
+
+#### Observation mechanism — source preparation in M0-SL-02
+
+The existing `scripts/ui-m0-windows.ps1` addresses Win32 child-control IDs through
+`GetDlgItem` and native text messages. Slint-drawn widgets do not supply that
+control model. M0-SL-02 must explicitly adapt or replace those field-interaction
+and expected-output observations before M0-SL-05; do not reuse the old helper and
+assume it reached Slint callbacks. Generic owned PID/start-time/image/HWND,
+geometry, capture and resource-custody checks can be reused after revalidation.
+Choose a supported, bounded toolkit observation mechanism or an owned-window
+manual interaction record; either must exercise the real editor callbacks and
+inspect visible/persisted-in-memory results against independent input facts.
+A direct model call or screenshot alone cannot establish the whole journey.
+Do not restore full D3 or enable a new accessibility feature solely to pretend
+the old Win32 automation passed. Record unavailable native observations as gaps.
+
+#### Downstream handoff and deferred work
+
+- **S0.5 / CHECK-22:** full feasibility remains deferred beyond UI-M0. Consume
+  M0-SL-01/02/05 receipts, then restore the relevant keyboard/UIA/Narrator,
+  contrast/text/DPI, elevation and optional-tray observations in its own scope.
+  M0 passes and the private idle experiment cannot close full S0.5.
+- **P5 S5.1–S5.4:** remain deferred in the grouped backlog. S5.1 restores D2 before
+  live read-only status; S5.2 before policy/protected effects; S5.3 owns actual
+  tray/export/close-versus-service behavior; S5.4 restores D1/D3 and qualifies
+  the exact Slint accessibility feature/bridge and complete resource workload.
+  Accessibility disabled in the pilot is not a product policy.
+- **W11-W09:** receives the exact Slint/backend/renderer and native resource and
+  power/notification obligations; expand only at its existing trigger.
+  **W11-W05/W11-W10 and P6 S6.1–S6.4** receive final UI executable/runtime/asset
+  inventory, licence/SBOM, per-role mitigations, activation and install/update/
+  repair/removal obligations. A standalone pilot EXE supplies no MSIX/Store pass.
+
+### OD-13 documentation checkpoint — 5 November 2026
+
+Slint default selection is recorded in NV-DEC-001 §17 and amended DEC-3, and
+propagated through the architecture, entry points, feature/hardening/diagram and
+research guides, development/MSIX/Windows plans, current design guidance,
+UI task/backlog records and relevant skills. Historical measurements and archived
+source copies remain identifiable as historical; the checked-in Win32 adapter
+has not changed. The migration handoff above owns the next UI implementation.
+
+Documentation verification passed: the 63-skill metadata/link/inventory checker,
+all 25 checker regression tests, added/changed local Markdown target/anchor checks
+and `git diff --check`. Independent review's remaining inherited-control and
+historical-default wording issues were corrected and rechecked. These are
+documentation/skill results, not a Slint product, native or release qualification.
+No Rust/Cargo change or native command was part of this decision update;
+unrelated concurrent formal-verification work remains in place.
+
+### Slint task-queue checkpoint — 5 November 2026
+
+The four-step OD-13 documentation handoff is now M0-SL-01–05 with owners,
+ready/held states, predecessor gates and existing M0/CHECK exits. Source-only
+preparation is the next UI action; the current Core continuation is unchanged.
+The task index, S0.5 disposition, grouped P5 backlog and actual W11-W09/P6 rows
+consume this same chain. Added observation-method preparation explicitly replaces
+the Win32 child-control assumptions, while preserving D1–D3 and every role's
+package mitigation obligations.
+
+A fresh-context read-only `slint_task_gap_review` completed the source-to-task gap
+review and the five-file recheck. Finding SL-TASK-01 narrowed S6.1 to UI-only
+protections; the row was repaired to retain engine/broker/helper/UI scope, and
+the reviewer closed that finding. Its attributed comprehension paragraphs and
+returned rechecks are retained at `/tmp/nevrotick-slint-task-sync-av7ogx5w/review-result.txt`.
+All local links in the five changed task records and changed-task whitespace
+checks passed. The Git index stayed unchanged. This task update ran no Rust,
+Cargo, native Windows or product qualification and preserves concurrent work.
+
+### Slint implementation-skill research — 5 November 2026
+
+Added [implement-slint](../.agents/skills/implementation/implement-slint/SKILL.md)
+and six conditional references alongside the native-UI skill. The requested
+dedicated path was absent from inspected base `5e98c79901c90de77db6c6047cb483ec10b8cbd5`;
+it is registered as an original local workflow, with no imported implementation.
+The skill index, native-UI route and agent guide now make it discoverable.
+
+Three research lanes used GitHub, Context7, Microsoft Learn, Exa and Firecrawl,
+with primary web documentation and coordinator source checks. Slint 1.18.1 at
+`372cf0ee5577c3dfec309a45e7b778ba4e81b734` is the inspected upstream baseline,
+not an admitted product graph. DeepWiki and Firecrawl's separate GitHub-research
+endpoint returned tool-availability errors; no findings rely on those calls.
+
+The references support M0-SL-01/02 with exact runtime/build feature and licence
+separation, generated unsafe/lint ownership, precision-safe presentation,
+binding/draft semantics, model notifications/identity, UI-thread delivery and
+lifecycle, asset derivation, supported editor/viewer tools and bounded testing.
+They record the AVIF encoder/decoder discrepancy and later tray broadcast/recovery
+concern with source links and explicit limits. Ordinary no-pixel tests, viewer
+rendering, optional developer MCP, native Windows and package evidence remain
+distinct. Examples are mapped to current owners; no example activates later work.
+
+Static verification: the package checker passes **64 skills**, including metadata,
+UI prompts, local Markdown links and inventories; changed-document link/anchor
+and whitespace checks pass. Pinned external GitHub targets were checked against
+complete upstream trees. The coordinator read the integrated references and
+reconciled their claims with the cited source and current repository contracts.
+Four fresh-context review attempts and two subsequent peer-review attempts
+returned context-window errors without usable analysis. They are failed review
+attempts, not independent approval or a behavioral skill-evaluation pass.
+
+This is source/documentation preparation only. No Cargo dependency, Rust source,
+brand asset, application execution or Windows state changed. M0-SL-01 licence/
+graph admission and M0-SL-02 candidate-bound contract review remain incomplete;
+M0-SL-03–05, current priorities, execution holds and D1/D2/D3 deferrals are unchanged.
+
+### Retained candidate evidence gaps
 
 - Run the required Application Verifier/full-PageHeap profile on an owned image
   through the documented elevated per-image setup and restoration workflow when

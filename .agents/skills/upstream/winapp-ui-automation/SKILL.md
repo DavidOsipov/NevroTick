@@ -6,7 +6,7 @@ license: "MIT"
 
 ## NevroTick scope
 
-Use alongside project-owned `qa-accessibility` and `qa-e2e-tests`; their requirements and canonical architecture control assessment. OD-11 selects Slint for NevroTick; qualify the actual Windows target's UIA provider and patterns rather than assuming classic Win32 control behavior. This skill selects no toolkit, .NET or Windows App SDK dependency, or package format.
+Use alongside project-owned `qa-accessibility` and `qa-e2e-tests`; their requirements and canonical architecture control assessment. OD-13 selects Slint for NevroTick; qualify the actual Windows target's UIA provider and patterns rather than assuming classic Win32 control behavior. This skill selects no toolkit, .NET or Windows App SDK dependency, or package format.
 
 Run only on qualified Windows test machine with already available `winapp` CLI and approved isolated application/test session. Record OS, CLI version, candidate and target identity; check installed help/JSON shapes before using examples. Retained JSON reference describes features added in v0.3.1 and v0.6.3+, not verified compatibility with every later CLI.
 

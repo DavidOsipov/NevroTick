@@ -131,7 +131,7 @@ the native UI consumes them.
 
 ## Translation catalogs
 
-[OD-12's design](../../../../../docs/plans/ui-localization.md) selects readable
+[OD-15's design](../../../../../docs/plans/ui-localization.md) selects readable
 JSON sources → validated CBOR resources → one application-owned typed Rust
 catalog feeding Slint properties/models and OS tray/notification adapters.
 Code generation uses an independently code-owned typed contract, never catalog

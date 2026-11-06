@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "name": "z3",
+  "version": "5.3.3",
+  "admission_status": "private-machine-specific-candidate",
+  "default_root": "/home/david_osipov/.local/share/nevrotick/formal-solvers/z3-5.3.3-linux-x64-candidate",
+  "release": {
+    "asset_id": 688774600,
+    "tag": "z3-5.3.3",
+    "commit": "430d19e697e2ec9bad79ff210d41b4a7a5fcfa3e",
+    "url": "https://github.com/Z3Prover/z3/releases/download/z3-5.3.3/z3-5.3.3-x64-glibc-2.39.zip",
+    "bytes": 69671358,
+    "sha256": "d56f60b06f432f33de5810f7f1a384a339131f361e2d54d08ea83eea14326880"
+  },
+  "files": {
+    "bin/z3": {
+      "bytes": 41746104,
+      "sha256": "fcd0ca765d1c0b4eac776f442ec0f10294b9a6416be91fad4e52fa19012c8d01",
+      "mode": "0500"
+    },
+    "LICENSE.txt": {
+      "bytes": 1096,
+      "sha256": "e617cad2ab9347e3129c2b171e87909332174e17961c5c3412d0799469111337",
+      "mode": "0400"
+    },
+    "manifest.json": {
+      "bytes": 16776,
+      "sha256": "3c5565093f3b0d605ae0ea3dbf531b61b89d1b6b1d2aad7282c8ad49c73efa50",
+      "mode": "0600"
+    }
+  },
+  "directories": {"": "0700", "bin": "0700"},
+  "host_runtime": "existing-public-host-trusted-base-not-rehashed",
+  "native_solver_controls": "pending"
+}

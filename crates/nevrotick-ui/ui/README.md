@@ -41,7 +41,7 @@ UTF-8, schema, repertoire and compatibility checks before CBOR preparation.
 Current schema/text contract/catalog revision are each 2: 509 active identities,
 596 stable ordinals and 426 immutable output rows. GUI build 2 is informational,
 not the compatibility key. See [text development](../../../docs/nevrotick-gui-text-development.md)
-for generation and [OD-12](../../../docs/plans/ui-localization.md) for authority.
+for generation and [OD-15](../../../docs/plans/ui-localization.md) for authority.
 
 The production semantic approval ledger is empty. Parser, generator, signature
 and coverage success do not approve critical wording or external language packs.

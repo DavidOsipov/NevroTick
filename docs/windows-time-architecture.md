@@ -8,11 +8,15 @@
 **Product name:** NevroTick  
 **Scope:** a chrony-derived Rust NTP/NTS client for Windows, with a small native UI
 
-**5 November UI toolkit amendment:** [OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+**5 November UI toolkit amendment:** [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Slint as the complete replacement for the Win32 UI. DEC-3 and §16 reflect
-the selected direction; checked-in Win32 source and its measurements remain the
-pre-migration baseline. Licence/graph admission, Slint implementation and native
-qualification are pending in the [existing S0.5 task](../tasks/s0.5-ui-comparison.md).
+the selected direction; the checked-in Windows entry now selects Slint against
+v0.4, while the old Win32 adapter and measurements remain historical. The
+[current GUI handoff](../tasks/slint-gui-handoff.md) and
+[existing S0.5 task](../tasks/s0.5-ui-comparison.md) own implemented fixture scope
+and portable evidence; native, complete-graph/distribution and production gates
+remain open. OD-13's 6 November licence amendment separately selects GPL-3.0-only
+original GUI composition while preserving GPL-2.0-only Core/engine.
 
 **Documentation amendments:** 29 October 2026 - explicit upstream-code verification and stress-testing policy; owner-directed adoption of garde-backed construction and explicit function/module contracts; adopted native memory diagnostics with separate retention evidence; and [owner decisions NV-DEC-001](nevrotick-owner-decisions.md). The owner decisions record derived reuse, large authenticated recovery as a qualification goal, the Pool/default-profile question, case-by-case risk decisions and an initial OpenPGP release alternative. These are design and agent-policy requirements, not application execution evidence.
 
@@ -84,24 +88,30 @@ Quick navigation: [architecture](#3-component-architecture-and-authority), [NTS 
 
 ## 1. Current-state capsule
 
-**Implementation status, 4 November 2026:** this summary was checked against
-[main at `889d534`](https://github.com/DavidOsipov/NevroTick/commit/889d534252d145e05f9442d6bbf66272d8e9f65f).
-The [workspace manifest](../Cargo.toml), [lockfile](../Cargo.lock) and current
-source contain six members. Source presence and task qualification are separate:
-the linked tasks retain the exact candidates, environments, completed checks and
-remaining work.
+**Implementation summary; historical main baseline, 5 November 2026:** the
+initial capsule was reconciled against
+[main at `5e98c79`](https://github.com/DavidOsipov/NevroTick/commit/5e98c79901c90de77db6c6047cb483ec10b8cbd5).
+The maintained table includes later 6 November engine and GUI source amendments;
+that old pin does not identify their candidates. The [workspace manifest](../Cargo.toml),
+[lockfile](../Cargo.lock) and current source contain six members. Source presence
+and task qualification are separate: linked tasks retain exact candidates,
+environments, completed checks and remaining work. Historical receipts do not
+qualify the combined integration candidate.
 
 | Component | Present implementation | Evidence owner and boundary |
 | --- | --- | --- |
-| [nevrotick-ui](../crates/nevrotick-ui/Cargo.toml) | Portable sample-data model and restricted native Windows UI | [UI-M0](../tasks/ui-m0.md); no engine/Core integration, with D1–D3 still deferred |
+| [nevrotick-ui](../crates/nevrotick-ui/Cargo.toml) | Checked fixture model, Slint v0.4 views and narrow Windows adapters; old Win32 adapter retained as unexported historical source | [Current GUI handoff](../tasks/slint-gui-handoff.md), [S0.5](../tasks/s0.5-ui-comparison.md) and [original UI-M0](../tasks/ui-m0.md); no engine/Core integration, with D1–D3 still deferred |
 | [ntp-wire](../crates/ntp-wire/Cargo.toml) | Bounded NTP decoding/framing, inert NTS-KE processing and NTS envelope/plaintext readers | [Header](../tasks/s1.1-header.md), [framing](../tasks/s1.1-framing.md) and [protocol](../tasks/s0.1-protocol-comparison.md) tasks; no TLS/AEAD, authenticated acquisition or sample authority |
-| [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding and distinct clock domains | [S1.1c](../tasks/s1.1-time-domain.md); pure arithmetic does not establish trusted time or clock effects |
+| [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
-| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); selected inert scopes, with current settled active-time delivery qualification incomplete |
-| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer and `nevrotick-observe` CLI | [Transport pilot](../tasks/engine-transport-pilot.md); unauthenticated observations remain ineligible for clock control |
+| [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); [settled-rate qualification](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture scope, not full P1 |
+| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer, explicit conditional software-clock measurements and `nevrotick-observe` CLI | [S2.1 source checkpoint](../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026); unauthenticated observations remain ineligible for clock control; current coverage/mutation and native qualification remain open |
 
-The engine depends on `ntp-wire`, Tokio and `getrandom`; it is not connected to
-`ntp-exchange`, `time-domain` or `time-core`. The UI has no engine/Core dependency.
+**6 November S2.1 amendment:** the engine now depends on `time-domain` alongside
+`ntp-wire`, Tokio and `getrandom`. Its explicit experimental model preserves
+exact conversion residuals and nominal phase/signed RTT; observed consistency
+is no qualified UTC continuity or wire-time accuracy. It is not connected to
+`ntp-exchange` or `time-core`. The UI has no engine/Core dependency.
 These components therefore do not yet form a production synchronization pipeline.
 Task records contain scoped host checks and native UI/engine observations for
 named candidates. Historical results do not automatically qualify later source
@@ -113,8 +123,7 @@ remain open. No production-supported stable release is declared; the
 
 **Current next action:** follow the
 [development plan §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the latest addenda in its assigned task. The current Core continuation is
-settled active-time delivery qualification. This status correction changes no
+and the latest addenda in its assigned task. This status correction changes no
 task ordering, scoped Sandbox permission, blocked Windows artifact, separate
 fuzz/storage hold, UI-M0 deferral or release requirement.
 
@@ -168,7 +177,7 @@ qualification. P0 investigations and D1–D3 re-entry gates remain unchanged.
 
 ### 1.2 Scope and non-goals
 
-Version 1 is a workstation NTPv4 client with NTS, an automatic background service, secure local administration, clear diagnostics and packaging verified under its declared release profile. Start with currently supported Windows 11 x64 releases, using the MSVC Rust target. Add ARM64 only after its own runtime, mitigation and package gates pass. The exact minimum Windows build and supported update channels must be frozen in P0; the historical API/MSIX minimum is not a promise to support every old Windows release.
+Version 1 is a Windows NTPv4 client with NTS, an automatic background service, secure local administration, clear diagnostics and packaging verified under its declared release profile. [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) selects Windows 11 26H2 x64 and the current Server counterpart, Windows Server 2025 x64 with Desktop Experience, using `x86_64-pc-windows-msvc`. Pro and Standard are first engineering fixtures, not all-edition support promises. The [two-family evidence matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) keeps exact build/UBR/servicing, CPU/protection, package applicability and native results open at their existing gates. Add ARM64 only after its own runtime, mitigation and package gates pass. An API/MSIX minimum or shared numeric build threshold does not select these two product families or establish support.
 
 The initial product is not an NTP server, PTP client, GPS/PPS/refclock host, domain-controller time service, kernel driver, chronyc-compatible remote management endpoint or general clock laboratory. It does not need symmetric peers, broadcast/multicast operation, interleaved mode, hardware timestamping, RTC temperature compensation or a plugin/script system. Time zones and daylight-saving settings remain Windows settings; the service disciplines UTC.
 
@@ -184,7 +193,7 @@ The following choices form the implementation baseline. A gated choice is select
 | --- | --- | --- | --- |
 | DEC-1 | Port chrony's selected client algorithms into a deterministic Rust core; independently test, fix and optimize with recorded evidence and provenance (OD-01) | Preserves the behavior the user values while replacing Unix integration; more fidelity work than a one-shot SNTP utility | License review or differential tests show the chosen translation strategy is unsuitable |
 | DEC-2 | Use two own-process services: engine and clock broker | Network parsing has no clock privilege; SCM launches both without broker child-launch authority | P0 proves unacceptable resource cost or isolation cannot be enforced |
-| DEC-3 | Replace the normal-user Win32 UI with Slint under OD-11; retain narrow Windows OS adapters | Owner-selected toolkit for the v0.4 interface; keep UI separate from service/clock authority. Existing Win32 results are historical, not Slint qualification | Concrete licence incompatibility or measured failure of resource, accessibility or security contracts requires an OD-04 exception/decision; choice alone lifts no gate |
+| DEC-3 | Replace the normal-user Win32 UI with Slint under OD-13; retain narrow Windows OS adapters | Owner-selected toolkit for the v0.4 interface, starting from the measured winit/software renderer and Fluent-style widgets; UI remains separate from service/clock authority. Historical Win32 and private-pilot results do not qualify the current Slint product candidate | Concrete licence, Windows accessibility, security or resource evidence prevents selected delivery; bring the bounded issue under OD-04. Choice alone lifts no gate |
 | DEC-4 | Use secured named pipes as the initial local transport | Simple local deployment and explicit Windows authorization | Mutual server identity cannot be proven without races; then evaluate authenticated local RPC |
 | DEC-5 | Retain the existing NTS-only selectable baseline while resolving OD-03's Pool/default-profile interaction; do not ship an unqualified preset | Prevents silent weakening of an authenticated configuration | An explicitly selected NTP-only profile is needed; it stays visibly unauthenticated |
 | DEC-6 | Prefer cached NTS associations before any bootstrap hint | Fresh authenticated UDP replies can avoid certificate-time circularity | State is absent, rejected, expired under policy or cryptographically invalid |
@@ -198,7 +207,7 @@ The following choices form the implementation baseline. A gated choice is select
 | DEC-14 | Use ASVS L3 as a clause-by-clause design target with native supplements | Provides traceability without pretending a desktop daemon is a web application | A new surface, stricter deployment profile or ASVS version changes applicability |
 | DEC-15 | Pin compiler, SDK, dependencies and checked feature combinations | Makes lint/build/evidence reproducible | Planned update review qualifies a replacement baseline |
 | DEC-16 | Enforce a small portable unsafe-free core and isolate Windows FFI | Shrinks the manually reviewed memory-safety surface | An unavoidable low-level optimization has measured benefit and a reviewed proof |
-| DEC-17 | Start with English and externalized typed message catalogs; OD-12's design uses editable JSON → validated CBOR resources and a Rust presentation bridge for Slint | Languages change data rather than UI/business logic; common labels/errors/tray/notifications/accessibility keep one locale policy | Qualify exact codec/formatter/interface/package profile and adopted locales; independently imported packs need a separate explicit contract |
+| DEC-17 | Start with English and externalized typed message catalogs; OD-15's design uses editable JSON → validated CBOR resources and a Rust presentation bridge for Slint | Languages change data rather than UI/business logic; common labels/errors/tray/notifications/accessibility keep one locale policy | Qualify exact codec/formatter/interface/package profile and adopted locales; independently imported packs need a separate explicit contract |
 | DEC-18 | Use bounded direct Serde decoding, mandatory shared garde validation inside private fallible domain construction, and separate current authorization/effect guards; specify and enforce every function/module contract | Makes omitted field validation visible and prevents ordinary callers from bypassing construction; typed invariants, checked transformations and current guards carry guarantees across internal calls. Library selection is not a qualified dependency graph | Owner adopted garde on 29 October 2026. Section 18.5 qualifies its exact graph/features; changes must preserve unavoidable construction and one rule owner. A real TypeScript client or dynamic-schema requirement may reopen code generation |
 | DEC-19 | Admit a small dependency set per component, use Windows security facilities through owned adapters, and qualify the explicit TLS provider separately from Rustls | Dependencies should remove a specific bug class or integration burden; library defaults, native work and bundled code can introduce authority, resource and licensing problems | Failed exact-graph/license/Windows qualification or a measured unmet requirement. Sections 15.3, 17.1 and 18.6-18.10 govern changes; no library receives blanket security approval |
 
@@ -218,7 +227,7 @@ flowchart TD
     O["Local users and processes"]
     subgraph PRODUCT["One installed product"]
         direction TB
-        U["Native UI - normal user"]
+        U["Slint UI - normal user"]
         E["Engine service - no clock privilege"]
         B["Clock broker - narrow time privilege"]
         A["Admin helper - elevated on demand"]
@@ -248,7 +257,7 @@ The engine publishes bounded redacted status/support snapshots through the broke
 
 ```mermaid
 sequenceDiagram
-    participant U as Native UI
+    participant U as Slint UI
     participant B as Clock broker
     participant E as Engine service
     participant N as Time sources
@@ -316,7 +325,7 @@ Use the existing `windows-platform` boundary for reusable Windows integration. A
 | `windows-platform` | Reviewed native resource ownership, error capture, service hosting, clock observations, pipe/identity mechanics, notifications, protected storage and Windows diagnostic sinks | Narrow role-specific adapters; no source selection, generic command executor or global `WindowsManager` |
 | `ipc-contract` | Portable versioned message types, bounded framing/strict decoding and checked conversions | No Windows handles, ambient OS access or claim that decoded identity/approval fields authorize an operation |
 | `diagnostics` | Event IDs/fields, privacy rules, finite verbosity profiles, bounds and sink interfaces | Platform-neutral; no clock policy, service lifecycle control, log upload or subscriber installation by a library |
-| Executable composition | Select its adapters, install its diagnostic subscriber/sinks and own their shutdown | Engine owns networking; broker owns current authorization and clock writes; helper/installer owns elevated lifecycle; UI owns native controls and UI-thread rules |
+| Executable composition | Select its adapters, install its diagnostic subscriber/sinks and own their shutdown | Engine owns networking; broker owns current authorization and clock writes; helper/installer owns elevated lifecycle; UI owns Slint view state, widgets and UI-thread rules |
 
 Separate clock observation from actuation: only the broker composition exposes the clock-write adapter, after its serialized current-state guard. Keep SCM service-host callbacks distinct from installer/helper service-registration and W32Time lifecycle operations. Common persistence mechanics preserve the separate engine-secret, broker-policy and journal writers/ACLs in section 12.1. Common pipe mechanics preserve the three independently authorized command surfaces in section 5. Native GUI bindings stay UI-owned so headless services do not acquire GUI dependencies.
 
@@ -581,7 +590,7 @@ The following is the default for security-relevant IPC, machine policy and broke
 | Identity and normalization | Decode escaped text once, canonicalize only as required by the field's domain, validate that canonical form and use it for comparison and effects. Keep an optional display label separate. Host identities are not arbitrary URLs or filesystem paths; DNS/IDNA/IP and endpoint admission follow the selected network policy |
 | Limits | Preserve 64 KiB maximum IPC frames, 16 clients and 4 in-flight requests/client. Initial schema budget: no recursive records and at most 16 container levels; maximum 16 logical sources and 2 bootstrap helpers; explicit bounded strings, collections, cookies and per-file bytes. P1 freezes the field/file limit table before those inputs are enabled |
 | Decoder work | Bound reads before body allocation, retain the JSON parser's recursion protection, and count collections during decoding. Never reserve directly from an untrusted length/size hint or read an unbounded file into memory. Decoder scratch space, escaped strings, error paths and queued responses belong to the budget; a post-parse `len()` check alone is not an allocation defense |
-| Failure atomicity | Reject without partial policy activation, network work, secret-store replacement or clock mutation. Failed policy updates keep the prior valid revision; invalid mandatory startup policy/journal blocks effects. Invalid optional statistical cache is discarded as an explicitly documented recovery case |
+| Failure atomicity | Admission rejection causes no partial policy activation, network work, secret-store replacement or clock mutation. Proven precommit policy rejection keeps the prior valid revision; committed/indeterminate outcomes follow §12.2 reconciliation. Invalid mandatory startup policy/journal blocks effects. Invalid optional statistical cache is discarded as an explicitly documented recovery case |
 
 Serde's unknown-field, conversion and default attributes are building blocks, not a complete strict-input policy. The source review confirmed direct-struct duplicate detection, Value-map replacement, the JSON struct array path, and explicit `Deserializer::end()` behavior. All must be qualified through the selected parser version, adapters and features. A bounded visitor does not mean every intermediate allocation is zero: the whole-frame cap limits parser scratch allocation, while narrower field/collection limits govern accepted state and further construction. [S62, S63, S64]
 
@@ -622,7 +631,7 @@ Consumers must use the checked return value, not an earlier unchecked copy. Prod
 | UI/helper to broker / `ipc-contract` and broker | Strict wire DTO; shared policy rules; real caller/verb rights; current revision and replay controls | Bounded error; no policy or clock effect. UI displays a field-level error or elevation/action requirement |
 | Engine to broker / broker | Strict correction DTO; exact units; finite envelope; current generations, freshness, ownership and cumulative budget | Reject/reconcile and preserve prior coherent state; no raw set-time command or constructor grants new rights |
 | Broker to UI/engine / receiving client | Genuine server identity; supported snapshot schema; consistent revision, age, bounds and trust labels | Show unavailable/stale/incompatible, never synthesize a synchronized state from a malformed snapshot |
-| Policy and journal / broker or installer | Bounded file read, strict versioned schema, validated migration, integrity/provenance and ownership procedures | Preserve prior valid policy on update; block unsafe startup/recovery when mandatory authority state is invalid |
+| Policy and journal / broker or installer | Bounded file read, strict versioned schema, validated migration, integrity/provenance and ownership procedures | Preserve prior valid policy on precommit rejection; reconcile committed/indeterminate outcomes under §12.2. Block unsafe startup/recovery when mandatory authority state is invalid |
 | Drift/cache/secrets / engine | Size/version/source binding; range and age checks; secret integrity and permitted association use | Discard invalid optional state and reacquire; corruption never authorizes plain-NTP fallback or resets broker budgets |
 | NTP and NTS / `ntp-wire`, `nts-client`, engine | Explicit bounded binary/TLS parsers, length arithmetic, record/authentication/replay/association checks, then domain sample admission | Packet or association rejection with bounded retry. No JSON-schema library validates these protocols |
 | Installer maintenance / installer and broker | Fixed allowed operation, bounded properties/journal, effective caller rights, safe paths/handles and version transitions | No privileged file/service/process effect from a valid-looking but unauthorized request; retain recovery machinery |
@@ -631,7 +640,7 @@ Consumers must use the checked return value, not an earlier unchecked copy. Prod
 
 Use stable error codes and allowlisted field paths, for example `sources[2].poll_min` plus `invalid_range`. Do not return parser `Debug`, raw offending values, full requests, NTS cookies/keys or detailed authorization internals. Map unknown/attacker-chosen field names to a generic bounded location. Proposal: at most 16 reported field errors and 4 KiB total validation-error payload, within the ordinary frame and rate limits. Truncate safely at a text boundary and signal omitted details without hiding the rejection.
 
-`serde_path_to_error` can locate a parse failure; it neither validates domain rules nor makes a raw error safe to display. Its adapter also does not replace the complete-consumption check. Convert garde reports to the same bounded redacted product errors; never serialize arbitrary library errors directly. Bound traversal/allocation before report construction as well as emitted output. User-facing field errors associate with native controls and preserve keyboard focus. Secret-bearing types avoid derived broad `Debug`. [S65, S66]
+`serde_path_to_error` can locate a parse failure; it neither validates domain rules nor makes a raw error safe to display. Its adapter also does not replace the complete-consumption check. Convert garde reports to the same bounded redacted product errors; never serialize arbitrary library errors directly. Bound traversal/allocation before report construction as well as emitted output. User-facing field errors associate with their UI widgets and preserve keyboard focus. Secret-bearing types avoid derived broad `Debug`. [S65, S66]
 
 CHECK-25 qualifies the whole admitted-input-to-effect path, not just a library's `.validate()` result. Tests require valid neighboring inputs, exact integer round trips and independent expected results, bounded resource behavior, constructors that cannot be bypassed, and no effects for invalid input. Include external consumer compile-fail cases for private fields and prohibited construction/mutation routes, plus passing supported-constructor controls; runtime invalid/valid controls must enter the real constructor and consumer. Exercise transformed-output postconditions, cross-field rules, finite-value rejection and guard invalidation after asynchronous work. Checks of actual pipe authorization and Windows actuation stay in CHECK-2/3/10. This separation improves reliability without treating a validation library as a security boundary by itself.
 
@@ -776,6 +785,284 @@ This policy requires no shared timer or blocking DNS/TLS work in the core.
 
 Define an explicit NTP-era pivot and plausible date range. The 32-bit seconds field wraps in 2036; a grossly wrong OS date cannot safely serve as the only era anchor. A persisted authenticated floor, operator date anchor and release policy can constrain interpretation. If interpretation remains ambiguous, block automatic stepping and explain the required remedy.
 
+#### Address-family admission and alternative progress
+
+Before scheduling a destination, the engine classifies local IPv4/IPv6 usability
+for its actual interface/source-address/route context. Distinguish a disabled
+family, no current local path, a locally usable candidate and unknown evidence.
+A current, conclusive local exclusion skips that candidate without waiting for a
+connection timeout or recording a failed peer exchange. A family disabled on one
+adapter is not disabled on every adapter. A configured address alone may be
+unusable; qualify source-address selection, including duplicate/tentative or
+expired state. An absent default Internet route or negative Internet-connectivity
+hint cannot exclude an otherwise permitted LAN/VPN destination. [S126]
+
+Dormant/on-demand state is not administrative disablement. Where ordinary
+policy-permitted network activity can activate an OS-configured path, absence of
+an already active path is not a conclusive exclusion. Preserve a bounded ordinary
+attempt or resolution/recovery path; observation-only polling must not prevent
+that activation. This grants no authority to enable or reconfigure adapters/VPNs.
+[S126]
+
+The platform adapter supplies bounded observations; the engine owns admission and
+scheduling. Bind observations to current network/resolution context, obtain an
+initial snapshot and reconcile interface/address/route, VPN and resume changes
+through the existing generation lifecycle. Reads are not assumed atomic: known
+context changes invalidate the result. Failed, incomplete or stale inspection is
+unknown, not proof of a disabled family; preserve bounded attempts or rechecks
+under current destination policy. Unknown local evidence alone cannot indefinitely
+suppress an otherwise permitted candidate. Local exclusions require a bounded
+recovery path even if no further notification arrives. Cache and refresh observations
+outside packet-timing work, retain actual native-job custody under §17.1, and
+handle changes/errors between inspection and send. `GetAdaptersAddresses` and
+`GetBestRoute2` are candidates pending selected SDK/binding and native
+qualification, not an implemented adapter. [S126]
+
+For each logical source, freeze a finite candidate-set limit, address/family
+ordering, time to try an alternative and total attempt/deadline/concurrency
+bounds. While other currently admitted candidates remain, a silently failing
+first address/family cannot indefinitely monopolize acquisition. Preserve progress
+under repeated refreshes and unchanged/reordered DNS answers; report bounded
+exhaustion when no attempt is available. All candidates share §7.3's source and
+aggregate budgets, earliest-operation guards and retry state. DNS/network events
+cannot refill them. RFC 8305 informs address interleaving and staggered TCP
+connection attempts; its timing defaults, parallelism and a particular library
+are not adopted automatically. [S127]
+
+Apply this policy separately to NTS-KE acquisition and the negotiated protected
+NTP path. A TCP connection is not completed KE, and completed KE is not usable
+protected UDP. A failed UDP path must permit bounded alternative progress under
+§7.4's authenticated identity, delegation, key/cookie and association rules;
+changing an IP never authorizes arbitrary cookie migration or extra independent
+votes. Preserve the existing full-transaction KE-backoff reset rule, no-downgrade
+policy and final current-generation/consume-once guards. S2.1/S2.2's
+[engine task](../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
+owns the implementation sequence and paired controls. This refinement leaves the
+first controlled measurement, ordinary product queue, deferred post-V1 proofs and native qualification distinct.
+[S20, S127]
+
+#### Observed path history and user network policy
+
+**Later 5 November scope decision:** [OD-11](nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+moves all proxy-specific implementation and product controls to
+[SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition), beyond first
+Windows delivery. Direct family/interface admission, upstream-failure handling
+and path reuse remain in current P2/P5. Shared contracts below still govern those
+features; proxy clauses are future requirements, not current release blockers or
+implemented capabilities. Reject unsupported proxy configuration/imports without
+silently resetting the route to Direct.
+
+**5 November 2026 refinement:** David requested upstream IPv4/IPv6 failure
+handling, reuse of successful paths, and user selection of interface, IP-family
+policy and proxy. Local admission above establishes only a candidate: an enabled
+adapter, suitable address and route can coexist with an ISP/upstream black hole.
+Use actual bounded acquisition outcomes to learn reachability to the configured
+destination. A UDP `connect`/send, generic Internet probe, successful proxy login
+or completed KE does not establish a usable protected NTP path. Do not diagnose
+an ISP-wide outage from one failed server, or suppress usable LAN/VPN/proxy paths
+because another destination fails. [S20, S126, S127]
+
+The engine refines the existing scheduler's finite, initially memory-only
+contextual path state (DATA-08/09/10/17), rather than adding a second cache owner
+or database. Reuse its current context, attempt identities and transitions;
+§12.1.3 maps live state and optional history to the existing storage inventory.
+Keep it separate from DNS answers, keys/cookies, accepted time and correction
+authority. Key it by logical
+source/delegation and concrete destination, transport stage, interface identity
+and source-address context, network/route epoch, active policy revision, and
+direct/proxy/resolver context. Track monotonic observation age, outcome and bounded
+cooldown/recheck deadlines. A concrete proxy address identifies the immediate
+peer; a forwarded target name retains its logical identity and explicit unknown
+proxy-resolved address until observed. Do not invent a local DNS result to fill
+the key. Reuse a still-admitted successful path before repeating
+a known failing attempt; ordinary polling need not race both families again.
+Stage-local success stays stage-local. Mark an NTS acquisition usable only after
+a current correlated authenticated NTP reply; plain-profile replies retain their
+unauthenticated status and all measurement checks. Cache hits grant no fresh time,
+extra vote, authentication exception or budget reset. RFC 8305 permits historical
+ordering but forbids transferring that history between interfaces and recommends
+flushing it on network attachment changes. [S127]
+
+Reconcile network/VPN, route/source address, resume, proxy, resolver, policy and
+association changes before reuse; unchanged interface names do not identify the
+same attached network. An unchanged/reordered DNS refresh must not refill retry
+budgets. Current destination membership and DNS validity still apply: do not pin
+an expired address indefinitely. Freeze finite cache size, age limits, failure
+penalties, reprobe cadence and switch hysteresis in the existing engine task.
+Repeated transport failures temporarily demote their path; certificate/AEAD or
+policy failures retain their actual cause and are not evidence that an entire
+family is unavailable. One permitted recovery attempt must remain schedulable
+under the common budgets, even without another network notification. Prefer
+ordinary scheduled acquisition for rechecks; add no fleet-wide ping/beacon service.
+Switches partition/requalify path-specific delay history and uncertainty through
+the existing estimator owner; they do not reset security budgets or invent source
+independence. RTT may order acquisition, never authorize the fastest server's time.
+
+One active acquisition profile initially applies to time-source and recovery-helper
+traffic, under the existing machine-policy revision and Apply authorization.
+Keep network family separate from the source's NTP/NTS trust profile:
+
+| Choice | Required semantics |
+| --- | --- |
+| Automatic | Use permitted OS candidates and current successful-path history; retain bounded alternatives. This is the proposed initial default. |
+| IPv4 only / IPv6 only | Hard filter on the relevant NevroTick-owned IP leg; never cross families to hide failure. Canonicalize IPv4-mapped literals before classification. |
+| Prefer IPv6 / Prefer IPv4 | Soft ordering among permitted candidates. Reuse a working fallback while the preferred path is penalized; probe recovery within budget and return only under the qualified hysteresis rule. |
+| Interface: Automatic | Follow current permitted OS routing, reconciling changes at the engine owner. |
+| Interface: selected adapter | Pin the actual owned sockets to that interface; show unavailable on removal or inability to honor the pin. Do not substitute another adapter silently. Resolve a stored stable identity to current indices; names and recycled indices are not durable identity. |
+
+Persist that profile through §12.1's existing strict versioned machine-policy
+JSON and broker/helper revision transaction, not UI preferences or Q history.
+Keep **saved policy revision** separate from **effective acquisition revision**.
+At cutover, stop admitting old-profile work, retire its publication eligibility,
+and reconcile owned sockets, DNS/verifier jobs and proxy associations through
+§§6/17.1's actual-completion rules. Recheck the current revision at each send or
+delegated-I/O boundary, including after awaits. Do not report the new profile as
+effective until its owned-I/O boundary is established; blocked or indeterminate
+activation is visible and cannot silently resume the old route. Already submitted
+traffic cannot be recalled from the OS or a remote proxy. Cancellation requests,
+closing a waiter and a durable policy write do not prove wire-level quiescence.
+Qualify the exact adapter's retirement/activation semantics under CHECK-2/6/14/27;
+this selects no machine-wide firewall or ability to stop another process. [S109]
+
+Apply the family/interface rule to the socket's **immediate peer**: the time
+destination for direct traffic, or the proxy/control/UDP-relay endpoint for
+proxied traffic. UI labels must change accordingly. Remote target families are
+separate: IPv4 to a proxy can carry a request for an IPv6 time destination and
+vice versa. Local family checks must not filter a proxy-side destination using
+the client's capabilities. NAT64/OS translation likewise means an IPv6 socket
+is not proof of native IPv6 at the remote server. Pinning NevroTick's socket
+cannot select a different process's egress; a loopback proxy's onward interface
+is controlled by that proxy. Reject a profile that promises a physical-adapter
+pin it cannot enforce. `IP_UNICAST_IF` and `IPV6_UNICAST_IF` are platform-adapter
+candidates pending qualification; their input byte orders differ. [S127, S128, S129]
+
+**Deferred SOCKS5 integration:** the limited first future subset is defined below.
+SOCKS5 uses UDP ASSOCIATE for NTP/NTS packets and, when NTS is selected, TCP CONNECT
+for NTS-KE. Direct is the only route in first Windows delivery.
+Qualify the actual server's UDP relay; a SOCKS5 label/TCP success is insufficient.
+Keep the UDP association's controlling TCP connection alive independently of
+the short KE tunnel. Its loss invalidates relay work; recreate it within the
+existing budgets. Admit the returned relay endpoint and each bounded encapsulated
+datagram before the unchanged inner NTP/NTS parser, correlation and authentication
+guards. Qualify the relay's expected client-source context, including NAT and
+control/relay address-family compatibility. The initial profile accepts standalone
+SOCKS datagrams only (`FRAG=0`);
+reject unsupported fragmentation and account for wrapper bytes/MTU. [S129]
+
+Proxy selection is strict: failure cannot send time traffic directly, silently
+resolve target names locally, use a different proxy or enable plain NTP. The
+initial future subset explicitly uses local DNS; proxy-side DNS remains a later
+extension. Configure their different privacy/routing consequences explicitly.
+A SOCKS domain
+request carries no independent desired-family selector: with proxy DNS, show
+the target family as proxy-selected/unknown. A hard target-family/address policy
+and §7.4/THR-21 destination-scope admission require admitted numeric destinations
+or a separately qualified resolving/enforcing path **before target I/O**. A
+forwarded hostname or an address learned after sending cannot establish that
+precondition. Reject unenforceable combinations instead of promising a guarantee;
+this does not admit a new trusted-proxy enforcement mechanism. Preserve the
+original NTS TLS identity through proxying and authenticated UDP delegation,
+including §7.4's actual-KE-peer requirement when no server is negotiated.
+Proxy-host bootstrap resolution is separately declared (or use an IP literal).
+Do not claim all acquisition I/O stays inside the profile until DNS and the
+selected verifier's AIA/OCSP/CRL retrieval also satisfy it; OPEN-8 verification
+requirements cannot be disabled to make proxy mode work. An interface selector
+is not a machine-wide traffic filter. [S20, S129, S131]
+
+Proxy credentials belong only to a later authenticated SOCKS5 extension, not the
+initial no-authentication subset. If supported, they require bounded admission,
+redaction and a separately scoped purpose under the existing engine secret-storage owner
+(§12.1.3). The current NTS/DNS allowlists do not already admit proxy passwords.
+Machine policy carries only a bounded opaque credential reference/revision;
+no plaintext password belongs in policy, Q/H, UI preferences, logs or exports,
+and the broker does not become a secret custodian. Do not forward ambient Windows
+credentials. Bind credential use to the admitted proxy identity/endpoint and
+authentication/channel profile as well as its purpose and revision. A changed
+proxy or a different process claiming a loopback port cannot inherit permission
+to receive an existing credential; later NTS server authentication does not
+authenticate that earlier proxy-credential recipient. Freeze the actual authorized
+credential-input, replacement, restart and unavailable-secret behavior through
+the existing storage task before enabling authentication. Missing credentials
+cannot select no-authentication, another proxy or Direct; a persistence fallback
+does not manufacture a credential for unattended restart. RFC 1929 username/password
+does not encrypt the proxy hop. Qualify the authentication/channel/storage profile;
+a limited no-authentication profile must not claim complete SOCKS5-method support.
+Existing protected-storage holds remain.
+SOCKS4, ordinary HTTP CONNECT as a complete time path, PAC/WPAD, automatic system
+proxy import, split KE-only proxying and CONNECT-UDP remain outside the selected
+proxy direction. Ordinary CONNECT supplies a stream; HTTP UDP proxying is a distinct
+protocol, and interactive-user proxy settings are not service configuration.
+[S129, S130, S131]
+
+A proxy introduces a shared path and additional delay/asymmetry; NTS authenticates
+the server response, not relay timing. Preserve route-generation/timestamp
+provenance, bounded uncertainty, source/operator independence and existing quorum
+policy. Do not claim independent paths when sources share a relay, or repair
+poor quality by lowering the agreement/accuracy gates. The engine and Windows
+tasks qualify actual encapsulated TX/RX timestamp locations and estimator effects;
+no code, dependency or native support is adopted by this planning amendment.
+[S20]
+
+##### Limited SOCKS5 profile — deferred
+
+This is the concrete first candidate for SOCKS-0, not an implemented profile or
+an admission of every RFC 1928 authentication method. Its narrow compatibility
+envelope is intentional; expand it only through a separately reviewed extension.
+
+| Profile field | First future subset |
+| --- | --- |
+| Route and proxy endpoint | Manual SOCKS5; explicit numeric `127.0.0.1` or `::1`, port 1–65535. No hostname bootstrap, remote endpoint, discovery or implicit default port. The supplied `127.0.0.1:10808` is an example only. |
+| Authentication | Offer exactly method `0x00` (no authentication); accept only that selected method. Reject a request for credentials, any unoffered method or no acceptable method. No username/password field, credential reference or ambient Windows authentication. |
+| DNS and target identity | Explicit local resolution through the existing admitted resolver; send numeric admitted KE/NTP/helper destinations to SOCKS. Do not discard remote A/AAAA candidates merely because that family is unavailable for local sockets. Preserve the original TLS name and the numeric KE target for RFC 8915's omitted-server default. Proxy DNS/domain target forwarding is unsupported. |
+| Interface and family | Automatic interface for the proxy profile, with NevroTick's sockets bound to loopback. Physical-adapter pinning is unsupported here. Family policy applies to the immediate proxy/relay leg: a hard family inconsistent with the literal is invalid; preferences cannot create another endpoint. The proxy owns its onward interface/family and may reach an admitted target of the other family. |
+| UDP relay | One active relay association for the single acquisition profile; separately accounted retiring work may remain during cutover. Bind a loopback UDP socket first and advertise its actual client address/port in UDP ASSOCIATE. Accept only a numeric relay address equal to the configured loopback IP, with nonzero port and matching immediate family. Domain/wildcard/other relay addresses are unsupported; do not guess how to replace `0.0.0.0` or `::`. |
+
+The engine's existing transport owner retains the control TCP connection and
+actually observes close/error; merely storing an unread stream is insufficient.
+Each NTS-KE CONNECT uses its own bounded stream and original TLS identity. Closing
+KE does not close the UDP association. A lost control connection retires the
+relay epoch and pending exchanges; packet timeouts and relay stalls enter existing
+bounded recovery. Re-establish within the common budgets, never per poll or by
+opening an unbounded parallel association. Preserve source-specific NTS keys,
+cookies, request correlation and retry state under their existing owners.
+
+Validate the selected method/command, reserved fields, address type and complete
+reply before using a returned endpoint. Validate actual relay sender, `FRAG=0`,
+numeric inner source/address/port, bounded lengths and current association before
+passing the payload to unchanged NTP/NTS admission. Check destination-buffer
+capacity before copying; truncation, oversized wrappers and stale data are errors,
+not panics or valid time. Account for wrapper/MTU overhead. Use the actual client
+socket TX/RX timestamp provenance and admit the resulting delay/uncertainty;
+relay send timestamps are neither supplied by SOCKS5 nor authenticated by NTS.
+[S20, S129]
+
+Local DNS is an explicit exception to tunnelling, visible before Apply. This
+subset promises proxy carriage of time and recovery-helper traffic, not remote
+DNS privacy or machine-wide tunnelling. Before activation, the verifier owner
+must qualify required AIA/OCSP/CRL I/O through the selected route, or establish
+that the selected valid verification path needs no such online I/O. A required
+unroutable retrieval blocks the profile; never silently bypass it or disable
+OPEN-8 checks. No TLS provider or verifier-transport implementation is selected
+by this requirement. The shared no-escape and policy-cutover rules still apply.
+
+Treat the local proxy as untrusted and independently managed. The engine must
+work under its actual service token when the proxy is available, and report a
+bounded unavailable state when it starts late, stops, restarts or disappears at
+logout. A process replacing a loopback listener does not acquire NTS identity;
+plain NTP remains explicitly unauthenticated. No browser configuration, interactive
+credential or assurance about the proxy's onward route is inherited. [S131]
+
+Reuse DATA-06 policy and DATA-08/09/10/17 live ownership; optional Q history is
+neither required for acquisition nor a credential store. The first subset creates
+no proxy secret purpose. A later authenticated extension must first satisfy the
+conditional secret contract above. An authorized observation-only connection
+check uses configured sources and the same bounded admission path, reports SOCKS
+negotiation, UDP association, KE and valid packet stages separately, and grants
+no clock, trust or voting authority. A port-open/TCP-only check cannot say
+"time connection works". Exact checks and release scope belong to the
+[existing engine task](../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026)
+and SOCKS-C01.
+
 ### 7.4 NTS implementation contract
 
 NTS requires a TLS 1.3-or-later KE channel with `ntske/1`, verified server identity, bounded record parsing and exporter-derived direction-specific keys. Implement the interoperable AES-SIV-CMAC-256 profile using a maintained compatible library. Each protected request uses a fresh UID containing at least 32 CSPRNG-generated octets, cookie handling and authenticated response validation. NTS authenticates time data; it does not make an inaccurate server correct or remove network delay attacks. [S20]
@@ -864,7 +1151,31 @@ RFC 8915 section 5.7 permits trailing unauthenticated extension fields and requi
 
 Freeze the relevant contracts before S2.2 integration and close the [RFC 8915 alignment checklist](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) across S2.2–S2.4 before P2 exit: KE record/error handling, retry reset, exporter/nonce/associated-data mapping, cookie lifecycle and the special KoD/NAK path. Ordinary time responses require packet authentication; the correlated KoD exception in section 5.7 is control-only and supplies neither authenticated time nor permission to downgrade. Keep the existing TLS/provider/trust gates; documentation alignment is not protocol qualification. [S20]
 
+The [ordinary S2.2 composition card](../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+joins the existing kernels to fresh KE, atomic association publication, protected
+UDP and the real numerical consumer. Freeze finite ephemeral key/association
+validity and invalidation before ordinary runtime use, even without caching.
+Initial KE cookies and zero replacement cookies in a protected UDP reply are
+different questions: the local acceptance/completion/retry disposition for the
+latter remains pending before dependent implementation. The [protocol appendix](../tasks/s0.1-protocol-comparison.md#ordinary-s22-composition-clarifications--5-november-2026)
+retains the precise RFC/source distinction, TLS completion boundaries and RFC
+SHOULD strength for size guidance. Packet/cookie completion never establishes
+numerical eligibility.
+
 Endpoint admission distinguishes the authenticated TLS server identity from any negotiated NTP hostname/address and port. A valid NTS-KE message is not permission for unrestricted outbound access. Validate the actual resolved destination against an administrator-approved network scope on initial connection, reconnect and DNS changes. Explicitly configured private/LAN servers remain supported; unsolicited loopback/private/out-of-scope redirection and unapproved ports are rejected. P0/P2 must choose an interoperable policy for legitimate provider delegation. Record the endpoint identity and policy reason without exposing secrets. See THR-21, OPEN-8 and CHECK-6/8/9/21. [S20]
+
+If the NTS-KE response omits Server Negotiation, the NTP destination is the
+actual KE server IP, not a fresh lookup of its name. SOCKS CONNECT `BND.ADDR`
+identifies the proxy's bind address, not that server. Keep TLS identity, KE target,
+delegated NTP target and immediate proxy/relay separate in DATA-08, with known
+address provenance or explicit unknown state. A numeric admitted KE target can
+satisfy the default while retaining the TLS name. Proxy-side resolution with an
+unknown KE peer requires a valid explicit server delegation or a separately
+qualified way to establish the required peer; either remains subject to pre-send
+destination admission. Otherwise the route is unsupported: use bounded recovery
+within the profile, never substitute the proxy address or silently use local DNS
+or Direct. This adds no resolver/metadata mechanism or persistence dependency.
+[S20, S129]
 
 ### 7.5 Operating profiles
 
@@ -1096,6 +1407,15 @@ Keep stable oscillator compensation separate from transient phase correction. A 
 
 The intended backend uses `GetSystemTimePreciseAsFileTime`, `QueryPerformanceCounter`, `GetSystemTimeAdjustmentPrecise`, `SetSystemTimeAdjustmentPrecise` and policy-authorized `SetSystemTime`. The exact semantics and achievable rate resolution must be qualified on supported Windows builds and hardware. Do not reuse Linux `adjtimex` constants or assume chrony's Linux slew limits transfer. [S07, S22, S23]
 
+The precise API pages do not specify the legacy setter's 100 ns interpretation.
+Preserve raw adjustment, increment, mode and QPC frequency; qualify the sample's
+QPC-scaled conversion, rounding and delivered slope. Neither its 1,000 ppm guard
+nor integer width establishes a maximum or effective quantum. Its restore calls
+always use `FALSE`, irrespective of saved mode, and are not a general restoration
+recipe. `AdjustTokenPrivileges` may report Boolean success with
+`ERROR_NOT_ALL_ASSIGNED`; check the documented result and effective token rather
+than copying the sample's Boolean-only privilege check. [S137]
+
 Model these actuator states explicitly, independently of the numerical adjustment:
 
 | Actuator state | Mode and transition contract |
@@ -1155,6 +1475,19 @@ death. Qualify filesystem write/flush/replacement semantics and retain section
 reservation write and flush, the API call, outcome write and flush, and reply.
 Test duplicate replay and a healthy operation beside every rejected/unknown case.
 
+Durable physical settlement and current model publication have separate owners.
+The broker retains custody of a native operation and reconciles its late actual
+outcome against the original reservation even after engine cancellation,
+generation invalidation, model rejection or loss of Ready. Persisting that old
+effect grants no new actuation authority; any further clock write still requires
+current ownership. Core separately checks current model identity/generation and
+qualified physical mapping before consuming feedback. Stale results cannot
+restore Ready, publish fresh confidence or authorize a correction. Unknown
+effects remain conservatively charged with unsafe follow-on work blocked. The
+existing pure Ready-only fixture receiver is not this durable owner; the
+[preparation handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+reuses its mathematical contract without claiming native or persistent custody.
+
 ### 10.3 Sleep, resume and external steps
 
 QPC includes standby/hibernation time, while `QueryUnbiasedInterruptTimePrecise` excludes sleep. Consequently, elapsed QPC alone is not proof that a temporary frequency correction was actively delivered throughout an interval. Use explicit power events, an active-time domain and measured backend behavior; qualify Modern Standby as well as ordinary sleep. [S22, S24]
@@ -1186,7 +1519,22 @@ neither a new driver nor a specific boot-identifier API. [S114]
 
 The Windows precise-adjustment API has no finite lease argument and does not document automatic reset when the caller exits. The broker can cancel a dead engine's transient plan while it still owns the clock, but it cannot run cleanup after its own abrupt death. Configure SCM recovery and make recovery startup query adjustment state and re-establish current ownership first. Only then may it clear attributable stale transient work and establish a known safe base before accepting proposals. A successor/ambiguous owner means read-only Blocked recovery, not an automatic reset. [S23]
 
-The remaining failure is quantified, not hidden: additional phase error from a retained rate is approximately `abs(transient_ppm) * recovery_seconds / 1,000,000`, plus quantization, scheduling and model uncertainty. For illustration, 500 ppm retained for 10 seconds contributes about 5 ms; this arithmetic is not a measured recovery promise. Set the maximum allowed rate and service-recovery envelope only after kill/restart tests.
+Define residual rate as the difference between the actual retained rate and the
+intended recovery state in the same qualified actuator coordinate; it need not
+always equal the named transient contribution. Additional phase is approximately
+`abs(residual_ppm) * delivered_exposure_seconds / 1,000,000`, with quantization,
+mapping and model uncertainty retained. For illustration, 500 ppm retained for
+10 delivered seconds contributes about 5 ms; neither value is a product limit.
+The bound is conditional on both rate and exposure bounds and qualified delivery
+semantics. A measured maximum, stop target or configured SCM delay establishes no
+all-failures deadline. If recovery can remain unavailable indefinitely, a nonzero
+retained rate has no demonstrated unconditional finite residual ceiling. [S138]
+
+Set production rate and recovery policy only after the relevant bounded native
+evidence and owner decision. Record supported environments, unsuccessful/censored
+attempts, uncertainty and any statistical assumptions; observe product cleanup
+before independent fixture restoration. The [existing S0.4/S0.7/P4 handoff](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
+prepares those inputs without selecting a watchdog, lease or production values.
 
 Orderly stop, update and uninstall must restore the policy-approved base/default-owner behavior. Do not restore an arbitrary stale rate from a previous controller. If SCM recovery repeatedly fails, diagnostics must explain that adjustment cleanup is uncertain; an independent kernel-expiring slew guarantee is outside this API's documented contract.
 
@@ -1325,6 +1673,8 @@ guarantee after abrupt death. See [lifecycle research](plans/windows11-integrati
 | Bundled leap history and UTC rules | Reviewed complete release | Public immutable data with source/revision/digest bound to package provenance; not optional encrypted cache. Unknown future coverage differs from corrupt package content; update/rollback never resets protected correction continuity (§10.5) |
 | Machine security/source policy | Broker after authorized helper request | Protected ProgramData path, strict schema, revision compare-and-swap, atomic durable replacement |
 | Broker journal and boot/step state | Broker/installer with explicit ownership | Separate ACL and schema; corruption blocks unsafe writes, not a reset to permissive defaults |
+| Current path preference and recovery state | Existing engine scheduler | Bounded RAM under DATA-08/09/10/17; disposable hints, no independent database or authority; §12.1.3 |
+| Optional source-quality summaries/history | Existing engine quality/storage owner | Advisory Q/H allocation and format decision remain with the catalogue/statistics plan; never required for live path selection; §12.1.3 |
 | Drift/statistical prior | Engine | Bounded validated values; corruption discards optional prior and enters acquisition |
 | NTS keys/cookies | Engine association owner | Service-SID ACL plus Windows-protected encryption; version/source/provenance binding; never UI-readable |
 | UI preferences | Current user | Per-user storage; cannot affect time policy or authorize operations |
@@ -1651,11 +2001,73 @@ The plan maps these obligations to existing BND/THR/CHECK and DNS-C owners;
 source review establishes no native pass.
 
 
+#### 12.1.3 Network state reuses existing storage owners
+
+**5 November 2026 reconciliation:** the owner requested reuse of the repository's
+cache/database design. The [DATA inventory and allocation](plans/server-catalogue-and-statistics-draft.md#5-proposed-storage-allocation),
+[storage tables](plans/server-catalogue-storage-tables.md),
+[catalogue/statistics task](../tasks/server-catalogue-and-statistics.md) and
+[protected-storage task](../tasks/windows-protected-storage.md) retain their
+owners and staged decisions. The network refinement adds no `network-cache`
+file, new database, storage daemon, generic cache framework or selected backend.
+These are design contracts; the current loopback transport pilot implements
+neither learned routing nor Q/H or a production secret store.
+
+| Information | Reused owner and placement | Admission and lifecycle |
+| --- | --- | --- |
+| Authorized interface/family/proxy/resolver profile | DATA-06; existing broker/helper machine-policy JSON in the protected ProgramData namespace | One schema/revision and shared checked construction. Engine receives its admitted projection. Invalid mandatory policy cannot reset to Direct/Automatic; effective activation is separately acknowledged under §7.3. Exact filename/schema bounds remain with the policy owner. |
+| Current endpoint and network context | DATA-08/09; existing resolver/network/association owners in bounded RAM | Reference admitted resolver results and existing network, policy, association and clock generations. Do not mirror an answer cache or invent a parallel generation for the same authority. Stable adapter identity is policy; live indices/source addresses are current observations. |
+| Successful-path ordering, failure penalty and recovery deadline | DATA-17; the existing scheduler's bounded RAM state | Use DATA-10 stage outcomes. Initial service restart discards these hints and reacquires within existing guards. A hit, inspection, export or restored descriptive row is not a new network success. Eviction cannot clear mandatory restrictions, active retry/rate guards or consumed authority. |
+| Attempt facts and optional explanations | DATA-10/16/17/19/20; live counters plus the existing Q writer if separately enabled | One terminal/stage identity feeds both path state and bounded aggregation. Local exclusions, not-run stages, local resource loss and real transport failures remain distinct. Each admitted retry has its own attempt identity; repeated processing of the same outcome cannot count it twice. Optional history backpressure cannot block acquisition or manufacture a peer failure. |
+| Durable path summaries or later restart hints | Optional Q under the existing catalogue/statistics task; H only for separately justified detail | SQLite typed rows versus bounded versioned JSON snapshot remains the existing Q0/Q-J choice. No per-poll durability requirement or second file family. Loading Q is outside timing-critical work; absent/corrupt Q leaves ordinary bounded acquisition available. A future hint loader must re-admit current policy/destination/context and qualified age; process-local monotonic deadlines are not portable across restart. Unqualified old penalties cannot exclude current candidates. |
+| NTS secrets and authentication ages | DATA-22; existing private association RAM and separately qualified optional protected snapshot | Keep the complete association/lifetime/current-trust contract. Path history stores only nonsecret references; it neither duplicates cookies/keys nor refreshes their ages. |
+| Conditional proxy credentials | Existing engine secret-storage manager, with an explicitly frozen purpose/allowlist and credential revision before support | Reuse §12.1.2's provider, namespace, exact-envelope, outcome and lifecycle contracts where applicable; do not put credentials in NTS/DNS payloads or automatically share their keys/epochs. ST-W01 must freeze the separate purpose, authorized input/readers and binding to the admitted proxy identity/endpoint and authentication/channel profile. The current NTS/DNS optional-state matrix alone does not qualify a persistent proxy credential or credential-free restart. |
+| DNS, UI and mandatory safety state | Existing independent DNS, U and E owners | Future DNS learning/privacy epochs are not time-source Q. UI receives redacted requested/effective projections, never database access. Broker journals, trusted floors, restrictions and clock recovery retain their independent failure and durability rules. |
+
+The scheduler updates admitted live state without awaiting a database, snapshot,
+compression or diagnostic write. Only a bounded handoff feeds optional Q/H; its
+producer-incarnation/attempt/stage identity makes duplicate processing harmless
+and reports gaps explicitly. One observation remains one fact across RAM and Q.
+Share compatible immutable IDs/records, not secret payloads or authority-bearing
+objects across owners. No future system-wide DNS service is required to implement
+the direct NTP/NTS path.
+
+Freeze total RAM bytes, live/retired path and context counts, queued handoffs,
+reader-held copies, outstanding native work and maintenance/reprobe work before
+dependent implementation. Count all families/stages/proxies against the existing
+source and aggregate budgets; 16 active sources alone does not bound this product
+of contexts. If Q is later enabled, its rows, dictionaries, sidecars, staging and
+migration consume the existing **shared** Q allowance, not another allowance per
+cache. The storage plan's 32 MiB Q example remains unadopted. Reuse DATA-20 and
+§17's accounting; clearing or evicting advisory state never replenishes independent
+retry/security budgets. Freeze a useful bounded recovery control beside every
+exhaustion/unknown-continuity refusal.
+
+Clear-history and restart affect only their declared optional classes. Delayed
+writers/readers cannot republish retired history as current after a reset or
+policy change. Preserve explicit unavailable coverage and current generation
+checks; do not reset policy, credential references, NTS full-authentication age,
+DNS privacy barriers, mandatory conflict state or broker authority. Runtime
+implementation, Q format/retention choice, protected-storage qualification and
+native profile cutover remain separate pending work in their existing tasks.
+
 ### 12.2 Configuration semantics
 
 Use a versioned strict schema with explicit defaults and validation before activation. Reject duplicate/unknown security-critical keys, invalid integers, NaN/infinite values, ambiguous units, excessive source counts and conflicting profiles. Display-only preferences may use separately defined compatibility behavior.
 
-Validate source identity, endpoint and independence-group references. Preserve order only where it has meaning; do not accidentally make list order a security priority. A policy update publishes one immutable revision to broker and engine; late requests under the old revision cannot change the current clock. Failed validation or persistence leaves the prior policy active and reports why the change failed.
+Validate source identity, endpoint and independence-group references. Preserve order only where it has meaning; do not accidentally make list order a security priority. A policy update publishes one immutable revision to broker and engine; late requests under the old revision cannot change the current clock.
+
+Distinguish a proven **not-committed rejection** from a committed revision and an
+**indeterminate commit/activation outcome**. Invalid input, stale revision,
+cancelled authorization and a persistence refusal known to precede commit leave
+the prior policy active. A lost acknowledgement, uncertain commit or failure
+after commit does not establish rollback. Reconcile the operation and revision
+through the existing policy owner before retrying or admitting affected work;
+do not silently resume the old route. Report the known saved revision separately
+from effective acquisition and its applying/blocked/unknown state under §7.3.
+Successful policy persistence is not an atomic transaction with native I/O
+retirement and cannot recall already submitted traffic. No second policy store
+or UI-owned recovery authority is introduced.
 
 No external config `include`, environment-variable expansion, command substitution, arbitrary executable hooks or dynamically loaded plugins are needed. Import/export, if added, uses the same bounded schema and authority path; importing a file does not grant its author administrator rights.
 
@@ -2373,14 +2785,15 @@ Current Smart App Control guidance supports trusted RSA and ECC signatures; olde
 Use event metadata that remains meaningful while the clock is wrong: UTC plus time-quality/generation, monotonic sequence and operation correlation where appropriate. Persisted log timestamps do not prove correct UTC. Event-channel readers, writer permissions, clear/export authority, retention and failure behavior are part of the diagnostics inventory; no extra always-running logging service is required.
 
 Native UI integration follows section 16's selected Slint replacement under
-OD-11; the current Win32-control prototype is the pre-migration baseline.
-Qualify the actual Slint backend, control semantics and Windows UIA provider;
-toolkit or binding availability alone supplies no accessibility evidence.
-Keyboard, Narrator, contrast, text scaling and DPI qualification retain the
-D1/D3 re-entry gates in §16.5. Keep narrow Windows adapters for required
-manifest, power, network, SCM and other OS facilities. Native notifications feed
-the single-owner event model at its admitted stage. Avoid WMI polling and routine
-PowerShell/`sc.exe` subprocesses for APIs already exposed by the adapter. [S90]
+OD-13; the old Win32-control adapter is retained as unexported historical source.
+Qualify the exact Slint backend/renderer, manifest, DPI, theme, control semantics
+and Windows UIA provider; toolkit or binding availability supplies no application
+accessibility evidence. Keyboard, Narrator, contrast, text scaling and DPI
+qualification retain the D1/D3 re-entry gates in §16.5. Keep narrow Windows
+adapters for required manifest, power, network, SCM and other OS facilities.
+Native notifications feed the single-owner event model at their admitted stage.
+Avoid WMI polling and routine PowerShell/`sc.exe` subprocesses for APIs already
+exposed by the adapter. [S90]
 
 ### 15.4 Per-process mitigation profiles and startup admission
 
@@ -2494,30 +2907,58 @@ The first UI implementation slice is the owner's restricted **UI-M0** milestone 
 
 ### 16.1 Toolkit and interaction model
 
-**Selected toolkit, 5 November 2026:** Slint replaces Win32 common controls under
-[OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
-Use Rust presentation logic and Slint views against the current v0.4 design;
-retain narrow `windows`/`windows-sys` adapters where actual Windows integration
-requires them. The UI remains an ordinary-user process with no service or clock
-authority. A second product UI or automatic Win32 fallback is not selected.
-The checked-in Win32 preview remains the pre-migration implementation until
-replaced. Slint widgets and accessibility support do not themselves prove usable
-Windows behavior; P0/P5 still require their actual native observations. [S40, S50]
+**Owner-selected default, 5 November 2026; GUI licence amended 6 November:**
+use **Slint** as the complete Win32 UI replacement under
+[OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
+against the [current v0.4 design](nevrotick-design-v0.4/README.md). The measured
+starting configuration is Slint 1.18.1, explicit winit/software rendering and
+Fluent-style widgets. Freeze and qualify the exact product graph; the toolkit
+direction is accepted and requires no renewed comparison. `windows`/`windows-sys`
+remain appropriate for narrow OS adapters, rather than the application-widget
+layer. The UI remains an ordinary-user process without service or clock authority;
+no second product UI, automatic Win32 fallback or browser runtime is selected.
+[S40, S50, S52]
 
-Pin Slint's version, Windows backend/renderer/features and complete dependency
-graph before admission. Its framework licence is not generally MIT merely
-because examples are; establish the applicable grant and compatibility with
-Chrony's GPLv2-only code. The toolkit choice is settled, while exact licence and
-target qualification remain open. A UI process split is a security design
-decision, not automatic legal clearance. [S52]
+The checked-in Windows entry now selects Slint/Winit/software and Fluent-style
+widgets. The old Win32 adapter remains unexported historical source. Follow the
+[current GUI handoff](../tasks/slint-gui-handoff.md) and
+[S0.5 source/evidence record](../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+for the implemented fixture scope and exact receipts. Source implementation,
+portable rendering and Linux-hosted Windows-target checking establish no native
+Windows, live-service or release qualification.
 
-The [30 October S0.5 comparison](../tasks/s0.5-ui-comparison.md#results) records a
-closed private Win32/egui pilot. David rejected the tested egui configuration's
-approximately 145 MiB private-memory use. OD-11 supersedes its retain-Win32
-direction; preserve those exact results without treating them as Slint evidence
-or reopening egui experiments. The existing resource targets and complete-graph
-licence review remain. Neither the old pilot nor the new toolkit selection
-completes CHECK-21/22, S0.5 or UI-M0's deferred requirements.
+Slint's Fluent-style widgets are toolkit-drawn, not Win32 child controls. P0/P5
+must demonstrate the actual status view, source list, settings, approved elevation
+and optional tray interactions with Windows accessibility tools at their existing
+gates. The private software pilot omitted accessibility; it waives no product
+keyboard, UIA or Narrator requirement. Preserve input/domain validation and
+UI-thread, weak-callback and teardown ownership. Explicitly review generated-code
+unsafe/lint boundaries; a private prototype's lint choice is no workspace-policy
+waiver.
+
+Slint's framework is not generally MIT merely because examples are. Its
+GPLv3/royalty-free/commercial grants and the measured Apache-2.0-only winit graph
+led to OD-13's accepted 6 November GUI composition amendment: the original GUI is
+separately **GPL-3.0-only**, while Chrony-derived Core/engine remain
+**GPL-2.0-only**. The UI package now records that grant and its
+[source/provenance inventory](../crates/nevrotick-ui/LICENSING.md). Review rights
+over original/shared GUI code, actual runtime/build/transitive graph, notices
+and complete distribution under section 18.3. No Core relicensing, incompatible
+linkage clearance or blanket dependency admission follows; a process split alone
+supplies no legal clearance. [S52]
+
+The [S0.5 record](../tasks/s0.5-ui-comparison.md) preserves the earlier Win32,
+egui, GPUI, Reactor and iced candidates and their bounded observations. David
+rejected the tested egui configuration's approximately 145 MiB private-memory
+use; the 30 October retain-Win32 direction is historical and superseded by
+OD-13. The
+[5 November Slint pilot](../tasks/s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026)
+measured 7.730 MiB visible private memory and 23.629 MiB working set, with no
+detected CPU-time increment in three short visible/minimized idle trials. Those
+results support the owner's selection; they establish no sustained workload,
+accessibility, package or complete-graph qualification of the current product.
+Keep the resource targets and exact provenance. Existing Win32 receipts cannot
+qualify Slint; S0.5, CHECK-21/22 and D1–D3 retain their stated scope and gates.
 
 No full-screen dashboard, animated charts or permanent GPU rendering is required. The normal experience is one small window with progressive disclosure and an optional tray icon. Closing the window exits the UI unless the user enabled the tray; service state is unchanged and running services continue. “Quit UI” and “stop synchronizing” must be distinct actions with accurate consequences.
 
@@ -2564,7 +3005,7 @@ Use applicable WCAG 2.2 A/AA criteria through WCAG2ICT as an evaluation framewor
 
 Start with English, but centralize messages in a typed catalog with stable error IDs. Add Russian when the locale is explicitly adopted, preserving placeholder/plural parity and accessible names. Locale selection never changes wire identifiers, policy keys, numerical units or authorization semantics.
 
-**OD-12, 5 November 2026:** use translator-editable UTF-8 JSON catalogs and
+**[OD-15](nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs), 5 November 2026:** use translator-editable UTF-8 JSON catalogs and
 validated deterministic CBOR language resources through the
 [localization design](plans/ui-localization.md). A typed Rust presentation owner
 provides messages to Slint properties/models, tray, local notifications and
@@ -2619,46 +3060,62 @@ marks, spaces/punctuation/units and narrowly justified orthographic joiners need
 explicit profile membership. Escape syntax and text presentation cannot bypass
 this guard; code-owned argument isolation is separate. On violation retain the
 admitted state and reject the whole candidate. The localization plan owns exact
-classification/exception/budget fixtures; no classifier is implemented here.
+classification/exception/budget fixtures; the
+[current GUI handoff](../tasks/slint-gui-handoff.md) owns implemented guards and
+their bounded evidence, which do not establish independent critical-meaning
+approval.
 
 Show local date/time where useful, with UTC available in diagnostics. Label milliseconds, seconds and ppm explicitly and handle negative signs consistently. Screen-reader text should expand abbreviations where necessary. Long translations, bidi text and non-ASCII source display names must not break layout or create ambiguous security-sensitive identifiers.
 
 ### 16.5 Restricted first UI milestone: UI-M0
 
-**Original owner decision, 29 October 2026; toolkit amended 5 November:** the
+**Original owner scope, 29 October 2026; toolkit amended 5 November:** the
 first UI slice is a small unelevated visual and interaction prototype,
-disconnected from production services. It was implemented with Win32;
-[OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
-now selects its complete replacement with Slint through the existing S0.5 task.
-Keep the fixture-only scope and M0-01–M0-08 expectations below. Engine, broker,
-protocol, installer and other work may proceed independently under their
-existing requirements, and admitted Slint fixture work can parallel Core.
-UI-M0 does not complete P0 toolkit qualification, S0.5, P5 or release gates.
+disconnected from production services. OD-13 selects its complete replacement
+with Slint through the existing S0.5 task. The original Win32 source and its
+exact-candidate observations remain historical evidence. Keep the fixture-only
+scope and M0-01–M0-08 expectations below. This restriction applies to the UI
+workstream; engine, broker, protocol, installer and other work may proceed under
+their own requirements, and admitted Slint fixture work can parallel Core.
+UI-M0 does not complete P0 toolkit qualification, S0.5, P5, complete-product
+distribution or release gates.
 
-The slice contains an ordinary resizable window with NevroTick branding, Status, Sources and Settings, source details and a small source-edit preview. Checked-in deterministic fixtures feed plain presentation types and native controls. Time/offset/uncertainty/authentication/health are sample values, not live measurements. Keep a persistent **Prototype — sample data** label, including equivalent context in standalone preview dialogs. **Sync now is disabled** with an explanation. Machine-policy controls are visibly unavailable; other protected actions are disabled with explanations or omitted. No Apply transaction, UAC imitation or fabricated synchronization/admin success is permitted.
+**Current fixture-source amendment, 6 November:** the checked-in Windows entry
+uses Slint against v0.4, with Simple/Power views, bounded local policy/recovery
+previews and source for an opt-in tray and explicit sample test-notification
+adapter. The [current GUI handoff](../tasks/slint-gui-handoff.md) and
+[S0.5 evidence](../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+own that implementation and its exact portable evidence. Those additions confer
+no native Windows pass, production effects or D1–D3 re-entry. The paragraphs and
+M0 table below retain the original milestone's restricted acceptance contract.
+
+The slice contains an ordinary resizable window with NevroTick branding, Status, Sources and Settings, source details and a small source-edit preview. Checked-in deterministic fixtures feed plain presentation types and Slint widgets. Time/offset/uncertainty/authentication/health are sample values, not live measurements. Keep a persistent **Prototype — sample data** label, including equivalent context in standalone preview dialogs. **Sync now is disabled** with an explanation. Machine-policy controls are visibly unavailable; other protected actions are disabled with explanations or omitted. No Apply transaction, UAC imitation or fabricated synchronization/admin success is permitted.
 
 Local field validation may update an in-memory source preview through **Update preview**. An invalid edit shows an error and preserves the prior preview; Cancel discards unaccepted editor changes. Close exits normally and discards all preview edits. Normal minimize/restore/close must use native window behavior. This transient editor state introduces no production drafts, policy revisions, persistence or review/apply workflow. Do not require every scene in the design package. Written UI specifications control layout/content intent; HTML/JSX and screenshots are illustrative, not behavioral authority.
 
 | ID | Status and boundary during UI-M0 | Re-entry trigger |
 | --- | --- | --- |
-| D1 | **Deferred:** light/dark/system theme selection, custom themes, contrast, enlarged text, mixed-monitor DPI adaptation and qualification. Use the selected toolkit in one documented reference display configuration; preserve useful inherited control behavior without claiming native-control parity. | Before a general-user preview/release or an earlier milestone claiming these display modes. |
+| D1 | **Deferred:** light/dark/system theme selection, custom themes, contrast, enlarged text, mixed-monitor DPI adaptation and qualification. Use stock toolkit widgets in one documented reference display configuration; record their actual Windows appearance and behavior without claiming native-control parity. | Before a general-user preview/release or an earlier milestone claiming these display modes. |
 | D2 | **Deferred:** production fresh/stale/unavailable snapshots, connection generations/reconnects, policy drafts/revisions/conflicts/review/apply, UAC and confirmed/failed/unknown administrative results. Only fixture data and transient local editor values are allowed. | Restore status freshness/connection/generation rules before live status, even read-only; restore policy, receiver authorization and result rules before real settings or protected commands. |
-| D3 | **Deferred:** full keyboard workflows, comprehensive focus management, Narrator/UIA qualification and custom accessibility providers. Preserve toolkit controls' inherited keyboard behavior and accessible labels without adding a full qualification campaign or assuming Win32 accessibility transfers to Slint. | Before a general-user preview/release or an earlier accessibility/usability qualification claim. |
+| D3 | **Deferred:** full keyboard workflows, comprehensive focus management, Narrator/UIA qualification and custom accessibility providers. Retain toolkit-provided basic keyboard/editing behavior and meaningful labels without adding a full qualification campaign; toolkit-drawn widgets do not inherit Win32 child-control accessibility. | Before a general-user preview/release or an earlier accessibility/usability qualification claim. |
 
 Agents must **not implement or qualify D1–D3 during UI-M0, or make completing them a prerequisite for finishing it**. Record them as Deferred, never Passed, Removed or Not applicable. The UI workstream owner carries all three items and their triggers into the backlog and next-stage plan; a later independent reviewer verifies the restored requirements. The owner has already selected this scope; no additional permission round is required. UI-M0 completion does not automatically satisfy the re-entry gates.
 
 Use one available Windows 11 x64 environment and one monitor. Prefer 100% scaling, default text size and a light theme only where already available; document the actual theme, display/text scaling and manifest settings. Do not change machine-wide preferences to force a preferred fixture. Essential content must fit and ordinary resizing remain usable through simple layout/scrolling in that configuration. No alternate-theme, contrast, text-scaling or mixed-DPI campaign is in scope.
 
-Reuse the real UI crate and checked fixture model where applicable. OD-11 admits
-the selected Slint replacement after its exact dependency/licence graph is
-reviewed; this supersedes the original no-replacement-framework restriction.
-Use ordinary toolkit buttons, tabs, text fields, lists and dialogs; a conventional
-source list/details panel may replace browser-specific variable-height rows.
-Keep one owner for shared model/schema, Cargo graph, Slint event-loop/callback
-lifetimes and Windows adapters/teardown. Disjoint presentation/view work can
-proceed in parallel; serialize shared desktop interaction and build-output writes.
-Retain compiler/format/lint/dependency checks, narrow documented unsafe FFI and
-independent review. No browser runtime, plug-in loader or updater is selected.
+Reuse the real UI crate and shared checked preview model for the selected Slint
+replacement. Pin the toolkit, backend/renderer and features with the approved
+toolchain and preserve exact dependency/licence admission. Ordinary buttons,
+tabs, text fields, lists and dialogs suffice; a conventional source list/details
+panel may replace browser-specific variable-height rows. One owner controls the
+shared model/schema, Cargo graph, Slint event loop/view/callback state, weak
+component references, generated-code safety/lint boundary and narrow native
+adapter lifetimes/teardown. Disjoint presentation/model/view work may proceed in
+parallel; serialize shared desktop interaction and build-output writes. Retain
+applicable compiler/format/lint/dependency checks, narrow documented unsafe FFI
+and independent review. OD-13 amends the old Win32-only framework restriction;
+no other toolkit, browser runtime, plug-in loader or updater is admitted by this
+milestone.
 
 There must be no actual NTP/NTS/DNS traffic, production IPC, service installation/control, registry policy writes, persistent preview state, elevation or host-clock action. The only data paths are fixture → presentation → controls and locally validated input → in-memory preview. Keep the fixture provider replaceable behind a small presentation boundary; do not add a service client, reconnect supervisor, generalized event/command system or hidden live-service switch. Restore the relevant D2 contracts before connecting real data or commands.
 
@@ -2681,7 +3138,7 @@ Use small independent behavioral checks for the editor and meaningful mouse-driv
 
 ## 17. Resource and performance targets
 
-The following are **unmeasured proposed budgets**, not inherited website mandates or achieved results. P0 records a reference Windows 11 x64 machine/VM configuration, OS build, CPU/RAM, power profile, antivirus state, network fixture and measurement tool. After the first working slice, revise budgets only through an explicit decision with measured reasons.
+The following are **unmeasured proposed budgets**, not inherited website mandates or achieved results. P0 records a reference configuration for each claimed client/Server row in the [platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026): edition/install mode, build/UBR, CPU/RAM, power profile, antivirus/effective protections, network fixture and measurement tool. Attach matching physical timing/power evidence where applicable and named-hardware CHECK-21 measurements to each claimed OS profile; client measurements cannot fill Server cells. Preserve the one-hour and 72-hour contracts below at their existing phase gates. After the first working slice, revise budgets only through an explicit decision with measured reasons.
 
 | Resource | Initial target | Measurement contract |
 | --- | --- | --- |
@@ -2773,11 +3230,11 @@ Preserve pure-core unsafe prohibitions and numerical operation/rejection contrac
 
 The inspected chrony core headers grant GPL version 2 without “or later.” The sample boilerplate near the end of COPYING is not a replacement grant for those files. A close Rust translation must be planned around GPL-2.0-only compatibility, notices, modification provenance and corresponding-source/build obligations. Changing languages does not erase upstream copyright. [S17, S48]
 
-Review every transitive license and selected alternative. MIT/Apache dual-licensed dependencies can generally use the MIT option for this plan; Apache-2.0-only code is a compatibility concern for GPLv2-only combinations. `windows-rs` and rustls themselves offer compatible alternatives, but crypto providers, native code and other dependencies still require inspection. OD-11 selects Slint; the applicable framework grant and complete selected graph still require compatibility/admission evidence before dependency adoption. [S49, S50, S51, S52]
+Review every transitive license and selected alternative. MIT/Apache dual-licensed dependencies can generally use the MIT option for the GPLv2-derived components; Apache-2.0-only code is a compatibility concern for GPLv2-only combinations. `windows-rs` and rustls themselves offer compatible alternatives, but crypto providers, native code and other dependencies still require inspection. OD-13 selects Slint and separately GPL-3.0-only original GUI composition; keep GPL-2.0-only Core/engine independent. The UI-specific grant does not clear shared-code rights, incompatible linkage or the exact framework/backend/runtime/build/native graph. Preserve the [GUI licensing inventory](../crates/nevrotick-ui/LICENSING.md), selected grants and notices alongside the Core port ledger. [S49, S50, S51, S52]
 
 Keep a port ledger mapping each translated file/algorithm to exact upstream source, original notices, intentional behavior changes and validation cases. Maintain a narrow upstream-monitoring process for chrony fixes affecting retained behavior. Never label source-by-source translation “clean room.” If a permissive-only implementation is later required, revisit the implementation strategy before porting.
 
-This document does not grant a new software license or legally clear a dependency graph. The existing [workspace manifest](../Cargo.toml) declares `GPL-2.0-only`; component provenance and the actual locked graph have their own admission records. Licensing of the complete delivered graph and signing-provider eligibility retain their P0/release evidence requirements.
+This document does not grant a new software license or legally clear a dependency graph. The existing [workspace manifest](../Cargo.toml) declares `GPL-2.0-only`; the original [UI package](../crates/nevrotick-ui/Cargo.toml) separately declares `GPL-3.0-only` under OD-13. Component provenance, shared-code rights and the actual locked graph have their own admission records. Licensing of the complete delivered graph and signing-provider eligibility retain their P0/release evidence requirements.
 
 ### 18.4 Inherited coverage and mutation gates
 
@@ -2867,6 +3324,61 @@ A bounded synchronous-worker design or native readiness loop is a credible alter
 
 Qualify one representative Tokio slice first, following the existing phase boundaries and CHECK-21/26/27: measure section 17 resources with the actual feature graph and security settings; exercise stalled DNS/certificate work, saturated native-job admission, reconnects and stop while observing control responsiveness and timestamp placement. Reconsider the runtime only for a demonstrated budget miss, unresolved platform/security/lifecycle incompatibility, or evidence that a direct design materially reduces complexity while satisfying the same contracts. Compare equivalent workloads if such a problem warrants an alternative; two complete engines are not a prerequisite. Existing later integration/soak gates remain, and this adds no blocker or live behavior to UI-M0.
 
+#### 18.6.2 Windows component reuse and binding coverage
+
+**Source review integrated 5 November 2026.** The inspected NevroTick baseline
+`e82f3f6b352fde88beceece4d3084862d8778338` already uses `windows-sys` 0.61.2 in
+the native UI and plans the Windows projections above. Preserve that reuse and
+section 3.4's narrow role-specific adapters. Generated ABI declarations, typed
+COM/WinRT projections and suitable focused wrappers remove routine interop work;
+authorization, bounded input, actual native completion, recovery and product
+state remain with their existing owners. No general Windows framework or new
+runtime dependency is selected by this review. [S132–S136]
+
+Keep upstream source, published package and admitted product graph separate.
+The reviewed Microsoft source is `276aec3bebe45c63d9d64ff18134ba6c7f7d279a`;
+the inspected crates.io index is `12b557a3fe84361740ee09a3cac32bd447afd53d`.
+At that snapshot `windows-sys` ends at published 0.61.2, although upstream
+manifests describe a newer generation. `windows-pickers` has only the empty
+0.0.0 package in the index; its useful upstream API is not an admitted published
+dependency. Focused `windows-registry`, `windows-window`, `windows-threading`,
+`windows-time`, `windows-version`, `windows-services` and `windows-reactor`
+0.100.0 are published candidates, not automatic upgrades. The Reactor registry
+dependency list already differs from current upstream. Verify the selected
+archive/checksum/source/features rather than importing examples from main.
+The focused candidates' declared Rust 1.95 minimum fits the current workspace's
+1.99 floor; this establishes no target, licence or runtime qualification. [S132]
+
+| Existing owner or candidate | Reuse disposition and remaining contract |
+| --- | --- |
+| Clock, SCM, IPC, IP Helper/Winsock/DNS, mitigation, files and diagnostic adapters | Use the selected generated Windows APIs and compatible wrapper first. Retain resource-specific destructors, actual error results, callback/thread ownership, exact rights and bounded completion. The [W11 reuse map](plans/windows11-integration-follow-up.md#windows-component-reuse-at-the-adapter-boundary) assigns existing W11/CHECK owners; bindings do not replace domain/protocol algorithms, network-path policy or protected-state recovery. |
+| Service hosting | Retain the preferred Mullvad `windows-service` experiment and Microsoft plural `windows-services` hold above. The inspected Microsoft source still discards `SetServiceStatus` failure, hides checkpoint/wait-hint/exit-code control and automatically reports Running/Stopped after callbacks. Extended controls exist, but a callback returning `()` cannot return every native handler result. This is API fit, not a demonstrated vulnerability; do not duplicate SCM dispatchers. [S71, S133] |
+| `windows-registry` | Conditional candidate when a concrete settings/state adapter is reached. Owned keys, typed values and access options can remove boilerplate. Project DACL/path policy and bounded allocation remain explicit: inspected variable-size getters allocate from the reported value size, and default creation requests read/write. Registry transactions do not atomically cover files or service effects. Do not add a registry layer without a consumer. [S133] |
+| `windows-window` | Conditional comparison for top-level window/message-loop plumbing only; it is not a control/layout toolkit. The checked-in Win32 adapter remains reference evidence while OD-13 selects the Slint successor; do not wrap Slint's event loop with this helper by assumption. NevroTick distinguishes `GetMessageW` error `-1`, quit `0` and messages; the inspected upstream `run()` uses a boolean conversion and returns `()`, and destruction errors are not returned by `Drop`. Require equivalent lifecycle/error observability before replacement. This source observation is not a reproduced runtime failure. [S133] |
+| `windows-reactor` | Retained source alternative; OD-13 already selects Slint. Revisit only when a concrete issue prevents selected delivery and the existing decision process admits a bounded comparison. Current upstream calls it a preview and requires Windows App Runtime. Compare an equivalent representative fixture, startup/private memory/idle/handles, keyboard/Narrator/UIA, final MSIX payload and UI mitigation compatibility. The closed egui result does not measure Reactor; the [separate live-host Reactor pilot](../tasks/s0.5-ui-comparison.md#windows-reactor--winui-3-live-host-result--5-november-2026) retains actual narrower observations. This source review reopens no general toolkit selection, runtime bundling or UI-M0 scope. [S134] |
+| `windows-pickers` | Recheck a real published release when S5.3 export needs a picker; current useful API remains source-only in this review. Standard OS dialogs are reusable, but returned paths still need ordinary-UI file handling, cancellation/error distinction and safe bounds. Never turn a selected filename into an arbitrary privileged service write. [S134] |
+| `windows-threading` / `windows-future` | Conditional implementation helpers, not replacements for the selected engine runtime. A pool thread limit does not bound accepted work; waits do not establish a finite shutdown deadline. WinRT async projection is not an executor, and cancellation need not terminate the running closure/native operation. Preserve section 17.1 custody and section 18.6.1's Tokio decision. [S136] |
+| `windows-time`, `windows-collections`, `windows-version` | Use only at a concrete WinRT/diagnostic boundary. WinRT 100-ns date/duration values do not replace checked UTC/monotonic/active-time or NTP types or the post-V1 OD-10 proof obligations; collection projections do not replace internal bounded storage. A version query is diagnostic context, not proof of API/policy/hardware support. [S136] |
+| `windows-bindgen` | Conditional way to generate a small missing private ABI surface from pinned metadata. First establish the exact gap; keep generator/metadata/output provenance and compatible types. No blanket regeneration of working imports or generator execution on every consumer build is required. [S132, S136] |
+
+**VBS binding gap:** the release-associated `windows` 0.62.2 cryptography module
+at `32c3144490c016fe496a0aed769bce60987a2e9d` contains
+`NCRYPT_USE_PER_BOOT_KEY_FLAG` but lacks `NCRYPT_REQUIRE_VBS_FLAG` and
+`NCRYPT_PREFER_VBS_FLAG`; the reviewed new header-based `Win32/ncrypt` module
+contains both. Do not assume main's namespaces or symbols exist in the selected
+published projection. ST-W01/ST-W04 and CHECK-26 own a compatible binding/SDK
+choice before dependent storage implementation; supported actual-key behavior
+still needs its existing native evidence. REQUIRE and PREFER retain different
+fallback semantics, and Microsoft's VBS-flag prerelease notice remains material.
+This closes a documentation inventory gap, not the implementation/OS gate. [S135]
+
+Apply the [development-plan handoff](plans/development-plan.md#44-apply-windows-component-reuse)
+at each existing consumer's entry. Preserve Rustls/CNG and Schannel dispositions,
+the selected storage fallback, Core priority, Windows/fuzz/storage holds and
+UI-M0 D1–D3 deferrals. Candidate evaluation creates no new global release blocker
+and does not schedule every alternative. Record measured savings only after a
+bounded comparison; no percentage or performance improvement is established here.
+
 ### 18.7 TLS, NTS and Windows trust decisions
 
 #### 18.7.1 License gate and finite provider choice
@@ -2915,6 +3427,16 @@ The normal/provisional session split does not settle association authentication
 lifetime. Section 7.4 and R-05 require an explicit full-authentication versus
 resumption contract, current trust-policy binding and unknown-age behavior before
 S2.3 cache reuse. Certificate expiry alone is not that policy. [S116]
+
+For ordinary S2.2, the [crypto profile card](../tasks/s0.1-crypto-feasibility.md#ordinary-s22-trust-profile-and-native-work--5-november-2026)
+owns the required freeze of actual principal/profile, effective stores, validation/
+date range, revocation/offline, retrieval/egress and policy-change contracts; the [W11 owner](../tasks/windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
+qualifies the selected lab path and later installed-service context separately.
+An opaque verifier success may truthfully report acceptance under profile X with
+revocation status not exposed when that profile permits it; it cannot establish
+confirmed non-revocation. A qualified adapter is required only when the selected
+policy needs information/control the interface lacks. This selects neither a
+custom verifier nor universal soft-fail/strict-online policy.
 
 #### 18.7.3 NTS packet AEAD, entropy and parser reuse
 
@@ -3230,6 +3752,20 @@ Neither project is installed or executed by this research amendment. [S121]
 
 #### 20.1.1 Mandatory mathematical proofs — 5 November 2026
 
+**Current policy, 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released software version (V1).
+The proof-first instructions and receipts below are historical; missing proofs
+are no V1 prerequisite, acceptance blocker or release gate. Do not execute formal
+compiler/solver/proof jobs, extend verifiers or repair pending proof metadata
+consumers before V1. Preserve exact historical proof scope and track remaining
+obligations in the existing tasks for post-V1 bounded resumption. Continue the
+ordinary product plan. Runtime/garde/private invariants, checked arithmetic,
+independent behavioral/property/boundary tests, security, 90% coverage/95% mutation
+within their required scopes, native/package/release gates and all existing
+Windows/fuzz/storage/UI holds remain unchanged.
+
+**Historical policy and receipts before the amendment:**
+
 [OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 requires machine-checked proofs for NevroTick's mathematical algorithms. This supersedes earlier optional-proof
 wording. Each existing and future product numerical algorithm needs an
@@ -3266,6 +3802,127 @@ The [hardening workflow](windows-time-development-hardening.md#961-mandatory-pro
 owns proof execution discipline. Runtime validation, tests, fuzzing,
 coverage/mutation, native Windows and package qualification remain required.
 OD-05 §7.5's enhanced release-build provenance remains separately optional.
+
+**Conditional tool evaluation, 5 November 2026:** the
+[existing Core task](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+owns the justified bounded Verus comparison after Kani's recorded addition timeout
+and David's instruction to use Verus if better. The three-command readiness attempt
+is now terminal with candidate **DEFER**: required `u64::checked_shl` was rejected
+during VIR translation, before SMT execution; no product-proof command ran.
+Mandatory addition remains open. The independent Kani
+[`ScaledValue::split` checkpoint](../tasks/s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026)
+qualified that full-raw-domain leaf. The
+[6 November representation checkpoint](../tasks/s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026)
+also qualified full raw-bit `from_bits` admission/exact Q33 decomposition and
+raw-payload `signed_whole` magnitude/sign/fraction independence, including each
+leaf's three semantic defects and restored healthy proof. Addition,
+`EndpointParts::new`, full enclosure, joint Garde admission/callers and Core/P1
+remain open. Reconsider this Verus route only after official
+support for the unchanged API and a newly reviewed finite checkpoint. Actual-source
+equivalence, full-domain success/error properties, verified callees, compiled
+semantic controls and restored health remain required. Completed Kani proofs keep
+their scopes; held extensions and execution holds remain held. Broader Verus
+adoption/CI remains deferred; documentation or an admitted tool closes no product
+proof or phase gate.
+
+The [6 November addition contract-mode assessment](../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+is also terminal **DEFER**. Its first primitive mechanism command reached CBMC,
+which aborted with status 134 on an internal closure type inconsistency and
+exported empty checks. No product-proof command or callee certificate followed;
+the checkpoint stopped without retries, tool patches or adoption. Existing
+ordinary Kani proofs remain reusable within their unchanged scopes, and all
+unproved mathematical obligations remain open.
+
+The [ordinary partition assessment](../tasks/s1.3-source-selection-readiness.md#ordinary-addition-partition-terminal-assessment--6-november-2026)
+is terminal **DEFER**. The union and cases 0–2 completed 631 checks: 575 `Success`,
+22 satisfied covers and 34 accounted unreachable checks. Case 3 timed out at
+60,018 ms with empty checks; later leaves, fault controls and restorations did not
+run. These four completed commands retain their individual scopes.
+
+The [full-addition compute-budget assessment](../tasks/s1.3-source-selection-readiness.md#full-addition-compute-budget-terminal-assessment--6-november-2026)
+is terminal **DEFER**: its first healthy command timed out at 300,011 ms with zero
+checks; negative controls and restoration did not run. All 37 source inputs, the
+60-entry snapshot and tool/solver identities remained intact. The larger budget
+leaves addition unproved; valid ordinary proofs retain their scopes and all holds
+remain. This card is closed, with no automatic new profile, retry or SDK patch.
+
+The [manual composition assessment](../tasks/s1.3-source-selection-readiness.md#manual-composition-terminal-assessment--6-november-2026)
+is terminal **DEFER / incomplete**. Thirteen commands supplied scoped actual-callee
+Post/actual-return seed proofs and controls; addition command 14 timed out at
+60,016 ms with zero checks and commands 15–18 did not run. An audit's unsuppressed
+Python imports also added four `.pyc` files to the frozen source island. All 45
+bound sources, addition inputs and earlier certificate receipts remained unchanged;
+the surviving evidence has only its earlier lemma scopes. The pure-composition
+rule and compiler name resolution remain explicit trusted boundaries. The closed
+card permits no addition adoption, certificate import or retry. Its incident
+remains preserved alongside the subsequent isolated query-split checkpoint.
+
+The [query-split terminal assessment](../tasks/s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026)
+is also **DEFER / incomplete**. Its fresh 13-command prefix establishes only the
+scoped actual-callee Post/seed premises and controls. Universal command 14 timed
+out at 60,018 ms with zero checks; commands 15–20, including both direct-witness
+and restored lanes, did not run. All 49 sources, 14 input/permission bookends,
+three certificate seals and tool identity passed final custody checks. Query
+reduction statistics establish no completed universal property. Addition and
+Core/P1 remain open. The subsequent
+[pure-bridge card](../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-terminal-assessment--6-november-2026)
+closed DEFER after its first healthy command: seven private-`open` annotation
+errors stopped VIR before SMT; no Z3 or qualified proof. An exact seven-modifier
+source-only correction preserves every body and private type, with fourteen
+source checks passing. The subsequent
+[private-spec v2 card](../tasks/s1.3-source-selection-readiness.md#private-spec-verus-bridge-v2-terminal-assessment--6-november-2026)
+reached Z3 without VIR errors, then closed DEFER with five failed equalities.
+Constructor Post's success is conditional on failed helpers; three Clone bodies
+also succeeded. No job qualified, and semantic controls/restoration did not run.
+The complete six-equality bridge remains incomplete. The later
+[bit-length dependency campaign](../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026)
+completed five jobs: full-raw lemma/two predicate equalities, three intended
+contract defects and byte-identical restored health. All62 focused Python checks
+pass;22 source files, exact executable erasure and final source/input/receipt/tool
+bookends are bound. Reuse this unchanged scoped evidence for remaining
+arithmetic/representation work; it supplies no complete bridge, native Ordering
+correspondence/import, actual addition or Core/P1 pass.
+The subsequent [constructor-Post campaign](../tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026)
+completed five jobs: full-raw Post/lemma/helpers, three isolated Post defects and
+restored health, with93 focused Python checks and24 bound source files. Old
+generated Rust/proofs remain preserved; the new unit re-verifies dependencies.
+This is the third predicate equality, with every typed raw Result admitted.
+It does not itself prove the constructor execution or caller integration.
+The later [complement v2 qualification](../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+passed seven jobs: four full-raw predicate equalities/three arithmetic lemmas,
+five isolated contract failures and restored health. Its30 source files and11
+executed-Python records bind the exact candidate;143 selected checks pass.
+The subsequent [rational-order qualification](../tasks/s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs: five full-raw predicate equalities/seven total lemmas,
+seventeen intended defects and restored health. All161 selected checks pass;
+33 sources/11 executed-Python records and final guards bind that candidate.
+Source inspection confirms missing pinned checked-shift support; native Ordering
+equality/comparison Post, caller import and full bridge/addition/Core/P1 remain
+open. Independent [RequestTiming qualification](../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026)
+passed five full raw-pair/three-defect/restored ordinary Kani jobs,158 Python
+checks and34-input/nine-executed-Python guards. This is constructor/getter
+arithmetic only. Subsequent [actual append_depth qualification](../tasks/s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+passed six full raw-state/four-defect/restored jobs,671 checks and208 Python
+checks, with34 bound inputs/nine executed-Python records. Its exact state/frame
+theorem preserves separate initialized-prefix/depth/topology/whole-selection
+obligations. Subsequent [actual lifecycle ordinal qualification](../tasks/s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored jobs,263 checks and248 Python
+checks;38 inputs/nine executed-Python records and complete23-enum closure bind
+the actual successor/exhaustion theorem. Subsequent [actual source-counter
+qualification](../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python
+checks;32 inputs/nine executed-Python records bind the real constants/predicate/
+From/min. The later [constructor source checkpoint](../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+prepares actual mandatory Garde/callback/constructor source and six Cargo cases,
+authenticates14 selected vendor packages, and passes51 source checks plus independent
+review. It runs no compiler/proof; source-specific admission/target/allocator/drop/
+unwinding and full constructor theorem remain unqualified. Known model/private-
+patch holds remain; source correctness does not confer execution readiness.
+Transactional lifecycle/currentness/commit/reset and global uniqueness remain
+separate obligations.
+The existing no-cheating gate
+still rejects `external_body`; no weaker profile, SDK patch or adoption follows.
+The old kit, ordinary defaults and all execution holds remain unchanged.
 
 ### 20.2 Acceptance catalog
 
@@ -3359,7 +4016,7 @@ The validation suite exercises public production decoding/construction entry poi
 | Declared garde rules | An unannotated field fails derivation; `allow_unvalidated` is prohibited and every justified `skip` names an independently reviewed enforcement owner. Test custom and cross-field rules through the real constructor, including rejected input and accepted neighbors; do not count macro compilation as runtime validation |
 | Resource behavior | Oversized headers/files, growth during reads, escaped strings, long numeric tokens, excessive collections/nesting and invalid-request storms remain within the declared byte/work/error budgets. Valid maximum-size cases still work; fuzzing is supplemented with measured peak allocation and bounded-work analysis |
 | Protected effect | Feed malformed and valid-shaped unauthorized/stale/replayed/overbudget requests directly to real handlers, bypassing UI. Assert no clock, policy, secret, network or installer effect as applicable; an authorized current neighboring request has the expected acknowledged effect. Mocks qualify only pure admission, not Windows enforcement |
-| Errors and recovery | Rejected secret-bearing input and hostile field names produce bounded allowlisted diagnostics without values/keys/cookies; logs cannot be flooded beyond limits. Failed policy update retains prior revision, invalid mandatory journal blocks writes, optional invalid drift state follows explicit reacquisition |
+| Errors and recovery | Rejected secret-bearing input and hostile field names produce bounded allowlisted diagnostics without values/keys/cookies; logs cannot be flooded beyond limits. Proven precommit policy rejection retains the prior revision; committed/indeterminate outcomes follow §12.2 reconciliation. Invalid mandatory journal blocks writes; optional invalid drift state follows explicit reacquisition |
 
 Fuzz frame/DTO parsing, DTO-to-domain conversion, configuration migration, numeric conversions and safe error projection independently, seeded with valid inputs. Keep NTP/NTS binary/crypto fuzz targets separate. A reject-all stub, zero discovered cases, parser-only pass or caught panic is not a successful admission test. Update critical-file coverage/mutation manifests for the decoder and invariant-bearing constructors under section 18.4.
 
@@ -3395,7 +4052,7 @@ The current first UI slice is [UI-M0](#165-restricted-first-ui-milestone-ui-m0):
 | S0.2 | Two minimal own-process services under intended accounts; inspect tokens, wrapper status/callback lifetimes and denied/successful clock/handle operations | CHECK-1 and CHECK-27 lifecycle subset pass in a disposable VM; otherwise change the narrow adapter/account topology without broadening to LocalSystem by default |
 | S0.3 | One real status method and one protected method over named pipes, including fake-server and PID-reuse/restart scenarios | CHECK-2 proves bidirectional identity and per-operation authorization; switch to local RPC if the pipe design cannot be proven |
 | S0.4 | Measure read/rate sign, quantization, step, cancel, kill/restart and power behavior with controlled reference time | CHECK-10/11/12 produce actual backend limits; no unsupported finite-expiry guarantee |
-| S0.5 | Qualify the owner-selected Slint UI with representative window, source list, settings/elevation dialog and tray actions at their admitted stages | CHECK-21/22 and licence/graph evidence establish selected toolkit resource/accessibility viability before production qualification; OD-11 already settles toolkit choice, while UI-M0 D1–D3 remain deferred |
+| S0.5 | Qualify the owner-selected Slint UI with representative window, source list, settings/elevation dialog and tray actions at their admitted stages | CHECK-21/22 and licence/graph evidence establish selected toolkit resource/accessibility viability before production qualification; OD-13 already settles toolkit choice, while UI-M0 D1–D3 remain deferred |
 | S0.6 | Qualify MSIX tool/schema and supported provisioning design, then a minimal complete laboratory package containing UI stub, both services and helper; takeover/recovery/repair/Reset/removal with hostile inputs | Exercise CHECK-5/13 and lifecycle/authority subset of CHECK-23, including unavailable recovery and unattended removal; isolated test signing permitted only in the owned lab. Store approval is not a prerequisite for preparing this candidate; execution holds still apply, and retail trust/capability evidence remains P6/CHECK-18 |
 | S0.7 | Review ASVS dispositions, native exception profile, automatic step/date/holdover limits, supported Windows builds and service-account trust/revocation/egress policy; set finite native-work/stop budgets | Explicit owner decisions or blockers, including OPEN-8 bootstrap/current-system-time limits and CHECK-27 admission/escalation contract; no unqualified L3 or Windows-security claim |
 
@@ -3485,8 +4142,8 @@ These decisions have proposed directions, not missing research disguised as impl
 
 | ID | Decision/evidence needed | Proposed direction | Owner and gate |
 | --- | --- | --- | --- |
-| OPEN-1 | Future repository license, crypto-provider artifact parity and exact compatible dependency/native graph | Preserve GPL-2.0-only chrony derivation; AWS-LC/ring graphs blocked pending authoritative resolution. Qualify MIT CNG-provider route first, Schannel second; record compatible grants and all transitive obligations | Product/license/security owners, S0.1/CHECK-26 |
-| OPEN-2 | Exact supported Windows builds, x64 baseline and ARM64 scope | Supported Windows 11 x64 first; qualify ARM64 separately | Platform owner, S0.4 |
+| OPEN-1 | Future repository license, crypto-provider artifact parity and exact compatible dependency/native graph | Preserve GPL-2.0-only chrony derivation and OD-13's separately GPL-3.0-only original GUI composition; retain exact shared-code/graph/distribution review. AWS-LC/ring graphs blocked pending authoritative resolution. Qualify MIT CNG-provider route first, Schannel second; record compatible grants and all transitive obligations | Product/license/security owners, S0.1/CHECK-26 |
+| OPEN-2 | Exact supported Windows builds, x64 baseline and ARM64 scope | OD-14 selects intended Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience; the [two-family matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retains open profile, admission, delivery and candidate-specific evidence. Intended v3 migration remains unqualified; qualify ARM64 separately | Platform owner, S0.4 |
 | OPEN-3 | Final account/token/object-owner/DACL topology, including runtime replacement | Virtual-account broker plus restricted LocalService engine | Security/platform, S0.2 |
 | OPEN-4 | Race-safe mutual IPC authentication and revocation semantics | Named pipes with OS identity proof; local RPC fallback | Security/platform, S0.3 |
 | OPEN-5 | Automatic step threshold/range/direction/count, cumulative correction windows/ceilings, durable reservation/settlement, boot epochs, production quorum/freshness and holdover budgets | OD-02 accepts very large authenticated recovery as a goal; qualify era/target bounds, quorum and effects. Plain-NTP 12 hours remains tentative; no arbitrary constant or session/repair budget reset | Product/core/platform, S0.4/S0.7 |
@@ -3494,7 +4151,7 @@ These decisions have proposed directions, not missing research disguised as impl
 | OPEN-7 | Qualify selected leap mapping/presentation, OS event knowledge/behavior, finite guard/cancellation/recovery and finite-slew failure envelope | §10.5 selects Windows-only explicit events, local reviewed knowledge and guard plus measured-residual recovery; exact event-time claim needs native evidence | Platform/core, S0.4/P4; pure S1.4 cases in NV-LP-001 |
 | OPEN-8 | Service-context trust stores, enterprise/distrust, revocation/offline policy, supported verifier-date conversions, provisional-time/ECH/session and full-authentication/key lifetime limits and all direct/delegated certificate/DNS/NTS destinations | Qualify leaf/chain/unknown-status policy, actual retrieval owner and HTTP versions/framing/length/transport/redirect obligations; supplied time does not shift every OS check. Resolve the pinned extreme-date source lead, bound native work and preserve fresh NTS-only recovery/approved LAN sources | Security/protocol/platform, S0.7/P2/CHECK-9/27 |
 | OPEN-9 | Literal ASVS hardware/authentication/encryption/logging and legacy plain-NTP entropy exceptions | OD-04: David decides concrete evidence-backed exceptions individually; transparent applicability profile, no blanket acceptance or L3 claim | Product/security-policy owner, S0.7/P7 |
-| OPEN-10 | Selected Slint UI accessibility and measured resource fit | OD-11 selects Slint; exact backend/renderer and native resource/accessibility evidence remain open, with narrow reviewed Windows adapters | UI/accessibility, S0.5 |
+| OPEN-10 | Slint Windows accessibility, lifecycle and measured resource fit | OD-13 selects the complete v0.4 Slint replacement, with winit/software as the starting configuration; current fixture source and portable evidence do not close exact graph/distribution, native resource/accessibility or delivered-candidate gates | UI/accessibility, S0.5/UI-M0; CHECK-21/22 |
 | OPEN-11 | Store publisher/package identity, capability/certification outcome, delivered-artifact trust and release-operations readiness | OD-05 selects the complete hardened MSIX submission attempt and David as human release approver. Preparing the candidate requires no prior Store approval; installed-code/helper admission, wrong-clock/offline behavior, actual Store-delivered evidence, approved support terms and rehearsed publishing-authority recovery remain open. Retained MSI signing options require later delivery reconsideration | David/release/security/Store, P0/P6; exact support/release decision at P7 |
 | OPEN-12 | Selected complete MSIX privilege/provisioning/recovery feasibility | Direction is selected; supported pre-start identities/rights, recovery before removal, multi-user lifetime and all section 19.4 release conditions remain unqualified. No external MSI prerequisite or automatic account broadening | Packaging/platform, S0.6/P6; source preparation can proceed under current holds |
 | OPEN-13 | Final runtime/native-work/stop budgets and permitted deliberate chrony deviations | Measure first slice with Windows protections active; keep permits with actual work, no replacement-pool growth, traceable changes | Core/platform/performance/product, P0/P1/P4 |
@@ -3516,7 +4173,7 @@ The supplied repository was read at a pinned commit through authorized read-only
 | plan-threat-model, ASVS applicability | Dataflow to protected effect, concrete threats/residual risk, full standard denominator and separate evidence state | No invented exploit findings or automatic N/A for missing evidence |
 | plan-independent-review | Fresh review of a frozen plan; readiness scope and findings recorded | Review agreement is not runtime verification or risk acceptance |
 | Implementation contract and TypeScript/Zod skills | Strong types, parsed trust boundaries, explicit missing/invalid cases, state ownership, generation/cancellation and contract evolution | No requirement for TS, Zod or parsing every internal typed call |
-| Semantic HTML skill | Use meaningful Slint control semantics, accessible names/relationships and real Windows assistive-technology checks | ARIA/DOM attributes are not directly applicable to Slint widgets; toolkit support alone proves no native accessibility |
+| Semantic HTML skill | Use meaningful Slint widget semantics and Windows accessibility exposure, accessible names/relationships and real assistive-technology checks | ARIA/DOM attributes and inherited Win32 child-control semantics do not directly qualify Slint widgets; toolkit support alone proves no native accessibility |
 | Security contract and seven security mains | Least privilege, fail-safe admission, dependency scrutiny, bounded resources, redaction, adversarial evidence and documented decisions | CSP, Trusted Types, browser storage, service workers and HTTP headers do not secure a native daemon |
 | 36 testing skill mains and testing contract | Independent expectations, real entry points/protected effects, positive controls, lifecycle/fault/model/property tests, evidence provenance | No empty full-suite rituals, mock-only OS claims or automatic application builds for this document-only task |
 | Dependency-update skill | Pin origins/versions, inspect changes, requalify affected behavior and preserve rollback | No npm/Vitest/Cloudflare commands in the Rust release contract |
@@ -3632,7 +4289,7 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S49 - Apache/GPL compatibility.** [Apache Software Foundation compatibility explanation](https://apache.org/licenses/GPL-compatibility.html).
 - **S50 - Rust Windows bindings.** [microsoft/windows-rs](https://github.com/microsoft/windows-rs), including its exact selected version's license files.
 - **S51 - rustls licensing.** [rustls license](https://github.com/rustls/rustls/blob/main/LICENSE); inspect the selected provider and all transitive licenses separately.
-- **S52 - Slint licensing.** [Framework license choices](https://github.com/slint-ui/slint/blob/master/LICENSE.md).
+- **S52 - Slint licensing.** [Slint 1.18.1 licence grants](https://github.com/slint-ui/slint/tree/v1.18.1/LICENSES) and [winit 0.30.13 Apache-2.0 licence](https://github.com/rust-windowing/winit/blob/v0.30.13/LICENSE); selection follows OD-13, exact combined-graph admission remains open.
 - **S53 - Clock/network simulation.** [clknetsim on GitLab](https://gitlab.com/chrony/clknetsim) and [maintainer mirror](https://github.com/mlichvar/clknetsim), checked reference revision `e9f11e60c72f2c0674a072c4ddcfe343f8634e58`; both advertise the same pin on 30 October 2026. Verify harness compatibility before use; reference scenarios do not establish native Windows behavior.
 - **S54 - Chrony configuration defaults.** [chrony.conf 4.9](https://chrony-project.org/doc/4.9/chrony.conf.html).
 - **S55 - ASVS attribution/license.** [Pinned ASVS license](https://github.com/OWASP/ASVS/blob/5cf9b032440be53ce345ab3c130fda46ba1ce7a2/LICENSE.md), Creative Commons Attribution-ShareAlike 4.0.
@@ -3718,6 +4375,32 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S124 - Application VBS enclaves, separate from CNG root protection, checked 2 November 2026.** Microsoft [overview](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves), [development guide](https://learn.microsoft.com/en-us/windows/win32/trusted-execution/vbs-enclaves-dev-guide) and [pinned tooling README](https://github.com/microsoft/VbsEnclaveTooling/blob/ec3ea90ddac245da7c96112dea0e27ee1a78f986/README.md). The selected path owns its OS/SDK/ABI/import/signing/debug/strict-memory requirements; the general enclave floor is not the CNG VBS-key feature floor. CFG is required for enclave DLLs; exact hardened-host compatibility remains unqualified.
 
 - **S125 - Leap knowledge and Windows ownership, checked 4 November 2026.** [NV-LP-001 source map](plans/leap-second-policy.md#8-sources-and-inspection-pins) pins RFC/erratum, IERS/BIPM/IANA, Chrony/NTPsec/ntpd-rs and official Microsoft evidence. §10.5 selects the project policy; source inspection is not Windows qualification and does not change the adopted upstream-code pin.
+
+- **S126 - Local address-family and destination-route evidence, checked 5 November 2026.** Microsoft [GetAdaptersAddresses](https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses), [adapter flags/status](https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_addresses_lh), [unicast address state](https://learn.microsoft.com/en-us/windows/win32/api/iptypes/ns-iptypes-ip_adapter_unicast_address_lh) and [GetBestRoute2](https://learn.microsoft.com/en-us/windows/win32/api/netioapi/nf-netioapi-getbestroute2). Enablement is per adapter; enumeration can include duplicate addresses; a route query is local evidence. Adapter enumeration is synchronous. The existing [network reconciliation](plans/windows11-integration.md#exclusive-loopback-endpoints-and-reconciled-network-changes) and [connectivity-hint limits](plans/windows11-integration-follow-up.md#native-ip-helper-hints-may-satisfy-a-narrower-cost-requirement) retain their callback, generation and destination-specific qualification requirements.
+
+- **S127 - Alternative-address connection progress, checked 5 November 2026.** [RFC 8305 §§3–5](https://www.rfc-editor.org/rfc/rfc8305.html#section-3) describes resolution, address ordering and staggered connection attempts; [§9](https://www.rfc-editor.org/rfc/rfc8305.html#section-9) limits what initial connection success establishes. Apply with RFC 8915's negotiated endpoint and retry requirements in S20. The required bounded NTP/NTS progress contract is NevroTick's adaptation; no complete Happy Eyeballs implementation, timing constant or Windows behavior is qualified by these sources.
+
+- **S128 - Explicit outgoing interface selection, checked 5 November 2026.** Microsoft [IPPROTO_IP options](https://learn.microsoft.com/en-us/windows/win32/winsock/ipproto-ip-socket-options) and [IPPROTO_IPV6 options](https://learn.microsoft.com/en-us/windows/win32/winsock/ipproto-ipv6-socket-options) specify `IP_UNICAST_IF` and `IPV6_UNICAST_IF`. Their input indices use network and host byte order respectively; these are outgoing-socket controls, not control over another process's onward connection. Native binding, actual route/source and receive provenance still require qualification.
+
+- **S129 - SOCKS relay and authentication semantics, checked 5 November 2026.** [RFC 1928 §§4–7](https://www.rfc-editor.org/rfc/rfc1928.html#section-4) defines typed IPv4/domain/IPv6 destinations, command/address failures, UDP relay/control lifetime and fragmentation. Its domain form has no separate requested-family field. [RFC 1929 §3](https://www.rfc-editor.org/rfc/rfc1929.html#section-3) documents cleartext username/password transport. The limited proposed NevroTick profile is not a claim that every SOCKS server relays UDP or that all RFC authentication methods are implemented.
+
+- **S130 - HTTP proxy transport distinction, checked 5 November 2026.** [RFC 9110 §9.3.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.6) describes CONNECT tunnelling; [RFC 9298](https://www.rfc-editor.org/rfc/rfc9298.html) separately specifies proxying UDP in HTTP. Browser HTTP-proxy configuration does not establish an NTP UDP path; no HTTP proxy dependency or CONNECT-UDP implementation is selected here.
+
+- **S131 - Interactive proxy settings versus service context, checked 5 November 2026.** Microsoft [WinHttpGetIEProxyConfigForCurrentUser](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpgetieproxyconfigforcurrentuser) describes current-user/current-connection settings and the service impersonation caveat. This is evidence against assuming the logged-in browser's settings or credentials apply to the engine, not a recommendation to impersonate a user or add WinHTTP to the time transport.
+
+- **S132 - Windows component and publication snapshot, checked 5 November 2026.** [Microsoft focused-crate guidance](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/docs/readme.md); immutable crates.io-index entries for [windows-sys](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-sys), [windows-registry](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-registry), [windows-window](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-window), [windows-threading](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-threading), [windows-time](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-time), [windows-version](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-version), [windows-services](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-services) and [windows-reactor](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-reactor). Registry metadata proves the recorded publication/checksum/dependency declarations, not archive parity, runtime behavior or admission of a new product graph.
+
+- **S133 - Focused wrapper contracts, checked 5 November 2026.** Microsoft [registry key ownership/read allocation](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/registry/src/key.rs), [registry access options](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/registry/src/open_options.rs), [window scope](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/window/readme.md), [window loop/lifetime](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/window/src/window.rs), [service status/control source](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/services/src/lib.rs), and official [GetMessageW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmessagew), [SetServiceStatus](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-setservicestatus) and [HandlerEx](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex) contracts. Source suitability findings are not reproduced vulnerabilities; qualify the selected release itself.
+
+- **S134 - UI candidates and release limits, checked 5 November 2026.** [Reactor preview/runtime contract](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/reactor/readme.md), [runtime staging](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/reactor-setup/readme.md), [picker source contract](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/pickers/readme.md) and [picker registry entry containing only 0.0.0](https://github.com/rust-lang/crates.io-index/blob/12b557a3fe84361740ee09a3cac32bd447afd53d/wi/nd/windows-pickers). Recheck publication and exact package behavior at the consumer trigger; examples on main are not an available Cargo release or a NevroTick toolkit decision.
+
+- **S135 - VBS binding-generation coverage, checked 5 November 2026.** [windows 0.62.2 release-associated cryptography projection](https://github.com/microsoft/windows-rs/blob/32c3144490c016fe496a0aed769bce60987a2e9d/crates/libs/windows/src/Windows/Win32/Security/Cryptography/mod.rs), [new ncrypt projection](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/windows/src/Windows/Win32/ncrypt/mod.rs) and [NCryptCreatePersistedKey flag semantics/prerelease notice](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreatepersistedkey). Symbol presence, target-build support and protection of the actual key are separate evidence.
+
+- **S136 - Windows interop helper boundaries, checked 5 November 2026.** Microsoft [thread-pool guidance](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/threading/readme.md), [WinRT futures](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/future/readme.md), [time values](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/time/readme.md), [collections](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/collections/readme.md), [version queries](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/version/readme.md) and [private binding generation](https://github.com/microsoft/windows-rs/blob/276aec3bebe45c63d9d64ff18134ba6c7f7d279a/crates/libs/bindgen/readme.md). Each applies only at its selected boundary; none establishes portable-core proof, bounded production scheduling or native capability by itself.
+
+- **S137 - Precise adjustment and privilege sample limits, checked 5 November 2026.** Microsoft [legacy setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustment), [precise setter/sample](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [precise getter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise) and [AdjustTokenPrivileges](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges). Legacy units, sample QPC conversion/guard/restoration and documented privilege results have distinct scopes; no sample supplies a tested Windows production envelope.
+
+- **S138 - Recovery observations and conditional bounds, checked 5 November 2026.** Microsoft [precise setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [service status](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setservicestatus), [failure actions](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw) and [queued restart behavior](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w); [NIST stability analysis](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1065.pdf), [NIST tolerance intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc264.htm) and [PNNL upper tolerance limits](https://vsp.pnnl.gov/help/vsample/Design_UTL_Non_Parametric.htm). API configuration, observed maxima and statistical population coverage do not establish an all-failures cleanup deadline. The residual calculation remains conditional on qualified rate, exposure and uncertainty assumptions.
 
 ## Appendix B. Worksheet attribution and use
 

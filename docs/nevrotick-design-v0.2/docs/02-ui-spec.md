@@ -7,11 +7,19 @@
 
 ## Область первого native-этапа UI-M0
 
-Для UI-M0 применяются явные границы **[архитектуры §16.5](../../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)**; полный продуктовый контракт ниже сохраняется для последующих этапов. Это unelevated fixture-driven Win32-окно со Status, Sources, Settings, source details и небольшим source-edit preview, а не реализация всех сцен HTML-макета. Главное окно постоянно показывает **Prototype — sample data**, отдельные preview-диалоги сохраняют такой же контекст.
+**Решение 5 ноября 2026:** [OD-13](../../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+принимает Rust/Slint как UI по умолчанию; отправная конфигурация — измеренный
+winit/software renderer и Fluent-style widgets. Существующий Win32-кандидат и его
+receipts остаются историческими фактами. [UI-M0 migration handoff](../../../tasks/ui-m0.md#slint-migration-handoff--5-november-2026)
+ведёт будущий перенос, product graph/licence, generated-code/unsafe boundary и
+actual native observations. Выбор Slint не означает выполненную миграцию или
+перенос Win32 accessibility evidence.
+
+Для UI-M0 применяются явные границы **[архитектуры §16.5](../../windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)**; полный продуктовый контракт ниже сохраняется для последующих этапов. Целевой UI-M0 — unelevated fixture-driven Slint-окно со Status, Sources, Settings, source details и небольшим source-edit preview, а не реализация всех сцен HTML-макета. Главное окно постоянно показывает **Prototype — sample data**, отдельные preview-диалоги сохраняют такой же контекст.
 
 Данные берутся только из checked-in fixtures; field validation ведёт к **Update preview** / **Cancel** и изменяет только память процесса. Ошибка видима и оставляет предыдущий preview; Cancel отбрасывает непринятые правки, Close завершает процесс и отбрасывает все preview-изменения без production unsaved-policy workflow. Minimize/restore работают как обычные Windows-действия. **Sync now** отключён с пояснением; machine-policy/Apply и остальные защищённые действия недоступны или отсутствуют. Нет live status/IPC, NTP/NTS/DNS, дисковой persistence, управления службами, UAC, изменения часов или скрытого live-переключателя. Локальное изменение не называется **Applied**, **Saved to service** или административным успехом.
 
-**D1** (themes/contrast/text/mixed-monitor DPI), **D2** (production freshness/reconnect/policy drafts/admin results) и **D3** (полные keyboard/focus/Narrator/UIA) — **Deferred**. Агенты не реализуют и не квалифицируют эти группы сейчас и не делают их условием завершения UI-M0. Стандартные labels, keyboard и system behavior сохраняются без полной accessibility-кампании. Одна documented reference display configuration, пригодный обычный resizing, узкие документированные FFI, корректные handles/callback lifetimes/teardown и применимые Rust/dependency/review проверки остаются в работе. Настройки машины ради reference configuration не меняются.
+**D1** (themes/contrast/text/mixed-monitor DPI), **D2** (production freshness/reconnect/policy drafts/admin results) и **D3** (полные keyboard/focus/Narrator/UIA) — **Deferred**. Агенты не реализуют и не квалифицируют эти группы сейчас и не делают их условием завершения UI-M0. Labels, keyboard и system behavior штатных Slint widgets сохраняются без полной accessibility-кампании; наследование Win32 UIA-поведения не предполагается. Одна documented reference display configuration, пригодный обычный resizing, узкие документированные FFI, корректные handles/callback lifetimes/teardown и применимые Rust/dependency/review проверки остаются в работе. Настройки машины ради reference configuration не меняются.
 
 Владелец UI-направления переносит D1–D3 и triggers в backlog/следующий handoff: D2 возвращается до соответствующей live-интеграции, D1/D3 — до general-user preview/release либо более ранней заявки на эти возможности. Приёмка и требуемые native observations определены в §16.5; compile/screenshot их не заменяют. UI-M0 не завершает P0 toolkit qualification, полные UI-критерии, другие workstreams или release gates. Это описание объёма, не результат выполненных проверок.
 
@@ -275,7 +283,7 @@ About показывает версию макета отдельно от бу�
 
 ## 9. Фокус, доступность и ошибки
 
-Полные keyboard/focus/Narrator/UIA требования таблицы — D3 / Deferred для UI-M0, а theme/contrast/text/DPI qualification — D1 / Deferred. Не реализовывать и не квалифицировать их сейчас; сохранить встроенное поведение стандартных контролов и видимые ошибки restricted slice. Полный контракт возвращается по §16.5 архитектуры.
+Полные keyboard/focus/Narrator/UIA требования таблицы — D3 / Deferred для UI-M0, а theme/contrast/text/DPI qualification — D1 / Deferred. Не реализовывать и не квалифицировать их сейчас; сохранить поведение штатных виджетов выбранного toolkit и видимые ошибки restricted slice; фактический Slint UIA/Narrator путь квалифицируется при D3 re-entry. Полный контракт возвращается по §16.5 архитектуры.
 
 | Ситуация | Контракт UI v0.2 |
 | --- | --- |
@@ -292,7 +300,7 @@ About показывает версию макета отдельно от бу�
 | Неактивная кнопка | Рядом понятна причина; tooltip не является единственным способом узнать её |
 | Трей | Не единственный путь к настройкам, диагностике и восстановлению |
 
-Это критерии будущей native-проверки. HTML-макет может подтвердить структуру и часть взаимодействий, но не квалифицирует Win32 UI Automation, Narrator, secure desktop UAC или Windows high-contrast поведение.
+Это критерии будущей native-проверки. HTML-макет может подтвердить структуру и часть взаимодействий, но не квалифицирует Windows UI Automation, Narrator, secure desktop UAC или Windows high-contrast поведение.
 
 Источник: [§16.3–16.4](../references/source-docs/windows-time-architecture.md#163-accessibility-acceptance).
 

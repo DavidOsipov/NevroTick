@@ -2,10 +2,13 @@
 
 Read this reference when proposing the Windows graph, changing renderer/assets,
 or preparing candidate-specific accessibility, lifecycle or resource checks.
-[OD-11](../../../../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
+[OD-13](../../../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 already selects complete Slint replacement; do not reopen toolkit selection.
 The [existing S0.5 task](../../../../../tasks/s0.5-ui-comparison.md) controls
-readiness, integration ownership and current execution holds.
+readiness, integration ownership and current execution holds. The M0-specific
+profile below is the original fixture proposal; inspect current S0.5 addenda
+and the GUI handoff for the implemented adapter and admitted later source
+features. This reference does not roll that source back or lift native holds.
 
 ## Prepare the profile before dependency execution
 
@@ -29,7 +32,9 @@ build defaults can be disabled with `compat-1-18`; preprocessing through
 feature. Resource mode and both feature sets must agree with the actual build
 configuration. These feature names are version-specific; inspect a changed pin.
 
-Exclude default `system-tray` from the fixture profile. Do not enable live-preview,
+Exclude default `system-tray` from the original UI-M0 profile; current S0.5
+tray-source addenda retain their own scope and native qualification gaps.
+Do not enable live-preview,
 `mcp`, `system-testing`, unstable APIs or broad all-features builds as ordinary
 integration defaults. Runtime environment selection can fall back among compiled
 implementations; it does not prove a single renderer or prevent graph expansion.
@@ -47,7 +52,12 @@ runtime/build graph. Framework grants differ from MIT docs/examples and from
 third-party inputs. Preserve Chrony's GPL-2.0-only provenance; neither selecting
 Slint's royalty-free option nor placing a UI in a separate process establishes
 compatibility. Supply source evidence and the bounded unresolved question to the
-existing licence owner. Routine source preparation needs no toolkit reapproval.
+existing licence owner. David has approved GPL-3.0-only for the original GUI
+while Chrony-derived Core/engine remains GPL-2.0-only; do not reopen that choice.
+Apply its GUI-specific grant and the actual graph/composition inventory. Current
+source and completed checks belong to S0.5 and the
+[GUI handoff](../../../../../tasks/slint-gui-handoff.md), with Windows
+qualification still open. Routine source preparation needs no toolkit reapproval.
 
 Choose bounded packaged resource locations/embedding, font fallback and image
 decoding deliberately. Absolute development paths are unsuitable package inputs.

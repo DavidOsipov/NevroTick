@@ -146,6 +146,14 @@ Expected malformed input/OS failures must not use panic/unwrap/expect as recover
 Review each panic site against the process fault policy. Never unwind across
 Windows FFI; `catch_unwind` catches only unwinding panics and the panic hook runs
 first. It neither catches aborts nor repairs invalid state or native faults.
+For an ordinary Rust panic, an installed hook runs before either the unwinding
+or aborting runtime. Direct aborts, process termination and allocation/stack
+failures need separate analysis; hook execution is not a universal crash signal.
+Keep hooks bounded and redacted. Safety must not depend on allocation, network
+delivery, lock acquisition or fallible cleanup from the hook. Review any chained
+previous hook as another output/effect path; sanitizing one hook does not sanitize
+the next. Test selected panic/termination paths in owned child processes when
+changing that guarantee; hooks establish neither recovery nor durable cleanup.
 Keep panic hooks/reports subject to the same output policy. Do not continue
 clock correction with an inconsistent model. Abort/process death skips promised
 destructor cleanup; recovery requires the established owner/journal/SCM contract

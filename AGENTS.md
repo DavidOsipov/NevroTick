@@ -21,10 +21,11 @@ plugin; load another skill only for concrete gap.
 2. Read [the documentation guide](docs/README.md), then the relevant authority
    below. Use its [plan and acceptance map](docs/README.md#plans-acceptance-and-execution-evidence)
    to identify the workstream, phase/slice, prerequisites and observable exit.
-3. Reuse the existing task/plan. For current UI work, start at the
-   [Slint migration in S0.5](tasks/s0.5-ui-comparison.md) under
-   [OD-11](docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint),
-   then [tasks/ui-m0.md](tasks/ui-m0.md): fixture scope, ownership,
+3. Reuse the existing task/plan. For current UI work, start with the
+   [Slint GUI handoff](tasks/slint-gui-handoff.md) and
+   [S0.5 migration task](tasks/s0.5-ui-comparison.md) under
+   [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit),
+   then [tasks/ui-m0.md](tasks/ui-m0.md) for the original fixture scope, ownership,
    [acceptance](tasks/ui-m0.md#acceptance-and-checks),
    [remaining evidence](tasks/ui-m0.md#remaining-evidence-and-next-work) and later
    candidate addenda. For other work, inspect `tasks/` and any `.agents/plans/`
@@ -50,20 +51,33 @@ Subagent assignments include the bounded question, canonical sections and
 acceptance IDs, current task/candidate, writable scope and expected evidence.
 The coordinator reconciles results against the integrated candidate.
 
-For existing or future mathematical algorithms, apply
-[OD-10](docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-and [architecture §20.1.1](docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026):
-source-bound machine-checked proofs over the full admitted domain are mandatory.
-Track unproved obligations in the existing task; do not close dependent
-mathematical acceptance with examples, a model-only proof or a deferred verifier.
-Use the [proof workflow](.agents/skills/testing/references/formal-verification.md)
-for specification, controls, assumptions and exact-candidate evidence. Reuse
-unchanged proofs; retain runtime validation and the other required checks.
+Apply [OD-10's first-release deferral](docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal proof work resumes after the first released software version (V1).
+Missing proofs do not block V1 implementation, acceptance or release. Do not run
+formal compiler/solver/proof jobs, extend verifiers or repair pending proof
+admission/metadata consumers before then. Continue the ordinary product plan;
+keep proof obligations in the existing tasks as post-V1 work and retain completed
+proofs only within their exact historical scopes. Runtime validation, garde/private
+invariants, checked arithmetic, independent behavioral/property/boundary tests,
+90% security-primitive coverage, 95% critical-file mutation, security, native,
+package and release gates remain. This lifts no Windows/fuzz/storage/UI hold.
+
+Apply [OD-10's proof-purpose rule](docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026)
+when planning or reviewing formal work: select a named product guarantee from
+the [post-V1 debt](tasks/development-backlog.md#product-guarantees-still-open),
+require its actual source/caller/constructor chain and independent semantic
+controls, and stop at the bounded pilot's exit. Helper proofs, green tooling and
+check counts do not close the parent guarantee. Use the existing
+[proof workflow](.agents/skills/testing/references/formal-verification.md);
+this policy/documentation maintenance does not resume formal execution.
 
 ## Read the right authority
 
-NevroTick: chrony-derived Rust NTP/NTS client, native GUI; initially supported
-Windows 11 x64, `x86_64-pc-windows-msvc`. Start with
+NevroTick: chrony-derived Rust NTP/NTS client, native GUI; intended initial scope
+is Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience,
+`x86_64-pc-windows-msvc`, under [OD-14](docs/nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope).
+The [two-family matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+keeps exact profiles, availability and native/support qualification open. Start with
 [docs/README.md](docs/README.md), then task-relevant sections:
 
 | Document | Authority and use |
@@ -140,7 +154,7 @@ section 8.5, recording owner, ready/held/deferred disposition and next action in
 the existing Windows 11 task. W11-W01 has [partial source preparation](tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
 through the [engine integration card](tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026);
 complete its selected capture/mapping contract when the acquisition owner reaches
-it, preserving the proof-first queue. Other items enter at
+it, preserving the ordinary product queue and OD-10 first-release deferral. Other items enter at
 their named phase or conditional trigger. Before related Windows integration,
 apply the mapped contracts and controls while retaining the distinction between
 required product behavior and optional API candidates. This handoff lifts no hold.
@@ -191,17 +205,21 @@ package integrity, installed identity and native/lifecycle evidence.
 
 Logging/verbosity work: read [architecture section 12.3](docs/windows-time-architecture.md#123-logging-and-support) and [hardening section 9.8](docs/windows-time-development-hardening.md#98-diagnostics-and-shared-adapter-verification). Keep per-process sinks, typed fields, required-event routing and locally expiring authorized DEBUG sessions explicit; diagnostics are not authoritative UI state or the clock journal.
 
-Localization work: read [OD-12's catalog design](docs/plans/ui-localization.md)
+Localization work: read [OD-15](docs/nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs),
+[the catalog design](docs/plans/ui-localization.md)
 and architecture §16.4 before the Slint or i18n skills. The selected design uses
 editable JSON → validated CBOR resources → typed Rust presentation → Slint and
 tray/notification/accessibility consumers. Slint has no selected native CBOR
 loader. Keep English fallback, stable codes/arguments and actual adopted-locale
-scope; exact codec/formatter and external user-import admission remain open.
-Source planning is independent; this supplies no native or Core execution waiver.
+scope. Current codec/formatter, generated resources and loader evidence belong
+to S0.5 and the GUI handoff; arbitrary external user-import admission remains
+unselected. The application-owned catalog is not a native Slint CBOR facility.
+This supplies no native or Core execution waiver.
 
 The current [Cargo workspace](Cargo.toml) contains
-[nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a portable preview model and native
-Windows UI-M0 adapter, and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure inert
+[nevrotick-ui](crates/nevrotick-ui/Cargo.toml): a checked portable presentation
+model and the Slint Windows adapter, with native/backend qualification still open,
+and [ntp-wire](crates/ntp-wire/Cargo.toml): the pure inert
 wire owner under [S1.1a qualification](tasks/s1.1-header.md) and
 [S1.1b framing qualification](tasks/s1.1-framing.md). It provides structural
 framing without exchange, era, authentication or sample admission.
@@ -219,9 +237,11 @@ fixture association under [S1.1d](tasks/s1.1-exchange-association.md) and the
 selection/principal/supporter combination, reference readiness and modeled
 correction accounting. [S1.2](tasks/s1.2-regression-readiness.md) and the
 [current Core task](tasks/s1.3-source-selection-readiness.md) retain the exact
-implementation and qualification scopes. Current settled active-time delivery
-qualification remains incomplete; selected fixture results do not establish
-production sample eligibility, an integrated controller, clock authority or P1.
+implementation and qualification scopes. The [settled-rate receipt](tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners)
+records completed qualification within its four-owner Linux fixture scope; the current
+continuation follows [development §7](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+These scoped results do not establish production sample eligibility, an integrated
+controller, clock authority or P1.
 [nevrotick-engine](crates/nevrotick-engine/Cargo.toml) owns the engine-only
 [bounded transport pilot](tasks/engine-transport-pilot.md): two explicit loopback
 peers, a private current-thread runtime and the unauthenticated, ineligible
@@ -233,22 +253,33 @@ never scaffold product crates merely to pass documentation/tool checks.
 
 ## Current UI milestone
 
-David selected Slint as the complete Win32 UI replacement in
-[OD-11](docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
-The [existing S0.5 task](tasks/s0.5-ui-comparison.md) owns the migration; no further
-toolkit-choice comparison or confirmation is required. Current checked-in UI
-source is still the Win32 baseline until migrated; its results do not qualify
-Slint. Source/licence preparation and admitted fixture UI work can run in
-parallel with Core. Pin and review the actual dependency/licence graph before
-adoption, retaining one Cargo graph/schema owner and existing execution holds.
+[OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default UI toolkit and the complete Win32 UI replacement.
+The [existing S0.5 task](tasks/s0.5-ui-comparison.md) owns the complete migration
+against design v0.4; start with its current addenda and the
+[Slint GUI handoff](tasks/slint-gui-handoff.md). The checked-in Windows entrypoint
+now selects Slint; the unexported Win32 adapter is retained historical source.
+Portable rendering, model tests and Windows-target checks retain their recorded
+scopes; native/backend, accessibility/resources and independent critical-text
+approval remain open. Historical Win32 receipts do not qualify Slint.
+
+David approved GPL-3.0-only for the original GUI while Chrony-derived Core/engine
+remains GPL-2.0-only. Do not reopen this choice or toolkit selection. Apply the
+GUI-specific grant and exact runtime/build/asset provenance inventory; that
+licence direction does not replace graph, composition, generated-code unsafe/lint,
+security, native or package review. Source preparation and admitted fixture UI
+work may parallel Core; retain one Cargo graph/schema owner and all execution holds.
 
 Apply [architecture §16.5](docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0)
-before UI/QA skills. UI-M0 is an unelevated, fixture-only native prototype.
+before UI/QA skills. The original UI-M0 is an unelevated, fixture-only native
+prototype; current S0.5 addenda own the complete GUI source scope. Within UI-M0,
 **D1** theme/contrast/text/DPI work, **D2** production freshness/reconnect/policy/
 administrative-result handling and **D3** full keyboard/Narrator/UIA work are
-**Deferred**: do not implement or qualify them now, or make them UI-M0 blockers.
-Retain toolkit controls' inherited behavior and labels, Rust/FFI quality checks,
-sample-data labelling, disabled protected actions and native window observations.
+**Deferred**: preserve their existing task triggers and do not make them UI-M0
+blockers. A later admitted source slice does not establish native qualification.
+Retain toolkit-provided basic keyboard/editing behavior and meaningful labels,
+Rust/FFI quality checks, sample-data labelling, disabled protected actions and
+native window observations. Slint widgets inherit no Win32-control accessibility pass.
 No live network/DNS, production IPC, persistence, services, elevation or clock
 effects. Carry deferred owners/triggers into the backlog and next-stage plan;
 restore them before the integrations/preview claims specified in §16.5.
@@ -278,7 +309,7 @@ them before executing that tooling; the native Rust build does not use it.
 Read canonical sections for exact limits; preserve these boundaries:
 
 - Separate network-facing engine without clock privilege, narrow privileged
-  clock broker, normal-user Slint UI (OD-11; migration pending), elevated lifecycle helper. Deliver one
+  clock broker, normal-user Slint UI, elevated lifecycle helper. Deliver one
   complete MSIX under amended OD-05, subject to supported service provisioning
   and complete lifecycle qualification. Older MSI-first summaries are superseded;
   retain MSI-specific mechanics only for a later owner-selected alternative.
@@ -295,7 +326,7 @@ Read canonical sections for exact limits; preserve these boundaries:
   signed/packaged or previously accepted files. Reuse admitted immutable typed
   values only within their valid context. For localization, an independent
   code-owned contract/checker controls IDs, types, plural/action rules and semantic
-  approval; catalogs cannot redefine them. Follow [OD-12's threat controls](docs/plans/ui-localization.md)
+  approval; catalogs cannot redefine them. Follow [OD-15's threat controls](docs/plans/ui-localization.md)
   for isolated conversion, bounded decode/format/render, literal sinks and
   whole critical-group English fallback. Origin/signatures and syntactic validity
   prove neither payload safety nor truthful translated consent text.
@@ -337,7 +368,8 @@ Read canonical sections for exact limits; preserve these boundaries:
 - Keep unsafe code in narrow reviewed Windows adapters, preserve useful errors,
   redact secrets from events/exports. UI status accurately distinguishes
   authentication, agreement, freshness, readiness, applied effects.
-- Preserve chrony source provenance and GPL-2.0-only obligations. Qualify exact
+- Preserve Chrony-derived Core/engine GPL-2.0-only provenance and the original
+  GUI's approved GPL-3.0-only grant. Qualify exact
   dependency/features/license graphs and held crypto-provider choices before
   adoption. Keep `Cargo.lock` versionable; exclude `target/` from Git/search indexes.
 
@@ -354,9 +386,9 @@ no new report tree or orchestration campaign.
 | Windows service architecture, SCM lifecycle or recovery | [Service adapter guide](.agents/skills/implementation/implement-rust/references/windows-service-adapters.md), with per-service recovery and object-access matrices; [Windows privileges](.agents/skills/security/security-windows-privileges/SKILL.md) for authority. |
 | Function/module contracts, wire admission and domain invariants | [implement-rust-contracts](.agents/skills/implementation/implement-rust-contracts/SKILL.md). |
 | Wire, persisted-state or semantic compatibility | [evolve-data-contracts](.agents/skills/implementation/evolve-data-contracts/SKILL.md). |
-| Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), then applicable accessibility/DPI checks. |
-| Slint views, Rust models/bindings, layout or toolkit build profile | [implement-slint](.agents/skills/implementation/implement-slint/SKILL.md); follow S0.5/OD-11 and the applicable UI-M0 or P5 boundary. |
+| Native UI and accessibility | [implement-native-ui](.agents/skills/implementation/implement-native-ui/SKILL.md), [implement-slint](.agents/skills/implementation/implement-slint/SKILL.md) for toolkit mechanisms, then applicable accessibility/DPI checks. |
 | Trust, privileges, IPC, crypto, logging or packaging | [Security index](.agents/skills/security/README.md), matching boundary owner. |
+| Windows product/package/Store metadata | [maintain-windows-metadata](.agents/skills/implementation/maintain-windows-metadata/SKILL.md); package QA retains artifact/native qualification. |
 | Cargo dependency changes | [dependency-updates](.agents/skills/environment/dependency-updates/SKILL.md). |
 | Windows Sandbox configuration, WSL-to-guest control or disposable lab evidence | [manage-windows-sandbox](.agents/skills/environment/manage-windows-sandbox/SKILL.md); check current task/incident holds before any Windows command. |
 | Verification, failure triage or commit preparation | [Testing index](.agents/skills/testing/README.md), [testing contract](.agents/skills/testing/CONTRACT.md); smallest relevant evidence layer. |

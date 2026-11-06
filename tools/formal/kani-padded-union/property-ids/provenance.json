@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "status": "source-candidate; not-built; not-adopted",
+  "purpose": "Preserve exact decoded CBMC property IDs for final-model guard-to-export accounting.",
+  "upstream": {
+    "repository": "https://github.com/model-checking/kani",
+    "commit": "0d2328a93f0e0ff66132d6bfa1a7d884877cf862",
+    "version": "0.68.0",
+    "license_expression": "Apache-2.0 OR MIT",
+    "baseline": "The five files matched the consumed private-compiler-inputs-v1/source copy before editing; no upstream refetch in this task."
+  },
+  "patch": {
+    "path": "preserve-raw-property-ids.patch",
+    "bytes": 9565,
+    "sha256": "b04dd2cb9d6ececd3644b47ebe08de71bd360906bb98267ac5454d4981dc39f0",
+    "files": {
+      "kani-driver/src/cbmc_output_parser.rs": {
+        "before": {
+          "bytes": 29187,
+          "sha256": "fdc0ef690f0ec16d14c03d66551617fc62f769053bfe9ddcec853de2674503b1"
+        },
+        "after": {
+          "bytes": 30796,
+          "sha256": "a974fa99c5a7c3a3395aec59000ac888b14abc67b901e6c978bab7012403ddf5"
+        },
+        "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/cbmc_output_parser.rs"
+      },
+      "kani-driver/src/frontend/schema_utils.rs": {
+        "before": {
+          "bytes": 23634,
+          "sha256": "5d1d22214db198ed42c2dd6290feca6fc62a86e7565a3d0c4ce4ac21144c59c1"
+        },
+        "after": {
+          "bytes": 23698,
+          "sha256": "c62de5e5cd59d00a8bd3b7d47be37598213d5b26968ab15def83133d1d406cdf"
+        },
+        "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/frontend/schema_utils.rs"
+      },
+      "kani-driver/src/frontend/tests/schema_utils_test.rs": {
+        "before": {
+          "bytes": 8626,
+          "sha256": "aae257ea275d97efd025212812878ade69076e5953b2c0292363a238d86ae95f"
+        },
+        "after": {
+          "bytes": 11341,
+          "sha256": "81d98c8f9acbc1d4c35e625ac4b5adb9c25fd8ba109b36d7b4e18098a40f56dc"
+        },
+        "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/frontend/tests/schema_utils_test.rs"
+      },
+      "kani-driver/src/sarif.rs": {
+        "before": {
+          "bytes": 13209,
+          "sha256": "53bcc12b65fdd0f4d84606ed48c543754dc5d2be04d276c96ce4db670f0c7193"
+        },
+        "after": {
+          "bytes": 13268,
+          "sha256": "9aabca88dd7848afc4335e516febfe491518cec2656ee88b2172ca22de2085ef"
+        },
+        "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/sarif.rs"
+      },
+      "kani-driver/src/concrete_playback/test_generator.rs": {
+        "before": {
+          "bytes": 39316,
+          "sha256": "da2277076d9700212795b0af111861681d4aed38ddcf7a71ca1c6965d901ad8e"
+        },
+        "after": {
+          "bytes": 39418,
+          "sha256": "1a3aa31312fcab4fe525bc2c0ac44cbec59e0fc512928df16d3e9d40aae70bec"
+        },
+        "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/concrete_playback/test_generator.rs"
+      }
+    }
+  },
+  "contract": {
+    "parser_field": "PropertyId.raw_id: String",
+    "export_field": "checks[].raw_property_id",
+    "meaning": "Exact decoded CBMC id_str; not the original JSON string-literal escape spelling.",
+    "parsed_function_class_counter_unchanged": true,
+    "enumeration_id_unchanged": true,
+    "existing_status_category_and_location_unchanged": true,
+    "json_metadata_version_unchanged": "1.0",
+    "canonical_qualifier_and_registry_unchanged": true
+  },
+  "source_validation": {
+    "rustfmt_cargo_compiler_solver_commands_executed": 0,
+    "rust_tests_authored_not_executed": [
+      "check_property_raw_id_preserves_mangled_fallback_identity",
+      "check_property_raw_id_preserves_distinct_ids_with_equal_parsed_counters",
+      "test_verification_export_preserves_raw_fallback_and_recursion_ids"
+    ],
+    "existing_parser_identity_assertions_added": 5,
+    "existing_export_identity_assertions_added": true,
+    "required_struct_literal_updates": 5,
+    "pure_python_compatibility_controls": {
+      "legacy_check_fixture_accepted": true,
+      "additive_raw_id_fixture_accepted": true,
+      "missing_legacy_id_rejected": true,
+      "canonical_qualifier_accepts_additive_fixture": true
+    },
+    "compatibility_authority": {
+      "validator": {
+        "path": "scripts/validate_json_export.py",
+        "bytes": 8146,
+        "sha256": "c6703aa3a050645c2015cf615f8ec59fd751650c7be2f818d5d2082f46720a3d"
+      },
+      "template": {
+        "path": "tests/json-handler/schema-validation/kani_json_schema.json",
+        "bytes": 3754,
+        "sha256": "8bb2b1dc15173ff817ce47fc0aed237adb0145d0c1f3a72864b7deb17d112a8e"
+      },
+      "canonical_qualifier": {
+        "path": "tools/formal/verify.py",
+        "bytes": 51271,
+        "sha256": "8d347b5e655df22eae182b857232aadfe1d3acb4bbd2d2f091c8b91001f8d47d"
+      }
+    },
+    "manifest_and_lock_bytes_unchanged": [
+      "Cargo.toml",
+      "Cargo.lock",
+      "kani-driver/Cargo.toml"
+    ]
+  },
+  "limits": [
+    "No build, Rust test, formatting, solver or driver admission has run.",
+    "Old permissive consumers can ignore the additive field; strict external readers remain unverified.",
+    "Old exports lack this field; any future identity-accounting consumer must reject missing or ambiguous IDs.",
+    "Raw IDs identify retained checks; they do not establish that every required model guard was retained or exported.",
+    "No singleton-refinement implementation, product theorem or general Kani adoption is established."
+  ]
+}

@@ -3,7 +3,7 @@
 The original first-party source in `nevrotick-ui` is licensed under the
 **GNU General Public License, version 3 only (`GPL-3.0-only`)**. This implements
 David Osipov's GUI-specific licence decision under
-[OD-11](../../docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint).
+[OD-13](../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit).
 It covers the original GUI application, fixture model and presentation code,
 GUI adapters, Slint views and GUI-specific tests in this crate. Copyright remains
 with the respective authors. Existing third-party notices and grants take

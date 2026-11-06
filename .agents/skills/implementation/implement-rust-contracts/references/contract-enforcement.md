@@ -169,6 +169,46 @@ inputs and distinct controls at the affected consumers. Standard-library
 hash output is not a stable serialization format or a fixed test oracle; verify
 the relevant equality/hash/ordering relationships and collection behavior instead.
 
+## Make structural changes require review
+
+When adding a field or variant must trigger a semantic decision, arrange for the
+compiler to identify the affected consumers. Apply this to the relevant owner;
+it is not a requirement to enumerate every field in every pattern.
+
+- In manual equality, hashing, ordering or `Debug` implementations, use exhaustive
+  named-field destructuring when every new field needs review. Name deliberately
+  ignored fields with `field: _` and explain their exclusion; avoid `..` at that
+  decision point. Keep trait laws aligned and sensitive fields redacted. Derive
+  only when all stored fields already express the intended semantics.
+- Initialize all fields explicitly where a new policy/invariant field needs an
+  intentional value. Avoid `..Default::default()` at that boundary; reuse named
+  defaults only when their semantics are appropriate. A valid `Default` remains
+  useful for types whose complete default state satisfies their contract.
+- Enumerate variants of closed internal state enums where each new state needs
+  handling, grouping known variants with identical behavior. Required wildcard
+  arms for external non-exhaustive APIs, or intentional open input sets, need
+  explicit unknown-case behavior under the owner's contract.
+
+For collection access, bind the element and its admission in the same operation
+with a slice pattern, `first`, `split_first` or `get` where appropriate. Handle
+empty/multiple/missing cases according to the real contract; do not replace a
+panic with silent omission or an invented default. Existing immutable bounded
+views may already carry the required access invariant.
+
+Limit mutable initialization to a small scope before publishing the result.
+An immutable binding does not freeze interior-mutating data or changing context.
+Likewise, named option enums clarify call sites but do not exclude invalid
+combinations of independent options; use checked construction or variants carrying
+the required data when the combinations themselves matter.
+
+Select lints by their actual behavior on the admitted compiler. In particular,
+`clippy::unneeded_field_pattern` recommends replacing named ignored fields with
+`..`, which defeats the exhaustive-field technique above. Do not enable it as
+enforcement of that guarantee. `#[must_use]` can detect accidental discarded
+results, but does not establish correct consumption, application or lifetime.
+Use [static checks](../../../testing/qa-static-checks/SKILL.md) for claimed compiler
+guarantees and the existing runtime/proof owners for semantic correctness.
+
 ## Prepare and commit owned state
 
 Use this pattern when a failed update must preserve the previous valid state.
@@ -256,9 +296,12 @@ range does not prove the correct units, finite floating values or related fields
 
 No public fields, tuple fields, mutable-inner getters, `DerefMut`, unchecked
 `From`, permissive `Default`, unrestricted domain `Deserialize`, or alternate
-factory may construct/publish invalid domain state. Audit defining-module code
-and re-exports too: Rust privacy does not prevent the defining module from adding
-a bypass. A test-only construction escape stays outside production builds.
+factory may construct/publish invalid domain state. Audit defining-module code,
+its descendant modules and re-exports too: private fields or seals restrict
+callers outside that privacy scope, not construction within it.
+`#[non_exhaustive]` supplies no construction restriction inside the defining
+crate. Neither mechanism validates fields or blocks exposed mutation. A test-only
+construction escape stays outside production builds.
 
 `garde::Valid<T>` records that validation ran; it is not automatically a durable
 invariant or permission. Its shared dereference can expose `T`'s interior-mutating
@@ -290,12 +333,13 @@ checked consumer and a discriminating check with a valid neighboring control:
   entry and effect, including after awaits. Observe the protected sink rather
   than only an intermediate validator return value.
 
-Use [contract tests](../../../testing/qa-contract-tests/SKILL.md), meaningful
-property/fuzz controls and the mandatory
-[mathematical proof workflow](../../../testing/references/formal-verification.md)
-for product algorithms under OD-10. Cover the full admitted success/error contract
-at the executable owner; optional Kani use for other finite invariants does not
-make mathematical proof optional.
+Use [contract tests](../../../testing/qa-contract-tests/SKILL.md) and meaningful
+property/fuzz controls. Apply [OD-10's first-release deferral](../../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal proofs and pending proof admission/metadata repairs resume after V1;
+missing proofs do not block first-release acceptance. Retain exact historical
+scope and post-V1 obligations without weakening runtime enforcement or tests.
+Use the [proof workflow](../../../testing/references/formal-verification.md)
+on resumption.
 [CodeQL](../../../testing/references/codeql-data-flow.md) can investigate paths
 around construction or from original DTOs to effects; inspect real callers and
 challenge query coverage before claiming no bypass. Compiler docs/lints, skill

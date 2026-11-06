@@ -1,0 +1,87 @@
+{
+  "acceptance_dependency": "Independently retained raw property IDs, exact generated fallback guard inventory, completed all-checks exports and admitted joint driver controls are required. Protocol validation supplies no proof acceptance.",
+  "control_fixture": {
+    "bytes": 1196,
+    "path": "controls.rs",
+    "sha256": "55c030e388a4332a881b554c1f24c777698ee036e75bc7d250b21c12c15b7d83",
+    "status": "preparation-only-not-run"
+  },
+  "dependencies_manifests_lockfiles_changed": false,
+  "files": [
+    {
+      "after": {
+        "bytes": 61690,
+        "git_blob": "4e74f5179cac961a68ffff1ee5c3bb4f6a0f7d22",
+        "sha256": "79640892dcf8b78a659ddcbdd0f799f22512fba4be7f33cf4814a80519cb20dd"
+      },
+      "before": {
+        "bytes": 57182,
+        "git_blob": "fe43c977016efca3b15de081bf26c920ac4a701f",
+        "sha256": "bedcd035be0ebdbac8ac9022285781bc5f8801be7149a01704bd9c8432260839"
+      },
+      "path": "kani-driver/src/args/mod.rs",
+      "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/args/mod.rs"
+    },
+    {
+      "after": {
+        "bytes": 26078,
+        "git_blob": "cb35b3d6461d52817ff246107df99bd92320f25e",
+        "sha256": "499fa1cebc33c9d361402b202ba15f14180343a289c06dbb65e30dcf2e276a91"
+      },
+      "before": {
+        "bytes": 10041,
+        "git_blob": "45616915f7acc1b20728aa89b28b50fa3291883d",
+        "sha256": "2551ccb84a67363f6c8bf82fee7a74a8348745c190d9a69e98482f00acaafc41"
+      },
+      "path": "kani-driver/src/metadata.rs",
+      "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/metadata.rs"
+    },
+    {
+      "after": {
+        "bytes": 11131,
+        "git_blob": "f9398b9128204ab4a0373f6229decd51959b70a5",
+        "sha256": "d406aae4faf56a928ba8690390f0e40976e6e021bfcc01243304c5e52e49164f"
+      },
+      "before": {
+        "bytes": 9804,
+        "git_blob": "f5d437f5b7afd20e6a723af87de6e3c664f81186",
+        "sha256": "981387b38ad3455a440aecb606266f546423084b69ece1ab47711e05e3cd68c2"
+      },
+      "path": "kani-driver/src/call_goto_instrument.rs",
+      "upstream_url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-driver/src/call_goto_instrument.rs"
+    }
+  ],
+  "inline_test_functions_prepared": [
+    "guarded_refinement_cli_accepts_closed_envelope",
+    "guarded_refinement_cli_rejects_missing_required_envelope",
+    "guarded_refinement_cli_rejects_check_suppression_and_raw_backend_args",
+    "guarded_refinement_absent_option_preserves_ordinary_args",
+    "guarded_refinement_accepts_subset_and_preserves_other_sites",
+    "guarded_refinement_accepts_equal_nonempty_target_set",
+    "guarded_refinement_rejects_unknown_site_or_added_target",
+    "guarded_refinement_strict_document_rejections",
+    "guarded_refinement_bounds_and_valid_neighbors",
+    "guarded_refinement_retains_request_and_both_maps_without_overwrite",
+    "guarded_refinement_rejection_writes_no_applied_artifacts"
+  ],
+  "license": "Apache-2.0 OR MIT",
+  "native_commands_executed": 0,
+  "patch": {
+    "bytes": 26274,
+    "path": "proposed-target-refinements-v1.patch",
+    "sha256": "f0780fb136dce7ecd243421d38ed6505e1bcdd4f3dc04973ebb2ee533f08dc11"
+  },
+  "rust_tests_executed": 0,
+  "rustfmt_executed": false,
+  "static_evidence": {
+    "forward_patch_hunks_match_originals_and_reproduce_candidate_bytes": true,
+    "original_git_blobs_match_immutable_github_metadata": true,
+    "public_patch_contains_machine_local_paths": false
+  },
+  "status": "source-candidate-not-built-not-executed-not-adopted",
+  "upstream": {
+    "repository": "model-checking/kani",
+    "revision": "0d2328a93f0e0ff66132d6bfa1a7d884877cf862",
+    "version": "0.68.0"
+  }
+}

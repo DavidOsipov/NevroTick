@@ -15,7 +15,16 @@ Trusted skill-installer copied only selected directories from full commit pins a
 
 Each leaf's `LOCAL-CHANGES.md` records project scope, metadata normalization, pinned optional references and technical corrections: cloning/lifetime-bound overclaims, generic Cell/marker bounds and Windows UIPI/delivery claims. Reviewed original source digests and current installed-file hashes: [UPSTREAM.json](../UPSTREAM.json). Hashes differ where documented local changes apply. Pinned local copy; no automatic update channel.
 
-UIA skill requires qualified Windows environment with matching `winapp ui` interface when used. The selected Slint UI needs evidence from its actual Windows UIA provider; installing this skill qualifies no toolkit and changes no packaging, services or privileges. OD-11 and the current migration task control the UI direction. Rust examples describe upstream compiler versions; they select no NevroTick MSRV/toolchain. Existing dependency and authorization workflows retain control.
+UIA skill requires a qualified Windows environment with matching `winapp ui`
+interface when used. Current [OD-13](../../../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects Slint as the default UI toolkit. The local preface follows current owner
+decisions; retained historical MSI wording is superseded by the complete-MSIX
+architecture. Preserve original import/provenance and use the current architecture
+for Slint and package requirements. Do not assume HWND/child-control keyboard delivery or UIA exposure
+for Slint-drawn widgets; qualify the actual candidate and chosen transport. This
+instruction changes no packaging, service, privilege or execution authorization.
+Rust examples describe upstream compiler versions; they select no NevroTick
+MSRV/toolchain. Existing dependency and authorization workflows retain control.
 
 ## Research decisions
 

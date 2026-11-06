@@ -1,0 +1,426 @@
+{
+  "build": {
+    "binary": "kani-compiler",
+    "cargo_flags": [
+      "-Zhost-config",
+      "-Ztarget-applies-to-host",
+      "--locked",
+      "--offline",
+      "-j2"
+    ],
+    "child_only_environment": {
+      "CARGO_HOME": "<PRIVATE_CARGO_HOME>",
+      "CARGO_NET_OFFLINE": "true",
+      "LD_LIBRARY_PATH": "<PRIVATE_TOOLCHAIN>/lib",
+      "LIBRARY_PATH": "<PRIVATE_TOOLCHAIN>/lib",
+      "RUSTC": "<PRIVATE_TOOLCHAIN>/bin/rustc",
+      "RUSTDOC": "<PRIVATE_TOOLCHAIN>/bin/rustdoc",
+      "RUSTUP_HOME": "<PRIVATE_RUSTUP_HOME>",
+      "RUSTUP_TOOLCHAIN": "nightly-2026-08-21-x86_64-unknown-linux-gnu"
+    },
+    "configuration_template": "cargo-config.toml.in",
+    "containment_implemented_by_kit": false,
+    "default_features": false,
+    "features": [
+      "kani-compiler/cprover"
+    ],
+    "limits": {
+      "address_space_bytes_per_process": 8589934592,
+      "binding_tests_wall_cpu_seconds": 600,
+      "build_jobs": 2,
+      "compiler_wall_cpu_seconds": 1200,
+      "minimum_free_bytes_soft": 8589934592,
+      "target_bytes_soft": 3221225472,
+      "tasks": 128
+    },
+    "package": "kani-compiler",
+    "release": true,
+    "source_generated_rpaths": [
+      "<PRIVATE_RUSTUP_HOME>/toolchains/<RUSTUP_TOOLCHAIN>/lib",
+      "$ORIGIN/../toolchain/lib"
+    ],
+    "target": "x86_64-unknown-linux-gnu",
+    "upstream_configuration_preserved": true
+  },
+  "cbmc": {
+    "rebuilt_by_this_patch": false,
+    "source_commit": "820ff0f555b43fb78e0cd9332e498461bd14244b",
+    "version": "6.11.0"
+  },
+  "historical_evidence": {
+    "build": {
+      "compiler_sha256": "e887efb0218112d0df93bf7f6d17f09443d49db847e6ac1f77350dad321ad8b6",
+      "label": "private-compiler-build-v5/summary.json",
+      "sha256": "ef514a757ffe8b71345b5cc437f0fb45c6c61ee66459b9341eb5063942d87cc2",
+      "tests": {
+        "executed": 46,
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "new_regressions": 10,
+        "passed": 46
+      }
+    },
+    "compiler_stage": {
+      "label": "private-compiler-compiled-v1/compiled-candidate.json",
+      "sha256": "b9125fc85e80df2d5f2144036bb0be441be6d34c35b1b64a8457b3de74604b28"
+    },
+    "eight_member_controls": {
+      "label": "compiled-member-controls-v1/summary.json",
+      "qualified_jobs": 8,
+      "sha256": "1debe6f61db58c4ed6687562e7b38a17c42431ec4d29cf94078f3ae0c09b1a9c"
+    },
+    "llvm_extension": {
+      "label": "private-compiler-llvm-extension-v1/extended-candidate.json",
+      "sha256": "6b3f86df09e96296604167490b88332668f22e80a2628fb7ec4693c67e74ea6f"
+    },
+    "storage": "Named receipts remain outside Git; new builds need fresh admission/qualification."
+  },
+  "licenses": {
+    "LICENSE-APACHE": {
+      "bytes": 9723,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+    },
+    "LICENSE-MIT": {
+      "bytes": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    }
+  },
+  "limits": [
+    "Actual public EraWindow/Garde constructor proof remains unfinished.",
+    "No full TyCtxt inliner, general Kani or restrict-vtable adoption.",
+    "No automatic installer, complete bootstrap, GitHub CI or release qualification.",
+    "No binary, SDK, dependency cache or large private controller is included."
+  ],
+  "llvm_layout": {
+    "bytes": 207996272,
+    "from": "lib/libLLVM.so.23.1-rust-1.100.0-nightly",
+    "inventory_entries_after": 7131,
+    "inventory_entries_before": 7130,
+    "operation": "one byte-identical regular-file copy in owned private toolchain; no overwrite or symlink",
+    "sha256": "559bc1644a9b1124bf62bf11cb022c8c385cb53dc940893a8a87b44241f9a77d",
+    "to": "lib/rustlib/x86_64-unknown-linux-gnu/lib/libLLVM.so.23.1-rust-1.100.0-nightly"
+  },
+  "member_controls": {
+    "fixed_jobs": [
+      {
+        "expected_native_exit": 0,
+        "harness": "padded_array_read",
+        "index": 1,
+        "restored_healthy": false,
+        "sole_intended_failure": null
+      },
+      {
+        "expected_native_exit": 0,
+        "harness": "padded_scalar_read",
+        "index": 2,
+        "restored_healthy": false,
+        "sole_intended_failure": null
+      },
+      {
+        "expected_native_exit": 0,
+        "harness": "initialized_union_write_read",
+        "index": 3,
+        "restored_healthy": false,
+        "sole_intended_failure": null
+      },
+      {
+        "expected_native_exit": 0,
+        "harness": "raw_address_write_read",
+        "index": 4,
+        "restored_healthy": false,
+        "sole_intended_failure": null
+      },
+      {
+        "expected_native_exit": 0,
+        "harness": "nested_payload_field",
+        "index": 5,
+        "restored_healthy": false,
+        "sole_intended_failure": null
+      },
+      {
+        "expected_native_exit": 0,
+        "harness": "equal_size_neighbor",
+        "index": 6,
+        "restored_healthy": false,
+        "sole_intended_failure": null
+      },
+      {
+        "expected_native_exit": "ordinary-nonzero",
+        "harness": "false_retention_control",
+        "index": 7,
+        "restored_healthy": false,
+        "sole_intended_failure": "deliberately false padded retention"
+      },
+      {
+        "expected_native_exit": 0,
+        "harness": "padded_scalar_read",
+        "index": 8,
+        "restored_healthy": true,
+        "sole_intended_failure": null
+      }
+    ],
+    "inliner_limit": {
+      "full_tyctxt_inliner_exercised": false,
+      "observed_entrypoint": "inline_as_pure_expr_toplevel has only its definition at goto_ctx.rs499-500 in the complete pinned compiler/src tree",
+      "qualification_limit": "binding recursive-rebuild tests remain source-unit evidence; no full GotocCtx inliner integration claim. Any new source caller or broader adoption requires a separately reviewed control.",
+      "quantifier_path": "build_quantifier_predicate at hooks.rs1168+ extracts the closure return and calls substitute_symbol directly; it does not call the inliner entrypoint",
+      "source_origin": "official Kani0d2328a93f0e0ff66132d6bfa1a7d884877cf862",
+      "source_sha256": {
+        "kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs": "0c3ade94f377ab690b8ded4c273292beaea1515fcf2e9aed572948470e554540",
+        "kani-compiler/src/codegen_cprover_gotoc/overrides/hooks.rs": "8c4f5c992f63bed86410e455bc67d8626ff3e5847541c10f4a2d372ff9782043"
+      }
+    },
+    "profile": {
+      "address_space_bytes": 8589934592,
+      "build_jobs": 2,
+      "cpu_seconds": 180,
+      "kani_flags": [
+        "--default-unwind",
+        "1",
+        "--output-format",
+        "regular",
+        "--solver",
+        "cadical",
+        "-Z",
+        "unstable-options",
+        "--run-sanity-checks",
+        "--harness-timeout",
+        "60s"
+      ],
+      "process_limit": 128,
+      "rustflags": "--edition=2024 --check-cfg=cfg(test)",
+      "solver_workers": 1,
+      "target": "x86_64-unknown-linux-gnu",
+      "wall_seconds": 180
+    },
+    "requires_fresh_complete_candidate_admission": true,
+    "schedule": {
+      "bytes": 11375,
+      "path": "member-controls/schedule.json",
+      "sha256": "3c862125fce626397dbb6d82923e6dcb85059a0eb87e3d7664e3f4c5d9577d86"
+    },
+    "source": {
+      "bytes": 7169,
+      "path": "member-controls/controls.rs",
+      "sha256": "984db0a66bbc126bbcc1c6587c159e425f1d3e16edc9f5c1dd86860b97f7a671"
+    }
+  },
+  "patch": {
+    "bytes": 20460,
+    "files": {
+      "cprover_bindings/src/goto_program/expr.rs": {
+        "after": {
+          "bytes": 71597,
+          "sha256": "289b787e86b57e981bae021f803d4ed2a85d9bc11faa151b7d3311b62a95ba7a"
+        },
+        "before": {
+          "bytes": 70326,
+          "git_blob_sha1": "3f04249cbd213d40d38af422f08e930b387c3efb",
+          "sha256": "6432060183ef7134246ef306463b77ab9198ffb9049e1330e690e2236fe36f3d"
+        },
+        "url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/cprover_bindings/src/goto_program/expr.rs"
+      },
+      "cprover_bindings/src/irep/to_irep.rs": {
+        "after": {
+          "bytes": 56914,
+          "sha256": "3f73efcc193010f7f430b0cd92946b77d3d77cdad122bf53074f9469df09edfa"
+        },
+        "before": {
+          "bytes": 42399,
+          "git_blob_sha1": "6312f8878af1df67476d52eb88a84424a34cfe27",
+          "sha256": "9e4e0169055d3cbdfe537077a6a11439bccbc409b827550886bb61525e0e388b"
+        },
+        "url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/cprover_bindings/src/irep/to_irep.rs"
+      },
+      "kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs": {
+        "after": {
+          "bytes": 58704,
+          "sha256": "be02f76b036926ffed5cddc590c24563f1e3993b81c6c1c470e17ca49157c9f3"
+        },
+        "before": {
+          "bytes": 58696,
+          "git_blob_sha1": "e5d1a50a7bda1f9ac3f7b6a92549681152be7ff0",
+          "sha256": "0c3ade94f377ab690b8ded4c273292beaea1515fcf2e9aed572948470e554540"
+        },
+        "url": "https://github.com/model-checking/kani/blob/0d2328a93f0e0ff66132d6bfa1a7d884877cf862/kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs"
+      }
+    },
+    "path": "proposed-member-read-v2.patch",
+    "regression_tests": [
+      "padded_member_serializes_two_typed_lvalues",
+      "ordinary_and_equal_size_members_remain_single_projection",
+      "padded_address_and_assignment_use_the_payload_lvalue",
+      "nested_payload_field_preserves_all_three_member_types",
+      "same_type_substitution_retains_projection_without_old_base",
+      "side_effecting_union_base_is_not_duplicated",
+      "recursive_logical_rebuild_does_not_double_unwrap_storage",
+      "union_initializer_keeps_original_payload_and_storage_width",
+      "malformed_storage_wrapper_shapes_are_rejected",
+      "independent_type_checker_rejects_missing_or_mistyped_projections"
+    ],
+    "sha256": "d00920b70d101c66f3a83ba7f568276b7ed79b391e4a7bd86aba94e5e0fc83a6"
+  },
+  "resolver": {
+    "charon": {
+      "commit": "b250680abd40ff1aaa07081d0497dc2755ed112e",
+      "destination": "charon",
+      "repository": "https://github.com/AeneasVerif/charon",
+      "selected_for_compilation": false
+    },
+    "other_gitlinks": {
+      "firecracker": "cd36c699f3cb3d531289aadee26c45c1306edcfc",
+      "tests/perf/s2n-quic": "a33d369b98a50fd9290fd6586832c969035bdec0"
+    },
+    "registry_packages": 291,
+    "root_lock_unchanged": true,
+    "tracing_tree": {
+      "commit": "841286bfffd3c2200810244506cd127013dbeff9",
+      "repository": "https://github.com/Nadrieril/tracing-tree",
+      "version": "0.4.0"
+    }
+  },
+  "schema_version": 1,
+  "sdk": {
+    "channel": "nightly-2026-08-21-x86_64-unknown-linux-gnu",
+    "components": [
+      "llvm-tools",
+      "rustc-dev",
+      "rust-src",
+      "rustfmt"
+    ],
+    "rust_commit": "8925ea358a0f265ca61026aadc7ecc506c545cbe",
+    "rustc_dev_archive": {
+      "archive_bytes": 123976232,
+      "prefix": "rustc-dev-nightly-x86_64-unknown-linux-gnu",
+      "sha256": "175a1fb7447dc3c4407d6ea568eeb5cbe15316c8e2e4ee06a93864a466f71bdb",
+      "tar_bytes": 683186176,
+      "url": "https://static.rust-lang.org/dist/2026-08-21/rustc-dev-nightly-x86_64-unknown-linux-gnu.tar.xz"
+    }
+  },
+  "source_validation": {
+    "cargo_template_toml_with_json_quoted_paths": "passed",
+    "commands": [
+      {
+        "argv": [
+          "git",
+          "-C",
+          "<isolated-three-file-fixture>",
+          "init",
+          "--quiet"
+        ],
+        "exit_code": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "<isolated-three-file-fixture>",
+          "apply",
+          "--reverse",
+          "--check",
+          "<source-kit-patch>"
+        ],
+        "exit_code": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "<isolated-three-file-fixture>",
+          "apply",
+          "--reverse",
+          "<source-kit-patch>"
+        ],
+        "exit_code": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "<isolated-three-file-fixture>",
+          "apply",
+          "--check",
+          "<source-kit-patch>"
+        ],
+        "exit_code": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      {
+        "argv": [
+          "git",
+          "-C",
+          "<isolated-three-file-fixture>",
+          "apply",
+          "<source-kit-patch>"
+        ],
+        "exit_code": 0,
+        "stderr": "",
+        "stdout": ""
+      }
+    ],
+    "forward_roundtrip_matches_qualified_patched_sources": {
+      "cprover_bindings/src/goto_program/expr.rs": {
+        "bytes": 71597,
+        "sha256": "289b787e86b57e981bae021f803d4ed2a85d9bc11faa151b7d3311b62a95ba7a"
+      },
+      "cprover_bindings/src/irep/to_irep.rs": {
+        "bytes": 56914,
+        "sha256": "3f73efcc193010f7f430b0cd92946b77d3d77cdad122bf53074f9469df09edfa"
+      },
+      "kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs": {
+        "bytes": 58704,
+        "sha256": "be02f76b036926ffed5cddc590c24563f1e3993b81c6c1c470e17ca49157c9f3"
+      }
+    },
+    "license_copies_match_upstream_hashes": true,
+    "local_readme_links_checked": 9,
+    "native_compiler_solver_commands_executed": 0,
+    "recovered_originals_match_immutable_github_blobs": {
+      "cprover_bindings/src/goto_program/expr.rs": {
+        "bytes": 70326,
+        "git_blob_sha1": "3f04249cbd213d40d38af422f08e930b387c3efb",
+        "sha256": "6432060183ef7134246ef306463b77ab9198ffb9049e1330e690e2236fe36f3d"
+      },
+      "cprover_bindings/src/irep/to_irep.rs": {
+        "bytes": 42399,
+        "git_blob_sha1": "6312f8878af1df67476d52eb88a84424a34cfe27",
+        "sha256": "9e4e0169055d3cbdfe537077a6a11439bccbc409b827550886bb61525e0e388b"
+      },
+      "kani-compiler/src/codegen_cprover_gotoc/context/goto_ctx.rs": {
+        "bytes": 58696,
+        "git_blob_sha1": "e5d1a50a7bda1f9ac3f7b6a92549681152be7ff0",
+        "sha256": "0c3ade94f377ab690b8ded4c273292beaea1515fcf2e9aed572948470e554540"
+      }
+    },
+    "scope": "Ordinary Git only; isolated three-file fixture; no compiler/Cargo/solver/proof execution",
+    "status": "passed"
+  },
+  "status": "reviewed source kit; no new native build",
+  "upstream": {
+    "cargo_configuration": {
+      "bytes": 1390,
+      "sha256": "cda1bd9276b1043ac25828cba5496f4a680c80b8ac9e0fb60443e0257dc2770e"
+    },
+    "cargo_lock": {
+      "bytes": 72348,
+      "git_blob_sha1": "1cd47c4dfb5f0d302e58f36b1086c011724bcf80",
+      "sha256": "c953c39f0ecf2c16f008bef74c86147222ae1f952621d60febe52441b7a2826d"
+    },
+    "commit": "0d2328a93f0e0ff66132d6bfa1a7d884877cf862",
+    "license_expression": "Apache-2.0 OR MIT",
+    "repository": "https://github.com/model-checking/kani",
+    "rust_toolchain_file": {
+      "bytes": 183,
+      "sha256": "b22d144e357098b9143fa72571178e75dd15bb6a6d36e038c4fbdb29662be6a0"
+    },
+    "version": "0.68.0"
+  }
+}

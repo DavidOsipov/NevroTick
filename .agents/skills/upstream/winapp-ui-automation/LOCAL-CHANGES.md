@@ -15,7 +15,7 @@ Local changes:
 - Quoted frontmatter name/description, narrowed automatic routing to qualified
   native UIA command use, and recorded the MIT license.
 - Added NevroTick scope: project-owned accessibility/E2E requirements remain
-  authoritative. The original Win32/MSI scope wording is superseded by OD-11's
+  authoritative. The original Win32/MSI scope wording is superseded by OD-13's
   selected Slint UI and amended OD-05's complete MSIX direction. On 5 November
   2026 the local scope was reconciled: qualify actual Slint UIA providers/patterns;
   this skill itself adopts no toolkit, runtime dependency or package format.

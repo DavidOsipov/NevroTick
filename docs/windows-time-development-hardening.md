@@ -71,11 +71,19 @@ The pinned website guidance at commit `6530d3a8d44cbe4f829b1e09edd3a1c90cffc087`
 
 ### 2.1 Restricted first UI milestone applicability
 
-[Architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) incorporates the owner's NV-UI-M0-001 scope decision. [OD-11, 5 November 2026](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) selects complete replacement of the Win32 UI with Slint; current Win32 source and observations remain the pre-migration baseline. UI-M0 retains its unelevated, fixture-only scope with deterministic checked-in sample data, Status/Sources/Settings, source details and an ephemeral source-edit preview. Keep the sample-data label visible; local validation, **Update preview** and Cancel affect only in-memory state discarded on exit. Sync now is disabled with an explanation; protected actions are disabled or omitted. No live status, production IPC, NTP/NTS/DNS traffic, service operations, policy persistence, UAC, Apply or clock effects are permitted in this UI slice. The toolkit decision grants no dependency, native, packaging or release qualification and lifts no execution hold.
+[Architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) incorporates the owner's NV-UI-M0-001 scope decision. [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects complete replacement of the Win32 UI with Slint; the old Win32 adapter and observations remain historical baseline evidence. The current Windows entry selects Slint/Winit/software against v0.4, while native Windows qualification remains open. UI-M0 retains its unelevated, fixture-only scope with deterministic checked-in sample data, Status/Sources/Settings, source details and an ephemeral source-edit preview. Keep the sample-data label visible; local validation, **Update preview** and Cancel affect only in-memory state discarded on exit. Sync now is disabled with an explanation; protected actions are disabled or omitted. No live status, production IPC, NTP/NTS/DNS traffic, service operations, policy persistence, UAC, Apply or clock effects are permitted in this UI slice. The toolkit decision grants no dependency, native, packaging or release qualification and lifts no execution hold.
 
-D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, policy drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator/UIA qualification) are **Deferred**, not Passed, Removed or N/A. Agents must not implement or qualify them or block UI-M0 on them. Preserve existing control behavior and labels through the replacement in one documented reference display configuration. Carry the canonical deferral ledger and triggers into the backlog/next-stage record: restore the relevant D2 rules before live status or real policy/protected commands, and D1/D3 before general-user preview/release or earlier support/qualification claims.
+D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, policy drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator/UIA qualification) are **Deferred**, not Passed, Removed or N/A. Agents must not implement or qualify them or block UI-M0 on them. Retain toolkit-provided basic keyboard/editing behavior and meaningful labels in one documented reference display configuration; Slint widgets do not inherit Win32 child-control accessibility. Carry the canonical deferral ledger and triggers into the backlog/next-stage record: restore the relevant D2 rules before live status or real policy/protected commands, and D1/D3 before general-user preview/release or earlier support/qualification claims.
 
-Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker direction. Qualify the selected Slint version/features/backend, generated code, licence and transitive dependency graph before admission; the toolkit choice is settled. One owner controls UI implementation and shared Windows OS adapters; serialize shared desktop interaction and build outputs. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or package qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
+Retain applicable compiler/format/lint/dependency/review policies on the real UI crate, narrow documented unsafe FFI, correct native ownership/string/callback/error lifetimes and teardown, and the admitted toolchain/linker direction. Preserve exact Slint version/features/backend, generated-code safety/lint boundaries, licence and runtime/build/transitive graph admission under the accepted separately GPL-3.0-only GUI direction; Core/engine stay GPL-2.0-only and the toolkit choice is settled. One owner controls shared schemas/Cargo graph, Slint event loop/view/callback state, weak references and Windows OS adapters; serialize shared desktop interaction and build outputs. M0-01–08 require small editor behavioral checks, meaningful native window/mouse-flow observations at the reference configuration and independent restricted-scope review; cross-compilation alone does not complete them. Do not force broad fuzz/stress/soak, production security coverage/mutation, service, accessibility, signing or package qualification into this fixture-only milestone. Those requirements retain their later applicability. Other workstreams remain independent; UI-M0 completes neither P0 toolkit qualification, CHECK-22 nor release gates.
+
+The [current GUI handoff](../tasks/slint-gui-handoff.md) and
+[S0.5 source/evidence record](../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+own the later complete-v0.4 fixture additions, including Simple/Power views,
+bounded local policy/recovery previews and opt-in tray/sample-notification source.
+Portable source/rendering checks do not establish actual Windows behavior or
+re-enter D1–D3. Preserve weak callback/native lifetime ownership and the distinction
+between original M0 receipts, current fixture evidence and later production gates.
 
 ## 3. Development threat model and execution boundaries
 
@@ -94,8 +102,11 @@ credential-free offline conversion with enforced resource/filesystem/process
 bounds, task-owned outputs and atomic successful publication. Do not execute PR
 artifacts or promote their executable caches into release. Runtime independently
 checks final catalog bytes; package signing supplies no parser or wording proof.
-These are required design controls, not evidence that a localization CI lane,
-runtime loader, OS isolation profile or hostile-payload test has been implemented.
+These are required design controls; this requirement text supplies no runtime or
+qualification evidence. The [current GUI handoff](../tasks/slint-gui-handoff.md)
+and S0.5 record own implemented catalog loaders, repertoire guards and hostile-
+payload checks with their exact scope. Production semantic approval remains
+separate; source checks establish no complete CI isolation or native Windows pass.
 
 | Threat | Concrete failure path | Required control and remaining limit |
 | --- | --- | --- |
@@ -140,7 +151,7 @@ Treat opening a repository in an IDE as an execution decision: build-script/proc
 
 The execution boundary must provide an allowlisted environment, unprivileged identity, task-owned writable paths, restricted network, no host credential mounts or shared privileged sockets, and CPU/RAM/process/disk/wall-time limits. Tool caches should be immutable or separately owned where feasible. An ordinary folder, Git worktree, `cargo --offline`, or a container with a privileged host socket does not meet that boundary by itself.
 
-**Hosted does not mean unprivileged.** GitHub-hosted Windows VMs run as administrators with UAC disabled. Their x64 hosted build images also do not by themselves establish behavior on our supported Windows 11 client environment. Qualify an actual reduced-token/execution boundary and its filesystem/network controls, or resolve a provider-approved alternative; the runner label alone cannot satisfy this requirement. Keep real Windows 11 user/elevation/security behavior in the separate supported-OS laboratory. [SC32]
+**Hosted does not mean unprivileged.** GitHub-hosted Windows VMs run as administrators with UAC disabled. Their x64 Server build images do not by themselves qualify either intended [client/Server product profile](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026), and supply no Windows 11 client result. Qualify an actual reduced-token/execution boundary and its filesystem/network controls, or resolve a provider-approved alternative; the runner label alone cannot satisfy this requirement. Keep each claimed OS profile's user/elevation/security behavior in its separate supported-OS laboratory. [SC32]
 
 No signing/publishing token, cloud credential, privileged OIDC grant, SSH agent, production trust-store access or unrelated checkout belongs in a build/analyzer sandbox. If a hosted integration requires a status-upload token, confine it to a separate minimal data-only upload stage. It must not execute scripts from the report artifact.
 
@@ -395,7 +406,7 @@ section 9.11's packaging cases for actual enforcement and repair observations;
 manifest text alone does not close CHECK-16/18/23/26. [C39]
 
 Qualify the engine and broker's headless/leaf restrictions against their actual
-SCM launch and provider graph. Give the normal-user UI and elevated helper
+SCM launch and provider graph. Give the normal-user Slint Windows UI and elevated helper
 separate profiles that preserve their narrowly permitted activation, callbacks
 and maintenance work. Do not copy a headless profile to the GUI, set every flag
 blindly, or change a shared installer host's policy. A required-control failure
@@ -587,6 +598,33 @@ A dependency proposal must state what complexity or bug class it removes, exact 
 Separate acquisition from execution. Command families include `cargo fetch --locked` to prepare exact inputs and `cargo build --frozen` for locked/offline Cargo resolution. Actual wrappers supply the admitted target/package/feature row. `--frozen` is **not** a network or filesystem sandbox for code executed by the build. [SC01–SC03]
 
 After verified acquisition, deny egress independently and build from staged inputs with no automatic fallback downloads. Native archives, code generators and tool packages need the same provenance discipline as Rust crates. Build scripts' conventional `OUT_DIR` usage is not a security boundary.
+
+#### 7.1.1 Windows API and wrapper admission
+
+Apply [architecture §18.6.2](windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage)
+when the existing adapter consumer is reached. Extend its CHECK-26 record with
+operation/owner, selected crate and published checksum/source, feature/target
+row, required SDK symbols and any pinned generator/metadata/output. Review the
+actual consumer path and remaining rights, bounds, error, callback and completion
+contract; a smaller source file is not sufficient evidence of equivalent behavior.
+
+Do not mix the planned `windows` 0.62.2/`windows-sys` 0.61.2 generation with
+current upstream namespaces or core types by assumption. Publication, source
+parity and a compilable target are separate checks. Resolve the documented
+VBS-flag gap at ST-W01/ST-W04 before its dependent implementation, retaining
+REQUIRE semantics and actual-key/native support evidence. Prefer a compatible
+published binding or narrow reviewed generation over hand-transcribed ABI or
+unverified constants; do not add generation to every build without need.
+
+For a proposed wrapper replacement, pair a legitimate operation with the relevant
+error/oversize/denial/reentrancy/late-completion control. Preserve SCM status
+errors and progress reporting, window-loop error distinctions, registry access
+and allocation limits, correct resource destruction and finite native-job custody.
+Run actual native checks only under the existing authorized fixture and holds.
+UI alternatives additionally need equivalent workloads, measured resource cost,
+accessibility, package/runtime inventory and mitigation compatibility at S0.5/P5.
+Conditional candidates and source-only gaps add no new current-Core or global
+release gate; existing CHECK-21/22/26/27 apply only to reached selected surfaces.
 
 ### 7.2 Tool selection and overlap
 
@@ -802,6 +840,20 @@ Add a tool only when it addresses a concrete uncovered invariant. Keep interpret
 
 #### 9.6.1 Mandatory product mathematical proof gate — 5 November 2026
 
+**Current policy, 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released software version (V1).
+The proof-first instructions and receipts below are historical; missing proofs
+are no V1 prerequisite, acceptance blocker or release gate. Do not execute formal
+compiler/solver/proof jobs, extend verifiers or repair pending proof metadata
+consumers before V1. Preserve exact historical proof scope and track remaining
+obligations in the existing tasks for post-V1 bounded resumption. Continue the
+ordinary product plan. Runtime/garde/private invariants, checked arithmetic,
+independent behavioral/property/boundary tests, security, 90% coverage/95% mutation
+within their required scopes, native/package/release gates and all existing
+Windows/fuzz/storage/UI holds remain unchanged.
+
+**Historical policy and receipts before the amendment:**
+
 [OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 requires machine-checked proofs of product mathematical algorithms, as specified by
 [architecture §20.1.1](windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
@@ -822,6 +874,131 @@ violate promised properties, and restored healthy passes. Preserve failures and
 resource/attempt accounting; unsupported syntax, timeout, empty selection or
 unsatisfied unwinding leaves the obligation incomplete. An unsupported verifier
 may justify another bounded tool evaluation; it does not waive the proof gate.
+
+The [5 November Core Verus pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+was such a conditional evaluation after the actual addition timeout and David's
+request to use Verus if better. Its three-command readiness budget is exhausted:
+the final command rejected required `u64::checked_shl` during VIR translation,
+before SMT execution. The candidate is **DEFER**, with zero product-proof commands;
+addition acceptance stays open. The independent Kani
+[`ScaledValue::split` checkpoint](../tasks/s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026)
+qualified that full-raw-domain leaf. The
+[6 November representation checkpoint](../tasks/s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026)
+also qualified full raw-bit `from_bits` admission/exact Q33 decomposition and
+raw-payload `signed_whole` magnitude/sign/fraction independence, with a complete
+healthy/three-defect/restored group for each leaf. Addition, `EndpointParts::new`,
+full enclosure, joint Garde admission/callers and Core/P1 remain open. Return to
+this Verus route only after official
+support for the unchanged API and a newly reviewed finite checkpoint. Preserve
+completed Kani evidence, held extensions and the complete actual-body scope; use
+no product assumptions, alternate executable body or narrowed domain to obtain a
+pass. Broad tool/CI adoption remains deferred. No shipping compiler change or
+execution-hold waiver follows.
+
+The [6 November addition contract-mode assessment](../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+is terminal **DEFER** after one primitive mechanism command: CBMC aborted with
+status 134 on an internal closure type inconsistency and exported empty checks.
+Zero product-proof commands or callee certificates followed. The checkpoint
+stopped without retries, tool patches or adoption. Ordinary Kani proofs retain
+their unchanged scopes and the full mathematical obligations remain.
+
+The [ordinary partition assessment](../tasks/s1.3-source-selection-readiness.md#ordinary-addition-partition-terminal-assessment--6-november-2026)
+is terminal **DEFER**. The union and cases 0–2 completed 631 checks: 575 `Success`,
+22 satisfied covers and 34 accounted unreachable checks. Case 3 timed out at
+60,018 ms with empty checks; later leaves, fault controls and restorations did not
+run. These four completed commands retain their individual scopes.
+
+The [full-addition compute-budget assessment](../tasks/s1.3-source-selection-readiness.md#full-addition-compute-budget-terminal-assessment--6-november-2026)
+is terminal **DEFER**: its first healthy command timed out at 300,011 ms with zero
+checks; negative controls and restoration did not run. All 37 source inputs, the
+60-entry snapshot and tool/solver identities remained intact. The larger budget
+leaves addition unproved; valid ordinary proofs retain their scopes and all holds
+remain. This card is closed, with no automatic new profile, retry or SDK patch.
+
+The [manual composition assessment](../tasks/s1.3-source-selection-readiness.md#manual-composition-terminal-assessment--6-november-2026)
+is terminal **DEFER / incomplete**: the first 13 commands supplied scoped
+actual-callee Post/actual-return seed proofs and controls; addition command 14
+timed out at 60,016 ms with zero checks, and commands 15–18 did not run. During
+that command an audit imported frozen Python without suppressing bytecode writes,
+adding four `.pyc` files to the source island. All 45 bound sources, addition
+inputs and three earlier certificate receipts remained unchanged; retain only
+the earlier lemma scopes. The reviewed pure-composition rule and compiler name
+resolution remain explicit trusted boundaries. Preserve the raw receipts and
+closed-card failure: no addition adoption, certificate import or retry. Its
+incident remains preserved alongside the subsequent query-split checkpoint.
+
+The [query-split terminal assessment](../tasks/s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026)
+is **DEFER / incomplete** after 14 of 20 commands: the fresh 13-command prefix
+supplied only scoped actual-callee Post/seed premises and controls. Universal
+command 14 timed out at 60,018 ms with zero checks; commands 15–20, including all
+direct-witness and restored lanes, did not run. All 49 source files, 14 complete
+input/permission bookends, three certificate seals and tool identity passed final
+custody checks; observer bytecode suppression and read-only input protection
+prevented recurrence of the earlier incident. Preserve both raw bundles. Solver
+query reductions prove no universal property or addition/Core/P1 acceptance.
+The subsequent
+[pure-bridge card](../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-terminal-assessment--6-november-2026)
+closed DEFER after one healthy command found seven private-`open` annotation
+errors before SMT. Zero jobs qualified; semantic controls/restoration did not run.
+Its exact seven-modifier source-only correction passes fourteen source checks.
+The later [private-spec v2 card](../tasks/s1.3-source-selection-readiness.md#private-spec-verus-bridge-v2-terminal-assessment--6-november-2026)
+reached Z3 without VIR errors but closed DEFER after five failed equalities.
+Constructor Post's success remains conditional on failed helpers; three Clone
+bodies also succeeded. Zero jobs qualified, and controls/restoration did not run.
+The complete six-equality bridge remains incomplete. The subsequent
+[bit-length dependency campaign](../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026)
+completed five jobs: full-raw lemma/two predicate equalities, three intended
+contract defects and restored health. All62 focused Python checks pass;22 source
+files, exact executable erasure and final source/input/receipt/tool bookends are
+bound. Reuse unchanged scoped proofs for remaining arithmetic/representation
+work. Complete bridge, native Ordering correspondence/import and actual addition
+remain open; no broader Core/P1 qualification follows.
+The subsequent [constructor-Post campaign](../tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026)
+completed five jobs with seven exact function results each: full-raw Post/
+lemma/helpers, three isolated Post defects and restored health. All93 focused
+Python checks pass;24 source files, exact erasure and final custody/tool bookends
+are bound. Both earlier Rust outputs and frozen proofs remain preserved.
+No checked-Result premise or imported product certificate was added. Constructor
+execution/caller integration remained separate. The later
+[complement v2 qualification](../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+passed seven jobs with ten exact function identities: four full-raw predicate
+equalities/three arithmetic lemmas, five contract failures and restoration.
+All143 selected checks pass;30 source files/11 executed-Python rows and final
+guards bind the candidate. V1's pre-SMT failure remains historical. Subsequent
+[rational-order qualification](../tasks/s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs: five full-raw predicate equalities/seven total lemmas,
+seventeen intended defects and restored health. All161 selected Python checks
+pass;33 sources/11 executed-Python records and final guards bind its candidate.
+Source inspection confirms missing pinned checked-shift support. Native Ordering
+equality/comparison Post, caller and full bridge/addition/Core/P1 stay open.
+Independent [RequestTiming qualification](../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026)
+passed five full raw-pair/three-defect/restored Kani jobs and158 Python checks;
+34 inputs/nine executed-Python records and final guards bind the candidate.
+Safe owned target cleanup preserves raw evidence and low-reserve failure status.
+Subsequent [actual append_depth qualification](../tasks/s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+passed six full raw-state/four-defect/restored jobs,671 checks and208 Python
+checks;34 inputs/nine actual Python records and final guards bind the candidate.
+The subsequent [actual lifecycle ordinal proof](../tasks/s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored jobs,263 checks and248 Python
+checks;38 inputs/nine executed-Python records and complete23-enum closure bind
+the actual successor/exhaustion theorem. Subsequent [actual source-counter
+qualification](../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python
+checks;32 inputs/nine executed-Python records bind the actual constants/predicate/
+From/min. The shared consumer uses exactly four immutable captured-wrapper-
+selected roles and strict per-role cleanup; all five source-counter targets were
+removed, retaining about4.35MiB including directories. The later [constructor
+source checkpoint](../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+prepares genuine Garde/callback/constructor/Cargo source, authenticates14 selected
+vendor packages and passes51 source checks plus independent review. No runner,
+tool admission, compiler/proof or private-patch adoption follows. The cache is
+unsealed; source-specific sealing/admission, target features, allocator/drop/
+unwinding and constructor theorem stay open. Transactional
+lifecycle, prefix/depth/topology/whole-selection and native authority remain
+separate obligations.
+The existing no-cheating gate rejects `external_body`;
+no profile weakening, SDK patch, native flags or adoption follows. The old kit,
+ordinary defaults and all holds remain unchanged.
 
 Reuse unchanged evidence and run required affected proofs at stable candidate
 checkpoints. The [S1.1c rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)

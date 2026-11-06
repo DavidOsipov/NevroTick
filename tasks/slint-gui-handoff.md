@@ -3,6 +3,7 @@
 Prepared 6 November 2026. English working notes; keep product copy readable.
 This is a continuation guide, not a second implementation plan. The
 [S0.5 task](s0.5-ui-comparison.md) owns candidate history and evidence.
+Remote review: [PR10](https://github.com/DavidOsipov/NevroTick/pull/10).
 
 ## Read first
 
@@ -28,12 +29,13 @@ Historical checkpoints retain their original failures, scope and holds.
 - Remote `main` observed during handoff:
   `b808eb74fd82f91f207fc03b9c890441a73af4fb`. Common ancestor:
   `8a66af924c509e898a9bab9bb3282f11b24fba93`. Main has newer engine, policy,
-  metadata, platform and documentation work. This draft preserves the tested GUI
-  checkpoint; it does not claim the combined tree is qualified or merge-ready.
-- Reconcile owner-decision identities before integration: this branch uses
-  OD-11/OD-12 for Slint/localization, while that remote snapshot uses those IDs
-  for SOCKS5/GeoIP and OD-13 for Slint. Preserve both decisions' meaning; do not
-  overwrite unrelated decisions or silently reuse their IDs.
+  metadata, platform and documentation work. The PR now integrates that main snapshot through a conflict-resolution merge.
+  The ordinary combined-candidate checks are recorded below; native and release
+  qualification remain separate.
+- Owner-decision collisions are resolved: published OD-11 SOCKS5, OD-12 GeoIP
+  and OD-14 platform scope stay intact. OD-13 now retains both Slint selections
+  and the accepted GUI licence/composition amendment; localization is OD-15.
+  Maintained routes use those canonical identities; old receipts keep their scope.
 - Remote main also defers formal proof execution until after V1 under its OD-10
   amendment. Preserve that newer decision when integrating; this branch's older
   mandatory-proof wording is historical and must not restore a V1 proof blocker.
@@ -64,11 +66,14 @@ patch notices and separate brand/font/Unicode terms. The selected 534 registry
 identities include inert resolution entries; that number is not the runtime
 package count. Distribution obligations remain separate from private checks.
 
-Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Lock SHA256:
-`1d22a9bd5de6e4c46ee2c634f531dde7553fb65e74fedc23652ebb2a3f7df9cb`.
-Schema3 policy anchor:
-`a903246efd5377ce2e21798544f610df90294e72e8bfdffac799dc4decb9f184`.
-These identify this GUI checkpoint, not a qualified merge with newer main.
+Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Merged lock SHA256:
+`0683420c01ac6af80554100b402be4673628bfb5fca514476cd3585572b9c297`.
+Merged schema3 policy anchor:
+`b76a65d04a7c99f78ba299c87e39a3ee9172e725604f220f43e2677a0ebb0455`.
+The graph adds only main's normal engine→time-domain edge and nine existing
+dependency contexts in each engine package scope. Registry identities/grants,
+patch pins, workspace and other package scopes remain unchanged. The earlier
+GUI41–43 receipts below retain the old graph and cannot qualify this merged one.
 
 ## Not implemented or not qualified
 
@@ -141,6 +146,33 @@ passed all143 controls and509/509 coverage. Its365 admitted sources match curren
 bytes; the optional SDK policy is unchanged and belongs to the full GUI42 row.
 GUI43 is a Python-only diagnostic, not another product/native test run.
 
+**Merged candidate, GUI44:** the current ordinary source checkpoint incorporates
+main `b808eb7`. `gui44-merge-portable.json`, SHA256
+`e72e4ba6f3e15aac80c15a7d3118b3cecd59e4405456e8913cf85a02398b2d0b`,
+passes all configured build/Clippy/rustdoc,759 ordinary tests,174 doctests,
+470 optimized tests,143 source controls and50 captures. GUI remains183 tests/
+17 doctests; main's engine now has47 ordinary/47 optimized tests and12 doctests.
+All368 source entries (367 product plus SDK policy) match current bytes. All50
+actual capture files remain byte-identical to the reviewed GUI42 lineage.
+
+Both-target dependency/scanner row `gui44-merge-dependencies.json` passes under a
+new lock-bound public advisory snapshot, SHA256
+`1f2dbe65f19447bfa15927d26939efabb89bbc628fd7298eecacb91b8e21f7b5`.
+The separately captured18 metadata/tree observations and independent review admit
+only the named engine/domain closure. No registry grant, patch pin or non-engine
+scope was expanded. Focused inert tooling controls pass223 cases; the skill
+checker admits65 leaves and its25 tests pass. Private Python receipt
+`/tmp/nevrotick-merge-observation-v1/python-targeted.json`, SHA256
+`8a43b9a5bff80339e431dd6e5b21c34bd568fb849ac146e5e9b633af353ff038`.
+
+An optional broader Core campaign-control run is **incomplete** (exit137), with
+inherited checked-in-campaign failures before termination. Its unchanged policy
+binds158 files; main already selects168 and has11 stale bound hashes. The merged
+product selects367. This is not a new Core runtime defect or a current campaign
+pass. Eight affected inert Core registry-projection checks and five domain
+identity checks pass; do not rebind historical campaign/proof metadata or resume
+deferred formal work merely to clear that broader run.
+
 S0.5 records exact later deltas, failed attempts and independently viewed image
 lineage. GUI41's 50 captures matched the reviewed GUI40 set; GUI37's full 50-frame
 set and two emergency frames were viewed separately. These are software-rendered
@@ -176,10 +208,11 @@ limits, lints, graph roles or trust to obtain green output.
 
 ## Next work and dependencies
 
-1. Review this draft and reconcile it with current main in an isolated integration
-   branch. Preserve newer engine/source/proof-policy work and both branches'
-   decisions. Resolve lock, manifest, policy/verifier and documentation conflicts
-   through their single owners; re-admit changed graphs before target execution.
+1. Review the resolved integration against current main. The b808eb7 snapshot is
+   now incorporated; if main moves, reconcile only its new delta. Preserve newer
+   engine/source/proof-policy work and the canonical decision identities. Keep
+   lock, manifest and graph policy changes with one owner; re-admit affected
+   graphs before target execution.
 2. Freeze that combined candidate. Repeat affected format/compiler/Clippy,
    behavioral/doctest, generator/consumer/native-source controls and captures.
    Reuse unchanged evidence only after matching all relevant inputs; old GUI

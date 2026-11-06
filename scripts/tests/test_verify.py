@@ -29,7 +29,7 @@ CORE_LOCK = ('[[package]]\nname="time-core"\nversion="0.0.0"\n'
 
 
 ENGINE_LOCK = ('[[package]]\nname="nevrotick-engine"\nversion="0.0.0"\n'
-               'dependencies=["getrandom","ntp-wire","tokio"]\n')
+               'dependencies=["getrandom","ntp-wire","time-domain","tokio"]\n')
 # Independent fixture identities: no production helper supplies these expectations.
 SELECTED_VERSIONS = {
     "castaway": "0.2.4", "cfg-if": "1.0.5", "compact_str": "0.9.1", "garde": "0.23.0",
@@ -176,6 +176,7 @@ class ProductAdmissionTests(unittest.TestCase):
                 with (member / "Cargo.toml").open("a") as stream:
                     stream.write('[dependencies]\ngetrandom={version="=0.4.3",default-features=false}\n'
                                  'ntp-wire={version="=0.0.0",path="../ntp-wire"}\n'
+                                 'time-domain={version="=0.0.0",path="../time-domain"}\n'
                                  'tokio={version="=1.54.1",default-features=false,features=["rt","net","time","sync","macros"]}\n'
                                  '[[bin]]\nname="nevrotick-observe"\npath="src/bin/nevrotick-observe.rs"\n')
                 (member / "src/bin").mkdir()
@@ -359,7 +360,7 @@ class ProductAdmissionTests(unittest.TestCase):
             local_closures = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"},
                               "time-domain": {"time-domain"}, "time-core": {"time-core", "time-domain"},
                               "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"},
-                              "nevrotick-engine": {"nevrotick-engine", "ntp-wire"}}
+                              "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"}}
             self.policy["rows"][target] = {
                 "features": features,
                 "local_features": {name + "@0.0.0": {"target": [[]]} for name in EXPECTED_PACKAGES},
@@ -381,8 +382,10 @@ class ProductAdmissionTests(unittest.TestCase):
             "name": "getrandom", "version": "0.3.4", "checksum": "a" * 64,
             "license": "MIT", "files_sha256": "b" * 64, "role": "metadata-only"})
         lock = self.root / "Cargo.lock"
-        lock.write_text(lock.read_text().replace('dependencies=["getrandom","ntp-wire","tokio"]',
-                                               'dependencies=["getrandom 0.4.3","ntp-wire","tokio"]') +
+        unqualified = 'dependencies=["getrandom","ntp-wire","time-domain","tokio"]'
+        self.assertIn(unqualified, lock.read_text())
+        lock.write_text(lock.read_text().replace(unqualified,
+                                               'dependencies=["getrandom 0.4.3","ntp-wire","time-domain","tokio"]') +
                         '\n[[package]]\nname="getrandom"\nversion="0.3.4"\n'
                         'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="' + 'a' * 64 + '"\n')
         self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
@@ -571,6 +574,39 @@ class ProductAdmissionTests(unittest.TestCase):
                 with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "engine requires"):
                     VERIFY.admit_product(self.root)
 
+    def test_engine_time_domain_edge_has_exact_normal_role_and_locked_identity(self):
+        path = self.root / "crates/nevrotick-engine/Cargo.toml"
+        healthy = path.read_text()
+        edge = 'time-domain={version="=0.0.0",path="../time-domain"}\n'
+        self.assertIn(edge, healthy)
+        variants = (
+            healthy.replace(edge, ""),
+            healthy.replace(edge, 'time-domain={path="../time-domain"}\n'),
+            healthy.replace(edge, 'time-domain={version="=0.0.1",path="../time-domain"}\n'),
+            healthy.replace(edge, 'time-domain={version="=0.0.0",path="../time-core"}\n'),
+            healthy.replace(edge, 'domain={package="time-domain",version="=0.0.0",path="../time-domain"}\n'),
+            healthy.replace(edge, "") + '\n[dev-dependencies]\n' + edge,
+        )
+        for text in variants:
+            path.write_text(text)
+            self.policy["manifests_sha256"]["crates/nevrotick-engine/Cargo.toml"] = VERIFY.sha256(path)
+            self.write_policy()
+            with self.subTest(manifest=text), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "engine requires"):
+                VERIFY.admit_product(self.root)
+        path.write_text(healthy)
+        self.policy["manifests_sha256"]["crates/nevrotick-engine/Cargo.toml"] = VERIFY.sha256(path)
+        lock = self.root / "Cargo.lock"
+        raw = lock.read_text()
+        lock.write_text(raw.replace(ENGINE_LOCK, ENGINE_LOCK.replace(',"time-domain"', '')))
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        self.write_policy()
+        with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpected packages"):
+            VERIFY.admit_product(self.root)
+        lock.write_text(raw)
+        self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
+        self.write_policy()
+        VERIFY.admit_product(self.root)
+
     def test_ui_cannot_acquire_engine_runtime_even_with_updated_manifest_admission(self):
         path = self.root / "crates/nevrotick-ui/Cargo.toml"
         healthy = path.read_text()
@@ -602,7 +638,7 @@ class ProductAdmissionTests(unittest.TestCase):
     def test_engine_lock_edges_entrypoint_and_runtime_suite_are_mandatory(self):
         lock = self.root / "Cargo.lock"
         healthy = lock.read_text()
-        lock.write_text(healthy.replace(ENGINE_LOCK, ENGINE_LOCK.replace('["getrandom","ntp-wire","tokio"]', '["tokio"]')))
+        lock.write_text(healthy.replace(ENGINE_LOCK, ENGINE_LOCK.replace('["getrandom","ntp-wire","time-domain","tokio"]', '["tokio"]')))
         self.policy["lockfile_sha256"] = VERIFY.sha256(lock)
         self.write_policy()
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "unexpected packages"):

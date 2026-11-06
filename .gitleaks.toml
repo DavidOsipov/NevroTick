@@ -1,4 +1,4 @@
-title = "NevroTick: upstream secret rules with one reviewed prose exception"
+title = "NevroTick: upstream secret rules with reviewed exact-text exceptions"
 
 [extend]
 useDefault = true
@@ -21,3 +21,35 @@ condition = "AND"
 regexTarget = "line"
 paths = ['''(?:^|/)docs/(?:nevrotick-design-v0\.2/references/source-docs/)?asvs-5\.0\.0-applicability\.md$''']
 regexes = ['''^\n?\| Native control mapping \| CTRL-KEYS: key inventory, access separation, rekey/disposal and no plaintext secret outputs; any persisted association requires explicit protected-storage policy\. \|$''']
+
+# Reviewed historical findings are constrained to this rule, path and exact text.
+[[rules.allowlists]]
+description = "Public UI audit prose; no credential material"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)tasks/s0\.5-ui-comparison\.md$''']
+regexes = ['''^\n?Independent audit recomputed every selected statistic, sample admission, token,\ngeometry/focus and identity check\. All six selected trials closed normally with$''']
+
+# Reviewed historical findings are constrained to this rule, path and exact text.
+[[rules.allowlists]]
+description = "Public OpenPGP policy prose; no key material"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)docs/windows-time-architecture\.md$''']
+regexes = ['''^\n?For a later selected OpenPGP MSI alternative, admission also needs current trusted-key distribution, revocation/expiry$''', '''^\n?OpenPGP admission also needs current trusted-key distribution, revocation/expiry$''']
+
+# Reviewed historical findings are constrained to this rule, path and exact text.
+[[rules.allowlists]]
+description = "Recomputed public SHA-256 of the secret-scan entry point"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)tasks/s1\.2-worker-concurrency-pilot\.json$''']
+regexes = ['''^\n?    "\.github/security/check_secrets\.py": "80994c615da3f41d24596f5b6af6ba52733f6aec711314ea171fcf4e585b0d0d",$''']
+
+# Reviewed historical findings are constrained to this rule, path and exact text.
+[[rules.allowlists]]
+description = "Public unauthenticated wire-token u64 regression fixture"
+condition = "AND"
+regexTarget = "line"
+paths = ['''(?:^|/)crates/ntp-exchange/tests/association\.rs$''']
+regexes = ['''^\n?    let token = 0x0f1e_2d3c_4b5a_6978_u64;$''']

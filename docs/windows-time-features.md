@@ -7,13 +7,13 @@
 
 ## 1. Product goal and launch scope
 
-Build a small Windows 11 application that keeps system time synchronized in the background, recovers from ordinary interruptions, and explains clearly when safe synchronization is unavailable. Installation, updates and removal use one complete package. Everyday status and refresh actions work without elevation; machine-wide trust and clock policy remain administrative operations.
+Build a small Windows desktop application that keeps system time synchronized in the background, recovers from ordinary interruptions, and explains clearly when safe synchronization is unavailable. Installation, updates and removal use one complete package. Everyday status and refresh actions work without elevation; machine-wide trust and clock policy remain administrative operations.
 
 The motivating problem is a time service that stops working without a useful explanation. Therefore the first release should prioritize **unattended operation, honest health information, safe recovery and actionable diagnosis**. A decorative clock face or a large dashboard would contribute less to that goal.
 
 **Owner amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) records the accepted choices and distinguishes recommendations; [NV-RESEARCH-001](nevrotick-research-handoff.md) assigns unresolved evidence. UI-M0 remains unchanged.
 
-**Owner delivery decision, 3 November 2026:** the launch target is supported Windows 11 x64, a native English-first UI, NTPv4/NTS client support and **one complete hardened MSIX prepared for a Microsoft Store submission attempt**, including services. [Architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) separate this selected direction from unresolved provisioning, Store acceptance and actual release qualification. Preparation does not require prior Store approval. Retained MSI/signing designs are fallback/reference options for David to reconsider after rejection or concrete technical evidence, not parallel deliverables. Current Core priority, Windows/fuzz/storage holds and UI-M0 deferrals remain. The application must work with its window closed and before login; synchronization requires no NevroTick account or remote control plane. Store acquisition has its own distribution requirements.
+**Owner delivery decision, 3 November 2026; OS scope amended 5 November:** the intended launch scope is Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience under [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope), a native English-first UI, NTPv4/NTS client support and **one complete hardened MSIX prepared for a Microsoft Store submission attempt**, including services. [Architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) separate this selected direction from unresolved provisioning, Store acceptance and actual release qualification. The [platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retains row-specific evidence and Server delivery questions. Preparation does not require prior Store approval. Retained MSI/signing designs are fallback/reference options for David to reconsider after rejection or concrete technical evidence, not parallel deliverables. Current Core priority, Windows/fuzz/storage holds and UI-M0 deferrals remain. The application must work with its window closed and before login; synchronization requires no NevroTick account or remote control plane. Store acquisition has its own distribution requirements.
 
 [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
 selects an intended **x86-64-v3** minimum for that x64 product, with qualified
@@ -27,11 +27,18 @@ This document translates [architecture revision 1.4](windows-time-architecture.m
 
 ### Current UI entry milestone: UI-M0
 
-The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). [OD-11, 5 November 2026](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) selects complete replacement of the Win32 UI with Slint; the existing Win32 implementation and observations remain the pre-migration baseline. Preserve UI-M0's unelevated, fixture-only scope: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice. Toolkit selection supplies no Slint implementation, dependency admission or native qualification.
+The owner's restricted first UI scope, NV-UI-M0-001, is incorporated in [architecture section 16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0). [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects complete replacement of the Win32 UI with Slint against v0.4. The checked-in Windows entry now selects Slint/Winit/software; the old Win32 adapter and receipts remain historical. Preserve the original unelevated fixture-only milestone: Status, Sources, Settings, source details and a bounded source-edit preview. Checked-in deterministic fixtures feed a small presentation boundary; keep **Prototype — sample data** visible, including equivalent context in standalone dialogs. Local validation, **Update preview** and Cancel affect only in-memory preview state, which is discarded on exit. Sync now is disabled with an explanation; machine-policy controls are visibly unavailable. No live status, production IPC, NTP/NTS/DNS traffic, services, policy persistence, UAC, Apply or host-clock effects belong in this slice.
 
-D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator and UI Automation qualification) are **Deferred**. Agents must not implement or qualify them during UI-M0 or make them completion prerequisites. Preserve existing control behavior and accessible labels through the replacement. Restore the relevant D2 rules before each live-status, real-policy or protected-command integration; restore D1/D3 before general-user preview/release or earlier support/qualification claims. The UI owner carries their triggers into the backlog and next-stage record.
+D1 (theme/contrast/text/DPI qualification), D2 (production freshness/reconnect, drafts/revisions/apply and administrative results) and D3 (full keyboard/focus, Narrator and UI Automation qualification) are **Deferred**. Agents must not implement or qualify them during UI-M0 or make them completion prerequisites. Retain toolkit-provided basic keyboard/editing behavior and meaningful labels; do not assume Slint widgets inherit Win32 child-control accessibility. Restore the relevant D2 rules before each live-status, real-policy or protected-command integration; restore D1/D3 before general-user preview/release or earlier support/qualification claims. The UI owner carries their triggers into the backlog and next-stage record.
 
-Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one UI implementation owner. Keep necessary Windows OS adapters narrow; selecting Slint does not remove their API responsibilities. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
+Use the real UI crate with applicable Rust/dependency/unsafe-FFI checks and one owner for the Slint UI/event loop and narrow native adapters. Preserve the exact dependency/licence graph and generated-code safety/lint boundary under OD-13's accepted separately GPL-3.0-only GUI direction, keeping Core/engine GPL-2.0-only; existing Win32 evidence does not qualify the current Slint candidate. Observe ordinary resizing, launch/minimize/restore/close and the mouse-driven preview flow in one documented Windows 11 x64 reference display configuration; compilation alone is insufficient. Small editor behavioral checks and native observations support M0-01–08 in the canonical section; no broad production qualification campaign is required. UI-M0 does not complete P0 toolkit qualification, S-0, CHECK-22 or release gates. Other workstreams retain their requirements and may proceed independently. The product requirements below remain applicable to their later integrations and release.
+
+The [current GUI handoff](../tasks/slint-gui-handoff.md) and
+[S0.5 record](../tasks/s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+retain the later complete-v0.4 fixture source, including Simple/Power views,
+bounded policy/recovery previews and opt-in tray/sample-notification source.
+Source and portable rendering evidence do not qualify native Windows behavior,
+production integration or D1–D3. Protected actions and live effects remain gated.
 
 ### The ten basic capabilities
 
@@ -139,7 +146,13 @@ If the measurements require an exceptional correction, the app presents the sepa
 
 Ordinary users can read the settings summaries and source information permitted by installation policy without elevation. Protected material remains service-owned. Per-user appearance preferences also remain ordinary-user operations. Changing the source set, trust/profile, bootstrap configuration or clock policy uses a specific elevated helper operation and a current policy revision.
 
-The editor separates **Draft changes** from **Active settings**. Apply first summarizes the changed behavior, including loss of authentication in plain-NTP mode and any exceptional-correction implications. It then invokes UAC for that operation. Successful activation publishes one validated revision; cancellation, invalid input, stale revision or storage failure leaves the previous active policy intact.
+The planned [network settings](#331-time-network-settings--5-november-2026)
+also belong to that machine policy: adapter, address-family mode, direct/proxy
+route and resolver choice cannot be changed by a display preference or raw draft.
+First Windows delivery exposes Direct with its qualified interface/family controls;
+proxy-specific controls are deferred to SOCKS-0 under OD-11.
+
+The editor separates **Draft changes** from saved and effective settings. Apply first summarizes the changed behavior, including loss of authentication in plain-NTP mode and any exceptional-correction implications. It then invokes UAC for that operation. Successful activation publishes one validated revision. Cancelled authorization, invalid/stale input and a proven not-committed persistence refusal preserve the prior policy. A committed revision or uncertain outcome requires the existing owner's reconciliation and truthful applying/blocked/unknown status; do not infer rollback, retry blindly or resume the old route. See [architecture §12.2](windows-time-architecture.md#122-configuration-semantics) and §3.3.1 below.
 
 Offer NTS, NTP and observe-only deliberately, with no mixed authenticated/plain voting. Bootstrap helpers have a separate editor and no normal-source selection role. Keep raw step/rate tuning out of the basic UI; expose only approved policy choices and their consequences. A deliberate single-source profile and unrestricted numerical tuning are deferred from this feature scope.
 
@@ -150,6 +163,13 @@ Changing an already-active installation to observe-only stops new product actuat
 ### F-07 — Recover after ordinary interruptions
 
 Handle offline startup, source outages, adapter/network changes, suspend/resume, external clock changes and separate engine/broker failures. Use bounded retry/reacquisition and preserve valid protected state. Ordinary network recovery should not require reinstalling, clearing settings or restarting the UI.
+
+Distinguish local family enablement from actual destination reachability. Both
+families may be configured while one upstream path fails. Reuse a recent working
+path within the active network/profile, with expiry and bounded recovery checks;
+show the observed failure rather than asserting the ISP lacks a protocol.
+[Architecture §7.3](windows-time-architecture.md#observed-path-history-and-user-network-policy)
+owns policy precedence, cache limits and the separate KE/UDP outcomes.
 
 When fresh measurements disappear, show holdover only while the prior model remains valid; age and uncertainty increase. After its budget expires, clearly show that the estimate is no longer usable. No new phase correction comes from absent/disputed sources, and neither plain NTP nor Windows Time becomes an automatic fallback.
 
@@ -213,9 +233,9 @@ Use event ordering that remains intelligible when wall time is wrong. Full/unava
 
 ### F-10 — Provide a small accessible native UI and optional tray
 
-Use one small main window with Sources, Settings and Diagnostics. Native controls, system visual preferences and progressive disclosure support familiarity and resource efficiency. English is the initial language; typed localized messages and stable reason codes prepare for later locales without requiring them now.
+Use one small Slint main window with Sources, Settings and Diagnostics. Toolkit widgets, qualified Windows accessibility exposure, system visual preferences and progressive disclosure support familiarity and resource efficiency. English is the initial language; typed localized messages and stable reason codes prepare for later locales without requiring them now.
 
-**Translation mechanism, OD-12:** the [localization design](plans/ui-localization.md)
+**Translation mechanism, [OD-15](nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs):** the [localization design](plans/ui-localization.md)
 separates editable JSON translation sources from generated binary CBOR resources.
 One typed Rust catalog supplies window/dialog/error/help text, tray/menu/local
 notifications and accessible names through the selected Slint bridge. A new
@@ -278,9 +298,80 @@ Source details and Diagnostics expose the **certificate-time basis** separately 
 
 ### 3.3 Settings
 
-Use three main groups: **Time sources and trust**, **Clock correction**, and **Appearance**. Less frequent About/version/privacy/license information can live in Diagnostics or Help. This follows the principle of grouping infrequent behavior/preferences into a dedicated settings surface; the particular WinUI implementation examples in Microsoft's settings guidance are not a reason to change our native toolkit. [R5]
+Use three main groups: **Time sources and trust**, **Clock correction**, and **Appearance**. Less frequent About/version/privacy/license information can live in Diagnostics or Help. This follows the principle of grouping infrequent behavior/preferences into a dedicated settings surface; the particular WinUI implementation examples in Microsoft's settings guidance do not change the owner-selected Slint toolkit. [R5]
 
 Keep Apply/Cancel for machine-policy drafts. Simple per-user display choices can apply immediately. Field validation identifies the invalid value and remedy without exposing secrets. Warn before leaving an unsaved draft; do not elevate merely to view settings.
+
+#### 3.3.1 Time network settings — 5 November 2026
+
+Place **Network connection** under **Time sources and trust**, reachable from
+Settings and from a source's connection details. Keep one active acquisition
+profile initially; do not add competing per-user service settings. The owner
+requested interface, IP-family and proxy choices. The later
+[OD-11 decision](nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral)
+keeps Direct interface/family controls in current P2/P5 and moves all proxy support
+beyond first Windows delivery to [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition).
+Do not enable a proxy editor or advertise working proxy support in that first
+delivery. Reject unsupported imported/raw proxy settings explicitly; never drop
+them into Direct. UI-M0 remains a fixture-only milestone.
+
+| Control | Values and useful explanation |
+| --- | --- |
+| Network interface | Automatic or a named adapter with current availability. A selected adapter is a strict pin; disappearance does not silently select another. |
+| IP version | Automatic; IPv4 only; IPv6 only; Prefer IPv6; Prefer IPv4. This is separate from NTP/NTS authentication. |
+| Connection route | Direct in first Windows delivery. Future SOCKS-0: manual `127.0.0.1` or `::1` plus port, no authentication, qualified UDP relay. No direct fallback. |
+| Resolve time-server names | Existing local resolver in Direct and the first future SOCKS5 subset. The latter explicitly discloses that DNS is local and is not tunnelled. Proxy DNS is a later extension, not a first-profile toggle. |
+| Proxy authentication | No password control in first Windows delivery or the first future SOCKS5 subset. A later authenticated SOCKS5 extension must first qualify its channel/service and existing protected-secret lifecycle. |
+| Connection details | Requested profile and actual interface, immediate-peer IP family, direct/proxy path, last successful exchange age, KE/UDP stage and bounded recovery reason. Unknown facts remain unknown. |
+
+For direct traffic, label the family control **IP version to the time server**;
+for future proxy traffic, **IP version to the proxy**. The proxy's onward family is
+separate: IPv4 locally can reach IPv6 remotely through a capable relay. The initial
+loopback subset permits only Automatic interface, not a physical-adapter pin; a
+hard family conflicting with its literal is invalid, and a preference cannot
+create a second endpoint. If a later proxy-DNS extension is qualified,
+display **Target family selected by proxy**; do not offer an enforceable
+target-family promise from an ordinary SOCKS domain request. A separately offered
+target constraint needs admitted numeric destinations or a qualified resolver;
+required destination-scope checks must also be enforceable before target traffic.
+Reject incompatible drafts instead of secretly using local DNS. If a valid NTS
+endpoint cannot be established at runtime, show the unsupported route and a
+policy-preserving remedy under architecture §7.4; do not display an invented
+remote address or bypass the profile. The IPv6 label
+describes the selected IP leg, not guaranteed native IPv6 end to end.
+
+The supplied Firefox example provides the possible endpoint `127.0.0.1:10808`,
+not a default or a tested proxy. Its proxy-DNS checkbox is outside the first
+future subset. A local proxy controls its
+own onward interface and may disappear at logout. Show this limitation; do not
+claim that selecting Wi-Fi here binds another application's Internet connection.
+No PAC/WPAD, automatic system-proxy import, SOCKS4, HTTP-only KE proxy or bypass
+exception list is in the selected proxy direction. Preserve the canonical
+[proxy and reachability contract](windows-time-architecture.md#observed-path-history-and-user-network-policy).
+The future connection check uses the authorized effective profile and configured
+sources in an observation-only path. Show SOCKS negotiation, UDP relay, NTS-KE and
+valid packet stages separately; a reachable TCP port cannot mean time acquisition
+works. The check changes no clock, endpoint policy or trust setting.
+
+Apply shows the route/resolver changes and uses the existing authorized atomic
+machine-policy revision transaction. Show **Saved**, **Applying**, **Effective**
+and **Blocked/unknown activation** according to the service's actual outcome;
+persisting settings does not mean old network I/O has finished. Do not claim
+wire-level recall of traffic already submitted to the OS/proxy. Ordinary Sync now
+can diagnose the effective profile within its budget; it cannot probe arbitrary
+unapproved draft hosts or resume a superseded route during blocked activation.
+Display fallback as a network-path choice, never as permission to lower NTS trust
+or source quorum.
+
+Use the existing [state owners](windows-time-architecture.md#1213-network-state-reuses-existing-storage-owners):
+machine settings are protected policy, live path hints are scheduler RAM, optional
+history belongs to Q and credentials have a separately qualified secret purpose.
+Initial path learning restarts cold after service restart; do not promise durable
+remembering before the existing Q/hint-loader work is qualified. Unavailable
+optional history does not prevent live reuse. No UI database access, second
+settings file or plaintext saved password is introduced. The first future subset
+has no proxy credential. In a later authenticated extension, a missing required
+credential has a visible remedy and cannot silently select Direct/no-authentication.
 
 ### 3.4 Diagnostics
 
@@ -338,6 +429,7 @@ A blocked or conflicting state can take precedence over a still-usable prior mod
 | Normal trust profile | Existing NTS-only baseline pending OD-03 resolution | Pool preference does not establish an NTS preset or silently authorize a default trust downgrade |
 | Source preset | Target four diverse NTS operators; supplied directory is discovery input | Candidate shortlist in research R-04; qualification and exact identities remain open. Pool defaults require a vendor zone and an explicit role |
 | Agreement | Existing minimum-two-plus-majority proposal | Freeze the tested policy; never reduce automatically |
+| Time-network route | Direct, Automatic interface and Automatic IP mode | Machine policy; qualify current pinned/only-family controls. Proxy support is deferred beyond first delivery to SOCKS-0; unsupported proxy state cannot reset to Direct |
 | Plain NTP | Available by deliberate profile change | Administrator; permanently visible unauthenticated label |
 | Recovery hints | Off | Administrator explicitly chooses one or two helpers |
 | Two-helper recovery | Both must satisfy policy | No silent one-helper fallback |
@@ -375,7 +467,7 @@ Attempt cached/strict NTS → if appropriate, use only already-enabled helper re
 
 ### D. The user wants different servers
 
-Open Settings without elevation → edit a bounded draft → validate identities/profile compatibility → review the behavioral change → elevate for Apply → activate one current revision or leave the previous one intact. An outdated settings window must refresh and obtain a new review before replacing newer policy.
+Open Settings without elevation → edit a bounded draft → validate identities/profile compatibility → review the behavioral change → elevate for Apply → observe the authoritative saved/effective outcome. A proven precommit rejection preserves the prior policy; a committed or uncertain outcome follows the existing owner's reconciliation, with applying/blocked/unknown status instead of a rollback claim. An outdated settings window must refresh and obtain a new review before replacing newer policy.
 
 ### E. Synchronization appears to have stopped
 
@@ -414,7 +506,7 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-04 | F-02/06 | Valid NTS succeeds; wrong identity, invalid signatures/AEAD, forged NAK and outages never select plain NTP. Deliberately authorized NTP mode remains labelled. NTS/LI does not establish unsmeared-scale provenance; incompatible/unknown scales cannot join the UTC population. | CHECK-2/6/9 |
 | AC-05 | F-04 | Old/malformed/incompatible snapshots and failed connections cannot become current Tracking. Source reply, accepted estimate, applied correction and snapshot ages remain distinct. | CHECK-14/25 |
 | AC-06 | F-05 | Ordinary-user refresh succeeds; request storms/direct IPC stay bounded. Refresh carries no destination/target time and cannot override correction authority. | CHECK-2/3/25/27 |
-| AC-07 | F-06 | Valid current policy applies atomically. Cancelled UAC, invalid input, storage failure and stale-revision edits preserve the active policy. | CHECK-2/3/15/25 |
+| AC-07 | F-06 | A valid current revision becomes effective after its qualified activation boundary. Cancelled UAC, invalid/stale input and proven precommit persistence refusal preserve the prior policy. Lost/indeterminate commit results and postcommit activation failure require reconciliation and truthful saved/effective status, without blind retry or old-route resumption; pair with successful Apply. | CHECK-2/3/15/25; PATH-19 |
 | AC-08 | F-06/07 | Startup/restart already configured observe-only makes no product clock write. During active-to-observe transition, valid-owner cleanup precedes completion; lost/ambiguous ownership prevents a blind reset. No implicit Windows Time handback. | CHECK-5/10/12 |
 | AC-09 | F-08 | Cached NTS and strict NTS take precedence. Qualified helper recovery leaves global time unchanged until final authentication/agreement and broker authority pass; successful recovery retains its certificate-time basis/history. Wrong host dates cannot choose leap policy; ambiguity withholds effects without circularly blocking independent acquisition. | CHECK-6/9/10 |
 | AC-10 | F-08 | Two-helper timeout/disagreement/alias cannot become one-helper mode. Successful one- and two-helper paths preserve discoverable hint provenance after Tracking resumes; wrong-name certificate never enters hint recovery. | CHECK-8/9/14 |
@@ -428,6 +520,15 @@ retaining product ownership never implicitly hands synchronization to Windows.
 | AC-18 | F-10 | Tray disabled means no retained UI; enabled tray and sign-in preference affect only the user observer. Quit UI leaves synchronization active; stale status is labelled. | CHECK-14/21/22 |
 | AC-19 | F-02/03/07 | Independently generated offset/drift/asymmetry cases and real clock measurements establish convergence/holdover behavior within the declared test envelope. | CHECK-7/8/10/11/24 |
 | AC-20 | All | Measure startup, idle/active CPU, memory, wakeups, log bounds and package size on the declared Windows machine with supported protections enabled. | CHECK-21 |
+| AC-21 | F-02/04/07/09 | Both local families enabled with one upstream black hole; working alternative is reused, preferred-path recovery is bounded, and network change invalidates obsolete history. A failed Internet destination does not exclude permitted IPv6 LAN/VPN or proxy-side paths. Optional history disabled/full/corrupt cannot prevent live reuse; restart cannot revive stale deadlines or authenticate old observations. | CHECK-6/8/9/14/15/21/27 |
+| AC-22 | F-06/07/09/10 | Strict adapter/family/proxy/resolver choices survive failures without silent escape. Pair a UDP-capable SOCKS route with TCP-only/failed relay, incompatible proxy-DNS family policy, loopback/service-lifetime and invalid/stale-draft cases; preserve useful accepted operation and truthful saved/effective status. Cover old I/O during Apply and missing/wrong-purpose proxy credentials; no silent direct/no-authentication recovery. | CHECK-2/3/6/9/14/15/25/27 |
+
+**AC-21/22 scope after OD-11:** direct-family/interface, path-history and shared
+Apply/reconciliation cases remain current P2/P5 work. Proxy-specific cases are
+deferred to SOCKS-0/SOCKS-C01; proxy DNS and credential cases activate only for
+their later extensions. First-delivery validation still rejects unsupported
+proxy configuration without a Direct reset. Retaining these IDs records future
+criteria, not executed checks or a new proxy prerequisite to Windows delivery.
 
 Resource targets remain those of architecture §17, including separate service/UI/tray accounting; they are unmeasured goals. Do not invent an internet-accuracy SLA, recovery deadline or automatic step threshold to complete a feature card. The [development-hardening specification](windows-time-development-hardening.md) governs test scope, coverage/mutation gates, independent review and truthful evidence accounting.
 
@@ -488,6 +589,11 @@ Time zones, daylight-saving policy, alarms and world-clock features remain Windo
 These are existing phase gates or concrete refinements of them. Missing evidence is not a reason to silently weaken the feature. Proposed UI copy, default presentation and tray choices can be refined with user testing without changing the security semantics.
 
 ## 12. Sources, review and readiness
+
+The 5 November network-settings amendment uses architecture S127–S131; its
+[current evidence record](../tasks/engine-transport-pilot.md#integration-and-evidence-status)
+retains the outstanding independent review. Earlier review statements below
+describe their original candidate, not acceptance of this amendment.
 
 This plan is based primarily on the maintained [architecture](windows-time-architecture.md), [development-hardening specification](windows-time-development-hardening.md), [signing guide](windows-time-signing-guide.md) and their existing verification requirements. The following primary sources were checked on 28 October 2026 for the limited external claims above:
 

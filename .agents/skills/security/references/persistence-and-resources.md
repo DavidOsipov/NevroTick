@@ -6,6 +6,17 @@ Separate admission, candidate preparation, validation, staging write/sync, publi
 
 Check relevant traversal, Windows drive/share/device forms, reparse points, replacement races, inherited rights and open-handle sharing. Confine fixtures to owned temporary paths. OS ACL/path proofs need native execution; string allowlists prove no hardened filesystem sandbox. Never log sensitive paths to prove rejection.
 
+`Path::join` and `PathBuf::push` assemble paths; they do not establish containment.
+On Windows, an operand with a root but no prefix replaces the base's path while
+retaining its prefix; a drive-prefixed relative operand can replace the base
+entirely. Rejecting only paths for which `is_absolute()` is true misses both
+cases. Admit the intended components and namespace at the
+owning adapter, then retain the required handle/reparse/race protections at the
+actual open/effect. Lexical prefix checks or canonicalizing before a separate
+open do not establish enduring filesystem authority. Select Windows path cases
+and native observations for the actual guarantee; Unix behavior proves no
+Windows confinement.
+
 Bounds need owners/aggregate accounting: frames/fields, clients/in-flight tasks, queued/completed work, retained histories/snapshots/caches, nested crypto/parsers, diagnostics and task replacements. Checked arithmetic/fixed-capacity containers alone cannot bound total process memory/work. Distinguish byte/character/element counts; track sleeping, abandoned/cancelled work still live.
 
 Cancellation requested, result invalidated, operation completed, task exited and resources released remain distinct observations. Dropped handles are no joins; unwinding cannot catch every abort/OOM or undo external effects. Keep hostile/resource cases within owned process/host limits; record peak/cumulative work for those claims. Restore owned fault dependencies and perform bounded recovery only; successful retries erase neither first failure nor cleanup cause.

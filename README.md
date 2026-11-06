@@ -4,8 +4,11 @@
 **System essentials, under control.**
 
 NevroTick is my personal Rust project for secure timekeeping and, later,
-encrypted DNS. It starts on **Windows 11 x64**, with a planned Slint interface
-and chrony-derived numerical algorithms.
+encrypted DNS. Its intended initial platforms are **Windows 11 26H2 x64** and
+**Windows Server 2025 x64 with Desktop Experience**, with **Slint** as the selected
+native UI toolkit and chrony-derived numerical algorithms. The
+[platform matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+records the remaining qualification; no production support is declared.
 
 ## Why I am building this
 
@@ -22,9 +25,7 @@ integrations are outside the planned timekeeping scope.
 ## What is being built
 
 - **Windows first:** authenticated network time, chrony-derived estimation,
-  source agreement and a lightweight Slint UI. The selected
-  [Slint migration](docs/nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
-  will replace the current Win32 preview. The planned engine and clock
+  source agreement and a lightweight Slint UI. The planned engine and clock
   broker have separate privileges and ship in one complete MSIX. The selected
   [packaging plan](docs/plans/windows-msix-store.md) targets strong process and
   package protections, followed by a Microsoft Store submission with services;
@@ -52,9 +53,15 @@ Start with the [skills index](.agents/skills/README.md) for ideas to adapt.
 
 **Early development — the current software does not synchronize your clock.**
 
+[Slint is the owner-selected default](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit).
+The checked-in sample-data GUI uses Slint and the [current v0.4 design](docs/nevrotick-design-v0.4/README.md).
+Its [handoff](tasks/slint-gui-handoff.md) records the implemented fixture workflows,
+original GUI GPL-3.0-only grant, branch checks and remaining backend, native and
+critical-text approval gaps. Combined-tree qualification remains separate.
+
 The workspace contains a sample-data Windows UI, portable protocol/numerical
-fixtures and a bounded, unauthenticated two-peer loopback observer. Its
-observations are ineligible for clock control. Production NTP/NTS acquisition,
+fixtures and bounded, unauthenticated experimental acquisition with controlled
+measurement qualification. Its observations remain ineligible for clock control. Production NTP/NTS acquisition,
 installed services, clock changes, Android, DoQ, pinning and the complete
 installer remain future work.
 See the [current implementation summary](docs/windows-time-architecture.md#1-current-state-capsule)
@@ -74,7 +81,7 @@ proposed first-stable baseline and the preparation required for bad-release reco
 | [time-domain](crates/time-domain/) | Checked timestamp, era, offset and elapsed-time arithmetic. |
 | [ntp-exchange](crates/ntp-exchange/) | Unauthenticated fixture association and deterministic scenarios. |
 | [time-core](crates/time-core/) | Pure time-estimation, source-selection/combination and modeled correction fixtures. |
-| [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated loopback observation pilot; no production service or clock authority. |
+| [nevrotick-engine](crates/nevrotick-engine/) | Bounded, unauthenticated experimental acquisition and controlled measurements; no production service or clock authority. |
 
 ## Getting started with development
 

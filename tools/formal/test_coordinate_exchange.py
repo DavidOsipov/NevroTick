@@ -182,6 +182,68 @@ class ProjectionTests(unittest.TestCase):
         self.assertEqual(values["RELATIVE_LIMIT"], 2 * ((2 ** 95 - 1) - (-(2 ** 95))))
         self.assertLessEqual(values["RELATIVE_LIMIT"] * 1_000_000_000, 2 ** 127 - 1)
 
+    def test_exchange_universal_input_selection_precedes_concrete_covers(self):
+        text = self.harness.read_text()
+        body = text.split("fn exchange_full_domain() {", 1)[1].split("\n}\n", 1)[0]
+        universal = """
+    let t1 = admitted_ticks();
+    let t2 = admitted_ticks();
+    let t3 = admitted_ticks();
+    let t4 = admitted_ticks();
+    exchange_contract(t1, t2, t3, t4);
+"""
+        self.assertTrue(body.startswith(universal))
+        self.assertEqual(body.count("admitted_ticks()"), 4)
+        self.assertEqual(body.count("exchange_contract(t1, t2, t3, t4)"), 1)
+        self.assertNotIn("kani::assume", text)
+        self.assertNotIn("t1 ==", body)
+        helper = text.split("fn concrete_exchange_observation(", 1)[1].split("\n}\n", 1)[0]
+        self.assertIn("exchange::exchange_arithmetic(", helper)
+        for role in ("t1", "t2", "t3", "t4"):
+            self.assertIn(f"admitted_coordinate({role})", helper)
+        self.assertIn("arithmetic.offset().numerator()", helper)
+        self.assertIn("arithmetic.round_trip().numerator()", helper)
+        self.assertIn('assert!(false, "concrete exchange witness requires success")', helper)
+        self.assertIn('panic!("concrete exchange observation required")', helper)
+        self.assertNotIn("kani::cover!", helper)
+        self.assertNotIn("kani::any", helper)
+
+    def test_concrete_exchange_covers_check_all_six_actual_observation_pairs(self):
+        text = self.harness.read_text()
+        body = text.split("fn exchange_full_domain() {", 1)[1].split("\n}\n", 1)[0]
+        calls = re.findall(r"let (\w+) = concrete_exchange_observation\((.*?)\);", body, re.S)
+        covers = re.findall(
+            r'kani::cover!\(\s*(\w+)\s*==\s*\(([^)]*)\),\s*"([^"]+)"\s*\);', body, re.S
+        )
+        lower, upper = -(2 ** 95), 2 ** 95 - 1
+        limit = 2 * (upper - lower)
+        tokens = {"0": 0, "1": 1, "-1": -1, "COORDINATE_LOWER": lower,
+                  "COORDINATE_UPPER": upper, "RELATIVE_LIMIT": limit, "-RELATIVE_LIMIT": -limit}
+        expected = {
+            "zero": ((0, 0, 0, 0), (0, 0), "zero exchange"),
+            "positive_phase": ((lower, upper, upper, lower), (limit, 0), "positive phase endpoint"),
+            "negative_phase": ((upper, lower, lower, upper), (-limit, 0), "negative phase endpoint"),
+            "positive_round_trip": ((lower, upper, lower, upper), (0, limit), "positive round trip endpoint"),
+            "negative_round_trip": ((upper, lower, upper, lower), (0, -limit), "negative round trip endpoint"),
+            "odd_phase": ((0, 0, 1, 0), (1, -1), "odd phase and negative round trip"),
+        }
+        self.assertEqual(len(calls), 6)
+        self.assertEqual(len(covers), 6)
+        self.assertEqual({name for name, _ in calls}, set(expected))
+        self.assertEqual({name for name, _, _ in covers}, set(expected))
+        for name, raw_arguments in calls:
+            arguments = tuple(tokens[item.strip()] for item in raw_arguments.split(",") if item.strip())
+            wanted_arguments, wanted_pair, label = expected[name]
+            self.assertEqual(arguments, wanted_arguments)
+            self.assertTrue(all(lower <= value <= upper for value in arguments))
+            t1, t2, t3, t4 = arguments
+            self.assertEqual(((t2 + t3) - (t1 + t4), (t2 + t4) - (t1 + t3)), wanted_pair)
+            actual_covers = [(pair, actual_label) for variable, pair, actual_label in covers if variable == name]
+            self.assertEqual(len(actual_covers), 1)
+            raw_pair, actual_label = actual_covers[0]
+            self.assertEqual(tuple(tokens[item.strip()] for item in raw_pair.split(",")), wanted_pair)
+            self.assertEqual(actual_label, label)
+
 
 if __name__ == "__main__":
     unittest.main()

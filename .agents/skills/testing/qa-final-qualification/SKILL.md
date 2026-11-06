@@ -18,15 +18,13 @@ contract do not establish unavoidable consumer validation. Apply
 [contract QA](../qa-contract-tests/SKILL.md); missing required direct-call,
 transformation or rejection-effect evidence remains incomplete.
 
-For existing and new product mathematical algorithms, reconcile OD-10's
-[mandatory proof evidence](../references/formal-verification.md) against the
-actual candidate: full admitted domain, required success/error outcomes,
-machine/rounding semantics, invariants and applicable constructor/caller
-obligations. Reuse valid unchanged proofs; new mathematics, changed semantics or
-invalidated proof inputs require affected proofs. Missing, subset-only or
-incomplete required proofs leave the owning CHECK and dependent mathematical
-acceptance incomplete. Verifier choice remains subject to admission; runtime
-guards, tests and native/package evidence retain their separate requirements.
+For product mathematics, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal work and pending proof admission/metadata repairs resume after V1.
+Missing or invalidated proofs do not block V1 acceptance or release. Record
+remaining obligations under the existing source/CHECK owners as post-V1 work;
+retain completed evidence only within its exact historical scope. Continue
+independent behavioral/property/boundary checks and all nonformal gates.
+Use the [proof workflow](../references/formal-verification.md) on post-V1 resumption.
 
 For required native memory/resource claims, reconcile
 [Windows diagnostics](../references/windows-memory.md): exact image/tools,

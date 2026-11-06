@@ -72,6 +72,9 @@ HEX = re.compile(r"[a-f0-9]{64}\Z")
 MAX_JSON = 32 * 1024 * 1024
 ADMISSION_PROFILES = ("full", "stable-core")
 STABLE_CORE_SCOPES = ("bin", "etc", "lib", "libexec", "share")
+KANI_PROOF_PROFILE = "kani-proof"
+KANI_PROOF_SCOPES = ("payload/kani-0.68.0",
+                     "rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu")
 
 
 def unique_object(pairs):
@@ -311,13 +314,142 @@ def check_inventory(base, specification, stable=None):
 
 
 def admit(root=ROOT, installation_record=None, *, profile="full"):
-    """Hash the complete selected payload closure; full admission stays default.
+    """Admit an existing generic full/stable role; never select the Kani role.
 
-    Stable-core admits the existing complete stable inventory only. Its caller
-    must restrict execution to stable core lanes and mount only readonly_roots;
-    no omitted analysis-store payload is admitted or made available implicitly.
+    CLI and portable/Core callers retain exactly ADMISSION_PROFILES. The narrow
+    Kani closure is available only through its dedicated proof-consumer API.
     """
     if type(profile) is not str or profile not in ADMISSION_PROFILES:
+        raise Incomplete("Unknown analysis admission profile.")
+    return _admit(root, installation_record, profile=profile)
+
+
+def admit_kani_proof(root=ROOT, installation_record=None):
+    """Admit the complete Kani/compiler closure for a dedicated proof command.
+
+    A proof consumer must use exactly returned readonly_roots, fixed Kani flags,
+    pinned compiler paths, and its ordinary per-command input/runtime custody.
+    This API neither executes a command nor admits generic Cargo/analysis lanes.
+    """
+    return _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+
+
+def admit_era_constructor_codegen(root=ROOT, installation_record=None):
+    """Admit the same complete Kani closure for one closed Cargo frontend role.
+
+    Only the EraWindow constructor codegen consumer may use this API. It must
+    enforce its fixed Cargo-mode --only-codegen arguments, admitted selected
+    vendor/build inputs, immutable offline source/lock/configuration and ordinary
+    per-command runtime custody. This is not proof execution, a generic Cargo
+    admission or permission to change the proof profile's flags. The underlying
+    inventory/mount scope stays kani-proof; the consumer identity is separate.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "era-constructor-codegen-v1"}
+
+
+def admit_era_constructor_model_inspection(root=ROOT, installation_record=None):
+    """Admit the complete Kani closure for one fixed constructor-model C dump.
+
+    The dedicated consumer must authenticate the qualified codegen receipt and
+    healthy model, freeze its own inputs/helpers, and run only bundled
+    goto-instrument --dump-c against a readonly model copy in ordinary custody.
+    This admits neither proof execution, arbitrary GOTO tools/flags nor generic
+    Cargo/analysis lanes. Both existing readonly Kani roots remain required;
+    generated C is inspection material, not an established theorem/unwind bound.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "era-constructor-model-inspection-v1"}
+
+
+def admit_era_constructor_proof(root=ROOT, installation_record=None):
+    """Admit the complete Kani closure for the closed Cargo constructor proof.
+
+    The dedicated consumer must enforce its reviewed fixed solver/unwind/sanity
+    profile and five-job actual-source schedule, admit the complete selected
+    vendor graph, freeze offline Cargo sources/locks/configuration, reject raw
+    compiler metadata overrides/stubs, and retain ordinary per-command custody.
+    All safety and unwinding checks remain enabled. This is not generic Cargo
+    admission or permission to alter standalone proof/codegen/inspection roles.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "era-constructor-proof-v1"}
+
+
+def admit_fraction_contracts_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one closed contracts/stubbing pilot.
+
+    Only the fraction-contracts-pilot-v1 consumer may use this API. It must
+    enforce its separate fixed command/input policy, bind successful full-domain
+    callee proofs before verified substitution, and retain ordinary namespace,
+    resource and cumulative input/receipt custody. This payload admission neither
+    executes a command nor establishes a callee contract. Generic/ordinary flags,
+    profile and CLI choices remain unchanged; no arbitrary stubbing is admitted.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-contracts-pilot-v1"}
+
+
+def admit_fraction_addition_compute_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one isolated addition compute pilot.
+
+    Only fraction-addition-compute-pilot-v1 may consume this admission. Its
+    separate fixed policy permits Z3, a 300-second harness timeout and at most
+    600 seconds of command wall time and per-process CPU, with the reviewed
+    five-job full-domain addition group and cumulative source/receipt custody.
+    Existing Z3 payload admission is separately required. This API neither
+    executes proofs nor changes ordinary flags, profiles, resources or CLI roles.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-addition-compute-pilot-v1"}
+
+
+def admit_fraction_composition_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one closed pure-fraction pilot.
+
+    Only fraction-composition-pilot-v1 may consume this admission. Its separate
+    eighteen-command matrix must prove actual-body postconditions and complete
+    actual-return encoding before ordinary-stub caller substitution. Retain the
+    original CaDiCaL/compiler, baseline flags plus -Z stubbing and --keep-temps
+    retention, 60-second harness/180-second command and per-process CPU, 8-GiB
+    address-space and 128-task limits, with ordinary cumulative custody. Bind
+    retained compiler metadata's Stub token pairs to unique fully qualified
+    paths and native activation controls; compiler name resolution remains a
+    trusted component, and token matching is not resolved-identity evidence.
+    This API executes no proof and changes no ordinary profile, flag or CLI role.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-composition-pilot-v1"}
+
+
+def admit_fraction_query_split_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one closed twenty-command pilot.
+
+    Only fraction-query-split-pilot-v1 may consume this admission. Its separate
+    fixed matrix requires fresh actual-callee Post/return-seed proofs and both
+    universal and direct-witness healthy/restored lanes, with no old certificate
+    import or retry. Keep original CaDiCaL/compiler roots, baseline flags plus
+    -Z stubbing/--keep-temps, 60-second harness/180-second command and per-process
+    CPU, 8-GiB address-space, 128-task, two-build-job and one-solver-worker limits.
+    The consumer owns bytecode-safe observers, local owner/0400-file/0500-directory
+    permission bookends and complete source/tool/receipt custody. This API starts
+    no proof and changes no ordinary profile, flag, selector or qualification rule.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-query-split-pilot-v1"}
+
+
+def _admit(root, installation_record, *, profile):
+    """Hash the complete selected payload closure; full admission stays default.
+
+    Stable-core admits the existing complete stable inventory. Kani-proof admits
+    the existing complete Kani payload/private compiler inventory. Callers must
+    restrict execution to the selected lane and mount only readonly_roots; no
+    omitted analysis-store payload is admitted or made available implicitly.
+    Both selected profiles retain shipping executable/helper hash checks and
+    installation-pointer bookends. Neither is a full host-runtime integrity proof.
+    """
+    if type(profile) is not str or profile not in (*ADMISSION_PROFILES, KANI_PROOF_PROFILE):
         raise Incomplete("Unknown analysis admission profile.")
     root = Path(root).resolve(strict=True)
     if os.name != "posix" or not sys.platform.startswith("linux") or os.geteuid() == 0:
@@ -326,9 +458,9 @@ def admit(root=ROOT, installation_record=None, *, profile="full"):
     policy = decode(data)
     validate_policy(policy)
     pointer = installation_record or Path.home() / ".local/share/nevrotick/analysis-installation.json"
-    if profile == "stable-core":
+    if profile != "full":
         pointer = Path(pointer).expanduser()
-    pointer_data = read_once(pointer, maximum=4096, private=True) if profile == "stable-core" else b""
+    pointer_data = read_once(pointer, maximum=4096, private=True) if profile != "full" else b""
     base, stable = load_installation(pointer, root)
     inventories = policy.get("inventories")
     if (not isinstance(inventories, list) or not all(isinstance(item, dict) for item in inventories)
@@ -338,21 +470,33 @@ def admit(root=ROOT, installation_record=None, *, profile="full"):
         raise Incomplete("Complete common/Kani/Lockbud/stable payload inventories are required.")
     selected = inventories
     readonly = (base, stable)
-    if profile == "stable-core":
+    if profile != "full":
         for item in inventories:
             inventory_specification(item)
-        selected = [item for item in inventories if item["root"] == "stable"]
-        if (len(selected) != 1 or selected[0].get("name") != "stable"
-                or selected[0].get("scopes") != list(STABLE_CORE_SCOPES)):
-            raise Incomplete("Stable-core requires exactly the existing complete stable inventory scopes.")
-        readonly = tuple(RUNTIME._directory(internal(stable, scope), "Stable-core payload scope")
-                         for scope in STABLE_CORE_SCOPES)
+        if profile == "stable-core":
+            selected = [item for item in inventories if item["root"] == "stable"]
+            if (len(selected) != 1 or selected[0].get("name") != "stable"
+                    or selected[0].get("scopes") != list(STABLE_CORE_SCOPES)):
+                raise Incomplete("Stable-core requires exactly the existing complete stable inventory scopes.")
+            readonly = tuple(RUNTIME._directory(internal(stable, scope), "Stable-core payload scope")
+                             for scope in STABLE_CORE_SCOPES)
+        else:
+            selected = [item for item in inventories if item["root"] == "kani"]
+            if (len(selected) != 1 or selected[0].get("name") != "kani"
+                    or selected[0].get("scopes") != list(KANI_PROOF_SCOPES)):
+                raise Incomplete("Kani-proof requires exactly the existing complete Kani inventory scopes.")
+            folder = internal(base, "kani")
+            readonly = tuple(RUNTIME._directory(internal(folder, scope), "Kani-proof payload scope")
+                             for scope in KANI_PROOF_SCOPES)
     reports, covered = [], set()
     for item in selected:
         report, paths = check_inventory(base, item, stable)
         reports.append(report)
         covered.update(paths)
-    for name in TOOLS if profile == "full" else ():
+    entrypoints = TOOLS if profile == "full" else ()
+    if profile == KANI_PROOF_PROFILE:
+        entrypoints = ("kani",)
+    for name in entrypoints:
         item = policy["tools"][name]
         path = internal(base, item["entrypoint"])
         if item["entrypoint"] not in covered or digest(path) != item["sha256"]:
@@ -369,9 +513,9 @@ def admit(root=ROOT, installation_record=None, *, profile="full"):
     admitted = {"root": root, "base": base, "stable": stable, "policy": policy,
                 "policy_sha256": hashlib.sha256(data).hexdigest(), "inventories": reports,
                 "admission_profile": profile, "readonly_roots": readonly}
-    if profile == "stable-core":
+    if profile != "full":
         if read_once(pointer, maximum=4096, private=True) != pointer_data:
-            raise Incomplete("Installation pointer changed during stable-core admission.")
+            raise Incomplete(f"Installation pointer changed during {profile} admission.")
         admitted.update(installation_pointer=str(Path(pointer).expanduser()),
                         installation_pointer_sha256=hashlib.sha256(pointer_data).hexdigest())
     return admitted

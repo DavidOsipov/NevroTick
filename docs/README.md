@@ -26,29 +26,36 @@ to own requirements, and task records own executed evidence.
 | What code exists now, and which results apply to it? | [Current implementation summary](windows-time-architecture.md#1-current-state-capsule), backed by the workspace manifests, lockfile, source and linked candidate-specific task evidence. Dated baseline and review records below remain historical. |
 | What should a development agent do next, and which skills must it read and use? | [Development execution plan](plans/development-plan.md), especially its phase skill map, acceptance gates and next executable task. |
 | Which task owns each phase, integrated slice and deferred continuation? | [Task index](../tasks/README.md) maps existing implementation and evidence records; the [grouped deferred backlog](../tasks/development-backlog.md) supplies uncovered phase parents and activation criteria. The development plan still controls order and acceptance; task presence proves no readiness or completion. |
+| What must formal proofs actually establish, and what is still unproved? | [OD-10 §14.2](nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026) and the [product-guarantee debt](../tasks/development-backlog.md#product-guarantees-still-open) define scope, missing composition and completion; the [agent workflow](../.agents/skills/testing/references/formal-verification.md) prevents helper/tooling counts from replacing useful guarantees. All formal execution remains post-V1 under §14.1. |
 | Where are the personal project direction, future platforms and DNS plans recorded? | [Product roadmap](../ROADMAP.md): Android local SNTP bridge, ADB setup/restoration and feasibility gates; [system-wide Windows DNS/cache design](plans/system-dns-cache-design.md) for DoQ-only upstream resolution with leaf/intermediate pinning, DNSSEC acceleration/multicore work and bounded adaptive caching. The Windows execution plan continues to own current work, phase readiness and acceptance. |
 | How should Roughtime work with NTS and Khronos/Ananke? | [Time-assurance coordination design](plans/time-assurance-integration.md) and [shared future task](../tasks/time-assurance-integration.md): preferred Roughtime cold bootstrap, conditional Khronos/Ananke provisional-date reserve, then full NTS; dated server census, provenance, failure classification, epochs, conflict/resource rules and Windows gates. KHR-C01 and RGT-C01 remain separate future exits, with no new current Core prerequisite. |
 | What data should the default-source catalogue and source-quality history retain, and where might it live? | [Server catalogue and statistics draft](plans/server-catalogue-and-statistics-draft.md): data inventory, authority and provenance, proposed RAM/SQLite/compressed-history allocation, catalogue verification, database protection and optional NTS pinning. [Storage and format tables](plans/server-catalogue-storage-tables.md) provide the companion data/location/encoding/rationale/capacity/security matrices. Exact client representations, budgets, cryptographic providers and runtime implementation remain unselected or unqualified as stated there; the later shipped-catalogue direction and separate publisher input stage are recorded below. |
 | How should a compact release catalogue include hundreds of sources, Roughtime keys and future collection tooling? | [Binary catalogue refinement](plans/server-catalogue-binary-format.md): prefer binary delivery, with constrained CBOR and generated immutable tables as candidates; require Roughtime key/profile material in the first schema; the [offline publisher collector](../tools/server-catalogue/README.md) implements bounded local candidates and semantic diff. The [existing catalogue task §8](../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) owns its exact verification evidence and remaining build/admission work. Catalogue size does not enlarge the active-source set, settle OD-03 or implement RGT-0; Q0/Q-J retains its separate scope. |
+| Which catalogue decisions remain open, including expected DNSSEC protection? | [Catalogue open-question register](server-catalogue-open-questions.md) consolidates OPEN-CAT-01–03 and the proposed per-source DNSSEC continuity rule. It preserves Roughtime-first bootstrap, existing DNS validation owners and the current Core queue; no new preset, encoding, validator or release blocker is selected. |
 | Where are the origins and qualification scenarios for borrowed DNS mechanisms? | [DNS upstream lessons and adaptation plan](plans/dns-upstream-lessons.md): pinned Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and dnscrypt-proxy sources; eighteen lessons, including the [DNSSEC/cache follow-up](plans/dns-upstream-lessons.md#dns-r11-reuse-verification-results-bound-to-exact-content-and-proof-scope), with observed mechanisms, proposed adaptations and existing DNS-C owners; the [Security-kit follow-up](plans/dns-upstream-lessons.md#security-kit-follow-up-cache-contracts-and-regression-cases) adds TS cache contracts and source-derived regression cases under the same owners. |
 | Where are protected key storage, VBS fallback and their evidence gates owned? | [Architecture §12.1.2](windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [protected-storage plan](plans/windows-protected-storage.md), [development workstream](plans/development-plan.md#84-protected-optional-storage-design-and-qualification) and [provider qualification](windows-time-development-hardening.md#641-protected-storage-provider-qualification). |
 | Where are source examples and adaptation limits for protected Windows storage? | [First upstream review](plans/windows-protected-storage-upstream-lessons.md) and [second upstream review](plans/windows-protected-storage-upstream-lessons-2.md): pinned implementation/test sources, adaptation limits and future checks. The second adds directory authority, indeterminate commits, crash/protocol models, per-call CNG contracts, behavioral mitigation checks, RedirectionGuard and conditional rollback research. |
 | What should an agent do with the protected-storage research? | [Protected-storage agent task](../tasks/windows-protected-storage.md): bounded work items, prerequisites, owners, independent expectations, healthy/defect controls and candidate-specific evidence, mapped to the existing storage plan. The native experiment pause and current development priority remain unchanged. |
 | Which Microsoft Windows 11 mechanisms should be evaluated, and where does their work belong? | [Windows 11 integration research](plans/windows11-integration.md), [Microsoft Learn follow-up](plans/windows11-integration-follow-up.md), [phase workstream](plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent task](../tasks/windows11-integration.md): packet timestamps, sleep/timer behavior, DNS/WSH integration, service/MSI/COM lifetimes, resource signals, CNG, diagnostics and future UI. The follow-up adds exact completion, metadata, permission, tracing and partial-replacement cases plus source discrepancies. Existing CHECK/DNS-C/ST-T owners and conditional triggers apply; no native pass or automatic API/dependency adoption. |
+| Which Windows work can reuse Microsoft components, and what remains product-owned? | [Architecture reuse register](windows-time-architecture.md#1862-windows-component-reuse-and-binding-coverage), [development-plan handoff](plans/development-plan.md#44-apply-windows-component-reuse) and [grouped backlog](../tasks/development-backlog.md#windows-component-reuse-at-existing-stage-entry). [W11 task §4.29](../tasks/windows11-integration.md#429-windows-component-reuse-routing--5-november-2026), [storage §6.7](../tasks/windows-protected-storage.md#67-windows-binding-coverage-and-reuse--5-november-2026) and [UI handoff](../tasks/ui-m0.md#windows-component-reuse-handoff--5-november-2026) own the exact API/version map, VBS-symbol gap and conditional wrappers/toolkits. Published packages and upstream main differ; this review selects no dependency or toolkit and lifts no execution hold. |
+| How are production clock-correction limits prepared? | [W11 §4.31](../tasks/windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026) maps fields, provenance, proposed measurements and admission controls to S0.4/S0.7/P4 and W11-W02/04/05. Actual combined-rate accounting, late durable settlement, holdover assumptions and conditional recovery exposure refine OPEN-5/7/13; production values, decisions and native evidence remain open. Current Core/proof priority and all holds remain. |
+| Which Windows configurations are intended, and what evidence is missing? | [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope) and [W11 §4.32](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026): Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience, two first fixtures and shared controls. Exact profiles, actual availability, Server delivery and candidate-specific results remain open under existing owners; no stable support or native pass is declared. |
 | Which product capabilities and user journeys are intended? | [Feature specifications, F-01–F-10](windows-time-features.md#2-feature-specifications) and [essential journeys](windows-time-features.md#6-essential-user-journeys). |
+| Is SOCKS5 part of first Windows delivery? | No. [OD-11](nevrotick-owner-decisions.md#15-od-11--socks5-scope-and-deferral) and [SOCKS-0](../ROADMAP.md#socks-0--optional-socks5-time-acquisition) defer proxy support beyond P0–P7. Direct interface/family and successful-path reuse stay in current work. The [limited future profile](windows-time-architecture.md#limited-socks5-profile--deferred) uses loopback/no-auth/local-DNS; the [existing engine task](../tasks/engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026) owns implementation/check preparation. |
 | How is the selected complete MSIX hardened and prepared for a Store attempt with services? | [MSIX/Store plan](plans/windows-msix-store.md), [amended OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership), [architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate), [signing guide §6.1](windows-time-signing-guide.md#61-store-msix-trust-and-publication-boundaries) and [current W11-W10 task](../tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): explicit content integrity, sealed executable paths, Store-compatible CIG, per-role protections, supported service provisioning and recovery. Local mechanics, owner submission and final Store-delivered qualification are separate stages; no working package or Store acceptance is claimed. |
+| How do we maintain extensive, correct Windows product/package metadata for either MSIX or a later MSI route? | [Windows metadata contract](plans/windows-package-metadata.md): per-binary VERSIONINFO, MSIX identity/resources, MSI product/ARP/summary fields, Store listings, shared value sources and independent readback through verified windows-rs APIs. Use [maintain-windows-metadata](../.agents/skills/implementation/maintain-windows-metadata/SKILL.md) for harvesting, field authority, TOML/JSON storage, generation and artifact comparison. OD-05 §7.6 records the owner objective; W11-W10/P6 retain implementation and artifact qualification. |
 | Which stable releases are supported, and how are unsafe releases or compromised publication authority handled? | [Release policy](release-policy.md): current no-stable status, proposed first-stable support/backport baseline, exact candidate promotion, Store containment, compatible corrective releases and incident recovery. [Existing W11 task §4.21](../tasks/windows11-integration.md#421-release-operations-integration--4-november-2026) owns documentation evidence and remaining decisions/rehearsals; no support commitment or native/account pass follows from the document. |
 | Can a Store release carry independently checkable evidence of its source and build? | [Enhanced build provenance](plans/release-provenance.md) records the possible attestation, reproducible-build and delivered-payload chain and its limits. [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026) makes this additional assurance optional, with no new release blocker; existing artifact custody, SBOM/licence, integrity and installed-product checks remain required. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | How are leap seconds, silent-LI servers and Windows event ownership handled? | [Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales) owns the selected contract; [NV-LP-001](plans/leap-second-policy.md) records primary evidence, local knowledge, source/guard/Windows behavior; [S1.4's task](../tasks/s1.4-leap-policy.md) owns implementation cases and remaining native gates. |
-| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) reconcile completed S157/S158/S1.4a–c scopes with the current Core checkpoint, explicit date/data/import bounds and later protocol/native work. The [implementation continuation](../tasks/s1.4-leap-policy.md#15-pure-implementation-authoring--5-november-2026) has an initial portable pass; new-owner qualification remains in progress. |
+| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) retain its prerequisites and finite bounds. The [selected pure checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) now qualifies history/coverage/rule construction, interpretation and atomic replacement, with exact receipt reconciliation. Full acquisition and native integration remain separate. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
-| What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-20, mapped to technical checks. |
+| What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-22, mapped to technical checks. |
 | What technical/security result is required? | [Architecture §20.2](windows-time-architecture.md#202-acceptance-catalog): CHECK-1–CHECK-27, independent expected results, protected effects, valid controls and stage/owner. |
 | What is in scope for the current UI prototype? | [Architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0): M0-01–M0-08 and D1–D3 deferrals/re-entry gates; [UI-M0 task](../tasks/ui-m0.md) for implementation ownership and evidence. |
-| Which UI toolkit should the next agent use? | [OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint) selects Slint as the complete Win32 UI replacement; [S0.5](../tasks/s0.5-ui-comparison.md) owns the migration. Source preparation and admitted fixture work can parallel Core; current Win32 source and results are the pre-migration baseline. |
-| How should translators add UI languages and how are binary catalogs delivered? | [UI localization](plans/ui-localization.md), under [OD-12](nevrotick-owner-decisions.md#16-od-12--externalized-ui-translations-and-binary-catalogs): editable JSON → validated CBOR → shared typed Rust presentation catalog. All raw catalogs remain untrusted; the 6 November threat amendment covers independent contracts, isolated conversion, bounded admission and critical-meaning review/fallback. Slint, tray/notifications and accessible names share one policy; source work belongs to S0.5, actual adopted-locale/native evidence to P5. |
+| Which UI toolkit should the next agent use? | [OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint and incorporates the accepted local migration/licence scope. The [GUI handoff](../tasks/slint-gui-handoff.md) and [S0.5](../tasks/s0.5-ui-comparison.md) own implemented fixture behavior, GPL-3.0-only original GUI, branch evidence and remaining native/backend/text-approval/hardening work. Win32 and comparison receipts retain their exact historical scope; merged-candidate checks are separate. |
+| How should translators add UI languages and how are binary catalogs delivered? | [UI localization](plans/ui-localization.md), under [OD-15](nevrotick-owner-decisions.md#19-od-15--externalized-ui-translations-and-binary-catalogs): editable JSON → validated CBOR → shared typed Rust presentation catalog. All raw catalogs remain untrusted; the 6 November threat amendment covers independent contracts, isolated conversion, bounded admission and critical-meaning review/fallback. Slint, tray/notifications and accessible names share one policy; source work belongs to S0.5, actual adopted-locale/native evidence to P5. |
 | Which unresolved decisions or investigations gate dependent work? | [Open decisions](windows-time-architecture.md#22-open-decisions-and-release-blockers), [owner-decision procedure](nevrotick-owner-decisions.md) and [research assignments](nevrotick-research-handoff.md). |
 | How are checks run, and where are results kept? | [TOOLING.md](../TOOLING.md#starting-implementation) and [configured tool execution](../.agents/skills/testing/references/configured-tooling.md); the existing task record owns candidate-specific results and gaps. |
 | How do agents prepare and manage a disposable Windows Sandbox from Windows or WSL? | [manage-windows-sandbox](../.agents/skills/environment/manage-windows-sandbox/SKILL.md): concise procedure with detailed operations, security/configuration, resource, winapp, evidence and troubleshooting references. [Windows task §4.16](../tasks/windows11-integration.md#416-windows-sandbox-management-skill--3-november-2026) records the skill delivery; current execution holds and product CHECK owners remain. |
@@ -58,13 +65,48 @@ experiments. UI-M0's M0 checks do not complete the AC/CHECK catalogs or P0/P5.
 Select only the criteria applicable to the authorized task and retain deferred
 requirements with their owners and restoration triggers.
 
-The current [UI-M0 task](../tasks/ui-m0.md#remaining-evidence-and-next-work)
-records an implemented, observed prototype with required full native-memory
-instrumentation still incomplete. Read its later candidate addenda before reusing
-earlier results, and verify relevant source/environment identity before relying on
-them. A task receipt records execution; a catalog specifies expectations.
+The [UI-M0 task](../tasks/ui-m0.md#remaining-evidence-and-next-work) retains the
+Win32 prototype and its incomplete full native-memory instrumentation. The
+[current Slint handoff](../tasks/slint-gui-handoff.md) and S0.5 own the successor
+fixture GUI and its separate portable/capture evidence. Neither old Win32 passes
+nor branch-only checks establish merged-candidate or native qualification.
+A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
+
+**Current Slint source continuation — 6 November 2026:** the
+[GUI handoff](../tasks/slint-gui-handoff.md) records the implemented v0.4 fixture
+GUI, strict text-contract2 producer/loaders, separate GPL-3.0-only original GUI
+grant, GUI42 portable/capture and GUI43 affected source controls. Its exact
+branch evidence remains historical for the combined tree. Backend/native
+qualification, independent critical-text approval and the planned P3/P5/P6
+hardening handoff remain open; retain D1–D3 and all execution holds.
+
+**Controlling owner amendment — 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers all formal-proof work until after the first released software version
+(V1). Proofs are not V1 implementation, phase-acceptance or release prerequisites.
+Preserve the historical checkpoints below without extending their scope or
+resuming their jobs, source preparation, metadata repairs or verifier work.
+The [selected pure-leap checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
+is complete, including four current mutation cohorts and qualified receipt
+reconciliation. [S2.1's controlled measurement source checkpoint](../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026)
+now passes focused host tests, public-contract probes, dependency checks and
+Windows cross-builds on its recorded source. The subsequent
+[three-owner measurement qualification](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
+passes current host tests, coverage and complete mutation gates. Next freeze the
+existing observation-to-Core admission contract; native, production-scale/
+uncertainty and estimator qualification remain open.
+Runtime validation, independent behavioral tests, coverage/mutation, security,
+native/package and release gates remain; all existing execution holds remain.
+
+**Latest Core proof checkpoint, 6 November 2026:** [actual lifecycle source-counter invariant](../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored Kani jobs:145 properties and exact restoration. All291 selected Python checks pass;32 inputs/nine actually executed Python sources and final guards bind the candidate. Earlier ordinal/append-depth/rational proofs remain preserved. The later [complete constructor source checkpoint](../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) prepares genuine Garde-backed source/harness/Cargo and authenticates14 selected vendor packages, with51 source checks and independent review. It has zero compiler/proof commands and is not execution-ready; source-specific admission/target/allocator/drop/unwinding and constructor proof remain open. Transactional lifecycle, prefix/depth/topology/whole-selection, fraction-model/bridge/caller/addition and Core/P1 remain open; all execution holds are unchanged.
+
+**Independent P1 proof, 6 November 2026:** [RequestTiming constructor/getters](../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed five ordinary Kani jobs over every raw endpoint pair, three semantic defects and restored health. Its158-check/34-input/nine-executed-Python candidate remains preserved; later shared-runner changes have separate291-check compatibility evidence, with no native rerun claimed. Actual clock callees are compiled, with no certificate imported. This arithmetic proof grants no native-clock, lifecycle or P1 authority.
+
+The [supporter-label work](../tasks/s1.3-source-selection-readiness.md#next-independent-core-source-assignment--supporter-labels) and [constructor execution gap](../tasks/s1.3-source-selection-readiness.md#constructor-execution-gap-and-return-trigger) are retained post-V1 backlog. Neither supplies a current product priority, retry or private-patch adoption. The supporter-label healthy attempt timed out with zero checks; its new report consumer also needs a post-V1 correction. No supporter-label theorem or restored qualification was obtained.
+
+
+**Core verifier checkpoint, 6 November 2026:** the [Kani contract-mode pilot](../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026) ended DEFER at a primitive CBMC internal error, with zero product proofs or callee certificates. Completed ordinary proofs retain their scopes; full-domain addition and Core/P1 remain open.
 
 **Mandatory mathematical proofs, 5 November 2026:**
 [OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
@@ -72,13 +114,27 @@ requires machine-checked product mathematical proofs under
 [architecture §20.1.1](windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
 and [hardening §9.6.1](windows-time-development-hardening.md#961-mandatory-product-mathematical-proof-gate--5-november-2026).
 The [next-task record](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-routes the first continuation to the existing
-[S1.1c rounding/era handoff](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026).
+owns the current sequence and remaining domain/Core proof inventory. The existing
+[S1.1c proof chain](../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
+retains its scoped results and open public-constructor obligation.
 This supersedes earlier optional-proof wording; actual-source proofs of the
 remaining domain, leap, exchange and Core mathematics are still required.
 Historical bounded checks do not establish the stronger gate. Tool selection,
 Windows/native qualification and OD-05's optional enhanced release provenance
 retain their separate status.
+
+**Verus readiness result, 5 November 2026:** David's conditional request and the
+named full-domain addition gap justified the
+[bounded Core pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026),
+routed through the [development plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+and [P1 backlog](../tasks/development-backlog.md#p1-core-completion). The pinned
+payload's isolated version/loader check passed, but the final preparation command
+rejected the unchanged `u64::checked_shl` API before SMT execution. The readiness
+result is **DEFER**: three preparation commands used, zero product-proof commands
+and no adoption. Reconsider only after official support for the same actual call
+graph and a separate finite card; no assumed project specifications or runtime
+rewrite closes the gap. Completed Kani proofs remain reusable; addition and all
+other mandatory open obligations and execution holds retain their scopes.
 
 The [proof workflow](../.agents/skills/testing/references/formal-verification.md)
 and shared [testing contract](../.agents/skills/testing/CONTRACT.md#product-specific-evidence)
@@ -86,13 +142,22 @@ carry this requirement through planning, Rust/contract implementation and final
 qualification. Missing or invalidated proof evidence keeps dependent mathematical
 acceptance incomplete; choosing a different tool does not waive the obligation.
 
+**Ordinary S2.2 preparation, 5 November 2026:** the [engine composition card](../tasks/engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026)
+connects fresh normal-date KE, complete association publication, protected UDP and
+the actual numerical consumer through planned paired exits. Protocol, crypto and
+[W11 §4.30](../tasks/windows11-integration.md#430-ordinary-s22-windows-qualification--5-november-2026)
+retain their existing semantics/trust/native owners. This is source preparation;
+provider/profile admission, finite contracts and execution remain open. The current
+queue stays in [development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
 **S2.1 preparation, 5 November 2026:** the existing [engine integration card](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 consolidates three research lanes and their analysis into the real acquisition
 producer/consumer handoff. It distinguishes the existing exchange-to-Core fixture
 chain, the first experimental real-UDP measurement and later justified
 uncertainty/Core admission. [W11-W01 §4.26](../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
-remains partial source preparation. S1.1c stays first; no implementation, proof,
-native result, new gate or execution permission is established by this addition.
+remains partial source preparation. Development §7 controls the continuation;
+no implementation, proof, native result, new gate or execution permission is
+established by this addition.
 
 **Independent MSIX removal, 5 November 2026:** the
 [recovery continuation](plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026)
@@ -376,8 +441,13 @@ integration until a bounded actual-code comparison demonstrates additional value
 A valuable contract and a justified benefit hypothesis can trigger that pilot;
 prior Kani failure is not required. The report retains candidate properties, the
 Kani alternative, proof/trust boundaries and failure triage. No application proof
-was executed or new tool/CI gate adopted; the [S1.1c task](../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026)
-owns assessment history and review results.
+was executed or new tool/CI gate adopted **by that assessment**; the
+[S1.1c task](../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026)
+owns its history. The report's dated 5 November addenda and
+[current Core pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+record the triggered evaluation and actual readiness **DEFER** after the pinned
+candidate rejected `checked_shl`. No SMT or product proof ran; broader adoption
+remains deferred.
 
 **State-guided fuzzing experiment, 1 November 2026:** the
 [completed experiment report](supporting-reviews/state-guided-fuzzing-experiment.md)
@@ -389,14 +459,24 @@ Detailed execution evidence remains in the [S1.1e task](../tasks/s1.1-determinis
 
 **Architecture contract assessment, 30 October 2026:** the [critical review](supporting-reviews/architecture-contract-review.md) distinguishes valid specification gaps from existing controls and stale external snapshots. [Canonical acceptance refinements](windows-time-architecture.md#2021-contract-review-acceptance-refinements), [hardening §9.10](windows-time-development-hardening.md#910-contract-review-qualification-matrix) and [the execution workstream](plans/development-plan.md#82-contract-review-workstream-and-interface-gates) cover ownership, durable correction, adjustment modes, trust lifetimes, fresh agreement and lifecycle/tooling evidence. Unresolved numerical and trust-policy decisions remain held; no native qualification is claimed.
 
-**UI toolkit comparison, 30 October 2026; superseded choice on 5 November:** the
-[Win32 versus egui report](supporting-reviews/ui-toolkit-comparison.md) preserves
-the closed pilot and exact evidence. David rejected the tested egui configuration
-on memory consumption. [OD-11](nevrotick-owner-decisions.md#15-od-11--replace-the-win32-ui-with-slint)
-now selects Slint as the complete Win32 UI replacement, with migration tracked in
-the [existing S0.5 record](../tasks/s0.5-ui-comparison.md). Keep the resource targets
-and licence/graph/native qualification requirements. Old results do not qualify
-Slint; selecting it requires no repeat toolkit-choice comparison.
+**Current UI toolkit decision, 5 November 2026:**
+[OD-13](nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
+selects **Slint as the default**, starting with the measured winit/software
+renderer and Fluent-style widgets. The
+[Slint comparison result](../tasks/s0.5-ui-comparison.md#slint-software-renderer-live-host-result--5-november-2026)
+records 7.730 MiB visible private memory and no detected CPU-time increment in
+short idle trials; it is not full qualification. The integrated [Slint GUI handoff](../tasks/slint-gui-handoff.md)
+records later fixture implementation, bounded graph admission and the original
+GUI GPL-3.0-only grant; backend/native and critical-text approval remain open.
+The earlier [Win32/egui report](supporting-reviews/ui-toolkit-comparison.md)
+preserves the 30 October decision and measurements, superseded as a default by
+OD-13. The checked-in Windows GUI now selects Slint; Win32 receipts and the resource targets remain historical reference.
+
+David reaffirmed Slint after the subsequent iced comparison. The consolidated
+[Slint/iced assessment](supporting-reviews/slint-iced-assessment-2026-11-05.md)
+retains the reported resource results, pinned source review, unresolved findings,
+dated community/development census and decision rationale. It records no clear
+runtime-resource winner and routes its remaining source findings through the existing UI-M0/S0.5 chain.
 
 **Protocol follow-up, 30 October 2026:** [NTP client behavior](windows-time-architecture.md#73-ntp-client-behavior) makes KoD support explicit through pinned Chrony/independent-codebase analysis and reuse. The [existing protocol task](../tasks/s0.1-protocol-comparison.md#kod-reuse-and-rfc-8915-alignment-follow-up) records RFC 8915 alignment and remaining implementation checks; [TLS policy](windows-time-architecture.md#1871-license-gate-and-finite-provider-choice) prioritizes AES-GCM while retaining provider/CPU qualification. These are P2 requirements, not implemented NTS/KoD support or measured AES speedup.
 
@@ -440,7 +520,7 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 
 **IPC external comparison, 29 October 2026:** [architecture section 5.4](windows-time-architecture.md#54-native-ipc-implementation-and-qualification) records refinements from Microsoft guidance and pinned Tokio/Mio, Kestrel and OpenVPN source: caller-token association/reversion, effective rights, continuous pipe ownership and cancellation/completion. [Hardening section 9.9](windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification) maps them to existing native acceptance checks. The transport, runtime, dependency and UI-M0 decisions remain; external comparison is not implementation evidence.
 
-**Current UI milestone:** [UI-M0, architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), is a restricted native fixture-only prototype. D1 display/theme, D2 production service/policy-state and D3 full keyboard/Narrator/UIA work are explicitly **Deferred**, not prerequisites for UI-M0. Restore them at their specified integration/preview gates. Other workstreams and eventual product/release requirements remain unchanged; completing UI-M0 does not complete P0 toolkit qualification.
+**Current UI milestone:** [UI-M0, architecture §16.5](windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0), is a restricted native fixture-only prototype. The checked-in fixture GUI uses Slint under OD-13; current source/evidence and remaining backend/native/text-approval work are in the GUI handoff and S0.5. Win32 remains a historical reference. D1 display/theme, D2 production service/policy-state and D3 full keyboard/Narrator/UIA work are explicitly **Deferred**, not prerequisites for UI-M0. Restore them at their specified integration/preview gates. Other workstreams and eventual product/release requirements remain unchanged; completing UI-M0 does not complete P0 toolkit qualification.
 
 **Latest owner instructions:** [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) records accepted reuse/recovery/release choices and unresolved default-profile policy. [nevrotick-research-handoff.md](nevrotick-research-handoff.md) assigns the remaining investigations, including the supplied NTS directory and proposed operator candidates. Read these before interpreting older unconditional signing language in retained historical reviews.
 
@@ -455,7 +535,7 @@ The [LLVM settings matrix](windows-time-development-hardening.md#66-llvm-setting
 | A | [nevrotick-owner-decisions.md](nevrotick-owner-decisions.md) | Owner instructions of 29 October; accepted choices, recommendations and unresolved policy distinguished. |
 | B | [nevrotick-research-handoff.md](nevrotick-research-handoff.md) | Bounded future research, NTS operator candidates, evidence requirements and owner decision cards. |
 | C | [release-policy.md](release-policy.md) | Current support status and proposed stable-maintenance model; exact-candidate promotion, withdrawal, corrective recovery and publishing-authority incidents. Required operational rehearsals and product qualification remain open. |
-| 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, twenty acceptance scenarios and staged delivery. |
+| 1 | [windows-time-features.md](windows-time-features.md) | V1 product feature plan: ten capabilities, main journeys, authority, recovery, AC-01–AC-22 acceptance scenarios and staged delivery. |
 | 2 | [windows-time-architecture.md](windows-time-architecture.md) | Canonical creation specification, revision 1.4: technical contracts, threat model, NTP/NTS, Windows authority and release gates. |
 | 3 | [windows-time-diagrams.md](windows-time-diagrams.md) | Editable Mermaid architecture views aligned with revision 1.4. |
 | 4 | [windows-time-development-hardening.md](windows-time-development-hardening.md) | Strict Rust/Windows agentic development policy, CI, auditors, tool qualification and evidence requirements. See the current tooling record for adopted bootstrap checks; application/native/release qualification remains pending. |
@@ -482,7 +562,7 @@ artwork and variants. Design v0.2 remains historical with its original scene IDs
 
 Apply the references within the current UI-M0 scope and D1–D3 deferrals. HTML
 validators, dependencies and mock outcomes do not define the Rust/Slint
-implementation selected under OD-11. Imported Win32 descriptions reflect the
+implementation selected under OD-13. Imported Win32 descriptions reflect the
 pre-migration baseline. Simulated service, ownership and notification flows in v0.4 do
 not implement or qualify native behavior. The live canonical architecture and accepted owner
 decisions retain precedence over archived copies in the design bundle.
@@ -498,11 +578,13 @@ These preserve first-pass findings and correction checks, not competing specific
 - [development-compiler-review.md](supporting-reviews/development-compiler-review.md): compiler/lint/profile and Windows mitigation review.
 - [development-evidence-review.md](supporting-reviews/development-evidence-review.md): CI trust, isolation, mutation contract and correction verification.
 - [basic-features-review.md](supporting-reviews/basic-features-review.md): integrated product feature, UX, authority and acceptance review.
-- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): historical Win32/egui pilot and dependency concerns; OD-11 supersedes its retain-Win32 direction. Detailed evidence and the selected Slint migration stay in the S0.5 task.
+- [ui-toolkit-comparison.md](supporting-reviews/ui-toolkit-comparison.md): historical Win32/egui measurements and decision, now superseded by OD-13's Slint default; subsequent GPUI, Reactor and Slint evidence stays in the S0.5 task.
+- [slint-iced-assessment-2026-11-05.md](supporting-reviews/slint-iced-assessment-2026-11-05.md): consolidated resource, source-quality, accessibility, verification and community/development assessment; David's reaffirmation of Slint, exact source pins, evidence limits and existing migration follow-through.
 - [x86-runtime-optimization.md](supporting-reviews/x86-runtime-optimization.md): v3 baseline and ahead-of-time runtime dispatch, precise feature/OS gates, numerical constraints, compatibility and benchmark qualification; implementation follows OD-07 and the existing build task.
 - [architecture-contract-review.md](supporting-reviews/architecture-contract-review.md): critical disposition of the external assessment, primary-source basis, contract amendments and remaining decision/native-evidence gates.
 - [state-guided-fuzzing-experiment.md](supporting-reviews/state-guided-fuzzing-experiment.md): completed four-defect mutation/oracle comparison, retained defaults, per-class results, reusable lessons and frozen evidence references.
-- [verus-assessment.md](supporting-reviews/verus-assessment.md): source-based evaluation, deferred integration, candidate properties, comparison with Kani, proof boundaries and conditions for a future pilot.
+- [verus-assessment.md](supporting-reviews/verus-assessment.md): historical source assessment and dated bounded Core pilot, retained Kani evidence, same-contract comparison, proof/trust boundaries and conditional adoption criteria.
+- [hifitime-lessons.md](supporting-reviews/hifitime-lessons.md): critically checked proof-specification, harness-reachability, conversion-anchor and leap-data lessons; current proof-status corrections and bounded adoption through existing domain/leap owners, without a new numerical dependency.
 
 Some records retain workspace paths, initial hashes and source identifiers for provenance. Read correction addenda alongside the first-pass findings. Main documents control current requirements; the tooling record identifies completed tool controls separately from pending application, native-product and signing qualification.
 

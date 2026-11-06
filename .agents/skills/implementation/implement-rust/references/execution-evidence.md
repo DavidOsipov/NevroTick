@@ -17,6 +17,16 @@ member MSRV declaration. Resolver fallback aids resolution, not promised-compile
 compilation. All-features may hide missing member declarations/enable conflicting
 backends. Avoid exponential feature powersets/manifest-mutating helpers by default.
 
+For release-sensitive behavior, record the effective overflow-check, debug-assertion,
+panic, optimization and relevant `cfg` settings, including admitted overrides.
+Do not infer them from the profile name: this workspace enables release overflow
+checks, while `verify-release` additionally enables debug assertions. Its passing
+checks do not establish the behavior of branches/assertions disabled in the
+shipping profile. Select affected checks under the actual intended shipping
+settings through the configured lane; retain a missing supported lane as an
+evidence gap rather than bypassing admission. Required input rejection remains
+active in production under the existing contract.
+
 Capture selected test names, actual executions, ignored/filtered cases and first
 failure. Lists are discovery; successful zero-test filters exercise no behavior.
 Compile-fail specimens need intended diagnostic and compiling companion, not missing

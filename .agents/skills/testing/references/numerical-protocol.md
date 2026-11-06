@@ -10,14 +10,22 @@ Compare selection/principal/supporter/rejected membership/reasons, common-instan
 
 Keep exact NTP timestamp differences and Windows conversions in checked integer/fixed-point arithmetic before deliberately using floating point for small deltas. Declare physical error envelopes and numerical tolerances before execution. Test NaN/infinity, cancellation, saturation/overflow boundaries, quantization and signed rounding independently. Differential comparison with pinned chrony is useful but cannot be the only oracle for a ported algorithm. Record upstream revision/port-ledger identity.
 
+For conversions, pair reciprocity with independent known-answer anchors for the
+actual epoch, unit, scale and coverage interval. Shared inverse mistakes can
+round-trip. A related upstream formula is supplemental evidence, not an
+independent oracle for its translation. At affected rounding/narrowing boundaries,
+include both signs, zero, exact multiples, tie parities and destination neighbors
+as applicable; preserve the declared residual rather than silently saturating.
+
 When translating integer logic into a model or proof, reconcile
 [specification and machine semantics](formal-verification.md#relate-integer-specifications-to-machine-operations),
 especially negative division/remainder, casts and required-success overflow paths.
-Product mathematical algorithms require machine-checked, source-bound proofs
-under [OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-and the [proof workflow](formal-verification.md). Semantic review and behavioral
-oracles complement that gate. No particular additional verifier is selected here;
-an unavailable tool leaves its required proof incomplete.
+Product mathematics follows [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal proof work resumes after V1 and missing proofs are no first-release gate.
+Continue independent numerical/behavioral oracles and runtime checks; retain
+exact historical proof scopes and post-V1 obligations in the existing tasks.
+The [proof workflow](formal-verification.md) applies on resumption, including
+pending proof admission/metadata repairs.
 
 For a numerical kernel or threshold, use the
 [numerical procedure](../../implementation/implement-rust/references/numerical-kernels.md).

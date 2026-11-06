@@ -5,6 +5,10 @@ description: "Design or run bounded NevroTick semantic-state fuzzing with an ind
 
 # Explore meaningful states with a checked oracle
 
+Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+
 Read [the testing contract](../CONTRACT.md). Use this for a concrete search gap:
 different relevant states or histories revisit familiar code, so edge novelty
 alone provides weak guidance. Keep ordinary parser/conversion fuzzing in

@@ -44,7 +44,7 @@ execution holds and historical review receipts remain unchanged.
 
 This task does not activate future implementation, change the next Core task,
 select providers/dependencies, change public licensing or permit direct clock
-correction from Roughtime/Khronos. Windows P0–P7 → KHR-C01 → Android and the later
+correction from Roughtime/Khronos. Windows P0–P7 → KHR-C01 → GEO-C01 → Android and the later
 RGT-0 → CHR-0 sequence remain. Roughtime-only qualification does not depend on
 adopting Khronos. Claiming the combined automatic-reserve profile does require
 the relevant reserve implementation and integration evidence.
@@ -174,6 +174,10 @@ portable refinements do not qualify native event behavior or execute RGT-C01.
 the roadmap. `ADOPT_LIMITED` requires the bounded implementation and its relevant
 cases qualified before Android. `DEFER`/`REJECT` retain reasons and re-entry
 triggers. A Roughtime paper or successful bootstrap does not complete this exit.
+The next roadmap experiment is [GEO-0](../ROADMAP.md#geo-0--evaluate-geography-assisted-source-ordering),
+owned by the [existing catalogue task](server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos).
+Its disposition precedes Android without requiring GeoIP implementation or
+altering the qualified Khronos/Ananke population and sampling distribution.
 
 **RGT-C01:** TA-W02/03/04/06/07 and applicable TA-W08/09 evidence demonstrate
 qualified interval → NTS → broker recovery with refusal cases and actual Windows

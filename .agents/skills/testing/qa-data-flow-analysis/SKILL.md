@@ -5,6 +5,10 @@ description: "Trace NevroTick Rust external, untrusted or secret inputs through 
 
 # Analyze Rust source-to-sink paths
 
+Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+
 Read [the testing contract](../CONTRACT.md) and
 [CodeQL data-flow analysis](../references/codeql-data-flow.md). For query authoring,
 use the [pinned Rust query recipe](../references/codeql-rust-query.md). Use this skill
