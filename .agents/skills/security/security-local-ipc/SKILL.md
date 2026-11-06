@@ -17,6 +17,15 @@ Read [the security contract](../CONTRACT.md), architecture sections 4–6 and re
 5. Serialized effect owner rechecks operation rights, policy/authorization revision, engine/clock generation, monotonic freshness, sequence/request reuse, ownership and cumulative correction budget. Bind exceptional approval to exact correction/evidence/identity/revisions and finite single-use validity. Product-grant revocation and issued Windows group tokens have different limits; repeated inspection of same token cannot promise immediate OS account revocation.
 6. Define cancellation/disconnect/partial-read behavior and actual acknowledgement. Reconcile ambiguous outcomes before retrying non-idempotent effects. Reconnect/restart/cancel/sign changes must not refund correction authority or resurrect consumed approvals.
 
+Apply [protected management admission](../../../../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery).
+Keep separate from actor/verb authorization. Bind genuine OS package/component
+evidence to actual peer and approved installed release; request identity
+fields, names, paths, PIDs or signer-class checks alone grant no authority.
+Qualify acquisition races, injection and inherited/duplicated/proxied handles;
+unknown identity rejects protected admission. Preserve finite rights for compromised admitted UI/engine; retain public
+status/refresh and deliberate elevated recovery. Full-trust MSIX is no automatic AppContainer; no embedded UI secret or
+unqualified capability scheme closes the boundary.
+
 Select [qa-contract-tests](../../testing/qa-contract-tests/SKILL.md), [qa-security-boundaries](../../testing/qa-security-boundaries/SKILL.md) and lifecycle checks by changed claim. Include allowed command/identity controls, denied neighboring identity/command, squatting/restart races, stale/replayed requests and observed absence of forbidden clock/policy effects. Mock identities prove dispatch logic only. Report exact endpoint/rights, current guard, cancellation/reconciliation and evidence limits.
 
 For uncertain request-to-effect paths, use

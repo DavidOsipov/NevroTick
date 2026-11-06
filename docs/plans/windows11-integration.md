@@ -1,7 +1,7 @@
 # NevroTick: useful Windows 11 integration mechanisms
 
-**Document:** NV-WIN11-RESEARCH-001, revision 1.2<br>
-**Date:** 4 November 2026<br>
+**Document:** NV-WIN11-RESEARCH-001, revision 1.3<br>
+**Date:** 7 November 2026<br>
 **Owner:** David Osipov<br>
 **Status:** Owner-requested documentation integration; source research and proposed qualification, no native execution.
 
@@ -20,6 +20,12 @@ selects the v1 leap contract, including silent-LI sources, native ownership and
 the default process presentation. Its Windows work stays with W11-W02/S0.4/P4;
 its immutable dataset follows the existing complete-release channel. The source
 review below retains its original baseline and supplies no native qualification.
+
+**7 November service-hardening amendment:** the
+[management review](#service-management-hardening--7-november-2026) adds
+application admission, explicit administrative exceptions and native lifetime
+limits to existing SCM/IPC/recovery requirements. It changes no execution hold,
+account topology or current Core priority.
 
 ## Decision and scope
 
@@ -141,6 +147,128 @@ Zero Trust DNS is especially relevant to enterprise coexistence. Current documen
 Custom WFP remains conditional on a demonstrated WSH gap. Its object ACLs, transaction scope, and filter/session lifetime require their own design. Dynamic-session objects are removed when their session ends. [S11] [S12] [S13] A denial that disappears when its owner crashes can defeat the intended protection. No new kernel driver or machine-wide policy change follows from this recommendation.
 
 ## 4. Make installation and service state reflect actual Windows behavior
+
+### Service management hardening — 7 November 2026
+
+**Scope/evidence.** Owner requested maximum supported service hardening; normal
+management through NevroTick, administrative-utility exception retained. Three
+bounded lanes covered SCM/assets, IPC/application identity and repository
+reconciliation; coordinator covered reliability/existing mitigations. Sources:
+Microsoft API documentation, MSRC policy and Microsoft engineering explanations.
+Product rules/proposed tests are engineering conclusions, not measured protection.
+Canonical sections/skills compared at `c8df999abb2309d11cd4484159671a7110c21fa4`;
+Scoped source review; no exhaustive audit or native qualification.
+
+Main increment:
+[management admission and recovery contract](../windows-time-architecture.md#421-service-management-admission-and-administrative-recovery).
+Existing least privilege, mutual IPC, maximum-compatible mitigations and finite
+recovery remain required. Add no duplicate security framework, skill or acceptance catalogue. Owner map:
+
+| Layer | Required hardening/reliability outcome | Existing implementation/qualification owner |
+| --- | --- | --- |
+| Service roles and tokens | Separate own-process engine/broker; engine lacks clock/debug/impersonation authority; broker retains only required privileges and no external-network role. Inspect actual token, owner and restricted/service SIDs before normal work | Architecture §4.1; S0.2; W11-W05; CHECK-1/27 |
+| SCM management | Explicit principal/operation/route matrix, exact manager/service rights, fixed targets and deliberate elevated recovery. Normal UI has no direct lifecycle/configuration authority | Architecture §4.2.1; service-adapter access matrix; W11-W05; CHECK-1/2/13/23/27 |
+| Application admission | Current OS-authorized actor, admitted installed NevroTick component and current effect guards all pass. Unadmitted same-user processes, copied helpers and unrelated signed packages gain no protected admission merely from user identity or signature validity; admitted-process abuse retains §14.3's residual scope | Architecture §4.2.1/§19.4–19.5; S0.3/W11-W10; CHECK-1/2/15/18 |
+| Local IPC | Explicit protected DACL, exact pipe rights, remote rejection on every instance, continuous server ownership, bidirectional identity and explicit identification-level client QoS | Architecture §5.1/§5.4; S0.3/S3.2; CHECK-2/3/25/27 |
+| Process and loaded code | Review process/thread/token access and handle inheritance/duplication. Qualify required DEP/ASLR/CFG/CET, dynamic-code, CIG, image-load, extension-point, strict-handle and role-compatible Win32k/child restrictions on final artifacts and activation paths | Architecture §15.1–15.4; hardening §6.3–6.4; CHECK-16/18/20/23/26 |
+| Files and configuration | Protect immutable code, DLL search, service registry state, policy/journal and parent replacement authority. Inspect actual final owner/DACL after creation, replacement, repair and update | Architecture §12/§15.2; service-adapter object matrix; CHECK-1/13/15/23 |
+| Network confinement | Broker denied external traffic; engine gets only approved direct/delegated capabilities. Record rule activation and enterprise-policy conflicts | This plan §3; W11-W04; CHECK-1/18/23 |
+| Work and native lifetimes | Finite caller/global bytes, clients, queues, retries and deadlines; legitimate neighboring work progresses. Cancellation retains native buffers/handles/permits until actual completion | Architecture §5.4/§17.1; CHECK-3/25/27 |
+| Startup, stop and recovery | Readiness means usable service, not trusted UTC. One lifecycle owner; short callbacks; real progress; cleanup before final Stopped. Per-service finite restart policy, maintenance interlock and independently usable crash recovery | Architecture §11.2; service-adapter lifecycle/recovery matrices; CHECK-12/13/27 |
+| Mandatory clock authority | Current ownership, durable reservations/outcomes and correction limits survive crashes, reconnects and updates. Unknown outcome blocks further effects; restart does not refund authority | Architecture §10–12; P4; CHECK-10/11/12/15/25 |
+| Installation and servicing | Complete hardened MSIX, supported pre-start isolation, protected payload and fresh admission; repair/removal preserve an independently invocable recovery owner until obligations settle | MSIX plan §7.5–7.6; W11-W05/W11-W10/P6; CHECK-1/13/18/23/27 |
+| Evidence and drift | Record configured, effective and actually challenged state separately. Bounded redacted security decisions and lifecycle outcomes must not invent caller identity or successful cleanup | Architecture §12.3; hardening §9.8–9.11; CHECK-14/17/27 |
+
+**SCM authorization is not application authentication.** Access checks compare
+effective token/requested rights against a descriptor. Service
+descriptors cannot select EXE names. Default local-authenticated-user grants
+include custom controls; service `GENERIC_EXECUTE` also contains start/stop,
+pause/continue and custom-control rights. The HandlerEx interface provides
+control/event data and service-owned context, not an authenticated original
+calling application. Therefore protected product commands belong behind the
+qualified IPC method boundary. Retain only separately justified query rights
+for observation/server verification; hiding enumeration is not a security goal.
+Use actual installed descriptors, not historical default-permission prose, as
+qualification evidence. [H1] [H2] [H3]
+
+**Package identity is useful evidence with a bounded claim.** Windows writes packaged-process
+identity through controlled token/deployment paths; IPC package strings supply
+no equivalent evidence. NevroTick must bind the actual
+peer to its approved installed package/publisher/component/release and protected
+content. Full-trust MSIX does not automatically create an AppContainer; inspect
+the actual activation and token, including elevated helper cases. Neither package
+identity nor a signature proves untampered live memory, safe loaded code or an
+authorized verb. CIG and Trusted Launch retain their separate existing contracts.
+[H4] [H5]
+
+AppContainer/profile capability SIDs do not alone prove publisher provenance or
+exclusive use by the intended application; launch authority, injection and handle
+delegation still need a threat model. The documented HSA custom-capability/SCCD
+route requires Microsoft reservation/approval and binds authorized packages and
+certificate-signature hashes. It is not a generic private-capability shortcut
+for this utility. Neither that route nor a new AppContainer/driver/topology is
+selected. PPL remains excluded: Windows protection levels are reserved and the
+third-party antimalware route has special eligibility/signing requirements.
+[X2] [X9] [H6]
+
+**Existing authority survives superficial repair.** The Windows handle model
+checks access on acquisition; later DACL tightening does not revoke existing
+handles. Require a pre-existing-handle case across SCM/IPC repair; no universal
+revocation recipe follows. Establish
+protection before exposure and recheck current protected-operation policy.
+Likewise, obtaining a stable process handle after PID lookup does not prove the
+earlier acquisition interval was race-free. Review actual peer/token/process
+association, process-object rights, inherited/duplicated handles and authorized
+proxying; reject inconsistent identity. [H7] [H11] [H21]
+
+**Final objects and supported configuration paths matter.** Default file ACLs
+are assigned on creation, not merely on rename/move. Moving an updater artifact into a protected
+directory proves no secure owner/DACL. Inspect
+final objects and parent replacement authority through actual supported package
+servicing. SCM configuration functions, not direct Services-registry writes,
+own service database mutation. Use fully qualified/correctly quoted executable paths and reviewed protected
+DLL dependency search paths; safe-search
+ordering alone leaves writable locations possible. [H8] [H9] [H20] [H22]
+
+**Local IPC and administrative recovery are separate policies.** Reject remote clients on every pipe
+instance; exact data rights avoid the
+`FILE_GENERIC_WRITE`/instance-creation alias. Limit client SQOS explicitly so a
+fake endpoint cannot gain unnecessary impersonation authority. Serialize
+read/caller capture because impersonation uses the last message read; reject
+failed impersonation and stop process execution after failed reversion. Existing IPC requirements; no new transport selected. [H12] [H13] [H14] [H16] [H23]
+
+SCM can use remote RPC/TCP and named-pipe transports independently of product
+IPC. Record supported/denied administrative remote use and observed host
+policy; do not change host-wide firewall/RPC/UAC settings merely to make
+NevroTick management succeed. Retain deliberate elevated administrative repair
+when UI or service is unavailable. Ordinary-service ACLs cannot promise defense
+against malicious local administrator/kernel control; this scope does not erase
+the distinct Windows VBS/protected-feature boundaries. [H10] [H24]
+
+**Reliability is part of the protection.** `CancelIoEx` requests cancellation;
+native completion still owns `OVERLAPPED` and its buffers. `SetServiceStatus`
+requires meaningful progress and cleanup before the single final Stopped report.
+SCM repeats the last configured failure action; a bounded restart policy needs
+an explicit terminal `SC_ACTION_NONE` and justified reset/backoff semantics. Queued restart
+cannot be canceled merely by clearing the failure-action array. The existing
+lifecycle owner must explicitly disable the affected service and retain the
+protected maintenance-startup interlock; the interlock supplements disabling
+and does not cancel the queued action. The non-crash
+flag has separate documented activation timing. Keep process-specific failure,
+network-unavailable/degraded operation, orderly stop and crash recovery distinct;
+no restart loop or false Running may conceal failed admission. Reuse existing
+deadlines and decision owners rather than copy sample numbers. [H15] [H17] [H18] [H19] [S8]
+
+**Next bounded work.** Freeze the architecture §4.2.1 route/actor/component/verb
+matrix and its allowed/denied neighbors under S0.2/S0.3 and W11-W05/W11-W10.
+Specify the package-aware peer verifier and independent recovery entry point;
+both remain unqualified. Existing hardening §9.9/§9.11 owns same-principal/wrong-
+application, pre-existing-handle, legitimate elevated-admin and unavailable-UI
+controls. Native work needs existing admission/disposable fixture; source tests
+cannot qualify Windows enforcement. Current Core priority, broad
+Windows stop, fuzz/storage holds, UI-M0 deferrals and post-V1 formal deferral stay.
+No production limits, account mapping, dependency or new execution permission
+is selected by this research.
 
 ### Restart Manager is another restart source
 
@@ -326,4 +454,28 @@ Links below are primary Microsoft documentation, except the pinned project basel
 [X8]: https://learn.microsoft.com/en-us/windows/win32/sysinfo/creating-a-time-provider
 [X9]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_launch_protected_info
 [X10]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_trigger
+[H1]: https://learn.microsoft.com/en-us/windows/win32/services/service-security-and-access-rights
+[H2]: https://learn.microsoft.com/en-us/windows/win32/secauthz/how-dacls-control-access-to-an-object
+[H3]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex
+[H4]: https://devblogs.microsoft.com/insidemsix/msix-chain-of-trust/
+[H5]: https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/app-capability-declarations
+[H6]: https://learn.microsoft.com/en-us/windows-hardware/drivers/devapps/hardware-support-app--hsa--steps-for-driver-developers
+[H7]: https://devblogs.microsoft.com/oldnewthing/20200320-00/?p=103579
+[H8]: https://learn.microsoft.com/en-us/windows/win32/fileio/file-security-and-access-rights
+[H9]: https://learn.microsoft.com/en-us/windows/win32/services/service-configuration-programs
+[H10]: https://learn.microsoft.com/en-us/windows/win32/services/services-and-rpc-tcp
+[H11]: https://learn.microsoft.com/en-us/windows/win32/procthread/process-security-and-access-rights
+[H12]: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+[H13]: https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-impersonatenamedpipeclient
+[H14]: https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-reverttoself
+[H15]: https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex
+[H16]: https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights
+[H17]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-setservicestatus
+[H18]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw
+[H19]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w
+[H20]: https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-security
+[H21]: https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-process_information
+[H22]: https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-createservicew
+[H23]: https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-createnamedpipew
+[H24]: https://www.microsoft.com/en-us/msrc/windows-security-servicing-criteria
 

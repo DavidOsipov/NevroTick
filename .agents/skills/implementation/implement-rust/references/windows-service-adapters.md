@@ -220,6 +220,22 @@ owner, DACL/inheritance, service/restricted/logon SIDs, handle lifetime and any
 impersonation state. Distinguish access requested, access granted and a successful
 effect; source constants or a copied SDDL string prove none of them.
 
+Apply [management admission and administrative recovery](../../../../../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery):
+Record normal route, required installed component and deliberate elevated
+exception per actor/verb. SCM checks principal rights; HandlerEx supplies
+no authenticated original-caller application credential. Protected product
+commands require qualified IPC plus current actor/component/effect guards.
+Preserve public status/refresh policy and independently usable recovery.
+
+Establish protection before exposing authority. DACL tightening does not prove
+revocation of existing handles; Qualify pre-existing handles across repair/update.
+Holding a process handle after lookup does not prove race-free acquisition or
+prevent delegation. Inspect staged/moved/replaced files: final owner/DACL and parent authority; moving into a protected directory is insufficient. Use supported
+SCM/package configuration APIs, not direct Services-registry edits. Local-only
+pipes do not settle remote SCM policy. The [source review](../../../../../docs/plans/windows11-integration.md#service-management-hardening--7-november-2026)
+owns API distinctions. Exact descriptors, peer binding and exceptions remain
+native qualification outputs; no universal SDDL.
+
 For runtime-created objects, distinguish a service SID in the token/DACL from the
 token's **default owner**. A service SID does not automatically become object
 owner, and an owner normally receives implicit `WRITE_DAC`. A narrow allow-ACE

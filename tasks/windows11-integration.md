@@ -347,6 +347,26 @@ retrieval; DNS-C14/17 when the DNS service participates.
 **Prerequisites:** existing token/object, mitigation, mandatory-state and
 [installation research](../docs/plans/windows11-integration.md#4-make-installation-and-service-state-reflect-actual-windows-behavior).
 
+**7 November service-management refinement:** apply the
+[source review](../docs/plans/windows11-integration.md#service-management-hardening--7-november-2026)
+and [canonical route policy](../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery)
+with W11-W10/S0.2/S0.3. Before choosing descriptors/peer verifier, record each operation's
+normal route, effective principal, required installed component, object/right
+and deliberate administrative/recovery exception. Public redacted
+status and argument-free refresh retain their existing policy. Product commands
+requiring application identity cannot use SCM custom-control delivery as proof
+of that identity. Remote administrative SCM and local-only pipes need separate
+dispositions; no global host-policy weakening follows.
+
+Next source-only child: freeze matrix and valid/hostile controls; specify
+still-unqualified package-aware peer binding and independent recovery entry point. Later native evidence must cover same-principal/wrong-app,
+copied or unapproved component, identity acquisition/restart races, injected or
+delegated authority, prior handles across DACL repair, final moved/replaced-object
+security and intended elevated recovery without a healthy UI/service. Existing
+hardening §9.9/§9.11 and CHECK-1/2/13/15/18/23/27 retain acceptance. Descriptor, signature or package-family match proves no application exclusivity. Source
+research grants no native execution, new service identity, topology or dependency;
+current priority and holds remain unchanged.
+
 **Clock-limit preparation:** [§4.31](#431-clock-correction-limits-preparation--5-november-2026)
 keeps actual native-job completion, broker cleanup, durable late outcomes and
 conditional recovery exposure with this owner; configured delays prove no expiry.

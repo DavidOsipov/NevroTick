@@ -362,6 +362,12 @@ as below. **Status:** deferred parents; existing S0.1 and W11-W05/W11-W10 S0.6
 records remain authoritative. **Exit:** [plan §6/P0](../docs/plans/development-plan.md#p0--admit-sources-and-prove-platform-assumptions)
 and [architecture §21](../docs/windows-time-architecture.md#21-delivery-phases-and-readiness-gates).
 
+S0.2/S0.3 consume the [management route policy](../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery)
+and W11-W05/W11-W10 source refinement: exact SCM rights, current actor plus
+installed-component admission for protected IPC, deliberate elevated recovery
+and same-principal/wrong-application controls. Mechanism selection/native qualification remain open dependencies of
+existing deferred cards.
+
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
 | S0.2 service tokens / platform/security | Intended account topology, admitted wrapper/graph, disposable Windows fixture and current native gates; prepare one two-service token/lifecycle experiment. Clock-writing subcase also needs the canonical temporary experiment card. | Intended broker operation succeeds within policy while engine/UI clock and broker-injection access fail; real callback/stop ownership remains bounded. CHECK-1/27 subset. |
@@ -594,6 +600,10 @@ for unrelated research before ordinary full NTS acquisition.
 **Status:** deferred full-services parent; apply W11-W04/05/08 and relevant
 ST-W03–ST-W07 before dependent adapters. Optional-cache pause does not pause the
 separate mandatory policy/authority/floor state owner. **Exit:** [plan §6/P3](../docs/plans/development-plan.md#p3--windows-services-secure-ipc-and-protected-state).
+
+S3.1/S3.2 inherit the [management admission/recovery contract](../docs/windows-time-architecture.md#421-service-management-admission-and-administrative-recovery)
+and hardening §9.9/§9.11 controls from S0.2/S0.3. Service DACL/package signature alone cannot close application admission; normal-client denial and
+deliberately elevated recovery must both work. Full services remain deferred.
 
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |

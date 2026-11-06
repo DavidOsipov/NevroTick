@@ -639,6 +639,13 @@ Implement two own-process services using qualified narrow SCM adapters, then
 bounded versioned handlers, current authorization, protected persistence and
 coherent status. Start proposal integration with a simulated clock backend.
 
+Apply [service management admission and administrative recovery](../windows-time-architecture.md#421-service-management-admission-and-administrative-recovery).
+Use existing S0.2/S0.3 and W11-W05/W11-W10. Qualify normal protected component
+admission separately from principal/verb authorization, SCM rights and deliberate
+elevated recovery. Include same-user foreign clients, prior-handle authority and
+recovery without a healthy UI/service under hardening §9.9/§9.11. Preserve public-operation
+policy, phase order and all execution holds.
+
 | Acceptance | Required Windows observation | Mapping |
 | --- | --- | --- |
 | Service isolation | Actual engine/UI tokens cannot set time or inject/write into the broker; broker has only qualified rights and no external network role. No LocalSystem shortcut. Valid permitted broker operation remains possible in the owned fixture. | CHECK-1/2/27 |

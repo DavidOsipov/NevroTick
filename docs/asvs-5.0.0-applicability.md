@@ -12,6 +12,20 @@ The [architecture and threat model](windows-time-architecture.md) owns product d
 
 ## Common provenance fields
 
+**7 November service-management routing:** apply the
+[normal/administrative admission policy](windows-time-architecture.md#421-service-management-admission-and-administrative-recovery)
+and [IPC/route controls](windows-time-development-hardening.md#99-ipc-identity-framing-and-native-lifetime-verification)
+through existing THR-6/7/20/22/23/25/26 and CHECK owners. Separate current actor,
+installed component and effect authority; challenge same-user foreign code,
+alternate SCM paths, stale handles and unavailable-UI recovery beside valid
+normal and deliberate elevated operations. Strengthens planned authentication inventory, V8 authorization,
+V13 least privilege, V15.4.2 resource binding and V16 decision/failure evidence. Closes no open immediate-revocation V8.3.2, posture/context V8.4.2,
+fresh-verification V7.5.3 or audit-loss/time/analysis decision. Elevation is not automatically fresh authentication;
+bounded logging must retain the existing L3 requirement for successful as well
+as denied protected authorization decisions and its unresolved loss policy.
+All 345 IDs, classifications, original fields and unexecuted statuses below remain
+unchanged; source research is no implementation, native pass or ASVS conformance.
+
 **4 November release-operations routing:** the [release policy](release-policy.md)
 documents support proposals, promotion, withdrawal and incident recovery under
 existing CHECK-13/15/17/18/23/24/26/27 owners. Its proposed support model and

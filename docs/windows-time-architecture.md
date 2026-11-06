@@ -409,7 +409,7 @@ topology, TokenOwner mechanism or new authentication protocol.
 | Approve a large exceptional correction | Elevated administrator or explicitly delegated operator | Single-use, current-generation action bound to the proposed correction and policy |
 | Install, update, remove, alter service identity or take over W32Time | Elevated installer/helper | Signed protected binaries, transaction journal and rollback |
 
-A future delegated operator group may receive a documented subset of product operations. It must not receive `SERVICE_CHANGE_CONFIG`, general filesystem/registry write authority or `SeSystemtimePrivilege`. Other processes under an authorized user's identity can exercise that identity's allowed rights. Signing the official UI does not make it the only authorized process. [S10]
+A future delegated operator group may receive a documented subset of product operations. It must not receive `SERVICE_CHANGE_CONFIG`, general filesystem/registry write authority or `SeSystemtimePrivilege`. Windows account permissions apply to other processes under that identity; UI signing alone creates no executable-exclusive boundary. The additional application-admission policy below must be established separately. [S10]
 
 The normal UI profile specifies `asInvoker`. This preserves the permission level
 of the launching process; it does not remove inherited elevation, and an
@@ -421,6 +421,58 @@ installer handoff rule still applies; this does not select an automatic
 de-elevation mechanism. [S139]
 
 The UI may invoke the approved installed elevated helper through a supported UAC flow for a specific operation. The selected MSIX profile must bind installed package/publisher identity, approved release and actual protected payload to helper/IPC authorization under sections 19.4–19.5; an unrelated Store-signed executable is not authorized. Required Store elevation capability and activation behavior remain unqualified. Retained MSI profiles have their own installed-file trust requirements; missing signatures cannot become successful verification. The helper re-reads authoritative service state and validates a bounded request; it must not trust a user-writable temporary command file or accept arbitrary executable paths, registry keys, shell commands or Windows service names. UAC cancellation leaves policy unchanged.
+
+#### 4.2.1 Service management admission and administrative recovery
+
+**7 November 2026 owner-requested hardening:** normal protected management must
+use admitted installed NevroTick components and current operation authority.
+Preserve deliberate elevated administration and owned recovery. Required
+design/qualification target; no implemented-exclusivity claim. The [source review](plans/windows11-integration.md#service-management-hardening--7-november-2026)
+records Windows mechanisms, limits and evidence owners.
+
+| Operation | Normal route and required authority | Administrative/recovery scope |
+| --- | --- | --- |
+| Redacted status; argument-free measurement refresh under current configuration (§5.3) | Existing local interactive-user policy, rate limits/coalescing and bounded product IPC; retain minimum SCM/process query rights required for genuine-server verification | These existing public operations are outside the application-only protected-management target; they grant no machine-policy or lifecycle rights |
+| Protected policy, scoped service diagnostics, exceptional correction approval | Admitted installed UI/helper as appropriate; actual elevated/delegated actor permitted for this verb; broker rechecks current policy, revision, generation and finite authority | Any separately supported administrative product entry point requires its own explicit verb/actor policy; elevation creates no implicit bypass on normal IPC |
+| Engine correction proposal | Current intended engine service identity plus admitted installed component; private IPC and independent broker limits | UI, helper or administrator membership does not turn a request into an engine proposal or bypass broker effect guards |
+| Start, stop, restart or configure product services | Approved elevated lifecycle owner, fixed product targets and exact per-operation SCM/service rights; ordinary UI requests the approved helper flow | Deliberately elevated administrative utilities may use rights granted by the reviewed service descriptor; record remote administration separately |
+| Change service security, identity, image or recovery configuration; delete service | Installer/repair owner under supported package/SCM lifecycle, fixed targets and separately justified mutation rights | Explicit elevated administrative recovery remains possible; service runtimes and ordinary clients receive no general configuration, deletion or security-descriptor authority |
+| Recover with UI/service unavailable; update, repair or remove | Independently usable compatible code, protected current journal, current authority and invocation under section 11.2 | Recovery must not require a healthy UI or the failed normal IPC path; preserve ownership, successor/GPO checks and durable outcomes |
+
+Normal protected IPC requires all three: **OS-derived actor may
+perform this verb; connected component satisfies the installed NevroTick
+admission policy; current request/state permits the effect**. Genuine OS package
+identity is useful evidence, distinct from a sender's package-name field. Bind
+it to the actual connected peer, approved package/publisher/component/release and
+protected payload under the selected MSIX profile. A package-family match,
+filename, path, bare PID, signer-class pass or successful signature check alone
+is insufficient. Keep full-trust activation distinct from AppContainer and
+inspect the actual token; packaging does not fix elevation or live-process trust.
+
+Before claiming this boundary, qualify native peer/process/token binding,
+identity-query failures, replacement/PID-reuse races, injection, inherited or
+duplicated handles and proxying by an admitted process. Holding a process handle
+does not retroactively close its acquisition interval. Unknown/inconsistent identity blocks the affected protected route. Compromised admitted
+UI/engine remain adversaries under section 14.3; valid component identity never
+expands their finite rights. No embedded UI secret, unqualified AppContainer/
+custom-capability scheme or PPL shortcut satisfies this gate.
+
+SCM/service DACLs authorize security principals and handle rights, not executable
+names. The SCM control callback supplies no authenticated original-caller
+application credential. Keep product commands requiring application/request
+identity behind qualified IPC; unsupported custom controls have no protected
+effect. Tightening a DACL does not establish revocation of existing handles;
+qualify pre-existing authority across repair/update and retain current broker
+checks. Local-only pipes do not disable remote SCM. Normal product management
+uses local paths; any administrative remote allowance/denial must be explicit
+and observed under host policy, without weakening global SCM/RPC/UAC controls.
+
+Retain bounded redacted decision evidence: observed route/actor/component,
+operation, current policy/generation, decision and actual outcome. Record unknown
+caller origin as unknown; an SCM event cannot supply missing application identity.
+Malicious local administrator/kernel control remains outside the guarantee.
+S0.2/S0.3, W11-W05/W11-W10 and P3/P6 own these obligations under existing checks;
+MSIX provisioning, native execution holds and current development priority remain.
 
 ---
 
@@ -477,6 +529,13 @@ The 29 October 2026 comparison with Microsoft documentation and pinned upstream 
 Use first-instance protection when initially acquiring a pipe name. Subsequent service-owned instances use the established protected descriptor without repeating the first-instance-only flag. Never retry a failed initial acquisition by silently omitting that protection. Keep continuous service ownership of the name while the endpoint is advertised ready: retain an owned anchor/pending instance or a qualified equivalent across idle periods, connection handoff, disconnect churn and recoverable accept errors. Reserve this listener capacity within the finite handle/connection budget. If the last owned instance is lost, stop admission, invalidate the endpoint incarnation and reacquire through the full initial checks. Kestrel's pinned listener illustrates maintaining a pending stream; it is evidence for the invariant, not adopted code or proof of our error paths. [S107, S110]
 
 A pipe name, owner SID, first-instance result, executable name or bare PID alone does not authenticate the connected server. Microsoft documents that multiple instances share the first security descriptor, so an attacker-created instance can report the same owner. The selected SCM/service/process proof must bind the connected handle to the current intended service with stable process/token handles and account for status lag, invalid start/stop-pending PIDs and restart/reuse races. No sensitive request or trusted status is admitted while that proof is incomplete. Preserve section 5.1's local-RPC fallback gate; these examples do not select TLS, gRPC or a shared-secret scheme. [S107]
+
+Apply [section 4.2.1](#421-service-management-admission-and-administrative-recovery)
+to application admission on protected routes. Captured token authorization and
+peer component admission establish separate facts; neither replaces current
+effect guards. Qualify acquisition races and handle delegation as well as PID
+reuse. Identification-level client QoS must be explicit at the native open, and
+remote-client rejection must hold for every exposed pipe instance.
 
 #### 5.4.2 Caller identity, impersonation and reversion
 
@@ -1615,6 +1674,11 @@ Group Policy can overwrite ordinary W32Time configuration. Detect managed policy
 
 ### 11.2 Upgrade, rollback and uninstall
 
+The [management exception](#421-service-management-admission-and-administrative-recovery)
+must preserve the independent recovery path below when normal UI/application
+admission is unavailable. Administrative recovery retains operation-specific
+authority and current ownership; it grants no stale journal replay or budget reset.
+
 | Operation | Required sequence | Failure behavior |
 | --- | --- | --- |
 | Upgrade | Quiesce engine; broker cancels transient slew; persist versioned state; replace protected binaries; start one broker generation; verify version/capability compatibility | Use only a qualified compatible code/state transition, preserving current mandatory authority and uncertain outcomes; do not enable W32Time beneath the successor |
@@ -2284,7 +2348,7 @@ The principal invariants are:
 | Malicious dependency/build contributor | Influence code/build scripts in an untrusted contribution or upstream package | Review, hermetic/restricted execution, protected signing workflow and exact-artifact release approval |
 | Authorized administrator/operator | Change permitted policy and explicitly approve exceptional corrections | Correctly bounded operations, consent clarity, auditability and transaction safety; malicious admin prevention is out of scope |
 
-All processes running under an authorized user's identity can exercise that identity's granted product rights. Signing the official UI does not create a separate Windows user identity. A compromised engine is deliberately included: otherwise the process split would be assessed only while every component was honest.
+Windows account grants apply to other processes under that identity; signing the official UI creates no separate Windows user identity. Section 4.2.1 additionally requires qualified component admission for normal protected management, while preserving public operations and explicit administrative recovery. This does not remove the compromised-UI/engine threat: an admitted process can still abuse its own credentials or proxy requests. Independent broker authorization, budgets and ownership remain required.
 
 ### 14.4 Data flow and trust boundaries
 
