@@ -1,5 +1,19 @@
 # Windows 11 integration: agent task and evidence record
 
+**Current owner amendment — 6 November 2026:** [OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. Retain the proof receipts and incomplete obligations below; their older
+“next”, “mandatory before acceptance” and proof-first directions do not authorize
+pre-V1 work or block first-version implementation, phase acceptance or release.
+No new solver/compiler proof campaign, verifier extension, formal source
+preparation or proof-metadata consumer repair is scheduled before V1. Resume
+through normal bounded planning after that release. Runtime validation, checked
+arithmetic, independent tests, property/boundary cases, 90% security-primitive
+coverage, 95% critical-file mutation, security/native/package/release gates and
+all existing Windows/fuzz/storage/UI holds remain in force. Current product work
+follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+
 **Date:** 5 November 2026, Asia/Tbilisi; earlier dated receipts retain their recorded time zones.<br>
 **Status:** Research recorded; earlier integration/adoption review receipts retain their original candidates. The later owner decision in section 4.8 selects complete hardened MSIX preparation and David's Store attempt with services; it supersedes the MSI-first disposition in sections 4.6–4.7. Section 4.14 records the concrete source profile; section 4.15 records the deeper provisioning/removal research and unselected alternatives. Section 4.16 records the repository-local Windows Sandbox management skill and its documentation evidence. Section 4.19 records the later owner-ready scope and executed Sandbox management smoke. Section 4.20 routes the selected leap policy into W11-W02 and package provenance. Section 4.21 adds release-operations documentation, proposed support terms and pending rehearsals under the existing release/lifecycle owners. Section 4.24 refines pre-start provisioning; section 4.25 refines independent removal with recovery still pending. Section 4.26 records partial W11-W01 preparation through the S2.1 engine handoff. Package implementation and native product qualification remain unexecuted.<br>
 **Initial inspected project baseline:** [`a6c2401b9a8166515293653f14f637e5543c689e`](https://github.com/DavidOsipov/NevroTick/tree/a6c2401b9a8166515293653f14f637e5543c689e), tree `7d0558ab295a7859e0d7d9e5b1180bea0fe30443`. This task was initially prepared from an API-derived partial snapshot, not a local Git checkout; no dirty/index/staged-state claim applies to that preparation. Later adoption and research candidates are identified in section 4.  

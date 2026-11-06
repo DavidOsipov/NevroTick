@@ -73,6 +73,11 @@ _STEMS = {
     "scaled-value-split": "scaled_value_split",
     "scaled-value-representation": "scaled_value_representation",
     "fraction-addition-partitions": "fraction_addition_partitions",
+    "request-timing": "request_timing",
+    "selection-depth": "selection_depth",
+    "lifecycle-ordinal": "lifecycle_ordinal",
+    "lifecycle-source-fields": "lifecycle_source_fields",
+    "supporter-labels": "supporter_labels",
 }
 _FIELDS = {"subject", "case", "harness", "intended_failure", "restored_healthy"}
 
@@ -93,6 +98,38 @@ def input_names(selector: str) -> list[str]:
         result.extend(("tools/formal/fraction_arithmetic_harness.rs",
                        "tools/formal/fraction_arithmetic_projection.py",
                        "tools/formal/test_fraction_addition_partitions.py"))
+    if selector == "request-timing":
+        result.extend(("tools/formal/test_request_timing.py",
+                       "crates/ntp-exchange/src/context.rs", "crates/ntp-exchange/src/lib.rs",
+                       "crates/ntp-exchange/Cargo.toml", "crates/time-domain/src/clock.rs",
+                       "crates/time-domain/src/lib.rs", "crates/time-domain/Cargo.toml"))
+    if selector == "selection-depth":
+        result.extend(("tools/formal/test_selection_depth.py",
+                       "tools/formal/verify_selection_depth.py",
+                       "tools/formal/test_verify_selection_depth.py",
+                       "crates/time-core/src/selection.rs", "crates/time-core/src/lib.rs",
+                       "crates/time-core/Cargo.toml"))
+    if selector == "lifecycle-ordinal":
+        result.extend(("tools/formal/test_lifecycle_ordinal.py",
+                       "tools/formal/verify_lifecycle_ordinal.py",
+                       "tools/formal/test_verify_lifecycle_ordinal.py",
+                       "crates/time-core/src/combination/lifecycle.rs",
+                       "crates/time-core/src/principal.rs",
+                       "crates/time-core/src/combination.rs",
+                       "crates/time-core/src/regression.rs",
+                       "crates/time-core/src/selection.rs",
+                       "crates/time-core/src/lib.rs", "crates/time-core/Cargo.toml"))
+    if selector == "lifecycle-source-fields":
+        result.extend(("tools/formal/test_lifecycle_source_fields.py",
+                       "tools/formal/verify_lifecycle_source_fields.py",
+                       "tools/formal/test_verify_lifecycle_source_fields.py",
+                       "crates/time-core/src/combination/lifecycle.rs"))
+    if selector == "supporter-labels":
+        result.extend(("tools/formal/test_supporter_labels.py",
+                       "tools/formal/verify_supporter_labels.py",
+                       "tools/formal/test_verify_supporter_labels.py",
+                       "crates/time-core/src/selection.rs", "crates/time-core/src/lib.rs",
+                       "crates/time-core/Cargo.toml"))
     return result
 
 
@@ -247,6 +284,53 @@ def jobs(selector: str) -> list[dict]:
         add("from_bits", "wrong_error", "scaled_value_representation::from_bits_control_error",
             "from bits rejection classification")
         add("from_bits", "healthy", "scaled_value_representation::from_bits_full_domain", restored=True)
+    elif selector == "request-timing":
+        add("request_timing", "healthy", "request_timing::request_timing_full_domain")
+        add("request_timing", "zero_lifetime", "request_timing::request_timing_control_zero_lifetime",
+            "timing nonpositive classification")
+        add("request_timing", "excess_lifetime", "request_timing::request_timing_control_excess_lifetime",
+            "timing excess classification")
+        add("request_timing", "retained_send", "request_timing::request_timing_control_retained_send",
+            "timing exact send retained")
+        add("request_timing", "healthy", "request_timing::request_timing_full_domain", restored=True)
+    elif selector == "selection-depth":
+        add("selection_depth", "healthy", "selection_depth::selection_depth_full_domain")
+        add("selection_depth", "wrong_slot", "selection_depth::selection_depth_control_wrong_slot",
+            "append error probe unchanged")
+        add("selection_depth", "wrong_length", "selection_depth::selection_depth_control_wrong_length",
+            "append exact mathematical length")
+        add("selection_depth", "wrong_maximum", "selection_depth::selection_depth_control_wrong_maximum",
+            "append independent maximum")
+        add("selection_depth", "wrong_error", "selection_depth::selection_depth_control_wrong_error",
+            "append exact slot error")
+        add("selection_depth", "healthy", "selection_depth::selection_depth_full_domain", restored=True)
+    elif selector == "lifecycle-ordinal":
+        add("lifecycle_ordinal", "healthy", "lifecycle_ordinal::lifecycle_ordinal_full_domain")
+        add("lifecycle_ordinal", "always_error", "lifecycle_ordinal::lifecycle_ordinal_control_always_error",
+            "ordinal success iff bound")
+        add("lifecycle_ordinal", "wrong_increment", "lifecycle_ordinal::lifecycle_ordinal_control_wrong_increment",
+            "ordinal exact successor")
+        add("lifecycle_ordinal", "wrong_error", "lifecycle_ordinal::lifecycle_ordinal_control_wrong_error",
+            "ordinal exact exhaustion error")
+        add("lifecycle_ordinal", "healthy", "lifecycle_ordinal::lifecycle_ordinal_full_domain", restored=True)
+    elif selector == "lifecycle-source-fields":
+        add("lifecycle_source_fields", "healthy", "lifecycle_source_fields::lifecycle_source_fields_full_domain")
+        add("lifecycle_source_fields", "strict_penalty", "lifecycle_source_fields::lifecycle_source_fields_control_strict_penalty",
+            "source fields penalty classification")
+        add("lifecycle_source_fields", "wrong_maturity", "lifecycle_source_fields::lifecycle_source_fields_control_wrong_maturity",
+            "source fields maturity classification")
+        add("lifecycle_source_fields", "loose_relationship", "lifecycle_source_fields::lifecycle_source_fields_control_loose_relationship",
+            "source fields required rejection")
+        add("lifecycle_source_fields", "healthy", "lifecycle_source_fields::lifecycle_source_fields_full_domain", restored=True)
+    elif selector == "supporter-labels":
+        add("supporter_labels", "healthy", "supporter_labels::supporter_labels_full_domain")
+        add("supporter_labels", "empty_sort", "supporter_labels::supporter_labels_control_empty_sort",
+            "supporter prefix ordered")
+        add("supporter_labels", "multiplicity", "supporter_labels::supporter_labels_control_multiplicity",
+            "supporter prefix multiplicity")
+        add("supporter_labels", "wrong_tail", "supporter_labels::supporter_labels_control_wrong_tail",
+            "supporter first-label tail")
+        add("supporter_labels", "healthy", "supporter_labels::supporter_labels_full_domain", restored=True)
     else:
         add("calendar_finite_laws", "healthy", "calendar_finite_laws_full_domain")
         add("calendar_finite_laws", "cycle_year_coefficient", "calendar_finite_laws_control_year", "Gregorian segment year recurrence")
@@ -487,6 +571,48 @@ def expected_contract(subject: str, harness: str) -> tuple[frozenset[str], froze
                   "complete numeric window is admitted", "inverted valid neighbors rejected",
                   "only lower endpoint fails Garde", "only upper endpoint fails Garde",
                   "both endpoint report entries are reachable", "raw i128 extremes are rejected"}
+    elif (subject, harness) == ("request_timing", "request_timing::request_timing_full_domain"):
+        assertions = {"timing typed send exact", "timing typed deadline exact", "timing success iff contract",
+                      "timing nonpositive classification", "timing excess classification",
+                      "timing exact send retained", "timing exact deadline retained",
+                      "timing exact returned lifetime"}
+        covers = {"timing one tick succeeds", "timing equal endpoints reject", "timing reversed neighbors reject",
+                  "timing exact ceiling succeeds", "timing first excess rejects", "timing near maximum succeeds",
+                  "timing full positive span rejects", "timing reversed raw extremes reject"}
+    elif (subject, harness) == ("selection_depth", "selection_depth::selection_depth_full_domain"):
+        assertions = {"append required success", "append exact selected slot", "append exact mathematical length",
+                      "append independent maximum", "append success probe unchanged", "append exact slot error",
+                      "append error length unchanged", "append error maximum unchanged", "append error probe unchanged"}
+        covers = {"append first slot succeeds", "append final slot succeeds", "append maximum grows to raw maximum",
+                  "append maximum retains raw maximum", "append equal maximum succeeds",
+                  "append first unavailable slot rejects", "append raw maximum length rejects",
+                  "append nonselected earlier slot retained", "append nonselected later slot retained",
+                  "append rejection retains distinct probe value"}
+    elif (subject, harness) == ("lifecycle_ordinal", "lifecycle_ordinal::lifecycle_ordinal_full_domain"):
+        assertions = {"ordinal success iff bound", "ordinal exact successor", "ordinal nonzero output",
+                      "ordinal exact exhaustion error", "ordinal exhaustion iff max", "ordinal input retained"}
+        covers = {"ordinal zero reaches one", "ordinal one reaches two", "ordinal high bit successor",
+                  "ordinal final successor", "ordinal maximum exhausts"}
+    elif (subject, harness) == ("lifecycle_source_fields", "lifecycle_source_fields::lifecycle_source_fields_full_domain"):
+        assertions = {"source fields exact classification", "source fields penalty classification",
+                      "source fields maturity classification", "source fields required rejection",
+                      "source fields input retained"}
+        covers = {"source fields zero admitted", "source fields last immature admitted",
+                  "source fields exact maturity and penalty admitted", "source fields after maturity admitted",
+                  "source fields maximum ordinal admitted", "source fields low mature value rejected",
+                  "source fields first excess penalty rejected", "source fields maximum penalty rejected",
+                  "source fields first excess maturity rejected", "source fields maximum maturity rejected",
+                  "source fields low relationship rejected", "source fields high relationship rejected"}
+    elif (subject, harness) == ("supporter_labels", "supporter_labels::supporter_labels_full_domain"):
+        assertions = {"supporter success iff prefix contract",
+                      "supporter prefix ordered", "supporter prefix multiplicity", "supporter first-label tail",
+                      "supporter exact support error", "supporter complete input frame"}
+        covers = {"supporter one label succeeds", "supporter sixteen labels succeed",
+                  "supporter zero count rejects", "supporter seventeen count rejects", "supporter maximum count rejects",
+                  "supporter missing first rejects", "supporter missing interior rejects",
+                  "supporter duplicate prefix succeeds", "supporter descending sixteen succeeds",
+                  "supporter maximum labels succeed", "supporter irrelevant None tail succeeds",
+                  "supporter irrelevant Some tail succeeds"}
     else:
         raise ValueError("Unknown additional healthy proof contract")
     if not assertions or not covers:
@@ -539,6 +665,16 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         selector = "scaled-value-split"
     elif subject in {"signed_whole", "from_bits"}:
         selector = "scaled-value-representation"
+    elif subject == "request_timing":
+        selector = "request-timing"
+    elif subject == "selection_depth":
+        selector = "selection-depth"
+    elif subject == "lifecycle_ordinal":
+        selector = "lifecycle-ordinal"
+    elif subject == "lifecycle_source_fields":
+        selector = "lifecycle-source-fields"
+    elif subject == "supporter_labels":
+        selector = "supporter-labels"
     else:
         raise ValueError("Unknown additional proof subject")
     schedule = jobs(selector)
@@ -577,6 +713,16 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         prepared = projection.prepare_scaled_value_split(source, inputs, job["case"], harness)
     elif selector == "scaled-value-representation":
         prepared = projection.prepare_scaled_value_representation(source, inputs, subject, job["case"], harness)
+    elif selector == "request-timing":
+        prepared = projection.prepare_request_timing(source, inputs, job["case"], harness)
+    elif selector == "selection-depth":
+        prepared = projection.prepare_selection_depth(source, inputs, job["case"], harness)
+    elif selector == "lifecycle-ordinal":
+        prepared = projection.prepare_lifecycle_ordinal(source, inputs, job["case"], harness)
+    elif selector == "lifecycle-source-fields":
+        prepared = projection.prepare_lifecycle_source_fields(source, inputs, job["case"], harness)
+    elif selector == "supporter-labels":
+        prepared = projection.prepare_supporter_labels(source, inputs, job["case"], harness)
     else:
         prepared = projection.prepare_calendar_finite_laws(source, inputs, job["case"], harness)
     if not isinstance(prepared, dict) or prepared.get("entrypoint") != inputs / "proof.rs":

@@ -70,7 +70,21 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
-**Latest Core proof checkpoint, 6 November 2026:** [complement v2](../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026) completed seven jobs: four full-raw predicate equalities and three arithmetic lemmas, five isolated contract failures and byte-identical restored health. All143 selected Python checks pass;30 source files and11 actually executed Python sources are bound, with final source/tool/input/receipt guards intact. The opaque-power preparation failure remains closed in v1. Next prepare [rational-order correspondence](../tasks/s1.3-source-selection-readiness.md#next-source-preparation--rational-order) through the pinned primitive integer cmp models; native Ordering PartialEq/comparison Post and caller import remain held. Complete bridge, actual product execution, addition and Core/P1 remain open; no-cheating and execution holds are unchanged.
+**Controlling owner amendment — 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers all formal-proof work until after the first released software version
+(V1). Proofs are not V1 implementation, phase-acceptance or release prerequisites.
+Preserve the historical checkpoints below without extending their scope or
+resuming their jobs, source preparation, metadata repairs or verifier work.
+The next product task is [pure-leap final mutation qualification and candidate
+reconciliation](../tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026).
+Runtime validation, independent behavioral tests, coverage/mutation, security,
+native/package and release gates remain; all existing execution holds remain.
+
+**Latest Core proof checkpoint, 6 November 2026:** [actual lifecycle source-counter invariant](../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored Kani jobs:145 properties and exact restoration. All291 selected Python checks pass;32 inputs/nine actually executed Python sources and final guards bind the candidate. Earlier ordinal/append-depth/rational proofs remain preserved. The later [complete constructor source checkpoint](../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) prepares genuine Garde-backed source/harness/Cargo and authenticates14 selected vendor packages, with51 source checks and independent review. It has zero compiler/proof commands and is not execution-ready; source-specific admission/target/allocator/drop/unwinding and constructor proof remain open. Transactional lifecycle, prefix/depth/topology/whole-selection, fraction-model/bridge/caller/addition and Core/P1 remain open; all execution holds are unchanged.
+
+**Independent P1 proof, 6 November 2026:** [RequestTiming constructor/getters](../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed five ordinary Kani jobs over every raw endpoint pair, three semantic defects and restored health. Its158-check/34-input/nine-executed-Python candidate remains preserved; later shared-runner changes have separate291-check compatibility evidence, with no native rerun claimed. Actual clock callees are compiled, with no certificate imported. This arithmetic proof grants no native-clock, lifecycle or P1 authority.
+
+The [supporter-label work](../tasks/s1.3-source-selection-readiness.md#next-independent-core-source-assignment--supporter-labels) and [constructor execution gap](../tasks/s1.3-source-selection-readiness.md#constructor-execution-gap-and-return-trigger) are retained post-V1 backlog. Neither supplies a current product priority, retry or private-patch adoption. The supporter-label healthy attempt timed out with zero checks; its new report consumer also needs a post-V1 correction. No supporter-label theorem or restored qualification was obtained.
 
 
 **Core verifier checkpoint, 6 November 2026:** the [Kani contract-mode pilot](../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026) ended DEFER at a primitive CBMC internal error, with zero product proofs or callee certificates. Completed ordinary proofs retain their scopes; full-domain addition and Core/P1 remain open.

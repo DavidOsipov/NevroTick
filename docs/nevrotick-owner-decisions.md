@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.14<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November 2026, Asia/Tbilisi<br>
+**Document:** NV-DEC-001, revision 1.15<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -37,7 +37,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
-| OD-10 | Make formal proofs mandatory for product mathematical algorithms and continue the source-bound proof work | **Accepted mathematical assurance requirement, 5 November 2026** | Actual-source proof inventory and complete contracts, admitted verifier execution, meaningful defect controls and exact-candidate evidence under CHECK-7/8/25; two initial kernels do not establish whole-product correctness |
+| OD-10 | Defer formal proof work until after the first released software version (V1) | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
 | OD-13 | Use Slint as the default UI toolkit after the live-Windows comparison | **Accepted toolkit direction, 5 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
@@ -536,6 +536,8 @@ needs no repeated design permission; material exceptions still follow OD-04.
 
 ## 14. OD-10 — mandatory mathematical proofs
 
+**Current disposition:** the [6 November first-release deferral](#141-first-release-deferral--6-november-2026) supersedes the proof-first execution and acceptance requirements below. The 5 November instruction and receipts are retained as historical policy.
+
 **Direct owner instruction, 5 November 2026:** David stated that formal proofs
 are now mandatory, supplied the source-bound rounding/era proof handoff and
 instructed the main development agent to synchronize the repository and continue.
@@ -573,6 +575,45 @@ This instruction preserves the source-bound proof requirement and conditional
 adoption: a justified pilot is not demonstrated superiority, general verifier
 selection or a weaker mathematical acceptance rule.
 
+### 14.1 First-release deferral — 6 November 2026
+
+**Explicit owner instruction:** David directed the agent to finalize, commit and
+push the current work, defer formal proofs until after the first released
+software version (V1), document the decision, adjust the existing tasks and
+continue product development. This amends OD-10's 5 November proof-first policy;
+formal proof completion is no longer a V1 prerequisite, acceptance blocker or
+release gate. The whole-product objective continues.
+
+**Owner-reported rationale:** this proof work took more than one day without a
+new demonstrated product mathematical defect. This is the owner's account of
+this work, not a measured assurance claim or a claim that the product has no
+software defects. Deliberately injected semantic mutants and defects in proof
+tooling or harnesses remain distinct from demonstrated product defects.
+
+**Current execution:** defer formal compiler/solver/proof jobs, proof authoring,
+verifier/tool extensions, admission/metadata work and the pending metadata-consumer
+repair until after V1. Do not restart them automatically because an old task,
+skill, verifier capability or missing theorem says proof comes first. Continue
+the ordinary product plan and its applicable nonformal acceptance. Ordinary
+product compilation and testing are unaffected by this formal-work deferral.
+
+Retain existing proofs, failed/incomplete receipts and unproved obligations in
+their current task/evidence chain. Completed proofs retain only their exact
+historical source/domain/configuration scope; neither this decision nor changed
+source extends them. Track unfinished and newly affected obligations as post-V1
+work, not permanently waived work or completed mathematical assurance. After V1,
+resume through normal bounded planning and reconcile the source-bound contracts,
+controls and candidate identity before claiming new proof acceptance.
+
+Runtime validation, garde-backed private construction and invariants, checked
+arithmetic, independent behavioral/property/boundary tests, security checks,
+90% security-primitive executable-line coverage, 95% per-critical-file mutation,
+native Windows, packaging and release requirements remain unchanged. Existing
+Windows execution, fuzz, protected-storage and UI-M0 holds/deferrals remain.
+Amended OD-05's complete hardened MSIX direction and David's release authority
+remain canonical; this amendment grants no native execution, publication-account
+action or release approval.
+
 ## 15. OD-11 — SOCKS5 scope and deferral
 
 **Direct owner instruction, 5 November 2026:** David asked for a concrete working
@@ -598,8 +639,8 @@ policy, upstream-failure recovery and successful-path reuse stay with their
 existing P2/P5 owners. Unsupported proxy configuration, including an imported
 newer profile, must be rejected explicitly; it cannot be silently erased or
 interpreted as Direct. Existing shared policy cutover, storage and security
-requirements remain. This does not reorder the current proof-first work or future
-KHR/Android and RGT/CHR sequences.
+requirements remain. This does not reorder the ordinary product plan or future KHR/Android and
+RGT/CHR sequences; formal work follows the [first-release deferral](#141-first-release-deferral--6-november-2026).
 
 **Proposed first future subset:** manual numeric loopback SOCKS5, method 0x00
 only, explicitly local DNS, admitted numeric targets, NTS TCP CONNECT and a

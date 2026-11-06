@@ -33,6 +33,27 @@ Attestations, independent rebuilds and a public proof bundle add no P6/P7
 activation or release-blocking requirement. Required custody, SBOM/licence,
 package integrity and installed-product checks above keep their existing scope.
 
+## Post-V1 formal-proof backlog — 6 November 2026
+
+[OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. No missing theorem, verifier/tool extension, formal source preparation,
+metadata-consumer repair or formal campaign is a first-version implementation,
+phase or release blocker. Existing proof inventories remain in the domain,
+exchange, Core and leap task records, with successful subscopes and all failed or
+incomplete attempts preserved. Older next-proof directions below are historical;
+resume through normal bounded planning after V1. The owner's report of more than
+a day without a newly identified product mathematical defect explains the
+priority change; it supplies no general correctness claim.
+
+**Ready product continuation:** [pure-leap new-owner qualification](s1.4-leap-policy.md#current-product-continuation--6-november-2026).
+The contract, implementation and offline generator already exist. Finish the
+four final mutation cohorts and current integrated-candidate reconciliation;
+reuse only unchanged portable/contracts/coverage evidence. Runtime validation,
+checked arithmetic, independent tests/property/boundary cases, the existing
+90%/95% thresholds, security/native/package/release gates and all execution holds
+remain required. No general parent below is activated by this note.
+
 ## P0 platform and policy
 
 **Owner:** platform/security, with IPC, clock, UI and architecture/policy owners
@@ -57,7 +78,7 @@ separate; source review adopts no production values or execution permission.
 records OD-14's two intended OS families and first engineering fixtures. Platform,
 build and W11-W05/10 owners resolve admission/delivery and actual fixture inputs;
 P4/P6/P7 consume row-specific timing, protection, lifecycle and resource evidence.
-OPEN-2, the current proof-first queue and all execution holds remain open/intact.
+OPEN-2 and all execution holds remain open/intact; §7 supplies current product priority and formal work is post-V1.
 
 ### Windows component reuse at existing stage entry
 
@@ -104,7 +125,7 @@ remain in [their existing task chain](s1.3-source-selection-readiness.md).
 **Exit:** [plan §6/P1](../docs/plans/development-plan.md#p1--pure-protocols-and-independently-checked-algorithms),
 CHECK-6/7/8/19/20 and pure CHECK-25; this proves no Windows effect.
 
-**Current proof continuation, 6 November 2026:** the
+**Retained proof history; all further work post-V1, 6 November 2026:** the
 [query-split card remains terminal DEFER/incomplete](s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026).
 Fourteen of twenty maximum commands ran; jobs 1–13 qualified 1,415 raw checks
 (1,315 Success, 69 covers, nine intended failures, 22 Unreachable). Job 14's
@@ -141,10 +162,33 @@ has now passed seven jobs: four full-raw predicate equalities/three arithmetic
 lemmas, five intended failures and restoration. All143 selected checks pass;
 30 source files/11 executed Python sources and final custody/tool guards bind
 the candidate. V1's preprocessing failure remains closed and historical.
-Next follow [rational-order source preparation](s1.3-source-selection-readiness.md#next-source-preparation--rational-order),
-retaining qualified predicates/lemmas and every raw pair. Pinned primitive cmp
-models provide a source-feasible route; native Ordering PartialEq/comparison-Post
-correspondence/import remains held. The complete six-equality bridge and its
+The later [rational-order qualification](s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs: five full-raw predicate equalities/seven total lemmas,
+seventeen intended failures and restoration. All161 selected checks pass;
+33 sources/11 executed-Python records and final guards bind the candidate.
+The source gate confirms missing pinned checked-shift support; native Ordering
+equality/comparison Post and caller import stay held. Independent
+[RequestTiming qualification](s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026)
+passed five full raw-pair/three-defect/restored jobs,158 Python checks and final
+34-input/nine-executed-Python guards. The later [actual append-depth proof](s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+passed six full raw-state/four-defect/restored jobs,671 checks and208 Python
+checks;34 inputs/nine executed-Python records and final guards bind it.
+The subsequent [actual lifecycle ordinal proof](s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored jobs,263 checks and248 Python
+checks;38 inputs/nine executed-Python records and complete23-enum closure bind it.
+The subsequent [source-counter invariant proof](s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python
+checks;32 inputs/nine executed-Python records bind it. The [complete constructor
+source checkpoint](s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+now prepares genuine Garde/derive/Report/constructor source and six Cargo cases,
+authenticates14 selected vendor packages and passes51 source checks plus independent
+review. No compiler/proof ran; source-specific admission/target/allocator/drop/
+unwinding and full constructor proof remain open, without a retry of held or
+exhausted compiler campaigns. Transactional lifecycle, prefix/depth/topology and
+whole selection remain open. Continue independent [supporter-label source preparation](s1.3-source-selection-readiness.md#next-independent-core-source-assignment--supporter-labels)
+over its complete raw array/count and actual sort-callee closure; loop/oracle/
+unwinding/card review precedes execution. The [constructor return trigger](s1.3-source-selection-readiness.md#constructor-execution-gap-and-return-trigger)
+retains the known model/admission holds. No unsupported comparison retry follows. The complete six-equality bridge and its
 remaining controls stay open before relating the actual Verus caller to separately
 Kani-proved callees. The existing Verus `--no-cheating` gate rejects
 `external_body`/`assume_specification`; no flag change, adoption or new run is
@@ -199,12 +243,12 @@ Held patches and all execution holds remain in force.
 
 | Card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
-| S1.3 Verus addition pilot / numerical Core; tooling/QA | **DEFER — readiness attempt terminal.** Required `u64::checked_shl` is unsupported in the pinned candidate. Official support for the unchanged API and a newly reviewed finite checkpoint are the return trigger; no retry or local assumed specification follows. | Verify actual `Fraction::new`, `compare`, `complement` and `add_fractions` bodies with exact executable correspondence and source/tool custody. Require three compiled semantic defects to fail their intended obligations and a restored healthy pass. No product `external_body`, assumed central theorem, alternate executable behavior or model-only proof closes this exit. |
+| S1.3 Verus addition pilot / numerical Core; tooling/QA | **Post-V1; readiness attempt terminal DEFER.** Required `u64::checked_shl` is unsupported in the pinned candidate. Official support for the unchanged API and a newly reviewed finite checkpoint are the return trigger; no retry or local assumed specification follows. | Verify actual `Fraction::new`, `compare`, `complement` and `add_fractions` bodies with exact executable correspondence and source/tool custody. Require three compiled semantic defects to fail their intended obligations and a restored healthy pass. No product `external_body`, assumed central theorem, alternate executable behavior or model-only proof closes this exit. |
 | S1.3 independent split proof / numerical Core; tooling/QA | **Qualified raw leaf only.** The [split terminal checkpoint](s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026) completed all five expected job outcomes with the unchanged admitted Kani route. | Full raw significand/scale admission, exact decomposition, fraction canonicalization/invariants and error classification are proved, including three compiled semantic defects and restored healthy proof. This does not qualify the complete producer, addition or Core. |
 | S1.3 raw scaled-value representation proofs / numerical Core; tooling/QA | **Qualified exact raw leaves only.** The [representation terminal checkpoint](s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026) completed all ten expected outcomes: `signed_whole` covers every bool sign, u64 whole and arbitrary u64/u32 fraction field pair; `from_bits` covers every raw u64 bit pattern. | Exact signed magnitude/fraction independence, raw bit admission, sign/Q33 representation, invariant/error guarantees, each leaf's three semantic defects and restored health are qualified. This closes no Garde/caller admission, addition, `EndpointParts` construction, complete enclosure or Core/P1 acceptance. |
-| S1.3 full-domain fraction addition / numerical Core; tooling/QA | **Query-split card terminal DEFER.** The [terminal assessment](s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026) records the qualified thirteen-job prefix, job 14's zero-check universal timeout, unrun jobs 15–20 and passing final custody. Direct witnesses and restorations remain unqualified. Next: source-only encoding/property diagnosis and bounded Verus/Kani bridge scout; `--no-cheating` rejects `external_body`/`assume_specification`. An exact bridge is required; no flag change, adoption, new run, automatic retry or budget extension follows. Prior trials and all holds retain their status. | Retain the existing full checked-pair carry/residual and required-success contract, unchanged actual-source full domain, all eleven mathematical assertions, all 23 witnesses, three semantic defects and both complete restored lanes. Earlier bounded results, partial regions, narrowed domains and assumed product theorems do not close addition or Core. |
+| S1.3 full-domain fraction addition / numerical Core; tooling/QA | **Post-V1; query-split card terminal DEFER.** The [terminal assessment](s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026) records the qualified thirteen-job prefix, job 14's zero-check universal timeout, unrun jobs 15–20 and passing final custody. Direct witnesses and restorations remain unqualified. After V1 only: source-only encoding/property diagnosis and bounded Verus/Kani bridge scout; `--no-cheating` rejects `external_body`/`assume_specification`. An exact bridge is required; no flag change, adoption, new run, automatic retry or budget extension follows. Prior trials and all holds retain their status. | Retain the existing full checked-pair carry/residual and required-success contract, unchanged actual-source full domain, all eleven mathematical assertions, all 23 witnesses, three semantic defects and both complete restored lanes. Earlier bounded results, partial regions, narrowed domains and assumed product theorems do not close addition or Core. |
 | S1.4 discipline/holdover / Core/domain | Applicable S1.3 selection/combination and current reference, achieved-effect and active-time delivered-rate contracts; finish the current child first, then freeze one abstract controller/holdover transition. | Independent trajectories give bounded step/slew/holdover proposals; stale generations, duplicate/unknown effects and unacknowledged requests cannot create delivered correction or fresh observations. CHECK-7/8/10/11/25, AC-19. Current S1.4a–c and rate-delivery receipts stay in S1.3. |
-| S1.4 leap child / domain/Core/protocol | Use [the explicit entry and finite-input tables](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) after the current Core checkpoint. S157/S158 and selected S1.4a–c retain completed predecessor scopes; freeze the leap child's own date/data/import limits before dependent implementation. Static constructors do not require every later production contract. | Pure history/coverage/rule cases and atomic replacement are the first exit. Full silent-source acquisition, guard/reacquisition and LP-C04 stay in protocol integration; native mapping stays S0.4/P4. Existing LP-C cases and CHECK-6/7/8/11/14/25/26 retain their owning slices. |
+| S1.4 leap child / domain/Core/protocol | **Current product action:** finish [implemented pure-leap qualification](s1.4-leap-policy.md#current-product-continuation--6-november-2026): freeze current bindings, complete four final mutation cohorts and reconcile the exact integrated candidate. Contract/date/data/import freeze and implementation already exist. S157/S158, selected S1.4a–c and settled-rate retain completed predecessor scopes; formal proofs wait until after V1. | Pure history/coverage/rule cases and atomic replacement are the first exit. Full silent-source acquisition, guard/reacquisition and LP-C04 stay in protocol integration; native mapping stays S0.4/P4. Existing LP-C cases and CHECK-6/7/8/11/14/25/26 retain their owning slices. |
 | S1.5 verification closure / tooling/dependency/QA | Existing configured application gates and selected critical owners; maintain required checks now, close remaining phase scope at its actual checkpoint. Deferred QF-02 recipe maintenance stays acknowledged in the active Core task. | Healthy code/inputs pass and intended lint/SAST/discovery/admission faults fail actual gates; retained provenance, applicable per-file coverage/mutation and exact receipt scope support closure. CHECK-19/20/25/26. No new implementation prerequisite or duplicate campaign. |
 
 Reuse unchanged Kani proofs within their recorded scope; the held Kani extensions

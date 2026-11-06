@@ -48,15 +48,16 @@ Subagent assignments include the bounded question, canonical sections and
 acceptance IDs, current task/candidate, writable scope and expected evidence.
 The coordinator reconciles results against the integrated candidate.
 
-For existing or future mathematical algorithms, apply
-[OD-10](docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-and [architecture §20.1.1](docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026):
-source-bound machine-checked proofs over the full admitted domain are mandatory.
-Track unproved obligations in the existing task; do not close dependent
-mathematical acceptance with examples, a model-only proof or a deferred verifier.
-Use the [proof workflow](.agents/skills/testing/references/formal-verification.md)
-for specification, controls, assumptions and exact-candidate evidence. Reuse
-unchanged proofs; retain runtime validation and the other required checks.
+Apply [OD-10's first-release deferral](docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal proof work resumes after the first released software version (V1).
+Missing proofs do not block V1 implementation, acceptance or release. Do not run
+formal compiler/solver/proof jobs, extend verifiers or repair pending proof
+admission/metadata consumers before then. Continue the ordinary product plan;
+keep proof obligations in the existing tasks as post-V1 work and retain completed
+proofs only within their exact historical scopes. Runtime validation, garde/private
+invariants, checked arithmetic, independent behavioral/property/boundary tests,
+90% security-primitive coverage, 95% critical-file mutation, security, native,
+package and release gates remain. This lifts no Windows/fuzz/storage/UI hold.
 
 ## Read the right authority
 
@@ -141,7 +142,7 @@ section 8.5, recording owner, ready/held/deferred disposition and next action in
 the existing Windows 11 task. W11-W01 has [partial source preparation](tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026)
 through the [engine integration card](tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026);
 complete its selected capture/mapping contract when the acquisition owner reaches
-it, preserving the proof-first queue. Other items enter at
+it, preserving the ordinary product queue and OD-10 first-release deferral. Other items enter at
 their named phase or conditional trigger. Before related Windows integration,
 apply the mapped contracts and controls while retaining the distinction between
 required product behavior and optional API candidates. This handoff lifts no hold.

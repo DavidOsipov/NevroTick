@@ -815,6 +815,20 @@ Add a tool only when it addresses a concrete uncovered invariant. Keep interpret
 
 #### 9.6.1 Mandatory product mathematical proof gate — 5 November 2026
 
+**Current policy, 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released software version (V1).
+The proof-first instructions and receipts below are historical; missing proofs
+are no V1 prerequisite, acceptance blocker or release gate. Do not execute formal
+compiler/solver/proof jobs, extend verifiers or repair pending proof metadata
+consumers before V1. Preserve exact historical proof scope and track remaining
+obligations in the existing tasks for post-V1 bounded resumption. Continue the
+ordinary product plan. Runtime/garde/private invariants, checked arithmetic,
+independent behavioral/property/boundary tests, security, 90% coverage/95% mutation
+within their required scopes, native/package/release gates and all existing
+Windows/fuzz/storage/UI holds remain unchanged.
+
+**Historical policy and receipts before the amendment:**
+
 [OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 requires machine-checked proofs of product mathematical algorithms, as specified by
 [architecture §20.1.1](windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
@@ -925,9 +939,38 @@ execution/caller integration remained separate. The later
 passed seven jobs with ten exact function identities: four full-raw predicate
 equalities/three arithmetic lemmas, five contract failures and restoration.
 All143 selected checks pass;30 source files/11 executed-Python rows and final
-guards bind the candidate. V1's pre-SMT failure remains historical. Rational-order
-alignment can be source-prepared via pinned primitive cmp models; native
-Ordering PartialEq/comparison Post, caller and full bridge/addition/Core/P1 stay open.
+guards bind the candidate. V1's pre-SMT failure remains historical. Subsequent
+[rational-order qualification](../tasks/s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs: five full-raw predicate equalities/seven total lemmas,
+seventeen intended defects and restored health. All161 selected Python checks
+pass;33 sources/11 executed-Python records and final guards bind its candidate.
+Source inspection confirms missing pinned checked-shift support. Native Ordering
+equality/comparison Post, caller and full bridge/addition/Core/P1 stay open.
+Independent [RequestTiming qualification](../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026)
+passed five full raw-pair/three-defect/restored Kani jobs and158 Python checks;
+34 inputs/nine executed-Python records and final guards bind the candidate.
+Safe owned target cleanup preserves raw evidence and low-reserve failure status.
+Subsequent [actual append_depth qualification](../tasks/s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+passed six full raw-state/four-defect/restored jobs,671 checks and208 Python
+checks;34 inputs/nine actual Python records and final guards bind the candidate.
+The subsequent [actual lifecycle ordinal proof](../tasks/s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored jobs,263 checks and248 Python
+checks;38 inputs/nine executed-Python records and complete23-enum closure bind
+the actual successor/exhaustion theorem. Subsequent [actual source-counter
+qualification](../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python
+checks;32 inputs/nine executed-Python records bind the actual constants/predicate/
+From/min. The shared consumer uses exactly four immutable captured-wrapper-
+selected roles and strict per-role cleanup; all five source-counter targets were
+removed, retaining about4.35MiB including directories. The later [constructor
+source checkpoint](../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+prepares genuine Garde/callback/constructor/Cargo source, authenticates14 selected
+vendor packages and passes51 source checks plus independent review. No runner,
+tool admission, compiler/proof or private-patch adoption follows. The cache is
+unsealed; source-specific sealing/admission, target features, allocator/drop/
+unwinding and constructor theorem stay open. Transactional
+lifecycle, prefix/depth/topology/whole-selection and native authority remain
+separate obligations.
 The existing no-cheating gate rejects `external_body`;
 no profile weakening, SDK patch, native flags or adoption follows. The old kit,
 ordinary defaults and all holds remain unchanged.

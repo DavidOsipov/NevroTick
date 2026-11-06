@@ -333,12 +333,13 @@ checked consumer and a discriminating check with a valid neighboring control:
   entry and effect, including after awaits. Observe the protected sink rather
   than only an intermediate validator return value.
 
-Use [contract tests](../../../testing/qa-contract-tests/SKILL.md), meaningful
-property/fuzz controls and the mandatory
-[mathematical proof workflow](../../../testing/references/formal-verification.md)
-for product algorithms under OD-10. Cover the full admitted success/error contract
-at the executable owner; optional Kani use for other finite invariants does not
-make mathematical proof optional.
+Use [contract tests](../../../testing/qa-contract-tests/SKILL.md) and meaningful
+property/fuzz controls. Apply [OD-10's first-release deferral](../../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal proofs and pending proof admission/metadata repairs resume after V1;
+missing proofs do not block first-release acceptance. Retain exact historical
+scope and post-V1 obligations without weakening runtime enforcement or tests.
+Use the [proof workflow](../../../testing/references/formal-verification.md)
+on resumption.
 [CodeQL](../../../testing/references/codeql-data-flow.md) can investigate paths
 around construction or from original DTOs to effects; inspect real callers and
 challenge query coverage before claiming no bypass. Compiler docs/lints, skill

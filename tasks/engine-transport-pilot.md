@@ -1,8 +1,22 @@
 # Engine transport/runtime pilot
 
+**Current owner amendment — 6 November 2026:** [OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. Retain the proof receipts and incomplete obligations below; their older
+“next”, “mandatory before acceptance” and proof-first directions do not authorize
+pre-V1 work or block first-version implementation, phase acceptance or release.
+No new solver/compiler proof campaign, verifier extension, formal source
+preparation or proof-metadata consumer repair is scheduled before V1. Resume
+through normal bounded planning after that release. Runtime validation, checked
+arithmetic, independent tests, property/boundary cases, 90% security-primitive
+coverage, 95% critical-file mutation, security/native/package/release gates and
+all existing Windows/fuzz/storage/UI holds remain in force. Current product work
+follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+
 **Current S2.1 preparation, 5 November 2026:** the [integration card](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 separates the next experimental real-UDP measurement from later uncertainty and
-actual Core admission. W11-W01 is partially prepared; the [S1.1c proof-first
+actual Core admission. W11-W01 is partially prepared; the [current product
 queue](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 remains first. Historical engine receipts below retain their original candidates.
 
@@ -1458,7 +1472,7 @@ base; the partial synthetic checkout is never published as repository history.
 or qualified. This addendum starts from `8a66af924c509e898a9bab9bb3282f11b24fba93`
 and implements the documentation handoff for
 [architecture §7.3](../docs/windows-time-architecture.md#address-family-admission-and-alternative-progress).
-The [S1.1c proof-first queue][s21-development] remains first. The current two-peer
+The [current product queue][s21-development] remains first; formal work is post-V1. The current two-peer
 loopback pilot and its first experimental measurement retain their bounded scope;
 neither gains production DNS, retry, NTS or local-path qualification here.
 

@@ -1,5 +1,12 @@
 # Verus assessment for NevroTick
 
+**Current owner amendment — 6 November 2026:** [OD-10 §14.1](../nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal-proof work until after the first released software version (V1).
+This assessment and the experiments below are retained history/post-V1 backlog,
+not first-version gates or authority for more verifier/source/metadata work now.
+No proof is waived permanently or promoted beyond its actual scope; ordinary
+product qualification and every existing execution hold remain.
+
 **Date:** 1 November 2026
 
 **Disposition:** DEFER Verus integration on the assessed evidence.
@@ -336,6 +343,33 @@ passed seven jobs, establishing four predicate equalities and three arithmetic
 lemmas with five contract defects/restoration. All143 selected Python checks pass;
 30 source files/11 executed-Python rows and final guards are bound. The first
 attempt's opaque-power preprocessing failure stays closed; no solver ran there.
-Next rational-order source preparation can use pinned unsigned cmp models,
-independently of the still-held native Ordering PartialEq/comparison-Post route.
-Complete bridge, caller/addition and Core/P1 remain open.
+Subsequent [rational-order qualification](../../tasks/s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs with fifteen named functions: five full-raw predicate
+equalities/seven total lemmas, seventeen intended defects and restored health.
+All161 selected checks pass;33 sources/11 executed-Python records and final guards
+bind the candidate. Source review confirms missing pinned checked-shift support;
+the native Ordering equality/comparison-Post route, complete bridge,
+caller/addition and Core/P1 remain open. Ordinary Kani independently completed
+[RequestTiming admission](../../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026):
+five full raw-pair/three-defect/restored jobs,158 Python checks and34-input/
+nine-executed-Python guards. This actual-source constructor/getter result imports
+no certificate and supplies no missing Verus model. The later [actual
+append_depth proof](../../tasks/s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+passed six full raw-state/four-defect/restored Kani jobs,671 checks and208 Python
+checks with34 bound inputs/nine executed-Python records. This proves local state/
+frame only; prefix/depth/topology/whole selection remain open. Subsequent
+[actual lifecycle ordinal qualification](../../tasks/s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored ordinary Kani jobs,263 checks and248
+Python checks, with38 inputs/nine executed-Python records and complete23-enum
+closure. Actual successor/exhaustion mathematics imports no certificate and
+supplies no missing Verus model. Subsequent [actual source-counter
+qualification](../../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored ordinary Kani jobs,145 properties
+and291 Python checks, binding32 inputs/nine executed-Python records and actual
+constants/From/min. The later [constructor source checkpoint](../../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+prepares real Garde/callback/constructor/Cargo source, authenticates14 selected
+vendor packages and passes51 source checks plus independent review. No compiler/
+proof or cross-verifier certificate runs; source-specific admission/target/
+allocator/drop/unwinding and constructor theorem remain open. Existing Era model/
+private-patch holds remain. Transactional lifecycle/global uniqueness and every fraction model/
+bridge/caller hold remain open; no old Era/compiler campaign is restarted.

@@ -79,18 +79,19 @@ native observation or release qualification. UI-M0's D1/D2/D3 deferrals remain.
 When selecting existing compiler, lint, test, security or inventory commands, use
 [configured tool execution](testing/references/configured-tooling.md). It maps
 changed guarantees to current entry points and their execution/evidence limits.
-Select Miri, cargo-fuzz, Loom, Kani, Lockbud or cargo-vet only for their relevant
-memory, input, concurrency, proof or dependency-review obligation. For uncertain
+Select Miri, cargo-fuzz, Loom, Lockbud or cargo-vet only for their relevant
+memory, input, concurrency or dependency-review obligation. Kani/formal proof
+work follows the post-V1 deferral below. For uncertain
 source-to-sink propagation, use the data-flow skill and its local CodeQL MCP
 profile. Installed tools and fixture controls establish no product qualification;
 hosted CodeQL scanning remains deferred.
 
-Product mathematical algorithms require machine-checked proofs under
-[OD-10](../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs).
-Use the [proof workflow](testing/references/formal-verification.md) during planning,
-implementation and qualification. Preserve the full admitted success/error and
-machine-arithmetic contract; missing or invalidated proofs block dependent
-mathematical acceptance. Tool choice and other analysis lanes remain scoped.
+Apply [OD-10’s first-release deferral](../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal proof work,
+verifier extensions and pending proof admission/metadata repairs resume after V1.
+Missing proofs do not block V1 implementation, acceptance or release. Continue
+the ordinary product plan and all nonformal gates; keep proof obligations in
+the existing post-V1 backlog and historical evidence within its exact scope.
+The [proof workflow](testing/references/formal-verification.md) applies on resumption.
 
 ## Adaptation and research
 

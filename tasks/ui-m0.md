@@ -1,5 +1,19 @@
 # UI-M0 implementation task
 
+**Current owner amendment — 6 November 2026:** [OD-10 §14.1](../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers **all formal-proof work until after the first released software version
+(V1)**. Retain the proof receipts and incomplete obligations below; their older
+“next”, “mandatory before acceptance” and proof-first directions do not authorize
+pre-V1 work or block first-version implementation, phase acceptance or release.
+No new solver/compiler proof campaign, verifier extension, formal source
+preparation or proof-metadata consumer repair is scheduled before V1. Resume
+through normal bounded planning after that release. Runtime validation, checked
+arithmetic, independent tests, property/boundary cases, 90% security-primitive
+coverage, 95% critical-file mutation, security/native/package/release gates and
+all existing Windows/fuzz/storage/UI holds remain in force. Current product work
+follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+
 ## Current UI direction — 5 November 2026
 
 David selected **Slint as the default UI toolkit** under
@@ -253,7 +267,7 @@ observed successfully after publication before making it required.
 
 **Owner:** UI with dependency/security, accessibility and Windows QA owners.
 **Disposition:** Slint selection accepted; migration not started. The current
-Core/proof-first continuation in development plan §7 remains the primary task.
+The product continuation in development plan §7 remains the primary task.
 This update defines work; it does not execute a Rust migration or native campaign.
 
 M0-SL-01–M0-SL-05 are **task-local work labels**, not replacements for canonical
@@ -297,8 +311,9 @@ its raw widget allocations, omitted accessibility feature and generated-unsafe
 accommodation still need the named owners above. Retain shared mandatory garde
 construction and UI-M0 field/domain rules. This migration changes no numerical
 algorithm by design; if a conversion or mathematical contract does change,
-route its mandatory actual-source proof to the existing OD-10/CHECK-7/8/25 owner
-before dependent acceptance. Do not replace it with UI examples or model-only proof.
+record its actual-source proof obligation with the existing OD-10/CHECK-7/8/25
+owner for after V1; it is not a first-version acceptance blocker. Retain checked
+conversions and independent behavioral/boundary checks.
 
 #### Observation mechanism — source preparation in M0-SL-02
 

@@ -1,5 +1,9 @@
 # Select sanitizers and memory checks
 
+Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+
 Use for a concrete address, initialization, aliasing, race or leak question.
 Read the [testing contract](../CONTRACT.md); use the existing
 [configured analysis](configured-tooling.md#additional-rust-analysis) and

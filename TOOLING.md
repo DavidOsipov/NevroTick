@@ -1,5 +1,16 @@
 # Rust development environment
 
+**Current owner instruction — 6 November 2026:** [OD-10 §14.1](docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers all formal-proof work until after the first released software version
+(V1). Do not run the Kani/Verus proof recipes or continue proof source, admission,
+metadata-consumer or verifier work before then. Their descriptions below retain
+historical candidate evidence, not current V1 gates or execution authority.
+The supporter-label v1 attempt ended in a60,118ms verification timeout with zero
+checks; its exported-unwind-field expectation is known unfinished tooling.
+Keep that correction post-V1. Resume [pure-leap product qualification](tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026)
+with the ordinary Rust/test/coverage/mutation/security/native/package controls;
+all existing execution holds remain.
+
 **UI toolkit decision, 5 November 2026:**
 [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Slint with the measured winit/software and Fluent-style starting
@@ -524,7 +535,9 @@ callee certificates. The dedicated source consumer is unadopted; ordinary Kani
 flags and the SDK are unchanged. Keep this candidate terminal and do not retry or
 patch the tool under its closed card. Full-domain addition remains open.
 
-**Latest Core proof checkpoint, 6 November 2026:** [complement v2](tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026) passed all seven jobs: four full-raw predicate equalities/three arithmetic lemmas, five isolated contract failures and restored health. All143 selected checks pass;30 source files/11 executed Python sources and final source/input/receipt/tool guards bind the candidate. The captured-source `verify_fraction_complement_post.py` attempt is closed; do not rerun or delete its root. V1's opaque-power preprocessing failure remains historical. All earlier Rust pins are preserved, with no certificate imported. Next prepare rational-order alignment through pinned primitive cmp models; Ordering PartialEq/caller import, complete bridge/addition and Core/P1 remain open. No profile, SDK, CI or Windows execution hold changed.
+**Latest Core proof checkpoint, 6 November 2026:** [actual lifecycle source-counter qualification](tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026) passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python checks. The fixed `verify_lifecycle_source_fields.py` attempt is closed; preserve its root without rerunning. Four immutable captured-wrapper-selected records retain each cohort's original root/clock/jobs/reserve. Current/frozen32 inputs and nine actual Python modules bind the actual constants/predicate/From/min theorem. Role-specific cleanup removed five targets and retained about4.35MiB including directories. Earlier ordinal/rational/append-depth evidence remains preserved. Later [constructor source preparation](tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026) adds only a source-only projector/harness/tests: six genuine Garde-backed Cargo projects,14 authenticated vendor packages,51 source checks and independent review. It adds no fifth role or compiler/proof command; source-specific admission/target/allocator/drop/unwinding/constructor proof remain open. Transactional lifecycle, caller prefix/depth/topology/whole-selection, fraction models/bridge/import/addition and Core/P1 remain open. No SDK, profile or Windows hold changed.
+
+**Independent RequestTiming proof:** [five ordinary Kani jobs](tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026) passed full raw-pair admission, three semantic defects and restored health. Its158-check/34-input/nine-executed-Python frozen candidate remains intact; later shared runner/registry/test changes have separate291-check compatibility evidence, not a native rerun. The fixed `verify_request_timing.py` attempt is closed. All four dedicated cohorts use captured current Python with frozen data; other generic defaults/receipts gain no retroactive guarantee. The retained timing root is about4.25MiB. Ordinary Kani0.68/Cadical/kani-proof flags/two tool roots remain; no toolchain modification or certificate import.
 
 | Tool | Installed pin | Qualification and intended use |
 | --- | --- | --- |

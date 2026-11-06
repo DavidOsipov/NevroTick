@@ -48,17 +48,13 @@ a valid consumer. These controls prove field/API restrictions only: use
 checked transformations and release-active failure behavior.
 
 For static lock defects, select the guarded experimental Lockbud lane only on
-source/features compatible with its separate compiler. For existing or new
-product mathematical algorithms, apply OD-10's
-[mandatory proof workflow](../references/formal-verification.md): require
-actual-source proofs of the full admitted domain, required success/error outcomes,
-machine/rounding semantics and invariants with reviewed assumptions and meaningful
-controls. New mathematics, changed semantics or invalidated evidence reopen
-affected obligations; reuse valid unchanged proofs. Missing proofs leave the
-owning CHECK acceptance incomplete. Kani is one verifier option, subject to
-admission; this gate selects no new tool installation. Miri, Loom and cargo-fuzz
-answer different execution/model questions; route those gaps through
-[Rust techniques](../references/rust-techniques.md), not a static-pass label.
+source/features compatible with its separate compiler. Product mathematics
+follows [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal jobs, verifier
+extensions and pending proof admission/metadata repairs resume after V1. Missing
+proofs do not block V1 acceptance; retain historical exact-scope evidence and
+post-V1 obligations in the existing tasks. Miri, Loom and cargo-fuzz retain their
+separate execution/model roles through [Rust techniques](../references/rust-techniques.md).
+The [proof workflow](../references/formal-verification.md) applies after V1.
 
 For source-to-sink or taint questions, use
 [CodeQL data-flow analysis](../references/codeql-data-flow.md). Admit the actual

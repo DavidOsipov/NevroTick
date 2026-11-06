@@ -7,13 +7,14 @@ Evidence is private and external to the checkout; no existing receipt is reused.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
+from collections import Counter, namedtuple
 import hashlib
 import importlib.util
 import json
 import math
 import os
 from pathlib import Path
+import shutil
 import stat
 import sys
 import time
@@ -36,6 +37,71 @@ Z3_INPUTS = ("tools/formal/solver_admission.py", "policy/formal-solvers.json",
              "tools/crypto-aes-siv-witness/fuzz/input_custody.py")
 KANI_ENTRYPOINT = "kani/payload/kani-0.68.0/bin/kani-driver"
 KANI_COMPILER = "kani/rustup/toolchains/nightly-2026-08-21-x86_64-unknown-linux-gnu"
+REQUEST_TIMING_SELECTOR = "request-timing"
+REQUEST_TIMING_OUTPUT_LEAF = "formal-request-timing-20261106-v1"
+REQUEST_TIMING_PYTHON_NAMES = frozenset({
+    "tools/formal/verify_request_timing.py", "tools/formal/python_source_binding.py",
+    "tools/formal/verify.py", "tools/formal/additional_suites.py",
+    "tools/formal/request_timing_projection.py", "scripts/check-analysis.py",
+    "scripts/analysis-runtime.py", "scripts/analysis-controls.py", "scripts/check-environment.py",
+})
+SELECTION_DEPTH_SELECTOR = "selection-depth"
+SELECTION_DEPTH_OUTPUT_LEAF = "formal-selection-depth-20261106-v1"
+SELECTION_DEPTH_PYTHON_NAMES = frozenset({
+    "tools/formal/verify_selection_depth.py", "tools/formal/python_source_binding.py",
+    "tools/formal/verify.py", "tools/formal/additional_suites.py",
+    "tools/formal/selection_depth_projection.py", "scripts/check-analysis.py",
+    "scripts/analysis-runtime.py", "scripts/analysis-controls.py", "scripts/check-environment.py",
+})
+LIFECYCLE_ORDINAL_SELECTOR = "lifecycle-ordinal"
+LIFECYCLE_ORDINAL_OUTPUT_LEAF = "formal-lifecycle-ordinal-20261106-v1"
+LIFECYCLE_ORDINAL_PYTHON_NAMES = frozenset({
+    "tools/formal/verify_lifecycle_ordinal.py", "tools/formal/python_source_binding.py",
+    "tools/formal/verify.py", "tools/formal/additional_suites.py",
+    "tools/formal/lifecycle_ordinal_projection.py", "scripts/check-analysis.py",
+    "scripts/analysis-runtime.py", "scripts/analysis-controls.py", "scripts/check-environment.py",
+})
+LIFECYCLE_SOURCE_FIELDS_SELECTOR = "lifecycle-source-fields"
+LIFECYCLE_SOURCE_FIELDS_OUTPUT_LEAF = "formal-lifecycle-source-fields-20261106-v1"
+LIFECYCLE_SOURCE_FIELDS_PYTHON_NAMES = frozenset({
+    "tools/formal/verify_lifecycle_source_fields.py", "tools/formal/python_source_binding.py",
+    "tools/formal/verify.py", "tools/formal/additional_suites.py",
+    "tools/formal/lifecycle_source_fields_projection.py", "scripts/check-analysis.py",
+    "scripts/analysis-runtime.py", "scripts/analysis-controls.py", "scripts/check-environment.py",
+})
+SUPPORTER_LABELS_SELECTOR = "supporter-labels"
+SUPPORTER_LABELS_OUTPUT_LEAF = "formal-supporter-labels-20261106-v1"
+SUPPORTER_LABELS_PYTHON_NAMES = frozenset({
+    "tools/formal/verify_supporter_labels.py", "tools/formal/python_source_binding.py",
+    "tools/formal/verify.py", "tools/formal/additional_suites.py",
+    "tools/formal/supporter_labels_projection.py", "scripts/check-analysis.py",
+    "scripts/analysis-runtime.py", "scripts/analysis-controls.py", "scripts/check-environment.py",
+})
+_ClosedCohort = namedtuple("_ClosedCohort", (
+    "selector", "wrapper", "output_leaf", "projection", "python_names",
+    "consumer_test", "job_count", "minimum_first_seconds",
+))
+_CLOSED_COHORTS = (
+    _ClosedCohort(REQUEST_TIMING_SELECTOR, "tools/formal/verify_request_timing.py",
+                  REQUEST_TIMING_OUTPUT_LEAF, "tools/formal/request_timing_projection.py",
+                  REQUEST_TIMING_PYTHON_NAMES, "tools/formal/test_verify_request_timing.py", 5, 1020),
+    _ClosedCohort(SELECTION_DEPTH_SELECTOR, "tools/formal/verify_selection_depth.py",
+                  SELECTION_DEPTH_OUTPUT_LEAF, "tools/formal/selection_depth_projection.py",
+                  SELECTION_DEPTH_PYTHON_NAMES, "tools/formal/test_verify_selection_depth.py", 6, 1200),
+    _ClosedCohort(LIFECYCLE_ORDINAL_SELECTOR, "tools/formal/verify_lifecycle_ordinal.py",
+                  LIFECYCLE_ORDINAL_OUTPUT_LEAF, "tools/formal/lifecycle_ordinal_projection.py",
+                  LIFECYCLE_ORDINAL_PYTHON_NAMES, "tools/formal/test_verify_lifecycle_ordinal.py", 5, 1020),
+    _ClosedCohort(LIFECYCLE_SOURCE_FIELDS_SELECTOR, "tools/formal/verify_lifecycle_source_fields.py",
+                  LIFECYCLE_SOURCE_FIELDS_OUTPUT_LEAF, "tools/formal/lifecycle_source_fields_projection.py",
+                  LIFECYCLE_SOURCE_FIELDS_PYTHON_NAMES, "tools/formal/test_verify_lifecycle_source_fields.py", 5, 1020),
+    _ClosedCohort(SUPPORTER_LABELS_SELECTOR, "tools/formal/verify_supporter_labels.py",
+                  SUPPORTER_LABELS_OUTPUT_LEAF, "tools/formal/supporter_labels_projection.py",
+                  SUPPORTER_LABELS_PYTHON_NAMES, "tools/formal/test_verify_supporter_labels.py", 5, 1020),
+)
+COHORT_SELECTORS = frozenset(item.selector for item in _CLOSED_COHORTS)
+SOURCE_BINDING = globals().get("__source_binding__")
+BOUND_SOURCE_ROOT = None
+COHORT_CAMPAIGN = None
 STATUSES = {"Success", "Satisfied", "Failure", "Unreachable", "Unsatisfiable"}
 ROUNDING_COVERS = {
     "zero succeeds", "negative destination endpoint succeeds",
@@ -56,6 +122,20 @@ class Incomplete(RuntimeError):
 
 def module(name: str, path: Path):
     """Load one source-bound local Python module without installing anything."""
+    if SOURCE_BINDING is not None:
+        cohort = captured_cohort()
+        path = Path(path)
+        if not path.is_absolute() or path != path.resolve(strict=True):
+            raise Incomplete("Captured Python input redirects or is not absolute")
+        if path.is_relative_to(ROOT):
+            relative = path.relative_to(ROOT).as_posix()
+        elif BOUND_SOURCE_ROOT is not None and path.is_relative_to(BOUND_SOURCE_ROOT):
+            relative = path.relative_to(BOUND_SOURCE_ROOT).as_posix()
+        else:
+            raise Incomplete("Captured Python input escapes the fixed source roots")
+        if relative not in cohort.python_names:
+            raise Incomplete("Undeclared captured Python input")
+        return SOURCE_BINDING.load_module(name, ROOT / relative)
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise Incomplete(f"Cannot load local module: {path}")
@@ -154,6 +234,8 @@ def solver_flags(check, solver_backend: str = "cadical") -> list[str]:
 def input_names(subject: str, solver_backend: str = "cadical") -> list[str]:
     """Inventory the original crate, specifications, runners and pinned policies."""
     solver_selection(solver_backend)
+    if SOURCE_BINDING is not None:
+        captured_cohort(subject)
     names = {
         "Cargo.toml", "Cargo.lock", "rust-toolchain.toml",
         "crates/time-domain/Cargo.toml", "policy/analysis-tools.json",
@@ -168,8 +250,12 @@ def input_names(subject: str, solver_backend: str = "cadical") -> list[str]:
         names.add("tools/formal/rounding_harness.rs")
     if subject in ("era", "all"):
         names.update(("tools/formal/era_harness.rs", "tools/formal/era_projection.py"))
-    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"):
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions", REQUEST_TIMING_SELECTOR, SELECTION_DEPTH_SELECTOR, LIFECYCLE_ORDINAL_SELECTOR, LIFECYCLE_SOURCE_FIELDS_SELECTOR, SUPPORTER_LABELS_SELECTOR):
         names.update(additional_suites().input_names(subject))
+    cohort = cohort_metadata(subject)
+    if cohort is not None:
+        names.update(cohort.python_names)
+        names.add(cohort.consumer_test)
     if subject in {"endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"}:
         names.update(("crates/time-core/Cargo.toml",
                       "crates/time-core/src/projection_enclosure.rs",
@@ -183,6 +269,16 @@ def input_names(subject: str, solver_backend: str = "cadical") -> list[str]:
 
 def freeze_inputs(check, source: Path, names: list[str]) -> dict:
     """Copy exact bounded regular-file inputs; preserve an original byte manifest."""
+    global BOUND_SOURCE_ROOT
+    if SOURCE_BINDING is not None:
+        cohort = captured_cohort()
+        expected = cohort_output() / "source"
+        if names != input_names(cohort.selector):
+            raise Incomplete("Captured cohort requires its complete fixed source inventory")
+        if source != expected or BOUND_SOURCE_ROOT not in (None, source):
+            raise Incomplete("Captured cohort requires its one fixed fresh source root")
+        SOURCE_BINDING.verify(names)
+        BOUND_SOURCE_ROOT = source
     records = {}
     for name in names:
         original = ROOT / name
@@ -193,6 +289,8 @@ def freeze_inputs(check, source: Path, names: list[str]) -> dict:
         target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         target.write_bytes(data)
         records[name] = {"sha256": digest(data), "bytes": len(data)}
+    if SOURCE_BINDING is not None:
+        SOURCE_BINDING.verify(names, records)
     return records
 
 
@@ -201,6 +299,11 @@ def require_sources(check, source: Path, records: dict, subject: str,
     """Reject changed, missing or newly added original inputs and frozen bytes."""
     if input_names(subject, solver_backend) != sorted(records):
         raise Incomplete("Original source/configuration input inventory changed")
+    if subject in COHORT_SELECTORS:
+        require_cohort_binding(subject)
+        if source != BOUND_SOURCE_ROOT:
+            raise Incomplete("Captured cohort source root differs from its frozen root")
+        SOURCE_BINDING.verify(records, records)
     for name, expected in records.items():
         original = ROOT / name
         if original != original.resolve(strict=True):
@@ -211,9 +314,141 @@ def require_sources(check, source: Path, records: dict, subject: str,
                 raise Incomplete(f"Original or frozen input drift: {name}")
 
 
+def cohort_metadata(subject: str):
+    """Return fixed inventory metadata only; this grants no execution role."""
+    return next((item for item in _CLOSED_COHORTS if item.selector == subject), None)
+
+
 def job_limit(subject: str) -> int:
-    """Keep twelve for every old suite; allow only this fixed sixteen-job cohort."""
+    """Preserve ordinary bounds and each captured cohort's literal schedule."""
+    cohort = cohort_metadata(subject)
+    if cohort is not None:
+        return cohort.job_count
     return 16 if subject == PARTITION_SELECTOR else MAX_JOBS
+
+
+def request_timing_output() -> Path:
+    """Return the original timing root, independent of any captured role."""
+    return Path.home() / ".local/share/nevrotick" / REQUEST_TIMING_OUTPUT_LEAF
+
+
+def selection_depth_output() -> Path:
+    """Return the selection card's sole fresh root without caller overrides."""
+    return Path.home() / ".local/share/nevrotick" / SELECTION_DEPTH_OUTPUT_LEAF
+
+
+def lifecycle_ordinal_output() -> Path:
+    """Return the ordinal card's sole fresh root without caller overrides."""
+    return Path.home() / ".local/share/nevrotick" / LIFECYCLE_ORDINAL_OUTPUT_LEAF
+
+
+def lifecycle_source_fields_output() -> Path:
+    """Return the source-counter card's sole fresh root without caller overrides."""
+    return Path.home() / ".local/share/nevrotick" / LIFECYCLE_SOURCE_FIELDS_OUTPUT_LEAF
+
+
+def supporter_labels_output() -> Path:
+    """Return the supporter-label card's sole fresh root without overrides."""
+    return Path.home() / ".local/share/nevrotick" / SUPPORTER_LABELS_OUTPUT_LEAF
+
+
+def captured_cohort(subject: str | None = None):
+    """Resolve immutable wrapper identity; source bookends verify current bytes."""
+    if (SOURCE_BINDING is None or SOURCE_BINDING is not globals().get("__source_binding__")
+            or SOURCE_BINDING.root != ROOT):
+        raise Incomplete("Closed cohort requires its captured fixed wrapper")
+    snapshot = SOURCE_BINDING.snapshot()
+    candidates = [item for item in _CLOSED_COHORTS if item.wrapper in snapshot]
+    if (len(candidates) != 1
+            or not {"tools/formal/python_source_binding.py", "tools/formal/verify.py"} <= snapshot.keys()):
+        raise Incomplete("Closed cohort requires exactly one captured fixed wrapper")
+    cohort = candidates[0]
+    if subject is not None and subject != cohort.selector:
+        raise Incomplete("Captured fixed wrapper cannot select another cohort subject")
+    if not snapshot.keys() <= cohort.python_names:
+        raise Incomplete("Captured Python source is outside the fixed wrapper inventory")
+    return cohort
+
+
+def require_cohort_binding(subject: str | None = None):
+    """Verify all executed source bytes at the selected cohort's bookends."""
+    cohort = captured_cohort(subject)
+    SOURCE_BINDING.verify(cohort.python_names)
+    return cohort
+
+
+def cohort_output() -> Path:
+    """Return only the root of the role established by captured execution."""
+    cohort = captured_cohort()
+    return Path.home() / ".local/share/nevrotick" / cohort.output_leaf
+
+
+def cohort_resources(work: Path | None = None) -> dict:
+    """Bound retained owned files, excluding only exact disposable job targets."""
+    cohort = captured_cohort()
+    location = cohort_output().parent if work is None else work
+    if shutil.disk_usage(location).free < 3 * 1024**3:
+        raise Incomplete("Closed cohort requires three GiB free disk reserve")
+    total = 0
+    if work is not None:
+        if work != cohort_output() or work != work.resolve(strict=True):
+            raise Incomplete("Closed cohort resource root redirects or differs")
+        targets = {work / "jobs" / f"{index:02d}-{job['subject']}-{job['case']}-{job['harness']}" / "target"
+                   for index, job in enumerate(jobs(cohort.selector), 1)}
+        def unreadable(error):
+            raise Incomplete("Closed cohort retained tree is unreadable") from error
+
+        entries = 0
+        for directory, subdirs, files in os.walk(work, followlinks=False, onerror=unreadable):
+            current = Path(directory)
+            for name in [*subdirs, *files]:
+                entries += 1
+                if entries > 100000:
+                    raise Incomplete("Closed cohort retained tree exceeds its finite entry bound")
+                item = current / name
+                info = item.lstat()
+                if (info.st_uid != os.geteuid() or item != item.resolve(strict=True)
+                        or not (stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode))
+                        or stat.S_ISREG(info.st_mode) and info.st_nlink != 1):
+                    raise Incomplete("Closed cohort retained input aliases or is not owned/regular")
+                if item in targets:
+                    if not stat.S_ISDIR(info.st_mode):
+                        raise Incomplete("Disposable target is not an owned directory")
+                    subdirs.remove(name)
+                elif stat.S_ISREG(info.st_mode):
+                    total += info.st_size
+                    if total > 128 * 1024**2:
+                        raise Incomplete("Closed cohort retained source/receipts exceed 128 MiB")
+    return {"retained_bytes": total, "minimum_free_bytes": 3 * 1024**3,
+            "maximum_retained_bytes": 128 * 1024**2}
+
+
+def cleanup_cohort_targets(check, work: Path) -> list[str]:
+    """Remove only exact role-owned targets after terminal native custody checks."""
+    cohort = captured_cohort()
+    if (work != cohort_output() or work != work.resolve(strict=True)
+            or not work.is_dir()):
+        raise Incomplete("Refusing cleanup outside the exact canonical captured-cohort work root")
+    check.RUNTIME._owned_work(work, ROOT)
+    if not shutil.rmtree.avoids_symlink_attacks:
+        raise Incomplete("Safe descriptor-based target cleanup is unavailable")
+    targets = []
+    for index, job in enumerate(jobs(cohort.selector), 1):
+        path = work / "jobs" / f"{index:02d}-{job['subject']}-{job['case']}-{job['harness']}" / "target"
+        if path.exists() or path.is_symlink():
+            if (path != path.resolve(strict=True) or not path.is_dir()
+                    or path.lstat().st_uid != os.geteuid()):
+                raise Incomplete("Refusing aliased or unowned disposable target cleanup")
+            for directory, _, _ in os.walk(path, followlinks=False):
+                if Path(directory).is_mount():
+                    raise Incomplete("Refusing mounted disposable target cleanup")
+            targets.append(path)
+    removed = []
+    for path in targets:
+        shutil.rmtree(path)
+        removed.append(path.relative_to(work).as_posix())
+    check.RUNTIME._owned_work(work, ROOT)
+    return removed
 
 
 def partition_projection(source: Path = ROOT):
@@ -222,7 +457,17 @@ def partition_projection(source: Path = ROOT):
 
 
 def partition_remaining(subject: str, source: Path = ROOT) -> float | None:
-    """Enforce the original source-to-decision cap only for the fresh partition card."""
+    """Check the selected finite card's once-recorded source-to-decision clock."""
+    if SOURCE_BINDING is not None:
+        captured_cohort(subject)
+    if subject in COHORT_SELECTORS:
+        cohort = require_cohort_binding(subject)
+        projection = module("formal_" + subject.replace("-", "_") + "_budget", source / cohort.projection)
+        remaining = projection.remaining_budget()
+        if (isinstance(remaining, bool) or not isinstance(remaining, (int, float))
+                or not math.isfinite(remaining) or not 0 < remaining <= 3600):
+            raise Incomplete("Captured cohort preparation/execution budget expired or malformed")
+        return float(remaining)
     if subject != PARTITION_SELECTOR:
         return None
     try:
@@ -237,7 +482,18 @@ def partition_remaining(subject: str, source: Path = ROOT) -> float | None:
 
 def partition_preflight(subject: str, profile: str, solver_backend: str,
                         solver_root, output_dir: str) -> None:
-    """Constrain the one new cohort without changing any existing lane's options."""
+    """Constrain captured cohorts without changing ordinary lane options."""
+    if SOURCE_BINDING is not None:
+        captured_cohort(subject)
+    if subject in COHORT_SELECTORS:
+        cohort = require_cohort_binding(subject)
+        if (profile != "kani-proof" or solver_backend != "cadical" or solver_root is not None
+                or output_dir != str(cohort_output())):
+            raise Incomplete("Captured cohort requires the fixed output and Kani-proof/Cadical role")
+        if partition_remaining(subject) < cohort.minimum_first_seconds:
+            raise Incomplete(f"{subject} requires {cohort.minimum_first_seconds} seconds before first admission")
+        cohort_resources()
+        return
     if subject != PARTITION_SELECTOR:
         return
     if profile != "kani-proof" or solver_backend != "cadical" or solver_root is not None:
@@ -265,10 +521,12 @@ def generated_identity(check, inputs: Path) -> dict:
 
 def jobs(subject: str) -> list[dict]:
     """Return the complete fixed schedule, without retries or solver concurrency."""
-    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"):
+    if SOURCE_BINDING is not None:
+        captured_cohort(subject)
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions", REQUEST_TIMING_SELECTOR, SELECTION_DEPTH_SELECTOR, LIFECYCLE_ORDINAL_SELECTOR, LIFECYCLE_SOURCE_FIELDS_SELECTOR, SUPPORTER_LABELS_SELECTOR):
         result = additional_suites().jobs(subject)
         limit = job_limit(subject)
-        if not 1 <= len(result) <= limit or (subject == PARTITION_SELECTOR and len(result) != limit):
+        if not 1 <= len(result) <= limit or (subject in COHORT_SELECTORS | {PARTITION_SELECTOR} and len(result) != limit):
             raise Incomplete("Empty or excessive additional proof schedule")
         return result
     result = []
@@ -302,6 +560,8 @@ def selected_jobs(subject: str, start_at: int, only_jobs: list[int] | None = Non
     This is explicit partial execution, not automatic receipt reuse or campaign
     resumption. The coordinator must separately reconcile any earlier evidence.
     """
+    if subject in COHORT_SELECTORS and (start_at != 1 or only_jobs is not None):
+        raise Incomplete("Captured cohort requires its complete fixed selection")
     if subject == PARTITION_SELECTOR and (start_at != 1 or only_jobs is not None):
         raise Incomplete("Partition theorem requires the full fixed sixteen-job selection")
     schedule = jobs(subject)
@@ -432,6 +692,22 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
                 (not isinstance(harnesses[0].get("source"), dict)
                  or harnesses[0]["source"].get("file") != entrypoint))):
         raise Incomplete("Harness metadata differs from the selected ordinary proof")
+    source_unwind = None
+    if (job["subject"] == "supporter_labels"
+            or isinstance(job["harness"], str) and job["harness"].startswith("supporter_labels::")):
+        fixed_jobs = additional_suites().jobs(SUPPORTER_LABELS_SELECTOR)
+        if not any((job["subject"], job["harness"]) == (item["subject"], item["harness"])
+                   for item in fixed_jobs):
+            raise Incomplete("Source unwind profile requires the fixed supporter-label subject and harness")
+        attributes = harnesses[0]["attributes"]
+        unwind_value = attributes.get("unwind_value")
+        if type(unwind_value) is not int or unwind_value != 17:
+            raise Incomplete("Supporter-label proof requires the exact source unwind integer 17")
+        for field in ("stubs", "verified_stubs"):
+            value = attributes.get(field, [])
+            if type(value) is not list or value:
+                raise Incomplete("Supporter-label proof permits no stubs or verified stubs")
+        source_unwind = 17
     cbmc = one_record(report, "cbmc", job["harness"])
     if (not isinstance(cbmc.get("configuration"), dict)
             or cbmc["configuration"].get("solver") != expected_solver):
@@ -496,7 +772,7 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
                             or item["location"].get("file") != entrypoint))
                        for item in failures)):
             raise Incomplete("Defect did not fail exclusively at its intended assertion")
-    return {"verification_summary": summary, "checks": len(checks), "status_counts": dict(counts),
+    qualified = {"verification_summary": summary, "checks": len(checks), "status_counts": dict(counts),
             "failed_checks": failures, "covers": covers, "solver_seconds": solver_seconds,
             "decision_procedure_seconds": decision_seconds if expected_solver == "z3" else None,
             "timing_field": timing_field, "timing_meaning": timing_meaning,
@@ -505,6 +781,9 @@ def qualify(report: dict, native: dict, job: dict, entrypoint: str | None = None
             "tools": tools, "metadata": metadata, "error_details": errors,
             "expected_solver_backend": expected_solver,
             "property_details": properties, "cbmc": cbmc, "harness_metadata": harnesses}
+    if source_unwind is not None:
+        qualified.update(expected_source_unwind=17, effective_source_unwind=source_unwind)
+    return qualified
 
 
 def proof_readonly_roots(admitted: dict, profile: str) -> tuple[Path, Path]:
@@ -669,6 +948,21 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
     main supplies its cumulative in-memory custody list. A standalone call owns
     only its frozen source and current job; it establishes no cross-job campaign.
     """
+    if SOURCE_BINDING is not None:
+        captured_cohort(subject)
+    if subject in COHORT_SELECTORS:
+        cohort = require_cohort_binding(subject)
+        campaign = COHORT_CAMPAIGN
+        if (type(campaign) is not dict or campaign.get("cohort") is not cohort
+                or campaign.get("work") != work or work != cohort_output()
+                or campaign.get("source") != source or source != BOUND_SOURCE_ROOT
+                or campaign.get("retained") is not retained
+                or campaign.get("next_index") != index or type(index) is not int or not 1 <= index <= cohort.job_count
+                or job != jobs(subject)[index - 1]
+                or tool_admission_profile != "kani-proof" or solver_backend != "cadical"
+                or solver_root is not None):
+            raise Incomplete("Captured cohort permits only its complete fixed campaign without retries")
+        campaign["next_index"] += 1
     started = time.monotonic()
     folder = work / "jobs" / f"{index:02d}-{job['subject']}-{job['case']}-{job['harness']}"
     inputs = folder / "inputs"
@@ -706,9 +1000,10 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
             raise Incomplete("Projection must return the canonical inputs/proof.rs")
         record.update(preparation=prepared, prepare_seconds=time.monotonic() - started,
                       source_original_manifest=records)
-        if subject == PARTITION_SELECTOR and job["restored_healthy"]:
-            original_index = index - 9
-            if not 2 <= original_index <= 7:
+        if subject in COHORT_SELECTORS | {PARTITION_SELECTOR} and job["restored_healthy"]:
+            original_index = 1 if subject in COHORT_SELECTORS else index - 9
+            if (subject == PARTITION_SELECTOR and not 2 <= original_index <= 7
+                    or subject in COHORT_SELECTORS and index != cohort.job_count):
                 raise Incomplete("Unexpected restored partition index")
             original = work / "jobs" / f"{original_index:02d}-{job['subject']}-{job['case']}-{job['harness']}" / "inputs"
             if generated_identity(check, inputs) != generated_identity(check, original):
@@ -720,6 +1015,11 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
         write_json(folder / "input-before.json", before)
         solver_options = {} if solver_backend == "cadical" else {
             "solver_backend": solver_backend, "solver_root": requested_solver, "source": source, "work": work}
+        if subject in COHORT_SELECTORS:
+            require_sources(check, source, records, subject, solver_backend)
+            cohort_resources(work)
+            if index == 1 and partition_remaining(subject, source) < cohort.minimum_first_seconds:
+                raise Incomplete(f"{subject} requires {cohort.minimum_first_seconds} seconds before first admission")
         admitted, admitted_record = admission(check, folder / "admission.json", profile=tool_admission_profile,
                                               **solver_options)
         record["admission_seconds"] = admitted_record["seconds"]
@@ -834,11 +1134,12 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
 
 def main(argv=None) -> int:
     """Run finite selected commands and repeat their admission role at closeout."""
+    global COHORT_CAMPAIGN
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True,
                         help="fresh canonical absolute private directory outside this checkout")
     parser.add_argument("--subject", choices=("rounding", "era", "all", "coordinate-exchange",
-                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"), default="all",
+                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions", REQUEST_TIMING_SELECTOR, SELECTION_DEPTH_SELECTOR, LIFECYCLE_ORDINAL_SELECTOR, LIFECYCLE_SOURCE_FIELDS_SELECTOR, SUPPORTER_LABELS_SELECTOR), default="all",
                         help="fixed suite; all retains the original twelve-job rounding/era schedule")
     parser.add_argument("--start-at", type=int, default=1,
                         help="execute only this fixed-schedule suffix; omitted jobs are not qualified")
@@ -851,6 +1152,8 @@ def main(argv=None) -> int:
     parser.add_argument("--solver-root", help="canonical admitted Z3 directory; valid only with --solver-backend z3")
     args = parser.parse_args(argv)
     try:
+        if SOURCE_BINDING is not None:
+            require_cohort_binding(args.subject)
         # Reject invalid selection before creating evidence or admitting tools;
         # recompute under the frozen source bookends before actual execution.
         selected_jobs(args.subject, args.start_at, args.only_jobs)
@@ -877,6 +1180,11 @@ def main(argv=None) -> int:
         require_sources(check, source, records, args.subject, args.solver_backend)
         write_json(work / "source-manifest.json", {"source_original_manifest": records,
                    "runner_sha256": records["tools/formal/verify.py"]["sha256"]})
+        if args.subject in COHORT_SELECTORS:
+            summary["executed_python_sources"] = SOURCE_BINDING.snapshot()
+            COHORT_CAMPAIGN = {"cohort": require_cohort_binding(args.subject),
+                               "work": work, "source": source,
+                               "retained": retained, "next_index": 1}
         retain_artifacts(check, work, retained, [source, work / "source-manifest.json"])
         selection = selected_jobs(args.subject, args.start_at, args.only_jobs)
         fixed_count = len(jobs(args.subject))
@@ -917,6 +1225,11 @@ def main(argv=None) -> int:
         if check is not None:
             try:
                 partition_remaining(args.subject, source)
+                if args.subject in COHORT_SELECTORS:
+                    if records is None:
+                        raise Incomplete("No complete captured-cohort source manifest was frozen")
+                    require_sources(check, source, records, args.subject, args.solver_backend)
+                    cohort_resources(work)
                 solver_options = {} if args.solver_backend == "cadical" else {
                     "solver_backend": args.solver_backend, "solver_root": requested_solver,
                     "source": source, "work": work}
@@ -936,6 +1249,16 @@ def main(argv=None) -> int:
             except Exception as error:
                 summary["status"] = "incomplete"
                 summary["final_error"] = f"{type(error).__name__}: {error}"
+        if args.subject in COHORT_SELECTORS:
+            try:
+                if check is None:
+                    raise Incomplete("No runtime custody owner available for target cleanup")
+                summary["removed_disposable_targets"] = cleanup_cohort_targets(check, work)
+                summary["retained_resources"] = cohort_resources(work)
+                summary["executed_python_sources"] = SOURCE_BINDING.snapshot()
+            except Exception as error:
+                summary["status"] = "incomplete"
+                summary["cleanup_error"] = f"{type(error).__name__}: {error}"
         summary["total_seconds"] = time.monotonic() - started
         write_json(work / "summary.json", summary)
     print(json.dumps({"status": summary["status"], "completed_jobs": len(summary["jobs"]),

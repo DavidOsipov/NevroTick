@@ -974,5 +974,254 @@ class FractionComplementPostPreparationTests(unittest.TestCase):
         self.assertNotIn("--no-cheating", script)
 
 
+class FractionRationalOrderPreparationTests(unittest.TestCase):
+    def setUp(self):
+        FractionComplementPostPreparationTests.setUp(self)
+        path = self.source / PROJECTION.RATIONAL_LEMMAS
+        path.write_bytes((ROOT / PROJECTION.RATIONAL_LEMMAS).read_bytes())
+        self.fragment = self.prefix[:2333] + self.prefix[2684:3731]
+
+    def prepare(self):
+        return PROJECTION.prepare_rational_order(self.source, self.output)
+
+    def test_closed_ten_source_inventory_and_fifteen_literal_modes(self):
+        self.assertEqual(PROJECTION.rational_input_names(),
+                         (*PROJECTION.complement_input_names(), PROJECTION.RATIONAL_LEMMAS))
+        result = self.prepare()
+        self.assertEqual(len(result["source_files_sha256"]), 10)
+        self.assertEqual(result["source_files_sha256"], {
+            name: PROJECTION.digest((self.source / name).read_bytes())
+            for name in PROJECTION.rational_input_names()
+        })
+        self.assertEqual(set(result), {
+            "schema_version", "status", "proof_commands", "scope", "source_files_sha256",
+            "original_sources_sha256", "correspondence", "prefix_sha256", "prefix_bytes",
+            "fragment_source_spans", "fragment_sha256", "annotated_fragment_sha256",
+            "ghost_sha256", "lemma_sha256", "complement_lemma_sha256", "rational_lemma_sha256",
+            "predicate_relations", "full_bridge_predicate_relations", "expected_function_modes",
+            "proof_hooks", "raw_domains", "upstream_dependencies", "remaining", "generated_sha256",
+        })
+        self.assertEqual(result["expected_function_modes"], {
+            "proof::lemma_bridge_bit_length_power": "proof",
+            "proof::lemma_bridge_u128_shift_power": "proof",
+            "proof::lemma_bridge_complement_reject_outside": "proof",
+            "proof::lemma_bridge_u128_shifted_u64": "proof",
+            "proof::lemma_bridge_denominator_factor": "proof",
+            "proof::lemma_bridge_positive_factor_order": "proof",
+            "proof::lemma_bridge_rational_gap_dominates": "proof",
+            "proof::composition_constructor_admitted": "exec",
+            "proof::composition_checked": "exec",
+            "proof::composition_constructor_post": "exec",
+            "proof::composition_rational_order": "exec",
+            "proof::composition_complement_post": "exec",
+            "proof::IntervalError::clone": "exec",
+            "proof::FixtureEnclosureError::clone": "exec",
+            "proof::Fraction::clone": "exec",
+        })
+        self.assertEqual(result["predicate_relations"], [
+            "bridge_constructor_admitted(numerator, shift)", "bridge_checked(value)",
+            "bridge_constructor_post(numerator, shift, result)", "bridge_rational_order(left, right)",
+            "bridge_complement_post(input, result)",
+        ])
+        self.assertEqual(result["status"], "unproved_source_candidate")
+        self.assertEqual(result["proof_commands"], 0)
+        self.assertEqual(len(result["full_bridge_predicate_relations"]), 6)
+
+    def test_exact_disjoint_spans_erasure_annotations_and_eleven_hooks(self):
+        result = self.prepare()
+        candidate = PROJECTION.annotated_rational_order(self.fragment)
+        self.assertEqual(PROJECTION.RATIONAL_SOURCE_SPANS, ((0, 2333), (2684, 3731)))
+        self.assertEqual(len(self.fragment), 3380)
+        self.assertEqual(PROJECTION.digest(self.fragment),
+                         "b5e0a0dcdf924add0f9447bfce57555f39c5bc73deae656bec9993a576796a8d")
+        self.assertEqual(result["fragment_source_spans"], [
+            {"source_byte_offsets_half_open": [0, 2333],
+             "sha256": "c1eb218abfc039caf065c00391d1f9832b668229397f6ff71c3385e89318352d"},
+            {"source_byte_offsets_half_open": [2684, 3731],
+             "sha256": "a9e8e582cc3b7630f37df1b7e446bb18c12b4192bd7a2dbb47dd423225b683fa"},
+        ])
+        self.assertEqual(PROJECTION.erase_rational_order_annotations(candidate), self.fragment)
+        self.assertEqual(candidate.count(b"#[verifier::allow_in_spec]"), 5)
+        self.assertEqual(candidate.count(b"\n    returns "), 5)
+        self.assertEqual(candidate.count(b"proof {\n"), 11)
+        self.assertEqual(result["annotated_fragment_sha256"], PROJECTION.digest(candidate))
+        self.assertIn(candidate, (self.output / "proof.rs").read_bytes())
+        self.assertNotIn(b"fn composition_comparison_post(", (self.output / "proof.rs").read_bytes())
+        self.assertEqual((self.output / "predicate_source.rs").read_bytes(), self.prefix)
+
+    def test_six_rational_hooks_scoped_unique_and_original_prefix_offsets(self):
+        result = self.prepare()
+        candidate = PROJECTION.annotated_rational_order(self.fragment)
+        self.assertEqual(len(result["proof_hooks"]), 11)
+        self.assertEqual(len(PROJECTION.RATIONAL_HOOKS), 6)
+        for index, (name, anchor, block) in enumerate(PROJECTION.RATIONAL_HOOKS):
+            self.assertEqual(self.prefix.count(anchor), 1)
+            self.assertEqual(candidate.count(block + anchor), 1)
+            self.assertEqual(result["proof_hooks"][index + 5], {
+                "function": "proof::" + name, "source_byte_offset": self.prefix.index(anchor),
+                "insertion": "at approved rational-order proof site",
+                "anchor_sha256": PROJECTION.digest(anchor), "proof_block_sha256": PROJECTION.digest(block),
+            })
+            self.assertGreaterEqual(self.prefix.index(anchor), 1202)
+            self.assertLess(self.prefix.index(anchor), 2333)
+            self.assertNotIn(b"assert(bridge_rational_order", block)
+        self.assertEqual(candidate.count(b"assert(gap as int == right.shift as int - left.shift as int);"), 2)
+        self.assertEqual(candidate.count(b"assert(gap as int == left.shift as int - right.shift as int);"), 2)
+
+    def test_total_raw_domains_four_helpers_exact_machine_bridge_and_no_assumptions(self):
+        result = self.prepare()
+        proof = (self.output / "proof.rs").read_bytes()
+        lemma = (self.source / PROJECTION.RATIONAL_LEMMAS).read_bytes()
+        self.assertEqual(PROJECTION.digest(lemma), PROJECTION.RATIONAL_LEMMAS_SHA256)
+        self.assertEqual(result["rational_lemma_sha256"], PROJECTION.RATIONAL_LEMMAS_SHA256)
+        self.assertEqual(re.findall(rb"(?m)^proof fn (\w+)\(", lemma), [
+            b"lemma_bridge_u128_shifted_u64", b"lemma_bridge_denominator_factor",
+            b"lemma_bridge_positive_factor_order", b"lemma_bridge_rational_gap_dominates",
+        ])
+        self.assertIn("every independent left/right raw Fraction", result["raw_domains"]["rational_order"])
+        self.assertEqual(len(result["raw_domains"]), 12)
+        self.assertNotRegex(re.sub(rb"(?m)//[^\n]*", b"", proof),
+                            rb"\b(?:requires|assume|admit|external_body|external_fn_specification|assume_specification|axiom)\b")
+        self.assertIn(b"g < 64 ==> (((n as u128) << g) as int == (n as int) * pow(2, g as nat)),", lemma)
+        self.assertIn(b"==> (((n as u128) << g) == ((n as u128) << (g as u128)))) by (bit_vector);", lemma)
+        self.assertLess(lemma.index(b"assert(0 <= (n as int) * pow(2, g as nat) < pow(2, 127));"),
+                        lemma.index(b"vstd::bits::lemma_u128_shl_is_mul(n as u128, g as u128);"))
+        self.assertIn(b"if !composition_checked(left) || !composition_checked(right) {\n        return Ordering::Equal;", proof)
+        self.assertNotIn(b"Fraction::new(", proof)
+        self.assertNotIn(b"by (compute_only);", lemma)
+        self.assertEqual(result["upstream_dependencies"]["paths"][-3:], [
+            "source/vstd/arithmetic/mul.rs", "source/vstd/std_specs/cmp.rs", "source/vstd/std_specs/num.rs",
+        ])
+
+    def test_independent_raw_shift_factoring_order_and_branch_witness_facts(self):
+        for n in (0, 1, (1 << 53) - 1, (1 << 64) - 1):
+            for gap in (0, 1, 52, 53, 63):
+                self.assertEqual(n << gap, n * 2**gap)
+                self.assertLess(n * 2**gap, 2**127)
+        for lo, hi in ((0, 0), (0, 1041), (1, 1), (1, 64), (1, 65), (64, 1041)):
+            self.assertEqual(2**hi, 2**lo * 2**(hi - lo))
+        for a, b, k in ((-3, 2, 1), (2, -3, 9), (0, 0, 2**1041), (1, 2, 2**63)):
+            self.assertEqual((a > b) - (a < b), (a*k > b*k) - (a*k < b*k))
+        for n, m, gap in ((1, 0, 64), (1, (1 << 53) - 1, 64), (1, 1, 1040)):
+            self.assertLess(m, n * 2**gap)
+        for left, right, expected in (
+            ((0, 0), (0, 0), 0), ((0, 0), (1, 1), -1), ((1, 1), (0, 0), 1),
+            ((1, 2), (2, 2), -1), ((1, 1), (2, 2), 0),
+            ((1, 1), (1, 2), 1), ((1, 2), (1, 1), -1),
+            ((1, 1), (1, 64), 1), ((1, 1), (1, 65), 1),
+            ((1, 64), (1, 1), -1), ((1, 65), (1, 1), -1),
+            ((1, 1), ((1 << 53) - 1, 1041), 1),
+        ):
+            n, s = left
+            m, t = right
+            self.assertEqual((n * 2**t > m * 2**s) - (n * 2**t < m * 2**s), expected)
+
+    def test_erasure_rejects_each_hook_omission_duplication_movement_and_statement_change(self):
+        candidate = PROJECTION.annotated_rational_order(self.fragment)
+        for _, anchor, block in PROJECTION.RATIONAL_HOOKS:
+            for changed in (candidate.replace(block, b"", 1), candidate.replace(block, block + block, 1),
+                            candidate.replace(block + anchor, anchor + block, 1),
+                            candidate.replace(block, block.replace(b";", b" ;", 1), 1)):
+                with self.assertRaises(ValueError):
+                    PROJECTION.erase_rational_order_annotations(changed)
+        for before, after in (
+            (b"returns bridge_rational_order(left, right)", b"returns bridge_rational_order(right, left)"),
+            (b"if !composition_checked(left) || !composition_checked(right)", b"if false"),
+            (b"if gap < 64", b"if gap <= 64"),
+            (b"right.shift - left.shift", b"right.shift + left.shift"),
+            (b"return left.numerator.cmp(&right.numerator)", b"return right.numerator.cmp(&left.numerator)"),
+            (b"lemma_bridge_u128_shifted_u64(left.numerator, gap)", b"lemma_bridge_u128_shifted_u64(right.numerator, gap)"),
+            (b"lemma_bridge_u128_shift_power(52)", b"lemma_bridge_u128_shift_power(51)"),
+        ):
+            self.assertIn(before, candidate)
+            with self.assertRaises(ValueError):
+                PROJECTION.erase_rational_order_annotations(candidate.replace(before, after, 1))
+
+    def test_wrong_fragment_and_all_pinned_source_drift_create_no_output(self):
+        for changed in (self.fragment + b"\n", self.fragment[:-1], self.prefix,
+                        self.prefix[2684:3731] + self.prefix[:2333]):
+            with self.assertRaisesRegex(ValueError, "five-predicate rational slice changed"):
+                PROJECTION.annotated_rational_order(changed)
+        for name, pattern in (
+            (PROJECTION.RATIONAL_LEMMAS, "rational ghost lemmas changed"),
+            (PROJECTION.COMPLEMENT_LEMMAS, "complement ghost lemmas changed"),
+            (PROJECTION.BIT_LENGTH_LEMMAS, "bit-length ghost lemma changed"),
+            ("tools/formal/fraction_verus_bridge_spec.rs", "ghost specification changed"),
+            ("tools/formal/fraction_composition_spec.rs", "composition specification changed"),
+            ("tools/formal/fraction_arithmetic_projection.py", "arithmetic projection changed"),
+            ("crates/time-core/src/projection_enclosure.rs", "complete product source changed"),
+            ("crates/time-core/src/selection.rs", "complete product source changed"),
+            ("tools/formal/fraction_verus_bridge_projection.py", "differs from this executing source"),
+        ):
+            path = self.source / name
+            original = path.read_bytes()
+            path.write_bytes(original + b"\n// drift\n")
+            with self.assertRaisesRegex(ValueError, pattern):
+                self.prepare()
+            self.assertFalse(self.output.exists())
+            path.write_bytes(original)
+
+    def test_redirected_lemma_collision_and_output_containment_preserve_custody(self):
+        path = self.source / PROJECTION.RATIONAL_LEMMAS
+        original = path.read_bytes()
+        target = self.base / "rational.rs"
+        target.write_bytes(original)
+        path.unlink()
+        path.symlink_to(target)
+        with self.assertRaisesRegex(ValueError, "path redirects"):
+            self.prepare()
+        path.unlink()
+        path.write_bytes(original)
+        with self.assertRaisesRegex(ValueError, "outside its source tree"):
+            PROJECTION.prepare_rational_order(self.source, self.source / "candidate")
+        self.output.mkdir()
+        sentinel = self.output / "retain"
+        sentinel.write_bytes(b"custody")
+        with self.assertRaisesRegex(ValueError, "fresh output leaf"):
+            self.prepare()
+        self.assertEqual(sentinel.read_bytes(), b"custody")
+
+    def test_all_four_old_apis_keep_exact_rust_pins_without_new_lemma(self):
+        self.prepare()
+        actual = (self.output / "actual_source.rs").read_bytes()
+        (self.source / PROJECTION.RATIONAL_LEMMAS).unlink()
+        for leaf, prepare, rust, expected in (
+            ("original", PROJECTION.prepare, "bridge.rs", "bcb1ca3d22a7e15b3948d65da34d1ecf6f34547153374591717948d4a279a4b5"),
+            ("bit", PROJECTION.prepare_bit_length, "proof.rs", "08c78bf2017c86bf62b7374db52a98b89b5dfacf7636970f0fa92adfa2206176"),
+            ("constructor", PROJECTION.prepare_constructor_post, "proof.rs", "e13f323735503aa784bf510957273c5c60206fcfe65521d967044d31c4e90ca8"),
+            ("complement", PROJECTION.prepare_complement_post, "proof.rs", "3ba949d2b0f9a608676e8566f0a93fe84caf087fb70e54fc98f9a28875560c7b"),
+        ):
+            output = self.base / leaf
+            prepare(self.source, output)
+            self.assertEqual(PROJECTION.digest((output / rust).read_bytes()), expected)
+            self.assertEqual((output / "actual_source.rs").read_bytes(), actual)
+
+    def test_determinism_complete_product_closure_and_no_execution_surface(self):
+        first = self.prepare()
+        other = self.base / "second-rational"
+        second = PROJECTION.prepare_rational_order(self.source, other)
+        self.assertEqual(first, second)
+        self.assertEqual(json.loads((self.output / "correspondence.json").read_text()), first)
+        self.assertEqual({path.name for path in self.output.iterdir()},
+                         {"proof.rs", "actual_source.rs", "predicate_source.rs", "correspondence.json"})
+        for name, expected in first["generated_sha256"].items():
+            self.assertEqual(PROJECTION.digest((self.output / name).read_bytes()), expected)
+            self.assertEqual((self.output / name).read_bytes(), (other / name).read_bytes())
+        proof = (self.output / "proof.rs").read_bytes()
+        for name in ("tools/formal/fraction_verus_bridge_spec.rs", PROJECTION.BIT_LENGTH_LEMMAS,
+                     PROJECTION.COMPLEMENT_LEMMAS, PROJECTION.RATIONAL_LEMMAS):
+            self.assertEqual(proof.count((self.source / name).read_bytes()), 1)
+        actual = (self.output / "actual_source.rs").read_bytes()
+        for row in first["correspondence"]:
+            start, end = row["byte_offsets_half_open"]
+            selected = (self.source / row["source"]).read_bytes()[start:end]
+            self.assertEqual(PROJECTION.digest(selected), row["sha256"])
+            self.assertEqual(actual.count(selected), 1)
+            self.assertEqual(selected in proof, row["bridge_type"])
+        script = (HERE / "fraction_verus_bridge_projection.py").read_text()
+        self.assertNotRegex(script, r"(?:^|\n)(?:from|import) (?:subprocess|os|importlib)\b")
+        self.assertNotIn("if __name__", script)
+
+
 if __name__ == "__main__":
     unittest.main()

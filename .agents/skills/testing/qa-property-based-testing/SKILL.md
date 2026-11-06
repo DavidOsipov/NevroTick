@@ -21,13 +21,14 @@ Keep independent expectations; encode/decode round trips alone may share bugs. B
 
 Retain concrete original/minimized input, seed, strategy/tool/configuration/source identity, actual reached failure. Replay concrete counterexample alone from clean state; keep named regression. Strategy edits can change seed meaning. Read [Rust techniques](../references/rust-techniques.md).
 
-For product mathematical algorithms, sampled cases complement the
-[mandatory proof workflow](../references/formal-verification.md) under OD-10;
-they cannot close its full-domain obligations. For other small finite invariants,
-select a bounded proof when it addresses a named gap. Kani is one admitted option
-through [configured analysis](../references/configured-tooling.md#additional-rust-analysis).
-Keep independent expectations, explicit assumptions/unwind bounds and reachable
-valid-state controls; report all incomplete obligations and excluded inputs.
+Product mathematics follows [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+Continue independent sampled properties and boundary cases; they establish their
+observed scope, not a full-domain proof. Formal jobs, verifier extensions and
+pending proof admission/metadata repairs resume after V1. Missing proofs do not
+block V1 acceptance; retain exact historical evidence and post-V1 obligations in
+the existing tasks. Use the [proof workflow](../references/formal-verification.md)
+on resumption.
+
 For malformed byte coverage, route a separate production-decoder target through
 [structured fuzzing](../qa-structured-fuzzing/SKILL.md). Neither tool changes the
 quantified domain or replaces required native observations.

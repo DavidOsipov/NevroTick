@@ -1,8 +1,20 @@
 # Bounded arithmetic proofs
 
+**Deferred until after V1 — 6 November 2026:** [OD-10 §14.1](../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+postpones this entire workstream until after the first released software version.
+Do not run proof/compiler/solver campaigns, extend verifiers, prepare more proof
+sources or repair proof consumers before then. These scripts and receipts are
+retained research checkpoints; they are not V1 dependencies or release gates.
+The supporter-label attempt timed out with zero checks and has an unresolved
+exported-metadata consumer assumption; its controls/restoration never ran.
+Resolve that defect before any post-V1 reuse. Existing successful proofs retain
+only their historical source/domain/configuration scopes. Ordinary product
+compilation/testing and every nonformal acceptance requirement continue.
+
 [OD-10](../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 and [architecture §20.1.1](../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
-require source-bound mathematical proofs. This driver covers only its named
+record the original proof requirement, now scheduled after V1 by the amendment
+above. This driver covers only its named
 suite obligations; no suite covers every product algorithm.
 The [bounded Verus addition pilot](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
 exhausted its three readiness commands: the pinned private candidate rejects
@@ -14,6 +26,52 @@ exhausted candidate or assume a missing standard-library contract. The card and
 trigger; the Kani commands below select no Verus candidate.
 Track actual completion and remaining constructor/caller and other mathematical
 obligations in the [existing S1.1c task](../../tasks/s1.1-time-domain.md).
+The independent [RequestTiming checkpoint](../../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026)
+completed five ordinary Kani jobs: full raw-pair constructor/getters, three
+compiled semantic defects and byte-identical restored health. All158 selected
+Python checks pass;34 inputs/nine executed-Python records and final guards bind
+the candidate. `verify_request_timing.py` is a closed fixed zero-argument attempt;
+do not rerun its root. The new selector alone executes captured current Python
+through exact declared-path mapping while preserving frozen product/harness data.
+It compiles actual clock callees, imports no certificate and keeps ordinary
+Kani0.68/Cadical/kani-proof defaults. Its five disposable target trees were
+removed safely; raw evidence remains about4.25MiB. This proves fixture arithmetic,
+not clock provenance/lifecycle, native behavior or P1. The shared runner later
+gained a second immutable captured-wrapper role; original timing settings and
+frozen native evidence remain, with current compatibility checks separately.
+Core's [actual append-depth leaf](../../tasks/s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+has now passed six full raw-state/four-defect/restored ordinary jobs:671 checks
+and208 selected Python checks. Exact source/types, unrestricted63-element state,
+length/maximum/slot/frame and34-input/nine-executed-Python guards are bound.
+`verify_selection_depth.py` is closed; do not rerun its root. All six disposable
+targets were removed; retained evidence is about5.24MiB. The subsequent
+[actual lifecycle ordinal proof](../../tasks/s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored jobs:263 checks and248 Python
+checks, with38 inputs/nine executed-Python records and complete23-enum closure.
+`verify_lifecycle_ordinal.py` is closed; all five targets were removed and raw
+evidence is about5.61MiB including directories. The subsequent [actual source-
+counter invariant](../../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored jobs:145 properties and291 Python
+checks, with32 inputs/nine executed-Python records and actual constants/From/min.
+`verify_lifecycle_source_fields.py` is closed; all five targets were removed,
+retaining about4.35MiB including directories. Four immutable dedicated roles
+retain original settings and strict source/campaign/cleanup guards; ordinary
+defaults remain. Earlier frozen native identities are historical after shared
+host changes, with separate current compatibility evidence. The later [complete
+constructor source checkpoint](../../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+prepares seven actual spans/23,483 bytes/23 enums, real Garde/callback/constructor
+harnesses and six eight-file Cargo projects. Existing low-level helpers
+authenticate14 selected vendor packages/639 files against policy maps, with51
+source checks and independent review. The new source-only files add no runner,
+tool admission, compiler or proof execution. Source-specific sealing/admission,
+target features, allocator/drop/unwinding and constructor theorem remain open;
+the shared model barrier and old Era/private-patch holds are retained.
+Transactional lifecycle, prefix/depth/topology/whole-selection and held fraction/
+caller/addition obligations remain open. No old Era attempt is restarted.
+The next independent [supporter-label source assignment](../../tasks/s1.3-source-selection-readiness.md#next-independent-core-source-assignment--supporter-labels)
+retains its whole raw caller domain and actual sort callee; generic sorting
+remains separate. Existing unwind1/strict attributes stay until a finite
+loop/oracle/unwinding review admits any new profile.
 The [Core task](../../tasks/s1.3-source-selection-readiness.md#independent-endpoint-finish-proof-checkpoint--5-november-2026)
 owns the separate endpoint-finish proof and its omitted producer/composition obligations.
 Its [Fraction constructor checkpoint](../../tasks/s1.3-source-selection-readiness.md#fraction-constructor-proof-checkpoint--5-november-2026)
@@ -154,9 +212,21 @@ checks pass. Thirty source files and eleven executed-Python records are bound.
 V1 stopped before SMT because opaque pow did not reduce under compute_only;
 the correction proves its literal through the existing shift lemma and a
 primitive bit-vector fact. Both roots are closed; preserve them without reruns.
-Older output Rust pins remain exact. Next prepare rational-order alignment via
-pinned primitive cmp models. Complete bridge, Ordering PartialEq/comparison Post,
-caller import and actual addition remain open.
+Older output Rust pins remain exact. The additive `prepare_rational_order()`
+retains spans`[0,2333)`/`[2684,3731)`, five annotations and eleven exact hooks.
+Four new total lemmas establish variable shifts, denominator factoring, positive
+common-factor ordering and large-gap domination. Its captured-source
+`verify_fraction_rational_order.py` [fixed campaign](../../tasks/s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs with fifteen named functions: five predicate equalities and
+seven lemmas, seventeen intended defects and restored health. All161 selected
+Python checks pass;33 source files/11 executed-Python records and final guards
+bind the candidate. This root is closed; do not rerun it. Only this recipe has
+90-second job caps; earlier recipes retain180. Source inspection confirms the
+checked-shift model is absent. Preserve that actual-compare and native Ordering
+equality/comparison Post hold. The independent append-depth leaf is qualified;
+prepare the nonwrapping ordinal owner next.
+Complete bridge, caller import and actual addition remain open; no SDK/model
+assumption or weaker profile is adopted.
 
 The new consumer's focused synthetic checks execute no compiler or solver:
 

@@ -1,53 +1,42 @@
-# Prove mathematical Rust contracts
+# Post-V1 mathematical Rust proofs
 
-Use for mandatory product mathematical proofs and when evaluating a verifier.
-Read the
-[testing contract](../CONTRACT.md) and [configured analysis lanes](configured-tooling.md#additional-rust-analysis).
+**Current disposition, 6 November 2026:** [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released software version (V1).
+Do not initiate formal compiler/solver/proof jobs, author proofs, extend verifiers
+or repair pending proof admission/metadata consumers before V1. Missing,
+invalidated or model-only proofs do not block V1 implementation, acceptance or
+release. Continue ordinary product development and all nonformal gates.
+
+Keep completed proofs and failed/incomplete receipts within their exact
+historical scope; maintain unfinished/newly affected obligations under existing
+source/CHECK owners as post-V1 work. Source changes do not extend old evidence.
+The sections below describe normal bounded post-V1 resumption, not permission
+to restart the former proof-first queue. No extra release or owner-approval gate
+is introduced here. Runtime validation, garde/private invariants, checked
+arithmetic, independent behavioral/property/boundary checks, coverage/mutation,
+security, native/package/release evidence and all existing holds remain.
+
+Read the [testing contract](../CONTRACT.md) and
+[configured analysis lanes](configured-tooling.md#additional-rust-analysis).
 This reference admits no new tool, dependency, compiler, CI gate or product claim.
 Keep candidate-specific decisions/results in the existing task record.
 
-## Mandatory mathematical proof acceptance — 5 November 2026
+## Source-bound acceptance on post-V1 resumption
 
-[OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-requires machine-checked proofs for product mathematical algorithms. Apply
-[architecture §20.1.1](../../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
-and its existing CHECK owners. This supersedes earlier optional-proof guidance;
-choice or adoption of a particular verifier remains conditional. Deferring a tool
-leaves its required product proof open; it does not waive the property.
+Reconcile the existing algorithm inventory with its independently specified full
+admitted domain, required success/error outcomes, machine/rounding semantics,
+invariants, work bounds and executable correspondence. Review assumptions and
+unproved constructors/callers. Require nonempty completed results, meaningful
+healthy/error/compiled-defect controls and restored health before claiming a new
+proof. Subset/model proofs retain only their stated scope. Changed relevant
+source/specification/dependencies/configuration/tool inputs invalidate evidence
+unless reviewed as irrelevant; reuse unaffected historical proofs.
 
-For each algorithm, record the independently specified theorem, full admitted
-input domain, required success and error outcomes, machine representation and
-rounding/error semantics, invariants and promised termination/work bounds. Bind
-completed nonempty proof results and meaningful healthy/defect controls to the
-actual implementation and its dependency/configuration/tool/solver inputs.
-Inventory assumptions, trusted components, source correspondence and unproved
-constructors/callers. A bounded input subset or a translated model proves only
-that subset/model until its missing obligations are discharged.
+A deferred obligation is not completed assurance or a permanent waiver. The
+remaining proof-acceptance methodology applies after V1; it creates no current
+first-release proof prerequisite.
 
-Maintain remaining obligations in the existing owning task. The rounding/era
-handoff in [S1.1c](../../../../tasks/s1.1-time-domain.md#mandatory-proof-continuation-and-remote-integration--5-november-2026)
-is the first continuation, not proof of the rest of domain, leap, exchange or
-Core mathematics. Preserve runtime guards, behavioral/property/fuzz checks,
-coverage/mutation gates and native evidence. Enhanced release-build provenance
-remains separately optional under OD-05 §7.5.
-
-The inventory must identify each algorithm/function and its CHECK/source owner,
-the independent contract/domain, theorem-to-executable correspondence, proof
-status and exact evidence, remaining obligations and next action. Include existing
-algorithms as well as new work. A valid-input theorem leaves raw-input admission
-and any omitted constructor proofs open with their owners. Do not silently narrow
-the admitted domain to fit the verifier or count a promise of future proof as
-acceptance. Missing evidence blocks the dependent mathematical acceptance;
-independent authorized work can continue.
-
-At each affected qualification checkpoint, reconcile the inventory with the
-candidate. Changed source, specification, assumptions, correspondence, dependencies,
-features, compiler/verifier/solver or proof configuration invalidate evidence
-unless an explicit reviewed argument establishes that the change is irrelevant
-to that theorem. Reuse valid unaffected proofs. This is a required acceptance
-policy, not a claim of an automated workspace-wide CI proof gate.
-
-## Select an adequate verifier; evaluate additional tools before integration
+## After V1, select an adequate verifier and evaluate additional tools
 
 The proof requirement is already adopted. The benefit evaluation below concerns
 adding or replacing a verifier; it is not an option to omit a required proof

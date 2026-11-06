@@ -126,25 +126,18 @@ arithmetic. Do not impose exact-constant results on unrelated algorithms.
   and tool admission. Reuse [numerical QA](../../../testing/references/numerical-protocol.md)
   and the existing test/analysis lanes rather than creating a parallel framework.
 
-## Mandatory mathematical proofs and rounding obligations
+## Post-V1 formal proofs and current rounding obligations
 
-[OD-10](../../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-makes machine-checked product mathematical proofs mandatory under
-[architecture §20.1.1](../../../../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026).
-For every numerical algorithm, maintain its full admitted-domain theorem,
-required success/error behavior, machine ranges, rounding/error envelope and
-promised termination/work bounds in the existing task. Use the
-[formal-verification workflow](../../../testing/references/formal-verification.md)
-for actual-source correspondence, assumptions, meaningful controls and exact
-proof-input identity. Fixtures and tool bootstrap controls do not close this gate.
-Keep unfinished obligations explicit before dependent qualification; a tool or
-solver limitation does not convert the required proof into an optional check.
+Apply [OD-10’s first-release deferral](../../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026): formal proof work,
+verifier extensions and pending admission/metadata repairs resume after V1.
+Missing proofs do not block V1 implementation or acceptance. Preserve completed
+proofs within their exact historical scope and track unproved/changed obligations
+in the existing post-V1 backlog. Continue the numerical procedure above,
+independent boundary/property checks, runtime invariants and checked arithmetic.
 
-The verifier is a separate selection. Consider Gappa for a named
-consumer-relevant rounding-error bound over a declared nonempty domain when it
-adds value to the current route. Begin with one small kernel and compare
-maintenance cost. This requirement admits no particular new proof stack or
-installation; use already admitted tools where adequate.
+The remaining modeling guidance and [proof workflow](../../../testing/references/formal-verification.md)
+apply on post-V1 resumption. Tool choice, including any Gappa pilot, remains
+conditional; this reference starts no pre-V1 proof/tool campaign.
 
 Map the model to current Rust conversions, exact constant values, units, operation
 order, separate/fused operations and intermediate admission guards. A formula

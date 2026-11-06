@@ -151,6 +151,47 @@ _COMPLEMENT_POST_RECIPE = _Recipe(
      ("complement_wrong_error", "proof::composition_complement_post"),
      ("complement_wrong_scale", "proof::composition_complement_post"),
      ("complement_wrong_conservation", "proof::composition_complement_post"), ("restored", None)))
+_RATIONAL_ORDER_CONTROLLER = "tools/formal/verify_fraction_rational_order.py"
+_RATIONAL_ORDER_TESTS = "tools/formal/test_verify_fraction_rational_order.py"
+_RATIONAL_ORDER_MODES = (
+    ("proof::lemma_bridge_bit_length_power", "proof"),
+    ("proof::lemma_bridge_u128_shift_power", "proof"),
+    ("proof::lemma_bridge_complement_reject_outside", "proof"),
+    ("proof::lemma_bridge_u128_shifted_u64", "proof"),
+    ("proof::lemma_bridge_denominator_factor", "proof"),
+    ("proof::lemma_bridge_positive_factor_order", "proof"),
+    ("proof::lemma_bridge_rational_gap_dominates", "proof"),
+    ("proof::composition_constructor_admitted", "exec"),
+    ("proof::composition_checked", "exec"),
+    ("proof::composition_constructor_post", "exec"),
+    ("proof::composition_rational_order", "exec"),
+    ("proof::composition_complement_post", "exec"),
+    ("proof::IntervalError::clone", "exec"),
+    ("proof::FixtureEnclosureError::clone", "exec"),
+    ("proof::Fraction::clone", "exec"),
+)
+_RATIONAL_ORDER_RECIPE = _Recipe(
+    Path.home() / ".local/share/nevrotick/formal-core-fraction-rational-order-20261106-v1",
+    1793937385474478571, 34053307946337, 37653307946337,
+    "d3fc5615-e867-45cd-b74f-4a7413afc5ab", _RATIONAL_ORDER_MODES,
+    (("healthy", None), ("shift_wrong_theorem", "proof::lemma_bridge_u128_shift_power"),
+     ("outside_wrong_theorem", "proof::lemma_bridge_complement_reject_outside"),
+     ("complement_wrong_error", "proof::composition_complement_post"),
+     ("complement_wrong_scale", "proof::composition_complement_post"),
+     ("complement_wrong_conservation", "proof::composition_complement_post"),
+     ("variable_shift_wrong_theorem", "proof::lemma_bridge_u128_shifted_u64"),
+     ("factor_wrong_theorem", "proof::lemma_bridge_denominator_factor"),
+     ("positive_order_wrong_theorem", "proof::lemma_bridge_positive_factor_order"),
+     ("domination_wrong_theorem", "proof::lemma_bridge_rational_gap_dominates"),
+     ("rational_invalid", "proof::composition_rational_order"),
+     ("rational_left_zero", "proof::composition_rational_order"),
+     ("rational_right_zero", "proof::composition_rational_order"),
+     ("rational_equal_shifts", "proof::composition_rational_order"),
+     ("rational_left_small_gap", "proof::composition_rational_order"),
+     ("rational_right_small_gap", "proof::composition_rational_order"),
+     ("rational_left_large_gap", "proof::composition_rational_order"),
+     ("rational_right_large_gap", "proof::composition_rational_order"), ("restored", None)))
+
 _LEMMA_THEOREM = (b"    ensures\n"
     b"        (64 - u64_leading_zeros(n) <= s as int)\n"
     b"            <==> ((n as int) < pow(2, s as nat)),\n")
@@ -174,10 +215,60 @@ _WRONG_OUTSIDE_THEOREM = (b"    ensures\n"
     b"            && (n != 0 || s != 0),\n")
 
 
+# Each false conclusion is additive: retained caller facts remain available.
+_RATIONAL_PROOF_CONTRACTS = (
+    ("variable_shift_wrong_theorem", b"proof fn lemma_bridge_u128_shifted_u64(n: u64, g: u32)",
+     b"    ensures\n"
+     b"        g < 64 ==> ((n as u128) << g) == ((n as u128) << (g as u128)),\n"
+     b"        g < 64 ==> (((n as u128) << g) as int == (n as int) * pow(2, g as nat)),\n"
+     b"        g < 64 ==> (0 <= (n as int) * pow(2, g as nat) < pow(2, 127)),\n",
+     b"        g < 64 ==> (((n as u128) << g) as int == (n as int) * pow(2, (g as nat) + 1)),\n",
+     b"    if g < 64 {\n"),
+    ("factor_wrong_theorem", b"proof fn lemma_bridge_denominator_factor(lo: u32, hi: u32)",
+     b"    ensures\n"
+     b"        0 < bridge_denominator(lo),\n"
+     b"        0 < bridge_denominator(hi),\n"
+     b"        lo <= hi ==> bridge_denominator(hi)\n"
+     b"            == bridge_denominator(lo) * pow(2, (hi as int - lo as int) as nat),\n",
+     b"        lo <= hi ==> bridge_denominator(hi) == bridge_denominator(lo) * pow(2, hi as nat),\n",
+     b"    if lo <= hi {\n"),
+    ("positive_order_wrong_theorem", b"proof fn lemma_bridge_positive_factor_order(a: int, b: int, k: int)",
+     b"    ensures\n"
+     b"        k > 0 ==> ((a * k < b * k) <==> (a < b)),\n"
+     b"        k > 0 ==> ((a * k > b * k) <==> (a > b)),\n"
+     b"        k > 0 ==> ((a * k == b * k) <==> (a == b)),\n",
+     b"        k > 0 ==> ((a * k < b * k) <==> (a > b)),\n",
+     b"    if k > 0 {\n"),
+    ("domination_wrong_theorem", b"proof fn lemma_bridge_rational_gap_dominates(n: u64, m: u64, g: u32)",
+     b"    ensures\n"
+     b"        (1 <= n && (m as int) < pow(2, 53) && 64 <= g)\n"
+     b"            ==> ((m as int) < (n as int) * pow(2, g as nat)),\n",
+     b"        (1 <= n && (m as int) < pow(2, 53) && 64 <= g) ==> ((m as int) > (n as int) * pow(2, g as nat)),\n",
+     b"    if 1 <= n && (m as int) < pow(2, 53) && 64 <= g {\n"),
+)
+_RATIONAL_VALID_POSITIVE = (b"bridge_checked(left) && bridge_checked(right)"
+                            b" && left.numerator != 0 && right.numerator != 0")
+_RATIONAL_BRANCH_GUARDS = (
+    ("rational_invalid", b"!bridge_checked(left) || !bridge_checked(right)"),
+    ("rational_left_zero", b"bridge_checked(left) && bridge_checked(right) && left.numerator == 0"),
+    ("rational_right_zero", b"bridge_checked(left) && bridge_checked(right)"
+                            b" && left.numerator != 0 && right.numerator == 0"),
+    ("rational_equal_shifts", _RATIONAL_VALID_POSITIVE + b" && left.shift == right.shift"),
+    ("rational_left_small_gap", _RATIONAL_VALID_POSITIVE
+        + b" && left.shift < right.shift && (right.shift as int) - (left.shift as int) < 64"),
+    ("rational_right_small_gap", _RATIONAL_VALID_POSITIVE
+        + b" && right.shift < left.shift && (left.shift as int) - (right.shift as int) < 64"),
+    ("rational_left_large_gap", _RATIONAL_VALID_POSITIVE
+        + b" && left.shift < right.shift && 64 <= (right.shift as int) - (left.shift as int)"),
+    ("rational_right_large_gap", _RATIONAL_VALID_POSITIVE
+        + b" && right.shift < left.shift && 64 <= (left.shift as int) - (right.shift as int)"),
+)
+
+
 def _closed(recipe):
     """Accept the legacy default or one reviewed immutable dependency card."""
     require(recipe is None or recipe is _BIT_LENGTH_RECIPE or recipe is _CONSTRUCTOR_POST_RECIPE
-            or recipe is _COMPLEMENT_POST_RECIPE,
+            or recipe is _COMPLEMENT_POST_RECIPE or recipe is _RATIONAL_ORDER_RECIPE,
             "Unrecognized finite recipe")
     return recipe
 
@@ -196,6 +287,12 @@ def _source_names(recipe):
     """Bind exactly the current closure for the selected closed source path."""
     if _closed(recipe) is None:
         return SOURCE_NAMES
+    if recipe is _RATIONAL_ORDER_RECIPE:
+        return tuple(sorted(set(PILOT.SOURCES) | set(PROJECTION.rational_input_names()) | set(_BINDING_FILES)
+                            | {CONTROLLER, TESTS, _BIT_LENGTH_CONTROLLER, _BIT_LENGTH_TESTS,
+                               _CONSTRUCTOR_POST_CONTROLLER, _CONSTRUCTOR_POST_TESTS,
+                               _COMPLEMENT_POST_CONTROLLER, _COMPLEMENT_POST_TESTS,
+                               _RATIONAL_ORDER_CONTROLLER, _RATIONAL_ORDER_TESTS}))
     if recipe is _COMPLEMENT_POST_RECIPE:
         return tuple(sorted(set(PILOT.SOURCES) | set(PROJECTION.complement_input_names()) | set(_BINDING_FILES)
                             | {CONTROLLER, TESTS, _BIT_LENGTH_CONTROLLER, _BIT_LENGTH_TESTS,
@@ -207,6 +304,18 @@ def _source_names(recipe):
                                _CONSTRUCTOR_POST_CONTROLLER, _CONSTRUCTOR_POST_TESTS}))
     return tuple(sorted(set(PILOT.SOURCES) | set(PROJECTION.dependency_input_names()) | set(_BINDING_FILES)
                         | {CONTROLLER, TESTS, _BIT_LENGTH_CONTROLLER, _BIT_LENGTH_TESTS}))
+
+
+def _command_seconds(recipe):
+    """Only the new rational card tightens the existing per-command wall/CPU cap."""
+    return 90 if _closed(recipe) is _RATIONAL_ORDER_RECIPE else COMMAND_SECONDS
+
+
+def _rational_dispatch_capacity(recipe):
+    """Reserve the complete fixed rational schedule before its first admission."""
+    if _closed(recipe) is _RATIONAL_ORDER_RECIPE:
+        require(remaining(_recipe=recipe) >= 19 * 90 + 120,
+                "Insufficient original clock for the complete nineteen-command schedule")
 
 
 def _jobs(recipe):
@@ -368,7 +477,9 @@ def freeze_sources(work, *, _recipe=None):
 
 def validate_metadata(details, source, generated, *, _recipe=None):
     """Require the exact six relations and complete original/generated byte bindings."""
-    if _closed(_recipe) is _COMPLEMENT_POST_RECIPE:
+    if _closed(_recipe) is _RATIONAL_ORDER_RECIPE:
+        return _validate_rational_order_metadata(details, source, generated)
+    if _recipe is _COMPLEMENT_POST_RECIPE:
         return _validate_complement_post_metadata(details, source, generated)
     if _recipe is _CONSTRUCTOR_POST_RECIPE:
         return _validate_constructor_post_metadata(details, source, generated)
@@ -701,6 +812,130 @@ def _validate_complement_post_metadata(details, source, generated):
             "Persisted dependency metadata differs")
 
 
+def _validate_rational_order_metadata(details, source, generated):
+    """Independently reconstruct all raw rational spans, lemmas, hooks and claims."""
+    names = PROJECTION.rational_input_names()
+    sources = {name: CHECK.read_once(source / name) for name in names}
+    source_hashes = {name: digest(data) for name, data in sources.items()}
+    originals, spans = PROJECTION._source_support(sources["tools/formal/fraction_arithmetic_projection.py"])
+    selected = {}
+    for name, span in spans.items():
+        original = sources["crates/time-core/src/" + span["source"]]
+        first, last = span["offsets"]
+        selected[name] = original[first:last]
+        require(digest(original) == originals[span["source"]]
+                and original.count(span["start"]) == original.count(span["following"]) == 1
+                and original.index(span["start"]) == first and original.index(span["following"]) >= last
+                and digest(selected[name]) == span["sha256"], "Dependency original source/span differs")
+    expected_spans = [{"item": name, "source": "crates/time-core/src/" + span["source"],
+                       "byte_offsets_half_open": list(span["offsets"]), "sha256": span["sha256"],
+                       "bridge_type": name in PROJECTION.TYPE_NAMES} for name, span in spans.items()]
+    composition = sources["tools/formal/fraction_composition_spec.rs"]
+    require(digest(composition) == PROJECTION.COMPOSITION_SHA256
+            and composition.count(PROJECTION.PREFIX_MARKER) == 1, "Dependency composition source differs")
+    prefix = composition.split(PROJECTION.PREFIX_MARKER, 1)[0]
+    require(len(prefix) == 3731 and digest(prefix) == PROJECTION.PREFIX_SHA256
+            and prefix.count(PROJECTION.CONSTRUCTOR_POST_MARKER) == 1, "Dependency complete predicate prefix differs")
+    fragment_spans = ((0, 2333), (2684, 3731))
+    fragment = b"".join(prefix[first:last] for first, last in fragment_spans)
+    predicates = PROJECTION.annotated_rational_order(fragment)
+    require(len(fragment) == 3380
+            and digest(fragment) == "b5e0a0dcdf924add0f9447bfce57555f39c5bc73deae656bec9993a576796a8d"
+            and PROJECTION.erase_rational_order_annotations(predicates) == fragment,
+            "Dependency fragment erasure differs")
+    ghost = sources["tools/formal/fraction_verus_bridge_spec.rs"]
+    lemma = sources[PROJECTION.BIT_LENGTH_LEMMAS]
+    require(digest(ghost) == PROJECTION.GHOST_SHA256 and digest(lemma) == PROJECTION.BIT_LENGTH_LEMMAS_SHA256,
+            "Dependency ghost/lemma source differs")
+    complement_lemma = sources[PROJECTION.COMPLEMENT_LEMMAS]
+    require(digest(complement_lemma) == PROJECTION.COMPLEMENT_LEMMAS_SHA256,
+            "Complement lemma source differs")
+    rational_lemma = sources[PROJECTION.RATIONAL_LEMMAS]
+    require(digest(rational_lemma) == PROJECTION.RATIONAL_LEMMAS_SHA256, "Rational lemma source differs")
+    types = b"\n".join(selected[name] for name in PROJECTION.TYPE_NAMES)
+    proof = (b"// SPDX-License-Identifier: GPL-2.0-only\n"
+             b"// UNPROVED rational-order dependency source; full bridge acceptance remains open.\n"
+             b"use std::cmp::Ordering;\nuse vstd::prelude::*;\n\nverus! {\n\n"
+             + types + b"\n\n" + ghost + b"\n" + lemma + b"\n" + complement_lemma
+             + b"\n" + rational_lemma + b"\n" + predicates + b"\n}\n")
+    actual = (b"// SPDX-License-Identifier: GPL-2.0-only\n"
+              b"// Correspondence input only; no caller-import entrypoint or permission.\n"
+              b"use std::cmp::Ordering;\n\n" + types + b"\nimpl Fraction {\n"
+              + b"\n".join(selected[name] for name in ("zero", "new", "compare", "complement"))
+              + b"\n}\n\n" + selected["fraction_sum"] + b"\n" + selected["addition"])
+    hooks = [{"function": "proof::" + name, "source_byte_offset": prefix.index(anchor),
+              "insertion": ("before unchanged leading_zeros subtraction" if index < 2
+                            else "at approved complement proof site" if index < 5
+                            else "at approved rational-order proof site"),
+              "anchor_sha256": digest(anchor), "proof_block_sha256": digest(block)}
+             for index, (name, anchor, block) in enumerate((*PROJECTION.BIT_LENGTH_HOOKS, *PROJECTION.COMPLEMENT_HOOKS,
+                                                               *PROJECTION.RATIONAL_HOOKS))]
+    expected = {
+        "schema_version": 1, "status": "unproved_source_candidate", "proof_commands": 0,
+        "scope": "bit-length, complement and rational lemmas and five unrestricted predicate equalities; source preparation only",
+        "source_files_sha256": source_hashes, "original_sources_sha256": originals,
+        "correspondence": expected_spans, "prefix_sha256": digest(prefix), "prefix_bytes": 3731,
+        "fragment_source_spans": [{"source_byte_offsets_half_open": list(offsets),
+                                   "sha256": digest(prefix[offsets[0]:offsets[1]])}
+                                  for offsets in fragment_spans], "fragment_sha256": digest(fragment),
+        "annotated_fragment_sha256": digest(predicates), "ghost_sha256": digest(ghost),
+        "lemma_sha256": digest(lemma), "complement_lemma_sha256": digest(complement_lemma),
+        "rational_lemma_sha256": digest(rational_lemma),
+        "predicate_relations": [PROJECTION.DECLARATIONS[index][1].decode() for index in (0, 1, 2, 3, 5)],
+        "full_bridge_predicate_relations": [relation.decode() for _, relation in PROJECTION.DECLARATIONS],
+        "expected_function_modes": dict(_RATIONAL_ORDER_RECIPE.modes), "proof_hooks": hooks,
+        "raw_domains": {"lemma": "every n:u64 and s:u32; no precondition",
+                        "constructor_admitted": "every numerator:u64 and shift:u32; no precondition",
+                        "checked": "every raw Fraction { numerator:u64, shift:u32 }; no precondition",
+                        "constructor_post": "every numerator:u64, shift:u32 and independently chosen &Result<Fraction, FixtureEnclosureError>; raw Ok fields and every error variant; no precondition",
+                        "shift_power": "every s:u32; no precondition; guarded shift/power implication for 1 <= s <= 53",
+                        "reject_outside": "every n:u64 and s:u32; no precondition; guarded checked outside-window implication",
+                        "shifted_u64": "every n:u64 and g:u32; no precondition; exact u128 shift/product and u32/u128 shift identity guarded by g < 64",
+                        "denominator_factor": "every lo:u32 and hi:u32; no precondition; both powers positive and factorization guarded by lo <= hi",
+                        "positive_factor_order": "every a:int, b:int and k:int; no precondition; complete order equivalence guarded by k > 0",
+                        "gap_dominates": "every n:u64, m:u64 and g:u32; no precondition; dominance guarded by n >= 1, m < pow(2,53) and g >= 64",
+                        "rational_order": "every independent left/right raw Fraction { numerator:u64, shift:u32 }; invalid either side maps to Equal; no precondition",
+                        "complement_post": "every raw Fraction { numerator:u64, shift:u32 } and independently chosen &Result<Fraction, FixtureEnclosureError>; raw Ok fields and every error variant; no precondition"},
+        "upstream_dependencies": {
+            "commit": "8bf68ee741df833ea5d0fe6a2255126fdea87e47",
+            "paths": ["source/vstd/std_specs/bits.rs", "source/vstd/arithmetic/power.rs",
+                      "source/vstd/arithmetic/power2.rs", "source/vstd/arithmetic/div_mod.rs",
+                      "source/vstd/bits.rs", "source/vstd/std_specs/convert.rs",
+                      "source/vstd/arithmetic/mul.rs", "source/vstd/std_specs/cmp.rs",
+                      "source/vstd/std_specs/num.rs"],
+            "status": "source API references only; no new admission or proof"},
+        "remaining": ["exact Verus compatibility and all lemma assertions/termination",
+                      "u32 leading_zeros result and subtraction-to-int inference",
+                      "five completed full-raw predicate equalities and wrong-contract/restoration controls",
+                      "all six full-domain bridge equalities and their controls",
+                      "native Ordering equality correspondence and comparison Post",
+                      "separate caller-import profile admission and original addition union"],
+    }
+    require(set(details) == {*expected, "generated_sha256"}
+            and type(details.get("schema_version")) is int and type(details.get("proof_commands")) is int
+            and type(details.get("prefix_bytes")) is int
+            and type(details.get("fragment_source_spans")) is list
+            and all(details.get(key) == value for key, value in expected.items()),
+            "Dependency projection metadata differs")
+    for span in details["fragment_source_spans"]:
+        require(type(span.get("source_byte_offsets_half_open")) is list
+                and all(type(value) is int for value in span["source_byte_offsets_half_open"]),
+                "Complement fragment offsets differ")
+    for span in details["correspondence"]:
+        require(type(span.get("bridge_type")) is bool
+                and type(span.get("byte_offsets_half_open")) is list
+                and all(type(value) is int for value in span["byte_offsets_half_open"]),
+                "Dependency correspondence offset/type differs")
+    for hook in details["proof_hooks"]:
+        require(type(hook.get("source_byte_offset")) is int, "Dependency hook offset is not an integer")
+    artifacts = {"proof.rs": proof, "actual_source.rs": actual, "predicate_source.rs": prefix}
+    require(all(CHECK.read_once(generated / name) == data for name, data in artifacts.items())
+            and details.get("generated_sha256") == {name: digest(data) for name, data in artifacts.items()},
+            "Dependency generated proof/product/prefix differs")
+    require(CHECK.decode(CHECK.read_once(generated / "correspondence.json")) == details,
+            "Persisted dependency metadata differs")
+
+
 def _bit_length_control(healthy, ghost, job):
     """Change exactly one closed ghost/theorem segment, with inverse erasure."""
     lemma = CHECK.read_once(ROOT / PROJECTION.BIT_LENGTH_LEMMAS)
@@ -822,9 +1057,78 @@ def _complement_post_control(healthy, ghost, job):
     return candidate
 
 
+def _rational_order_control(healthy, ghost, job):
+    """Change one closed ghost conclusion/relation and preserve every executable byte."""
+    lemma = CHECK.read_once(ROOT / PROJECTION.BIT_LENGTH_LEMMAS)
+    complement = CHECK.read_once(ROOT / PROJECTION.COMPLEMENT_LEMMAS)
+    rational = CHECK.read_once(ROOT / PROJECTION.RATIONAL_LEMMAS)
+    prefix = CHECK.read_once(ROOT / "tools/formal/fraction_composition_spec.rs").split(PROJECTION.PREFIX_MARKER, 1)[0]
+    fragment = prefix[:2333] + prefix[2684:3731]
+    executable = PROJECTION.annotated_rational_order(fragment)
+    require(digest(ghost) == PROJECTION.GHOST_SHA256 and healthy.count(ghost) == 1
+            and digest(lemma) == PROJECTION.BIT_LENGTH_LEMMAS_SHA256 and healthy.count(lemma) == 1
+            and digest(complement) == PROJECTION.COMPLEMENT_LEMMAS_SHA256 and healthy.count(complement) == 1
+            and digest(rational) == PROJECTION.RATIONAL_LEMMAS_SHA256 and healthy.count(rational) == 1,
+            "Rational ghost/lemma segment identity differs")
+    require(healthy.count(executable) == 1 and PROJECTION.erase_rational_order_annotations(executable) == fragment,
+            "Rational executable erasure differs")
+    descriptions = dict(_RATIONAL_ORDER_RECIPE.jobs)
+    require(job.get("id") in descriptions and job.get("target") == descriptions[job["id"]],
+            "Rational control identity differs")
+    if job["target"] is None:
+        return healthy
+    identifier = job["id"]
+    if identifier == "shift_wrong_theorem":
+        segment, old, new = complement, _SHIFT_THEOREM, _WRONG_SHIFT_THEOREM
+    elif identifier == "outside_wrong_theorem":
+        segment, old, new = complement, _OUTSIDE_THEOREM, _WRONG_OUTSIDE_THEOREM
+    elif identifier.startswith("complement_"):
+        segment = ghost[ghost.index(b"spec fn bridge_complement_post("):]
+        replacements = {
+            "complement_wrong_error": (b"Err(FixtureEnclosureError::Invariant) => !required_success,",
+                                       b"Err(FixtureEnclosureError::Invariant) => true,"),
+            "complement_wrong_scale": (b"&& value.shift == input.shift", b"&& value.shift >= input.shift"),
+            "complement_wrong_conservation": (
+                b"&& (value.numerator as int) + (input.numerator as int) == denominator",
+                b"&& (value.numerator as int) + (input.numerator as int) <= denominator"),
+        }
+        old, new = replacements[identifier]
+    elif identifier in {item[0] for item in _RATIONAL_PROOF_CONTRACTS}:
+        _, _, old, extra, _ = next(item for item in _RATIONAL_PROOF_CONTRACTS if item[0] == identifier)
+        segment, new = rational, old + extra
+    else:
+        guards = dict(_RATIONAL_BRANCH_GUARDS)
+        require(identifier in guards, "Unknown rational branch control")
+        first = b"spec fn bridge_rational_order(left: Fraction, right: Fraction) -> Ordering {\n"
+        following = b"\n/// All checked pairs require the exact native ordering and reject every error."
+        require(ghost.count(first) == ghost.count(following) == 1, "Rational ghost scope is ambiguous")
+        segment = ghost[ghost.index(first):ghost.index(following)]
+        require(segment.endswith(b"}\n"), "Rational ghost closing boundary differs")
+        body = segment[len(first):-2]
+        old = segment
+        new = (first + b"    let original = {\n" + body + b"    };\n"
+               + b"    if " + guards[identifier] + b" {\n"
+               + b"        match original {\n"
+               + b"            Ordering::Less => Ordering::Greater,\n"
+               + b"            Ordering::Greater => Ordering::Less,\n"
+               + b"            Ordering::Equal => Ordering::Less,\n"
+               + b"        }\n    } else {\n        original\n    }\n}\n")
+    require(healthy.count(segment) == 1 and segment.count(old) == 1 and new not in segment,
+            "Rational control replacement is ambiguous")
+    faulty = segment.replace(old, new, 1)
+    require(faulty.replace(new, old, 1) == segment, "Rational control reversal differs")
+    candidate = healthy.replace(segment, faulty, 1)
+    require(candidate.replace(faulty, segment, 1) == healthy and candidate.count(executable) == 1
+            and candidate.count(lemma) == 1,
+            "Rational control changed executable or restored healthy bytes")
+    return candidate
+
+
 def control_bytes(healthy, ghost, job, *, _recipe=None):
     """Change one exact ghost-only leaf and prove reversal and executable erasure."""
-    if _closed(_recipe) is _COMPLEMENT_POST_RECIPE:
+    if _closed(_recipe) is _RATIONAL_ORDER_RECIPE:
+        return _rational_order_control(healthy, ghost, job)
+    if _recipe is _COMPLEMENT_POST_RECIPE:
         return _complement_post_control(healthy, ghost, job)
     if _recipe is _CONSTRUCTOR_POST_RECIPE:
         return _constructor_post_control(healthy, ghost, job)
@@ -852,7 +1156,9 @@ def function_spans(data, *, _recipe=None):
     """Bind six exact returns clauses and their closed executable body ranges."""
     dependency = _closed(_recipe) is not None
     result = {}
-    if _recipe is _COMPLEMENT_POST_RECIPE:
+    if _recipe is _RATIONAL_ORDER_RECIPE:
+        declarations = tuple(PROJECTION.DECLARATIONS[index] for index in (0, 1, 2, 3, 5))
+    elif _recipe is _COMPLEMENT_POST_RECIPE:
         declarations = tuple(PROJECTION.DECLARATIONS[index] for index in (0, 1, 2, 5))
     elif _recipe is _CONSTRUCTOR_POST_RECIPE:
         declarations = PROJECTION.DECLARATIONS[:3]
@@ -893,7 +1199,7 @@ def function_spans(data, *, _recipe=None):
             "clause_end": data[:clause_end].count(b"\n") + 1,
             "return_start": data[:opening].count(b"\n") + 1,
             "return_end": data[:position].count(b"\n") + 1}
-    if _recipe is _COMPLEMENT_POST_RECIPE:
+    if _recipe is _COMPLEMENT_POST_RECIPE or _recipe is _RATIONAL_ORDER_RECIPE:
         closed = (
             (b"proof fn lemma_bridge_u128_shift_power(s: u32)", _SHIFT_THEOREM, _WRONG_SHIFT_THEOREM,
              b"    if 1 <= s && s <= 53 {\n"),
@@ -901,6 +1207,9 @@ def function_spans(data, *, _recipe=None):
              _OUTSIDE_THEOREM, _WRONG_OUTSIDE_THEOREM,
              b"    if bridge_checked(Fraction { numerator: n, shift: s }) && (s == 0 || s > 53) {\n"),
         )
+        if _recipe is _RATIONAL_ORDER_RECIPE:
+            closed += tuple((declaration, theorem, theorem + extra, tail)
+                            for _, declaration, theorem, extra, tail in _RATIONAL_PROOF_CONTRACTS)
         for declaration, theorem, altered, tail in closed:
             require(data.count(declaration) == 1, "Complement proof declaration differs")
             start = data.index(declaration) + len(declaration)
@@ -934,7 +1243,9 @@ def prepare_inputs(work, *, _recipe=None):
     inputs = work / "inputs"
     inputs.mkdir(mode=0o700)
     generated = inputs / "baseline"
-    if _recipe is _COMPLEMENT_POST_RECIPE:
+    if _recipe is _RATIONAL_ORDER_RECIPE:
+        details = PROJECTION.prepare_rational_order(work / "source", generated)
+    elif _recipe is _COMPLEMENT_POST_RECIPE:
         details = PROJECTION.prepare_complement_post(work / "source", generated)
     elif _recipe is _CONSTRUCTOR_POST_RECIPE:
         details = PROJECTION.prepare_constructor_post(work / "source", generated)
@@ -1098,6 +1409,8 @@ def execute_job(work, state, job, record, *, _recipe=None):
     folder.mkdir(mode=0o700)
     try:
         tick = time.monotonic()
+        if not state["completed"]:
+            _rational_dispatch_capacity(_recipe)
         stable, payload = PILOT.admit()
         expected_identity = payload_identity(payload)
         state["last_admission"] = (stable, payload, expected_identity)
@@ -1119,7 +1432,8 @@ def execute_job(work, state, job, record, *, _recipe=None):
                 readonly=[*stable["readonly_roots"], payload], sealed=sealed, cwd=job["inputs"],
                 environment={"VERUS_USE_RUSTUP": "0", "VERUS_ROOT": str(payload),
                              "VERUS_Z3_PATH": str(payload / "z3")},
-                timeout=min(COMMAND_SECONDS, remaining(**_recipe_options(_recipe))), cpu_seconds=COMMAND_SECONDS,
+                timeout=min(_command_seconds(_recipe), remaining(**_recipe_options(_recipe))),
+                cpu_seconds=_command_seconds(_recipe),
                 address_space_bytes=8 * 1024**3, build_jobs=1, process_limit=128)
             record.update(native=native, execute_seconds=time.monotonic() - tick)
         finally:
@@ -1159,14 +1473,17 @@ def run_campaign(*, _recipe=None):
     started_monotonic = STARTED_MONOTONIC_NS if recipe is None else recipe.started_monotonic_ns
     deadline_monotonic = DEADLINE_MONOTONIC_NS if recipe is None else recipe.deadline_monotonic_ns
     boot = BOOT_ID if recipe is None else recipe.boot_id
-    maximum_commands = 7 if recipe is _COMPLEMENT_POST_RECIPE else 5
-    if recipe is _COMPLEMENT_POST_RECIPE:
+    maximum_commands = 19 if recipe is _RATIONAL_ORDER_RECIPE else (7 if recipe is _COMPLEMENT_POST_RECIPE else 5)
+    if recipe is _RATIONAL_ORDER_RECIPE:
+        passed = "rational-order-dependency-checkpoint-passed"
+    elif recipe is _COMPLEMENT_POST_RECIPE:
         passed = "complement-post-dependency-checkpoint-passed"
     elif recipe is _CONSTRUCTOR_POST_RECIPE:
         passed = "constructor-post-dependency-checkpoint-passed"
     else:
         passed = "pure-bridge-checkpoint-passed" if recipe is None else "bit-length-dependency-checkpoint-passed"
     remaining(**_recipe_options(recipe))
+    _rational_dispatch_capacity(recipe)
     require(work.parent == work.parent.resolve(strict=True) and not work.exists() and not work.is_symlink(),
             "Use only the fresh fixed work root; retries are forbidden")
     work.mkdir(mode=0o700)
@@ -1183,6 +1500,7 @@ def run_campaign(*, _recipe=None):
         state["inputs"] = inputs
         summary.update(source_files=original, frozen_source=source, generated_inputs=inputs,
                        executed_python_sources=SOURCE_BINDING.snapshot())
+        _rational_dispatch_capacity(recipe)
         (work / "jobs").mkdir(mode=0o700)
         for job in planned:
             record = {key: value for key, value in job.items() if key != "inputs"}
@@ -1190,7 +1508,8 @@ def run_campaign(*, _recipe=None):
             summary["jobs"].append(record)
             execute_job(work, state, job, record, **_recipe_options(recipe))
         require(len(summary["jobs"]) == maximum_commands and all(job["qualified"] for job in summary["jobs"]),
-                "The fixed seven-command schedule is incomplete" if recipe is _COMPLEMENT_POST_RECIPE
+                "The fixed nineteen-command schedule is incomplete" if recipe is _RATIONAL_ORDER_RECIPE
+                else "The fixed seven-command schedule is incomplete" if recipe is _COMPLEMENT_POST_RECIPE
                 else "The fixed five-command schedule is incomplete")
         summary["status"] = passed
     except Exception as error:
@@ -1236,6 +1555,11 @@ def run_constructor_post_campaign():
 def run_complement_post_campaign():
     """Execute only the fixed unrestricted complement-Post dependency card."""
     return run_campaign(_recipe=_COMPLEMENT_POST_RECIPE)
+
+
+def run_rational_order_campaign():
+    """Execute only the fixed full-raw rational-order dependency card."""
+    return run_campaign(_recipe=_RATIONAL_ORDER_RECIPE)
 
 
 if __name__ == "__main__":

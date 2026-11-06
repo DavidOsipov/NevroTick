@@ -27,6 +27,10 @@ COMPLEMENT_LEMMAS = "tools/formal/fraction_verus_complement_lemmas.rs"
 COMPLEMENT_LEMMAS_SHA256 = "55578940ea86be1ddf20693143c12afe7229e9cbfd053c2a06138ec2449abf85"
 COMPLEMENT_SLICE_SHA256 = "f8a1e46efbbbf8b252d2dae75fb73493613f9fea5f745af85bc8a45616890d0d"
 COMPLEMENT_SOURCE_SPANS = ((0, 1202), (2684, 3731))
+RATIONAL_LEMMAS = "tools/formal/fraction_verus_rational_lemmas.rs"
+RATIONAL_LEMMAS_SHA256 = "82d35d5e2c6289912c62cdb7a2d40a7f72e787cbee0c4604869a66c532a2880b"
+RATIONAL_SOURCE_SPANS = ((0, 2333), (2684, 3731))
+RATIONAL_SLICE_SHA256 = "b5e0a0dcdf924add0f9447bfce57555f39c5bc73deae656bec9993a576796a8d"
 PREFIX_MARKER = b"// Six flattened alternatives:"
 TYPE_NAMES = ("interval_error", "enclosure_error", "fraction")
 SPAN_NAMES = ("fraction", "zero", "new", "compare", "complement", "fraction_sum",
@@ -102,6 +106,86 @@ COMPLEMENT_HOOKS = (
      b"                    assert(denominator as int == bridge_denominator(input.shift));\n"
      b"                }\n"),
 )
+RATIONAL_HOOKS = (
+    ("composition_rational_order",
+     b"    if !composition_checked(left) || !composition_checked(right) {\n",
+     b"    proof {\n"
+     b"        reveal(bridge_rational_order);\n"
+     b"        reveal(bridge_checked);\n"
+     b"        lemma_bridge_denominator_factor(left.shift, right.shift);\n"
+     b"        lemma_bridge_denominator_factor(right.shift, left.shift);\n"
+     b"        lemma_bridge_positive_factor_order(0, left.numerator as int,\n"
+     b"            bridge_denominator(right.shift));\n"
+     b"        lemma_bridge_positive_factor_order(0, right.numerator as int,\n"
+     b"            bridge_denominator(left.shift));\n"
+     b"    }\n"),
+    ("composition_rational_order",
+     b"        return left.numerator.cmp(&right.numerator);\n",
+     b"        proof {\n"
+     b"            lemma_bridge_positive_factor_order(left.numerator as int,\n"
+     b"                right.numerator as int, bridge_denominator(left.shift));\n"
+     b"        }\n"),
+    ("composition_rational_order",
+     b"            (u128::from(left.numerator) << gap).cmp(&u128::from(right.numerator))\n",
+     b"            proof {\n"
+     b"                assert(gap as int == right.shift as int - left.shift as int);\n"
+     b"                lemma_bridge_u128_shifted_u64(left.numerator, gap);\n"
+     b"                assert((left.numerator as u128) as int == left.numerator as int);\n"
+     b"                assert((right.numerator as u128) as int == right.numerator as int);\n"
+     b"                assert(bridge_denominator(right.shift) == bridge_denominator(left.shift)\n"
+     b"                    * pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_commutative(\n"
+     b"                    bridge_denominator(left.shift), pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_associative(left.numerator as int,\n"
+     b"                    pow(2, gap as nat), bridge_denominator(left.shift));\n"
+     b"                lemma_bridge_positive_factor_order((left.numerator as int) * pow(2, gap as nat),\n"
+     b"                    right.numerator as int, bridge_denominator(left.shift));\n"
+     b"            }\n"),
+    ("composition_rational_order",
+     b"            Ordering::Greater\n        }\n",
+     b"            proof {\n"
+     b"                assert(gap as int == right.shift as int - left.shift as int);\n"
+     b"                lemma_bridge_rational_gap_dominates(left.numerator, right.numerator, gap);\n"
+     b"                assert(bridge_denominator(right.shift) == bridge_denominator(left.shift)\n"
+     b"                    * pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_commutative(\n"
+     b"                    bridge_denominator(left.shift), pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_associative(left.numerator as int,\n"
+     b"                    pow(2, gap as nat), bridge_denominator(left.shift));\n"
+     b"                lemma_bridge_positive_factor_order((left.numerator as int) * pow(2, gap as nat),\n"
+     b"                    right.numerator as int, bridge_denominator(left.shift));\n"
+     b"            }\n"),
+    ("composition_rational_order",
+     b"            u128::from(left.numerator).cmp(&(u128::from(right.numerator) << gap))\n",
+     b"            proof {\n"
+     b"                assert(gap as int == left.shift as int - right.shift as int);\n"
+     b"                lemma_bridge_u128_shifted_u64(right.numerator, gap);\n"
+     b"                assert((left.numerator as u128) as int == left.numerator as int);\n"
+     b"                assert((right.numerator as u128) as int == right.numerator as int);\n"
+     b"                assert(bridge_denominator(left.shift) == bridge_denominator(right.shift)\n"
+     b"                    * pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_commutative(\n"
+     b"                    bridge_denominator(right.shift), pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_associative(right.numerator as int,\n"
+     b"                    pow(2, gap as nat), bridge_denominator(right.shift));\n"
+     b"                lemma_bridge_positive_factor_order(left.numerator as int,\n"
+     b"                    (right.numerator as int) * pow(2, gap as nat), bridge_denominator(right.shift));\n"
+     b"            }\n"),
+    ("composition_rational_order",
+     b"            Ordering::Less\n        }\n    }\n",
+     b"            proof {\n"
+     b"                assert(gap as int == left.shift as int - right.shift as int);\n"
+     b"                lemma_bridge_rational_gap_dominates(right.numerator, left.numerator, gap);\n"
+     b"                assert(bridge_denominator(left.shift) == bridge_denominator(right.shift)\n"
+     b"                    * pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_commutative(\n"
+     b"                    bridge_denominator(right.shift), pow(2, gap as nat));\n"
+     b"                vstd::arithmetic::mul::lemma_mul_is_associative(right.numerator as int,\n"
+     b"                    pow(2, gap as nat), bridge_denominator(right.shift));\n"
+     b"                lemma_bridge_positive_factor_order(left.numerator as int,\n"
+     b"                    (right.numerator as int) * pow(2, gap as nat), bridge_denominator(right.shift));\n"
+     b"            }\n"),
+)
 
 
 def digest(data: bytes) -> str:
@@ -125,6 +209,11 @@ def dependency_input_names() -> tuple[str, ...]:
 def complement_input_names() -> tuple[str, ...]:
     """The closed complement path adds one separately pinned ghost source."""
     return (*dependency_input_names(), COMPLEMENT_LEMMAS)
+
+
+def rational_input_names() -> tuple[str, ...]:
+    """The additive rational path preserves all earlier source dependencies."""
+    return (*complement_input_names(), RATIONAL_LEMMAS)
 
 
 def _plain_path(path: Path) -> Path:
@@ -283,6 +372,56 @@ def erase_complement_post_annotations(candidate: bytes) -> bytes:
     result = first + complement
     if digest(result) != COMPLEMENT_SLICE_SHA256:
         raise ValueError("Erased four-predicate complement executable bytes changed")
+    return result
+
+
+def annotated_rational_order(fragment: bytes) -> bytes:
+    """Add one predicate and six exact hooks while preserving old annotations."""
+    if digest(fragment) != RATIONAL_SLICE_SHA256:
+        raise ValueError("Exact five-predicate rational slice changed")
+    old = annotated_complement_post(fragment[:1202] + fragment[2333:])
+    complement_annotation = _annotation(*DECLARATIONS[5])
+    first, complement = old.split(complement_annotation, 1)
+    rational = fragment[1202:2333]
+    declaration, relation = DECLARATIONS[3]
+    if rational.count(declaration) != 1:
+        raise ValueError("Rational-order predicate declaration is not unique")
+    rational = rational.replace(declaration, _annotation(declaration, relation), 1)
+    for _, anchor, block in RATIONAL_HOOKS:
+        if rational.count(anchor) != 1:
+            raise ValueError("Rational-order proof insertion anchor is not unique")
+        rational = rational.replace(anchor, block + anchor, 1)
+    result = first + rational + complement_annotation + complement
+    if erase_rational_order_annotations(result) != fragment:
+        raise ValueError("Rational-order insertions do not erase exactly")
+    return result
+
+
+def erase_rational_order_annotations(candidate: bytes) -> bytes:
+    """Erase only approved annotations/hooks and recover both exact raw spans."""
+    rational_annotation = _annotation(*DECLARATIONS[3])
+    complement_annotation = _annotation(*DECLARATIONS[5])
+    if candidate.count(rational_annotation) != 1 or candidate.count(complement_annotation) != 1:
+        raise ValueError("Exact rational-order annotation missing or altered")
+    first, tail = candidate.split(rational_annotation, 1)
+    rational, complement = tail.split(complement_annotation, 1)
+    if first.count(CONSTRUCTOR_POST_MARKER) != 1:
+        raise ValueError("Exact rational-order leading comments missing or altered")
+    first, leading_comments = first.split(CONSTRUCTOR_POST_MARKER, 1)
+    rational = CONSTRUCTOR_POST_MARKER + leading_comments + rational_annotation + rational
+    for _, anchor, block in RATIONAL_HOOKS:
+        if rational.count(block + anchor) != 1:
+            raise ValueError("Exact rational-order proof hook missing or altered")
+        rational = rational.replace(block + anchor, anchor, 1)
+    rational = rational.replace(rational_annotation, DECLARATIONS[3][0], 1)
+    if digest(rational) != "bb726637b89b2f6d2fce1c76538894a04ac728e8915ad663b2f71399fb8cd7de":
+        raise ValueError("Erased rational-order executable span changed")
+    old = erase_complement_post_annotations(first + complement_annotation + complement)
+    result = old[:1202] + rational + old[1202:]
+    if digest(result[:2333]) != "c1eb218abfc039caf065c00391d1f9832b668229397f6ff71c3385e89318352d":
+        raise ValueError("Erased rational first executable span changed")
+    if digest(result) != RATIONAL_SLICE_SHA256:
+        raise ValueError("Erased five-predicate rational executable bytes changed")
     return result
 
 
@@ -621,6 +760,112 @@ def prepare_complement_post(source_root: Path, inputs: Path) -> dict:
                       "four completed full-raw predicate equalities and wrong-contract/restoration controls",
                       "all six full-domain bridge equalities and their controls",
                       "native Ordering equality correspondence, rational alignment and complement",
+                      "separate caller-import profile admission and original addition union"],
+        "generated_sha256": {name: digest(data) for name, data in generated.items()},
+    }
+    generated["correspondence.json"] = (json.dumps(details, indent=2, sort_keys=True) + "\n").encode()
+    _write_payload(inputs, generated)
+    return details
+
+
+def prepare_rational_order(source_root: Path, inputs: Path) -> dict:
+    """Prepare seven total lemmas and five full-raw predicate equalities only."""
+    inputs, old_payload, original, selected, prefix, ghost, sources = _reviewed_payload(
+        source_root, inputs, rational_input_names())
+    lemmas = sources[BIT_LENGTH_LEMMAS]
+    complement_lemmas = sources[COMPLEMENT_LEMMAS]
+    rational_lemmas = sources[RATIONAL_LEMMAS]
+    if digest(lemmas) != BIT_LENGTH_LEMMAS_SHA256:
+        raise ValueError("Pinned bit-length ghost lemma changed")
+    if digest(complement_lemmas) != COMPLEMENT_LEMMAS_SHA256:
+        raise ValueError("Pinned complement ghost lemmas changed")
+    if digest(rational_lemmas) != RATIONAL_LEMMAS_SHA256:
+        raise ValueError("Pinned rational ghost lemmas changed")
+    span_hashes = ("c1eb218abfc039caf065c00391d1f9832b668229397f6ff71c3385e89318352d",
+                   "a9e8e582cc3b7630f37df1b7e446bb18c12b4192bd7a2dbb47dd423225b683fa")
+    fragments = [prefix[first:last] for first, last in RATIONAL_SOURCE_SPANS]
+    if tuple(digest(part) for part in fragments) != span_hashes:
+        raise ValueError("Exact rational source spans changed")
+    fragment = b"".join(fragments)
+    predicates = annotated_rational_order(fragment)
+    local_code = re.sub(rb"(?m)//[^\n]*", b"", rational_lemmas + complement_lemmas + predicates)
+    if re.search(rb"\b(?:assume|admit|external_body|external_fn_specification|assume_specification|axiom|requires)\b",
+                 local_code):
+        raise ValueError("Rational candidate contains a forbidden local assumption or precondition")
+    bridge = (b"// SPDX-License-Identifier: GPL-2.0-only\n"
+              b"// UNPROVED rational-order dependency source; full bridge acceptance remains open.\n"
+              b"use std::cmp::Ordering;\nuse vstd::prelude::*;\n\nverus! {\n\n"
+              + b"\n".join(selected[name] for name in TYPE_NAMES) + b"\n\n"
+              + ghost + b"\n" + lemmas + b"\n" + complement_lemmas + b"\n"
+              + rational_lemmas + b"\n" + predicates + b"\n}\n")
+    modes = {"proof::lemma_bridge_bit_length_power": "proof",
+             "proof::lemma_bridge_u128_shift_power": "proof",
+             "proof::lemma_bridge_complement_reject_outside": "proof",
+             "proof::lemma_bridge_u128_shifted_u64": "proof",
+             "proof::lemma_bridge_denominator_factor": "proof",
+             "proof::lemma_bridge_positive_factor_order": "proof",
+             "proof::lemma_bridge_rational_gap_dominates": "proof",
+             "proof::composition_constructor_admitted": "exec",
+             "proof::composition_checked": "exec",
+             "proof::composition_constructor_post": "exec",
+             "proof::composition_rational_order": "exec",
+             "proof::composition_complement_post": "exec",
+             "proof::IntervalError::clone": "exec",
+             "proof::FixtureEnclosureError::clone": "exec",
+             "proof::Fraction::clone": "exec"}
+    hooks = [{"function": "proof::" + name,
+              "source_byte_offset": prefix.index(anchor),
+              "insertion": ("before unchanged leading_zeros subtraction" if index < 2
+                            else "at approved complement proof site" if index < 5
+                            else "at approved rational-order proof site"),
+              "anchor_sha256": digest(anchor), "proof_block_sha256": digest(block)}
+             for index, (name, anchor, block) in enumerate(
+                 (*BIT_LENGTH_HOOKS, *COMPLEMENT_HOOKS, *RATIONAL_HOOKS))]
+    generated = {"proof.rs": bridge, "actual_source.rs": old_payload["actual_source.rs"],
+                 "predicate_source.rs": prefix}
+    details = {
+        "schema_version": 1, "status": "unproved_source_candidate", "proof_commands": 0,
+        "scope": "bit-length, complement and rational lemmas and five unrestricted predicate equalities; source preparation only",
+        "source_files_sha256": original["source_files_sha256"],
+        "original_sources_sha256": original["original_sources_sha256"],
+        "correspondence": original["correspondence"],
+        "prefix_sha256": digest(prefix), "prefix_bytes": len(prefix),
+        "fragment_source_spans": [
+            {"source_byte_offsets_half_open": list(span), "sha256": expected}
+            for span, expected in zip(RATIONAL_SOURCE_SPANS, span_hashes)],
+        "fragment_sha256": digest(fragment), "annotated_fragment_sha256": digest(predicates),
+        "ghost_sha256": digest(ghost), "lemma_sha256": digest(lemmas),
+        "complement_lemma_sha256": digest(complement_lemmas),
+        "rational_lemma_sha256": digest(rational_lemmas),
+        "predicate_relations": [DECLARATIONS[index][1].decode() for index in (0, 1, 2, 3, 5)],
+        "full_bridge_predicate_relations": original["predicate_relations"],
+        "expected_function_modes": modes, "proof_hooks": hooks,
+        "raw_domains": {
+            "lemma": "every n:u64 and s:u32; no precondition",
+            "shift_power": "every s:u32; no precondition; guarded shift/power implication for 1 <= s <= 53",
+            "reject_outside": "every n:u64 and s:u32; no precondition; guarded checked outside-window implication",
+            "constructor_admitted": "every numerator:u64 and shift:u32; no precondition",
+            "checked": "every raw Fraction { numerator:u64, shift:u32 }; no precondition",
+            "constructor_post": "every numerator:u64, shift:u32 and independently chosen &Result<Fraction, FixtureEnclosureError>; raw Ok fields and every error variant; no precondition",
+            "complement_post": "every raw Fraction { numerator:u64, shift:u32 } and independently chosen &Result<Fraction, FixtureEnclosureError>; raw Ok fields and every error variant; no precondition",
+            "rational_order": "every independent left/right raw Fraction { numerator:u64, shift:u32 }; invalid either side maps to Equal; no precondition",
+            "shifted_u64": "every n:u64 and g:u32; no precondition; exact u128 shift/product and u32/u128 shift identity guarded by g < 64",
+            "denominator_factor": "every lo:u32 and hi:u32; no precondition; both powers positive and factorization guarded by lo <= hi",
+            "positive_factor_order": "every a:int, b:int and k:int; no precondition; complete order equivalence guarded by k > 0",
+            "gap_dominates": "every n:u64, m:u64 and g:u32; no precondition; dominance guarded by n >= 1, m < pow(2,53) and g >= 64",
+        },
+        "upstream_dependencies": {
+            "commit": "8bf68ee741df833ea5d0fe6a2255126fdea87e47",
+            "paths": ["source/vstd/std_specs/bits.rs", "source/vstd/arithmetic/power.rs",
+                      "source/vstd/arithmetic/power2.rs", "source/vstd/arithmetic/div_mod.rs",
+                      "source/vstd/bits.rs", "source/vstd/std_specs/convert.rs",
+                      "source/vstd/arithmetic/mul.rs", "source/vstd/std_specs/cmp.rs", "source/vstd/std_specs/num.rs"],
+            "status": "source API references only; no new admission or proof"},
+        "remaining": ["exact Verus compatibility and all lemma assertions/termination",
+                      "u32 leading_zeros result and subtraction-to-int inference",
+                      "five completed full-raw predicate equalities and wrong-contract/restoration controls",
+                      "all six full-domain bridge equalities and their controls",
+                      "native Ordering equality correspondence and comparison Post",
                       "separate caller-import profile admission and original addition union"],
         "generated_sha256": {name: digest(data) for name, data in generated.items()},
     }

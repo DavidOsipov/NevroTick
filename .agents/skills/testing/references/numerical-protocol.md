@@ -20,11 +20,12 @@ as applicable; preserve the declared residual rather than silently saturating.
 When translating integer logic into a model or proof, reconcile
 [specification and machine semantics](formal-verification.md#relate-integer-specifications-to-machine-operations),
 especially negative division/remainder, casts and required-success overflow paths.
-Product mathematical algorithms require machine-checked, source-bound proofs
-under [OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-and the [proof workflow](formal-verification.md). Semantic review and behavioral
-oracles complement that gate. No particular additional verifier is selected here;
-an unavailable tool leaves its required proof incomplete.
+Product mathematics follows [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal proof work resumes after V1 and missing proofs are no first-release gate.
+Continue independent numerical/behavioral oracles and runtime checks; retain
+exact historical proof scopes and post-V1 obligations in the existing tasks.
+The [proof workflow](formal-verification.md) applies on resumption, including
+pending proof admission/metadata repairs.
 
 For a numerical kernel or threshold, use the
 [numerical procedure](../../implementation/implement-rust/references/numerical-kernels.md).

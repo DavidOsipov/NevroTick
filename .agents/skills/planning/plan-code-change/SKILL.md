@@ -18,13 +18,13 @@ the user requests it or the selected guarantee needs it. Preserve focused
 RED→GREEN and plan formatting before final candidate freeze; reuse existing
 recipes instead of adding process layers without a concrete enforcement need.
 
-For mathematical algorithms, inventory required source-bound proofs under
-[OD-10](../../../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
-using the [proof workflow](../../testing/references/formal-verification.md).
-Name the independent full-domain contract, source owner/CHECK IDs, proof or
-remaining gap, invalidating changes and dependent acceptance checkpoint in the
-existing task. Schedule missing existing proofs and new/affected proofs before
-that acceptance; unavailable tooling leaves the obligation incomplete.
+For mathematical algorithms, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+Continue ordinary product work; missing formal proofs do not block V1 acceptance.
+Track affected proof obligations under the existing task/CHECK owners as post-V1
+work. Preserve historical proof scope without extending it to changed source.
+Do not plan or run pre-V1 formal campaigns, verifier extensions or pending
+proof admission/metadata-consumer repairs. On post-V1 resumption use the
+[proof workflow](../../testing/references/formal-verification.md).
 
 For multiple stages, uncertain impact, security-sensitive work or migration:
 

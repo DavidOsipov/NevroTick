@@ -811,7 +811,7 @@ votes. Preserve the existing full-transaction KE-backoff reset rule, no-downgrad
 policy and final current-generation/consume-once guards. S2.1/S2.2's
 [engine task](../tasks/engine-transport-pilot.md#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
 owns the implementation sequence and paired controls. This refinement leaves the
-first controlled measurement, proof-first queue and native qualification distinct.
+first controlled measurement, ordinary product queue, deferred post-V1 proofs and native qualification distinct.
 [S20, S127]
 
 #### Observed path history and user network policy
@@ -3215,7 +3215,7 @@ The focused candidates' declared Rust 1.95 minimum fits the current workspace's
 | `windows-reactor` | Retained source alternative; OD-13 already selects Slint. Revisit only when a concrete issue prevents selected delivery and the existing decision process admits a bounded comparison. Current upstream calls it a preview and requires Windows App Runtime. Compare an equivalent representative fixture, startup/private memory/idle/handles, keyboard/Narrator/UIA, final MSIX payload and UI mitigation compatibility. The closed egui result does not measure Reactor; the [separate live-host Reactor pilot](../tasks/s0.5-ui-comparison.md#windows-reactor--winui-3-live-host-result--5-november-2026) retains actual narrower observations. This source review reopens no general toolkit selection, runtime bundling or UI-M0 scope. [S134] |
 | `windows-pickers` | Recheck a real published release when S5.3 export needs a picker; current useful API remains source-only in this review. Standard OS dialogs are reusable, but returned paths still need ordinary-UI file handling, cancellation/error distinction and safe bounds. Never turn a selected filename into an arbitrary privileged service write. [S134] |
 | `windows-threading` / `windows-future` | Conditional implementation helpers, not replacements for the selected engine runtime. A pool thread limit does not bound accepted work; waits do not establish a finite shutdown deadline. WinRT async projection is not an executor, and cancellation need not terminate the running closure/native operation. Preserve section 17.1 custody and section 18.6.1's Tokio decision. [S136] |
-| `windows-time`, `windows-collections`, `windows-version` | Use only at a concrete WinRT/diagnostic boundary. WinRT 100-ns date/duration values do not replace checked UTC/monotonic/active-time or NTP types and OD-10 proofs; collection projections do not replace internal bounded storage. A version query is diagnostic context, not proof of API/policy/hardware support. [S136] |
+| `windows-time`, `windows-collections`, `windows-version` | Use only at a concrete WinRT/diagnostic boundary. WinRT 100-ns date/duration values do not replace checked UTC/monotonic/active-time or NTP types or the post-V1 OD-10 proof obligations; collection projections do not replace internal bounded storage. A version query is diagnostic context, not proof of API/policy/hardware support. [S136] |
 | `windows-bindgen` | Conditional way to generate a small missing private ABI surface from pinned metadata. First establish the exact gap; keep generator/metadata/output provenance and compatible types. No blanket regeneration of working imports or generator execution on every consumer build is required. [S132, S136] |
 
 **VBS binding gap:** the release-associated `windows` 0.62.2 cryptography module
@@ -3609,6 +3609,20 @@ Neither project is installed or executed by this research amendment. [S121]
 
 #### 20.1.1 Mandatory mathematical proofs — 5 November 2026
 
+**Current policy, 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
+defers formal proof work until after the first released software version (V1).
+The proof-first instructions and receipts below are historical; missing proofs
+are no V1 prerequisite, acceptance blocker or release gate. Do not execute formal
+compiler/solver/proof jobs, extend verifiers or repair pending proof metadata
+consumers before V1. Preserve exact historical proof scope and track remaining
+obligations in the existing tasks for post-V1 bounded resumption. Continue the
+ordinary product plan. Runtime/garde/private invariants, checked arithmetic,
+independent behavioral/property/boundary tests, security, 90% coverage/95% mutation
+within their required scopes, native/package/release gates and all existing
+Windows/fuzz/storage/UI holds remain unchanged.
+
+**Historical policy and receipts before the amendment:**
+
 [OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 requires machine-checked proofs for NevroTick's mathematical algorithms. This supersedes earlier optional-proof
 wording. Each existing and future product numerical algorithm needs an
@@ -3735,9 +3749,34 @@ The later [complement v2 qualification](../tasks/s1.3-source-selection-readiness
 passed seven jobs: four full-raw predicate equalities/three arithmetic lemmas,
 five isolated contract failures and restored health. Its30 source files and11
 executed-Python records bind the exact candidate;143 selected checks pass.
-Rational-order alignment is the next source-preparation owner, using pinned
-primitive cmp models independently of native Ordering PartialEq. Comparison Post,
-caller import and complete bridge/addition/Core/P1 remain open.
+The subsequent [rational-order qualification](../tasks/s1.3-source-selection-readiness.md#rational-order-terminal-qualification--6-november-2026)
+passed nineteen jobs: five full-raw predicate equalities/seven total lemmas,
+seventeen intended defects and restored health. All161 selected checks pass;
+33 sources/11 executed-Python records and final guards bind that candidate.
+Source inspection confirms missing pinned checked-shift support; native Ordering
+equality/comparison Post, caller import and full bridge/addition/Core/P1 remain
+open. Independent [RequestTiming qualification](../tasks/s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026)
+passed five full raw-pair/three-defect/restored ordinary Kani jobs,158 Python
+checks and34-input/nine-executed-Python guards. This is constructor/getter
+arithmetic only. Subsequent [actual append_depth qualification](../tasks/s1.3-source-selection-readiness.md#selection-append-depth-terminal-qualification--6-november-2026)
+passed six full raw-state/four-defect/restored jobs,671 checks and208 Python
+checks, with34 bound inputs/nine executed-Python records. Its exact state/frame
+theorem preserves separate initialized-prefix/depth/topology/whole-selection
+obligations. Subsequent [actual lifecycle ordinal qualification](../tasks/s1.3-source-selection-readiness.md#lifecycle-ordinal-terminal-qualification--6-november-2026)
+passed five full raw-u64/three-defect/restored jobs,263 checks and248 Python
+checks;38 inputs/nine executed-Python records and complete23-enum closure bind
+the actual successor/exhaustion theorem. Subsequent [actual source-counter
+qualification](../tasks/s1.3-source-selection-readiness.md#lifecycle-source-counter-terminal-qualification--6-november-2026)
+passed five full raw2^80/three-defect/restored jobs,145 properties and291 Python
+checks;32 inputs/nine executed-Python records bind the real constants/predicate/
+From/min. The later [constructor source checkpoint](../tasks/s1.3-source-selection-readiness.md#source-state-constructor-source-checkpoint--6-november-2026)
+prepares actual mandatory Garde/callback/constructor source and six Cargo cases,
+authenticates14 selected vendor packages, and passes51 source checks plus independent
+review. It runs no compiler/proof; source-specific admission/target/allocator/drop/
+unwinding and full constructor theorem remain unqualified. Known model/private-
+patch holds remain; source correctness does not confer execution readiness.
+Transactional lifecycle/currentness/commit/reset and global uniqueness remain
+separate obligations.
 The existing no-cheating gate
 still rejects `external_body`; no weaker profile, SDK patch or adoption follows.
 The old kit, ordinary defaults and all execution holds remain unchanged.

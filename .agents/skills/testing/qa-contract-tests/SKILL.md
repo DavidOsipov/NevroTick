@@ -43,16 +43,15 @@ rejection, including non-finite in-memory values and changed context after an
 await. Verify bounded error generation on maximum admitted inputs, not only final
 error truncation. Every failure case needs an independently expected valid neighbor.
 
-For existing or new product mathematical algorithms, apply OD-10's
-[mandatory proof workflow](../references/formal-verification.md): reconcile
-actual-source proof coverage with the full admitted domain, required success/error
-outcomes, machine/rounding semantics and invariants, including constructor/caller
-obligations. New mathematics, changed semantics or invalidated proof inputs
-require affected proofs; reuse valid unchanged evidence. Behavioral controls
-complement proofs; missing proofs leave the owning CHECK acceptance incomplete.
+For product mathematics, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026):
+formal work and pending proof admission/metadata repairs resume after V1.
+Missing or invalidated proofs do not block V1 acceptance or release. Record
+remaining obligations under the existing source/CHECK owners as post-V1 work;
+retain completed evidence only within its exact historical scope. Continue
+independent behavioral/property/boundary checks and all nonformal gates.
+Use the [proof workflow](../references/formal-verification.md) on post-V1 resumption.
 
-Use bounded cargo-fuzz for a real raw-admission/conversion gap. Kani is one tool
-option for checked-domain/arithmetic proofs; select the admitted
+Use bounded cargo-fuzz for a real raw-admission/conversion gap. Kani checked-domain/arithmetic proofs resume after V1; retain the admitted
 [guarded lanes](../references/configured-tooling.md#additional-rust-analysis)
 and qualify actual harness reachability. For uncertain constructor/guard bypass
 paths use [CodeQL data-flow analysis](../references/codeql-data-flow.md), then

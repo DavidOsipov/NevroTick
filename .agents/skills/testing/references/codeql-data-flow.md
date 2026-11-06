@@ -1,5 +1,9 @@
 # Rust data-flow analysis with the local CodeQL MCP
 
+Formal/Kani proof work and pending proof admission/metadata repairs are deferred
+until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+The tool capabilities below create no pre-V1 proof execution or acceptance gate.
+
 Use this reference for a concrete source-to-sink question across Rust functions,
 validation, state or trust boundaries. [TOOLING.md](../../../../TOOLING.md) owns
 installation and qualification status; [the local policy](../../../../policy/codeql-mcp.json)

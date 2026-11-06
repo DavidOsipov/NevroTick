@@ -88,21 +88,19 @@ source-text matching alone is insufficient. CHECK-25 plans whole-path qualificat
 real pipe identity/clock effects need Windows lanes.
 
 For changed parser/conversion resilience, select bounded cargo-fuzz at the actual
-admission seam. Kani is one tool option for finite arithmetic or domain
-invariants; require reachable valid construction and justified assumptions.
+admission seam. Kani proofs of finite arithmetic/domain invariants resume after
+V1 under the deferral below; retain reachable construction and justified assumptions.
 Preserve compile-fail consumer checks for privacy guarantees. Use the
 [configured analysis lanes](../../testing/references/configured-tooling.md#additional-rust-analysis)
 and qualify each product harness independently of tool controls.
 
-For existing or new product mathematical algorithms, apply OD-10's
-[mandatory proof workflow](../../testing/references/formal-verification.md).
-Bind proofs of the full admitted domain, required success/error outcomes,
-machine/rounding semantics and invariant preservation to the actual executable
-body and constructor/caller obligations. New mathematics, changed semantics or
-invalidated evidence reopen affected proofs; reuse valid unchanged evidence.
-Keep missing obligations in the existing task and its CHECK acceptance incomplete.
-Verifier choice remains subject to admission; preserve runtime checks for
-unverified callers, since proof preconditions replace no admission.
+For product mathematics, apply [OD-10’s first-release deferral](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
+Formal proof work, including pending admission/metadata repairs, resumes after
+V1; missing or invalidated proofs are no V1 blocker. Retain historical exact-scope
+evidence and track affected obligations in the existing post-V1 backlog. Continue
+runtime/garde/private invariants, checked arithmetic and independent contract
+checks. Use the [proof workflow](../../testing/references/formal-verification.md)
+on post-V1 resumption.
 
 Use [evolution](../evolve-data-contracts/SKILL.md) before acceptance, normalization,
 meaning, version, storage or consumer-compatibility changes. Share pure UI/service
