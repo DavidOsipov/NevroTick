@@ -586,3 +586,14 @@ engine edges, packages, features, grants and manifest/lock identities are retain
 The initial audit receipts above retain their original candidates and limits.
 Further local CodeQL analysis is a separate continuation, not a retrospective
 pass for the failed product queries. No native Windows or formal execution resumes.
+
+### Cloud continuation — 6 November 2026
+
+The owner stopped local analysis because resources were low. The reviewed runner
+corrections and portable queries are carried into active main; the other AI's
+rational-seconds/engine work is preserved separately. The
+[cloud handoff](codeql-cloud-handoff.md) is the next execution entry point.
+Local product extraction/import and all twelve endpoint expectations passed;
+the local data-flow evaluation ended with disk exhaustion, and global/negative
+query execution remains incomplete. No completed-flow, native or release pass is
+established by these setup results. Do not restart local analysis from this note.

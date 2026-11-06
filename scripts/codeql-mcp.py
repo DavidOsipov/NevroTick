@@ -3,6 +3,7 @@
 
 --check verifies installation identity without connecting. --create-database
 extracts an owned Rust source tree; it does not create an application workspace.
+--finalize-database imports a retained unfinished database without re-extraction.
 """
 
 from __future__ import annotations
@@ -33,8 +34,8 @@ RUNTIME = GUARD.RUNTIME
 SUPERVISOR = module("codeql_mcp_supervisor", "codeql-mcp-supervisor.py")
 Incomplete = GUARD.Incomplete
 PROFILE = {"request_timeout_seconds": 300, "startup_timeout_seconds": 600,
-           "cpu_seconds": 600, "address_space_bytes": 8589934592,
-           "ram_hint_mb": 1024, "threads": 12}
+           "cpu_seconds": 1800, "address_space_bytes": 8589934592,
+           "ram_hint_mb": 4096, "threads": 12, "descriptor_limit": 4096}
 FORBIDDEN_TOOLS = {"audit_clear_repo", "annotation_delete", "codeql_database_create",
                    "codeql_pack_install", "codeql_test_accept", "codeql_test_extract",
                    "create_codeql_query", "codeql_query_format"}
@@ -173,6 +174,61 @@ def check_results(work):
             raise Incomplete("CodeQL results must contain no symlinks, hardlinks or special files.")
 
 
+def unfinished_database(state, destination, source_arg):
+    """Admit one owned unfinished Rust/none database and its exact source prefix.
+
+    Accept only the pinned CLI's bounded generated metadata shape, not general
+    YAML. Database output files cannot alias source/query/policy inputs. The
+    caller retains original extraction identity and seals/snapshots its source.
+    """
+    if not re.fullmatch(r"/[A-Za-z0-9_./-]+", source_arg):
+        raise Incomplete("Resume source must be an unambiguous plain metadata path.")
+    RUNTIME._directory(destination.parent, "CodeQL databases")
+    RUNTIME._directory(destination, "CodeQL database")
+    pending, entries = [destination], 0
+    while pending:
+        path = pending.pop()
+        info = path.lstat()
+        entries += 1
+        if entries > 100000 or info.st_uid != os.geteuid():
+            raise Incomplete("CodeQL database ownership/entry budget failed.")
+        if stat.S_ISDIR(info.st_mode):
+            with os.scandir(path) as children:
+                pending.extend(Path(child.path) for child in children)
+        elif not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise Incomplete("CodeQL database must contain no symlinks, hardlinks or special files.")
+    if not all((destination / item).is_dir() for item in ("trap/rust", "db-rust")):
+        raise Incomplete("Retained Rust TRAP and database directories are required.")
+    metadata_path = destination / "codeql-database.yml"
+    before = metadata_path.lstat()
+    metadata = GUARD.read_once(metadata_path, maximum=65536).decode("utf-8")
+    after = metadata_path.lstat()
+    fields = ("st_dev", "st_ino", "st_mode", "st_uid", "st_nlink", "st_size", "st_mtime_ns", "st_ctime_ns")
+    if (any(getattr(before, field) != getattr(after, field) for field in fields)
+            or after.st_uid != os.geteuid() or after.st_nlink != 1 or not stat.S_ISREG(after.st_mode)):
+        raise Incomplete("Database metadata identity/ownership changed during admission.")
+    pattern = (
+        r"---\nsourceLocationPrefix: " + re.escape(source_arg) + r"\n"
+        r"baselineLinesOfCode: (?:0|[1-9][0-9]{0,9})\n"
+        r"unicodeNewlines: false\ncolumnKind: utf8\nprimaryLanguage: rust\n"
+        r"inProgress:\n  primaryLanguage: rust\n  installedExtractors:\n"
+        r"(?P<extractors>(?:    [a-z][a-z0-9]*:\n     - [^\r\n]+\n)+)"
+        r"creationMetadata:\n  cliVersion: 2\.27\.3\n"
+        r"  creationTime: [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z\n"
+        r"buildMode: none\noverlayBaseDatabase: false\noverlayDatabase: false\nfinalised: false\n"
+    )
+    matched = re.fullmatch(pattern, metadata)
+    if not matched:
+        raise Incomplete("Database must be unfinished pinned Rust/none metadata matching the admitted source.")
+    extractors = re.findall(r"    ([a-z][a-z0-9]*):\n     - ([^\r\n]+)\n", matched["extractors"])
+    languages = {language for language, _ in extractors}
+    known = {"actions", "cpp", "csharp", "csv", "go", "html", "java", "javascript",
+             "properties", "python", "ruby", "rust", "swift", "xml", "yaml"}
+    if ("rust" not in languages or len(languages) != len(extractors) or not languages <= known
+            or any(path != str(state["base"] / "cli/codeql" / language) for language, path in extractors)):
+        raise Incomplete("Database extractor identities do not match the pinned CLI.")
+
+
 def command(state, argv, *, cwd=None, sealed=()):
     base, work, stable = (state[x] for x in ("base", "work", "stable"))
     for relative in ("results", "monitoring", "tmp/codeql"):
@@ -185,58 +241,69 @@ def command(state, argv, *, cwd=None, sealed=()):
            "MONITORING_STORAGE_LOCATION": "/work/monitoring", "ENABLE_MONITORING_TOOLS": "false",
            "ENABLE_ANNOTATION_TOOLS": "false", "DEBUG": "false",
            "CODEQL_THREADS": str(PROFILE["threads"]),
-           "JAVA_TOOL_OPTIONS": f"-Xmx1024m -XX:ActiveProcessorCount={PROFILE['threads']}",
+           "JAVA_TOOL_OPTIONS": f"-Xmx{PROFILE['ram_hint_mb']}m -XX:ActiveProcessorCount={PROFILE['threads']}",
            "RUSTC": str(stable / "bin/rustc"), "RUSTDOC": str(stable / "bin/rustdoc")}
     return RUNTIME.sandbox_command(ROOT, work, argv, readonly=[base, ROOT, stable],
                                   path_dirs=[base / "runtime", base / "cli/codeql", stable / "bin"],
                                   environment=env, cwd=cwd or work / "queries",
                                   sealed=[work / "policy", work / "packs", *sealed], cpu_seconds=PROFILE["cpu_seconds"],
-                                  address_space_bytes=PROFILE["address_space_bytes"])
+                                  address_space_bytes=PROFILE["address_space_bytes"], build_jobs=1,
+                                  descriptor_limit=PROFILE["descriptor_limit"])
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true")
-    parser.add_argument("--create-database", metavar="SOURCE")
-    parser.add_argument("--name", help="new database directory name, under private work/databases")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--check", action="store_true")
+    modes.add_argument("--create-database", metavar="SOURCE")
+    modes.add_argument("--finalize-database", metavar="SOURCE")
+    parser.add_argument("--name", help="bounded database directory name, under private work/databases")
     args = parser.parse_args(argv)
     try:
         state = admit()
         base, work = state["base"], state["work"]
         if args.check:
-            if args.create_database or args.name:
-                raise Incomplete("Choose admission or extraction, not both.")
+            if args.name:
+                raise Incomplete("--name requires a database operation.")
             print(json.dumps({"status": "admitted", "inventories": state["inventories"],
                               "workspace": str(work), "namespace_workspace": "/work",
                               "known_advisories": state["policy"]["known_advisories"],
                               "ci_codeql": "deferred"}, indent=2))
             return 0
-        if args.create_database:
-            source = RUNTIME._directory(Path(args.create_database), "Rust source")
+        source_value = args.create_database or args.finalize_database
+        if source_value:
+            source = RUNTIME._directory(Path(source_value), "Rust source")
             if not (source.is_relative_to(ROOT) or source.is_relative_to(work / "fixtures")):
                 raise Incomplete("Extract only this checkout or an owned fixture source tree.")
             if not all((source / item).is_file() for item in ("Cargo.toml", "Cargo.lock")):
                 raise Incomplete("Actual Cargo manifest/lockfile required; never scaffold for extraction.")
             if not args.name or not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", args.name):
-                raise Incomplete("A new bounded database name is required.")
+                raise Incomplete("A bounded database name is required.")
             destination = work / "databases" / args.name
-            if destination.exists() or destination.is_symlink():
-                raise Incomplete("Database destination must be new.")
-            destination.parent.mkdir(exist_ok=True, mode=0o700)
             source_arg = str(Path("/work") / source.relative_to(work)) if source.is_relative_to(work) else str(source)
+            if any(char in source_arg for char in "\0\r\n"):
+                raise Incomplete("Database source path contains control characters.")
+            if args.finalize_database:
+                unfinished_database(state, destination, source_arg)
+            else:
+                if destination.exists() or destination.is_symlink():
+                    raise Incomplete("Database destination must be new.")
+                destination.parent.mkdir(exist_ok=True, mode=0o700)
             sealed = [source] if source.is_relative_to(work) else []
             before = GUARD.input_snapshot(source.parent, [source])
-            native = [str(base / "cli/codeql/codeql"), "database", "create", "/work/databases/" + args.name,
-                      "--language=rust", "--build-mode=none", "--source-root=" + source_arg]
+            native = [str(base / "cli/codeql/codeql"), "database",
+                      "finalize" if args.finalize_database else "create", "/work/databases/" + args.name]
+            if args.create_database:
+                native.extend(["--language=rust", "--build-mode=none", "--source-root=" + source_arg])
             result = RUNTIME.ENV.run(command(state, native, sealed=sealed), cwd=ROOT, timeout=600,
                                      environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
                                      stdin=__import__("subprocess").DEVNULL)
             print(json.dumps(result, indent=2))
             if before != GUARD.input_snapshot(source.parent, [source]):
-                raise Incomplete("Extraction source changed during the command.")
+                raise Incomplete("Database source changed during the command.")
             return 0 if result["exit_code"] == 0 and result["failure"] is None else 1
         if args.name:
-            raise Incomplete("--name applies only to extraction.")
+            raise Incomplete("--name requires a database operation.")
         native = [str(base / "runtime/node"), str(base / "server/dist/codeql-development-mcp-server.js")]
         return SUPERVISOR.serve(command(state, native), state["policy"]["allowed_tools"],
                                 environment={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"}, cwd=ROOT,

@@ -46,6 +46,25 @@ class RuntimeControls(unittest.TestCase):
         binds = [argv[index + 1:index + 3] for index, item in enumerate(argv) if item == "--bind"]
         self.assertEqual(binds, [[str(self.work), "/work"], [str(self.work / "tmp"), "/tmp"]])
 
+    def test_descriptor_profile_changes_only_the_inside_namespace_file_limit(self):
+        default = self.build()
+        has_profile = "descriptor_limit" in inspect.signature(RUNTIME.sandbox_command).parameters
+        selected = self.build(**({"descriptor_limit": 4096} if has_profile else {}))
+        self.assertEqual([item for item in default if item.startswith("--nofile=")], ["--nofile=256"])
+        self.assertEqual([item for item in selected if item.startswith("--nofile=")], ["--nofile=4096"])
+        self.assertEqual([item for item in default if not item.startswith("--nofile=")],
+                         [item for item in selected if not item.startswith("--nofile=")])
+        self.assertEqual(self.build(descriptor_limit=256), default)
+        for limit in ("--as=8589934592", "--cpu=120", "--nproc=128", "--fsize=268435456"):
+            self.assertIn(limit, selected)
+
+    def test_descriptor_profile_rejects_unreviewed_values_before_execution(self):
+        with patch.object(RUNTIME.ENV, "run") as execute:
+            for invalid in (True, False, None, "4096", 4096.0, 0, -1, 255, 257, 4095, 4097, 65536):
+                with self.subTest(invalid=invalid), self.assertRaises(RUNTIME.Incomplete):
+                    RUNTIME.run(ROOT, self.work, ["/usr/bin/true"], descriptor_limit=invalid)
+            execute.assert_not_called()
+
     def test_stable_core_session_namespace_denies_omitted_payload_canary(self):
         """Actual bwrap control: a broad fixture mount exposes the omitted executable.
 

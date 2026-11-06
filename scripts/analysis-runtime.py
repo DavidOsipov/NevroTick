@@ -183,7 +183,8 @@ def _sanitizer(command: list[str], profile="legacy") -> None:
 def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), sealed=(), path_dirs=(),
                     environment=None, cwd: Path | None = None, mode="ordinary", cpu_seconds=120,
                     address_space_bytes=DEFAULT_ADDRESS_SPACE, build_jobs=MAX_JOBS,
-                    sanitizer_profile="legacy", cargo_target_mode="shared", process_limit=128) -> list[str]:
+                    sanitizer_profile="legacy", cargo_target_mode="shared", process_limit=128,
+                    descriptor_limit=256) -> list[str]:
     """Return argv with admitted helpers, absolute readonly binds and `/work`.
 
     `sealed` protects canonical input files/directories strictly inside work;
@@ -197,6 +198,8 @@ def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), 
     ordinary resource mode, worker-owned targets and one inner Cargo job.
     All other invocations retain the 128-task default; neither profile changes
     namespace isolation, memory/file/CPU limits or any host process limit.
+    `descriptor_limit=4096` permits an explicitly selected finite file-descriptor
+    budget; callers that omit it retain the 256-descriptor default.
     """
     if type(cargo_target_mode) is not str or cargo_target_mode not in ("shared", "worker"):
         raise Incomplete("Unknown Cargo target mode.")
@@ -229,6 +232,8 @@ def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), 
         raise Incomplete("Process limit must be exactly 128 or 512 tasks.")
     if process_limit == 512 and (mode != "ordinary" or cargo_target_mode != "worker" or build_jobs != 1):
         raise Incomplete("The 512-task profile requires ordinary mode, worker-owned targets and one inner job.")
+    if type(descriptor_limit) is not int or descriptor_limit not in (256, 4096):
+        raise Incomplete("Descriptor limit must be exactly 256 or 4096 files.")
     if type(cpu_seconds) is not int or not 1 <= cpu_seconds <= 3600:
         raise Incomplete("CPU budget must be an integer between 1 and 3600 seconds.")
     if type(address_space_bytes) is not int or not 256 * 1024 ** 2 <= address_space_bytes <= 64 * 1024 ** 3:
@@ -271,7 +276,7 @@ def sandbox_command(root: Path, work: Path, command: list[str], *, readonly=(), 
     for key, value in trusted.items():
         args.extend(["--setenv", key, value])
     # Install the selected bounded NPROC inside the new namespace, not on the host.
-    limits = [f"--cpu={cpu_seconds}", f"--nproc={process_limit}", "--nofile=256", "--fsize=268435456"]
+    limits = [f"--cpu={cpu_seconds}", f"--nproc={process_limit}", f"--nofile={descriptor_limit}", "--fsize=268435456"]
     if mode == "ordinary":
         limits.insert(0, f"--as={address_space_bytes}")
     return args + ["--", helpers["prlimit"], *limits, "--", *command]

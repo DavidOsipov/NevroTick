@@ -50,7 +50,7 @@ class LauncherControls(unittest.TestCase):
         for name in ("queries", "results", "policy/codeql", "home/.config/codeql", "fixtures"):
             (self.work / name).mkdir(parents=True, exist_ok=True)
         config = self.work / "policy/codeql/config"
-        config.write_text("--ram 1024\n--threads 12\n")
+        config.write_text("--ram 4096\n--threads 12\n")
         self.policy["config_sha256"] = sha256(config)
         (self.work / "home/.config/codeql/config").symlink_to("../../../policy/codeql/config")
         self.pointer = self.home / ".local/share/nevrotick/codeql-installation.json"
@@ -94,6 +94,24 @@ class LauncherControls(unittest.TestCase):
     def state(self):
         return {"base": self.base, "work": self.work, "stable": self.stable,
                 "policy": self.policy, "inventories": []}
+
+    def unfinished_database(self):
+        source = self.work / "fixtures/source"
+        source.mkdir()
+        (source / "Cargo.toml").write_text("[workspace]\nmembers = []\n")
+        (source / "Cargo.lock").write_text("version = 4\n")
+        database = self.work / "databases/fixture"
+        (database / "trap/rust").mkdir(parents=True)
+        (database / "db-rust").mkdir()
+        (database / "codeql-database.yml").write_text(
+            "---\nsourceLocationPrefix: /work/fixtures/source\nbaselineLinesOfCode: 12\n"
+            "unicodeNewlines: false\ncolumnKind: utf8\nprimaryLanguage: rust\ninProgress:\n"
+            "  primaryLanguage: rust\n  installedExtractors:\n    rust:\n"
+            f"     - {self.base}/cli/codeql/rust\n"
+            "creationMetadata:\n  cliVersion: 2.27.3\n"
+            "  creationTime: 2026-11-06T16:20:00.242062380Z\nbuildMode: none\n"
+            "overlayBaseDatabase: false\noverlayDatabase: false\nfinalised: false\n")
+        return source, database
 
     def test_complete_owned_installation_is_admitted_without_execution(self):
         with patch.object(LAUNCH.SUPERVISOR, "serve") as serve, patch.object(LAUNCH.RUNTIME.ENV, "run") as run:
@@ -227,9 +245,37 @@ class LauncherControls(unittest.TestCase):
         self.assertEqual(options["environment"]["CODEQL_QUERY_LOG_DIR"], "/work/results")
         self.assertEqual(options["environment"].get("CODEQL_THREADS"), "12")
         self.assertEqual(options["environment"]["JAVA_TOOL_OPTIONS"],
-                         "-Xmx1024m -XX:ActiveProcessorCount=12")
+                         "-Xmx4096m -XX:ActiveProcessorCount=12")
         self.assertNotIn("CODEQL_TEST_SECRET", options["environment"])
         self.assertEqual(options["cpu_seconds"], LAUNCH.PROFILE["cpu_seconds"])
+        self.assertEqual(options["build_jobs"], 1)
+        self.assertEqual(options["descriptor_limit"], 4096)
+
+    def test_command_serializes_cargo_with_original_analyzer_and_sandbox_limits(self):
+        (self.stable / "bin").mkdir()
+        helpers = {"bwrap": "/usr/bin/bwrap", "prlimit": "/usr/bin/prlimit"}
+        with patch.object(LAUNCH.RUNTIME, "_helpers", return_value=helpers), \
+                patch.dict(os.environ, {"CARGO_BUILD_JOBS": "12", "CODEQL_THREADS": "99"}):
+            state = LAUNCH.admit()
+            argv = LAUNCH.command(state, ["owned-argv"])
+        environment = {argv[index + 1]: argv[index + 2]
+                       for index, value in enumerate(argv) if value == "--setenv"}
+        self.assertEqual(environment["CARGO_BUILD_JOBS"], "1")
+        self.assertEqual(environment["CODEQL_THREADS"], "12")
+        self.assertEqual(environment["JAVA_TOOL_OPTIONS"], "-Xmx4096m -XX:ActiveProcessorCount=12")
+        self.assertEqual(environment["CARGO_NET_OFFLINE"], "true")
+        self.assertEqual(environment["RUSTUP_AUTO_INSTALL"], "0")
+        self.assertEqual(LAUNCH.PROFILE, self.policy["profile"])
+        self.assertEqual(LAUNCH.PROFILE["ram_hint_mb"], 4096)
+        self.assertEqual(LAUNCH.PROFILE["cpu_seconds"], 1800)
+        self.assertEqual(LAUNCH.PROFILE["descriptor_limit"], 4096)
+        for option in ("--unshare-all", "--die-with-parent", "--clearenv", "--cap-drop",
+                       "--cpu=1800", "--as=8589934592", "--nproc=128", "--nofile=4096", "--fsize=268435456"):
+            self.assertIn(option, argv)
+        for source in (self.base, self.checkout, self.stable):
+            self.assertIn(["--ro-bind", str(source), str(source)],
+                          [argv[index:index + 3] for index in range(len(argv) - 2)])
+        self.assertEqual(argv[-1], "owned-argv")
 
     def test_normal_server_start_emits_no_preflight_json_on_protocol_stdout(self):
         output = io.StringIO()
@@ -260,6 +306,143 @@ class LauncherControls(unittest.TestCase):
         run.assert_not_called()
         self.assertFalse((self.checkout / "Cargo.toml").exists())
         self.assertFalse((self.checkout / "Cargo.lock").exists())
+
+    def test_finalize_runs_only_retained_database_with_sealed_unchanged_source(self):
+        source, _ = self.unfinished_database()
+        result = {"exit_code": 0, "failure": None}
+        with patch.object(LAUNCH, "admit", return_value=self.state()), \
+                patch.object(LAUNCH.RUNTIME, "sandbox_command", return_value=["sandbox"]) as sandbox, \
+                patch.object(LAUNCH.RUNTIME.ENV, "run", return_value=result) as run, \
+                patch("sys.stdout", io.StringIO()):
+            self.assertEqual(LAUNCH.main(["--finalize-database", str(source), "--name", "fixture"]), 0)
+        self.assertEqual(sandbox.call_args.args[2],
+                         [str(self.base / "cli/codeql/codeql"), "database", "finalize", "/work/databases/fixture"])
+        self.assertIn(source, sandbox.call_args.kwargs["sealed"])
+        self.assertEqual(sandbox.call_args.kwargs["build_jobs"], 1)
+        self.assertEqual(run.call_args.kwargs["timeout"], 600)
+
+    def test_create_still_uses_fresh_destination_and_original_rust_selection(self):
+        source, _ = self.unfinished_database()
+        with patch.object(LAUNCH, "admit", return_value=self.state()), \
+                patch.object(LAUNCH.RUNTIME, "sandbox_command", return_value=["sandbox"]) as sandbox, \
+                patch.object(LAUNCH.RUNTIME.ENV, "run", return_value={"exit_code": 0, "failure": None}), \
+                patch("sys.stdout", io.StringIO()):
+            self.assertEqual(LAUNCH.main(["--create-database", str(source), "--name", "fresh"]), 0)
+        self.assertEqual(sandbox.call_args.args[2],
+                         [str(self.base / "cli/codeql/codeql"), "database", "create", "/work/databases/fresh",
+                          "--language=rust", "--build-mode=none", "--source-root=/work/fixtures/source"])
+
+    def test_finalize_rejects_wrong_or_ambiguous_database_metadata_before_execution(self):
+        source, database = self.unfinished_database()
+        metadata = database / "codeql-database.yml"
+        original = metadata.read_text()
+        variants = [original.replace("/work/fixtures/source", "/work/fixtures/other"),
+                    original.replace("cliVersion: 2.27.3", "cliVersion: 2.27.2"),
+                    original.replace("primaryLanguage: rust", "primaryLanguage: python", 1),
+                    original.replace("inProgress:\n  primaryLanguage: rust", "inProgress:\n  primaryLanguage: python"),
+                    original.replace("finalised: false", "finalised: true"),
+                    original.replace("finalised: false\n", ""),
+                    original.replace("buildMode: none", "buildMode: manual"),
+                    original + "sourceLocationPrefix: /work/fixtures/other\n",
+                    original.replace("cliVersion: 2.27.3", "cliVersion: &version 2.27.3"),
+                    original.replace(str(self.base) + "/cli/codeql/rust", "/work/queries/untrusted")]
+        for text in variants:
+            metadata.write_text(text)
+            with self.subTest(metadata=text), patch.object(LAUNCH, "admit", return_value=self.state()), \
+                    patch.object(LAUNCH.RUNTIME.ENV, "run") as run, patch("sys.stderr", io.StringIO()):
+                self.assertEqual(LAUNCH.main(["--finalize-database", str(source), "--name", "fixture"]), 1)
+            run.assert_not_called()
+
+    def test_finalize_rejects_ambiguous_unquoted_source_prefix(self):
+        source, database = self.unfinished_database()
+        metadata = database / "codeql-database.yml"
+        original = metadata.read_text()
+        for suffix in (" #comment", " ", "\t", "\nextra: true"):
+            selected = "/work/fixtures/source" + suffix
+            metadata.write_text(original.replace("/work/fixtures/source", selected))
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(LAUNCH.Incomplete, "unambiguous"):
+                LAUNCH.unfinished_database(LAUNCH.admit(), database, selected)
+
+    def test_finalize_rejects_missing_database_wrong_source_and_unsafe_names(self):
+        source, _ = self.unfinished_database()
+        outside = self.scratch / "outside"
+        outside.mkdir()
+        (outside / "Cargo.toml").write_text("[workspace]\n")
+        (outside / "Cargo.lock").write_text("version = 4\n")
+        cases = [(source, "missing"), (outside, "fixture"), (source, "../fixture"),
+                 (source, "Fixture"), (source, "a" * 65)]
+        for selected, name in cases:
+            with self.subTest(source=selected, name=name), patch.object(LAUNCH, "admit", return_value=self.state()), \
+                    patch.object(LAUNCH.RUNTIME.ENV, "run") as run, patch("sys.stderr", io.StringIO()):
+                self.assertEqual(LAUNCH.main(["--finalize-database", str(selected), "--name", name]), 1)
+            run.assert_not_called()
+
+    def test_finalize_rejects_database_aliases_and_special_files(self):
+        source, database = self.unfinished_database()
+        protected = self.work / "queries/protected.expected"
+        protected.write_text("must remain unchanged\n")
+        entry = database / "alias"
+        for kind in ("symlink", "hardlink", "fifo"):
+            if kind == "symlink":
+                entry.symlink_to(protected)
+            elif kind == "hardlink":
+                entry.hardlink_to(protected)
+            else:
+                os.mkfifo(entry)
+            with self.subTest(kind=kind), patch.object(LAUNCH, "admit", return_value=self.state()), \
+                    patch.object(LAUNCH.RUNTIME.ENV, "run") as run, patch("sys.stderr", io.StringIO()):
+                self.assertEqual(LAUNCH.main(["--finalize-database", str(source), "--name", "fixture"]), 1)
+            run.assert_not_called()
+            self.assertEqual(protected.read_text(), "must remain unchanged\n")
+            entry.unlink()
+        database.rename(database.with_name("moved"))
+        database.symlink_to("moved", target_is_directory=True)
+        with patch.object(LAUNCH, "admit", return_value=self.state()), \
+                patch.object(LAUNCH.RUNTIME.ENV, "run") as run, patch("sys.stderr", io.StringIO()):
+            self.assertEqual(LAUNCH.main(["--finalize-database", str(source), "--name", "fixture"]), 1)
+        run.assert_not_called()
+
+    def test_finalize_detects_source_change_and_propagates_native_failure(self):
+        source, _ = self.unfinished_database()
+        for changed, result in ((False, {"exit_code": 99, "failure": None}),
+                                (False, {"exit_code": -9, "failure": "wall timeout (600s)"}),
+                                (True, {"exit_code": 0, "failure": None})):
+            def native(*_args, **_kwargs):
+                if changed:
+                    (source / "Cargo.lock").write_text("changed during finalize\n")
+                return result
+            with self.subTest(changed=changed, result=result), \
+                    patch.object(LAUNCH, "admit", return_value=self.state()), \
+                    patch.object(LAUNCH, "command", return_value=["sandbox"]), \
+                    patch.object(LAUNCH.RUNTIME.ENV, "run", side_effect=native), \
+                    patch("sys.stdout", io.StringIO()), patch("sys.stderr", io.StringIO()):
+                self.assertEqual(LAUNCH.main(["--finalize-database", str(source), "--name", "fixture"]), 1)
+
+    def test_finalize_rejects_metadata_link_added_during_admission(self):
+        source, database = self.unfinished_database()
+        original_read = LAUNCH.GUARD.read_once
+
+        def alias_after_read(path, **options):
+            data = original_read(path, **options)
+            if path == database / "codeql-database.yml":
+                (self.work / "queries/metadata-alias").hardlink_to(path)
+            return data
+
+        with patch.object(LAUNCH, "admit", return_value=self.state()), \
+                patch.object(LAUNCH.GUARD, "read_once", side_effect=alias_after_read), \
+                patch.object(LAUNCH.RUNTIME.ENV, "run") as run, patch("sys.stderr", io.StringIO()):
+            self.assertEqual(LAUNCH.main(["--finalize-database", str(source), "--name", "fixture"]), 1)
+        run.assert_not_called()
+
+    def test_create_finalize_and_check_are_mutually_exclusive_before_admission(self):
+        cases = [["--create-database", str(self.checkout), "--finalize-database", str(self.checkout)],
+                 ["--check", "--finalize-database", str(self.checkout)]]
+        for arguments in cases:
+            with self.subTest(arguments=arguments), patch.object(LAUNCH, "admit") as admit, \
+                    patch("sys.stderr", io.StringIO()), self.assertRaises(SystemExit) as stopped:
+                LAUNCH.main(arguments)
+            self.assertEqual(stopped.exception.code, 2)
+            admit.assert_not_called()
 
     def test_results_symlink_cannot_alias_query_or_expected_input(self):
         protected = self.work / "queries/test.expected"

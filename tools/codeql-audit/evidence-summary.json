@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "product_candidate_commit": "bd1f7c4a44e4a8dcf31fa6ca650b3a0cea1dd83e",
+  "scope": "Frozen committed product projection; concurrent rational-seconds working-tree changes excluded",
+  "projection": {
+    "git_files": 343,
+    "rust_sources": 227,
+    "source_manifest_sha256": "d30a884b739a9a6d829f0b4814119cc2dfc22334322b349dd5107161141149a6"
+  },
+  "tools": {
+    "cli": "2.27.3",
+    "rust_library": "0.2.24",
+    "rust_library_source_revision": "a1575b98a8cc19bcfa7bb6cb41be688cb3dae65c",
+    "rust_compiler": "1.99.1",
+    "server_source_revision": "b0fae2809de0a5ff4fb984677354b7015b6ad57f"
+  },
+  "tested_runner_profile": {
+    "request_timeout_seconds": 300,
+    "startup_timeout_seconds": 600,
+    "cpu_seconds": 1800,
+    "address_space_bytes": 8589934592,
+    "ram_hint_mb": 4096,
+    "threads": 12,
+    "descriptor_limit": 4096
+  },
+  "observations": {
+    "database_finalization": {
+      "status": "passed",
+      "elapsed_seconds": 89.507,
+      "peak_importer_rss_mib": 3221,
+      "max_importer_cpu_seconds": 379.95
+    },
+    "inventory": {
+      "status": "passed",
+      "rows": 16699,
+      "decoded_rows": 16699,
+      "owner_rows": {
+        "nevrotick-engine": 300,
+        "nevrotick-ui": 12988,
+        "ntp-exchange": 428,
+        "ntp-wire": 255,
+        "time-core": 2209,
+        "time-domain": 227,
+        "accesskit_windows": 280,
+        "spin_on": 12
+      },
+      "qualification": "Includes test and macro-generated declarations; not reviewed-function coverage"
+    },
+    "selectors": {
+      "status": "passed",
+      "actual_rows": [
+        [
+          "global",
+          "replace_raw",
+          "source",
+          1,
+          "<nevrotick_ui::ui_drafts::UiDrafts>::replace",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          307,
+          49
+        ],
+        [
+          "global",
+          "replace_raw",
+          "sink",
+          1,
+          "<nevrotick_ui::ui_drafts::RawText>::parse",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          183,
+          17
+        ],
+        [
+          "global",
+          "replace_field",
+          "source",
+          0,
+          "<nevrotick_ui::ui_drafts::UiDrafts>::replace",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          307,
+          31
+        ],
+        [
+          "global",
+          "replace_field",
+          "sink",
+          0,
+          "<nevrotick_ui::ui_drafts::RawText>::parse",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          183,
+          17
+        ],
+        [
+          "local",
+          "ui_raw",
+          "source",
+          1,
+          "<nevrotick_ui::ui_drafts::RawText>::parse",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          176,
+          32
+        ],
+        [
+          "local",
+          "ui_raw",
+          "sink",
+          1,
+          "<nevrotick_ui::ui_drafts::RawText>::parse",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          183,
+          17
+        ],
+        [
+          "local",
+          "ui_field",
+          "source",
+          0,
+          "<nevrotick_ui::ui_drafts::RawText>::parse",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          176,
+          14
+        ],
+        [
+          "local",
+          "ui_field",
+          "sink",
+          0,
+          "<nevrotick_ui::ui_drafts::RawText>::parse",
+          "crates/nevrotick-ui/src/ui_drafts.rs",
+          183,
+          17
+        ],
+        [
+          "local",
+          "engine_slot",
+          "source",
+          0,
+          "nevrotick_engine::stage_reply",
+          "crates/nevrotick-engine/src/lib.rs",
+          1155,
+          5
+        ],
+        [
+          "local",
+          "engine_slot",
+          "sink",
+          0,
+          "nevrotick_engine::stage_reply",
+          "crates/nevrotick-engine/src/lib.rs",
+          1171,
+          46
+        ],
+        [
+          "local",
+          "engine_bytes",
+          "source",
+          1,
+          "nevrotick_engine::stage_reply",
+          "crates/nevrotick-engine/src/lib.rs",
+          1156,
+          5
+        ],
+        [
+          "local",
+          "engine_bytes",
+          "sink",
+          1,
+          "nevrotick_engine::stage_reply",
+          "crates/nevrotick-engine/src/lib.rs",
+          1171,
+          46
+        ]
+      ],
+      "matches_independently_frozen_expected": true
+    },
+    "local_flow": {
+      "status": "incomplete",
+      "stage": "compiled/evaluation failed",
+      "reason": "No space left on device while writing derived query cache; no admitted result"
+    },
+    "global_flow": {
+      "status": "not run"
+    },
+    "global_paths": {
+      "status": "not run"
+    },
+    "broken_local_flow": {
+      "status": "not run"
+    },
+    "broken_global_flow": {
+      "status": "not run"
+    }
+  },
+  "observed_failures": [
+    "Parallel Cargo compilation under the 128-task namespace failed with EAGAIN; one Cargo job corrected it.",
+    "TRAP import exhausted its prior 1055 MiB heap; larger finite RAM profile corrected it.",
+    "Import merging exhausted 256 file descriptors; CodeQL-only 4096 allowance corrected it.",
+    "Full inventory decoding through tool stdout exceeded its buffer; complete decoding to a file succeeded.",
+    "LocalFlow exhausted filesystem space in derived query cache."
+  ],
+  "coverage_limits": [
+    "Host extraction, implicit all-features and test cfg; not a Windows configuration.",
+    "Windows-only/archived native modules and some macro expansions unavailable, including a Tokio select expansion.",
+    "Propagation does not establish guard dominance, authorization, freshness, absence of all defects or product/native qualification."
+  ],
+  "local_state_at_handoff": {
+    "analysis_processes": "stopped; no new local analysis authorized by this handoff",
+    "derived_failed_cache": "removed; all 958 imported extensional-relation files verified unchanged",
+    "duplicate_vendor_cache": "post-verified then removed; original vendor untouched",
+    "cargo_configuration": "restored to originally absent",
+    "proposed_6144_mb_profile": "not applied or qualified"
+  },
+  "local_raw_evidence_directory": "/home/david_osipov/.local/share/nevrotick/codeql-work/results/product-bd1f7c4",
+  "transfer_note": "Raw database/logs/BQRS are not bundled. Cloud worker must rebuild or explicitly receive and re-admit artifacts; do not assume local paths exist."
+}

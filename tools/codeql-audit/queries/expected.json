@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "candidate_commit": "bd1f7c4a44e4a8dcf31fa6ca650b3a0cea1dd83e",
+  "query_api": "codeql/rust-all 0.2.24 / CLI 2.27.3",
+  "execution_status": "authored only; no CodeQL compilation or execution by preparer",
+  "selector_expected_rows": [
+    [
+      "local",
+      "ui_raw",
+      "source",
+      1,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      176,
+      32
+    ],
+    [
+      "local",
+      "ui_raw",
+      "sink",
+      1,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      183,
+      17
+    ],
+    [
+      "local",
+      "ui_field",
+      "source",
+      0,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      176,
+      14
+    ],
+    [
+      "local",
+      "ui_field",
+      "sink",
+      0,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      183,
+      17
+    ],
+    [
+      "local",
+      "engine_bytes",
+      "source",
+      1,
+      "nevrotick_engine::stage_reply",
+      "crates/nevrotick-engine/src/lib.rs",
+      1156,
+      5
+    ],
+    [
+      "local",
+      "engine_bytes",
+      "sink",
+      1,
+      "nevrotick_engine::stage_reply",
+      "crates/nevrotick-engine/src/lib.rs",
+      1171,
+      46
+    ],
+    [
+      "local",
+      "engine_slot",
+      "source",
+      0,
+      "nevrotick_engine::stage_reply",
+      "crates/nevrotick-engine/src/lib.rs",
+      1155,
+      5
+    ],
+    [
+      "local",
+      "engine_slot",
+      "sink",
+      0,
+      "nevrotick_engine::stage_reply",
+      "crates/nevrotick-engine/src/lib.rs",
+      1171,
+      46
+    ],
+    [
+      "global",
+      "replace_raw",
+      "source",
+      1,
+      "<nevrotick_ui::ui_drafts::UiDrafts>::replace",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      307,
+      49
+    ],
+    [
+      "global",
+      "replace_raw",
+      "sink",
+      1,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      183,
+      17
+    ],
+    [
+      "global",
+      "replace_field",
+      "source",
+      0,
+      "<nevrotick_ui::ui_drafts::UiDrafts>::replace",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      307,
+      31
+    ],
+    [
+      "global",
+      "replace_field",
+      "sink",
+      0,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      183,
+      17
+    ]
+  ],
+  "local_expected_rows": [
+    [
+      "ui_raw",
+      1,
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      183,
+      17
+    ],
+    [
+      "engine_bytes",
+      1,
+      "nevrotick_engine::stage_reply",
+      "crates/nevrotick-engine/src/lib.rs",
+      1171,
+      46
+    ]
+  ],
+  "local_expected_absent_cases": [
+    "ui_field",
+    "engine_slot"
+  ],
+  "global_expected_rows": [
+    [
+      "replace_raw",
+      1,
+      "<nevrotick_ui::ui_drafts::UiDrafts>::replace",
+      "<nevrotick_ui::ui_drafts::RawText>::parse",
+      "crates/nevrotick-ui/src/ui_drafts.rs",
+      183,
+      17
+    ]
+  ],
+  "global_expected_absent_cases": [
+    "replace_field"
+  ],
+  "broken_local_expected_rows": [],
+  "broken_global_expected_rows": [],
+  "sensitivity_rule": "Comparing BrokenLocalFlow output to local_expected_rows and BrokenGlobalFlow output to global_expected_rows must fail. Their independent exact empty-output checks must pass. Never replace healthy expected rows with empty output.",
+  "scope_limits": [
+    "Value propagation is expected through successful validation; validation is not modeled as a barrier.",
+    "Field and slot controls concern value flow, not control dependence or authorization.",
+    "Results do not establish guard dominance, native enforcement, absence of resource abuse or whole-program safety.",
+    "GlobalPaths is a path-output companion for the same question as GlobalFlow; it is not a second guarantee."
+  ],
+  "anchors": {
+    "ui_allocation_receiver": {
+      "file": "crates/nevrotick-ui/src/ui_drafts.rs",
+      "line": 183,
+      "column": 17,
+      "line_text": "        Ok(Self(raw.to_owned()))",
+      "token": "raw"
+    },
+    "engine_frame_argument": {
+      "file": "crates/nevrotick-engine/src/lib.rs",
+      "line": 1171,
+      "column": 46,
+      "line_text": "    let frame = frame_no_legacy_mac_datagram(bytes, limits).map_err(Rejection::Frame)?;",
+      "token": "bytes"
+    },
+    "source_parameters": {
+      "ui_raw": {
+        "file": "crates/nevrotick-ui/src/ui_drafts.rs",
+        "line": 176,
+        "column": 32,
+        "token": "raw"
+      },
+      "ui_field": {
+        "file": "crates/nevrotick-ui/src/ui_drafts.rs",
+        "line": 176,
+        "column": 14,
+        "token": "field"
+      },
+      "engine_bytes": {
+        "file": "crates/nevrotick-engine/src/lib.rs",
+        "line": 1156,
+        "column": 5,
+        "token": "bytes"
+      },
+      "engine_slot": {
+        "file": "crates/nevrotick-engine/src/lib.rs",
+        "line": 1155,
+        "column": 5,
+        "token": "slot"
+      },
+      "replace_raw": {
+        "file": "crates/nevrotick-ui/src/ui_drafts.rs",
+        "line": 307,
+        "column": 49,
+        "token": "raw"
+      },
+      "replace_field": {
+        "file": "crates/nevrotick-ui/src/ui_drafts.rs",
+        "line": 307,
+        "column": 31,
+        "token": "field"
+      }
+    }
+  }
+}

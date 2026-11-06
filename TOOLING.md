@@ -433,16 +433,44 @@ Protocol input is limited before upstream schema validation: 1 MiB/frame,
 32 nesting levels, 256 entries/collection and 4096 nodes/request. Per connection,
 output is bounded to 64 MiB protocol plus 1 MiB stderr. Each request has a
 300-second wall deadline; startup allows 600 seconds. Timeout/disconnect kills
-the private PID namespace. Per-process limits include 600 CPU seconds, 8 GiB
-address space, 256 MiB/file and bounded file descriptors/processes. Twelve threads
-and a 1024 MB RAM estimate are requested, but CodeQL raises some estimates to
-2048 MB and uses its own JVM heap settings. These are **not an aggregate RAM
+the private PID namespace. Per-process limits include 1800 CPU seconds, 8 GiB
+address space, 256 MiB/file, 4096 file descriptors and 128 tasks. Twelve threads
+and a 4096 MB RAM estimate are requested; CodeQL selects its own JVM heap settings
+within that profile. These are **not an aggregate RAM
 quota**. Exhausted budgets require investigation/reconnection, not removal of
 limits or a passing-result claim. Query/test inputs remain writable where the
 upstream tools place compilation and test artifacts. Startup alias inspection
 does not freeze them against native code executed later: retain authored input/
 expectation hashes outside the runtime workspace and compare before/after each
 analysis. A changed query, fixture or baseline invalidates its evidence.
+
+Cargo compilation inside the CodeQL sandbox uses **one job**, separately from
+the twelve CodeQL analyzer threads. The 6 November 2026 extraction of the
+227-source product projection stalled after Rust compilers failed to create
+threads with `EAGAIN` (`Resource temporarily unavailable`); the extractor and
+Cargo then remained idle with failed compiler children. Serializing inner Cargo
+compilation reduces contention under the existing 128-task limit. It preserves
+the 300-second request deadline, 600-second extraction
+deadline, 8 GiB address-space limit and offline execution. Launcher unit controls
+qualify command construction; the failed attempt and this correction establish
+no successful product extraction, data-flow result or native qualification.
+The subsequent one-job attempt completed extraction, then TRAP import failed
+with CodeQL's explicit out-of-memory diagnostic and exit 99 under the prior
+1024 MB estimate. The finite 4096 MB profile addresses that observed import gap;
+the [existing UI handoff](tasks/slint-gui-handoff.md#codeql-observations-and-limits)
+owns failed-attempt context and the subsequent execution receipt. With 4096 MB,
+resumed import passed its memory phase, then relation merging failed with
+`FileSystemException: Too many open files` under the prior 256-descriptor limit.
+CodeQL now selects a finite 4096-descriptor budget; other runtime callers retain
+256 unless explicitly selecting that reviewed value. Its finite CPU budget is
+1800 seconds to accommodate the bounded twelve-thread workspace analysis;
+request and extraction/finalization wall deadlines remain 300 and 600 seconds.
+Pins, allowed tools, isolation, RAM, address-space and task limits remain intact.
+
+The [cloud audit handoff](tasks/codeql-cloud-handoff.md) records the completed
+local extraction/inventory/endpoint checks, the disk-exhausted flow attempt and
+portable query bundle. Local analysis is stopped at the owner's request;
+resource-profile qualification is separate from product data-flow results.
 
 The registry precheck returned [grade F and unverified identity](https://policylayer.com/tools/codeql-development)
 (last scan 24 October), recommending restrictions on `audit_clear_repo` and
@@ -458,6 +486,8 @@ a compatible fix; do not silently replace its Zod major version.
 python3 -B scripts/codeql-mcp.py --check
 # Only after a real Cargo manifest/lockfile and its inputs have been admitted:
 python3 -B scripts/codeql-mcp.py --create-database /absolute/source --name reviewed-slice
+# Resume only a retained unfinished database for that same admitted source:
+python3 -B scripts/codeql-mcp.py --finalize-database /absolute/source --name reviewed-slice
 ```
 
 Extraction accepts this checkout or owned external fixtures, creates a new
@@ -470,6 +500,13 @@ queries. Do not create extra workspaces for a tool check. Use
 [its query/evidence reference](.agents/skills/testing/references/codeql-data-flow.md)
 for explicit source/sink models, positive/negative controls, database freshness
 and native/FFI coverage limits.
+
+Finalization accepts an existing owned, canonical database with no symlinks,
+hardlinks or special files. Its bounded generated metadata must identify the
+same source prefix, unfinished Rust/none extraction, CLI 2.27.3 and admitted
+extractor paths. The source is sealed and checked before/after the 600-second
+command; extraction is not repeated. Retain the original source identity and
+one owner for the writable database. Successful import alone qualifies no query.
 
 Qualification on 29 October used an owned std-only Rust fixture outside this
 checkout: five expected functions were extracted; the interprocedural taint

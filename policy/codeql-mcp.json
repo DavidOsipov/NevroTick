@@ -33,12 +33,13 @@
   "profile": {
     "request_timeout_seconds": 300,
     "startup_timeout_seconds": 600,
-    "cpu_seconds": 600,
+    "cpu_seconds": 1800,
     "address_space_bytes": 8589934592,
-    "ram_hint_mb": 1024,
-    "threads": 12
+    "ram_hint_mb": 4096,
+    "threads": 12,
+    "descriptor_limit": 4096
   },
-  "config_sha256": "4c6484f1a311b6e34c31c82b8e8576f6a0e773cb13fc22dec96fefa764e1720d",
+  "config_sha256": "ad783ed1de4b95382672aa2facc0a1e7125121421118f0ec571d8875249fe62c",
   "inventories": [
     {
       "root": "server",
