@@ -22,7 +22,9 @@ authority changes through this documentation amendment.
 
 Prepared on 28 October 2026 for the initial NevroTick development stage.
 The repository pin is Rust **1.99.1**, the current stable release checked against
-its official distribution manifest. Rustup is **1.29.2**. The same compiler and
+its official distribution manifest. WSL Rustup is **1.29.3**, independently
+matched to its official archive/checksum after David's 6 November update;
+the separately pinned Windows manager remains1.29.2. The same compiler and
 components are installed in WSL and for the native Windows user.
 
 The initial setup used temporary, dependency-free fixtures outside the checkout.
@@ -55,13 +57,14 @@ the original bootstrap results.
 Clippy, rustfmt, rust-analyzer, rust-src, LLVM tools, and the
 `x86_64-pc-windows-msvc` standard library. It governs this checkout without
 changing other projects' default compiler. UI-M0 declares edition 2024 and
-`rust-version = "1.99"`; its verification lane uses the pinned 1.99.1 compiler.
-This does not establish a separately tested production MSRV.
+`rust-version = "1.99"`; David raised the workspace declaration to1.99.1 on
+6 November, matching the pinned compiler. This does not establish compatibility
+with a lower compiler or a separately tested production support commitment.
 
 | Tool | Installed stable version | Initial scope |
 | --- | --- | --- |
 | Rust / Cargo | 1.99.1 | Host compilation and Windows MSVC target |
-| rustup | 1.29.2 | Toolchain management |
+| rustup | WSL1.29.3; Windows1.29.2 | Separately pinned toolchain managers |
 | cargo-nextest | 0.9.150 | Optional test runner; doctests remain separate |
 | cargo-deny | 0.20.2 | Frozen UI-M0 dependency rows and separate bootstrap controls |
 | cargo-audit | 0.22.2 | Optional complementary scan; shares RustSec data |

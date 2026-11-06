@@ -1,15 +1,15 @@
 {
   "schema_version": 3,
-  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on and Windows AccessKit source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all 534 registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate.",
-  "lockfile_sha256": "56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286",
+  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on and Windows AccessKit source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all 534 registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain.",
+  "lockfile_sha256": "9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e",
   "manifests_sha256": {
-    "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
+    "Cargo.toml": "e200e5e14ffd56653a707939f5a5543c9ac52514693fcf345a71253e1f94f763",
     "crates/nevrotick-ui/Cargo.toml": "e8359c64b49b24d60f326b69b2dd9e467f206dd46e33288b28c5648fb76ea99c",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
     "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
-    "crates/nevrotick-engine/Cargo.toml": "07a8af6be34ba3115ca79d871a43bb3859c9303204e58d2c18b1620a371a8683"
+    "crates/nevrotick-engine/Cargo.toml": "a0b65ce3d53d4c37348ddc5546a2b8d9f5f266cbf2cd342d29990efa3adfe725"
   },
   "first_party_build_scripts": {
     "crates/nevrotick-ui/build.rs": "52bc9b540e36beca77e7586e09449aaf013e035d8137ced2c949b9af0ee50431"
@@ -581,15 +581,15 @@
     },
     {
       "name": "flate2",
-      "version": "1.1.10",
-      "checksum": "6e634e2e0ebac1ee034020da1ca582e17ffe4e0f5e985823721e168928136dcb",
+      "version": "1.1.11",
+      "checksum": "626d4928326b646e70f65ed36fc7cf9f206bdb68a0019ee7c6b4709da4e084c4",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "b9759ae254ed77807447f96c8da93b7fc67a172e4f0ff161d2ef4c1208d1a928",
+      "files_sha256": "09fa393491eb31774727b43a5fb3c89b43790ccf3d37dae1318f85cd030e030e",
       "selected_license": "MIT",
       "build_script": false,
       "proc_macro": false,
       "links": null,
-      "upstream_revision": "ed93d4fc60eaf876c6aded741bf992d524551930"
+      "upstream_revision": "cd06529164c5447958f309e649ffe6c9d6329865"
     },
     {
       "name": "float-cmp",
@@ -2333,15 +2333,15 @@
     },
     {
       "name": "tokio-macros",
-      "version": "2.7.1",
-      "checksum": "6328af13490e73a9b4694030fafd93f8c8c6a9dede33e821c3fc63eddf8042ba",
+      "version": "2.7.2",
+      "checksum": "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e",
       "license": "MIT",
-      "files_sha256": "792125c4d9e697ddd2f85b81f9f5a27069633a6aaca37feaf86390ae299fa01f",
+      "files_sha256": "d9f8da59e863375087b6d01189b30f7dba0c1526dbb84a8f6dbda8a0743b63a3",
       "selected_license": "MIT",
       "build_script": false,
       "proc_macro": true,
       "links": null,
-      "upstream_revision": "50f76c71ec7203013f7f0cda59deaa9016e93939"
+      "upstream_revision": "4308c74a65218e8ebea1a84e09c0ba4b0882f881"
     },
     {
       "name": "tokio",
@@ -2357,27 +2357,27 @@
     },
     {
       "name": "toml_datetime",
-      "version": "1.1.2+spec-1.1.0",
-      "checksum": "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053",
+      "version": "1.1.3+spec-1.1.0",
+      "checksum": "173f25c883cd2176a2d8212155638c0a60d484a9d84546d270866f40f56b6e49",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "4d4e6d3c11fe08b152d64bfb02905322e0edfe14ff6d3d53832eec20f6d6cc19",
+      "files_sha256": "02a4754521f71638c42158afcf58cfdb30063c31e77e29ef9eb57e7e49ee6ecf",
       "selected_license": "MIT",
       "build_script": false,
       "proc_macro": false,
       "links": null,
-      "upstream_revision": "f72038c2508112dfaaedb227a511f91bf9b2015c"
+      "upstream_revision": "563cb1a5d133e39d1008d4d4148ef35d3bba379f"
     },
     {
       "name": "toml_edit",
-      "version": "0.25.18+spec-1.1.0",
-      "checksum": "1ec6e78bd70db9420d8d212fa9dc97f116448a1ceff5d00eabb991d407e21396",
+      "version": "0.25.19+spec-1.1.0",
+      "checksum": "dd43688c4858d7264ae1cf9a9f874a67c3feb74a883b1cd7bebd6a4ea8307218",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "80e3cc3959b8e0bbef16cf44d49b23c4982ab82968dc468f7a4466ece8c87271",
+      "files_sha256": "9fe763ef12cf82edc92162cf4f777d03dfd6c5c394507e9de08465ba63f5798f",
       "selected_license": "MIT",
       "build_script": false,
       "proc_macro": false,
       "links": null,
-      "upstream_revision": "22ef745e668f5a6d25ca3d56063e7408aff73755"
+      "upstream_revision": "563cb1a5d133e39d1008d4d4148ef35d3bba379f"
     },
     {
       "name": "toml_parser",
@@ -3383,10 +3383,10 @@
     },
     {
       "name": "cc",
-      "version": "1.11.0",
-      "checksum": "375989decec1a0fa424442bed520fa12ede43a48475ce8c7417d2c69b32b5f6b",
+      "version": "1.11.1",
+      "checksum": "4ff2a8126fff0f8c839080d619675a585e61720bb12d2baceae45769fd66f155",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "27cdb5eb77507caee89f33aa4779622623c73098456b0486b75e8a683b6416fc",
+      "files_sha256": "36e03a32589758d171df03b23a8066690122f7fe86d5dad7be07dc79ead17de3",
       "role": "metadata-only"
     },
     {
@@ -4647,10 +4647,10 @@
     },
     {
       "name": "serde_spanned",
-      "version": "1.1.2",
-      "checksum": "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c",
+      "version": "1.1.3",
+      "checksum": "9c187e0a369471c550af028cba56d4f4fa2a489ad28151ae95a4d340a2a8b782",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "32289c1919bc120136d27b39b9e2d40c3e438defebe672fbab2ce8f70d827aa2",
+      "files_sha256": "37784a9639af74f5eab114ec013b58334ed10c9d84ff863e782acab5eb2881c9",
       "role": "metadata-only"
     },
     {
@@ -4783,10 +4783,10 @@
     },
     {
       "name": "toml",
-      "version": "1.2.0+spec-1.1.0",
-      "checksum": "c5ffcdf8f50436dbbfd675c1fe1b8e0854f42b7defea8584bdebe1aee900e561",
+      "version": "1.2.1+spec-1.1.0",
+      "checksum": "d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7",
       "license": "MIT OR Apache-2.0",
-      "files_sha256": "840e7bda1e10c4533a46cab2f0b6272788a4cc7fc2d032bf2e14d3f5c245b4c9",
+      "files_sha256": "6b53179ecdf9b4a82971074a90596e109784e6d161035cd9ddb81ae1b003bac8",
       "role": "metadata-only"
     },
     {
@@ -5515,6 +5515,74 @@
   ],
   "rows": {
     "x86_64-pc-windows-msvc": {
+      "allowed_build_scripts": [
+        "crc32fast@1.5.4",
+        "crossbeam-utils@0.8.23",
+        "field-offset@0.3.6",
+        "getrandom@0.4.3",
+        "i-slint-backend-selector@1.18.1",
+        "i-slint-backend-winit@1.18.1",
+        "i-slint-compiler@1.18.1",
+        "icu_decimal_data@2.4.0",
+        "icu_locale_fallback_data@2.4.0",
+        "icu_normalizer_data@2.4.0",
+        "icu_properties_data@2.4.0",
+        "icu_segmenter_data@2.4.0",
+        "libm@0.2.16",
+        "memoffset@0.9.1",
+        "nevrotick-ui@0.0.0",
+        "num-traits@0.2.19",
+        "portable-atomic@1.15.0",
+        "proc-macro2@1.0.107",
+        "pulldown-cmark@0.13.6",
+        "quote@1.0.47",
+        "rspolib@0.1.2",
+        "rustversion@1.0.23",
+        "serde@1.0.229",
+        "serde_core@1.0.229",
+        "serde_json@1.0.154",
+        "slotmap@1.1.1",
+        "thiserror@2.0.21",
+        "windows_x86_64_msvc@0.52.6",
+        "winit@0.30.13",
+        "zmij@1.0.23"
+      ],
+      "allowed_proc_macros": [
+        "bytemuck_derive@1.12.1",
+        "const-field-offset-macro@0.2.1",
+        "derive_more-impl@2.1.1",
+        "displaydoc@0.2.7",
+        "garde_derive@0.23.0",
+        "i-slint-core-macros@1.18.1",
+        "num_enum_derive@0.7.6",
+        "pin-project-internal@1.1.13",
+        "rustversion@1.0.23",
+        "serde_derive@1.0.229",
+        "slint-macros@1.18.1",
+        "snafu-derive@0.8.9",
+        "strum_macros@0.28.0",
+        "thiserror-impl@2.0.21",
+        "tokio-macros@2.7.2",
+        "vtable-macro@0.5.0",
+        "windows-implement@0.60.2",
+        "windows-interface@0.59.3",
+        "yoke-derive@0.8.4",
+        "zerofrom-derive@0.1.8",
+        "zerovec-derive@0.11.7"
+      ],
+      "duplicate_exceptions": [
+        "hashbrown@0.14.5",
+        "hashbrown@0.16.1",
+        "hashbrown@0.17.1",
+        "miniz_oxide@0.8.9",
+        "miniz_oxide@0.9.1",
+        "smol_str@0.2.2",
+        "smol_str@0.3.7",
+        "syn@2.0.119",
+        "syn@3.0.9",
+        "windows-sys@0.52.0",
+        "windows-sys@0.61.2"
+      ],
       "features": {
         "accesskit@0.24.1": {
           "target": [
@@ -5700,13 +5768,13 @@
             []
           ]
         },
-        "const-field-offset@0.2.1": {
-          "target": [
+        "const-field-offset-macro@0.2.1": {
+          "host": [
             []
           ]
         },
-        "const-field-offset-macro@0.2.1": {
-          "host": [
+        "const-field-offset@0.2.1": {
+          "target": [
             []
           ]
         },
@@ -5773,6 +5841,23 @@
             ]
           ]
         },
+        "derive_more-impl@2.1.1": {
+          "host": [
+            [
+              "add",
+              "add_assign",
+              "default",
+              "deref",
+              "deref_mut",
+              "display",
+              "error",
+              "from",
+              "into",
+              "mul",
+              "not"
+            ]
+          ]
+        },
         "derive_more@2.1.1": {
           "host": [
             [
@@ -5793,23 +5878,6 @@
             [
               "add",
               "add_assign",
-              "deref",
-              "deref_mut",
-              "display",
-              "error",
-              "from",
-              "into",
-              "mul",
-              "not"
-            ]
-          ]
-        },
-        "derive_more-impl@2.1.1": {
-          "host": [
-            [
-              "add",
-              "add_assign",
-              "default",
               "deref",
               "deref_mut",
               "display",
@@ -5889,7 +5957,7 @@
             []
           ]
         },
-        "flate2@1.1.10": {
+        "flate2@1.1.11": {
           "target": [
             [
               "any_impl",
@@ -6090,6 +6158,13 @@
             ]
           ]
         },
+        "i-slint-core-macros@1.18.1": {
+          "host": [
+            [
+              "default"
+            ]
+          ]
+        },
         "i-slint-core@1.18.1": {
           "target": [
             [
@@ -6105,13 +6180,6 @@
               "unicode",
               "unicode-linebreak",
               "unicode-script"
-            ]
-          ]
-        },
-        "i-slint-core-macros@1.18.1": {
-          "host": [
-            [
-              "default"
             ]
           ]
         },
@@ -6283,17 +6351,17 @@
             ]
           ]
         },
+        "image-webp@0.2.4": {
+          "target": [
+            []
+          ]
+        },
         "image@0.25.10": {
           "target": [
             [
               "jpeg",
               "png"
             ]
-          ]
-        },
-        "image-webp@0.2.4": {
-          "target": [
-            []
           ]
         },
         "imagesize@0.15.0": {
@@ -6643,17 +6711,17 @@
             ]
           ]
         },
-        "pin-project@1.1.13": {
-          "target": [
-            []
-          ]
-        },
         "pin-project-internal@1.1.13": {
           "host": [
             []
           ]
         },
         "pin-project-lite@0.2.17": {
+          "target": [
+            []
+          ]
+        },
+        "pin-project@1.1.13": {
           "target": [
             []
           ]
@@ -6922,18 +6990,6 @@
             []
           ]
         },
-        "slint@1.18.1": {
-          "target": [
-            [
-              "accessibility",
-              "backend-winit",
-              "compat-1-18",
-              "renderer-software",
-              "std",
-              "unstable-winit-030"
-            ]
-          ]
-        },
         "slint-build@1.18.1": {
           "host": [
             [
@@ -6944,6 +7000,18 @@
         "slint-macros@1.18.1": {
           "host": [
             []
+          ]
+        },
+        "slint@1.18.1": {
+          "target": [
+            [
+              "accessibility",
+              "backend-winit",
+              "compat-1-18",
+              "renderer-software",
+              "std",
+              "unstable-winit-030"
+            ]
           ]
         },
         "slotmap@1.1.1": {
@@ -6983,6 +7051,13 @@
             ]
           ]
         },
+        "snafu-derive@0.8.9": {
+          "host": [
+            [
+              "rust_1_61"
+            ]
+          ]
+        },
         "snafu@0.8.9": {
           "host": [
             [
@@ -6991,13 +7066,6 @@
               "rust_1_61",
               "rust_1_65",
               "std"
-            ]
-          ]
-        },
-        "snafu-derive@0.8.9": {
-          "host": [
-            [
-              "rust_1_61"
             ]
           ]
         },
@@ -7161,6 +7229,11 @@
             []
           ]
         },
+        "thiserror-impl@2.0.21": {
+          "host": [
+            []
+          ]
+        },
         "thiserror@2.0.21": {
           "host": [
             [
@@ -7174,9 +7247,12 @@
             ]
           ]
         },
-        "thiserror-impl@2.0.21": {
-          "host": [
-            []
+        "tiny-skia-path@0.12.0": {
+          "target": [
+            [
+              "default",
+              "std"
+            ]
           ]
         },
         "tiny-skia@0.12.0": {
@@ -7185,14 +7261,6 @@
               "default",
               "png-format",
               "simd",
-              "std"
-            ]
-          ]
-        },
-        "tiny-skia-path@0.12.0": {
-          "target": [
-            [
-              "default",
               "std"
             ]
           ]
@@ -7219,6 +7287,11 @@
             ]
           ]
         },
+        "tokio-macros@2.7.2": {
+          "host": [
+            []
+          ]
+        },
         "tokio@1.54.1": {
           "target": [
             [
@@ -7235,12 +7308,7 @@
             ]
           ]
         },
-        "tokio-macros@2.7.1": {
-          "host": [
-            []
-          ]
-        },
-        "toml_datetime@1.1.2+spec-1.1.0": {
+        "toml_datetime@1.1.3+spec-1.1.0": {
           "host": [
             [
               "alloc",
@@ -7249,7 +7317,7 @@
             ]
           ]
         },
-        "toml_edit@0.25.18+spec-1.1.0": {
+        "toml_edit@0.25.19+spec-1.1.0": {
           "host": [
             [
               "default",
@@ -7276,12 +7344,12 @@
             ]
           ]
         },
-        "tracing@0.1.44": {
+        "tracing-core@0.1.36": {
           "target": [
             []
           ]
         },
-        "tracing-core@0.1.36": {
+        "tracing@0.1.44": {
           "target": [
             []
           ]
@@ -7415,13 +7483,13 @@
             []
           ]
         },
-        "vtable@0.5.0": {
-          "target": [
+        "vtable-macro@0.5.0": {
+          "host": [
             []
           ]
         },
-        "vtable-macro@0.5.0": {
-          "host": [
+        "vtable@0.5.0": {
+          "target": [
             []
           ]
         },
@@ -7434,41 +7502,6 @@
           "target": [
             [
               "alloc",
-              "default",
-              "std"
-            ]
-          ]
-        },
-        "windows@0.62.2": {
-          "target": [
-            [
-              "ApplicationModel",
-              "Data",
-              "Data_Xml",
-              "Data_Xml_Dom",
-              "Foundation",
-              "UI",
-              "UI_Notifications",
-              "Win32",
-              "Win32_Foundation",
-              "Win32_Globalization",
-              "Win32_Graphics",
-              "Win32_Graphics_DirectWrite",
-              "Win32_Graphics_Dwm",
-              "Win32_Graphics_Gdi",
-              "Win32_System",
-              "Win32_System_Com",
-              "Win32_System_LibraryLoader",
-              "Win32_System_Ole",
-              "Win32_System_Variant",
-              "Win32_System_WinRT",
-              "Win32_UI",
-              "Win32_UI_Accessibility",
-              "Win32_UI_HiDpi",
-              "Win32_UI_Input",
-              "Win32_UI_Input_KeyboardAndMouse",
-              "Win32_UI_Shell",
-              "Win32_UI_WindowsAndMessaging",
               "default",
               "std"
             ]
@@ -7621,6 +7654,41 @@
             []
           ]
         },
+        "windows@0.62.2": {
+          "target": [
+            [
+              "ApplicationModel",
+              "Data",
+              "Data_Xml",
+              "Data_Xml_Dom",
+              "Foundation",
+              "UI",
+              "UI_Notifications",
+              "Win32",
+              "Win32_Foundation",
+              "Win32_Globalization",
+              "Win32_Graphics",
+              "Win32_Graphics_DirectWrite",
+              "Win32_Graphics_Dwm",
+              "Win32_Graphics_Gdi",
+              "Win32_System",
+              "Win32_System_Com",
+              "Win32_System_LibraryLoader",
+              "Win32_System_Ole",
+              "Win32_System_Variant",
+              "Win32_System_WinRT",
+              "Win32_UI",
+              "Win32_UI_Accessibility",
+              "Win32_UI_HiDpi",
+              "Win32_UI_Input",
+              "Win32_UI_Input_KeyboardAndMouse",
+              "Win32_UI_Shell",
+              "Win32_UI_WindowsAndMessaging",
+              "default",
+              "std"
+            ]
+          ]
+        },
         "windows_x86_64_msvc@0.52.6": {
           "target": [
             []
@@ -7684,6 +7752,11 @@
             ]
           ]
         },
+        "yoke-derive@0.8.4": {
+          "host": [
+            []
+          ]
+        },
         "yoke@0.8.4": {
           "host": [
             [
@@ -7700,17 +7773,17 @@
             ]
           ]
         },
-        "yoke-derive@0.8.4": {
-          "host": [
-            []
-          ]
-        },
         "zeno@0.3.3": {
           "target": [
             [
               "eval",
               "std"
             ]
+          ]
+        },
+        "zerofrom-derive@0.1.8": {
+          "host": [
+            []
           ]
         },
         "zerofrom@0.1.8": {
@@ -7725,11 +7798,6 @@
               "alloc",
               "derive"
             ]
-          ]
-        },
-        "zerofrom-derive@0.1.8": {
-          "host": [
-            []
           ]
         },
         "zerotrie@0.2.5": {
@@ -7748,6 +7816,11 @@
             ]
           ]
         },
+        "zerovec-derive@0.11.7": {
+          "host": [
+            []
+          ]
+        },
         "zerovec@0.11.9": {
           "host": [
             [
@@ -7762,11 +7835,6 @@
               "derive",
               "yoke"
             ]
-          ]
-        },
-        "zerovec-derive@0.11.7": {
-          "host": [
-            []
           ]
         },
         "zmij@1.0.23": {
@@ -7913,7 +7981,7 @@
         "castaway@0.2.4": [
           "alloc"
         ],
-        "cc@1.11.0": [
+        "cc@1.11.1": [
           "parallel"
         ],
         "cexpr@0.6.0": [],
@@ -7955,8 +8023,8 @@
         "codespan-reporting@0.13.1": [],
         "color_quant@1.1.0": [],
         "compact_str@0.9.1": [],
-        "const-field-offset@0.2.1": [],
         "const-field-offset-macro@0.2.1": [],
+        "const-field-offset@0.2.1": [],
         "convert_case@0.10.0": [],
         "countme@3.0.1": [],
         "crc32fast@1.5.4": [
@@ -7981,19 +8049,6 @@
           "default",
           "std"
         ],
-        "derive_more@2.1.1": [
-          "add",
-          "add_assign",
-          "deref",
-          "deref_mut",
-          "display",
-          "error",
-          "from",
-          "into",
-          "mul",
-          "not",
-          "std"
-        ],
         "derive_more-impl@2.1.1": [
           "add",
           "add_assign",
@@ -8006,6 +8061,19 @@
           "into",
           "mul",
           "not"
+        ],
+        "derive_more@2.1.1": [
+          "add",
+          "add_assign",
+          "deref",
+          "deref_mut",
+          "display",
+          "error",
+          "from",
+          "into",
+          "mul",
+          "not",
+          "std"
         ],
         "displaydoc@0.2.7": [],
         "document-features@0.2.12": [
@@ -8032,7 +8100,7 @@
         "filetime@0.2.29": [],
         "find-msvc-tools@0.1.15": [],
         "fixed_decimal@0.7.3": [],
-        "flate2@1.1.10": [
+        "flate2@1.1.11": [
           "any_impl",
           "default",
           "miniz_oxide",
@@ -8073,6 +8141,13 @@
         "gl_generator@0.14.0": [],
         "glob@0.3.4": [],
         "glow@0.18.0": [],
+        "glutin-winit@0.5.0": [
+          "egl",
+          "glx",
+          "wayland",
+          "wgl",
+          "x11"
+        ],
         "glutin@0.32.3": [
           "egl",
           "glutin_egl_sys",
@@ -8086,13 +8161,6 @@
           "windows-sys",
           "x11",
           "x11-dl"
-        ],
-        "glutin-winit@0.5.0": [
-          "egl",
-          "glx",
-          "wayland",
-          "wgl",
-          "x11"
         ],
         "glutin_egl_sys@0.7.1": [],
         "glutin_wgl_sys@0.6.1": [],
@@ -8169,6 +8237,9 @@
           "quote",
           "rust"
         ],
+        "i-slint-core-macros@1.18.1": [
+          "default"
+        ],
         "i-slint-core@1.18.1": [
           "accessibility-text",
           "box-shadow-cache",
@@ -8184,9 +8255,6 @@
           "unicode-linebreak",
           "unicode-script",
           "wgpu-30"
-        ],
-        "i-slint-core-macros@1.18.1": [
-          "default"
         ],
         "i-slint-renderer-skia@1.18.1": [
           "default",
@@ -8243,11 +8311,11 @@
         "idna_adapter@1.2.2": [
           "compiled_data"
         ],
+        "image-webp@0.2.4": [],
         "image@0.25.10": [
           "jpeg",
           "png"
         ],
-        "image-webp@0.2.4": [],
         "imagesize@0.15.0": [
           "aesprite",
           "astc",
@@ -8386,6 +8454,7 @@
           "sse_shaper_paths"
         ],
         "muda@0.19.3": [],
+        "naga-types@30.0.1": [],
         "naga@30.0.1": [
           "default",
           "hlsl-out",
@@ -8393,7 +8462,6 @@
           "spv-out",
           "wgsl-in"
         ],
-        "naga-types@30.0.1": [],
         "natord@1.0.9": [],
         "nom@7.1.3": [
           "alloc",
@@ -8447,9 +8515,9 @@
           "default",
           "eq-separator"
         ],
-        "pin-project@1.1.13": [],
         "pin-project-internal@1.1.13": [],
         "pin-project-lite@0.2.17": [],
+        "pin-project@1.1.13": [],
         "pin-weak@1.1.0": [
           "default",
           "sync"
@@ -8497,25 +8565,6 @@
           "experimental_font_api",
           "std"
         ],
-        "regex@1.13.1": [
-          "default",
-          "perf",
-          "perf-backtrack",
-          "perf-cache",
-          "perf-dfa",
-          "perf-inline",
-          "perf-literal",
-          "perf-onepass",
-          "std",
-          "unicode",
-          "unicode-age",
-          "unicode-bool",
-          "unicode-case",
-          "unicode-gencat",
-          "unicode-perl",
-          "unicode-script",
-          "unicode-segment"
-        ],
         "regex-automata@0.4.18": [
           "alloc",
           "dfa-onepass",
@@ -8542,6 +8591,25 @@
         ],
         "regex-syntax@0.8.11": [
           "default",
+          "std",
+          "unicode",
+          "unicode-age",
+          "unicode-bool",
+          "unicode-case",
+          "unicode-gencat",
+          "unicode-perl",
+          "unicode-script",
+          "unicode-segment"
+        ],
+        "regex@1.13.1": [
+          "default",
+          "perf",
+          "perf-backtrack",
+          "perf-cache",
+          "perf-dfa",
+          "perf-inline",
+          "perf-literal",
+          "perf-onepass",
           "std",
           "unicode",
           "unicode-age",
@@ -8610,7 +8678,7 @@
           "default",
           "std"
         ],
-        "serde_spanned@1.1.2": [
+        "serde_spanned@1.1.3": [
           "alloc",
           "serde",
           "std"
@@ -8671,6 +8739,10 @@
           "default",
           "std"
         ],
+        "slint-build@1.18.1": [
+          "compat-1-18"
+        ],
+        "slint-macros@1.18.1": [],
         "slint@1.18.1": [
           "accessibility",
           "backend-winit",
@@ -8679,10 +8751,6 @@
           "std",
           "unstable-winit-030"
         ],
-        "slint-build@1.18.1": [
-          "compat-1-18"
-        ],
-        "slint-macros@1.18.1": [],
         "slotmap@1.1.1": [
           "default",
           "std"
@@ -8700,15 +8768,15 @@
           "default",
           "std"
         ],
+        "snafu-derive@0.8.9": [
+          "rust_1_61"
+        ],
         "snafu@0.8.9": [
           "alloc",
           "default",
           "rust_1_61",
           "rust_1_65",
           "std"
-        ],
-        "snafu-derive@0.8.9": [
-          "rust_1_61"
         ],
         "socket2@0.6.5": [
           "all"
@@ -8800,19 +8868,19 @@
           "xattr"
         ],
         "text-size@1.1.1": [],
+        "thiserror-impl@2.0.21": [],
         "thiserror@2.0.21": [
           "default",
           "std"
         ],
-        "thiserror-impl@2.0.21": [],
+        "tiny-skia-path@0.12.0": [
+          "default",
+          "std"
+        ],
         "tiny-skia@0.12.0": [
           "default",
           "png-format",
           "simd",
-          "std"
-        ],
-        "tiny-skia-path@0.12.0": [
-          "default",
           "std"
         ],
         "tinystr@0.8.5": [
@@ -8823,6 +8891,7 @@
           "alloc",
           "default"
         ],
+        "tokio-macros@2.7.2": [],
         "tokio@1.54.1": [
           "libc",
           "macros",
@@ -8835,21 +8904,20 @@
           "tokio-macros",
           "windows-sys"
         ],
-        "tokio-macros@2.7.1": [],
-        "toml@1.2.0+spec-1.1.0": [
+        "toml@1.2.1+spec-1.1.0": [
           "default",
           "display",
           "parse",
           "serde",
           "std"
         ],
-        "toml_datetime@1.1.2+spec-1.1.0": [
+        "toml_datetime@1.1.3+spec-1.1.0": [
           "alloc",
           "default",
           "serde",
           "std"
         ],
-        "toml_edit@0.25.18+spec-1.1.0": [
+        "toml_edit@0.25.19+spec-1.1.0": [
           "default",
           "display",
           "parse"
@@ -8864,17 +8932,17 @@
           "default",
           "std"
         ],
+        "tracing-attributes@0.1.31": [],
+        "tracing-core@0.1.36": [
+          "once_cell",
+          "std"
+        ],
         "tracing@0.1.44": [
           "attributes",
           "default",
           "log",
           "std",
           "tracing-attributes"
-        ],
-        "tracing-attributes@0.1.31": [],
-        "tracing-core@0.1.36": [
-          "once_cell",
-          "std"
         ],
         "typed-index-collections@3.5.0": [
           "alloc",
@@ -8926,17 +8994,17 @@
           "std"
         ],
         "version_check@0.9.5": [],
-        "vtable@0.5.0": [],
         "vtable-macro@0.5.0": [],
+        "vtable@0.5.0": [],
         "webbrowser@1.2.6": [],
         "weezl@0.1.12": [
           "alloc",
           "default",
           "std"
         ],
-        "wgpu@30.0.1": [
+        "wgpu-core-deps-windows-linux-android@30.0.1": [
           "dx12",
-          "metal",
+          "renderdoc",
           "vulkan"
         ],
         "wgpu-core@30.0.1": [
@@ -8951,11 +9019,6 @@
           "wgpu-core-deps-windows-linux-android",
           "wgsl"
         ],
-        "wgpu-core-deps-windows-linux-android@30.0.1": [
-          "dx12",
-          "renderdoc",
-          "vulkan"
-        ],
         "wgpu-hal@30.0.1": [
           "dx12",
           "metal",
@@ -8965,52 +9028,10 @@
         ],
         "wgpu-naga-bridge@30.0.1": [],
         "wgpu-types@30.0.1": [],
-        "windows@0.62.2": [
-          "ApplicationModel",
-          "Data",
-          "Data_Xml",
-          "Data_Xml_Dom",
-          "Foundation",
-          "UI",
-          "UI_Notifications",
-          "Win32",
-          "Win32_Devices",
-          "Win32_Devices_DeviceAndDriverInstallation",
-          "Win32_Devices_Display",
-          "Win32_Foundation",
-          "Win32_Globalization",
-          "Win32_Graphics",
-          "Win32_Graphics_Direct3D",
-          "Win32_Graphics_Direct3D12",
-          "Win32_Graphics_Direct3D_Dxc",
-          "Win32_Graphics_Direct3D_Fxc",
-          "Win32_Graphics_DirectComposition",
-          "Win32_Graphics_DirectWrite",
-          "Win32_Graphics_Dwm",
-          "Win32_Graphics_Dxgi",
-          "Win32_Graphics_Dxgi_Common",
-          "Win32_Graphics_Gdi",
-          "Win32_Security",
-          "Win32_System",
-          "Win32_System_Com",
-          "Win32_System_Diagnostics",
-          "Win32_System_Diagnostics_Debug",
-          "Win32_System_Kernel",
-          "Win32_System_LibraryLoader",
-          "Win32_System_Ole",
-          "Win32_System_Performance",
-          "Win32_System_Threading",
-          "Win32_System_Variant",
-          "Win32_System_WinRT",
-          "Win32_UI",
-          "Win32_UI_Accessibility",
-          "Win32_UI_HiDpi",
-          "Win32_UI_Input",
-          "Win32_UI_Input_KeyboardAndMouse",
-          "Win32_UI_Shell",
-          "Win32_UI_WindowsAndMessaging",
-          "default",
-          "std"
+        "wgpu@30.0.1": [
+          "dx12",
+          "metal",
+          "vulkan"
         ],
         "windows-collections@0.3.2": [
           "std"
@@ -9115,6 +9136,53 @@
         ],
         "windows-targets@0.52.6": [],
         "windows-threading@0.2.1": [],
+        "windows@0.62.2": [
+          "ApplicationModel",
+          "Data",
+          "Data_Xml",
+          "Data_Xml_Dom",
+          "Foundation",
+          "UI",
+          "UI_Notifications",
+          "Win32",
+          "Win32_Devices",
+          "Win32_Devices_DeviceAndDriverInstallation",
+          "Win32_Devices_Display",
+          "Win32_Foundation",
+          "Win32_Globalization",
+          "Win32_Graphics",
+          "Win32_Graphics_Direct3D",
+          "Win32_Graphics_Direct3D12",
+          "Win32_Graphics_Direct3D_Dxc",
+          "Win32_Graphics_Direct3D_Fxc",
+          "Win32_Graphics_DirectComposition",
+          "Win32_Graphics_DirectWrite",
+          "Win32_Graphics_Dwm",
+          "Win32_Graphics_Dxgi",
+          "Win32_Graphics_Dxgi_Common",
+          "Win32_Graphics_Gdi",
+          "Win32_Security",
+          "Win32_System",
+          "Win32_System_Com",
+          "Win32_System_Diagnostics",
+          "Win32_System_Diagnostics_Debug",
+          "Win32_System_Kernel",
+          "Win32_System_LibraryLoader",
+          "Win32_System_Ole",
+          "Win32_System_Performance",
+          "Win32_System_Threading",
+          "Win32_System_Variant",
+          "Win32_System_WinRT",
+          "Win32_UI",
+          "Win32_UI_Accessibility",
+          "Win32_UI_HiDpi",
+          "Win32_UI_Input",
+          "Win32_UI_Input_KeyboardAndMouse",
+          "Win32_UI_Shell",
+          "Win32_UI_WindowsAndMessaging",
+          "default",
+          "std"
+        ],
         "windows_x86_64_msvc@0.52.6": [],
         "winit@0.30.13": [
           "ahash",
@@ -9150,38 +9218,38 @@
         "yazi@0.2.2": [
           "std"
         ],
+        "yoke-derive@0.8.4": [],
         "yoke@0.8.4": [
           "alloc",
           "derive",
           "zerofrom"
         ],
-        "yoke-derive@0.8.4": [],
         "zeno@0.3.3": [
           "eval",
           "std"
         ],
+        "zerocopy-derive@0.8.63": [],
         "zerocopy@0.8.63": [
           "derive",
           "simd",
           "zerocopy-derive"
         ],
-        "zerocopy-derive@0.8.63": [],
+        "zerofrom-derive@0.1.8": [],
         "zerofrom@0.1.8": [
           "alloc",
           "derive"
         ],
-        "zerofrom-derive@0.1.8": [],
         "zerotrie@0.2.5": [
           "alloc",
           "yoke",
           "zerofrom"
         ],
+        "zerovec-derive@0.11.7": [],
         "zerovec@0.11.9": [
           "alloc",
           "derive",
           "yoke"
         ],
-        "zerovec-derive@0.11.7": [],
         "zlib-rs@0.6.8": [
           "rust-allocator",
           "std"
@@ -9198,6 +9266,206 @@
         ]
       },
       "package_scopes": {
+        "nevrotick-engine": {
+          "features": {
+            "castaway@0.2.4": {
+              "target": [
+                [
+                  "alloc"
+                ]
+              ]
+            },
+            "cfg-if@1.0.5": {
+              "target": [
+                []
+              ]
+            },
+            "compact_str@0.9.1": {
+              "target": [
+                []
+              ]
+            },
+            "garde@0.23.0": {
+              "target": [
+                [
+                  "derive"
+                ]
+              ]
+            },
+            "garde_derive@0.23.0": {
+              "host": [
+                []
+              ]
+            },
+            "getrandom@0.4.3": {
+              "target": [
+                []
+              ]
+            },
+            "itoa@1.0.18": {
+              "target": [
+                []
+              ]
+            },
+            "mio@1.2.4": {
+              "target": [
+                [
+                  "net",
+                  "os-ext",
+                  "os-poll"
+                ]
+              ]
+            },
+            "pin-project-lite@0.2.17": {
+              "target": [
+                []
+              ]
+            },
+            "proc-macro2@1.0.107": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "quote@1.0.47": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "rustversion@1.0.23": {
+              "host": [
+                []
+              ]
+            },
+            "ryu@1.0.23": {
+              "target": [
+                []
+              ]
+            },
+            "smallvec@1.16.4": {
+              "target": [
+                []
+              ]
+            },
+            "socket2@0.6.5": {
+              "target": [
+                [
+                  "all"
+                ]
+              ]
+            },
+            "static_assertions@1.1.0": {
+              "target": [
+                []
+              ]
+            },
+            "syn@2.0.119": {
+              "host": [
+                [
+                  "clone-impls",
+                  "default",
+                  "derive",
+                  "full",
+                  "parsing",
+                  "printing",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "syn@3.0.9": {
+              "host": [
+                [
+                  "clone-impls",
+                  "default",
+                  "derive",
+                  "full",
+                  "parsing",
+                  "printing",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "tokio-macros@2.7.2": {
+              "host": [
+                []
+              ]
+            },
+            "tokio@1.54.1": {
+              "target": [
+                [
+                  "libc",
+                  "macros",
+                  "mio",
+                  "net",
+                  "rt",
+                  "socket2",
+                  "sync",
+                  "time",
+                  "tokio-macros",
+                  "windows-sys"
+                ]
+              ]
+            },
+            "unicode-ident@1.0.27": {
+              "host": [
+                []
+              ]
+            },
+            "windows-link@0.2.1": {
+              "target": [
+                []
+              ]
+            },
+            "windows-sys@0.61.2": {
+              "target": [
+                [
+                  "Wdk",
+                  "Wdk_Foundation",
+                  "Wdk_Storage",
+                  "Wdk_Storage_FileSystem",
+                  "Wdk_System",
+                  "Wdk_System_IO",
+                  "Win32",
+                  "Win32_Foundation",
+                  "Win32_Networking",
+                  "Win32_Networking_WinSock",
+                  "Win32_Security",
+                  "Win32_Storage",
+                  "Win32_Storage_FileSystem",
+                  "Win32_System",
+                  "Win32_System_IO",
+                  "Win32_System_Pipes",
+                  "Win32_System_SystemServices",
+                  "Win32_System_Threading",
+                  "Win32_System_WindowsProgramming",
+                  "default"
+                ]
+              ]
+            }
+          },
+          "local_features": {
+            "nevrotick-engine@0.0.0": {
+              "target": [
+                []
+              ]
+            },
+            "ntp-wire@0.0.0": {
+              "target": [
+                []
+              ]
+            },
+            "time-domain@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
+        },
         "nevrotick-ui": {
           "features": {
             "accesskit@0.24.1": {
@@ -9384,13 +9652,13 @@
                 []
               ]
             },
-            "const-field-offset@0.2.1": {
-              "target": [
+            "const-field-offset-macro@0.2.1": {
+              "host": [
                 []
               ]
             },
-            "const-field-offset-macro@0.2.1": {
-              "host": [
+            "const-field-offset@0.2.1": {
+              "target": [
                 []
               ]
             },
@@ -9457,6 +9725,23 @@
                 ]
               ]
             },
+            "derive_more-impl@2.1.1": {
+              "host": [
+                [
+                  "add",
+                  "add_assign",
+                  "default",
+                  "deref",
+                  "deref_mut",
+                  "display",
+                  "error",
+                  "from",
+                  "into",
+                  "mul",
+                  "not"
+                ]
+              ]
+            },
             "derive_more@2.1.1": {
               "host": [
                 [
@@ -9477,23 +9762,6 @@
                 [
                   "add",
                   "add_assign",
-                  "deref",
-                  "deref_mut",
-                  "display",
-                  "error",
-                  "from",
-                  "into",
-                  "mul",
-                  "not"
-                ]
-              ]
-            },
-            "derive_more-impl@2.1.1": {
-              "host": [
-                [
-                  "add",
-                  "add_assign",
-                  "default",
                   "deref",
                   "deref_mut",
                   "display",
@@ -9573,7 +9841,7 @@
                 []
               ]
             },
-            "flate2@1.1.10": {
+            "flate2@1.1.11": {
               "target": [
                 [
                   "any_impl",
@@ -9769,6 +10037,13 @@
                 ]
               ]
             },
+            "i-slint-core-macros@1.18.1": {
+              "host": [
+                [
+                  "default"
+                ]
+              ]
+            },
             "i-slint-core@1.18.1": {
               "target": [
                 [
@@ -9784,13 +10059,6 @@
                   "unicode",
                   "unicode-linebreak",
                   "unicode-script"
-                ]
-              ]
-            },
-            "i-slint-core-macros@1.18.1": {
-              "host": [
-                [
-                  "default"
                 ]
               ]
             },
@@ -9962,17 +10230,17 @@
                 ]
               ]
             },
+            "image-webp@0.2.4": {
+              "target": [
+                []
+              ]
+            },
             "image@0.25.10": {
               "target": [
                 [
                   "jpeg",
                   "png"
                 ]
-              ]
-            },
-            "image-webp@0.2.4": {
-              "target": [
-                []
               ]
             },
             "imagesize@0.15.0": {
@@ -10313,17 +10581,17 @@
                 ]
               ]
             },
-            "pin-project@1.1.13": {
-              "target": [
-                []
-              ]
-            },
             "pin-project-internal@1.1.13": {
               "host": [
                 []
               ]
             },
             "pin-project-lite@0.2.17": {
+              "target": [
+                []
+              ]
+            },
+            "pin-project@1.1.13": {
               "target": [
                 []
               ]
@@ -10592,18 +10860,6 @@
                 []
               ]
             },
-            "slint@1.18.1": {
-              "target": [
-                [
-                  "accessibility",
-                  "backend-winit",
-                  "compat-1-18",
-                  "renderer-software",
-                  "std",
-                  "unstable-winit-030"
-                ]
-              ]
-            },
             "slint-build@1.18.1": {
               "host": [
                 [
@@ -10614,6 +10870,18 @@
             "slint-macros@1.18.1": {
               "host": [
                 []
+              ]
+            },
+            "slint@1.18.1": {
+              "target": [
+                [
+                  "accessibility",
+                  "backend-winit",
+                  "compat-1-18",
+                  "renderer-software",
+                  "std",
+                  "unstable-winit-030"
+                ]
               ]
             },
             "slotmap@1.1.1": {
@@ -10653,6 +10921,13 @@
                 ]
               ]
             },
+            "snafu-derive@0.8.9": {
+              "host": [
+                [
+                  "rust_1_61"
+                ]
+              ]
+            },
             "snafu@0.8.9": {
               "host": [
                 [
@@ -10661,13 +10936,6 @@
                   "rust_1_61",
                   "rust_1_65",
                   "std"
-                ]
-              ]
-            },
-            "snafu-derive@0.8.9": {
-              "host": [
-                [
-                  "rust_1_61"
                 ]
               ]
             },
@@ -10824,6 +11092,11 @@
                 []
               ]
             },
+            "thiserror-impl@2.0.21": {
+              "host": [
+                []
+              ]
+            },
             "thiserror@2.0.21": {
               "host": [
                 [
@@ -10837,9 +11110,12 @@
                 ]
               ]
             },
-            "thiserror-impl@2.0.21": {
-              "host": [
-                []
+            "tiny-skia-path@0.12.0": {
+              "target": [
+                [
+                  "default",
+                  "std"
+                ]
               ]
             },
             "tiny-skia@0.12.0": {
@@ -10848,14 +11124,6 @@
                   "default",
                   "png-format",
                   "simd",
-                  "std"
-                ]
-              ]
-            },
-            "tiny-skia-path@0.12.0": {
-              "target": [
-                [
-                  "default",
                   "std"
                 ]
               ]
@@ -10882,7 +11150,7 @@
                 ]
               ]
             },
-            "toml_datetime@1.1.2+spec-1.1.0": {
+            "toml_datetime@1.1.3+spec-1.1.0": {
               "host": [
                 [
                   "alloc",
@@ -10891,7 +11159,7 @@
                 ]
               ]
             },
-            "toml_edit@0.25.18+spec-1.1.0": {
+            "toml_edit@0.25.19+spec-1.1.0": {
               "host": [
                 [
                   "default",
@@ -10918,12 +11186,12 @@
                 ]
               ]
             },
-            "tracing@0.1.44": {
+            "tracing-core@0.1.36": {
               "target": [
                 []
               ]
             },
-            "tracing-core@0.1.36": {
+            "tracing@0.1.44": {
               "target": [
                 []
               ]
@@ -11057,13 +11325,13 @@
                 []
               ]
             },
-            "vtable@0.5.0": {
-              "target": [
+            "vtable-macro@0.5.0": {
+              "host": [
                 []
               ]
             },
-            "vtable-macro@0.5.0": {
-              "host": [
+            "vtable@0.5.0": {
+              "target": [
                 []
               ]
             },
@@ -11076,41 +11344,6 @@
               "target": [
                 [
                   "alloc",
-                  "default",
-                  "std"
-                ]
-              ]
-            },
-            "windows@0.62.2": {
-              "target": [
-                [
-                  "ApplicationModel",
-                  "Data",
-                  "Data_Xml",
-                  "Data_Xml_Dom",
-                  "Foundation",
-                  "UI",
-                  "UI_Notifications",
-                  "Win32",
-                  "Win32_Foundation",
-                  "Win32_Globalization",
-                  "Win32_Graphics",
-                  "Win32_Graphics_DirectWrite",
-                  "Win32_Graphics_Dwm",
-                  "Win32_Graphics_Gdi",
-                  "Win32_System",
-                  "Win32_System_Com",
-                  "Win32_System_LibraryLoader",
-                  "Win32_System_Ole",
-                  "Win32_System_Variant",
-                  "Win32_System_WinRT",
-                  "Win32_UI",
-                  "Win32_UI_Accessibility",
-                  "Win32_UI_HiDpi",
-                  "Win32_UI_Input",
-                  "Win32_UI_Input_KeyboardAndMouse",
-                  "Win32_UI_Shell",
-                  "Win32_UI_WindowsAndMessaging",
                   "default",
                   "std"
                 ]
@@ -11250,6 +11483,41 @@
                 []
               ]
             },
+            "windows@0.62.2": {
+              "target": [
+                [
+                  "ApplicationModel",
+                  "Data",
+                  "Data_Xml",
+                  "Data_Xml_Dom",
+                  "Foundation",
+                  "UI",
+                  "UI_Notifications",
+                  "Win32",
+                  "Win32_Foundation",
+                  "Win32_Globalization",
+                  "Win32_Graphics",
+                  "Win32_Graphics_DirectWrite",
+                  "Win32_Graphics_Dwm",
+                  "Win32_Graphics_Gdi",
+                  "Win32_System",
+                  "Win32_System_Com",
+                  "Win32_System_LibraryLoader",
+                  "Win32_System_Ole",
+                  "Win32_System_Variant",
+                  "Win32_System_WinRT",
+                  "Win32_UI",
+                  "Win32_UI_Accessibility",
+                  "Win32_UI_HiDpi",
+                  "Win32_UI_Input",
+                  "Win32_UI_Input_KeyboardAndMouse",
+                  "Win32_UI_Shell",
+                  "Win32_UI_WindowsAndMessaging",
+                  "default",
+                  "std"
+                ]
+              ]
+            },
             "windows_x86_64_msvc@0.52.6": {
               "target": [
                 []
@@ -11313,6 +11581,11 @@
                 ]
               ]
             },
+            "yoke-derive@0.8.4": {
+              "host": [
+                []
+              ]
+            },
             "yoke@0.8.4": {
               "host": [
                 [
@@ -11329,17 +11602,17 @@
                 ]
               ]
             },
-            "yoke-derive@0.8.4": {
-              "host": [
-                []
-              ]
-            },
             "zeno@0.3.3": {
               "target": [
                 [
                   "eval",
                   "std"
                 ]
+              ]
+            },
+            "zerofrom-derive@0.1.8": {
+              "host": [
+                []
               ]
             },
             "zerofrom@0.1.8": {
@@ -11354,11 +11627,6 @@
                   "alloc",
                   "derive"
                 ]
-              ]
-            },
-            "zerofrom-derive@0.1.8": {
-              "host": [
-                []
               ]
             },
             "zerotrie@0.2.5": {
@@ -11377,6 +11645,11 @@
                 ]
               ]
             },
+            "zerovec-derive@0.11.7": {
+              "host": [
+                []
+              ]
+            },
             "zerovec@0.11.9": {
               "host": [
                 [
@@ -11391,11 +11664,6 @@
                   "derive",
                   "yoke"
                 ]
-              ]
-            },
-            "zerovec-derive@0.11.7": {
-              "host": [
-                []
               ]
             },
             "zmij@1.0.23": {
@@ -11426,115 +11694,6 @@
           },
           "local_features": {
             "nevrotick-ui@0.0.0": {
-              "target": [
-                []
-              ]
-            }
-          }
-        },
-        "ntp-wire": {
-          "features": {},
-          "local_features": {
-            "ntp-wire@0.0.0": {
-              "target": [
-                []
-              ]
-            }
-          }
-        },
-        "time-domain": {
-          "features": {
-            "castaway@0.2.4": {
-              "target": [
-                [
-                  "alloc"
-                ]
-              ]
-            },
-            "cfg-if@1.0.5": {
-              "target": [
-                []
-              ]
-            },
-            "compact_str@0.9.1": {
-              "target": [
-                []
-              ]
-            },
-            "garde@0.23.0": {
-              "target": [
-                [
-                  "derive"
-                ]
-              ]
-            },
-            "garde_derive@0.23.0": {
-              "host": [
-                []
-              ]
-            },
-            "itoa@1.0.18": {
-              "target": [
-                []
-              ]
-            },
-            "proc-macro2@1.0.107": {
-              "host": [
-                [
-                  "default",
-                  "proc-macro"
-                ]
-              ]
-            },
-            "quote@1.0.47": {
-              "host": [
-                [
-                  "default",
-                  "proc-macro"
-                ]
-              ]
-            },
-            "rustversion@1.0.23": {
-              "host": [
-                []
-              ]
-            },
-            "ryu@1.0.23": {
-              "target": [
-                []
-              ]
-            },
-            "smallvec@1.16.4": {
-              "target": [
-                []
-              ]
-            },
-            "static_assertions@1.1.0": {
-              "target": [
-                []
-              ]
-            },
-            "syn@2.0.119": {
-              "host": [
-                [
-                  "clone-impls",
-                  "default",
-                  "derive",
-                  "full",
-                  "parsing",
-                  "printing",
-                  "proc-macro"
-                ]
-              ]
-            },
-            "unicode-ident@1.0.27": {
-              "host": [
-                []
-              ]
-            }
-          },
-          "local_features": {
-            "time-domain@0.0.0": {
               "target": [
                 []
               ]
@@ -11655,6 +11814,26 @@
             }
           }
         },
+        "ntp-wire": {
+          "features": {},
+          "local_features": {
+            "ntp-wire@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
+        },
+        "spin_on": {
+          "features": {
+            "spin_on@0.1.1": {
+              "target": [
+                []
+              ]
+            }
+          },
+          "local_features": {}
+        },
         "time-core": {
           "features": {
             "castaway@0.2.4": {
@@ -11759,7 +11938,7 @@
             }
           }
         },
-        "nevrotick-engine": {
+        "time-domain": {
           "features": {
             "castaway@0.2.4": {
               "target": [
@@ -11790,26 +11969,7 @@
                 []
               ]
             },
-            "getrandom@0.4.3": {
-              "target": [
-                []
-              ]
-            },
             "itoa@1.0.18": {
-              "target": [
-                []
-              ]
-            },
-            "mio@1.2.4": {
-              "target": [
-                [
-                  "net",
-                  "os-ext",
-                  "os-poll"
-                ]
-              ]
-            },
-            "pin-project-lite@0.2.17": {
               "target": [
                 []
               ]
@@ -11845,13 +12005,6 @@
                 []
               ]
             },
-            "socket2@0.6.5": {
-              "target": [
-                [
-                  "all"
-                ]
-              ]
-            },
             "static_assertions@1.1.0": {
               "target": [
                 []
@@ -11870,106 +12023,35 @@
                 ]
               ]
             },
-            "tokio-macros@2.7.1": {
-              "host": [
-                []
-              ]
-            },
-            "tokio@1.54.1": {
-              "target": [
-                [
-                  "libc",
-                  "macros",
-                  "mio",
-                  "net",
-                  "rt",
-                  "socket2",
-                  "sync",
-                  "time",
-                  "tokio-macros",
-                  "windows-sys"
-                ]
-              ]
-            },
             "unicode-ident@1.0.27": {
               "host": [
                 []
               ]
-            },
-            "windows-link@0.2.1": {
-              "target": [
-                []
-              ]
-            },
-            "windows-sys@0.61.2": {
-              "target": [
-                [
-                  "Wdk",
-                  "Wdk_Foundation",
-                  "Wdk_Storage",
-                  "Wdk_Storage_FileSystem",
-                  "Wdk_System",
-                  "Wdk_System_IO",
-                  "Win32",
-                  "Win32_Foundation",
-                  "Win32_Networking",
-                  "Win32_Networking_WinSock",
-                  "Win32_Security",
-                  "Win32_Storage",
-                  "Win32_Storage_FileSystem",
-                  "Win32_System",
-                  "Win32_System_IO",
-                  "Win32_System_Pipes",
-                  "Win32_System_SystemServices",
-                  "Win32_System_Threading",
-                  "Win32_System_WindowsProgramming",
-                  "default"
-                ]
-              ]
             }
           },
           "local_features": {
-            "nevrotick-engine@0.0.0": {
-              "target": [
-                []
-              ]
-            },
-            "ntp-wire@0.0.0": {
-              "target": [
-                []
-              ]
-            },
             "time-domain@0.0.0": {
               "target": [
                 []
               ]
             }
           }
-        },
-        "spin_on": {
-          "features": {
-            "spin_on@0.1.1": {
-              "target": [
-                []
-              ]
-            }
-          },
-          "local_features": {}
         }
-      },
+      }
+    },
+    "x86_64-unknown-linux-gnu": {
       "allowed_build_scripts": [
         "crc32fast@1.5.4",
-        "crossbeam-utils@0.8.23",
         "field-offset@0.3.6",
         "getrandom@0.4.3",
         "i-slint-backend-selector@1.18.1",
-        "i-slint-backend-winit@1.18.1",
         "i-slint-compiler@1.18.1",
         "icu_decimal_data@2.4.0",
         "icu_locale_fallback_data@2.4.0",
         "icu_normalizer_data@2.4.0",
         "icu_properties_data@2.4.0",
         "icu_segmenter_data@2.4.0",
+        "libc@0.2.191",
         "libm@0.2.16",
         "memoffset@0.9.1",
         "nevrotick-ui@0.0.0",
@@ -11985,8 +12067,7 @@
         "serde_json@1.0.154",
         "slotmap@1.1.1",
         "thiserror@2.0.21",
-        "windows_x86_64_msvc@0.52.6",
-        "winit@0.30.13",
+        "yeslogic-fontconfig-sys@6.0.1",
         "zmij@1.0.23"
       ],
       "allowed_proc_macros": [
@@ -11999,15 +12080,12 @@
         "num_enum_derive@0.7.6",
         "pin-project-internal@1.1.13",
         "rustversion@1.0.23",
-        "serde_derive@1.0.229",
         "slint-macros@1.18.1",
         "snafu-derive@0.8.9",
         "strum_macros@0.28.0",
         "thiserror-impl@2.0.21",
-        "tokio-macros@2.7.1",
+        "tokio-macros@2.7.2",
         "vtable-macro@0.5.0",
-        "windows-implement@0.60.2",
-        "windows-interface@0.59.3",
         "yoke-derive@0.8.4",
         "zerofrom-derive@0.1.8",
         "zerovec-derive@0.11.7"
@@ -12018,15 +12096,9 @@
         "hashbrown@0.17.1",
         "miniz_oxide@0.8.9",
         "miniz_oxide@0.9.1",
-        "smol_str@0.2.2",
-        "smol_str@0.3.7",
         "syn@2.0.119",
-        "syn@3.0.9",
-        "windows-sys@0.52.0",
-        "windows-sys@0.61.2"
-      ]
-    },
-    "x86_64-unknown-linux-gnu": {
+        "syn@3.0.9"
+      ],
       "features": {
         "adler2@2.0.1": {
           "target": [
@@ -12170,13 +12242,13 @@
             []
           ]
         },
-        "const-field-offset@0.2.1": {
-          "target": [
+        "const-field-offset-macro@0.2.1": {
+          "host": [
             []
           ]
         },
-        "const-field-offset-macro@0.2.1": {
-          "host": [
+        "const-field-offset@0.2.1": {
+          "target": [
             []
           ]
         },
@@ -12219,6 +12291,23 @@
             ]
           ]
         },
+        "derive_more-impl@2.1.1": {
+          "host": [
+            [
+              "add",
+              "add_assign",
+              "default",
+              "deref",
+              "deref_mut",
+              "display",
+              "error",
+              "from",
+              "into",
+              "mul",
+              "not"
+            ]
+          ]
+        },
         "derive_more@2.1.1": {
           "host": [
             [
@@ -12239,23 +12328,6 @@
             [
               "add",
               "add_assign",
-              "deref",
-              "deref_mut",
-              "display",
-              "error",
-              "from",
-              "into",
-              "mul",
-              "not"
-            ]
-          ]
-        },
-        "derive_more-impl@2.1.1": {
-          "host": [
-            [
-              "add",
-              "add_assign",
-              "default",
               "deref",
               "deref_mut",
               "display",
@@ -12325,7 +12397,7 @@
             []
           ]
         },
-        "flate2@1.1.10": {
+        "flate2@1.1.11": {
           "target": [
             [
               "any_impl",
@@ -12502,6 +12574,13 @@
             ]
           ]
         },
+        "i-slint-core-macros@1.18.1": {
+          "host": [
+            [
+              "default"
+            ]
+          ]
+        },
         "i-slint-core@1.18.1": {
           "target": [
             [
@@ -12512,13 +12591,6 @@
               "shared-swash",
               "std",
               "svg"
-            ]
-          ]
-        },
-        "i-slint-core-macros@1.18.1": {
-          "host": [
-            [
-              "default"
             ]
           ]
         },
@@ -12685,17 +12757,17 @@
             ]
           ]
         },
+        "image-webp@0.2.4": {
+          "target": [
+            []
+          ]
+        },
         "image@0.25.10": {
           "target": [
             [
               "jpeg",
               "png"
             ]
-          ]
-        },
-        "image-webp@0.2.4": {
-          "target": [
-            []
           ]
         },
         "imagesize@0.15.0": {
@@ -13028,17 +13100,17 @@
             ]
           ]
         },
-        "pin-project@1.1.13": {
-          "target": [
-            []
-          ]
-        },
         "pin-project-internal@1.1.13": {
           "host": [
             []
           ]
         },
         "pin-project-lite@0.2.17": {
+          "target": [
+            []
+          ]
+        },
+        "pin-project@1.1.13": {
           "target": [
             []
           ]
@@ -13286,15 +13358,6 @@
             []
           ]
         },
-        "slint@1.18.1": {
-          "target": [
-            [
-              "compat-1-18",
-              "renderer-software",
-              "std"
-            ]
-          ]
-        },
         "slint-build@1.18.1": {
           "host": [
             [
@@ -13305,6 +13368,15 @@
         "slint-macros@1.18.1": {
           "host": [
             []
+          ]
+        },
+        "slint@1.18.1": {
+          "target": [
+            [
+              "compat-1-18",
+              "renderer-software",
+              "std"
+            ]
           ]
         },
         "slotmap@1.1.1": {
@@ -13336,6 +13408,13 @@
             ]
           ]
         },
+        "snafu-derive@0.8.9": {
+          "host": [
+            [
+              "rust_1_61"
+            ]
+          ]
+        },
         "snafu@0.8.9": {
           "host": [
             [
@@ -13344,13 +13423,6 @@
               "rust_1_61",
               "rust_1_65",
               "std"
-            ]
-          ]
-        },
-        "snafu-derive@0.8.9": {
-          "host": [
-            [
-              "rust_1_61"
             ]
           ]
         },
@@ -13494,6 +13566,11 @@
             []
           ]
         },
+        "thiserror-impl@2.0.21": {
+          "host": [
+            []
+          ]
+        },
         "thiserror@2.0.21": {
           "host": [
             [
@@ -13504,9 +13581,12 @@
             []
           ]
         },
-        "thiserror-impl@2.0.21": {
-          "host": [
-            []
+        "tiny-skia-path@0.12.0": {
+          "target": [
+            [
+              "default",
+              "std"
+            ]
           ]
         },
         "tiny-skia@0.12.0": {
@@ -13515,14 +13595,6 @@
               "default",
               "png-format",
               "simd",
-              "std"
-            ]
-          ]
-        },
-        "tiny-skia-path@0.12.0": {
-          "target": [
-            [
-              "default",
               "std"
             ]
           ]
@@ -13549,6 +13621,11 @@
             ]
           ]
         },
+        "tokio-macros@2.7.2": {
+          "host": [
+            []
+          ]
+        },
         "tokio@1.54.1": {
           "target": [
             [
@@ -13564,12 +13641,7 @@
             ]
           ]
         },
-        "tokio-macros@2.7.1": {
-          "host": [
-            []
-          ]
-        },
-        "toml_datetime@1.1.2+spec-1.1.0": {
+        "toml_datetime@1.1.3+spec-1.1.0": {
           "host": [
             [
               "alloc",
@@ -13578,7 +13650,7 @@
             ]
           ]
         },
-        "toml_edit@0.25.18+spec-1.1.0": {
+        "toml_edit@0.25.19+spec-1.1.0": {
           "host": [
             [
               "default",
@@ -13721,13 +13793,13 @@
             []
           ]
         },
-        "vtable@0.5.0": {
-          "target": [
+        "vtable-macro@0.5.0": {
+          "host": [
             []
           ]
         },
-        "vtable-macro@0.5.0": {
-          "host": [
+        "vtable@0.5.0": {
+          "target": [
             []
           ]
         },
@@ -13781,6 +13853,11 @@
             []
           ]
         },
+        "yoke-derive@0.8.4": {
+          "host": [
+            []
+          ]
+        },
         "yoke@0.8.4": {
           "host": [
             [
@@ -13797,17 +13874,17 @@
             ]
           ]
         },
-        "yoke-derive@0.8.4": {
-          "host": [
-            []
-          ]
-        },
         "zeno@0.3.3": {
           "target": [
             [
               "eval",
               "std"
             ]
+          ]
+        },
+        "zerofrom-derive@0.1.8": {
+          "host": [
+            []
           ]
         },
         "zerofrom@0.1.8": {
@@ -13822,11 +13899,6 @@
               "alloc",
               "derive"
             ]
-          ]
-        },
-        "zerofrom-derive@0.1.8": {
-          "host": [
-            []
           ]
         },
         "zerotrie@0.2.5": {
@@ -13845,6 +13917,11 @@
             ]
           ]
         },
+        "zerovec-derive@0.11.7": {
+          "host": [
+            []
+          ]
+        },
         "zerovec@0.11.9": {
           "host": [
             [
@@ -13859,11 +13936,6 @@
               "derive",
               "yoke"
             ]
-          ]
-        },
-        "zerovec-derive@0.11.7": {
-          "host": [
-            []
           ]
         },
         "zmij@1.0.23": {
@@ -14007,9 +14079,6 @@
         ],
         "async-trait@0.1.92": [],
         "atomic-waker@1.1.2": [],
-        "atspi@0.29.0": [
-          "proxies"
-        ],
         "atspi-common@0.13.0": [
           "default",
           "wrappers",
@@ -14018,6 +14087,9 @@
         "atspi-proxies@0.13.0": [
           "default",
           "wrappers"
+        ],
+        "atspi@0.29.0": [
+          "proxies"
         ],
         "autocfg@1.5.1": [],
         "base64@0.23.1": [
@@ -14064,13 +14136,13 @@
           "default",
           "std"
         ],
+        "calloop-wayland-source@0.3.0": [],
         "calloop@0.13.0": [],
         "calloop@0.14.5": [],
-        "calloop-wayland-source@0.3.0": [],
         "castaway@0.2.4": [
           "alloc"
         ],
-        "cc@1.11.0": [
+        "cc@1.11.1": [
           "parallel"
         ],
         "cexpr@0.6.0": [],
@@ -14113,8 +14185,8 @@
           "default",
           "std"
         ],
-        "const-field-offset@0.2.1": [],
         "const-field-offset-macro@0.2.1": [],
+        "const-field-offset@0.2.1": [],
         "convert_case@0.10.0": [],
         "countme@3.0.1": [],
         "crc32fast@1.5.4": [
@@ -14138,19 +14210,6 @@
           "default",
           "std"
         ],
-        "derive_more@2.1.1": [
-          "add",
-          "add_assign",
-          "deref",
-          "deref_mut",
-          "display",
-          "error",
-          "from",
-          "into",
-          "mul",
-          "not",
-          "std"
-        ],
         "derive_more-impl@2.1.1": [
           "add",
           "add_assign",
@@ -14163,6 +14222,19 @@
           "into",
           "mul",
           "not"
+        ],
+        "derive_more@2.1.1": [
+          "add",
+          "add_assign",
+          "deref",
+          "deref_mut",
+          "display",
+          "error",
+          "from",
+          "into",
+          "mul",
+          "not",
+          "std"
         ],
         "displaydoc@0.2.7": [],
         "dlib@0.5.3": [],
@@ -14177,7 +14249,6 @@
           "default",
           "std"
         ],
-        "drm@0.14.1": [],
         "drm-ffi@0.9.1": [],
         "drm-fourcc@2.2.0": [
           "default",
@@ -14186,6 +14257,7 @@
         "drm-sys@0.8.1": [
           "default"
         ],
+        "drm@0.14.1": [],
         "dtor@0.8.1": [
           "std"
         ],
@@ -14210,13 +14282,13 @@
           "libm",
           "std"
         ],
+        "event-listener-strategy@0.5.4": [
+          "default",
+          "std"
+        ],
         "event-listener@5.4.2": [
           "default",
           "parking",
-          "std"
-        ],
-        "event-listener-strategy@0.5.4": [
-          "default",
           "std"
         ],
         "fastrand@2.5.0": [
@@ -14230,7 +14302,7 @@
         "find-msvc-tools@0.1.15": [],
         "fixed_decimal@0.7.3": [],
         "fixedbitset@0.5.7": [],
-        "flate2@1.1.10": [
+        "flate2@1.1.11": [
           "any_impl",
           "default",
           "miniz_oxide",
@@ -14254,14 +14326,6 @@
         ],
         "form_urlencoded@1.2.2": [
           "alloc",
-          "std"
-        ],
-        "futures@0.3.34": [
-          "alloc",
-          "async-await",
-          "default",
-          "executor",
-          "futures-executor",
           "std"
         ],
         "futures-channel@0.3.34": [
@@ -14316,6 +14380,14 @@
           "slab",
           "std"
         ],
+        "futures@0.3.34": [
+          "alloc",
+          "async-await",
+          "default",
+          "executor",
+          "futures-executor",
+          "std"
+        ],
         "garde@0.23.0": [
           "derive"
         ],
@@ -14334,6 +14406,13 @@
         "gl_generator@0.14.0": [],
         "glob@0.3.4": [],
         "glow@0.18.0": [],
+        "glutin-winit@0.5.0": [
+          "egl",
+          "glx",
+          "wayland",
+          "wgl",
+          "x11"
+        ],
         "glutin@0.32.3": [
           "egl",
           "glutin_egl_sys",
@@ -14347,13 +14426,6 @@
           "windows-sys",
           "x11",
           "x11-dl"
-        ],
-        "glutin-winit@0.5.0": [
-          "egl",
-          "glx",
-          "wayland",
-          "wgl",
-          "x11"
         ],
         "glutin_egl_sys@0.7.1": [],
         "glutin_glx_sys@0.6.1": [],
@@ -14445,6 +14517,9 @@
           "quote",
           "rust"
         ],
+        "i-slint-core-macros@1.18.1": [
+          "default"
+        ],
         "i-slint-core@1.18.1": [
           "accessibility-text",
           "box-shadow-cache",
@@ -14460,9 +14535,6 @@
           "unicode-linebreak",
           "unicode-script",
           "wgpu-30"
-        ],
-        "i-slint-core-macros@1.18.1": [
-          "default"
         ],
         "i-slint-renderer-skia@1.18.1": [
           "default",
@@ -14522,11 +14594,11 @@
         "idna_adapter@1.2.2": [
           "compiled_data"
         ],
+        "image-webp@0.2.4": [],
         "image@0.25.10": [
           "jpeg",
           "png"
         ],
-        "image-webp@0.2.4": [],
         "imagesize@0.15.0": [
           "aesprite",
           "astc",
@@ -14590,19 +14662,6 @@
           "default"
         ],
         "linebender_resource_handle@0.1.1": [],
-        "linux-raw-sys@0.4.15": [
-          "elf",
-          "errno",
-          "general",
-          "ioctl",
-          "no_std",
-          "prctl",
-          "system"
-        ],
-        "linux-raw-sys@0.9.4": [
-          "general",
-          "no_std"
-        ],
         "linux-raw-sys@0.12.1": [
           "auxvec",
           "elf",
@@ -14616,6 +14675,19 @@
           "prctl",
           "system",
           "xdp"
+        ],
+        "linux-raw-sys@0.4.15": [
+          "elf",
+          "errno",
+          "general",
+          "ioctl",
+          "no_std",
+          "prctl",
+          "system"
+        ],
+        "linux-raw-sys@0.9.4": [
+          "general",
+          "no_std"
         ],
         "litemap@0.8.3": [
           "alloc"
@@ -14685,6 +14757,7 @@
           "sse_shaper_fixed_point_paths",
           "sse_shaper_paths"
         ],
+        "naga-types@30.0.1": [],
         "naga@30.0.1": [
           "default",
           "hlsl-out",
@@ -14692,7 +14765,6 @@
           "spv-out",
           "wgsl-in"
         ],
-        "naga-types@30.0.1": [],
         "natord@1.0.9": [],
         "nix@0.31.3": [
           "default",
@@ -14782,9 +14854,9 @@
           "default",
           "eq-separator"
         ],
-        "pin-project@1.1.13": [],
         "pin-project-internal@1.1.13": [],
         "pin-project-lite@0.2.17": [],
+        "pin-project@1.1.13": [],
         "pin-weak@1.1.0": [
           "default",
           "sync"
@@ -14840,25 +14912,6 @@
           "experimental_font_api",
           "std"
         ],
-        "regex@1.13.1": [
-          "default",
-          "perf",
-          "perf-backtrack",
-          "perf-cache",
-          "perf-dfa",
-          "perf-inline",
-          "perf-literal",
-          "perf-onepass",
-          "std",
-          "unicode",
-          "unicode-age",
-          "unicode-bool",
-          "unicode-case",
-          "unicode-gencat",
-          "unicode-perl",
-          "unicode-script",
-          "unicode-segment"
-        ],
         "regex-automata@0.4.18": [
           "alloc",
           "dfa-onepass",
@@ -14885,6 +14938,25 @@
         ],
         "regex-syntax@0.8.11": [
           "default",
+          "std",
+          "unicode",
+          "unicode-age",
+          "unicode-bool",
+          "unicode-case",
+          "unicode-gencat",
+          "unicode-perl",
+          "unicode-script",
+          "unicode-segment"
+        ],
+        "regex@1.13.1": [
+          "default",
+          "perf",
+          "perf-backtrack",
+          "perf-cache",
+          "perf-dfa",
+          "perf-inline",
+          "perf-literal",
+          "perf-onepass",
           "std",
           "unicode",
           "unicode-age",
@@ -14957,8 +15029,8 @@
         ],
         "rustversion@1.0.23": [],
         "ryu@1.0.23": [],
-        "scoped-tls@1.0.1": [],
         "scoped-tls-hkt@0.1.5": [],
+        "scoped-tls@1.0.1": [],
         "scopeguard@1.2.0": [],
         "sctk-adwaita@0.10.1": [
           "ab_glyph",
@@ -14988,7 +15060,7 @@
           "std"
         ],
         "serde_repr@0.1.21": [],
-        "serde_spanned@1.1.2": [
+        "serde_spanned@1.1.3": [
           "alloc",
           "serde",
           "std"
@@ -15050,6 +15122,10 @@
           "default",
           "std"
         ],
+        "slint-build@1.18.1": [
+          "compat-1-18"
+        ],
+        "slint-macros@1.18.1": [],
         "slint@1.18.1": [
           "accessibility",
           "backend-winit",
@@ -15058,10 +15134,6 @@
           "std",
           "unstable-winit-030"
         ],
-        "slint-build@1.18.1": [
-          "compat-1-18"
-        ],
-        "slint-macros@1.18.1": [],
         "slotmap@1.1.1": [
           "default",
           "std"
@@ -15083,15 +15155,15 @@
           "default",
           "std"
         ],
+        "snafu-derive@0.8.9": [
+          "rust_1_61"
+        ],
         "snafu@0.8.9": [
           "alloc",
           "default",
           "rust_1_61",
           "rust_1_65",
           "std"
-        ],
-        "snafu-derive@0.8.9": [
-          "rust_1_61"
         ],
         "socket2@0.6.5": [
           "all"
@@ -15183,13 +15255,20 @@
           "xattr"
         ],
         "text-size@1.1.1": [],
+        "thiserror-impl@1.0.69": [],
+        "thiserror-impl@2.0.21": [],
         "thiserror@1.0.69": [],
         "thiserror@2.0.21": [
           "default",
           "std"
         ],
-        "thiserror-impl@1.0.69": [],
-        "thiserror-impl@2.0.21": [],
+        "tiny-skia-path@0.11.4": [
+          "std"
+        ],
+        "tiny-skia-path@0.12.0": [
+          "default",
+          "std"
+        ],
         "tiny-skia@0.11.4": [
           "simd",
           "std"
@@ -15198,13 +15277,6 @@
           "default",
           "png-format",
           "simd",
-          "std"
-        ],
-        "tiny-skia-path@0.11.4": [
-          "std"
-        ],
-        "tiny-skia-path@0.12.0": [
-          "default",
           "std"
         ],
         "tiny-xlib@0.2.5": [
@@ -15221,6 +15293,7 @@
           "alloc",
           "default"
         ],
+        "tokio-macros@2.7.2": [],
         "tokio@1.54.1": [
           "libc",
           "macros",
@@ -15233,21 +15306,20 @@
           "tokio-macros",
           "windows-sys"
         ],
-        "tokio-macros@2.7.1": [],
-        "toml@1.2.0+spec-1.1.0": [
+        "toml@1.2.1+spec-1.1.0": [
           "default",
           "display",
           "parse",
           "serde",
           "std"
         ],
-        "toml_datetime@1.1.2+spec-1.1.0": [
+        "toml_datetime@1.1.3+spec-1.1.0": [
           "alloc",
           "default",
           "serde",
           "std"
         ],
-        "toml_edit@0.25.18+spec-1.1.0": [
+        "toml_edit@0.25.19+spec-1.1.0": [
           "default",
           "display",
           "parse"
@@ -15262,17 +15334,17 @@
           "default",
           "std"
         ],
+        "tracing-attributes@0.1.31": [],
+        "tracing-core@0.1.36": [
+          "once_cell",
+          "std"
+        ],
         "tracing@0.1.44": [
           "attributes",
           "default",
           "log",
           "std",
           "tracing-attributes"
-        ],
-        "tracing-attributes@0.1.31": [],
-        "tracing-core@0.1.36": [
-          "once_cell",
-          "std"
         ],
         "tree_magic_mini@3.2.2": [],
         "ttf-parser@0.25.1": [
@@ -15333,26 +15405,26 @@
           "std"
         ],
         "version_check@0.9.5": [],
-        "vtable@0.5.0": [],
         "vtable-macro@0.5.0": [],
+        "vtable@0.5.0": [],
         "wayland-backend@0.3.17": [
           "client_system"
         ],
         "wayland-client@0.31.15": [],
         "wayland-csd-frame@0.3.0": [],
         "wayland-cursor@0.31.14": [],
-        "wayland-protocols@0.32.13": [
-          "client",
-          "staging",
-          "unstable",
-          "wayland-client"
-        ],
         "wayland-protocols-plasma@0.3.12": [
           "client",
           "wayland-client"
         ],
         "wayland-protocols-wlr@0.3.12": [
           "client",
+          "wayland-client"
+        ],
+        "wayland-protocols@0.32.13": [
+          "client",
+          "staging",
+          "unstable",
           "wayland-client"
         ],
         "wayland-scanner@0.31.11": [],
@@ -15368,9 +15440,9 @@
           "default",
           "std"
         ],
-        "wgpu@30.0.1": [
+        "wgpu-core-deps-windows-linux-android@30.0.1": [
           "dx12",
-          "metal",
+          "renderdoc",
           "vulkan"
         ],
         "wgpu-core@30.0.1": [
@@ -15385,11 +15457,6 @@
           "wgpu-core-deps-windows-linux-android",
           "wgsl"
         ],
-        "wgpu-core-deps-windows-linux-android@30.0.1": [
-          "dx12",
-          "renderdoc",
-          "vulkan"
-        ],
         "wgpu-hal@30.0.1": [
           "dx12",
           "metal",
@@ -15399,6 +15466,34 @@
         ],
         "wgpu-naga-bridge@30.0.1": [],
         "wgpu-types@30.0.1": [],
+        "wgpu@30.0.1": [
+          "dx12",
+          "metal",
+          "vulkan"
+        ],
+        "windows-collections@0.3.2": [
+          "std"
+        ],
+        "windows-core@0.62.2": [
+          "default",
+          "std"
+        ],
+        "windows-future@0.3.2": [
+          "std"
+        ],
+        "windows-implement@0.60.2": [],
+        "windows-interface@0.59.3": [],
+        "windows-link@0.2.1": [],
+        "windows-numerics@0.3.1": [
+          "std"
+        ],
+        "windows-result@0.4.1": [
+          "std"
+        ],
+        "windows-strings@0.5.1": [
+          "std"
+        ],
+        "windows-threading@0.2.1": [],
         "windows@0.62.2": [
           "ApplicationModel",
           "Data",
@@ -15446,29 +15541,6 @@
           "default",
           "std"
         ],
-        "windows-collections@0.3.2": [
-          "std"
-        ],
-        "windows-core@0.62.2": [
-          "default",
-          "std"
-        ],
-        "windows-future@0.3.2": [
-          "std"
-        ],
-        "windows-implement@0.60.2": [],
-        "windows-interface@0.59.3": [],
-        "windows-link@0.2.1": [],
-        "windows-numerics@0.3.1": [
-          "std"
-        ],
-        "windows-result@0.4.1": [
-          "std"
-        ],
-        "windows-strings@0.5.1": [
-          "std"
-        ],
-        "windows-threading@0.2.1": [],
         "winit@0.30.13": [
           "ahash",
           "bytemuck",
@@ -15500,6 +15572,17 @@
           "alloc"
         ],
         "x11-dl@2.21.0": [],
+        "x11rb-protocol@0.13.2": [
+          "randr",
+          "render",
+          "resource_manager",
+          "shape",
+          "shm",
+          "std",
+          "xfixes",
+          "xinput",
+          "xkb"
+        ],
         "x11rb@0.13.2": [
           "allow-unsafe-code",
           "as-raw-xcb-connection",
@@ -15512,17 +15595,6 @@
           "resource_manager",
           "shape",
           "shm",
-          "xfixes",
-          "xinput",
-          "xkb"
-        ],
-        "x11rb-protocol@0.13.2": [
-          "randr",
-          "render",
-          "resource_manager",
-          "shape",
-          "shm",
-          "std",
           "xfixes",
           "xinput",
           "xkb"
@@ -15542,12 +15614,14 @@
           "std"
         ],
         "yeslogic-fontconfig-sys@6.0.1": [],
+        "yoke-derive@0.8.4": [],
         "yoke@0.8.4": [
           "alloc",
           "derive",
           "zerofrom"
         ],
-        "yoke-derive@0.8.4": [],
+        "zbus-lockstep-macros@0.5.2": [],
+        "zbus-lockstep@0.5.2": [],
         "zbus@5.19.0": [
           "async-executor",
           "async-fs",
@@ -15557,8 +15631,6 @@
           "async-task",
           "blocking"
         ],
-        "zbus-lockstep@0.5.2": [],
-        "zbus-lockstep-macros@0.5.2": [],
         "zbus_macros@5.19.0": [
           "default"
         ],
@@ -15572,28 +15644,28 @@
           "eval",
           "std"
         ],
+        "zerocopy-derive@0.8.63": [],
         "zerocopy@0.8.63": [
           "derive",
           "simd",
           "zerocopy-derive"
         ],
-        "zerocopy-derive@0.8.63": [],
+        "zerofrom-derive@0.1.8": [],
         "zerofrom@0.1.8": [
           "alloc",
           "derive"
         ],
-        "zerofrom-derive@0.1.8": [],
         "zerotrie@0.2.5": [
           "alloc",
           "yoke",
           "zerofrom"
         ],
+        "zerovec-derive@0.11.7": [],
         "zerovec@0.11.9": [
           "alloc",
           "derive",
           "yoke"
         ],
-        "zerovec-derive@0.11.7": [],
         "zlib-rs@0.6.8": [
           "rust-allocator",
           "std"
@@ -15620,6 +15692,182 @@
         ]
       },
       "package_scopes": {
+        "nevrotick-engine": {
+          "features": {
+            "castaway@0.2.4": {
+              "target": [
+                [
+                  "alloc"
+                ]
+              ]
+            },
+            "cfg-if@1.0.5": {
+              "target": [
+                []
+              ]
+            },
+            "compact_str@0.9.1": {
+              "target": [
+                []
+              ]
+            },
+            "garde@0.23.0": {
+              "target": [
+                [
+                  "derive"
+                ]
+              ]
+            },
+            "garde_derive@0.23.0": {
+              "host": [
+                []
+              ]
+            },
+            "getrandom@0.4.3": {
+              "target": [
+                []
+              ]
+            },
+            "itoa@1.0.18": {
+              "target": [
+                []
+              ]
+            },
+            "libc@0.2.191": {
+              "target": [
+                [
+                  "default",
+                  "std"
+                ]
+              ]
+            },
+            "mio@1.2.4": {
+              "target": [
+                [
+                  "net",
+                  "os-ext",
+                  "os-poll"
+                ]
+              ]
+            },
+            "pin-project-lite@0.2.17": {
+              "target": [
+                []
+              ]
+            },
+            "proc-macro2@1.0.107": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "quote@1.0.47": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "rustversion@1.0.23": {
+              "host": [
+                []
+              ]
+            },
+            "ryu@1.0.23": {
+              "target": [
+                []
+              ]
+            },
+            "smallvec@1.16.4": {
+              "target": [
+                []
+              ]
+            },
+            "socket2@0.6.5": {
+              "target": [
+                [
+                  "all"
+                ]
+              ]
+            },
+            "static_assertions@1.1.0": {
+              "target": [
+                []
+              ]
+            },
+            "syn@2.0.119": {
+              "host": [
+                [
+                  "clone-impls",
+                  "default",
+                  "derive",
+                  "full",
+                  "parsing",
+                  "printing",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "syn@3.0.9": {
+              "host": [
+                [
+                  "clone-impls",
+                  "default",
+                  "derive",
+                  "full",
+                  "parsing",
+                  "printing",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "tokio-macros@2.7.2": {
+              "host": [
+                []
+              ]
+            },
+            "tokio@1.54.1": {
+              "target": [
+                [
+                  "libc",
+                  "macros",
+                  "mio",
+                  "net",
+                  "rt",
+                  "socket2",
+                  "sync",
+                  "time",
+                  "tokio-macros"
+                ]
+              ]
+            },
+            "unicode-ident@1.0.27": {
+              "host": [
+                []
+              ]
+            }
+          },
+          "local_features": {
+            "nevrotick-engine@0.0.0": {
+              "target": [
+                []
+              ]
+            },
+            "ntp-wire@0.0.0": {
+              "target": [
+                []
+              ]
+            },
+            "time-domain@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
+        },
         "nevrotick-ui": {
           "features": {
             "adler2@2.0.1": {
@@ -15764,13 +16012,13 @@
                 []
               ]
             },
-            "const-field-offset@0.2.1": {
-              "target": [
+            "const-field-offset-macro@0.2.1": {
+              "host": [
                 []
               ]
             },
-            "const-field-offset-macro@0.2.1": {
-              "host": [
+            "const-field-offset@0.2.1": {
+              "target": [
                 []
               ]
             },
@@ -15813,6 +16061,23 @@
                 ]
               ]
             },
+            "derive_more-impl@2.1.1": {
+              "host": [
+                [
+                  "add",
+                  "add_assign",
+                  "default",
+                  "deref",
+                  "deref_mut",
+                  "display",
+                  "error",
+                  "from",
+                  "into",
+                  "mul",
+                  "not"
+                ]
+              ]
+            },
             "derive_more@2.1.1": {
               "host": [
                 [
@@ -15833,23 +16098,6 @@
                 [
                   "add",
                   "add_assign",
-                  "deref",
-                  "deref_mut",
-                  "display",
-                  "error",
-                  "from",
-                  "into",
-                  "mul",
-                  "not"
-                ]
-              ]
-            },
-            "derive_more-impl@2.1.1": {
-              "host": [
-                [
-                  "add",
-                  "add_assign",
-                  "default",
                   "deref",
                   "deref_mut",
                   "display",
@@ -15919,7 +16167,7 @@
                 []
               ]
             },
-            "flate2@1.1.10": {
+            "flate2@1.1.11": {
               "target": [
                 [
                   "any_impl",
@@ -16091,6 +16339,13 @@
                 ]
               ]
             },
+            "i-slint-core-macros@1.18.1": {
+              "host": [
+                [
+                  "default"
+                ]
+              ]
+            },
             "i-slint-core@1.18.1": {
               "target": [
                 [
@@ -16101,13 +16356,6 @@
                   "shared-swash",
                   "std",
                   "svg"
-                ]
-              ]
-            },
-            "i-slint-core-macros@1.18.1": {
-              "host": [
-                [
-                  "default"
                 ]
               ]
             },
@@ -16274,17 +16522,17 @@
                 ]
               ]
             },
+            "image-webp@0.2.4": {
+              "target": [
+                []
+              ]
+            },
             "image@0.25.10": {
               "target": [
                 [
                   "jpeg",
                   "png"
                 ]
-              ]
-            },
-            "image-webp@0.2.4": {
-              "target": [
-                []
               ]
             },
             "imagesize@0.15.0": {
@@ -16608,13 +16856,13 @@
                 ]
               ]
             },
-            "pin-project@1.1.13": {
-              "target": [
+            "pin-project-internal@1.1.13": {
+              "host": [
                 []
               ]
             },
-            "pin-project-internal@1.1.13": {
-              "host": [
+            "pin-project@1.1.13": {
+              "target": [
                 []
               ]
             },
@@ -16861,15 +17109,6 @@
                 []
               ]
             },
-            "slint@1.18.1": {
-              "target": [
-                [
-                  "compat-1-18",
-                  "renderer-software",
-                  "std"
-                ]
-              ]
-            },
             "slint-build@1.18.1": {
               "host": [
                 [
@@ -16880,6 +17119,15 @@
             "slint-macros@1.18.1": {
               "host": [
                 []
+              ]
+            },
+            "slint@1.18.1": {
+              "target": [
+                [
+                  "compat-1-18",
+                  "renderer-software",
+                  "std"
+                ]
               ]
             },
             "slotmap@1.1.1": {
@@ -16911,6 +17159,13 @@
                 ]
               ]
             },
+            "snafu-derive@0.8.9": {
+              "host": [
+                [
+                  "rust_1_61"
+                ]
+              ]
+            },
             "snafu@0.8.9": {
               "host": [
                 [
@@ -16919,13 +17174,6 @@
                   "rust_1_61",
                   "rust_1_65",
                   "std"
-                ]
-              ]
-            },
-            "snafu-derive@0.8.9": {
-              "host": [
-                [
-                  "rust_1_61"
                 ]
               ]
             },
@@ -17062,6 +17310,11 @@
                 []
               ]
             },
+            "thiserror-impl@2.0.21": {
+              "host": [
+                []
+              ]
+            },
             "thiserror@2.0.21": {
               "host": [
                 [
@@ -17072,9 +17325,12 @@
                 []
               ]
             },
-            "thiserror-impl@2.0.21": {
-              "host": [
-                []
+            "tiny-skia-path@0.12.0": {
+              "target": [
+                [
+                  "default",
+                  "std"
+                ]
               ]
             },
             "tiny-skia@0.12.0": {
@@ -17083,14 +17339,6 @@
                   "default",
                   "png-format",
                   "simd",
-                  "std"
-                ]
-              ]
-            },
-            "tiny-skia-path@0.12.0": {
-              "target": [
-                [
-                  "default",
                   "std"
                 ]
               ]
@@ -17117,7 +17365,7 @@
                 ]
               ]
             },
-            "toml_datetime@1.1.2+spec-1.1.0": {
+            "toml_datetime@1.1.3+spec-1.1.0": {
               "host": [
                 [
                   "alloc",
@@ -17126,7 +17374,7 @@
                 ]
               ]
             },
-            "toml_edit@0.25.18+spec-1.1.0": {
+            "toml_edit@0.25.19+spec-1.1.0": {
               "host": [
                 [
                   "default",
@@ -17269,13 +17517,13 @@
                 []
               ]
             },
-            "vtable@0.5.0": {
-              "target": [
+            "vtable-macro@0.5.0": {
+              "host": [
                 []
               ]
             },
-            "vtable-macro@0.5.0": {
-              "host": [
+            "vtable@0.5.0": {
+              "target": [
                 []
               ]
             },
@@ -17329,6 +17577,11 @@
                 []
               ]
             },
+            "yoke-derive@0.8.4": {
+              "host": [
+                []
+              ]
+            },
             "yoke@0.8.4": {
               "host": [
                 [
@@ -17345,17 +17598,17 @@
                 ]
               ]
             },
-            "yoke-derive@0.8.4": {
-              "host": [
-                []
-              ]
-            },
             "zeno@0.3.3": {
               "target": [
                 [
                   "eval",
                   "std"
                 ]
+              ]
+            },
+            "zerofrom-derive@0.1.8": {
+              "host": [
+                []
               ]
             },
             "zerofrom@0.1.8": {
@@ -17370,11 +17623,6 @@
                   "alloc",
                   "derive"
                 ]
-              ]
-            },
-            "zerofrom-derive@0.1.8": {
-              "host": [
-                []
               ]
             },
             "zerotrie@0.2.5": {
@@ -17393,6 +17641,11 @@
                 ]
               ]
             },
+            "zerovec-derive@0.11.7": {
+              "host": [
+                []
+              ]
+            },
             "zerovec@0.11.9": {
               "host": [
                 [
@@ -17407,11 +17660,6 @@
                   "derive",
                   "yoke"
                 ]
-              ]
-            },
-            "zerovec-derive@0.11.7": {
-              "host": [
-                []
               ]
             },
             "zmij@1.0.23": {
@@ -17442,115 +17690,6 @@
           },
           "local_features": {
             "nevrotick-ui@0.0.0": {
-              "target": [
-                []
-              ]
-            }
-          }
-        },
-        "ntp-wire": {
-          "features": {},
-          "local_features": {
-            "ntp-wire@0.0.0": {
-              "target": [
-                []
-              ]
-            }
-          }
-        },
-        "time-domain": {
-          "features": {
-            "castaway@0.2.4": {
-              "target": [
-                [
-                  "alloc"
-                ]
-              ]
-            },
-            "cfg-if@1.0.5": {
-              "target": [
-                []
-              ]
-            },
-            "compact_str@0.9.1": {
-              "target": [
-                []
-              ]
-            },
-            "garde@0.23.0": {
-              "target": [
-                [
-                  "derive"
-                ]
-              ]
-            },
-            "garde_derive@0.23.0": {
-              "host": [
-                []
-              ]
-            },
-            "itoa@1.0.18": {
-              "target": [
-                []
-              ]
-            },
-            "proc-macro2@1.0.107": {
-              "host": [
-                [
-                  "default",
-                  "proc-macro"
-                ]
-              ]
-            },
-            "quote@1.0.47": {
-              "host": [
-                [
-                  "default",
-                  "proc-macro"
-                ]
-              ]
-            },
-            "rustversion@1.0.23": {
-              "host": [
-                []
-              ]
-            },
-            "ryu@1.0.23": {
-              "target": [
-                []
-              ]
-            },
-            "smallvec@1.16.4": {
-              "target": [
-                []
-              ]
-            },
-            "static_assertions@1.1.0": {
-              "target": [
-                []
-              ]
-            },
-            "syn@2.0.119": {
-              "host": [
-                [
-                  "clone-impls",
-                  "default",
-                  "derive",
-                  "full",
-                  "parsing",
-                  "printing",
-                  "proc-macro"
-                ]
-              ]
-            },
-            "unicode-ident@1.0.27": {
-              "host": [
-                []
-              ]
-            }
-          },
-          "local_features": {
-            "time-domain@0.0.0": {
               "target": [
                 []
               ]
@@ -17671,6 +17810,26 @@
             }
           }
         },
+        "ntp-wire": {
+          "features": {},
+          "local_features": {
+            "ntp-wire@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
+        },
+        "spin_on": {
+          "features": {
+            "spin_on@0.1.1": {
+              "target": [
+                []
+              ]
+            }
+          },
+          "local_features": {}
+        },
         "time-core": {
           "features": {
             "castaway@0.2.4": {
@@ -17775,7 +17934,7 @@
             }
           }
         },
-        "nevrotick-engine": {
+        "time-domain": {
           "features": {
             "castaway@0.2.4": {
               "target": [
@@ -17806,34 +17965,7 @@
                 []
               ]
             },
-            "getrandom@0.4.3": {
-              "target": [
-                []
-              ]
-            },
             "itoa@1.0.18": {
-              "target": [
-                []
-              ]
-            },
-            "libc@0.2.191": {
-              "target": [
-                [
-                  "default",
-                  "std"
-                ]
-              ]
-            },
-            "mio@1.2.4": {
-              "target": [
-                [
-                  "net",
-                  "os-ext",
-                  "os-poll"
-                ]
-              ]
-            },
-            "pin-project-lite@0.2.17": {
               "target": [
                 []
               ]
@@ -17869,13 +18001,6 @@
                 []
               ]
             },
-            "socket2@0.6.5": {
-              "target": [
-                [
-                  "all"
-                ]
-              ]
-            },
             "static_assertions@1.1.0": {
               "target": [
                 []
@@ -17894,26 +18019,6 @@
                 ]
               ]
             },
-            "tokio-macros@2.7.1": {
-              "host": [
-                []
-              ]
-            },
-            "tokio@1.54.1": {
-              "target": [
-                [
-                  "libc",
-                  "macros",
-                  "mio",
-                  "net",
-                  "rt",
-                  "socket2",
-                  "sync",
-                  "time",
-                  "tokio-macros"
-                ]
-              ]
-            },
             "unicode-ident@1.0.27": {
               "host": [
                 []
@@ -17921,93 +18026,14 @@
             }
           },
           "local_features": {
-            "nevrotick-engine@0.0.0": {
-              "target": [
-                []
-              ]
-            },
-            "ntp-wire@0.0.0": {
-              "target": [
-                []
-              ]
-            },
             "time-domain@0.0.0": {
               "target": [
                 []
               ]
             }
           }
-        },
-        "spin_on": {
-          "features": {
-            "spin_on@0.1.1": {
-              "target": [
-                []
-              ]
-            }
-          },
-          "local_features": {}
         }
-      },
-      "allowed_build_scripts": [
-        "crc32fast@1.5.4",
-        "field-offset@0.3.6",
-        "getrandom@0.4.3",
-        "i-slint-backend-selector@1.18.1",
-        "i-slint-compiler@1.18.1",
-        "icu_decimal_data@2.4.0",
-        "icu_locale_fallback_data@2.4.0",
-        "icu_normalizer_data@2.4.0",
-        "icu_properties_data@2.4.0",
-        "icu_segmenter_data@2.4.0",
-        "libc@0.2.191",
-        "libm@0.2.16",
-        "memoffset@0.9.1",
-        "nevrotick-ui@0.0.0",
-        "num-traits@0.2.19",
-        "portable-atomic@1.15.0",
-        "proc-macro2@1.0.107",
-        "pulldown-cmark@0.13.6",
-        "quote@1.0.47",
-        "rspolib@0.1.2",
-        "rustversion@1.0.23",
-        "serde@1.0.229",
-        "serde_core@1.0.229",
-        "serde_json@1.0.154",
-        "slotmap@1.1.1",
-        "thiserror@2.0.21",
-        "yeslogic-fontconfig-sys@6.0.1",
-        "zmij@1.0.23"
-      ],
-      "allowed_proc_macros": [
-        "bytemuck_derive@1.12.1",
-        "const-field-offset-macro@0.2.1",
-        "derive_more-impl@2.1.1",
-        "displaydoc@0.2.7",
-        "garde_derive@0.23.0",
-        "i-slint-core-macros@1.18.1",
-        "num_enum_derive@0.7.6",
-        "pin-project-internal@1.1.13",
-        "rustversion@1.0.23",
-        "slint-macros@1.18.1",
-        "snafu-derive@0.8.9",
-        "strum_macros@0.28.0",
-        "thiserror-impl@2.0.21",
-        "tokio-macros@2.7.1",
-        "vtable-macro@0.5.0",
-        "yoke-derive@0.8.4",
-        "zerofrom-derive@0.1.8",
-        "zerovec-derive@0.11.7"
-      ],
-      "duplicate_exceptions": [
-        "hashbrown@0.14.5",
-        "hashbrown@0.16.1",
-        "hashbrown@0.17.1",
-        "miniz_oxide@0.8.9",
-        "miniz_oxide@0.9.1",
-        "syn@2.0.119",
-        "syn@3.0.9"
-      ]
+      }
     }
   }
 }

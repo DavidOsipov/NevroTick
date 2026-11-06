@@ -3374,3 +3374,127 @@ rounding bound through one conversion. Focused ordinary/optimized/doctest and
 Windows-target compiler checks pass; current critical-owner qualification remains
 underway in S1.2. The diagnostic writer's twenty-field schema is unchanged.
 This does not choose a phase anchor, normalize the production fit or admit history.
+
+#### Next bounded bridge: common-run reference and exact anchoring — 6 November 2026
+
+**Contract draft; dependent implementation held** until the
+[rational-seconds child](s1.2-regression-readiness.md#exact-rational-seconds-normalization--6-november-2026)
+completes its selected critical-owner gates. This card refines the reference and
+exact-representation obligations above under REQ-8, BND-1 and
+CHECK-6/7/8/11/14/25/27, architecture §§6/7. Engine owns actual acquisition,
+run/request lifetime and publication; `time-domain` owns the already selected
+shared rational-seconds conversion. Core's production receiver, conditioning,
+quality model and genuine date/scale/mapping admission remain their existing
+dependent work. This is one step toward that receiver, not a substitute for it.
+
+**Observed source chain on `ce4efa5`.** `execute` captures `started: Instant`
+before constructing its private runtime, then passes it through `run_owned` to
+`PreparedPilot::run_inner`. The latter derives the deadline from that instant;
+the run origin is not retained in `TransportFacts`. `LiveSlot`, `StagedReply`
+and `TransportFacts` currently share a different `Arc<()>` for each actual
+prepared socket/request. `stage_reply` copies this identity and captures;
+`commit_reply` checks request identity, endpoints, profile and pending state
+after the processing owner's fresh control/deadline checks. Keep this chain.
+Neither equal endpoints, equal `Instant` values nor the per-request `Arc`
+establishes a shared execution chart.
+
+The next implementation has these bounded contracts:
+
+1. Create exactly one private `Arc<RunClockContext>` from the real `started`
+   argument in `run_inner`; retain its origin and propagate clones through both
+   `LiveSlot`s, each staged reply and each terminal ordinary `TransportFacts`.
+   No public constructor, caller-supplied origin, process-global registry or
+   inferred numeric identifier may mint this context. At terminal commit check
+   its pointer identity alongside the existing request/socket, endpoint, profile,
+   pending-state and fresh control/deadline guards. Add no await between those
+   guards and publication. Preserve consume-once completion and existing refusal
+   behavior. Budget one small shared context allocation per run; retaining it
+   retains no native socket, runtime or task. It identifies this experimental
+   execution chart, not a qualified production clock/mapping generation.
+2. Add a fallible immutable experimental relative view, reached from actual
+   terminal facts through `relative_to(&anchor)` or an equivalent checked API.
+   Require both facts' successful conditional measurements and identical real
+   run-context identity. Preserve both original facts, profiles and distinct
+   request/local/peer identities by borrowing or immutable ownership; choosing an
+   anchor must not merge logical sources, replace either acquisition time or
+   change either measurement's original refusal. A cross-run pair rejects even
+   if every numeric capture and endpoint happens to compare equal.
+3. For each row use the already selected lower captures
+   `send_before.monotonic()` and `read_return.monotonic()`.
+   Explicitly require send and read at or after the origin and read at or after
+   send before calculating checked durations since that origin. Do not rely on
+   `checked_duration_since` alone: the Windows implementation can clamp a tiny
+   negative difference to zero. Convert admitted durations to checked `u64`
+   nanoseconds `a,b`, rejecting unrepresentable endpoints. Derive
+   `whole=a+(b-a)/2` and `half=(b-a)%2` with checked operations.
+   Retain the exact half-nanosecond reference and its capture association; do
+   not sum endpoints, floor an odd midpoint or relabel receipt/processing time.
+   Bracket widths and physical placement uncertainty remain separate.
+4. Define both differences as **self minus anchor**; positive phase therefore
+   means the row's nominal phase exceeds its anchor's, while positive reference
+   means its reference is later. Anchor before floating conversion. Compare the two retained corrected
+   `NominalPhaseNs::numerator()` values, take their `i128::abs_diff` as `u128`
+   magnitude and retain the resulting sign. Convert that exact difference once
+   with seconds denominator `8_589_934_592_000_000_000`; never subtract separately
+   rounded absolute phases or require the difference to fit `i128`. For temporal
+   differences, encode each exact reference as `2*whole+half` in `u128`, compare
+   and subtract there, then use seconds denominator `2_000_000_000`. Carry both
+   original exact quantities and each arithmetic-only rounding bound. These
+   calculations supply no physical accuracy or statistical-weight claim.
+5. Publish the complete view only after all context, chronology, arithmetic and
+   mandatory transformed-output checks succeed. Use private fields, checked
+   construction and fixed typed refusals; expose no unchecked construction or
+   mutation bypass. Conversion reads no ambient clock and changes no facts,
+   freshness, report, history or owner state. Preserve the current twenty-field
+   diagnostic schema and existing engine-only runtime/dependency direction.
+
+**Independent acceptance controls.** Literal midpoint `[10,11]` must retain
+`10 + 1/2 ns`; `[u64::MAX,u64::MAX]` must retain `u64::MAX` without overflowing
+an endpoint sum. Include equal/adjacent endpoints, before-origin and reversed
+captures, the checked `u64` duration boundary and its first rejected neighbor.
+For a directional literal, row phase2 and anchor phase1 yield a positive
+one-numerator-tick difference; row reference11ns and anchor10ns yield positive1ns.
+For the private numeric helper use large admitted numerators around `2^120+1`
+whose separate binary64 projections collapse while an exact one-tick difference
+survives. Opposite-sign numerically admitted values such as `±(2^126+1)` exercise
+a difference larger than `i128::MAX` that still fits `u128`. Construct these
+through the checked nominal-arithmetic boundary with independent valid inputs;
+they are not genuine captured measurements under one unique common-era window.
+Actual wall-capture remainders are multiples of512, so a one-numerator-tick
+example is also a raw numeric-helper control, not an asserted real-capture case.
+Keep the real two-peer acquisition control separate. Self-reference produces canonical
+positive zero; swapping row and anchor preserves magnitudes and reverses nonzero
+signs. Recompute expected bits/bounds independently with exact rational/dyadic
+midpoints, using the public converter's previously selected error semantics.
+
+Actual controlled two-peer UDP execution must return two terminal facts sharing
+the genuine run context while `same_exchange` remains false. Exercise the public
+relative consumer on that report; a separate run rejects as an anchor. Private
+direct-handler controls challenge substituted run/request identity, mismatched
+profile/endpoints, stopped/stale control, deadline expiry and duplicate completion
+at the final commit. Observe unchanged terminal facts and no second publication,
+with a current healthy neighbor. External legal-use and compile-fail consumers
+challenge raw construction, field mutation and unchecked conversion. Synthetic
+integer/`Instant` fixtures support arithmetic or refusal checks; they do not
+replace the actual origin-to-report integration control.
+
+**Exit and finite execution budget.** Before code, independently review this
+contract against the actual source and reconcile the active rational gate's
+terminal receipt. One root owner runs the existing admitted Linux sandbox recipes:
+one intentional feature-omission RED, one coherent ordinary/optimized/doctest
+GREEN cohort, and at most two repairs/retries justified by actual failures.
+Freeze after formatting; enumerate each changed critical owner and complete its
+configured 90% line/95% viable mutation gates, generation-gap controls and complete
+survivor accounting. Retain the existing 512-variant per-file cap, ten mutation
+workers with one inner job and at most six ordinary build jobs; schedule Cargo
+campaigns serially. Check fresh disk capacity and stop reserve first, retain all
+failed/partial attempts and reconcile the cumulative budget before any extension.
+Windows-target checks remain compilation only. No native Windows, formal solver,
+fuzz/storage experiment, dependency expansion or new runtime framework follows.
+
+The pilot still returns one observation per peer. Its cross-peer relative view
+cannot establish a same-source history, frequency fit, physical calibration,
+production `ValidatedSample`, authenticated eligibility, selection vote or clock
+authority. After this bridge, continue the existing production normalization,
+conditioning and checked-receiver chain with its original source/provenance
+requirements and holds; do not call this bridge full S2.1, P1 or product completion.

@@ -136,3 +136,44 @@ supplies no kill credit; descriptor/source/candidate/review disagreement fails
 closed, and every unresolved survivor or timeout keeps qualification incomplete.
 No historical score is transferred. Ordinary qualification for this candidate
 remains pending until the new terminal receipts. No formal or Windows job ran.
+
+## Raw unsigned guard candidate revalidation — 6 November 2026
+
+The rational-seconds raw-sign admission and direct raw-rule controls change the
+complete374-input product map to
+`b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35`.
+The engine measurement source remains
+`85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648`.
+Independent reviewer `/root/rational_equivalence_review` compared the complete
+adjacent coherence contract and function with `cb223c5`: the1,618 bytes are
+identical, SHA256
+`9032c1fe2ef9540906a015c3f7115f2addcd54f2f6b02250fb12c1e032e38865`.
+Current lower/upper operators and documentation-inclusive span remain557:29,
+561:26 and524:1–569:2 respectively.
+
+The review covers the helper's full raw `SoftwareClock`/`ConvertedWall` domain,
+not just successful `measure` callers. Both variants first reject either
+reversed individual bracket, unavailable checked duration, failed narrowing or
+wall-subtraction overflow identically. For successful durations, `lower` and
+`upper` are nonnegative. If `lower=0`, it is no greater than `upper`. Otherwise,
+the ordered endpoints make the interval from `base.mono` to `later.mono_after`
+at least as long as the interval from `base.mono_after` to `later.mono`; their
+monotone duration/nanosecond conversion preserves `lower<=upper`. A platform's
+permitted small-negative-to-zero duration behavior cannot produce a negative
+bound or reverse this ordering.
+
+At `wall_delta=lower`, the lower-equality mutation computes checked `lower-lower`
+instead of the original zero branch; `lower<=upper` excludes a conflicting
+upper branch. The exact representable zero and final conversion agree. At
+`wall_delta=upper`, after the identical first-branch decision, the upper-equality
+mutation computes checked `upper-upper` instead of literal zero. All unequal
+cases, errors and absence of allocation/I/O/state/lifecycle effects agree.
+The bracket `>` to `>=` variants remain non-equivalent because zero-width
+ordered brackets are legal. No other variant is excluded by this argument.
+
+This independently revalidates only `ENGINE-COHERENCE-LOWER-EQUALITY` and
+`ENGINE-COHERENCE-UPPER-EQUALITY` for the current source. It supplies no kill
+credit or historical-score transfer. Fresh complete descriptor, source,
+candidate, review-hash and native-outcome admission remains required before
+the current campaign's gate can pass. No Cargo, formal or Windows job was run
+for this revalidation.

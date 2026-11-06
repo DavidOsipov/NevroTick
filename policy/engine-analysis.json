@@ -26,7 +26,7 @@
   "mutation_equivalences": [
     {
       "id": "ENGINE-COHERENCE-LOWER-EQUALITY",
-      "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
       "source_sha256": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
       "mutant": {
         "name": "crates/nevrotick-engine/src/measurement.rs:557:29: replace < with <= in coherence_residual",
@@ -63,15 +63,15 @@
       "rationale": "After helper-local bracket admission, changing only the equality branch computes checked zero instead of literal zero with identical errors and effects. Retain native survivors and raw denominators; no kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "3c40a7b6148d24ef8669deee677bc0f29d6a308f5aa230283a2238feb4392d14",
+        "sha256": "1a05909233dbaed1c0e65237cb87ad78a8d6298ce63f406c00940ec82ac3f14b",
         "section": "ENGINE-COHERENCE-LOWER-EQUALITY",
-        "reviewer": "/root/normalization_bounded_plan; /root",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "ENGINE-COHERENCE-UPPER-EQUALITY",
-      "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
       "source_sha256": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
       "mutant": {
         "name": "crates/nevrotick-engine/src/measurement.rs:561:26: replace > with >= in coherence_residual",
@@ -108,9 +108,9 @@
       "rationale": "After helper-local bracket admission, changing only the equality branch computes checked zero instead of literal zero with identical errors and effects. Retain native survivors and raw denominators; no kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "3c40a7b6148d24ef8669deee677bc0f29d6a308f5aa230283a2238feb4392d14",
+        "sha256": "1a05909233dbaed1c0e65237cb87ad78a8d6298ce63f406c00940ec82ac3f14b",
         "section": "ENGINE-COHERENCE-UPPER-EQUALITY",
-        "reviewer": "/root/normalization_bounded_plan; /root",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
         "verdict": "independently-justified-equivalent"
       }
     }
@@ -129,7 +129,7 @@
       "sha256": "dfa103fba24077de193f4792760021dd07bfe5e061cd88992ea3d3b636b95bf9"
     }
   },
-  "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
+  "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
   "inputs_sha256": {
     "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
     "Cargo.lock": "56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286",
@@ -145,7 +145,7 @@
     "crates/nevrotick-engine/tests/private/argument_guards.rs": "604bf76c7dfc7712f1823ee4d17f04adc46b5ff34ef4258b8aef9878502c71ca",
     "crates/nevrotick-engine/tests/private/measurement.rs": "d994da65ce59a5651c6edcdad5906fa1b0f5bb3e128ae788182b783a58123315",
     "scripts/portable-analysis.py": "36b1affc8fc8c384564ce147f156becf3b871ab40ab536069e778c0e1ab66b3d",
-    "scripts/analysis-runtime.py": "fcfe9eb5018d729e9a20ea9e782e3e767fff4388477e405826600091391c2f38",
+    "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
     "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
     "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",

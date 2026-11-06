@@ -215,7 +215,7 @@ class RationalSecondsAnalysisTests(unittest.TestCase):
         self.assertEqual(MODULE.rational_seconds_test_execution(literal_execution(doctests=True), doctests=True)
                          ["selected_doctests"], 5)
         rows = [line for line in ordinary.splitlines() if line.startswith("test ") and line.endswith(" ... ok")]
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 13)
         for row in rows:
             summary = ("7 passed;", "6 passed;") if "rational_seconds::tests::" in row else ("6 passed;", "5 passed;")
             bad = ordinary.replace(row + "\n", "").replace(*summary)

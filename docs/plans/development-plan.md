@@ -918,6 +918,14 @@ The active [exact rational seconds child](../../tasks/s1.2-regression-readiness.
 implements a shared once-rounded representation and real engine adapters; focused
 ordinary/optimized/public-consumer checks pass, while its stable critical-owner
 qualification remains underway. It does not insert observations into history.
+David's subsequent compiler/dependency request activates the existing
+[source-readiness dependency refresh](../../tasks/s0.1-source-readiness.md#owner-requested-dependency-refresh--6-november-2026)
+before further dependent qualification: preserve the1.99.1 minimum, review the
+latest direct/transitive graph and retain local repairs, exact grants and fresh
+two-target advisory/feature checks. The preceding rational campaign's final
+custody rejected a concurrent manifest change; its retained raw outcomes are not
+a current-candidate pass. Reconcile the refreshed graph and numeric gate before
+the [reviewed common-run reference/anchoring bridge](../../tasks/engine-transport-pilot.md#next-bounded-bridge-common-run-reference-and-exact-anchoring--6-november-2026).
 Production history insertion remains held until the complete contract and its
 prerequisites are settled. Preserve the 90% executable-line and 95% per-file
 viable-mutation gates, existing budgets, nonempty denominators and independent

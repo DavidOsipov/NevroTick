@@ -597,3 +597,65 @@ Local product extraction/import and all twelve endpoint expectations passed;
 the local data-flow evaluation ended with disk exhaustion, and global/negative
 query execution remains incomplete. No completed-flow, native or release pass is
 established by these setup results. Do not restart local analysis from this note.
+
+## AccessKit password-disclosure applicability — 6 November 2026
+
+The dependency refresh independently reviewed AccessKit
+[PR841](https://github.com/AccessKit/accesskit/pull/841) and exact commit
+[`d62a49614ffbb0d85ce2d34e0340df711eb86e46`](https://github.com/AccessKit/accesskit/commit/d62a49614ffbb0d85ce2d34e0340df711eb86e46),
+included in upstream `accesskit_windows 0.35.2`/`accesskit_consumer 0.39.2`.
+The substantive safeguards are in the consumer: mask unmasked password values
+and text ranges, suppress word starts and normalize character metrics. The
+Windows adapter change itself only replaces its password-role predicate.
+Upstream still assigns the toolkit responsibility for supplying masked text;
+its repeated-character heuristic is not a complete secrecy guarantee.
+
+**Current disposition: no concrete affected NevroTick password path found.**
+The selected Windows entrypoint runs the compiled Fluent Slint UI. Its seven
+code-owned editable fields are source label, host, port, source search, custom
+minutes and two helper identities
+([field owner](../crates/nevrotick-ui/src/ui_drafts.rs)). All use
+[GuardedLineEdit](../crates/nevrotick-ui/ui/guarded-line-edit.slint), which exposes
+no input-type selector and leaves the stock `InputType` at its Text default.
+Inspection of all 33 maintained `.slint` sources found no password-mode binding
+or password/credential control. Input/catalog text cannot choose that code-owned
+control type. The existing generated `app.rs` contains stock password-icon
+branches, which does not establish an application password field; it was
+inspected without rebuilding or claiming a fresh source-to-generated binding.
+
+The Slint 1.18.1 AccessKit emitter source also overwrites a text input's value
+with its display-derived text before layout lookup and derives text runs from
+that displayed layout; `RenderString` masks text in password mode. This is
+source evidence for toolkit-side masking, not native leakage qualification.
+The older selected consumer 0.38.0 still writes supplied values/text runs without
+the new defensive masking. Our local Windows adapter's value getter calls that
+consumer, and its text-range `GetText` calls the consumer's range writer. The
+existing local SetValue admission, interface-type and range-lock repairs address
+different paths and must not be described as password-output protection.
+
+Keep the present local 0.34.0 patch. Selected `accesskit_winit 0.33.2` requires
+Windows `^0.34.0` and AccessKit `^0.24.1`; Slint 1.18.1's core also selects
+AccessKit `^0.24`. Upstream Windows adapter 0.35.2 instead requires AccessKit 0.25.2,
+consumer 0.39.2 and hashbrown 0.17. There is no newer 0.34.x release. Substituting
+0.35.2 is an incompatible family/source migration, and that source still lacks
+the independent NevroTick ingress/type/lock repairs. This review selects no bump
+or backport and changes no licence grant: original GUI/added local helpers retain
+GPL-3.0-only; upstream dual MIT/Apache material and additional notices retain
+their existing separately selected terms.
+
+**Trigger and owner:** before the GUI owner introduces a password/credential
+control, reveal mode, or service-secret value/text-run producer, reconcile
+toolkit and consumer masking at that actual producer under existing GUI security,
+CHECK-22 and privacy owners. Independently challenge value, text-range and
+changed-value/metrics outputs with secret and ordinary-text neighbors; do not
+rely solely on a Password role or the upstream heuristic. Qualify the actual
+selected Windows/renderer/UIA path when its existing execution gate permits.
+The present source finding adds no UI-M0 blocker and lifts no D1–D3, Windows,
+backend, package or release hold.
+
+Exact upstream response and a compact source/hash review are retained under
+`/home/david_osipov/.local/share/nevrotick/dependency-refresh-20261106-v1/direct-research/password-applicability/`.
+This assessment ran no Cargo, native Windows, UIA, solver or product disclosure
+test. Reassess after relevant control, toolkit, consumer, profile or secret-flow
+changes; the current absence of a password producer is not a general dependency
+security certification.

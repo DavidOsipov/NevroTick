@@ -22,19 +22,19 @@
   "maximum_mutants": 512,
   "maximum_listed_per_file": 4096,
   "maximum_listed_total": 8192,
-  "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
+  "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
   "inputs_sha256": {
     "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
     "Cargo.lock": "56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/time-domain/src/lib.rs": "d1314aa80fc705d410e747de555d79d0a8a63d16b2ff5877e1012ce60ef039ab",
-    "crates/time-domain/src/rational_seconds.rs": "ad9a9b50d8f720dfdc3e2c1f7aa4e0d40279c79285609f35295de31135035d17",
+    "crates/time-domain/src/rational_seconds.rs": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
     "crates/time-domain/tests/rational_seconds.rs": "5db56cb0fd9d8120c53613a0ebc911f4d16f819876a7b90553f45e2393656439",
-    "crates/time-domain/tests/private/rational_seconds.rs": "a66cfd8b7836e874be68630ccb537c6138ea40b44aaffaec9600fb6bad364b81",
-    "scripts/verify-time-domain-analysis.py": "a0e124bcd84e10909382da0de0870b22c6e06dd638b04c0c1d0abd1f81f0fd6a",
-    "scripts/tests/test_rational_seconds_analysis.py": "c3e0609e3042123f80bc41e1cc46914d9eee97f85e2d9a0bb96fcf698f3bd572",
+    "crates/time-domain/tests/private/rational_seconds.rs": "0b1f650aacc8223c6ee495776b637f1f56a1b08b26bb2049b8e84bec06d27eb4",
+    "scripts/verify-time-domain-analysis.py": "8ee471e5b392a27734b7529852136f6d639f1fa5adabcff39d880b4cf4cec63c",
+    "scripts/tests/test_rational_seconds_analysis.py": "01d39f767049ed79c1f8eef9cf2e92b58e59002b0cd68f0ffb727da5eb9fa412",
     "scripts/portable-analysis.py": "36b1affc8fc8c384564ce147f156becf3b871ab40ab536069e778c0e1ab66b3d",
-    "scripts/analysis-runtime.py": "fcfe9eb5018d729e9a20ea9e782e3e767fff4388477e405826600091391c2f38",
+    "scripts/analysis-runtime.py": "0de6d23b2e52fea78ee81f038d216c962ef87511df53443984bb6e6aacb79dc9",
     "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
     "scripts/verify.py": "e081c73d830897fc14292be1bfffc160ab98c907a83ab23b383ea65063af51ef",
     "scripts/check-environment.py": "b4b1376eeb8516e6c8f4d726e7ae91e258587e3011b5509ca20491168b51c189",
@@ -45,10 +45,236 @@
   },
   "mutation_inventories": {
     "rational_seconds": {
-      "count": 104,
-      "sha256": "22f620ff4b00c4cceea6d8611643aa25d8c7d12298d358b5d03b6ede9f67dbaf"
+      "count": 103,
+      "sha256": "91667a1f1ffad0cf9d0613b26f07a02b1fbeefaee26e990bd718bb2080bdf5f0"
     }
   },
-  "mutation_equivalences": [],
+  "mutation_equivalences": [
+    {
+      "id": "RATIONAL-NORMALIZED-LOWER-RANGE",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
+      "mutant": {
+        "file": "crates/time-domain/src/rational_seconds.rs",
+        "function": {
+          "function_name": "normalized_ratio",
+          "return_type": "-> Result<NormalizedRatio, RationalSecondsError>",
+          "span": {
+            "end": {
+              "column": 2,
+              "line": 321
+            },
+            "start": {
+              "column": 1,
+              "line": 273
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/time-domain/src/rational_seconds.rs:309:17: replace << with >> in normalized_ratio",
+        "package": "time-domain",
+        "replacement": ">>",
+        "span": {
+          "end": {
+            "column": 19,
+            "line": 309
+          },
+          "start": {
+            "column": 17,
+            "line": 309
+          }
+        }
+      },
+      "requirement": "REQ-8/BND-1; CHECK-6/7/8/11/14/25/27",
+      "rationale": "Whole raw N/D domain produces a quotient at least 2^52; widening the lower guard to zero changes no result or effect.",
+      "proof": {
+        "path": "tasks/rational-seconds-analysis-equivalences.md",
+        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "section": "RATIONAL-NORMALIZED-LOWER-RANGE",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "RATIONAL-NORMALIZED-GUARD-FIRST",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
+      "mutant": {
+        "file": "crates/time-domain/src/rational_seconds.rs",
+        "function": {
+          "function_name": "normalized_ratio",
+          "return_type": "-> Result<NormalizedRatio, RationalSecondsError>",
+          "span": {
+            "end": {
+              "column": 2,
+              "line": 321
+            },
+            "start": {
+              "column": 1,
+              "line": 273
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/time-domain/src/rational_seconds.rs:310:9: replace || with && in normalized_ratio",
+        "package": "time-domain",
+        "replacement": "&&",
+        "span": {
+          "end": {
+            "column": 11,
+            "line": 310
+          },
+          "start": {
+            "column": 9,
+            "line": 310
+          }
+        }
+      },
+      "requirement": "REQ-8/BND-1; CHECK-6/7/8/11/14/25/27",
+      "rationale": "Whole raw typed normalization domain makes all three total pure guard predicates false; changed short-circuit changes no effect.",
+      "proof": {
+        "path": "tasks/rational-seconds-analysis-equivalences.md",
+        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "section": "RATIONAL-NORMALIZED-GUARD-FIRST",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "RATIONAL-NORMALIZED-GUARD-SECOND",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
+      "mutant": {
+        "file": "crates/time-domain/src/rational_seconds.rs",
+        "function": {
+          "function_name": "normalized_ratio",
+          "return_type": "-> Result<NormalizedRatio, RationalSecondsError>",
+          "span": {
+            "end": {
+              "column": 2,
+              "line": 321
+            },
+            "start": {
+              "column": 1,
+              "line": 273
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/time-domain/src/rational_seconds.rs:311:9: replace || with && in normalized_ratio",
+        "package": "time-domain",
+        "replacement": "&&",
+        "span": {
+          "end": {
+            "column": 11,
+            "line": 311
+          },
+          "start": {
+            "column": 9,
+            "line": 311
+          }
+        }
+      },
+      "requirement": "REQ-8/BND-1; CHECK-6/7/8/11/14/25/27",
+      "rationale": "Whole raw typed normalization domain makes every guard predicate false; all earlier errors and later results agree.",
+      "proof": {
+        "path": "tasks/rational-seconds-analysis-equivalences.md",
+        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "section": "RATIONAL-NORMALIZED-GUARD-SECOND",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "RATIONAL-SIGNIFICAND-DISJOINT-BITS",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
+      "mutant": {
+        "file": "crates/time-domain/src/rational_seconds.rs",
+        "function": {
+          "function_name": "round_magnitude",
+          "return_type": "-> Result<MagnitudeRounding, RationalSecondsError>",
+          "span": {
+            "end": {
+              "column": 2,
+              "line": 406
+            },
+            "start": {
+              "column": 1,
+              "line": 344
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/time-domain/src/rational_seconds.rs:389:75: replace | with ^ in round_magnitude",
+        "package": "time-domain",
+        "replacement": "^",
+        "span": {
+          "end": {
+            "column": 76,
+            "line": 389
+          },
+          "start": {
+            "column": 75,
+            "line": 389
+          }
+        }
+      },
+      "requirement": "REQ-8/BND-1; CHECK-6/7/8/11/14/25/27",
+      "rationale": "Enforced normalization/carry yields fraction below 2^52; the exponent-only binary power has no overlapping fraction bits.",
+      "proof": {
+        "path": "tasks/rational-seconds-analysis-equivalences.md",
+        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "section": "RATIONAL-SIGNIFICAND-DISJOINT-BITS",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "verdict": "independently-justified-equivalent"
+      }
+    },
+    {
+      "id": "RATIONAL-PUBLICATION-DISJOINT-SIGN",
+      "candidate_sha256": "b1852a81314a564c4923a7ed1be7d293da730ac2b7dd4152eca539f3a4474d35",
+      "source_sha256": "2eeffceacf47251e7d917f90b59af12aec768e0a902465d32338ca75dae9a438",
+      "mutant": {
+        "file": "crates/time-domain/src/rational_seconds.rs",
+        "function": {
+          "function_name": "publish",
+          "return_type": "-> Result<RoundedRationalSeconds, RationalSecondsError>",
+          "span": {
+            "end": {
+              "column": 2,
+              "line": 478
+            },
+            "start": {
+              "column": 1,
+              "line": 408
+            }
+          }
+        },
+        "genre": "BinaryOperator",
+        "name": "crates/time-domain/src/rational_seconds.rs:437:59: replace | with ^ in publish",
+        "package": "time-domain",
+        "replacement": "^",
+        "span": {
+          "end": {
+            "column": 60,
+            "line": 437
+          },
+          "start": {
+            "column": 59,
+            "line": 437
+          }
+        }
+      },
+      "requirement": "REQ-8/BND-1; CHECK-6/7/8/11/14/25/27",
+      "rationale": "Actual early raw sign-bit rejection precedes both expressions; remaining seconds word and closed-enum sign bit are disjoint, preserving validation allocations and all errors/effects.",
+      "proof": {
+        "path": "tasks/rational-seconds-analysis-equivalences.md",
+        "sha256": "d35ed705ebdceb811c939f42fbbd82b766f424888d98d54678e98a8478fc4c96",
+        "section": "RATIONAL-PUBLICATION-DISJOINT-SIGN",
+        "reviewer": "rational_equivalence_review; independent challenge rational_candidate_review",
+        "verdict": "independently-justified-equivalent"
+      }
+    }
+  ],
   "scope": "Current exact-rational-seconds numeric child; frozen source/helper admission for new enumeration, coverage and mutation. Complete product map and exact per-file gate are required; no historical qualification or physical/native/eligibility claim is transferred. Qualification remains pending until terminal receipts; formal work remains post-V1."
 }
