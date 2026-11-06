@@ -862,22 +862,135 @@ timed out at 60 seconds with zero checks, stopping the ten-job cohort at job 6;
 addition and row 3 remain incomplete. No retry, wider limit or stubbing followed.
 **Conditional Verus trial — 5 November 2026:** David asked to use Verus if it
 offers a justified benefit and to document that work. The actual addition timeout
-now meets the earlier assessment's reconsideration trigger. Execute the
-[existing Core pilot's bounded compatibility/admission preparation](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026),
-then its actual-source comparison only if those gates pass. The hypothesis is
-deductive composition of the actual new/compare/complement/addition bodies for
-the same full contract; no product assumptions, narrowed domain or model substitute.
-The card pins one release, isolated bootstrap, explicit storage/time/attempt
-limits, three semantic faults and restored health. Broader adoption remains
-DEFER until measured source-bound benefit is demonstrated; no tool/CI or global
-phase gate is added. Completed Kani proofs remain reusable and held extensions
-are not reopened. The independent
-[scaled-value split proof](../../tasks/s1.3-source-selection-readiness.md#scaled-value-split-proof-contract--5-november-2026)
-is the fallback if Verus compatibility or the finite pilot fails. Addition and
-all dependent producer/composition obligations remain open. Any other addition
-decomposition needs its own reviewed finite checkpoint preserving the full contract.
-The public era-constructor proof and held verifier extensions retain their
-separate incomplete status.
+met the earlier assessment's reconsideration trigger. The
+[bounded Core readiness trial](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+now ended **DEFER** after its three preparation commands: the pinned Verus release
+rejects required `u64::checked_shl` before SMT. An earlier ghost-assertion type
+error was repaired within the same cap and remains retained as a harness failure.
+No product proof or Verus adoption followed. Do not restart this exhausted
+candidate, add project assumptions, narrow the domain or rewrite executable
+arithmetic to suit it. Reconsider only when the actual APIs are supported through
+a separate finite checkpoint. No tool/CI or global phase gate is added.
+Completed Kani proofs remain reusable and held extensions are not reopened.
+The independent
+[scaled-value split proof](../../tasks/s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026)
+then qualified its complete five-job full-raw-domain campaign with unchanged
+Kani/CBMC/Cadical, including three intended semantic defects and restored health.
+The same task's [representation terminal checkpoint](../../tasks/s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026)
+then qualified both exact raw leaves on 6 November: `signed_whole` over every
+bool sign, u64 whole and arbitrary u64/u32 fraction field pair, and `from_bits` over every
+raw u64 bit pattern with exact admission, sign, Q33 decomposition and errors.
+All ten expected job outcomes passed, including each leaf's three semantic
+defects and restored healthy proof. These leaves do not close Garde/caller
+admission, fraction addition, `EndpointParts` construction, complete enclosure
+or Core/P1; retain the remaining proof inventory in the existing Core task.
+
+**Addition contract-mode terminal result, 6 November 2026:** full-domain fraction
+addition remains open. The separately bounded Kani verified-callee-contract
+[pilot ended DEFER](../../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+at its first primitive checker: Kani exited 1 after CBMC exited 134 with an
+internal `symbol_expr_type_matches_symbol_table` invariant failure in
+`apply_closure`. The one attempted command returned an empty checks list; zero
+callee certificates and zero product proof jobs followed. This is a verifier
+compatibility failure, not a demonstrated addition defect or a mathematical
+proof. No retry, source/tool change or contract-mode adoption follows.
+
+**Ordinary partition terminal result, 6 November 2026:** the
+[sixteen-job candidate ended partial DEFER](../../tasks/s1.3-source-selection-readiness.md#ordinary-addition-partition-terminal-assessment--6-november-2026).
+The union proof and healthy cases 0–2 completed **631 checks and 22 covers**.
+Job 5, healthy case 3, timed out at **60,018 ms**, exporting no checks.
+Later leaves, all three semantic defects and all restored proofs did not run.
+These four results remain bounded healthy evidence; the absent defect/restored
+group and remaining domains leave full addition unqualified. No retry or
+repartitioning follows this card.
+
+**Full-addition compute-budget terminal result, 6 November 2026:** the
+[dedicated Z3 compute checkpoint ended DEFER](../../tasks/s1.3-source-selection-readiness.md#full-addition-compute-budget-terminal-assessment--6-november-2026).
+Its first healthy full-domain proof timed out at **300,011 ms**, exporting no
+checks; no mutant or restored job ran. The exact original model, source and
+custody remained intact. This follows the separate ordinary Z3 comparison's
+60,012 ms timeout, not a reopened card. Neither timeout establishes an arithmetic
+defect or a completed theorem. Full addition, dependent enclosure work and Core/P1
+remain open.
+
+**Manual composition terminal result, 6 November 2026:** the
+[closed eighteen-command card remains DEFER](../../tasks/s1.3-source-selection-readiness.md#manual-composition-terminal-assessment--6-november-2026).
+Fourteen commands ran. Jobs 1–13 completed their required outcomes with **1,415
+raw checks**: 1,315 Success, 69 satisfied covers, nine intended failures and 22
+Unreachable. They include three fresh actual-callee Post/actual-return seed
+proofs and nine compiled controls. Job 14's actual full-domain addition proof
+timed out in CBMC at **60,016 ms**, exporting zero checks; jobs 15–18 did not run.
+
+A separate global custody failure remains preserved: an external audit import
+added four Python bytecode files and a `__pycache__` directory to the frozen
+source island during job 14. All 45 bound source inputs in the checkout and
+frozen copy, fourteen job input trees and three callee certificate receipt seals
+remained unchanged. No cleanup or retry follows. The earlier narrow premises
+remain useful partial evidence; they establish neither full composition
+adoption nor permission to reuse certificates, full addition or Core/P1.
+
+**Fraction query-split terminal result, 6 November 2026:** the
+[fixed twenty-command card remains DEFER/incomplete](../../tasks/s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026).
+Fourteen commands ran. Jobs 1–13 qualified **1,415 raw checks**: 1,315 Success,
+69 satisfied covers, nine intended failures and 22 Unreachable. Job 14's
+universal addition proof timed out at **60,018 ms**, exporting zero checks.
+Jobs 15–20 never ran; neither the direct-witness lane nor either restoration
+is qualified. Final custody, permissions and tool bookends passed across all
+49 source inputs, fourteen input trees and three fresh certificates, with no
+bytecode drift. The 67 focused code checks passed; the old eighteen-command
+kit and ordinary defaults remain unchanged. The prefix remains partial evidence,
+not full addition, tool adoption or Core/P1 completion.
+
+The encoding/log comparison is diagnostic only: old/new symbolic steps were
+33,009/25,030, VCCs 2,714/664, remaining VCCs 238/170, completed SAT calls 33/9
+and summed SAT time 44.63/2.81486242 seconds. The last reported solver stage before
+timeout was `Running propositional reduction`; these counts identify no completed
+property or counterexample and do not establish proof completion.
+
+The existing task's
+[source-only Verus bridge preparation](../../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-source-preparation--6-november-2026)
+retains the six executable predicates with reversible contract annotations and
+explicit full-domain mathematical specifications. The
+[pure-bridge card](../../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-terminal-assessment--6-november-2026)
+is now terminal DEFER: one healthy command found seven private-`open` annotation
+errors before SMT; zero jobs qualified and controls/restoration did not run.
+The subsequent source-only revision removes exactly seven modifiers, preserving
+all bodies/types; fourteen source checks pass. The fresh
+[private-spec v2 card](../../tasks/s1.3-source-selection-readiness.md#private-spec-verus-bridge-v2-terminal-assessment--6-november-2026)
+reached Z3 without VIR errors but closed DEFER: five predicate equalities failed;
+constructor Post and three Clone bodies report modular success, with constructor
+Post still conditional on failed helper equalities. Zero jobs qualified and
+controls/restoration did not run. The subsequent
+[bit-length dependency campaign](../../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026)
+completed all five jobs: full-raw-domain lemma and two predicate equalities,
+three distinct contract defects and restored health. Its62 focused Python checks
+pass;22 source files, exact executable erasure and final source/input/receipt/tool
+bookends are bound. The subsequent
+[constructor-Post campaign](../../tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026)
+completed all five jobs: three full-raw predicate equalities and the lemma,
+three isolated Post defects and restored health, with93 focused Python checks
+and24 current source files. It quantifies independently over every typed Result,
+not only checked/constructor-produced values, and does not prove `Fraction::new`.
+Next follow the existing task's
+[complement-Post source preparation](../../tasks/s1.3-source-selection-readiness.md#next-source-preparation--complement-post),
+retaining the qualified constructor Post/helpers and every raw input/Result,
+with exact two-span erasure and source-bound shift/power/cast obligations.
+Reprove all selected predicates and name any new proof lemmas before a fresh
+native card. Reuse
+unchanged scoped evidence for remaining arithmetic/representation contracts.
+The complete six-equality bridge
+and native Ordering correspondence/import remain open. Do not repeat closed
+attempts, import an unqualified product callee or weaken the full-raw domains.
+Pinned Verus may later verify the actual caller with separately Kani-proved
+callees, but its existing
+`--no-cheating` gate rejects `external_body` and `assume_specification`; an exact
+cross-verifier source/machine-semantics bridge is required. No flag change,
+adoption, new run, automatic retry or budget extension follows. Both complete
+healthy/restored lanes, all eleven mathematical assertions, all23 original
+concrete witnesses and original defects remain mandatory. Existing owner-
+decision/tool-adoption rules, every execution hold and the separate public
+era-constructor/held-verifier gaps remain. The overall P0–P7 objective remains
+active; no wider phase closes.
 
 Carry a per-algorithm remaining-proof inventory into the existing domain,
 exchange, Core and [leap task](../../tasks/s1.4-leap-policy.md#rust-contract-audit-follow-up--5-november-2026)

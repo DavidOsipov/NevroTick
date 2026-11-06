@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "consumer": "fraction-contracts-pilot-v1",
+  "status": "candidate-only",
+  "preparation_started_unix_ns": 1793911660902330435,
+  "preparation_started_monotonic_ns": 8328735757704,
+  "preparation_boot_id": "d3fc5615-e867-45cd-b74f-4a7413afc5ab",
+  "total_seconds": 3600,
+  "maximum_native_proof_commands": 11,
+  "solver": "cadical",
+  "flags": [
+    "--default-unwind",
+    "1",
+    "--output-format",
+    "regular",
+    "--solver",
+    "cadical",
+    "-Z",
+    "unstable-options",
+    "--run-sanity-checks",
+    "--harness-timeout",
+    "60s",
+    "-Z",
+    "function-contracts",
+    "-Z",
+    "stubbing"
+  ],
+  "rustflags": "--edition=2024 --check-cfg=cfg(test)",
+  "command_wall_seconds": 180,
+  "command_cpu_seconds": 180,
+  "address_space_bytes": 8589934592,
+  "process_limit": 128,
+  "build_jobs": 2,
+  "solver_workers": 1,
+  "retries": 0,
+  "source_sha256": {
+    "crates/time-core/src/projection_enclosure.rs": "6b7b079f7d820e611bd13bb96361c243973d231a7f65a07fb6d4350a63282023",
+    "crates/time-core/src/selection.rs": "da8b87fe69215b71419ff370d4032f0dc49363131c75e70076cb2cce6305d19e"
+  },
+  "output_leaf": "formal-core-fraction-contracts-20261106-v1"
+}

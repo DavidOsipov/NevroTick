@@ -5,10 +5,13 @@ and [architecture §20.1.1](../../docs/windows-time-architecture.md#2011-mandato
 require source-bound mathematical proofs. This driver covers only its named
 suite obligations; no suite covers every product algorithm.
 The [bounded Verus addition pilot](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
-is a separate queued evaluation of the same open addition contract. No Verus
-payload, guarded execution entrypoint or product proof is admitted yet. Follow
-that card and [TOOLING.md](../../TOOLING.md#additional-rust-analysis-tools) before
-acquisition/execution; the Kani commands below select no Verus candidate.
+exhausted its three readiness commands: the pinned private candidate rejects
+the required `u64::checked_shl` call before SMT. Its result is **DEFER**, with no
+product proof or adoption. Source guards/tests and private raw receipts preserve
+the actual failure and the earlier repaired probe type error. Do not restart the
+exhausted candidate or assume a missing standard-library contract. The card and
+[TOOLING.md](../../TOOLING.md#additional-rust-analysis-tools) own its future return
+trigger; the Kani commands below select no Verus candidate.
 Track actual completion and remaining constructor/caller and other mathematical
 obligations in the [existing S1.1c task](../../tasks/s1.1-time-domain.md).
 The [Core task](../../tasks/s1.3-source-selection-readiness.md#independent-endpoint-finish-proof-checkpoint--5-november-2026)
@@ -17,6 +20,144 @@ Its [Fraction constructor checkpoint](../../tasks/s1.3-source-selection-readines
 owns full raw admission, exact retention and zero canonicalization separately.
 The same task's [comparison contract](../../tasks/s1.3-source-selection-readiness.md#fraction-comparison-proof-contract--5-november-2026)
 owns checked-pair rational ordering and lossless machine alignment separately.
+Its [split checkpoint](../../tasks/s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026)
+qualifies full raw `ScaledValue::split` admission, exact decomposition and errors
+with healthy/three-defect/restored evidence. The separate
+[6 November representation checkpoint](../../tasks/s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026)
+qualified full raw-bit `from_bits` admission/exact Q33 decomposition and raw-payload
+`signed_whole` magnitude/sign/fraction independence, with one complete
+healthy/three-defect/restored group per leaf through `scaled-value-representation`.
+Addition, `EndpointParts::new`, full enclosure, joint Garde admission/callers and
+Core/P1 remain open. Reuse unchanged proofs; follow the Core task's remaining queue.
+
+The [6 November addition contract-mode assessment](../../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+is terminal **DEFER**: the first primitive mechanism command reached CBMC, which
+aborted with status 134 on an internal closure type inconsistency and exported
+empty checks. Zero product-proof commands or callee certificates followed; the
+checkpoint stopped without retries, tool patches or adoption. Existing ordinary
+Kani proofs retain their scopes and full mathematical obligations remain unchanged.
+
+The [ordinary partition assessment](../../tasks/s1.3-source-selection-readiness.md#ordinary-addition-partition-terminal-assessment--6-november-2026)
+is terminal **DEFER**. The union and cases 0–2 completed 631 checks: 575 `Success`,
+22 satisfied covers and 34 accounted unreachable checks. Case 3 timed out at
+60,018 ms with empty checks; later leaves, fault controls and restorations did not
+run. These four completed commands retain their individual scopes.
+
+The [full-addition compute-budget assessment](../../tasks/s1.3-source-selection-readiness.md#full-addition-compute-budget-terminal-assessment--6-november-2026)
+is terminal **DEFER**: its first healthy command timed out at 300,011 ms with zero
+checks; negative controls and restoration did not run. All 37 source inputs, the
+60-entry snapshot and tool/solver identities remained intact. The larger budget
+leaves addition unproved; valid ordinary proofs retain their scopes and all holds
+remain. This card is closed, with no automatic new profile, retry or SDK patch.
+
+The [manual composition assessment](../../tasks/s1.3-source-selection-readiness.md#manual-composition-terminal-assessment--6-november-2026)
+is terminal **DEFER / incomplete** after 14 of at most 18 commands. The first
+13 qualified 1,415 checks: 1,315 `Success`, 69 satisfied covers, nine intended
+failures and 22 accounted unreachable checks. This includes fresh unstubbed
+actual-constructor/comparison/complement Post and actual-return seed proofs over
+their full admitted domains. The pure-composition rule and compiler name
+resolution are explicit trusted boundaries. Addition command 14 timed out at
+60,016 ms with zero checks; commands 15–18 did not run.
+
+During command 14, an audit imported frozen Python modules without suppressing
+bytecode writes and added four `.pyc` files to the source island. All 45 bound
+source files, command-14 inputs and three earlier certificate receipts remained
+unchanged, preserving only the earlier scoped lemma evidence. The custody
+failure and timeout leave addition unproved and the whole card closed: no
+adoption, certificate import or retry. Retain the 23 MiB raw bundle. The separate
+query-split checkpoint below owns the subsequent hypothesis; the original card
+and its incident remain preserved.
+
+The [query-split terminal assessment](../../tasks/s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026)
+is **DEFER / incomplete** after 14 of 20 commands. Its fresh prefix qualified
+1,415 checks: 1,315 `Success`, 69 satisfied covers, nine intended failures and
+22 accounted unreachable checks, establishing only the scoped actual-callee
+Post/actual-return seed premises and controls. Universal command 14 timed out at
+60,018 ms with zero checks; commands 15–20, including every direct-witness and
+restored lane, did not run. Addition remains unproved and Core/P1 incomplete.
+
+All 49 source files, 14 input/permission bookends, three certificate seals and
+tool identity passed final custody checks; the observer bytecode failure was
+prevented. The 67 Python checks qualify preparation/gating only, and the old
+eighteen-job kit and ordinary defaults remain unchanged. Retain the
+26,947,584-byte raw bundle. Query splitting reduced the reported VCC count from
+2,714 to 664 and completed SAT calls from 33 to nine (44.63 s to 2.81486242 s),
+but supplies no property attribution or UNSAT result; the terminal tail reports
+only `Running propositional reduction`. Next work is source-only diagnosis and
+cross-verifier correspondence assessment. The existing Verus no-cheating gate
+still rejects `external_body`; no profile weakening, new experiment, SDK patch
+or adoption is authorized. Both cards are closed and all holds remain.
+
+The prepared [source-only bridge candidate](../../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-source-preparation--6-november-2026)
+uses `fraction_verus_bridge_projection.py` and `fraction_verus_bridge_spec.rs`.
+It retains the actual six executable predicates, inserts only reversible
+declaration annotations, and records the complete nine-span source closure.
+Its focused Python checks establish correspondence preparation, not verified
+Verus compatibility or mathematical equivalence. The candidate starts no tools
+and changes no admission profile; six body-to-spec proofs and semantic controls
+must precede any separately reviewed caller-import execution.
+
+Focused source-preparation checks (23 distinct checks pass, retaining all14 old
+checks and nine dependency-insertion controls):
+
+```sh
+python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_fraction_verus_bridge_projection.py' -v
+```
+
+The [first pure-bridge card](../../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-terminal-assessment--6-november-2026)
+is closed DEFER after seven private-`open` errors. The exact seven-modifier
+correction changes no mathematical/executable body. The subsequent
+[private-spec v2 card](../../tasks/s1.3-source-selection-readiness.md#private-spec-verus-bridge-v2-terminal-assessment--6-november-2026)
+reached Z3 without VIR errors but closed DEFER after five failed equalities.
+Constructor Post's success is conditional on failed helpers; only three Clone
+bodies otherwise succeeded. Zero jobs qualified; faults/restoration did not run.
+Do not invoke either fixed attempt again or remove its work root.
+
+The source-only diagnostic-consumer repair passes eighteen synthetic tests:
+
+```sh
+python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_verify_fraction_verus_bridge.py' -v
+```
+
+`fraction_verus_bridge_lemmas.rs` contains the full-raw bit-length/power lemma. The additive
+[dependency insertion path](../../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-insertion-preparation--6-november-2026)
+uses `dependency_input_names()` and `prepare_bit_length()` to bind eight sources,
+insert two fixed pre-subtraction ghost blocks, and erase to the exact original
+661-byte predicate slice. It retains the complete prefix and product closure;
+the old seven-input full-bridge path produces identical Rust bytes.
+The fixed consumer `verify_fraction_bit_length.py` reuses the existing guarded
+controller through an immutable closed recipe. Its
+[five-job terminal campaign](../../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026)
+passed: full-raw lemma/two predicate equalities, three distinct contract defects
+and byte-identical restored health, with exactly one proof/five exec results per
+job. All62 focused source/consumer checks pass, including21 new mixed-mode
+controls. The22-source closure and final source/input/receipt/tool bookends are
+bound. This fixed attempt is closed; do not invoke it again or delete its root.
+The subsequent closed `prepare_constructor_post()` path retains the first1,202
+original bytes, all three annotations and the same two proof hooks, with exact
+inverse erasure. Its fixed consumer `verify_fraction_constructor_post.py`
+completed the [constructor-Post campaign](../../tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026):
+five jobs, seven exact modes/results each, full-raw Post equality/lemma/helpers,
+three isolated Post defects and restored health. All93 current focused Python
+checks pass (33 projector;18 legacy,21 bit-length and21 constructor consumers).
+The24-source candidate binds all raw Result/Ok/error values without a checked-
+value or constructor-produced-result premise. Both older preparation outputs
+remain exact. This attempt is closed; do not invoke its fixed consumer again.
+The complete bridge, native Ordering correspondence/import and actual addition
+remain open; next prepare complement correspondence and its shift/power proof.
+
+The new consumer's focused synthetic checks execute no compiler or solver:
+
+```sh
+python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_verify_fraction_bit_length.py' -v
+```
+
+Constructor-Post consumer checks likewise execute no compiler or solver:
+
+```sh
+python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_verify_fraction_constructor_post.py' -v
+```
+
 Use the [proof workflow](../../.agents/skills/testing/references/formal-verification.md)
 for acceptance; preparing this runner does not establish a completed campaign.
 

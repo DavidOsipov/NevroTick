@@ -104,22 +104,109 @@ remain in [their existing task chain](s1.3-source-selection-readiness.md).
 **Exit:** [plan §6/P1](../docs/plans/development-plan.md#p1--pure-protocols-and-independently-checked-algorithms),
 CHECK-6/7/8/19/20 and pure CHECK-25; this proves no Windows effect.
 
-**Active bounded continuation, 5 November 2026:** the
-[Verus addition pilot](s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
-stays in the existing Core task under OD-10 and CHECK-7/8/25. The full checked-pair
-addition property remains unproved after Kani's **60,025 ms timeout with zero
-checks**. That named gap and David's conditional request to use Verus if better
-justify this trial; broader adoption remains **DEFER**.
+**Current proof continuation, 6 November 2026:** the
+[query-split card remains terminal DEFER/incomplete](s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026).
+Fourteen of twenty maximum commands ran; jobs 1–13 qualified 1,415 raw checks
+(1,315 Success, 69 covers, nine intended failures, 22 Unreachable). Job 14's
+universal proof timed out at **60,018 ms** with zero checks. Jobs 15–20 never
+ran, leaving direct witnesses and both restorations unqualified. Final source,
+permission, receipt and tool custody passed across 49 source inputs, fourteen
+input trees and three fresh certificates, without bytecode drift. The 67 focused
+code checks passed; the old eighteen-command kit and ordinary defaults remain
+unchanged. The earlier prefix is partial evidence, with no full addition or
+Core/P1 completion.
+
+The existing task's
+[source-only bridge preparation](s1.3-source-selection-readiness.md#fraction-verus-bridge-source-preparation--6-november-2026)
+retains the six executable predicates with reversible declaration annotations
+and explicit mathematical contracts. Its
+[first pure-bridge card](s1.3-source-selection-readiness.md#fraction-verus-bridge-terminal-assessment--6-november-2026)
+is terminal DEFER after one healthy dispatch: seven private-`open` annotation
+errors, zero SMT/proof results, no controls/restoration. The exact seven-modifier
+source-only correction has fourteen passing source checks. The subsequent
+[private-spec v2 card](s1.3-source-selection-readiness.md#private-spec-verus-bridge-v2-terminal-assessment--6-november-2026)
+reached Z3 but remains terminal DEFER: five equalities failed, zero jobs qualified,
+and controls/restoration did not run. Constructor Post's modular success depends
+on failed helper equalities. The subsequent
+[bit-length dependency campaign](s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026)
+completed five jobs: full-raw lemma/two body-to-spec equalities, three intended
+contract defects and restored health. Its62 focused Python checks pass, with22
+source files and final custody/tool bookends bound. Reuse the unchanged scoped
+proofs for remaining full-bridge arithmetic/representation work. The subsequent
+[constructor-Post campaign](s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026)
+completed five jobs: full-raw Post/lemma/helpers, three intended Post defects and
+restored health, with93 focused Python checks and24 bound source files. Next
+follow the [complement-Post source preparation](s1.3-source-selection-readiness.md#next-source-preparation--complement-post), retaining the
+qualified constructor Post/helpers and every independently chosen raw Result;
+native Ordering
+correspondence/import remains held. The complete six-equality bridge and its
+remaining controls stay open before relating the actual Verus caller to separately
+Kani-proved callees. The existing Verus `--no-cheating` gate rejects
+`external_body`/`assume_specification`; no flag change, adoption or new run is
+authorized. Smaller encoding and SAT timings identify no completed property or
+counterexample. All eleven mathematical assertions, all23 concrete witnesses,
+both complete restorations and existing owner-decision/tool-adoption rules
+remain required. No automatic retry or budget extension follows; all execution
+holds and the wider P0–P7 objective remain in force.
+
+**Earlier manual composition checkpoint:** the
+[manual composition card remains terminal DEFER](s1.3-source-selection-readiness.md#manual-composition-terminal-assessment--6-november-2026)
+after fourteen of eighteen maximum commands. Jobs 1–13 completed 1,415 raw
+checks, including three actual-callee Post/actual-return seed proofs and nine
+compiled controls. Job 14's full-domain addition proof timed out at **60,016 ms**
+with zero checks; jobs 15–18 did not run. An external audit import separately
+added four `.pyc` files and `__pycache__` to the frozen source island. All 45
+bound inputs in the checkout and frozen copy, fourteen job input trees and
+three certificate receipt seals remained unchanged, but the global custody
+failure is preserved without cleanup or retry. The earlier narrow premises are
+partial evidence, with no full adoption, automatic certificate reuse or Core/P1
+completion.
+
+The earlier
+[full-addition compute checkpoint ended DEFER](s1.3-source-selection-readiness.md#full-addition-compute-budget-terminal-assessment--6-november-2026)
+in the existing Core task under OD-10 and CHECK-7/8/25. The first healthy
+full-domain Z3 proof timed out at **300,011 ms**, exporting no checks; no mutant
+or restored job ran. The exact original model, source and custody stayed intact.
+Addition and dependent enclosure/Core acceptance remain open.
+
+The [ordinary partition pilot](s1.3-source-selection-readiness.md#ordinary-addition-partition-terminal-assessment--6-november-2026)
+retains four bounded healthy results—the union and cases 0–2—with **631 accounted
+checks and 22 covers**. Healthy case 3 timed out at **60,018 ms** with an empty
+checks list; later leaves, all three semantic defects and all restored proofs
+did not run. Its aggregate remains partial DEFER. The separate
+[ordinary Z3 comparison](s1.3-source-selection-readiness.md#existing-z3-comparison-terminal-assessment--6-november-2026)
+also remains terminal after its 60,012 ms first-healthy timeout with no checks.
+
+The [contract-mode pilot](s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+also remains terminal DEFER. Its first primitive checker exited Kani 1 / CBMC 134 on an internal
+`symbol_expr_type_matches_symbol_table` invariant failure in `apply_closure`,
+returning an empty checks list. One command ran; zero callee certificates and
+zero product proof jobs followed. No retry, source/tool change or mode adoption
+follows that failed card.
+
+Retain the earlier **60,025 ms monolithic timeout with zero checks** and the
+[Verus addition pilot](s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026).
+That trial's three-command readiness budget is exhausted: the final command
+rejected required `u64::checked_shl` during VIR translation before SMT execution.
+It remains **DEFER**, with zero product-proof commands. Official support for the
+unchanged API and a new reviewed finite checkpoint are its return trigger.
+Held patches and all execution holds remain in force.
 
 | Card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
-| S1.3 Verus addition pilot / numerical Core; tooling/QA | **Ready for compatibility/admission only.** Freeze the same full-domain addition contract and finite budget in the existing Core card; source proof depends on compatible actual APIs and completion within those limits. | Verify actual `Fraction::new`, `compare`, `complement` and `add_fractions` bodies with exact executable correspondence and source/tool custody. Require three compiled semantic defects to fail their intended obligations and a restored healthy pass. No product `external_body`, assumed central theorem, alternate executable behavior or model-only proof closes this exit. |
+| S1.3 Verus addition pilot / numerical Core; tooling/QA | **DEFER — readiness attempt terminal.** Required `u64::checked_shl` is unsupported in the pinned candidate. Official support for the unchanged API and a newly reviewed finite checkpoint are the return trigger; no retry or local assumed specification follows. | Verify actual `Fraction::new`, `compare`, `complement` and `add_fractions` bodies with exact executable correspondence and source/tool custody. Require three compiled semantic defects to fail their intended obligations and a restored healthy pass. No product `external_body`, assumed central theorem, alternate executable behavior or model-only proof closes this exit. |
+| S1.3 independent split proof / numerical Core; tooling/QA | **Qualified raw leaf only.** The [split terminal checkpoint](s1.3-source-selection-readiness.md#split-terminal-qualification--5-november-2026) completed all five expected job outcomes with the unchanged admitted Kani route. | Full raw significand/scale admission, exact decomposition, fraction canonicalization/invariants and error classification are proved, including three compiled semantic defects and restored healthy proof. This does not qualify the complete producer, addition or Core. |
+| S1.3 raw scaled-value representation proofs / numerical Core; tooling/QA | **Qualified exact raw leaves only.** The [representation terminal checkpoint](s1.3-source-selection-readiness.md#representation-terminal-qualification--6-november-2026) completed all ten expected outcomes: `signed_whole` covers every bool sign, u64 whole and arbitrary u64/u32 fraction field pair; `from_bits` covers every raw u64 bit pattern. | Exact signed magnitude/fraction independence, raw bit admission, sign/Q33 representation, invariant/error guarantees, each leaf's three semantic defects and restored health are qualified. This closes no Garde/caller admission, addition, `EndpointParts` construction, complete enclosure or Core/P1 acceptance. |
+| S1.3 full-domain fraction addition / numerical Core; tooling/QA | **Query-split card terminal DEFER.** The [terminal assessment](s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026) records the qualified thirteen-job prefix, job 14's zero-check universal timeout, unrun jobs 15–20 and passing final custody. Direct witnesses and restorations remain unqualified. Next: source-only encoding/property diagnosis and bounded Verus/Kani bridge scout; `--no-cheating` rejects `external_body`/`assume_specification`. An exact bridge is required; no flag change, adoption, new run, automatic retry or budget extension follows. Prior trials and all holds retain their status. | Retain the existing full checked-pair carry/residual and required-success contract, unchanged actual-source full domain, all eleven mathematical assertions, all 23 witnesses, three semantic defects and both complete restored lanes. Earlier bounded results, partial regions, narrowed domains and assumed product theorems do not close addition or Core. |
 | S1.4 discipline/holdover / Core/domain | Applicable S1.3 selection/combination and current reference, achieved-effect and active-time delivered-rate contracts; finish the current child first, then freeze one abstract controller/holdover transition. | Independent trajectories give bounded step/slew/holdover proposals; stale generations, duplicate/unknown effects and unacknowledged requests cannot create delivered correction or fresh observations. CHECK-7/8/10/11/25, AC-19. Current S1.4a–c and rate-delivery receipts stay in S1.3. |
 | S1.4 leap child / domain/Core/protocol | Use [the explicit entry and finite-input tables](s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) after the current Core checkpoint. S157/S158 and selected S1.4a–c retain completed predecessor scopes; freeze the leap child's own date/data/import limits before dependent implementation. Static constructors do not require every later production contract. | Pure history/coverage/rule cases and atomic replacement are the first exit. Full silent-source acquisition, guard/reacquisition and LP-C04 stay in protocol integration; native mapping stays S0.4/P4. Existing LP-C cases and CHECK-6/7/8/11/14/25/26 retain their owning slices. |
 | S1.5 verification closure / tooling/dependency/QA | Existing configured application gates and selected critical owners; maintain required checks now, close remaining phase scope at its actual checkpoint. Deferred QF-02 recipe maintenance stays acknowledged in the active Core task. | Healthy code/inputs pass and intended lint/SAST/discovery/admission faults fail actual gates; retained provenance, applicable per-file coverage/mutation and exact receipt scope support closure. CHECK-19/20/25/26. No new implementation prerequisite or duplicate campaign. |
 
 Reuse unchanged Kani proofs within their recorded scope; the held Kani extensions
-remain held. `ScaledValue::split` remains an independent fallback. The pilot adds
+remain held. Raw split, `from_bits` and `signed_whole` are qualified within their
+recorded domains. Retain the existing remaining proof inventory: addition,
+Garde/caller admission, endpoint/enclosure construction and complete producer/Core
+acceptance remain open. The pilot adds
 no global CI gate or phase blocker and lifts no execution hold; missing required
 mathematical evidence still leaves its existing dependent acceptance open.
 

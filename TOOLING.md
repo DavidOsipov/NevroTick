@@ -503,17 +503,28 @@ existing source-owner task before dependent acceptance.
 
 **Verus candidate, 5 November 2026:** the
 [bounded Core addition pilot](tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
-is justified for comparison after Kani's recorded zero-check timeout. Candidate
-release `0.2026.11.02.8bf68ee` uses existing Rust 1.99.1 and bundled Z3 4.16.0.
-It is **not installed, admitted or product-qualified** at this checkpoint;
-broader adoption remains DEFER. The card owns exact source/asset hashes,
-one-candidate bootstrap/footprint caps, compatibility and proof budgets, semantic
-controls and acceptance. Prepare isolated hash admission/read-only SDK execution
-before running it. The pinned launcher supports `VERUS_USE_RUSTUP=0`; no global
-rustup/PATH/SDK change is selected. Require explicit one-thread verification,
-actual SMT timeout distinct from resource units, complete selected obligations
-and `--no-cheating`. Existing Kani entrypoints and evidence remain in force;
-neither this candidate nor documentation changes the analysis installation policy.
+was justified after Kani's recorded zero-check timeout. The private official
+release `0.2026.11.02.8bf68ee` was acquired and admitted for bounded readiness
+using existing Rust 1.99.1 and bundled Z3 4.16.0. **Candidate DEFER:** its final
+compatibility command rejected the required `u64::checked_shl` call before SMT.
+Exactly three preparation commands ran; no product proof ran or adoption followed.
+The source guards and controls are in `tools/formal/verus_pilot*.py`; payload,
+licences and raw receipts remain in the private directory named by the Core task.
+The redundant archive was deleted. No global rustup/PATH/SDK or analysis-policy
+change occurred. The frozen command used an offline namespace, read-only SDK,
+one verifier thread, a real SMT timeout and `--no-cheating`. Do not restart the
+exhausted trial or add an assumed specification/runtime rewrite. Reconsider only
+after supported actual APIs and a separate finite checkpoint. Existing Kani
+entrypoints and scoped evidence remain in force.
+
+The separate [6 November Kani contract-mode pilot](tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+also ended **DEFER** at its first primitive checker: bundled CBMC aborted on a
+closure-symbol type inconsistency, with zero checks, product proof commands or
+callee certificates. The dedicated source consumer is unadopted; ordinary Kani
+flags and the SDK are unchanged. Keep this candidate terminal and do not retry or
+patch the tool under its closed card. Full-domain addition remains open.
+
+**Latest Core proof checkpoint, 6 November 2026:** the fixed [constructor-Post campaign](tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026) completed five jobs: full-raw Post correspondence/lemma/helpers, three isolated Post defects and restored health. All93 focused Python checks pass;24 current source files, exact executable erasure and final source/input/receipt/tool bookends are bound. `tools/formal/verify_fraction_constructor_post.py` is the completed fixed consumer; its attempt is closed and must not rerun. Both older Rust outputs and all prior roots remain preserved. The new unit re-verifies dependencies, importing no certificate. Next source-prepare complement/shift-power correspondence; complete bridge, native Ordering/caller import, addition and Core/P1 remain open. No profile, SDK, CI or Windows execution hold changed.
 
 | Tool | Installed pin | Qualification and intended use |
 | --- | --- | --- |

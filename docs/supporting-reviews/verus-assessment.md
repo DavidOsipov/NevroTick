@@ -9,10 +9,12 @@
 **Task record:** [S1.1c assessment and review results](../../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026).
 
 **5 November update:** the earlier snapshot and DEFER conclusion below remain
-historical. A [bounded Core addition pilot](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
-is now justified by a named full-domain gap, an actual Kani timeout and David's
-conditional instruction to use Verus if it is better. Broader Verus adoption
-remains DEFER; no Verus payload or product proof has been admitted/executed yet.
+historical. The justified [bounded Core addition pilot](../../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
+has now reached a readiness **DEFER**: the acquired pinned payload passed its
+isolated version/loader check, but rejected the unchanged `checked_shl` API before
+SMT execution. No product-proof command ran and no adoption follows. The
+[executed result below](#bounded-readiness-result--5-november-2026) supersedes the
+initial queued-pilot status; the full-domain addition obligation stays open.
 
 ## Conclusion and practical effect
 
@@ -167,6 +169,10 @@ requirements retain their own scope.
 
 ## Reconsideration triggered — 5 November 2026
 
+This subsection records the pre-execution rationale and initial card. The
+[readiness result below](#bounded-readiness-result--5-november-2026) supersedes its
+queued status and unmeasured-runtime statements.
+
 The 1 November assertion that application Kani had not run is a dated snapshot.
 Since then the source-bound rounding/era and named Core/domain helper checkpoints
 have qualified their declared scopes. The actual `add_fractions` full checked-pair
@@ -215,3 +221,114 @@ Current primary sources:
 - [Thread, SMT-option and no-cheating controls](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/source/rust_verify/src/config.rs),
   [solver option handling](https://github.com/verus-lang/verus/blob/8bf68ee741df833ea5d0fe6a2255126fdea87e47/source/air/src/context.rs)
   and [Z3 timeout units](https://microsoft.github.io/z3guide/programming/Parameters/).
+
+## Bounded readiness result — 5 November 2026
+
+**Disposition: DEFER this candidate for the unchanged addition call graph.** The
+official `0.2026.11.02.8bf68ee` payload was acquired and admitted for isolated
+compatibility work; its version/loader command passed. The first healthy-control
+command stopped on a harness expression's ghost/machine-integer type mismatch.
+One causal harness repair used the third and final preparation command, combining
+the two healthy controls with a separate, deliberately false assertion.
+
+That final native command exited 1 with no runtime-custody failure. Verus reported
+`encountered-vir-error: true` and an unsupported `u64::checked_shl` call at the
+actual executable expression on line 35 of the frozen compatibility input. The
+observed executable trace contains only the fixed environment helper, Verus
+launcher and `rust_verify`; Z3 was not spawned. Translation stopped before SMT
+execution, so neither healthy verification nor assertion sensitivity qualified.
+All three preparation commands are consumed; zero product-proof commands ran.
+The 42 passing Python controls cover acquisition and result interpretation, not
+Verus compatibility or product mathematics.
+
+The retained final receipt is
+`~/.local/share/nevrotick/formal-verus-pilot-20261105-v1/compatibility-final.json`,
+SHA256 `06c7b07021921461b8cbfba25520176491fbf8d064e6299e38baaddc124cd2a8`.
+Its status is `DEFER`, `adopted` is false and both `product_proofs` and
+`proof_commands_executed` are zero. This is an API-compatibility result for the
+pinned candidate, not a product arithmetic defect or a claim that every Verus
+version or approach is unsuitable. Other API compatibility remains unqualified.
+
+**Return trigger:** an official candidate with source-supported specifications
+for the same unchanged constructor/comparison/complement/addition call graph,
+followed by a separate finite compatibility/proof card. Add no assumed project
+specifications, runtime rewrites or verifier patches to bypass this result; do
+not run a fourth preparation command under the exhausted card. Full equivalent
+domain, actual-source correspondence, semantic fault controls and measured
+maintenance/cost remain prerequisites for any `ADOPT_LIMITED` conclusion.
+
+Completed Kani proofs and the preserved addition timeout remain valid within
+their unchanged bindings. The existing Core task owns the independent split
+fallback and the still-open addition/composition obligations; mandatory proof
+requirements and Windows, fuzz, storage and release holds remain unchanged.
+
+A later [ordinary-package Kani contract-mode pilot](../../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026)
+also ended DEFER at its first primitive control: CBMC aborted on an internal
+closure-symbol type inconsistency with zero checks. No product proof or callee
+certificate qualified. That distinct compatibility failure lifts no Verus hold
+and supplies no basis to patch a verifier or weaken the full-domain obligation.
+
+
+## Later source-only hybrid assessment — 6 November 2026
+
+The [query-split terminal record](../../tasks/s1.3-source-selection-readiness.md#fraction-query-split-terminal-assessment--6-november-2026)
+adds a changed premise: fresh actual-body Kani Post/return-seed proofs exist for
+construction,comparison and complement, while the actual addition caller still
+timed out. Source-only inspection finds a plausible caller-only deductive route
+because checked_shl resides in those callees and pinned vstd supplies relevant
+Result/Option/control-flow/comparison specifications. No exact caller
+compatibility or Kani-to-Verus contract equivalence has been executed/proved.
+
+The old `--no-cheating` launch rejects external_body/assume_specification;
+silently removing it or routing assumed contracts around it is not admitted.
+A separately reviewed exact contract-import policy and machine-checked domain/
+Post/type/frame correspondence are required before caller adoption. Kani seed
+inclusion alone does not certify a new Verus predicate. Source review supports
+only bridge-first preparation under a later finite card, with wrong-contract
+controls and the actual caller/original obligation union preserved. The central
+addition theorem cannot be imported. No new run, flag, installation,SDK patch or
+adoption follows; the old unchanged-callgraph pilot remains terminal DEFER.
+
+The existing Core task now owns the
+[source-only bridge candidate](../../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-source-preparation--6-november-2026).
+It preserves six executable predicates and the nine product-source spans, with
+reversible declaration annotations and separately frozen mathematical contracts.
+Source checks establish extraction discipline only. Body-to-spec proofs, primitive
+and dyadic correspondence, semantic controls and caller-import admission remain
+open; the existing no-cheating profile is unchanged.
+
+The subsequent [pure-bridge attempt](../../tasks/s1.3-source-selection-readiness.md#fraction-verus-bridge-terminal-assessment--6-november-2026)
+is terminal DEFER after one healthy dispatch. Seven private ghost functions
+were incorrectly marked `open`, so VIR stopped before SMT and no Z3 ran. This is
+a preparation defect, not an arithmetic/backend incompatibility finding. The
+separate source-only revision removes exactly seven modifiers, preserves private
+types and all bodies, and passes fourteen source checks. The subsequent
+[private-spec v2 card](../../tasks/s1.3-source-selection-readiness.md#private-spec-verus-bridge-v2-terminal-assessment--6-november-2026)
+observed VIR compatibility and Z3 execution, then closed DEFER with five failed
+equalities. Constructor Post's modular success depends on failed helpers; the
+other three successes are Clone bodies. Zero jobs qualified, and controls/
+restoration did not run. The eighteen-check diagnostic-consumer source repair
+and reviewed bit-length lemma were separate preparation at that checkpoint;
+no verifier adoption or full bridge followed.
+
+The subsequent [dependency insertion preparation](../../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-insertion-preparation--6-november-2026)
+binds the lemma and two full-raw predicates, with exact ghost-block/signature
+erasure. Its initial41 focused source/consumer checks were preparation only.
+The subsequent
+[bit-length dependency campaign](../../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026)
+completed all five jobs: the full-raw lemma and two predicate equalities,
+three intended contract defects and restored health. All62 focused Python checks
+pass;22 source files and final source/input/receipt/tool bookends are bound.
+This is scoped mathematical dependency evidence, with global adoption false and
+zero caller imports. Remaining arithmetic/native Ordering correspondence and the
+complete bridge/addition gates stay open; earlier attempts remain closed.
+
+The subsequent [constructor-Post campaign](../../tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026)
+completed all five jobs, re-verifying the lemma/two helpers with the full-raw Post
+equality and detecting three isolated Post defects before restored health.
+All93 focused Python checks pass, with24 source files and final custody/tool
+bookends bound. This adds one predicate correspondence, not a new execution
+theorem for `Fraction::new`. Existing generator functions and both older Rust
+outputs remain exact; old proofs retain their frozen candidates. No certificate
+is imported and global adoption remains false. Complement/shift-power and native
+Ordering correspondence, full bridge, caller/addition and Core/P1 remain open.

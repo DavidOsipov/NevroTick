@@ -110,7 +110,8 @@ The precise values support the rounded summary above.
 | Standalone release EXE, bytes | 12,766,720 | 4,097,536 |
 | Handwritten UI adapter lines, shared model excluded | 228 | 249 |
 
-The precise visible differences are **+1.743 MiB private memory** and
+The visible differences, rounded from the retained byte medians, are
+**+1.742 MiB private memory** and
 **−0.563 MiB working set** for iced. Its smaller EXE does not establish a smaller
 complete MSIX or lower physical-memory footprint. Private bytes are commitment;
 working set includes shared and file-backed resident pages. They are not

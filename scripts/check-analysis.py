@@ -376,6 +376,69 @@ def admit_era_constructor_proof(root=ROOT, installation_record=None):
     return {**admitted, "admission_consumer": "era-constructor-proof-v1"}
 
 
+def admit_fraction_contracts_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one closed contracts/stubbing pilot.
+
+    Only the fraction-contracts-pilot-v1 consumer may use this API. It must
+    enforce its separate fixed command/input policy, bind successful full-domain
+    callee proofs before verified substitution, and retain ordinary namespace,
+    resource and cumulative input/receipt custody. This payload admission neither
+    executes a command nor establishes a callee contract. Generic/ordinary flags,
+    profile and CLI choices remain unchanged; no arbitrary stubbing is admitted.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-contracts-pilot-v1"}
+
+
+def admit_fraction_addition_compute_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one isolated addition compute pilot.
+
+    Only fraction-addition-compute-pilot-v1 may consume this admission. Its
+    separate fixed policy permits Z3, a 300-second harness timeout and at most
+    600 seconds of command wall time and per-process CPU, with the reviewed
+    five-job full-domain addition group and cumulative source/receipt custody.
+    Existing Z3 payload admission is separately required. This API neither
+    executes proofs nor changes ordinary flags, profiles, resources or CLI roles.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-addition-compute-pilot-v1"}
+
+
+def admit_fraction_composition_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one closed pure-fraction pilot.
+
+    Only fraction-composition-pilot-v1 may consume this admission. Its separate
+    eighteen-command matrix must prove actual-body postconditions and complete
+    actual-return encoding before ordinary-stub caller substitution. Retain the
+    original CaDiCaL/compiler, baseline flags plus -Z stubbing and --keep-temps
+    retention, 60-second harness/180-second command and per-process CPU, 8-GiB
+    address-space and 128-task limits, with ordinary cumulative custody. Bind
+    retained compiler metadata's Stub token pairs to unique fully qualified
+    paths and native activation controls; compiler name resolution remains a
+    trusted component, and token matching is not resolved-identity evidence.
+    This API executes no proof and changes no ordinary profile, flag or CLI role.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-composition-pilot-v1"}
+
+
+def admit_fraction_query_split_pilot(root=ROOT, installation_record=None):
+    """Admit the unchanged Kani closure for one closed twenty-command pilot.
+
+    Only fraction-query-split-pilot-v1 may consume this admission. Its separate
+    fixed matrix requires fresh actual-callee Post/return-seed proofs and both
+    universal and direct-witness healthy/restored lanes, with no old certificate
+    import or retry. Keep original CaDiCaL/compiler roots, baseline flags plus
+    -Z stubbing/--keep-temps, 60-second harness/180-second command and per-process
+    CPU, 8-GiB address-space, 128-task, two-build-job and one-solver-worker limits.
+    The consumer owns bytecode-safe observers, local owner/0400-file/0500-directory
+    permission bookends and complete source/tool/receipt custody. This API starts
+    no proof and changes no ordinary profile, flag, selector or qualification rule.
+    """
+    admitted = _admit(root, installation_record, profile=KANI_PROOF_PROFILE)
+    return {**admitted, "admission_consumer": "fraction-query-split-pilot-v1"}
+
+
 def _admit(root, installation_record, *, profile):
     """Hash the complete selected payload closure; full admission stays default.
 

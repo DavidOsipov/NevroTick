@@ -6,7 +6,9 @@ import importlib.util
 from pathlib import Path
 import re
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 HERE = Path(__file__).resolve().parent
@@ -26,6 +28,195 @@ SUITES = load("additional_suites_test", HERE / "additional_suites.py")
 
 
 class AdditionalSuiteTests(unittest.TestCase):
+    def test_query_split_contracts_have_exact_isolated_delegation(self):
+        for lane in ("universal", "witnesses"):
+            subject = "fraction_addition_" + lane
+            harness = "fraction_arithmetic::" + subject + "_full_domain"
+            expected = (frozenset({lane + " assertion"}), frozenset({lane + " witness"}))
+            calls = []
+            projection = SimpleNamespace(expected_contract=lambda owner, name: calls.append((owner, name)) or expected)
+            specification = SimpleNamespace(loader=SimpleNamespace(exec_module=lambda module: None))
+            with self.subTest(lane=lane), \
+                 patch.object(SUITES.importlib.util, "spec_from_file_location", return_value=specification) as locate, \
+                 patch.object(SUITES.importlib.util, "module_from_spec", return_value=projection):
+                self.assertEqual(SUITES.expected_contract(subject, harness), expected)
+            self.assertEqual(calls, [(subject, harness)])
+            locate.assert_called_once_with("formal_fraction_query_split_registry_projection",
+                                           HERE / "fraction_query_split_projection.py")
+        for selector in ("fraction-query-split", "fraction_addition_universal", "fraction_addition_witnesses"):
+            with self.subTest(selector=selector), self.assertRaises(ValueError):
+                SUITES.jobs(selector)
+            with self.subTest(selector=selector), self.assertRaises(ValueError):
+                SUITES.input_names(selector)
+
+    def test_query_split_contracts_reject_crossed_or_mismatched_pairs_before_loading(self):
+        universal = "fraction_addition_universal"
+        witnesses = "fraction_addition_witnesses"
+        full = lambda subject: "fraction_arithmetic::" + subject + "_full_domain"
+        invalid = ((universal, full(witnesses)), (witnesses, full(universal)),
+                   (universal, full(universal) + "_control"), (witnesses, witnesses + "_full_domain"),
+                   ("fraction_addition", full(universal)), (None, full(witnesses)), (universal, None))
+        with patch.object(SUITES.importlib.util, "spec_from_file_location") as locate:
+            for subject, harness in invalid:
+                with self.subTest(subject=subject, harness=harness), self.assertRaises(ValueError):
+                    SUITES.expected_contract(subject, harness)
+            locate.assert_not_called()
+
+    def test_composition_mechanism_contract_has_exact_isolated_delegation(self):
+        subject = "fraction_composition_mechanism"
+        harness = "fraction_arithmetic::composition_mechanism_full_domain"
+        expected = (frozenset({"mechanism assertion"}), frozenset({"mechanism witness"}))
+        calls = []
+        projection = SimpleNamespace(expected_contract=lambda owner, name: calls.append((owner, name)) or expected)
+        specification = SimpleNamespace(loader=SimpleNamespace(exec_module=lambda module: None))
+        with patch.object(SUITES.importlib.util, "spec_from_file_location", return_value=specification) as locate, \
+             patch.object(SUITES.importlib.util, "module_from_spec", return_value=projection):
+            self.assertEqual(SUITES.expected_contract(subject, harness), expected)
+        self.assertEqual(calls, [(subject, harness)])
+        locate.assert_called_once_with("formal_fraction_composition_registry_projection",
+                                       HERE / "fraction_composition_projection.py")
+        for selector in ("fraction-composition", "fraction_composition_mechanism"):
+            with self.subTest(selector=selector), self.assertRaises(ValueError):
+                SUITES.jobs(selector)
+            with self.subTest(selector=selector), self.assertRaises(ValueError):
+                SUITES.input_names(selector)
+
+    def test_composition_mechanism_contract_rejects_mismatched_pairs_before_loading(self):
+        subject = "fraction_composition_mechanism"
+        harness = "fraction_arithmetic::composition_mechanism_full_domain"
+        invalid = ((subject, harness + "_control"), (subject, "composition_mechanism_full_domain"),
+                   ("fraction_addition", harness), (None, harness), (subject, None))
+        with patch.object(SUITES.importlib.util, "spec_from_file_location") as locate:
+            for candidate_subject, candidate_harness in invalid:
+                with self.subTest(subject=candidate_subject, harness=candidate_harness), self.assertRaises(ValueError):
+                    SUITES.expected_contract(candidate_subject, candidate_harness)
+            locate.assert_not_called()
+
+    def test_partition_registry_refuses_partial_extra_reordered_and_forged_schedules(self):
+        jobs = SUITES.jobs("fraction-addition-partitions")
+        samples = [jobs[:15], jobs + [jobs[-1]], tuple(jobs)]
+        reordered = copy.deepcopy(jobs)
+        reordered[1], reordered[2] = reordered[2], reordered[1]
+        samples.append(reordered)
+        for field, value in (("harness", "fraction_addition_partitions::unrelated"),
+                             ("subject", "fraction_addition"), ("case", "wrong_carry"),
+                             ("restored_healthy", 0), ("intended_failure", "unrelated"),
+                             ("extra", True)):
+            forged = copy.deepcopy(jobs)
+            forged[1][field] = value
+            samples.append(forged)
+        for number, sample in enumerate(samples):
+            fake = SimpleNamespace(schedule=lambda sample=sample: sample)
+            with self.subTest(sample=number), patch.object(SUITES, "_partition_projection", return_value=fake):
+                with self.assertRaises(ValueError):
+                    SUITES.jobs("fraction-addition-partitions")
+        self.assertEqual(SUITES.jobs("fraction-addition-partitions"), jobs)
+
+    def test_partition_schedule_is_closed_and_restores_every_healthy_leaf(self):
+        projection = load("partition_registry_schedule", HERE / "fraction_addition_partitions_projection.py")
+        jobs = SUITES.jobs("fraction-addition-partitions")
+        self.assertEqual(SUITES.MAX_JOBS, 12)
+        self.assertEqual(len(jobs), 16)
+        self.assertEqual(jobs, projection.schedule())
+        self.assertEqual([job["case"] for job in jobs],
+                         ["healthy"] * 7 + ["always_error", "wrong_carry", "wrong_residual"] + ["healthy"] * 6)
+        self.assertEqual([job["restored_healthy"] for job in jobs], [False] * 10 + [True] * 6)
+        self.assertEqual([job["intended_failure"] for job in jobs[7:10]],
+                         ["addition required success", "addition exact carry", "addition exact residual"])
+        self.assertEqual(len({job["harness"] for job in jobs[:7]}), 7)
+        for first, restored in zip(jobs[1:7], jobs[10:], strict=True):
+            self.assertEqual(dict(first, restored_healthy=True), restored)
+        jobs[0]["harness"] = "caller mutation"
+        self.assertNotEqual(SUITES.jobs("fraction-addition-partitions")[0]["harness"], "caller mutation")
+
+    def test_partition_ledger_requires_only_reachable_labels_and_preserves_all_23_witnesses(self):
+        projection = load("partition_registry_ledger", HERE / "fraction_addition_partitions_projection.py")
+        original = load("partition_original_ledger", HERE / "fraction_arithmetic_projection.py")
+        jobs = SUITES.jobs("fraction-addition-partitions")
+        full = frozenset({"addition left factory completeness", "addition right factory completeness",
+                          "addition required success", "addition exact carry", "addition exact residual",
+                          "addition oracle alignment exact", "addition oracle proper numerator bounds",
+                          "addition oracle sum representable", "addition high denominator positive",
+                          "addition global fraction maximum", "addition high numerator bound"})
+        high = {"addition high denominator positive", "addition global fraction maximum",
+                "addition high numerator bound"}
+        expected = [frozenset({"addition left factory completeness", "addition right factory completeness"}),
+                    full, full, full - high, full, full - high]
+        original_covers = frozenset(original.REQUIRED_COVERS["fraction_arithmetic::fraction_addition_full_domain"])
+        actual_covers = []
+        for case, job in enumerate(jobs[1:7]):
+            assertions, covers = SUITES.expected_contract(job["subject"], job["harness"])
+            self.assertEqual(assertions, expected[case], case)
+            self.assertIsInstance(assertions, frozenset)
+            self.assertIsInstance(covers, frozenset)
+            self.assertEqual((assertions, covers),
+                             (frozenset(projection.REQUIRED_ASSERTIONS[job["harness"]]),
+                              frozenset(projection.REQUIRED_COVERS[job["harness"]])))
+            if case == 0:
+                self.assertGreaterEqual(len(covers), 2)
+                self.assertTrue(covers.isdisjoint(original_covers))
+            else:
+                self.assertEqual(len(covers), [8, 2, 9, 2, 2][case - 1])
+                actual_covers.extend(covers)
+        self.assertEqual(len(actual_covers), 23)
+        self.assertEqual(frozenset(actual_covers), original_covers)
+        union = jobs[0]
+        assertions, covers = SUITES.expected_contract(union["subject"], union["harness"])
+        self.assertTrue(assertions)
+        self.assertGreaterEqual(len(covers), 6)
+        for job in jobs[7:10]:
+            with self.subTest(harness=job["harness"]), self.assertRaises(ValueError):
+                SUITES.expected_contract(job["subject"], job["harness"])
+
+    def test_partition_preparation_rejects_modified_jobs_before_loading_or_writing(self):
+        jobs = SUITES.jobs("fraction-addition-partitions")
+        alterations = [(jobs[0], 0), (jobs[0], True), (jobs[0], 2), (jobs[0], 17),
+                       (jobs[1], 1), (jobs[10], 2)]
+        for field, value in (("subject", "fraction_addition"), ("case", "always_error"),
+                             ("harness", "fraction_arithmetic::fraction_addition_full_domain"),
+                             ("restored_healthy", True), ("intended_failure", "addition exact carry")):
+            alterations.append((dict(jobs[1], **{field: value}), 2))
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            def forbidden_loader(name, path):
+                self.fail("An altered partition job reached loading")
+            for job, index in alterations:
+                with self.subTest(job=job, index=index), self.assertRaises(ValueError):
+                    SUITES.prepare(forbidden_loader, folder / "source", folder / "inputs", job, index)
+            self.assertFalse((folder / "inputs").exists())
+
+    def test_partition_preparation_freezes_actual_sources_and_byte_restores_six_leaves(self):
+        selector = "fraction-addition-partitions"
+        names = SUITES.input_names(selector)
+        self.assertTrue({"tools/formal/additional_suites.py",
+                         "tools/formal/fraction_addition_partitions_projection.py",
+                         "tools/formal/fraction_addition_partitions_harness.rs",
+                         "tools/formal/test_fraction_addition_partitions.py",
+                         "tools/formal/fraction_arithmetic_projection.py",
+                         "tools/formal/fraction_arithmetic_harness.rs"}.issubset(names))
+        self.assertNotIn("tools/formal/fraction_contracts_projection.py", names)
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            source = folder / "source"
+            for name in [*names, "crates/time-core/src/projection_enclosure.rs", "crates/time-core/src/selection.rs"]:
+                destination = source / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes((ROOT / name).read_bytes())
+            loaded = []
+            def frozen_loader(name, path):
+                self.assertTrue(path.is_relative_to(source))
+                loaded.append(path)
+                return load(name, path)
+            proofs = []
+            for index, job in enumerate(SUITES.jobs(selector), 1):
+                inputs = folder / f"inputs-{index}"
+                prepared = SUITES.prepare(frozen_loader, source, inputs, job, index)
+                self.assertEqual(prepared["entrypoint"], inputs / "proof.rs")
+                self.assertEqual(prepared["mutation"] is None, job["case"] == "healthy")
+                proofs.append((inputs / "proof.rs").read_bytes())
+            self.assertEqual(len(loaded), 16)
+            self.assertEqual(proofs[1:7], proofs[10:])
+
     def test_addition_cannot_use_a_complement_position_or_modified_subject(self):
         addition = SUITES.jobs("fraction-arithmetic")[5]
         altered = dict(addition, subject="fraction_complement")
@@ -44,7 +235,9 @@ class AdditionalSuiteTests(unittest.TestCase):
         for selector, stem in (("endpoint-finish", "endpoint_finish"),
                                ("fraction-constructor", "fraction_constructor"),
                                ("fraction-comparison", "fraction_comparison"),
-                               ("fraction-arithmetic", "fraction_arithmetic")):
+                               ("fraction-arithmetic", "fraction_arithmetic"),
+                               ("scaled-value-split", "scaled_value_split"),
+                               ("scaled-value-representation", "scaled_value_representation")):
             with self.subTest(selector=selector):
                 projection = load(f"additional_{stem}_metadata_test", HERE / f"{stem}_projection.py")
                 self.assertEqual(SUITES.jobs(selector), projection.schedule())

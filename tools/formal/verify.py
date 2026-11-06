@@ -22,6 +22,8 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 RUSTFLAGS = "--edition=2024 --check-cfg=cfg(test)"
 MAX_JOBS = 12
+PARTITION_SELECTOR = "fraction-addition-partitions"
+PARTITION_OUTPUT_LEAF = "formal-core-fraction-addition-partitions-20261106-v1"
 TOOL_ADMISSION_PROFILES = ("full", "kani-proof")
 SOLVER_BACKENDS = ("cadical", "z3")
 KANI_BASELINE_FLAGS = (
@@ -166,9 +168,9 @@ def input_names(subject: str, solver_backend: str = "cadical") -> list[str]:
         names.add("tools/formal/rounding_harness.rs")
     if subject in ("era", "all"):
         names.update(("tools/formal/era_harness.rs", "tools/formal/era_projection.py"))
-    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"):
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"):
         names.update(additional_suites().input_names(subject))
-    if subject in {"endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"}:
+    if subject in {"endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"}:
         names.update(("crates/time-core/Cargo.toml",
                       "crates/time-core/src/projection_enclosure.rs",
                       "crates/time-core/src/selection.rs"))
@@ -209,11 +211,64 @@ def require_sources(check, source: Path, records: dict, subject: str,
                 raise Incomplete(f"Original or frozen input drift: {name}")
 
 
+def job_limit(subject: str) -> int:
+    """Keep twelve for every old suite; allow only this fixed sixteen-job cohort."""
+    return 16 if subject == PARTITION_SELECTOR else MAX_JOBS
+
+
+def partition_projection(source: Path = ROOT):
+    """Load the reviewed ordinary partition spec without installing or executing tools."""
+    return module("formal_partition_budget", source / "tools/formal/fraction_addition_partitions_projection.py")
+
+
+def partition_remaining(subject: str, source: Path = ROOT) -> float | None:
+    """Enforce the original source-to-decision cap only for the fresh partition card."""
+    if subject != PARTITION_SELECTOR:
+        return None
+    try:
+        remaining = partition_projection(source).remaining_budget()
+    except (OSError, ValueError) as error:
+        raise Incomplete("Partition preparation/execution budget unavailable: " + str(error)) from error
+    if (isinstance(remaining, bool) or not isinstance(remaining, (int, float))
+            or not math.isfinite(remaining) or not 0 < remaining <= 3600):
+        raise Incomplete("Partition preparation/execution budget expired or malformed")
+    return float(remaining)
+
+
+def partition_preflight(subject: str, profile: str, solver_backend: str,
+                        solver_root, output_dir: str) -> None:
+    """Constrain the one new cohort without changing any existing lane's options."""
+    if subject != PARTITION_SELECTOR:
+        return
+    if profile != "kani-proof" or solver_backend != "cadical" or solver_root is not None:
+        raise Incomplete("Partition card requires the original Kani-proof/Cadical profile")
+    expected = Path.home() / ".local/share/nevrotick" / PARTITION_OUTPUT_LEAF
+    if output_dir != str(expected):
+        raise Incomplete("Partition card requires its one fixed fresh output directory")
+    partition_remaining(subject)
+
+
+def generated_identity(check, inputs: Path) -> dict:
+    """Compare complete generated/frozen input bytes, not differing job-root paths."""
+    result = {}
+    for path in sorted(inputs.rglob("*")):
+        if path.is_dir() and not path.is_symlink():
+            continue
+        if path != path.resolve(strict=True) or not path.is_file():
+            raise Incomplete("Generated partition input redirects or is not a regular file")
+        data = check.read_once(path)
+        result[path.relative_to(inputs).as_posix()] = {"sha256": digest(data), "bytes": len(data)}
+    if not result:
+        raise Incomplete("No generated proof input bytes")
+    return result
+
+
 def jobs(subject: str) -> list[dict]:
     """Return the complete fixed schedule, without retries or solver concurrency."""
-    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"):
+    if subject in ("coordinate-exchange", "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"):
         result = additional_suites().jobs(subject)
-        if not 1 <= len(result) <= MAX_JOBS:
+        limit = job_limit(subject)
+        if not 1 <= len(result) <= limit or (subject == PARTITION_SELECTOR and len(result) != limit):
             raise Incomplete("Empty or excessive additional proof schedule")
         return result
     result = []
@@ -247,6 +302,8 @@ def selected_jobs(subject: str, start_at: int, only_jobs: list[int] | None = Non
     This is explicit partial execution, not automatic receipt reuse or campaign
     resumption. The coordinator must separately reconcile any earlier evidence.
     """
+    if subject == PARTITION_SELECTOR and (start_at != 1 or only_jobs is not None):
+        raise Incomplete("Partition theorem requires the full fixed sixteen-job selection")
     schedule = jobs(subject)
     if type(start_at) is not int or not 1 <= start_at <= len(schedule):
         raise Incomplete("Start index must select a nonempty fixed-schedule suffix")
@@ -619,10 +676,14 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
     record = {"job": job, "expected_outcome_qualified": False, "output": str(folder),
               "expected_admission_profile": tool_admission_profile, "expected_solver_backend": solver_backend}
     try:
+        if subject == PARTITION_SELECTOR and (
+                tool_admission_profile != "kani-proof" or solver_backend != "cadical" or solver_root is not None):
+            raise Incomplete("Partition commands require the fixed Kani-proof/Cadical role")
         if retained is None:
             retained = []
             retain_artifacts(check, work, retained, [source])
         audit_retained(check, work, retained)
+        partition_remaining(subject, source)
         requested_solver = solver_selection(solver_backend, solver_root)
         flags = solver_flags(check, solver_backend)
         require_sources(check, source, records, subject, solver_backend)
@@ -645,6 +706,15 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
             raise Incomplete("Projection must return the canonical inputs/proof.rs")
         record.update(preparation=prepared, prepare_seconds=time.monotonic() - started,
                       source_original_manifest=records)
+        if subject == PARTITION_SELECTOR and job["restored_healthy"]:
+            original_index = index - 9
+            if not 2 <= original_index <= 7:
+                raise Incomplete("Unexpected restored partition index")
+            original = work / "jobs" / f"{original_index:02d}-{job['subject']}-{job['case']}-{job['harness']}" / "inputs"
+            if generated_identity(check, inputs) != generated_identity(check, original):
+                raise Incomplete("Restored partition input bytes differ from its qualified healthy leaf")
+            record.update(restored_generated_input_matches_healthy=True,
+                          restored_healthy_inputs=original)
         before = check.input_snapshot(work, [inputs])
         record["input_before"] = before
         write_json(folder / "input-before.json", before)
@@ -653,6 +723,7 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
         admitted, admitted_record = admission(check, folder / "admission.json", profile=tool_admission_profile,
                                               **solver_options)
         record["admission_seconds"] = admitted_record["seconds"]
+        partition_remaining(subject, source)
         require_sources(check, source, records, subject, solver_backend)
         if check.input_snapshot(work, [inputs]) != before:
             raise Incomplete("Prepared inputs changed during tool admission")
@@ -691,13 +762,22 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
             current_roots.append(summary_path)
         sealed = [path for item in retained for path in item["roots"]] + current_roots
         record["runtime_sealed_roots"] = sealed
+        budget_before_snapshot = partition_remaining(subject, source)
+        if budget_before_snapshot is not None:
+            record["preparation_budget_remaining_before_snapshot_seconds"] = budget_before_snapshot
+            record["runtime_wall_seconds_upper_bound"] = min(180, budget_before_snapshot)
         write_json(folder / "execution.json", record)
         # execution.json just gained the actual seal list through the owner.
         current_snapshot = check.input_snapshot(work, current_roots)
+        budget = partition_remaining(subject, source)
+        command_timeout = 180 if budget is None else min(180, budget)
+        if budget is not None:
+            record["preparation_budget_remaining_seconds"] = budget
+            record["runtime_effective_wall_seconds"] = command_timeout
         execute_start = time.monotonic()
         native = check.RUNTIME.run(ROOT, work, command, readonly=readonly,
             path_dirs=paths, cwd=inputs,
-            environment=environment, timeout=180, cpu_seconds=180, build_jobs=2,
+            environment=environment, timeout=command_timeout, cpu_seconds=180, build_jobs=2,
             address_space_bytes=8 * 1024 ** 3, process_limit=128, sealed=sealed)
         record.update(native=native, execute_seconds=time.monotonic() - execute_start)
         # Close native filesystem authority before ANY coordinator artifact write.
@@ -728,6 +808,7 @@ def execute_job(check, work: Path, source: Path, records: dict, subject: str,
         record.update(observed)
         record["execute_other_seconds"] = (record["execute_seconds"] - observed["solver_seconds"]
                                            if observed["solver_seconds"] is not None else None)
+        partition_remaining(subject, source)
         record["expected_outcome_qualified"] = True
     except Exception as error:
         record["qualification_error"] = f"{type(error).__name__}: {error}"
@@ -757,7 +838,7 @@ def main(argv=None) -> int:
     parser.add_argument("--output-dir", required=True,
                         help="fresh canonical absolute private directory outside this checkout")
     parser.add_argument("--subject", choices=("rounding", "era", "all", "coordinate-exchange",
-                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"), default="all",
+                                             "clock", "leap-calendar", "relative-range", "exchange-composition", "calendar-composition", "leap-ticks", "calendar-finite-laws", "leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation", "fraction-addition-partitions"), default="all",
                         help="fixed suite; all retains the original twelve-job rounding/era schedule")
     parser.add_argument("--start-at", type=int, default=1,
                         help="execute only this fixed-schedule suffix; omitted jobs are not qualified")
@@ -774,13 +855,15 @@ def main(argv=None) -> int:
         # recompute under the frozen source bookends before actual execution.
         selected_jobs(args.subject, args.start_at, args.only_jobs)
         requested_solver = solver_selection(args.solver_backend, args.solver_root)
+        partition_preflight(args.subject, args.tool_admission_profile, args.solver_backend,
+                            args.solver_root, args.output_dir)
     except (Incomplete, ValueError) as error:
         parser.error(str(error))
     os.umask(0o077)
     work = fresh_output(args.output_dir)
     source = work / "source"
     summary = {"status": "incomplete", "subject": args.subject, "jobs": [],
-               "maximum_jobs": MAX_JOBS, "root": str(ROOT), "output": str(work),
+               "maximum_jobs": job_limit(args.subject), "root": str(ROOT), "output": str(work),
                "tool_admission_profile": args.tool_admission_profile,
                "solver_backend": args.solver_backend, "requested_solver_root": requested_solver,
                "started_unix_ns": time.time_ns(), "retries": 0}
@@ -833,6 +916,7 @@ def main(argv=None) -> int:
     finally:
         if check is not None:
             try:
+                partition_remaining(args.subject, source)
                 solver_options = {} if args.solver_backend == "cadical" else {
                     "solver_backend": args.solver_backend, "solver_root": requested_solver,
                     "source": source, "work": work}
@@ -845,6 +929,7 @@ def main(argv=None) -> int:
                 # retain_artifacts audits every older anchored fact after final
                 # admission, then anchors the new owner-written final receipt.
                 retain_artifacts(check, work, retained, [work / "final-admission.json"])
+                partition_remaining(args.subject, source)
                 summary["original_and_frozen_inputs_unchanged"] = True
                 if summary["status"] == "passed":
                     summary["all_proof_inputs_and_required_receipts_unchanged"] = True

@@ -169,6 +169,20 @@ proof rechecks. Inspect selected functions/crates and relevant dependency proof 
 before claiming the whole declared scope passed. The upstream Cargo commands are
 capability documentation, not admitted NevroTick execution entry points.
 
+Audit frozen proof inputs without executing them when source/AST/JSON reads suffice.
+For a necessary Python import, inspect import-time effects and disable bytecode
+writes **before** loading any frozen module: use `python3 -B` or, in Context-mode
+Python, begin with `import sys; sys.dont_write_bytecode = True`. A read-only intent
+or importlib loader does not prevent `__pycache__` writes. Suppression covers only
+bytecode, not other module effects. Preserve and report any observer-created drift;
+never delete it or rewrite receipts to turn an incomplete campaign into a pass.
+A native readonly namespace does not protect its host-side observers. Where a
+consumer hardens outer input trees, keep generated outputs outside them and
+check exact ownership, modes, types and link identities separately: a content
+snapshot alone does not establish that permissions stayed unchanged. Validate
+compatibility before adopting hardening in another consumer; existing qualified
+receipts are not retroactively given this protection.
+
 Inventory project-added `assume`, axioms, `external_body`, external specifications,
 ignored relevant items/implementations, stubs and environment/type assumptions.
 Explain their justification and consequences. Account for the toolchain/solver's

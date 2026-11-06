@@ -7,9 +7,55 @@ retains its existing admission, namespace, resource and qualification controls.
 from __future__ import annotations
 
 from pathlib import Path
+import importlib.util
 
 
 MAX_JOBS = 12
+PARTITION_SELECTOR = "fraction-addition-partitions"
+PARTITION_SUBJECTS = {"fraction_addition_partition_union", *(
+    "fraction_addition_partition_" + str(index) for index in range(6))}
+
+
+def _partition_projection():
+    """Load only this closed source-bound ordinary suite; execute no proof."""
+    path = Path(__file__).with_name("fraction_addition_partitions_projection.py")
+    spec = importlib.util.spec_from_file_location("formal_partition_registry_projection", path)
+    if spec is None or spec.loader is None:
+        raise ValueError("Partition projection is unavailable")
+    projection = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(projection)
+    return projection
+
+
+def _partition_jobs() -> list[dict]:
+    """Reject partial, reordered or extended schedules for the new suite only."""
+    result = _partition_projection().schedule()
+    expected = [("fraction_addition_partition_union", "healthy", False)]
+    expected += [("fraction_addition_partition_" + str(i), "healthy", False) for i in range(6)]
+    expected += [("fraction_addition_partition_fault", case, False)
+                 for case in ("always_error", "wrong_carry", "wrong_residual")]
+    expected += [("fraction_addition_partition_" + str(i), "healthy", True) for i in range(6)]
+    if not isinstance(result, list) or len(result) != 16:
+        raise ValueError("Partition suite requires exactly sixteen fixed jobs")
+    for job, (owner, case, restored) in zip(result, expected, strict=True):
+        if (not isinstance(job, dict) or set(job) != _FIELDS
+                or (job["subject"], job["case"], job["restored_healthy"]) != (owner, case, restored)
+                or type(job["restored_healthy"]) is not bool):
+            raise ValueError("Partition suite has a reordered or malformed job")
+        if case == "healthy":
+            suffix, failure = owner, None
+        else:
+            suffix, failure = {
+                "always_error": ("fraction_addition_control_success", "addition required success"),
+                "wrong_carry": ("fraction_addition_control_carry", "addition exact carry"),
+                "wrong_residual": ("fraction_addition_control_residual", "addition exact residual"),
+            }[case]
+        if (job["harness"] != "fraction_addition_partitions::" + suffix
+                or job["intended_failure"] != failure):
+            raise ValueError("Partition harness or intended failure differs from fixed schedule")
+    return result
+
+
 _STEMS = {
     "coordinate-exchange": "coordinate_exchange",
     "clock": "clock",
@@ -24,6 +70,9 @@ _STEMS = {
     "fraction-constructor": "fraction_constructor",
     "fraction-comparison": "fraction_comparison",
     "fraction-arithmetic": "fraction_arithmetic",
+    "scaled-value-split": "scaled_value_split",
+    "scaled-value-representation": "scaled_value_representation",
+    "fraction-addition-partitions": "fraction_addition_partitions",
 }
 _FIELDS = {"subject", "case", "harness", "intended_failure", "restored_healthy"}
 
@@ -38,14 +87,20 @@ def input_names(selector: str) -> list[str]:
     if selector == "calendar-finite-laws":
         result.extend(("tools/formal/calendar_composition_harness.rs",
                        "tools/formal/calendar_composition_projection.py"))
-    if selector in {"leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic"}:
+    if selector in {"leap-coverage", "endpoint-finish", "fraction-constructor", "fraction-comparison", "fraction-arithmetic", "scaled-value-split", "scaled-value-representation"}:
         result.append(f"tools/formal/test_{stem}.py")
+    if selector == PARTITION_SELECTOR:
+        result.extend(("tools/formal/fraction_arithmetic_harness.rs",
+                       "tools/formal/fraction_arithmetic_projection.py",
+                       "tools/formal/test_fraction_addition_partitions.py"))
     return result
 
 
 def jobs(selector: str) -> list[dict]:
     """Return one complete immutable-in-meaning schedule as fresh job records."""
     input_names(selector)
+    if selector == PARTITION_SELECTOR:
+        return _partition_jobs()
     result = []
 
     def add(subject, case, harness, intended=None, restored=False):
@@ -166,6 +221,32 @@ def jobs(selector: str) -> list[dict]:
         add("fraction_addition", "wrong_residual", "fraction_arithmetic::fraction_addition_control_residual",
             "addition exact residual")
         add("fraction_addition", "healthy", "fraction_arithmetic::fraction_addition_full_domain", restored=True)
+    elif selector == "scaled-value-split":
+        add("scaled_value_split", "healthy", "scaled_value_split::scaled_value_split_full_domain")
+        add("scaled_value_split", "reject_all", "scaled_value_split::scaled_value_split_control_success",
+            "split required success")
+        add("scaled_value_split", "zero_remainder", "scaled_value_split::scaled_value_split_control_remainder",
+            "split exact quotient remainder")
+        add("scaled_value_split", "wrong_error", "scaled_value_split::scaled_value_split_control_error",
+            "split rejection classification")
+        add("scaled_value_split", "healthy", "scaled_value_split::scaled_value_split_full_domain", restored=True)
+    elif selector == "scaled-value-representation":
+        add("signed_whole", "healthy", "scaled_value_representation::signed_whole_full_domain")
+        add("signed_whole", "omit_negation", "scaled_value_representation::signed_whole_control_sign",
+            "signed whole strict sign")
+        add("signed_whole", "narrow_magnitude", "scaled_value_representation::signed_whole_control_magnitude",
+            "signed whole exact magnitude")
+        add("signed_whole", "use_fraction", "scaled_value_representation::signed_whole_control_fraction",
+            "signed whole fraction independence")
+        add("signed_whole", "healthy", "scaled_value_representation::signed_whole_full_domain", restored=True)
+        add("from_bits", "healthy", "scaled_value_representation::from_bits_full_domain")
+        add("from_bits", "wrong_subnormal_scale", "scaled_value_representation::from_bits_control_subnormal",
+            "from bits nonzero shift retained")
+        add("from_bits", "lose_sign", "scaled_value_representation::from_bits_control_sign",
+            "from bits original sign retained")
+        add("from_bits", "wrong_error", "scaled_value_representation::from_bits_control_error",
+            "from bits rejection classification")
+        add("from_bits", "healthy", "scaled_value_representation::from_bits_full_domain", restored=True)
     else:
         add("calendar_finite_laws", "healthy", "calendar_finite_laws_full_domain")
         add("calendar_finite_laws", "cycle_year_coefficient", "calendar_finite_laws_control_year", "Gregorian segment year recurrence")
@@ -185,6 +266,37 @@ def expected_contract(subject: str, harness: str) -> tuple[frozenset[str], froze
     """
     if type(subject) is not str or type(harness) is not str:
         raise ValueError("Unknown additional healthy proof contract")
+    if subject in {"fraction_addition_universal", "fraction_addition_witnesses"}:
+        if (subject, harness) not in {
+                ("fraction_addition_universal", "fraction_arithmetic::fraction_addition_universal_full_domain"),
+                ("fraction_addition_witnesses", "fraction_arithmetic::fraction_addition_witnesses_full_domain")}:
+            raise ValueError("Query split requires its exact universal or witness harness")
+        path = Path(__file__).with_name("fraction_query_split_projection.py")
+        spec = importlib.util.spec_from_file_location("formal_fraction_query_split_registry_projection", path)
+        if spec is None or spec.loader is None:
+            raise ValueError("Query split projection is unavailable")
+        projection = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(projection)
+        return projection.expected_contract(subject, harness)
+    if subject == "fraction_composition_mechanism":
+        if harness != "fraction_arithmetic::composition_mechanism_full_domain":
+            raise ValueError("Composition mechanism requires its exact full-domain harness")
+        path = Path(__file__).with_name("fraction_composition_projection.py")
+        spec = importlib.util.spec_from_file_location("formal_fraction_composition_registry_projection", path)
+        if spec is None or spec.loader is None:
+            raise ValueError("Composition projection is unavailable")
+        projection = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(projection)
+        return projection.expected_contract(subject, harness)
+    if subject in PARTITION_SUBJECTS:
+        if harness != "fraction_addition_partitions::" + subject:
+            raise ValueError("Partition harness is not the selected complete leaf")
+        projection = _partition_projection()
+        assertions = projection.REQUIRED_ASSERTIONS[harness]
+        covers = projection.REQUIRED_COVERS[harness]
+        if not assertions or not covers:
+            raise ValueError("Partition proofs require reachable assertions and covers")
+        return frozenset(assertions), frozenset(covers)
     if (subject, harness) == ("coordinate", "coordinate_full_domain"):
         assertions = {"coordinate rejection classification", "exact retained coordinate"}
         covers = {"zero coordinate succeeds", "minimum coordinate succeeds", "maximum coordinate succeeds",
@@ -325,6 +437,48 @@ def expected_contract(subject: str, harness: str) -> tuple[frozenset[str], froze
                   "addition minimum positive plus zero", "addition zero plus minimum positive",
                   "addition two minimum positives", "addition raw zeros canonicalize",
                   "addition half plus quarter", "addition quarter plus half"}
+    elif (subject, harness) == ("scaled_value_split", "scaled_value_split::scaled_value_split_full_domain"):
+        assertions = {"split required success", "split rejection classification",
+                      "split exact nonnegative whole", "split nonnegative zero fraction",
+                      "split exact quotient remainder", "split strict remainder bound",
+                      "split large denominator whole zero", "split large denominator numerator retained",
+                      "split zero canonicalization", "split nonzero shift retained",
+                      "split output numerator bound", "split output shift bound", "split output proper dyadic"}
+        covers = {"split zero at scale zero", "split zero at minimum scale", "split zero at negative sixty four",
+                  "split integral unit", "split maximum raw whole", "split exact negative scale",
+                  "split fractional negative scale", "split below source cutoff", "split at source cutoff",
+                  "split below oracle cutoff", "split at oracle cutoff", "split maximum fraction shift",
+                  "split oversized proper significand rejected", "split maximum raw significand rejected",
+                  "split zero beyond upper scale rejected", "split nonzero beyond upper scale rejected",
+                  "split zero beyond lower scale rejected", "split nonzero beyond lower scale rejected",
+                  "split minimum raw scale rejected", "split maximum raw scale rejected"}
+    elif (subject, harness) == ("signed_whole", "scaled_value_representation::signed_whole_full_domain"):
+        assertions = {"signed whole exact magnitude", "signed whole strict sign", "signed whole zero equivalence",
+                      "signed whole raw envelope", "signed whole fraction independence"}
+        covers = {"signed whole positive zero", "signed whole negative zero", "signed whole positive one",
+                  "signed whole negative one", "signed whole positive two", "signed whole negative two",
+                  "signed whole positive i64 maximum", "signed whole negative i64 maximum",
+                  "signed whole positive two to sixty three", "signed whole negative two to sixty three",
+                  "signed whole positive above two to sixty three", "signed whole negative above two to sixty three",
+                  "signed whole positive below u64 maximum", "signed whole negative below u64 maximum",
+                  "signed whole positive u64 maximum", "signed whole negative u64 maximum",
+                  "signed whole positive fractional zero", "signed whole negative fractional zero",
+                  "signed whole ignores raw oversized fraction", "signed whole ignores raw maximum fraction shift"}
+    elif (subject, harness) == ("from_bits", "scaled_value_representation::from_bits_full_domain"):
+        assertions = {"from bits required success", "from bits rejection classification", "from bits original sign retained",
+                      "from bits exact integral magnitude", "from bits integral zero fraction",
+                      "from bits exact quotient remainder", "from bits strict remainder bound",
+                      "from bits large denominator whole zero", "from bits large denominator numerator retained",
+                      "from bits zero canonicalization", "from bits nonzero shift retained", "from bits whole envelope",
+                      "from bits output numerator bound", "from bits output shift bound", "from bits output proper dyadic"}
+        covers = {"from bits positive zero", "from bits negative zero", "from bits positive minimum subnormal",
+                  "from bits negative minimum subnormal", "from bits maximum subnormal", "from bits minimum normal",
+                  "from bits half quantum", "from bits below quantum", "from bits integral quantum",
+                  "from bits above quantum", "from bits denominator sixty three", "from bits denominator sixty four",
+                  "from bits positive magnitude boundary", "from bits negative magnitude boundary",
+                  "from bits below magnitude boundary", "from bits above magnitude boundary rejected",
+                  "from bits positive infinity rejected", "from bits negative infinity rejected",
+                  "from bits quiet NaN rejected", "from bits negative signalling NaN rejected"}
     elif (subject, harness) == ("era_constructor", "proof::era_constructor_full_domain"):
         assertions = {"public window admission iff full raw contract", "exact earliest coordinate retained",
                       "exact latest coordinate retained", "constructed endpoints remain ordered",
@@ -379,6 +533,12 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         selector = "fraction-comparison"
     elif subject in {"fraction_complement", "fraction_addition"}:
         selector = "fraction-arithmetic"
+    elif subject in PARTITION_SUBJECTS or subject == "fraction_addition_partition_fault":
+        selector = PARTITION_SELECTOR
+    elif subject == "scaled_value_split":
+        selector = "scaled-value-split"
+    elif subject in {"signed_whole", "from_bits"}:
+        selector = "scaled-value-representation"
     else:
         raise ValueError("Unknown additional proof subject")
     schedule = jobs(selector)
@@ -411,6 +571,12 @@ def prepare(loader, source: Path, inputs: Path, job: dict, index: int) -> dict:
         prepared = projection.prepare_fraction_comparison(source, inputs, job["case"], harness)
     elif selector == "fraction-arithmetic":
         prepared = projection.prepare_fraction_arithmetic(source, inputs, subject, job["case"], harness)
+    elif selector == PARTITION_SELECTOR:
+        prepared = projection.prepare_fraction_addition_partitions(source, inputs, subject, job["case"], harness)
+    elif selector == "scaled-value-split":
+        prepared = projection.prepare_scaled_value_split(source, inputs, job["case"], harness)
+    elif selector == "scaled-value-representation":
+        prepared = projection.prepare_scaled_value_representation(source, inputs, subject, job["case"], harness)
     else:
         prepared = projection.prepare_calendar_finite_laws(source, inputs, job["case"], harness)
     if not isinstance(prepared, dict) or prepared.get("entrypoint") != inputs / "proof.rs":

@@ -70,6 +70,11 @@ them. A task receipt records execution; a catalog specifies expectations.
 
 ## Current baseline and amendments
 
+**Latest Core proof checkpoint, 6 November 2026:** the [constructor-Post campaign](../tasks/s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026) completed five jobs: full-raw Post correspondence with its lemma/two helpers, three isolated contract defects and byte-identical restored health. All93 focused Python checks pass;24 current source files and final source/tool/input/receipt bookends are bound. This adds the third predicate equality while preserving the earlier [bit-length checkpoint](../tasks/s1.3-source-selection-readiness.md#bit-length-dependency-terminal-assessment--6-november-2026) and both older Rust outputs. The complete six-equality bridge, native Ordering correspondence/import, actual constructor/caller integration, addition and Core/P1 remain open. Next prepare complement correspondence and its shift/power arithmetic; no-cheating, closed attempts and execution holds remain unchanged.
+
+
+**Core verifier checkpoint, 6 November 2026:** the [Kani contract-mode pilot](../tasks/s1.3-source-selection-readiness.md#addition-contract-mode-terminal-assessment--6-november-2026) ended DEFER at a primitive CBMC internal error, with zero product proofs or callee certificates. Completed ordinary proofs retain their scopes; full-domain addition and Core/P1 remain open.
+
 **Mandatory mathematical proofs, 5 November 2026:**
 [OD-10](nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 requires machine-checked product mathematical proofs under
@@ -85,15 +90,18 @@ Historical bounded checks do not establish the stronger gate. Tool selection,
 Windows/native qualification and OD-05's optional enhanced release provenance
 retain their separate status.
 
-**Conditional Verus pilot, 5 November 2026:** David asked to use Verus if it is
-better and document justified work. The named full-domain addition gap and
-Kani's actual zero-check timeout justify the
+**Verus readiness result, 5 November 2026:** David's conditional request and the
+named full-domain addition gap justified the
 [bounded Core pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026),
 routed through the [development plan](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and [P1 backlog](../tasks/development-backlog.md#p1-core-completion). Compatibility,
-isolated admission and actual-source benefit remain to be demonstrated. Broader
-adoption stays DEFER; completed Kani proofs, mandatory open obligations and all
-execution holds retain their scopes. No Verus installation or proof is claimed.
+and [P1 backlog](../tasks/development-backlog.md#p1-core-completion). The pinned
+payload's isolated version/loader check passed, but the final preparation command
+rejected the unchanged `u64::checked_shl` API before SMT execution. The readiness
+result is **DEFER**: three preparation commands used, zero product-proof commands
+and no adoption. Reconsider only after official support for the same actual call
+graph and a separate finite card; no assumed project specifications or runtime
+rewrite closes the gap. Completed Kani proofs remain reusable; addition and all
+other mandatory open obligations and execution holds retain their scopes.
 
 The [proof workflow](../.agents/skills/testing/references/formal-verification.md)
 and shared [testing contract](../.agents/skills/testing/CONTRACT.md#product-specific-evidence)
@@ -402,9 +410,11 @@ prior Kani failure is not required. The report retains candidate properties, the
 Kani alternative, proof/trust boundaries and failure triage. No application proof
 was executed or new tool/CI gate adopted **by that assessment**; the
 [S1.1c task](../tasks/s1.1-time-domain.md#verus-proposal-assessment--1-november-2026)
-owns its history. The report's dated 5 November addendum and
+owns its history. The report's dated 5 November addenda and
 [current Core pilot](../tasks/s1.3-source-selection-readiness.md#verus-addition-pilot--5-november-2026)
-now record the triggered evaluation; broader adoption remains deferred.
+record the triggered evaluation and actual readiness **DEFER** after the pinned
+candidate rejected `checked_shl`. No SMT or product proof ran; broader adoption
+remains deferred.
 
 **State-guided fuzzing experiment, 1 November 2026:** the
 [completed experiment report](supporting-reviews/state-guided-fuzzing-experiment.md)

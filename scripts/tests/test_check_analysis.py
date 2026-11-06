@@ -293,6 +293,213 @@ class AdmissionControls(unittest.TestCase):
                 CHECK.admit_era_constructor_proof(self.checkout, self.pointer)
         run.assert_not_called()
 
+    def test_fraction_query_split_has_distinct_consumer_and_original_complete_kani_closure(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        original_profiles = copy.deepcopy(CHECK.PROFILES)
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_fraction_query_split_pilot(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_consumer"], "fraction-query-split-pilot-v1")
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+        self.assertEqual([item["root"] for item in admitted["inventories"]], ["kani"])
+        self.assertEqual(admitted["policy"]["profiles"], original_profiles)
+        self.assertEqual(CHECK.PROFILES, original_profiles)
+        self.assertEqual(CHECK.ADMISSION_PROFILES, ("full", "stable-core"))
+        self.assertNotIn("admission_consumer", self.admit_kani())
+
+    def test_fraction_query_split_admission_is_closed_and_propagates_failure(self):
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="fraction-query-split-pilot-v1")
+            for keyword, value in (("profile", "full"), ("solver", "z3"), ("timeout", 300),
+                                   ("lane", "universal")):
+                with self.subTest(keyword=keyword), self.assertRaises(TypeError):
+                    CHECK.admit_fraction_query_split_pilot(self.checkout, self.pointer, **{keyword: value})
+            generic.assert_not_called()
+        with patch.object(CHECK, "_admit", side_effect=CHECK.Incomplete("query split admission denied")) as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "query split admission denied"):
+                CHECK.admit_fraction_query_split_pilot(self.checkout, self.pointer)
+        generic.assert_called_once_with(self.checkout, self.pointer, profile=CHECK.KANI_PROOF_PROFILE)
+
+    def test_fraction_composition_has_distinct_consumer_and_original_complete_kani_closure(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        original_profiles = copy.deepcopy(CHECK.PROFILES)
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_fraction_composition_pilot(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_consumer"], "fraction-composition-pilot-v1")
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+        self.assertEqual([item["root"] for item in admitted["inventories"]], ["kani"])
+        self.assertEqual(admitted["policy"]["profiles"], original_profiles)
+        self.assertEqual(CHECK.PROFILES, original_profiles)
+        self.assertEqual(CHECK.ADMISSION_PROFILES, ("full", "stable-core"))
+        self.assertNotIn("admission_consumer", self.admit_kani())
+
+    def test_fraction_composition_admission_is_closed_and_propagates_failure(self):
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="fraction-composition-pilot-v1")
+            for keyword, value in (("profile", "full"), ("solver", "z3"), ("timeout", 300)):
+                with self.subTest(keyword=keyword), self.assertRaises(TypeError):
+                    CHECK.admit_fraction_composition_pilot(self.checkout, self.pointer, **{keyword: value})
+            generic.assert_not_called()
+        with patch.object(CHECK, "_admit", side_effect=CHECK.Incomplete("composition admission denied")) as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "composition admission denied"):
+                CHECK.admit_fraction_composition_pilot(self.checkout, self.pointer)
+        generic.assert_called_once_with(self.checkout, self.pointer, profile=CHECK.KANI_PROOF_PROFILE)
+
+    def test_fraction_addition_compute_has_distinct_consumer_and_unchanged_complete_kani_closure(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        original_profiles = copy.deepcopy(CHECK.PROFILES)
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_fraction_addition_compute_pilot(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_consumer"], "fraction-addition-compute-pilot-v1")
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+        self.assertEqual([item["root"] for item in admitted["inventories"]], ["kani"])
+        self.assertEqual(admitted["installation_pointer"], str(self.pointer))
+        self.assertEqual(admitted["installation_pointer_sha256"],
+                         hashlib.sha256(self.pointer.read_bytes()).hexdigest())
+        self.assertEqual(admitted["policy"]["profiles"], original_profiles)
+        self.assertEqual(CHECK.PROFILES, original_profiles)
+        self.assertEqual(CHECK.ADMISSION_PROFILES, ("full", "stable-core"))
+        self.assertNotIn("admission_consumer", self.admit_kani())
+        for item in self.policy["inventories"]:
+            if item["root"] != "kani":
+                self.assertFalse((self.base / item["path"]).exists())
+
+    def test_fraction_addition_compute_rejects_same_size_library_tampering_with_healthy_neighbors(self):
+        _, _, files, payload, compiler = self.kani_fixture()
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            self.assertEqual(CHECK.admit_fraction_addition_compute_pilot(self.checkout, self.pointer)
+                             ["readonly_roots"], (payload, compiler))
+            for target in (payload / "lib/kani.rlib", compiler / "lib/librustc_driver.so"):
+                before = target.stat()
+                target.write_bytes(b"X" * len(files[target]))
+                os.utime(target, ns=(before.st_atime_ns, before.st_mtime_ns))
+                self.assertEqual(target.stat().st_size, before.st_size)
+                self.assertEqual(target.stat().st_mtime_ns, before.st_mtime_ns)
+                with self.subTest(target=target), self.assertRaisesRegex(CHECK.Incomplete, "digest/size mismatch"):
+                    CHECK.admit_fraction_addition_compute_pilot(self.checkout, self.pointer)
+                target.write_bytes(files[target])
+                self.assertEqual(CHECK.admit_fraction_addition_compute_pilot(self.checkout, self.pointer)
+                                 ["admission_consumer"], "fraction-addition-compute-pilot-v1")
+        run.assert_not_called()
+
+    def test_fraction_addition_compute_rejects_generic_overrides_and_helper_failure(self):
+        self.kani_fixture()
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="fraction-addition-compute-pilot-v1")
+            for keyword, value in (("profile", "kani-proof"), ("solver", "z3"), ("timeout", 300)):
+                with self.subTest(keyword=keyword), self.assertRaises(TypeError):
+                    CHECK.admit_fraction_addition_compute_pilot(self.checkout, self.pointer, **{keyword: value})
+            generic.assert_not_called()
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers",
+                          side_effect=CHECK.Incomplete("fraction addition compute helper denial")) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            with self.assertRaisesRegex(CHECK.Incomplete, "fraction addition compute helper denial"):
+                CHECK.admit_fraction_addition_compute_pilot(self.checkout, self.pointer)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+
+    def test_fraction_contracts_pilot_has_distinct_consumer_and_complete_unchanged_kani_closure(self):
+        specification, _, _, payload, compiler = self.kani_fixture()
+        original_profiles = copy.deepcopy(CHECK.PROFILES)
+        real_check = CHECK.check_inventory
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK, "check_inventory", wraps=real_check) as inventories, \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            admitted = CHECK.admit_fraction_contracts_pilot(self.checkout, self.pointer)
+        inventories.assert_called_once_with(self.base, specification, self.stable)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+        self.assertEqual(admitted["admission_consumer"], "fraction-contracts-pilot-v1")
+        self.assertEqual(admitted["admission_profile"], "kani-proof")
+        self.assertEqual(admitted["readonly_roots"], (payload, compiler))
+        self.assertEqual([item["root"] for item in admitted["inventories"]], ["kani"])
+        self.assertEqual(admitted["installation_pointer"], str(self.pointer))
+        self.assertEqual(admitted["installation_pointer_sha256"],
+                         hashlib.sha256(self.pointer.read_bytes()).hexdigest())
+        self.assertEqual(admitted["policy"]["profiles"], original_profiles)
+        self.assertEqual(CHECK.PROFILES, original_profiles)
+        self.assertEqual(CHECK.ADMISSION_PROFILES, ("full", "stable-core"))
+        self.assertNotIn("admission_consumer", self.admit_kani())
+        for item in self.policy["inventories"]:
+            if item["root"] != "kani":
+                self.assertFalse((self.base / item["path"]).exists())
+
+    def test_fraction_contracts_pilot_rejects_same_size_library_tampering_with_healthy_neighbors(self):
+        _, _, files, payload, compiler = self.kani_fixture()
+        targets = (payload / "lib/kani.rlib", compiler / "lib/librustc_driver.so")
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers", return_value={}), \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            self.assertEqual(CHECK.admit_fraction_contracts_pilot(self.checkout, self.pointer)
+                             ["readonly_roots"], (payload, compiler))
+            for target in targets:
+                before = target.stat()
+                target.write_bytes(b"X" * len(files[target]))
+                os.utime(target, ns=(before.st_atime_ns, before.st_mtime_ns))
+                self.assertEqual(target.stat().st_size, before.st_size)
+                self.assertEqual(target.stat().st_mtime_ns, before.st_mtime_ns)
+                with self.subTest(target=target), self.assertRaisesRegex(CHECK.Incomplete, "digest/size mismatch"):
+                    CHECK.admit_fraction_contracts_pilot(self.checkout, self.pointer)
+                target.write_bytes(files[target])
+                self.assertEqual(CHECK.admit_fraction_contracts_pilot(self.checkout, self.pointer)
+                                 ["admission_consumer"], "fraction-contracts-pilot-v1")
+        run.assert_not_called()
+
+    def test_fraction_contracts_pilot_rejects_generic_selection_overrides_and_helper_failure(self):
+        self.kani_fixture()
+        with patch.object(CHECK, "_admit") as generic:
+            with self.assertRaisesRegex(CHECK.Incomplete, "Unknown analysis admission profile"):
+                CHECK.admit(self.checkout, self.pointer, profile="fraction-contracts-pilot-v1")
+            with self.assertRaises(TypeError):
+                CHECK.admit_fraction_contracts_pilot(self.checkout, self.pointer, profile="full")
+            generic.assert_not_called()
+        with patch.object(Path, "home", return_value=self.home), \
+             patch.dict(CHECK.EXPECTED, {"kani": self.kani_pin}), \
+             patch.object(CHECK.RUNTIME, "_helpers",
+                          side_effect=CHECK.Incomplete("fraction contracts helper denial")) as helpers, \
+             patch.object(CHECK.RUNTIME, "run") as run:
+            with self.assertRaisesRegex(CHECK.Incomplete, "fraction contracts helper denial"):
+                CHECK.admit_fraction_contracts_pilot(self.checkout, self.pointer)
+        helpers.assert_called_once_with(self.checkout)
+        run.assert_not_called()
+
     def test_kani_proof_hashes_each_tool_solver_and_transitive_compiler_library(self):
         _, _, files, _, _ = self.kani_fixture()
         self.admit_kani()
