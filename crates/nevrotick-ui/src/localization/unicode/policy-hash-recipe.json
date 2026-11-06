@@ -1,0 +1,9 @@
+{
+  "algorithm": "SHA-256",
+  "exact_input": "policy-hash-input.bin",
+  "input_bytes": 1107,
+  "input_sha256": "db31f75a32cbd6bf8bedcf2d1e912bf59309452b8efca56000b340cce289f681",
+  "human_readable_artifact": "policy.canonical.json",
+  "encoding": "Exactly compact sorted-key UTF8 JSON bytes, no trailing newline; binary input equals policy.canonical.json minus its one final LF.",
+  "meaning": "Binds frozen source hashes, allowed scalar inventory, hard properties/components and empty multiline/joining exceptions."
+}

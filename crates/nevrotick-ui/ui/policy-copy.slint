@@ -1,0 +1,33 @@
+import { LocalizationCopy } from "localization-copy.slint";
+// Code-owned initial English copy; catalogs supply text, never state or actions.
+export global PolicyCopy {
+    out property <string> heading: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[266] : "Synchronization profile";
+    out property <string> description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[267] : "Compare an explicit local profile preview with the unchanged fixture baseline.";
+    out property <string> baseline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[268] : "Fixture baseline";
+    out property <string> preview: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[269] : "Local profile preview";
+    out property <string> no-preview: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[270] : "No profile preview";
+    out property <string> nts: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[271] : "NTS only";
+    out property <string> ntp: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[272] : "NTP - unauthenticated";
+    out property <string> observe: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[273] : "Observe only";
+    out property <string> choose: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[274] : "Choose profile preview";
+    out property <string> edit: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[275] : "Edit profile preview";
+    out property <string> review: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[276] : "Review profile preview";
+    out property <string> keep: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[277] : "Keep profile preview";
+    out property <string> discard: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[278] : "Discard profile preview";
+    out property <string> cancel: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[279] : "Cancel editing";
+    out property <string> choice-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[280] : "Profile preview";
+    out property <string> nts-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[281] : "Only eligible NTS-authenticated sources may supply ordinary votes. Authentication alone does not establish agreement.";
+    out property <string> ntp-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[282] : "Plain NTP is unauthenticated. NTP and NTS sources do not vote together, and there is no automatic downgrade or fallback.";
+    out property <string> observe-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[283] : "Observe only authorizes no product clock writes. It does not turn on Windows Time or settle the acquisition and authentication mode.";
+    out property <string> authority: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[284] : "A real change needs a current policy revision and a specific administrator-authorized operation. This local preview simulates neither UAC nor activation.";
+    out property <string> apply: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[285] : "Apply profile";
+    out property <string> apply-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[286] : "Profile activation is unavailable: no protected Apply transaction is connected.";
+    out property <string> fixture-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[287] : "The NTS fixture baseline is sample data, not a declaration of a shipped default.";
+    out property <string> preview-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[288] : "The selected preview is stored in this app session only; sources and active configuration are unchanged.";
+    out property <string> source-summary: "Profile changes are separate from source edits.";
+    out property <string> phase-required: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[289] : "Open the profile editor or review before using this action.";
+    out property <string> invalid-choice: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[290] : "Choose NTS, explicitly selected NTP, or observe only.";
+    out property <string> no-preview-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[291] : "Choose a profile preview before reviewing it.";
+    out property <string> page-required: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[292] : "Open Time policy in Settings before editing the profile preview.";
+    out property <string> editor-active: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[293] : "Finish or cancel the source preview edit on Sources before editing a profile preview.";
+}

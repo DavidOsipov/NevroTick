@@ -1,0 +1,35 @@
+import { SourceRow } from "types.slint";
+import { InspectionCopy } from "inspection-copy.slint";
+import { Theme } from "theme.slint";
+import { Panel, SectionHeading, SecondaryText, FactRow, ActionButton } from "components.slint";
+
+export component SourceDetailsPanel inherits Panel {
+    in property <SourceRow> source;
+    in property <bool> hidden-by-query;
+    callback close-requested();
+    SectionHeading { text: InspectionCopy.details-heading; }
+    ActionButton { text: InspectionCopy.close-details; clicked => { root.close-requested(); } }
+    SecondaryText { text: InspectionCopy.details-note; }
+    if root.hidden-by-query: SecondaryText { text: InspectionCopy.hidden-details; color: Theme.amber; }
+    FactRow { label: InspectionCopy.label; value: root.source.label; }
+    FactRow { label: InspectionCopy.identity; value: root.source.host; }
+    FactRow { label: InspectionCopy.protocol; value: root.source.protocol-choice == 0 ? InspectionCopy.nts : InspectionCopy.ntp; }
+    FactRow { label: InspectionCopy.port; value: root.source.port; }
+    SecondaryText { text: InspectionCopy.local-id-note; }
+    FactRow { label: InspectionCopy.authentication; value: root.source.protocol-choice == 0 ? InspectionCopy.not-established : InspectionCopy.unauthenticated; }
+    FactRow { label: InspectionCopy.auth-measurement; value: root.source.protocol-choice == 0 ? InspectionCopy.not-observed : InspectionCopy.not-applicable; }
+    FactRow { label: InspectionCopy.role; value: InspectionCopy.not-evaluated; }
+    FactRow { label: InspectionCopy.operator; value: InspectionCopy.not-established; }
+    FactRow { label: InspectionCopy.endpoint; value: InspectionCopy.not-observed; }
+    FactRow { label: InspectionCopy.vote-identity; value: InspectionCopy.not-established; }
+    FactRow { label: InspectionCopy.request-status; value: InspectionCopy.not-observed; }
+    FactRow { label: InspectionCopy.last-reply; value: InspectionCopy.not-measured; }
+    FactRow { label: InspectionCopy.last-accepted; value: InspectionCopy.not-measured; }
+    FactRow { label: InspectionCopy.offset; value: InspectionCopy.not-measured; }
+    FactRow { label: InspectionCopy.delay; value: InspectionCopy.not-measured; }
+    FactRow { label: InspectionCopy.uncertainty; value: InspectionCopy.not-measured; }
+    FactRow { label: InspectionCopy.certificate; value: root.source.protocol-choice == 0 ? InspectionCopy.not-observed : InspectionCopy.not-applicable; }
+    FactRow { label: InspectionCopy.scale; value: InspectionCopy.not-observed; }
+    FactRow { label: InspectionCopy.leap; value: InspectionCopy.not-observed; }
+    ActionButton { text: InspectionCopy.close-details; clicked => { root.close-requested(); } }
+}

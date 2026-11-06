@@ -1,0 +1,81 @@
+import { GuardedComboBox } from "guarded-combo-box.slint";
+import { PolicyCopy } from "policy-copy.slint";
+import { Theme } from "theme.slint";
+import { Panel, SectionHeading, SecondaryText, FactRow, ActionButton } from "components.slint";
+
+export component PolicyPanel inherits Panel {
+    in property <bool> host-ready;
+    in property <bool> source-editor-open;
+    property <bool> can-edit: root.host-ready && !root.source-editor-open;
+    in property <int> phase;
+    in property <bool> has-preview;
+    in property <int> accepted-choice;
+    in property <int> draft-choice;
+    in property <bool> raw-revision;
+    callback raw-choice-edited(int, int) -> int;
+    in property <string> error;
+    callback edit-requested();
+    callback review-requested(int);
+    callback cancel-requested();
+    callback open-review-requested();
+    callback keep-requested();
+    callback discard-requested();
+    if root.phase == 2 && root.source-editor-open: SecondaryText { text: PolicyCopy.editor-active; color: Theme.amber; }
+    if root.phase == 2 && root.error != "": SecondaryText { text: root.error; color: Theme.red; }
+    // Review begins with the proposal, its consequence and the local decision.
+    if root.phase == 2: VerticalLayout {
+        spacing: 10px;
+        FactRow { label: PolicyCopy.preview; value: root.accepted-choice == 0 ? PolicyCopy.nts : root.accepted-choice == 1 ? PolicyCopy.ntp : PolicyCopy.observe; }
+        SecondaryText { text: root.accepted-choice == 0 ? PolicyCopy.nts-consequence : root.accepted-choice == 1 ? PolicyCopy.ntp-consequence : PolicyCopy.observe-consequence; color: root.accepted-choice == 1 ? Theme.amber : Theme.ink; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: PolicyCopy.keep; enabled: root.can-edit; clicked => { root.keep-requested(); } }
+            ActionButton { text: PolicyCopy.edit; enabled: root.can-edit; clicked => { root.edit-requested(); } }
+        }
+        SecondaryText { text: PolicyCopy.authority; }
+        ActionButton { text: PolicyCopy.discard; enabled: root.can-edit; clicked => { root.discard-requested(); } }
+        ActionButton { text: PolicyCopy.apply; enabled: false; }
+        SecondaryText { text: PolicyCopy.apply-unavailable; }
+    }
+    SectionHeading { text: PolicyCopy.heading; }
+    SecondaryText { text: PolicyCopy.description; }
+    FactRow { label: PolicyCopy.baseline; value: PolicyCopy.nts; }
+    SecondaryText { text: PolicyCopy.fixture-note; }
+    if root.phase != 2 && root.source-editor-open: SecondaryText { text: PolicyCopy.editor-active; color: Theme.amber; }
+    if root.phase != 2 && root.error != "": SecondaryText { text: root.error; color: Theme.red; }
+    if root.phase == 0: VerticalLayout {
+        spacing: 10px;
+        FactRow {
+            label: PolicyCopy.preview;
+            value: !root.has-preview ? PolicyCopy.no-preview : root.accepted-choice == 0 ? PolicyCopy.nts : root.accepted-choice == 1 ? PolicyCopy.ntp : PolicyCopy.observe;
+        }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: root.has-preview ? PolicyCopy.edit : PolicyCopy.choose; enabled: root.can-edit; clicked => { root.edit-requested(); } }
+            ActionButton { text: PolicyCopy.review; enabled: root.can-edit && root.has-preview; clicked => { root.open-review-requested(); } }
+        }
+    }
+    if root.phase == 1: VerticalLayout {
+        spacing: 10px;
+        SecondaryText { text: PolicyCopy.choice-label; }
+        GuardedComboBox {
+            accessible-label: PolicyCopy.choice-label;
+            model: [PolicyCopy.nts, PolicyCopy.ntp, PolicyCopy.observe];
+            draft-index: root.draft-choice;
+            draft-revision: root.raw-revision;
+            edit-requested(value) => { return root.raw-choice-edited(3, value); }
+            enabled: root.can-edit;
+        }
+        SecondaryText { text: PolicyCopy.ntp-consequence; }
+        SecondaryText { text: PolicyCopy.observe-consequence; }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: PolicyCopy.review; enabled: root.can-edit; clicked => { root.review-requested(root.draft-choice); } }
+            ActionButton { text: PolicyCopy.cancel; enabled: root.can-edit; clicked => { root.cancel-requested(); } }
+        }
+    }
+    SecondaryText { text: PolicyCopy.preview-note; }
+}

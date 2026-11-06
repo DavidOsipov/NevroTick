@@ -30,7 +30,9 @@ SPEC.loader.exec_module(VERIFY)
 MAX_ARCHIVE = 16 * 1024 * 1024
 MAX_EXPANDED = 80 * 1024 * 1024
 MAX_MEMBERS = 10000
-MAX_PACKAGES = 25
+MAX_PACKAGES = 768
+MAX_TOTAL_ARCHIVE = 256 * 1024 * 1024
+MAX_TOTAL_EXPANDED = 1024 * 1024 * 1024
 VERSION = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
 
 
@@ -94,7 +96,7 @@ def archive_files(data: bytes, package: dict) -> dict[str, bytes]:
 def acquisition_records(policy: dict) -> list[dict]:
     """Precheck every source identity before I/O; do not merge its admission role.
 
-    The CLI invokes the shared strict schema2 owner first. Small archive controls
+    The CLI invokes the shared strict schema owner first. Small archive controls
     may use a selected-only envelope, while this lower boundary always bounds
     names, non-prerelease SemVer/build metadata, pins, duplicate identities and
     total work. Metadata-only records remain source inputs, never selected grants
@@ -140,13 +142,20 @@ def acquire(vendor: Path, policy: dict) -> None:
     vendor.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".ui-m0-acquire-", dir=vendor.parent))
     try:
+        total_archive = total_expanded = 0
         for package in packages:
             name, version = package["name"], package["version"]
             url = f"https://static.crates.io/crates/{name}/{name}-{version}.crate"
             request = urllib.request.Request(url, headers={"User-Agent": "NevroTick-UI-M0-admission"})
             with urllib.request.urlopen(request, timeout=60) as response:
                 data = response.read(MAX_ARCHIVE + 1)
+            total_archive += len(data)
+            if total_archive > MAX_TOTAL_ARCHIVE:
+                raise ValueError("Aggregate crate archive bytes exceed budget")
             files = archive_files(data, package)
+            total_expanded += sum(map(len, files.values()))
+            if total_expanded > MAX_TOTAL_EXPANDED:
+                raise ValueError("Aggregate extracted crate bytes exceed budget")
             directory = temporary / f"{name}-{version}"
             directory.mkdir()
             for relative, contents in files.items():

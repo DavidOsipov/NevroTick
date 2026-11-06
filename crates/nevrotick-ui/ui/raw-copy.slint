@@ -1,0 +1,16 @@
+import { LocalizationCopy } from "localization-copy.slint";
+// Code-owned, redacted raw-editor reasons. Catalogs never supply field/action IDs.
+export global RawCopy {
+    out property <string> too-long: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[385] : "This entry is too long for this editor. Your previous draft was kept.";
+    out property <string> character: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[386] : "Unsupported characters. Use A-Z, a-z, digits, spaces and ASCII punctuation. Your previous draft was kept.";
+    out property <string> invalid-option: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[387] : "Choose an available editor or option. No draft was changed.";
+    out property <string> context: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[388] : "This editor is not active. Your draft and accepted settings were kept.";
+    out property <string> unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[389] : "Input editing is unavailable because a checked draft could not be restored. Reopen the app to reset the local preview.";
+    out property <string> stale: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[390] : "The submitted values do not match the current draft. Review the draft and try again.";
+    out property <string> action-undo: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[391] : "Undo";
+    out property <string> action-redo: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[392] : "Redo";
+    out property <string> action-cut: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[393] : "Cut";
+    out property <string> action-copy: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[394] : "Copy";
+    out property <string> action-paste: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[395] : "Paste";
+    out property <string> action-select-all: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[396] : "Select all";
+}

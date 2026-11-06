@@ -179,6 +179,23 @@ class PolicyAdmissionTests(unittest.TestCase):
         self.assertEqual(release["panic"], "unwind")
         self.assertEqual(release["strip"], "none")
 
+    def test_ui_test_debug_budget_cannot_expand_or_remove_checks(self):
+        parsed = STRICT.read_configuration(self.root)
+        self.assertEqual(parsed["policy/rust-workspace.toml"]["profile"]["test"],
+                         {"package": {"nevrotick-ui": {"debug": 0}}})
+        path = self.root / "policy/rust-workspace.toml"
+        original = path.read_text()
+        for changed in (original.replace("debug = 0", "debug = 2"),
+                        original.replace("debug = 0", "debug = false"),
+                        original + "overflow-checks = false\n",
+                        original + "debug-assertions = false\n",
+                        original + "\n[profile.test.package.time-core]\ndebug = 0\n"):
+            with self.subTest(changed=changed[-100:]):
+                path.write_text(changed)
+                self.assert_refused("profiles differ")
+        path.write_text(original)
+        STRICT.read_configuration(self.root)
+
     def test_removing_required_unwrap_rule_is_rejected(self):
         self.replace("policy/rust-workspace.toml", 'unwrap_used = "deny"\n', "")
         self.assert_refused("Required strict lint missing")

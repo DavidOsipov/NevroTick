@@ -1,0 +1,228 @@
+import { GuardedLineEdit } from "guarded-line-edit.slint";
+import { GuardedToggleButton } from "guarded-toggle-button.slint";
+import { InspectionCopy } from "inspection-copy.slint";
+import { SourceDetailsPanel } from "source-details.slint";
+import { SourceRow, SourceChangeRow } from "types.slint";
+import { Theme } from "theme.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { RecoveryCopy } from "recovery-copy.slint";
+import { SourceCopy } from "source-copy.slint";
+import { Panel, BodyText, SecondaryText, SectionHeading, PageHeading, Badge, FactRow, ActionButton } from "components.slint";
+import { SourceEditor } from "source-editor.slint";
+
+export component SourcesPage inherits VerticalLayout {
+    callback recovery-open-requested();
+    in property <[SourceRow]> sources;
+    in property <int> all-source-count;
+    in property <bool> selected-source-visible;
+    in property <string> draft-query;
+    in property <string> accepted-query;
+    in property <string> query-error;
+    in property <bool> detail-open;
+    in property <bool> detail-hidden;
+    in property <SourceRow> detail-source;
+    callback query-requested(string);
+    callback query-clear-requested();
+    callback filter-requested(int);
+    callback details-requested(int);
+    callback details-close-requested();
+    in property <[SourceChangeRow]> source-changes;
+    in property <int> selected-source;
+    in property <bool> editor-open;
+    in property <bool> editor-adding;
+    in property <bool> review-open;
+    in property <bool> raw-revision;
+    callback raw-text-edited(int, string) -> string;
+    callback raw-action-permitted(int, int) -> bool;
+    callback raw-menu-key(string, bool) -> bool;
+    callback raw-choice-edited(int, int) -> int;
+    in property <bool> host-ready;
+    in property <bool> search-open;
+    private property <bool> compact-query: root.accepted-query != "" && !root.search-open && root.all-source-count > 0 && !root.editor-open && !root.detail-open && !root.review-open;
+    callback search-requested(bool) -> bool;
+    in property <string> draft-label;
+    in property <string> draft-host;
+    in property <string> draft-port;
+    in property <int> draft-protocol-choice;
+    in property <string> editor-error;
+    in property <string> editor-feedback;
+    callback source-selected(int);
+    callback edit-requested();
+    callback add-requested();
+    callback remove-requested(int);
+    callback undo-requested(int);
+    callback review-requested();
+    callback review-close-requested();
+    callback discard-requested();
+    callback update-requested(string, string, int, string);
+    callback cancel-requested();
+    spacing: 18px;
+    vertical-stretch: 0;
+
+    if !root.editor-open && !root.detail-open && !root.review-open && !root.compact-query: PageHeading { kicker: FixtureCopy.sources-tab; title: FixtureCopy.sources-heading; description: FixtureCopy.sources-description; }
+    if root.compact-query: SectionHeading { text: FixtureCopy.sources-heading; }
+    // Omit the redundant summary/toolbar so the active form starts higher.
+    if !root.editor-open && !root.detail-open && !root.review-open: VerticalLayout {
+        spacing: 14px;
+        if !root.compact-query: VerticalLayout {
+            spacing: 5px;
+            BodyText { text: SourceCopy.profile-value; font-weight: 600; }
+            SecondaryText { text: SourceCopy.preview-note; }
+        }
+        if root.all-source-count == 0: Panel {
+            SectionHeading { text: SourceCopy.empty-heading; }
+            SecondaryText { text: SourceCopy.empty-description; }
+        }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: SourceCopy.add-source; enabled: root.host-ready; clicked => { root.add-requested(); } }
+            ActionButton { text: FixtureCopy.edit-source; enabled: root.host-ready && root.selected-source > 0 && root.selected-source-visible; clicked => { root.edit-requested(); } }
+            ActionButton { text: SourceCopy.review-changes; enabled: root.host-ready && root.source-changes.length > 0; clicked => { root.review-requested(); } }
+        }
+        if root.selected-source > 0 && !root.selected-source-visible: SecondaryText { text: InspectionCopy.selected-hidden; color: Theme.amber; }
+        if root.all-source-count > 0: GuardedToggleButton {
+            text: InspectionCopy.query-label;
+            accepted-checked: root.search-open;
+            draft-revision: root.raw-revision;
+            enabled: root.host-ready;
+            edit-requested(requested) => { return root.search-requested(requested); }
+        }
+        if root.accepted-query != "" && !root.search-open: HorizontalLayout {
+            spacing: 12px;
+            FactRow { label: InspectionCopy.accepted-query; value: root.accepted-query; horizontal-stretch: 1; }
+            ActionButton { text: InspectionCopy.clear; enabled: root.host-ready; clicked => { root.query-clear-requested(); } }
+        }
+        if root.all-source-count > 0 && root.search-open: Panel {
+            SecondaryText { text: InspectionCopy.query-label; }
+            GuardedLineEdit { field-id: 3; action-permitted(field, action) => { return root.raw-action-permitted(field, action); } menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+                input-label: InspectionCopy.query-label;
+                placeholder-text: InspectionCopy.query-placeholder;
+                draft-value: root.draft-query;
+                draft-revision: root.raw-revision;
+                edit-requested(value) => { return root.raw-text-edited(3, value); }
+                enabled: root.host-ready;
+                accepted => { root.query-requested(root.draft-query); }
+            }
+            SecondaryText { text: InspectionCopy.query-help; }
+            HorizontalLayout {
+                spacing: 10px;
+                alignment: start;
+                ActionButton { text: InspectionCopy.search; enabled: root.host-ready; clicked => { root.query-requested(root.draft-query); } }
+                ActionButton { text: InspectionCopy.clear; enabled: root.host-ready; clicked => { root.query-clear-requested(); } }
+            }
+            if root.accepted-query != "": FactRow { label: InspectionCopy.accepted-query; value: root.accepted-query; }
+            if root.query-error != "": SecondaryText { text: root.query-error; color: Theme.red; }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                ActionButton { text: InspectionCopy.all; enabled: root.host-ready; clicked => { root.filter-requested(0); } }
+                ActionButton { text: InspectionCopy.used; enabled: false; clicked => { root.filter-requested(1); } }
+                ActionButton { text: InspectionCopy.other; enabled: false; clicked => { root.filter-requested(2); } }
+            }
+            SecondaryText { text: InspectionCopy.roles-unavailable; }
+        }
+        if root.editor-error != "": SecondaryText { text: root.editor-error; color: Theme.red; }
+        if root.editor-feedback != "" && !root.compact-query: SecondaryText { text: root.editor-feedback; color: Theme.blue; }
+    }
+    if root.editor-open: SourceEditor {
+        raw-revision: root.raw-revision;
+        raw-text-edited(field, value) => { return root.raw-text-edited(field, value); }
+        raw-action-permitted(field, action) => { return root.raw-action-permitted(field, action); }
+        raw-menu-key(text, shift) => { return root.raw-menu-key(text, shift); }
+        raw-choice-edited(field, value) => { return root.raw-choice-edited(field, value); }
+        host-ready: root.host-ready;
+        adding: root.editor-adding;
+        draft-label: root.draft-label;
+        draft-host: root.draft-host;
+        draft-port: root.draft-port;
+        draft-protocol-choice: root.draft-protocol-choice;
+        error: root.editor-error;
+        update-requested(label, host, protocol, port) => { root.update-requested(label, host, protocol, port); }
+        cancel-requested => { root.cancel-requested(); }
+    }
+    if root.review-open && !root.editor-open && !root.detail-open: Panel {
+        SectionHeading { text: SourceCopy.review-heading; }
+        SecondaryText { text: SourceCopy.review-description; }
+        // Undo may conflict; keep fixed guidance visible in the dedicated Review.
+        if root.editor-error != "": SecondaryText { text: root.editor-error; color: Theme.red; }
+        if root.editor-feedback != "": SecondaryText { text: root.editor-feedback; color: Theme.blue; }
+        ActionButton { text: SourceCopy.close-review; enabled: root.host-ready; clicked => { root.review-close-requested(); } }
+        if root.source-changes.length == 0: SecondaryText { text: SourceCopy.empty-review; }
+        for change in root.source-changes: Panel {
+            panel-background: Theme.soft;
+            HorizontalLayout {
+                spacing: 10px;
+                SectionHeading { text: SourceCopy.change-labels[change.change-choice]; horizontal-stretch: 1; }
+                ActionButton { text: SourceCopy.undo; enabled: root.host-ready; clicked => { root.undo-requested(change.view-id); } }
+            }
+            FactRow { label: SourceCopy.before-label; value: change.before-present ? (change.before-source.label + " · " + change.before-source.host + " · " + (change.before-source.protocol-choice == 0 ? FixtureCopy.nts-preview : InspectionCopy.ntp) + " · " + (change.before-source.protocol-choice == 0 ? FixtureCopy.nts-port : SourceCopy.ntp-port) + " " + change.before-source.port) : SourceCopy.review-none; }
+            FactRow { label: SourceCopy.after-label; value: change.after-present ? (change.after-source.label + " · " + change.after-source.host + " · " + (change.after-source.protocol-choice == 0 ? FixtureCopy.nts-preview : InspectionCopy.ntp) + " · " + (change.after-source.protocol-choice == 0 ? FixtureCopy.nts-port : SourceCopy.ntp-port) + " " + change.after-source.port) : SourceCopy.review-none; }
+        }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: SourceCopy.close-review; clicked => { root.review-close-requested(); } }
+            ActionButton { text: SourceCopy.discard; enabled: root.host-ready && root.source-changes.length > 0; clicked => { root.discard-requested(); } }
+        }
+        ActionButton { text: SourceCopy.apply; enabled: false; }
+        SecondaryText { text: SourceCopy.apply-unavailable; }
+    }
+    if root.detail-open && !root.editor-open: SourceDetailsPanel {
+        source: root.detail-source;
+        hidden-by-query: root.detail-hidden;
+        close-requested => { root.details-close-requested(); }
+    }
+    if root.sources.length == 0 && root.all-source-count > 0 && !root.editor-open && !root.detail-open && !root.review-open: Panel {
+        SectionHeading { text: InspectionCopy.no-matches-heading; }
+        SecondaryText { text: InspectionCopy.no-matches; }
+    }
+    if !root.detail-open && !root.editor-open && !root.review-open: VerticalLayout {
+        spacing: 18px;
+    for source in root.sources: Panel {
+        panel-background: source.view-id == root.selected-source ? Theme.blue-soft : Theme.surface;
+        HorizontalLayout {
+            spacing: 16px;
+            SectionHeading { text: source.label; horizontal-stretch: 1; }
+            if source.view-id == root.selected-source: Badge { text: FixtureCopy.selected; }
+            if source.show-draft-badge: Badge { text: SourceCopy.change-labels[source.change-choice]; }
+        }
+        BodyText { text: source.host; }
+        GridLayout {
+            spacing: 20px;
+            FactRow { row: 0; col: 0; label: source.protocol-choice == 0 ? FixtureCopy.nts-port : SourceCopy.ntp-port; value: source.port; }
+            FactRow { row: 0; col: 1; label: FixtureCopy.protocol-label; value: source.protocol-choice == 0 ? FixtureCopy.nts-preview : InspectionCopy.ntp; }
+            FactRow { row: 1; col: 0; label: FixtureCopy.source-role; value: FixtureCopy.not-evaluated; }
+            FactRow { row: 1; col: 1; label: FixtureCopy.last-reply; value: FixtureCopy.not-measured; }
+        }
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            ActionButton { text: FixtureCopy.select-source; enabled: root.host-ready && source.view-id != root.selected-source && !root.editor-open; clicked => { root.source-selected(source.view-id); } }
+            ActionButton { text: InspectionCopy.details; enabled: root.host-ready && !root.editor-open; clicked => { root.details-requested(source.view-id); } }
+            ActionButton { text: SourceCopy.remove-source; enabled: root.host-ready && !root.editor-open; clicked => { root.remove-requested(source.view-id); } }
+        }
+    }
+    }
+    // A collapsed accepted query puts its result before repeated preview context.
+    if root.compact-query: Rectangle {
+        height: compact-note.preferred-height;
+        vertical-stretch: 0;
+        compact-note := VerticalLayout {
+            width: parent.width;
+            spacing: 5px;
+            // Keep the earlier success receipt after the current search results.
+            if root.editor-feedback != "": SecondaryText { text: root.editor-feedback; color: Theme.blue; }
+            SecondaryText { text: FixtureCopy.sources-description; }
+            BodyText { text: SourceCopy.profile-value; font-weight: 600; }
+            SecondaryText { text: SourceCopy.preview-note; }
+        }
+    }
+    if !root.detail-open && !root.editor-open && !root.review-open: SecondaryText { text: FixtureCopy.source-list-note; }
+    SecondaryText { text: FixtureCopy.memory-boundary; }
+    if !root.detail-open && !root.editor-open && !root.review-open: Panel {
+        SectionHeading { text: RecoveryCopy.title; }
+        SecondaryText { text: RecoveryCopy.context-description; }
+        ActionButton { text: RecoveryCopy.open-details; enabled: root.host-ready; clicked => { root.recovery-open-requested(); } }
+    }
+}

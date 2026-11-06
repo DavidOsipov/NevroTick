@@ -1,0 +1,43 @@
+import { LocalizationCopy } from "localization-copy.slint";
+// Code-owned English fixture copy. Text never chooses a route or OS action.
+export global ShellCopy {
+    out property <string> quit-ui: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[228] : "Quit UI";
+    out property <string> quit-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[229] : "Quit NevroTick?";
+    out property <string> keep-open: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[230] : "Keep NevroTick open";
+    out property <string> manage-service: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[231] : "Manage background service";
+    out property <string> quit-only: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[232] : "Quit UI only";
+    out property <string> unknown-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[233] : "Quitting closes only the app observer. It does not stop services or confirm whether they are running or stopped.";
+    out property <string> draft-loss-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[234] : "Changes kept only in this app session will be lost";
+    out property <string> draft-loss: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[235] : "This includes source, profile and helper previews, unfinished edits, the selected preview interval, and notification, tray and sign-in choices. They are not saved after this preview exits and have not been applied to Windows or the services.";
+    out property <string> observer-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[236] : "New local notifications stop when the last NevroTick window or tray observer exits. Background timekeeping is separate.";
+    out property <string> stop-path: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[237] : "To stop temporarily: Settings > Background service > Stop.";
+    out property <string> disable-path: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[238] : "To prevent future starts: Settings > Background service > Disable NevroTick.";
+    out property <string> separate-management: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[239] : "Managing a service opens its settings. Stopping, disabling or changing time management requires a separate authorized operation.";
+    out property <string> exit-requested: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[240] : "App close requested. Its completion has not been confirmed.";
+    out property <string> overview: "Overview";
+    out property <string> background-service: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[241] : "Background service";
+    out property <string> notifications: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[242] : "Notifications";
+    out property <string> main-content: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[243] : "Current page content";
+    out property <string> service-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[244] : "Review background synchronization separately from this app window. Service controls are unavailable in this fixture.";
+    out property <string> service-summary: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[245] : "Service state is not observed. Closing this app does not stop any running background service.";
+    out property <string> manage-power: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[246] : "Manage in Power user";
+    out property <string> service-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[247] : "No service-management adapter is connected. These controls cannot submit a service or Windows Time operation.";
+    out property <string> diagnose: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[248] : "Open service diagnostics";
+    out property <string> diagnose-power: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[249] : "Open diagnostics in Power user";
+    out property <string> diagnose-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[250] : "Diagnostics opens observed facts. It does not start, stop or repair a service.";
+    out property <string> startup-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[251] : "Start with Windows";
+    out property <string> startup-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[252] : "The current startup configuration is not observed. Changing autostart would not start or stop an already running service.";
+    out property <string> autostart-on: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[253] : "Enable service autostart";
+    out property <string> autostart-off: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[254] : "Disable service autostart";
+    out property <string> disable-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[255] : "Disable NevroTick is a separate stop and future-start prevention operation. It requires confirmed clock cleanup and supported installed management.";
+    out property <string> time-manager-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[256] : "Time management";
+    out property <string> use-windows: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[257] : "Use Windows Time";
+    out property <string> use-nevrotick: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[258] : "Use NevroTick";
+    out property <string> handover-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[259] : "Changing the time manager is unavailable here. The installed application must reconcile ownership and perform a separate authorized handover. A running service alone does not prove synchronization.";
+    out property <string> synchronization-settings: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[260] : "Synchronization";
+    out property <string> time-policy: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[261] : "Time policy";
+    out property <string> time-policy-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[262] : "Review the synchronization profile and date-recovery settings. Local previews do not activate service policy.";
+    out property <string> time-policy-power: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[263] : "Open time policy in Power User";
+    out property <string> personal-preferences: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[264] : "Your preferences";
+    out property <string> personal-preferences-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[265] : "Choose how this app starts and stays available. These choices do not start or stop a background service.";
+}

@@ -1,0 +1,34 @@
+import { LocalizationCopy } from "localization-copy.slint";
+// Code-owned English source-workflow copy, pending the shared typed catalog.
+export global SourceCopy {
+    out property <[string]> change-labels: LocalizationCopy.value.catalog-ready ? [LocalizationCopy.value.texts[173], LocalizationCopy.value.texts[174], LocalizationCopy.value.texts[175], LocalizationCopy.value.texts[176]] : ["Baseline", "Add", "Edit", "Remove"];
+    out property <string> review-none: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[177] : "None";
+    out property <string> profile-value: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[147] : "Local source preview · active policy unchanged";
+    out property <string> preview-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[148] : "These entries are local candidates. They create no measurements, authenticated observations or votes.";
+    out property <string> add-source: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[149] : "Add source preview";
+    out property <string> remove-source: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[150] : "Remove preview";
+    out property <string> review-changes: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[151] : "Review changes";
+    out property <string> review-heading: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[152] : "Preview changes";
+    out property <string> review-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[153] : "Review the original fixture and the local candidate. No changes have been applied to a service.";
+    out property <string> before-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[154] : "Original fixture";
+    out property <string> after-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[155] : "Local preview";
+    out property <string> undo: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[156] : "Undo change";
+    out property <string> discard: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[157] : "Discard all preview changes";
+    out property <string> close-review: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[158] : "Keep editing";
+    out property <string> apply: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[159] : "Apply to background service";
+    out property <string> apply-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[160] : "Apply is unavailable in this fixture. Review and editing affect only this preview session.";
+    out property <string> empty-heading: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[161] : "No sources in the local preview";
+    out property <string> empty-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[162] : "Add a source preview or undo a removal. The original fixture and active service configuration are unchanged.";
+    out property <string> empty-review: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[163] : "No preview changes to review.";
+    out property <string> add-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[164] : "Add a source preview";
+    out property <string> edit-title: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[165] : "Edit source preview";
+    out property <[string]> protocols: LocalizationCopy.value.catalog-ready ? [LocalizationCopy.value.texts[166], LocalizationCopy.value.texts[167]] : ["NTS (authenticated responses)", "NTP (unauthenticated)"];
+    out property <string> protocol-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[168] : "Choose the protocol explicitly. Unavailable NTS never switches to plain NTP automatically.";
+    out property <string> ntp-warning: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[169] : "Plain NTP does not authenticate the server response. This is an explicit local protocol preview.";
+    out property <string> ntp-port: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[170] : "NTP port";
+    out property <string> port-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[171] : "Decimal port from 1 to 65535. Defaults: NTS-KE 4460; NTP 123. A manually edited port stays unchanged when switching protocol.";
+    out property <string> statistics-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[172] : "The local source preview contains identities and protocol-specific ports, without offsets, uncertainties or measurement history.";
+    out property <string> page-required: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[178] : "Open Sources in Power User mode before changing source previews.";
+    out property <string> list-required: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[179] : "Return to the source list before changing source previews.";
+    out property <string> review-required: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[180] : "Open the changes review before undoing or discarding local previews.";
+}

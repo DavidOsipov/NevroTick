@@ -35,6 +35,131 @@ ADAPTIVE_FIXTURES = importlib.util.module_from_spec(ADAPTIVE_FIXTURES_SPEC)
 ADAPTIVE_FIXTURES_SPEC.loader.exec_module(ADAPTIVE_FIXTURES)
 
 
+class ExactRegistryProjectionTests(unittest.TestCase):
+    """Lock parsing controls use inert registry blocks and never execute Cargo."""
+
+    REGISTRY = 'registry+https://github.com/rust-lang/crates.io-index'
+    LOCAL = ('version = 4\n\n[[package]]\nname = "time-core"\nversion = "0.0.0"\n'
+             'dependencies = ["garde", "time-domain"]\n\n[[package]]\n'
+             'name = "time-domain"\nversion = "0.0.0"\ndependencies = ["garde"]\n')
+
+    @classmethod
+    def block(cls, name, version, dependencies=(), source=None):
+        """Construct independent literal machine-style package bytes."""
+        text = ('[[package]]\nname = "' + name + '"\nversion = "' + version + '"\n'
+                'source = "' + (source or cls.REGISTRY) + '"\nchecksum = "' + 'a' * 64 + '"\n')
+        if dependencies:
+            text += 'dependencies = [\n' + ''.join(' "' + value + '",\n' for value in dependencies) + ']\n'
+        return text
+
+    def product(self, qualified=False):
+        """A garde-only closure shares syn's name with an unrelated GUI version."""
+        return (self.LOCAL + self.block('garde', '0.23.0', ['syn 2.0.119' if qualified else 'syn'])
+                + self.block('syn', '2.0.119'))
+
+    def test_exact_map_accepts_distinct_versions_without_merging_or_byte_changes(self):
+        old = self.block('syn', '2.0.119')
+        new = self.block('syn', '3.0.9')
+        result = MODULE.registry_blocks(old + new)
+        self.assertEqual(set(result), {('syn', '2.0.119'), ('syn', '3.0.9')})
+        self.assertEqual(result[('syn', '2.0.119')][1], old)
+        self.assertEqual(result[('syn', '3.0.9')][1], new)
+
+    def test_exact_edges_resolve_qualifiers_and_reject_ambiguous_missing_or_foreign_sources(self):
+        blocks = MODULE.registry_blocks(self.block('syn', '2.0.119') + self.block('syn', '3.0.9'))
+        self.assertEqual(MODULE.resolve_registry_dependency('syn 2.0.119', blocks), ('syn', '2.0.119'))
+        self.assertEqual(MODULE.resolve_registry_dependency('syn 2.0.119 (' + self.REGISTRY + ')', blocks),
+                         ('syn', '2.0.119'))
+        for reference in ('syn', 'syn 9.0.0', 'absent', 'syn 2.0.119 (registry+https://wrong.invalid)',
+                          'syn 2.0.119 extra', '', 1):
+            with self.subTest(reference=reference), self.assertRaises(MODULE.Incomplete):
+                MODULE.resolve_registry_dependency(reference, blocks)
+        self.assertEqual(MODULE.resolve_registry_dependency('syn', MODULE.registry_blocks(self.block('syn', '2.0.119'))),
+                         ('syn', '2.0.119'))
+
+    def test_duplicate_exact_records_and_unreviewed_origins_reject(self):
+        for text in (self.block('syn', '2.0.119') * 2,
+                     self.block('syn', '2.0.119', source='git+https://wrong.invalid'),
+                     self.block('syn', '2.0.119') + self.block('unreached', '1.0.0', source='registry+https://wrong.invalid')):
+            with self.subTest(text=text), self.assertRaises(MODULE.Incomplete):
+                MODULE.registry_blocks(text)
+
+    def test_irrelevant_gui_duplicates_and_qualified_selected_labels_preserve_fuzz_bytes(self):
+        control = self.block('libfuzzer-sys', '0.4.13')
+        expected = MODULE.reviewed_fuzz_lock(self.product(), control)
+        candidate = (self.product(qualified=True) + self.block('syn', '3.0.9')
+                     + self.block('windows-sys', '0.52.0') + self.block('windows-sys', '0.61.2'))
+        self.assertEqual(MODULE.reviewed_fuzz_lock(candidate, control), expected)
+        self.assertIn(control, expected)
+        self.assertNotIn('3.0.9', expected)
+        self.assertNotIn('windows-sys', expected)
+
+    def test_checked_in_standalone_lock_bytes_remain_the_current_pure_projection(self):
+        control = (ROOT / 'policy/time-core-fuzz.lock').read_text()
+        self.assertEqual(MODULE.reviewed_fuzz_lock((ROOT / 'Cargo.lock').read_text(), control), control)
+
+    def test_selected_label_projection_changes_no_source_checksum_or_other_field(self):
+        control = self.block('libfuzzer-sys', '0.4.13')
+        product = self.product(qualified=True) + self.block('syn', '3.0.9')
+        before = MODULE.registry_blocks(product)[('garde', '0.23.0')][0]
+        result = MODULE.reviewed_fuzz_lock(product, control)
+        after = MODULE.registry_blocks(result)[('garde', '0.23.0')][0]
+        self.assertEqual(after, dict(before, dependencies=['syn']))
+        for change in ('source', 'version', 'checksum'):
+            baseline = MODULE.reviewed_fuzz_lock(self.product(), control)
+            if change == 'source':
+                changed = product.replace(self.REGISTRY, 'registry+https://wrong.invalid', 1)
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.reviewed_fuzz_lock(changed, control)
+            else:
+                changed = product.replace('version = "0.23.0"', 'version = "0.23.1"', 1) if change == 'version' else product.replace('checksum = "' + 'a' * 64, 'checksum = "' + 'b' * 64, 1)
+                self.assertNotEqual(MODULE.reviewed_fuzz_lock(changed, control), baseline)
+
+    def test_reached_multi_versions_and_original_fuzz_conflicts_stay_rejected(self):
+        cases = [
+            (self.LOCAL + self.block('garde', '0.23.0', ['syn']) + self.block('syn', '2.0.119')
+             + self.block('syn', '3.0.9'), self.block('libfuzzer-sys', '0.4.13')),
+            (self.LOCAL + self.block('garde', '0.23.0', ['syn 2.0.119', 'syn 3.0.9'])
+             + self.block('syn', '2.0.119') + self.block('syn', '3.0.9'), self.block('libfuzzer-sys', '0.4.13')),
+            (self.product(), self.block('syn', '3.0.9')),
+            (self.product(), self.block('syn', '2.0.119', ['changed-edge'])),
+            (self.product(), self.block('original-only', '1.0.0') + self.block('original-only', '2.0.0')),
+            (self.product().replace('"syn"', '"missing"', 1), self.block('libfuzzer-sys', '0.4.13')),
+        ]
+        for product, control in cases:
+            with self.subTest(product=product, control=control), self.assertRaises(MODULE.Incomplete):
+                MODULE.reviewed_fuzz_lock(product, control)
+
+    def test_fuzz_vendor_admission_uses_reached_version_among_gui_duplicates(self):
+        class ReachedOwnedConfiguration(Exception):
+            pass
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            work, vendor = root / 'work', root / 'vendor'
+            work.mkdir()
+            source = vendor / 'syn-2.0.119'
+            source.mkdir(parents=True)
+            (source / 'lib.rs').write_text('// Inert source custody fixture; never compiled.\n')
+            files = MODULE.PRODUCT.inventory(source)
+            checksum = {'package': 'a' * 64, 'files': files}
+            (source / '.cargo-checksum.json').write_text(json.dumps(checksum))
+            package = {'name': 'syn', 'version': '2.0.119', 'checksum': checksum['package']}
+            selected = {'manifest': 'policy/time-core-fuzz-manifest.toml',
+                        'lockfile': 'policy/time-core-fuzz.lock',
+                        'target_source': 'policy/time-core-fuzz-target.rs',
+                        'locked_registry_packages': [package]}
+            session = SimpleNamespace(work=work, vendor=vendor, dependency_policy={'packages': [
+                {'name': 'syn', 'version': '3.0.9', 'files_sha256': '0' * 64},
+                {'name': 'syn', 'version': '2.0.119', 'files_sha256': MODULE.PREPARE.files_digest(files)},
+            ]}, configure=Mock(side_effect=ReachedOwnedConfiguration))
+            with patch.object(MODULE, 'admit_fuzz_sources', return_value={'locked_registry_packages': []}):
+                with self.assertRaises(ReachedOwnedConfiguration):
+                    MODULE.fuzz(session, selected, {})
+            session.configure.assert_called_once_with(MODULE.COMMON.FUZZ_CARGO_CONFIG)
+            self.assertEqual((work / 'fuzz-vendor/syn-2.0.119/lib.rs').read_bytes(), (source / 'lib.rs').read_bytes())
+
+
 class HistoricalS14cTestCase(unittest.TestCase):
     """Run predecessor parser controls under their explicit qualified profile.
 

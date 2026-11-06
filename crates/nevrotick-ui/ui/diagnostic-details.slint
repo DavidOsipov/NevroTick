@@ -1,0 +1,91 @@
+import { GuardedComboBox } from "guarded-combo-box.slint";
+import { DiagnosticCopy } from "diagnostic-copy.slint";
+import { Theme } from "theme.slint";
+import { BodyText, SecondaryText, SectionHeading, PageHeading, Panel, FactRow, ActionButton } from "components.slint";
+
+export component DiagnosticDetails inherits VerticalLayout {
+    in property <bool> host-ready;
+    in property <bool> raw-revision;
+    in property <int> view;
+    in property <int> scope;
+    in property <int> duration;
+    in property <string> feedback;
+    callback view-requested(int);
+    callback collection-requested(int, int);
+    spacing: 18px;
+    vertical-stretch: 0;
+    ActionButton { text: DiagnosticCopy.back; enabled: root.host-ready; clicked => { root.view-requested(0); } }
+    if root.view == 1: VerticalLayout {
+        spacing: 16px;
+        PageHeading { title: DiagnosticCopy.report-title; description: DiagnosticCopy.report-note; }
+        Panel {
+            BodyText { text: DiagnosticCopy.report-content; }
+        }
+        HorizontalLayout {
+            spacing: 12px;
+            alignment: start;
+            ActionButton { text: DiagnosticCopy.copy; enabled: false; }
+            ActionButton { text: DiagnosticCopy.export; enabled: false; }
+        }
+        SecondaryText { text: DiagnosticCopy.export-reason; }
+    }
+    if root.view == 2: VerticalLayout {
+        spacing: 16px;
+        PageHeading { title: DiagnosticCopy.collection-title; description: DiagnosticCopy.collection-note; }
+        Panel {
+            HorizontalLayout {
+                spacing: 12px;
+                VerticalLayout {
+                    spacing: 7px;
+                    SecondaryText { text: DiagnosticCopy.scope; }
+                    GuardedComboBox {
+                        model: DiagnosticCopy.scopes;
+                        draft-index: root.scope;
+                        draft-revision: root.raw-revision;
+                        enabled: root.host-ready;
+                        accessible-label: DiagnosticCopy.scope;
+                        edit-requested(value) => {
+                            root.collection-requested(value, root.duration);
+                            return root.scope;
+                        }
+                    }
+                }
+                VerticalLayout {
+                    spacing: 7px;
+                    SecondaryText { text: DiagnosticCopy.duration; }
+                    GuardedComboBox {
+                        model: DiagnosticCopy.durations;
+                        draft-index: root.duration;
+                        draft-revision: root.raw-revision;
+                        enabled: root.host-ready;
+                        accessible-label: DiagnosticCopy.duration;
+                        edit-requested(value) => {
+                            root.collection-requested(root.scope, value);
+                            return root.duration;
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+                ActionButton { text: DiagnosticCopy.start; enabled: false; }
+                ActionButton { text: DiagnosticCopy.stop; enabled: false; }
+            }
+            SecondaryText { text: DiagnosticCopy.collection-reason; }
+            FactRow { label: DiagnosticCopy.effective-scope; value: DiagnosticCopy.collection-state; }
+            FactRow { label: DiagnosticCopy.remaining; value: DiagnosticCopy.unavailable; }
+        }
+        SecondaryText { text: DiagnosticCopy.required-events; }
+    }
+    if root.view == 3: VerticalLayout {
+        spacing: 16px;
+        PageHeading { title: DiagnosticCopy.correction-title; description: DiagnosticCopy.correction-empty; }
+        Panel {
+            SecondaryText { text: DiagnosticCopy.correction-note; }
+            SecondaryText { text: DiagnosticCopy.correction-rule; }
+        }
+        ActionButton { text: DiagnosticCopy.approve; enabled: false; }
+    }
+    if root.feedback != "": SecondaryText { text: root.feedback; color: Theme.amber; }
+}

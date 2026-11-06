@@ -1,0 +1,37 @@
+import { LocalizationCopy } from "localization-copy.slint";
+// Code-owned English fixture copy. These strings are not a catalog validator.
+export global PreferencesCopy {
+    out property <string> incidents-heading: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[139] : "Recent notification problems";
+    out property <string> incidents-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[140] : "No incident feed is connected. This view cannot confirm whether problems were reported, resolved or dismissed. Dismissing a notification does not resolve its cause.";
+    out property <[string]> interval-options: LocalizationCopy.value.catalog-ready ? [LocalizationCopy.value.texts[134], LocalizationCopy.value.texts[135], LocalizationCopy.value.texts[136], LocalizationCopy.value.texts[137], LocalizationCopy.value.texts[138]] : ["Automatic (recommended)", "Every 2 minutes", "Every 5 minutes", "Every 15 minutes", "Enter my own interval"];
+    out property <string> schedule-description: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[110] : "How often to request time measurements. This preference does not authorize clock adjustments.";
+    out property <string> scheduling-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[111] : "Recovery, backoff and server limits may delay the next check. Automatic is recommended for normal use.";
+    out property <string> custom-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[112] : "Interval in minutes";
+    out property <string> custom-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[113] : "Enter a whole number of minutes, at least 1. Fractions, signs, spaces and scientific notation are not accepted.";
+    out property <string> accepted-interval: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[114] : "Accepted in this preview";
+    out property <string> preferences-boundary: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[115] : "Changes are process-local preview preferences. They are not saved to Windows or applied to the background service.";
+    out property <string> host-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[116] : "Preference editing is unavailable until the checked Rust presenter is connected.";
+    out property <string> notifications-heading: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[117] : "Windows notifications";
+    out property <string> notifications-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[118] : "Notify me about problems";
+    out property <string> notifications-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[119] : "Important problems and persistent issues that need attention. Routine checks and planned service stops stay quiet.";
+    out property <string> windows-availability: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[120] : "Windows availability";
+    out property <string> unknown-availability: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[121] : "Windows notification availability is unconfirmed or unavailable.";
+    out property <string> availability-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[122] : "The app preference does not grant Windows permission. Windows and organization settings can suppress notifications.";
+    out property <string> observer-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[123] : "Notification observer";
+    out property <string> observer-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[124] : "A running NevroTick window or tray observer is not confirmed.";
+    out property <string> observer-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[125] : "New local alerts need an active NevroTick window or tray observer. Background timekeeping runs separately.";
+    out property <string> test-notification: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[126] : "Send test notification";
+    out property <string> notification-test-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[127] : "A test needs a connected native adapter, current Windows permission and a running NevroTick observer.";
+    out property <string> preferences-heading: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[128] : "Tray and sign-in";
+    out property <string> tray-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[129] : "Keep NevroTick in the tray";
+    out property <string> tray-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[130] : "The tray preference starts off. Closing or quitting the UI does not stop the background service.";
+    out property <string> sign-in-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[131] : "Start NevroTick in the tray at sign-in";
+    out property <string> sign-in-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[132] : "Available while the tray preference is on. This is separate from background service startup.";
+    out property <string> tray-adapter-unavailable: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[133] : "These switches only retain your choices in this preview. A native tray icon and Windows sign-in registration are not connected.";
+    out property <string> language-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[141] : "Interface language";
+    out property <string> language-help: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[142] : "Only English is available. Additional catalogs require validation and independent review.";
+    out property <string> notification-windows-allowed: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[143] : "Windows permits notification requests";
+    out property <string> notification-windows-blocked: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[144] : "Windows settings or organization policy block notifications.";
+    out property <string> notification-observer-running: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[145] : "NevroTick observer is running";
+    out property <string> tray-ready-note: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[146] : "The tray icon is available. Closing this window keeps the app observer running; Quit UI still closes only the app. Windows sign-in registration is still unavailable.";
+}

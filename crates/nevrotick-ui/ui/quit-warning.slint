@@ -1,0 +1,62 @@
+import { ModalFrame } from "modal-frame.slint";
+import { ShellCopy } from "shell-copy.slint";
+import { SectionHeading, BodyText, SecondaryText } from "components.slint";
+
+// The Rust owner alone owns the open/confirm lifecycle; ModalFrame contains input.
+export component QuitWarning inherits ModalFrame {
+    // Projected by the private controller. This view flag grants no exit authority.
+    in property <bool> emergency: false;
+    in property <string> service-headline;
+    in property <string> service-consequence;
+    out property <bool> keep-open-focused: root.safe-focused;
+    out property <bool> manage-focused: root.second-focused;
+    out property <bool> confirm-focused: root.third-focused;
+    callback keep-open-requested();
+    callback manage-service-requested();
+    callback confirm-requested();
+
+    title: root.emergency ? "Close NevroTick interface?" : ShellCopy.quit-title;
+    safe-label: root.emergency ? "Keep NevroTick open" : ShellCopy.keep-open;
+    second-label: root.emergency ? "" : ShellCopy.manage-service;
+    third-label: root.emergency ? "Close interface only" : ShellCopy.quit-only;
+    second-visible: !root.emergency;
+    second-enabled: !root.emergency;
+    public function focus-keep-open() { root.focus-safe(); }
+    safe-requested => { root.keep-open-requested(); }
+    second-requested => { if !root.emergency { root.manage-service-requested(); } }
+    third-requested => { root.confirm-requested(); }
+
+    // This small code-owned emergency surface cannot depend on the failed catalog.
+    // Its exact English bytes belong to the independent human-review bundle.
+    // Forwarded conditional content needs an explicit intrinsic extent.
+    if root.emergency: Rectangle {
+        height: emergency-content.preferred-height;
+        vertical-stretch: 0;
+        emergency-content := VerticalLayout {
+            width: parent.width;
+            spacing: 12px;
+            alignment: start;
+            SectionHeading { text: "The interface encountered an internal error"; }
+            BodyText { text: "The interface cannot safely continue its normal workflow. Closing affects only this app. It does not request a service or clock change. Background services may keep running."; }
+            BodyText { text: "Unsaved changes in this app will be lost. New local notifications require an active NevroTick observer."; }
+            SecondaryText { text: "If this window remains open, closing has not been confirmed. Use Close again."; }
+        }
+    }
+    if !root.emergency: Rectangle {
+        height: normal-content.preferred-height;
+        vertical-stretch: 0;
+        normal-content := VerticalLayout {
+            width: parent.width;
+            spacing: 12px;
+            alignment: start;
+            SectionHeading { text: root.service-headline; }
+            BodyText { text: root.service-consequence; }
+            SectionHeading { text: ShellCopy.draft-loss-title; }
+            BodyText { text: ShellCopy.draft-loss; }
+            SecondaryText { text: ShellCopy.observer-consequence; }
+            SecondaryText { text: ShellCopy.stop-path; }
+            SecondaryText { text: ShellCopy.disable-path; }
+            SecondaryText { text: ShellCopy.separate-management; }
+        }
+    }
+}

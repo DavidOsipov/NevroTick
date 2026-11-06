@@ -1,0 +1,19 @@
+import { CheckBox } from "std-widgets.slint";
+
+// UiPreferences remains authoritative; even a rejected native toggle is resynced.
+export component GuardedCheckBox inherits CheckBox {
+    in property <bool> accepted-checked;
+    in property <bool> draft-revision;
+    callback edit-requested(bool) -> bool;
+
+    init => { root.checked = root.accepted-checked; }
+    changed accepted-checked => { root.checked = root.accepted-checked; }
+    changed draft-revision => { root.checked = root.accepted-checked; }
+    toggled => {
+        if root.enabled {
+            root.checked = root.edit-requested(root.checked);
+        } else {
+            root.checked = root.accepted-checked;
+        }
+    }
+}

@@ -1,0 +1,20 @@
+import { ComboBox } from "std-widgets.slint";
+
+// Labels never select state. Only a checked numeric receiver result may survive
+// a widget selection, including rejection when the parent value did not change.
+export component GuardedComboBox inherits ComboBox {
+    in property <int> draft-index;
+    in property <bool> draft-revision;
+    callback edit-requested(int) -> int;
+
+    init => { root.current-index = root.draft-index; }
+    changed draft-index => { root.current-index = root.draft-index; }
+    changed draft-revision => { root.current-index = root.draft-index; }
+    selected(value) => {
+        if root.enabled {
+            root.current-index = root.edit-requested(root.current-index);
+        } else {
+            root.current-index = root.draft-index;
+        }
+    }
+}

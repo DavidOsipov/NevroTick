@@ -125,9 +125,13 @@ at [david-osipov.vision](https://david-osipov.vision/).
 
 ## License and acknowledgements
 
-**License:** [GNU GPL v2.0 only](crates/ntp-wire/COPYING), SPDX identifier
+**Core and inherited workspace license:** [GNU GPL v2.0 only](crates/ntp-wire/COPYING), SPDX identifier
 [`GPL-2.0-only`](https://spdx.org/licenses/GPL-2.0-only.html), as declared in
 [Cargo.toml](Cargo.toml).
+
+Original GUI source in `nevrotick-ui` uses [GNU GPL v3.0 only](crates/nevrotick-ui/LICENSE),
+SPDX `GPL-3.0-only`. Its [licensing and provenance record](crates/nevrotick-ui/LICENSING.md)
+keeps that grant separate from Chrony-derived Core code and third-party material.
 
 Chrony-derived code retains its upstream notices and
 [provenance requirements](docs/nevrotick-owner-decisions.md#3-od-01--source-derived-port-with-independent-verification).

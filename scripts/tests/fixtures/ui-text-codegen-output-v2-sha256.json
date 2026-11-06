@@ -1,0 +1,18 @@
+{
+  "preferences-copy.slint": "5c5f652e025cc2c0459b255173abbc98e3f9d2c7203bcd9959d8527dc4e892e1",
+  "inspection-copy.slint": "2f509e617c358261d20169bf43fe51757ad2f1dcb9c9845a73444d2dd8bcdeb9",
+  "shell-copy.slint": "5d9eec1722c3a5cd2c960d37594f216060268672f81ec776c88b4604b6d58e34",
+  "diagnostic-copy.slint": "ca0794bd56a90084aa9b829f69b92fa9ee8a49b328ba21e27bef7b50f8345066",
+  "registry-tombstones.json": "f4d9add4cce894c1e57e4b99d3a142076007c1950293d80458be50919d190e20",
+  "contract.rs": "8bb2f1938dc01125b7a97fa2cbe9499c2af77db4adb4a4b731501bef653067fd",
+  "fixture-copy.slint": "ef6632e0d80fc64513ab7869644138948e0a9a93fe9ef4b57b01d84c4332496e",
+  "recovery-copy.slint": "a94430b05a21bbc9e7d865acd1bf7e0b14af108515a15183601af25d2402c4eb",
+  "policy-copy.slint": "92417da0950c032e6eeae6c8bf8220b0255c3f1386299029c8a3d1b71163365f",
+  "localization-copy.slint": "22b5f9a6cd5785d64e16859d600cddf81834bb795eb81d93ab50edb9bebc382a",
+  "identity.json": "c490eccb9949d86e3174eb9c2e4621ad3ed6cd6a41abe2ef2d87e91954601dd1",
+  "contract-fingerprint-input.bin": "34c97f8a74a9559ae998f55389bedd9f92bb3f878e72df84d090372053a69e80",
+  "catalog_projection.rs": "913ee6d0e05d33a15e5a26f50c82011f391b2b04a5c45021fb6a182fa3a0fec4",
+  "raw-copy.slint": "5aed6355ac80a4d4974bc692a3cb0becef5aa7a12e7a2d3eb05ea2014cdeefa1",
+  "output-slot-map.json": "abecb60eb8096fd20edd28fac28b23b23d2a1999479f18e13ef9dc1aeb40bcfd",
+  "source-copy.slint": "0b8b95540b0d66ae1725426afe741ec5c479c3954e44b6e7b0b3e58ccf9e1f8a"
+}

@@ -1,0 +1,2062 @@
+{
+  "schema_version": 2,
+  "text_contract_version": 2,
+  "domain": "nevrotick.ui",
+  "catalog_revision": 2,
+  "source_fingerprint": "34c97f8a74a9559ae998f55389bedd9f92bb3f878e72df84d090372053a69e80",
+  "locale": "en",
+  "plural_profile": "english-u64-cardinal-v1",
+  "messages": {
+    "ui.fixture.window-title": {
+      "args": {},
+      "text": "NevroTick — sample preview"
+    },
+    "ui.fixture.sample-label": {
+      "args": {},
+      "text": "Prototype — sample data"
+    },
+    "ui.fixture.local-boundary": {
+      "args": {},
+      "text": "Time controls are local previews. No service, elevation or clock effects."
+    },
+    "ui.fixture.memory-boundary": {
+      "args": {},
+      "text": "Changes stay in memory. Restarting restores the sample sources."
+    },
+    "ui.fixture.simple-mode": {
+      "args": {},
+      "text": "Simple"
+    },
+    "ui.fixture.power-mode": {
+      "args": {},
+      "text": "Power user"
+    },
+    "ui.fixture.status-tab": {
+      "args": {},
+      "text": "Status"
+    },
+    "ui.fixture.sources-tab": {
+      "args": {},
+      "text": "Sources"
+    },
+    "ui.fixture.statistics-tab": {
+      "args": {},
+      "text": "Statistics"
+    },
+    "ui.fixture.diagnostics-tab": {
+      "args": {},
+      "text": "Diagnostics"
+    },
+    "ui.fixture.settings-tab": {
+      "args": {},
+      "text": "Settings"
+    },
+    "ui.fixture.about-tab": {
+      "args": {},
+      "text": "About"
+    },
+    "ui.fixture.preview-badge": {
+      "args": {},
+      "text": "Preview only"
+    },
+    "ui.fixture.not-measured": {
+      "args": {},
+      "text": "Not measured"
+    },
+    "ui.fixture.not-evaluated": {
+      "args": {},
+      "text": "Not evaluated"
+    },
+    "ui.fixture.unavailable": {
+      "args": {},
+      "text": "Not available"
+    },
+    "ui.fixture.no-live-connection": {
+      "args": {},
+      "text": "No live connection"
+    },
+    "ui.fixture.status-kicker": {
+      "args": {},
+      "text": "YOUR SYSTEM CLOCK"
+    },
+    "ui.fixture.status-heading": {
+      "args": {},
+      "text": "Clock status"
+    },
+    "ui.fixture.status-qualifier": {
+      "args": {},
+      "text": "Authentication, source agreement and clock accuracy are separate facts."
+    },
+    "ui.fixture.difference-label": {
+      "args": {},
+      "text": "Estimated clock difference"
+    },
+    "ui.fixture.difference-note": {
+      "args": {},
+      "text": "No time measurements have been collected."
+    },
+    "ui.fixture.uncertainty-label": {
+      "args": {},
+      "text": "Estimated uncertainty"
+    },
+    "ui.fixture.uncertainty-note": {
+      "args": {},
+      "text": "A model estimate would not guarantee clock accuracy."
+    },
+    "ui.fixture.authentication-label": {
+      "args": {},
+      "text": "Authentication"
+    },
+    "ui.fixture.authentication-value": {
+      "args": {},
+      "text": "Not established"
+    },
+    "ui.fixture.authentication-note": {
+      "args": {},
+      "text": "NTS authenticates server responses; it does not guarantee their clock accuracy."
+    },
+    "ui.fixture.agreement-label": {
+      "args": {},
+      "text": "Source agreement"
+    },
+    "ui.fixture.agreement-note": {
+      "args": {},
+      "text": "Configured identities are not votes or qualified measurements."
+    },
+    "ui.fixture.qualified-label": {
+      "args": {},
+      "text": "Last qualified estimate"
+    },
+    "ui.fixture.sync-now": {
+      "args": {},
+      "text": "Sync now"
+    },
+    "ui.fixture.sync-unavailable": {
+      "args": {},
+      "text": "Unavailable in this fixture. No measurement or clock change can be requested."
+    },
+    "ui.fixture.sources-heading": {
+      "args": {},
+      "text": "Time sources"
+    },
+    "ui.fixture.sources-description": {
+      "args": {},
+      "text": "Identity, authentication and agreement are separate checks."
+    },
+    "ui.fixture.source-list-note": {
+      "args": {},
+      "text": "One logical identity per row. Aliases and additional addresses do not create independent votes."
+    },
+    "ui.fixture.edit-source": {
+      "args": {},
+      "text": "Edit selected preview"
+    },
+    "ui.fixture.select-source": {
+      "args": {},
+      "text": "Select preview"
+    },
+    "ui.fixture.selected": {
+      "args": {},
+      "text": "Selected"
+    },
+    "ui.fixture.server-identity": {
+      "args": {},
+      "text": "Server identity"
+    },
+    "ui.fixture.display-name": {
+      "args": {},
+      "text": "Display name"
+    },
+    "ui.fixture.nts-port": {
+      "args": {},
+      "text": "NTS-KE port"
+    },
+    "ui.fixture.protocol-label": {
+      "args": {},
+      "text": "Protocol"
+    },
+    "ui.fixture.nts-preview": {
+      "args": {},
+      "text": "NTS preview"
+    },
+    "ui.fixture.source-role": {
+      "args": {},
+      "text": "Selection role"
+    },
+    "ui.fixture.last-reply": {
+      "args": {},
+      "text": "Last measurement reply"
+    },
+    "ui.fixture.editor-description": {
+      "args": {},
+      "text": "Edit a local source entry. It will not join an active source set or change service policy."
+    },
+    "ui.fixture.label-help": {
+      "args": {},
+      "text": "1–64 printable ASCII characters, without leading or trailing spaces."
+    },
+    "ui.fixture.host-help": {
+      "args": {},
+      "text": "ASCII hostname or IP address. No URL, path, credentials or DNS lookup."
+    },
+    "ui.fixture.editor-unavailable": {
+      "args": {},
+      "text": "Update is unavailable in this standalone source preview."
+    },
+    "ui.fixture.update-preview": {
+      "args": {},
+      "text": "Update preview"
+    },
+    "ui.fixture.cancel": {
+      "args": {},
+      "text": "Cancel"
+    },
+    "ui.fixture.statistics-heading": {
+      "args": {},
+      "text": "Time measurements"
+    },
+    "ui.fixture.statistics-description": {
+      "args": {},
+      "text": "Per-source observations will appear here when qualified measurement data is available."
+    },
+    "ui.fixture.statistics-empty-title": {
+      "args": {},
+      "text": "No measurements in this preview"
+    },
+    "ui.fixture.one-snapshot": {
+      "args": {},
+      "text": "Sample snapshot"
+    },
+    "ui.fixture.offset-label": {
+      "args": {},
+      "text": "Offset"
+    },
+    "ui.fixture.positive-offset-note": {
+      "args": {},
+      "text": "A positive offset would mean Windows is behind the reference. Estimated uncertainty would not guarantee accuracy."
+    },
+    "ui.fixture.diagnostics-heading": {
+      "args": {},
+      "text": "Diagnostics"
+    },
+    "ui.fixture.diagnostics-description": {
+      "args": {},
+      "text": "Observed facts and useful next steps, without collecting or exporting real diagnostics."
+    },
+    "ui.fixture.observation-description": {
+      "args": {},
+      "text": "This window displays local fixtures. It is not connected to NevroTick services."
+    },
+    "ui.fixture.freshness-heading": {
+      "args": {},
+      "text": "Evidence freshness"
+    },
+    "ui.fixture.freshness-note": {
+      "args": {},
+      "text": "A measurement reply, qualified estimate, applied correction and status snapshot are separate events."
+    },
+    "ui.fixture.applied-label": {
+      "args": {},
+      "text": "Applied correction"
+    },
+    "ui.fixture.no-correction": {
+      "args": {},
+      "text": "None requested by this preview"
+    },
+    "ui.fixture.snapshot-label": {
+      "args": {},
+      "text": "Status snapshot"
+    },
+    "ui.fixture.fixture-snapshot": {
+      "args": {},
+      "text": "Local fixture · no service status"
+    },
+    "ui.fixture.diagnostics-events": {
+      "args": {},
+      "text": "Event history"
+    },
+    "ui.fixture.settings-description": {
+      "args": {},
+      "text": "Review the intended settings. Protected actions are unavailable in this preview."
+    },
+    "ui.fixture.schedule-heading": {
+      "args": {},
+      "text": "Synchronization"
+    },
+    "ui.fixture.interval-label": {
+      "args": {},
+      "text": "Time check interval"
+    },
+    "ui.fixture.service-heading": {
+      "args": {},
+      "text": "Background service"
+    },
+    "ui.fixture.service-description": {
+      "args": {},
+      "text": "Runtime, startup configuration, clock ownership and verified synchronization remain separate observations."
+    },
+    "ui.fixture.runtime-label": {
+      "args": {},
+      "text": "Current runtime"
+    },
+    "ui.fixture.runtime-value": {
+      "args": {},
+      "text": "Not observed"
+    },
+    "ui.fixture.startup-label": {
+      "args": {},
+      "text": "Start with Windows"
+    },
+    "ui.fixture.startup-value": {
+      "args": {},
+      "text": "Not configured by this preview"
+    },
+    "ui.fixture.owner-label": {
+      "args": {},
+      "text": "Clock owner"
+    },
+    "ui.fixture.owner-value": {
+      "args": {},
+      "text": "Not observed"
+    },
+    "ui.fixture.synchronization-label": {
+      "args": {},
+      "text": "Verified synchronization"
+    },
+    "ui.fixture.synchronization-value": {
+      "args": {},
+      "text": "Not established"
+    },
+    "ui.fixture.admin-required": {
+      "args": {},
+      "text": "Administrator required"
+    },
+    "ui.fixture.service-protected-note": {
+      "args": {},
+      "text": "Service controls require the installed application's authorized management path. This preview cannot start, stop, restart or disable services."
+    },
+    "ui.fixture.start-service": {
+      "args": {},
+      "text": "Start"
+    },
+    "ui.fixture.stop-service": {
+      "args": {},
+      "text": "Stop"
+    },
+    "ui.fixture.restart-service": {
+      "args": {},
+      "text": "Restart"
+    },
+    "ui.fixture.disable-service": {
+      "args": {},
+      "text": "Disable NevroTick"
+    },
+    "ui.fixture.lifecycle-note": {
+      "args": {},
+      "text": "Stop temporarily pauses execution. Disabling autostart does not stop current execution. Handing time management to Windows Time requires a separate explicit operation."
+    },
+    "ui.fixture.about-heading": {
+      "args": {},
+      "text": "About NevroTick"
+    },
+    "ui.fixture.about-tagline": {
+      "args": {},
+      "text": "System essentials, under control."
+    },
+    "ui.fixture.about-title": {
+      "args": {},
+      "text": "Dependable timekeeping for Windows"
+    },
+    "ui.fixture.about-description": {
+      "args": {},
+      "text": "NevroTick is a Windows timekeeping project designed for clear clock status and secure synchronization using NTP and Network Time Security (NTS)."
+    },
+    "ui.fixture.about-stage": {
+      "args": {},
+      "text": "Early development: time synchronization is not yet available."
+    },
+    "ui.fixture.author-label": {
+      "args": {},
+      "text": "Author"
+    },
+    "ui.fixture.repository-label": {
+      "args": {},
+      "text": "Source repository"
+    },
+    "ui.fixture.version-label": {
+      "args": {},
+      "text": "Version status"
+    },
+    "ui.fixture.version-value": {
+      "args": {},
+      "text": "Development snapshot · no stable release declared"
+    },
+    "ui.fixture.platform-label": {
+      "args": {},
+      "text": "Target platform"
+    },
+    "ui.fixture.code-license-label": {
+      "args": {},
+      "text": "Source code"
+    },
+    "ui.fixture.technologies-heading": {
+      "args": {},
+      "text": "Technologies and libraries"
+    },
+    "ui.fixture.technologies-description": {
+      "args": {},
+      "text": "Written in Rust. Slint provides the native interface; garde validates input. Serde and serde_json support strict localization source decoding. The separate engine pilot uses Tokio. Timekeeping integration is still in development."
+    },
+    "ui.fixture.chrony-note": {
+      "args": {},
+      "text": "The timekeeping algorithms draw on chrony 4.9. It is an upstream source of code and ideas, not a linked runtime library."
+    },
+    "ui.fixture.privacy-heading": {
+      "args": {},
+      "text": "Privacy and connections"
+    },
+    "ui.fixture.privacy-description": {
+      "args": {},
+      "text": "This preview collects no diagnostics or telemetry. Opening the repository uses your default browser. The planned application specifies no automatic telemetry or crash upload."
+    },
+    "ui.fixture.artwork-heading": {
+      "args": {},
+      "text": "License and artwork"
+    },
+    "ui.fixture.artwork-description": {
+      "args": {},
+      "text": "Copyright David Osipov. NevroTick artwork and visual brand: all rights reserved. Visual assets are licensed separately from the application source code."
+    },
+    "ui.preferences.schedule-description": {
+      "args": {},
+      "text": "How often to request time measurements. This preference does not authorize clock adjustments."
+    },
+    "ui.preferences.scheduling-note": {
+      "args": {},
+      "text": "Recovery, backoff and server limits may delay the next check. Automatic is recommended for normal use."
+    },
+    "ui.preferences.custom-label": {
+      "args": {},
+      "text": "Interval in minutes"
+    },
+    "ui.preferences.custom-help": {
+      "args": {},
+      "text": "Enter a whole number of minutes, at least 1. Fractions, signs, spaces and scientific notation are not accepted."
+    },
+    "ui.preferences.accepted-interval": {
+      "args": {},
+      "text": "Accepted in this preview"
+    },
+    "ui.preferences.preferences-boundary": {
+      "args": {},
+      "text": "Changes are process-local preview preferences. They are not saved to Windows or applied to the background service."
+    },
+    "ui.preferences.host-unavailable": {
+      "args": {},
+      "text": "Preference editing is unavailable until the checked Rust presenter is connected."
+    },
+    "ui.preferences.notifications-heading": {
+      "args": {},
+      "text": "Windows notifications"
+    },
+    "ui.preferences.notifications-label": {
+      "args": {},
+      "text": "Notify me about problems"
+    },
+    "ui.preferences.notifications-help": {
+      "args": {},
+      "text": "Important problems and persistent issues that need attention. Routine checks and planned service stops stay quiet."
+    },
+    "ui.preferences.windows-availability": {
+      "args": {},
+      "text": "Windows availability"
+    },
+    "ui.preferences.unknown-availability": {
+      "args": {},
+      "text": "Windows notification availability is unconfirmed or unavailable."
+    },
+    "ui.preferences.availability-help": {
+      "args": {},
+      "text": "The app preference does not grant Windows permission. Windows and organization settings can suppress notifications."
+    },
+    "ui.preferences.observer-label": {
+      "args": {},
+      "text": "Notification observer"
+    },
+    "ui.preferences.observer-unavailable": {
+      "args": {},
+      "text": "A running NevroTick window or tray observer is not confirmed."
+    },
+    "ui.preferences.observer-help": {
+      "args": {},
+      "text": "New local alerts need an active NevroTick window or tray observer. Background timekeeping runs separately."
+    },
+    "ui.preferences.test-notification": {
+      "args": {},
+      "text": "Send test notification"
+    },
+    "ui.preferences.notification-test-unavailable": {
+      "args": {},
+      "text": "A test needs a connected native adapter, current Windows permission and a running NevroTick observer."
+    },
+    "ui.preferences.preferences-heading": {
+      "args": {},
+      "text": "Tray and sign-in"
+    },
+    "ui.preferences.tray-label": {
+      "args": {},
+      "text": "Keep NevroTick in the tray"
+    },
+    "ui.preferences.tray-help": {
+      "args": {},
+      "text": "The tray preference starts off. Closing or quitting the UI does not stop the background service."
+    },
+    "ui.preferences.sign-in-label": {
+      "args": {},
+      "text": "Start NevroTick in the tray at sign-in"
+    },
+    "ui.preferences.sign-in-help": {
+      "args": {},
+      "text": "Available while the tray preference is on. This is separate from background service startup."
+    },
+    "ui.preferences.tray-adapter-unavailable": {
+      "args": {},
+      "text": "These switches only retain your choices in this preview. A native tray icon and Windows sign-in registration are not connected."
+    },
+    "ui.preferences.interval-option.automatic": {
+      "args": {},
+      "text": "Automatic (recommended)"
+    },
+    "ui.preferences.interval-option.custom": {
+      "args": {},
+      "text": "Enter my own interval"
+    },
+    "ui.error.page-unavailable": {
+      "args": {},
+      "text": "This sample page is available in Power user mode."
+    },
+    "ui.error.invalid-label": {
+      "args": {},
+      "text": "The sample display name is invalid."
+    },
+    "ui.error.invalid-host": {
+      "args": {},
+      "text": "The sample server identity is invalid."
+    },
+    "ui.error.invalid-port": {
+      "args": {},
+      "text": "The sample NTS-KE port is invalid."
+    },
+    "ui.error.invalid-selection": {
+      "args": {},
+      "text": "Select one of the sample sources."
+    },
+    "ui.feedback.source-cancelled": {
+      "args": {},
+      "text": "Unaccepted editor changes discarded."
+    },
+    "ui.error.invalid-custom-minutes": {
+      "args": {},
+      "text": "Enter whole minutes of at least 1, using digits only. For a very large value, try a smaller number."
+    },
+    "ui.error.tray-required": {
+      "args": {},
+      "text": "Enable the tray preference before opening at sign-in."
+    },
+    "ui.error.edit-before-select": {
+      "args": {},
+      "text": "Finish or cancel the current sample edit before selecting a source."
+    },
+    "ui.error.editor-closed": {
+      "args": {},
+      "text": "Open the sample source editor before updating its preview."
+    },
+    "ui.interval.automatic": {
+      "args": {},
+      "text": "Automatic"
+    },
+    "ui.error.interval-choice": {
+      "args": {},
+      "text": "Choose Automatic, a listed preset, or Custom."
+    },
+    "ui.feedback.preference-updated": {
+      "args": {},
+      "text": "Updated for this preview session only."
+    },
+    "ui.feedback.interval-cancelled": {
+      "args": {},
+      "text": "Interval draft discarded."
+    },
+    "ui.help.invalid-label": {
+      "args": {},
+      "text": "Use a label of 1–64 printable ASCII characters, without edge spaces."
+    },
+    "ui.help.invalid-host": {
+      "args": {},
+      "text": "Use an ASCII DNS name or IP address, without a URL or port suffix."
+    },
+    "ui.help.invalid-port": {
+      "args": {},
+      "text": "Use a decimal port from 1 to 65535, without spaces or a sign."
+    },
+    "ui.interval.custom": {
+      "args": {
+        "minutes": "minutes-u64"
+      },
+      "forms": {
+        "one": "Every {minutes} (custom)",
+        "other": "Every {minutes} (custom)"
+      }
+    },
+    "ui.fixture.open-repository": {
+      "args": {},
+      "text": "Open GitHub repository"
+    },
+    "ui.fixture.repository-help": {
+      "args": {},
+      "text": "Open the official project repository in your default browser."
+    },
+    "ui.fixture.repository-error": {
+      "args": {},
+      "text": "The browser could not be opened. You can use the repository address shown above."
+    },
+    "ui.source.profile-value": {
+      "args": {},
+      "text": "Local source preview · active policy unchanged"
+    },
+    "ui.source.preview-note": {
+      "args": {},
+      "text": "These entries are local candidates. They create no measurements, authenticated observations or votes."
+    },
+    "ui.source.add-source": {
+      "args": {},
+      "text": "Add source preview"
+    },
+    "ui.source.remove-source": {
+      "args": {},
+      "text": "Remove preview"
+    },
+    "ui.source.review-changes": {
+      "args": {},
+      "text": "Review changes"
+    },
+    "ui.source.review-heading": {
+      "args": {},
+      "text": "Preview changes"
+    },
+    "ui.source.review-description": {
+      "args": {},
+      "text": "Review the original fixture and the local candidate. No changes have been applied to a service."
+    },
+    "ui.source.before-label": {
+      "args": {},
+      "text": "Original fixture"
+    },
+    "ui.source.after-label": {
+      "args": {},
+      "text": "Local preview"
+    },
+    "ui.source.undo": {
+      "args": {},
+      "text": "Undo change"
+    },
+    "ui.source.discard": {
+      "args": {},
+      "text": "Discard all preview changes"
+    },
+    "ui.source.close-review": {
+      "args": {},
+      "text": "Keep editing"
+    },
+    "ui.source.apply": {
+      "args": {},
+      "text": "Apply to background service"
+    },
+    "ui.source.apply-unavailable": {
+      "args": {},
+      "text": "Apply is unavailable in this fixture. Review and editing affect only this preview session."
+    },
+    "ui.source.empty-heading": {
+      "args": {},
+      "text": "No sources in the local preview"
+    },
+    "ui.source.empty-description": {
+      "args": {},
+      "text": "Add a source preview or undo a removal. The original fixture and active service configuration are unchanged."
+    },
+    "ui.source.empty-review": {
+      "args": {},
+      "text": "No preview changes to review."
+    },
+    "ui.source.add-title": {
+      "args": {},
+      "text": "Add a source preview"
+    },
+    "ui.source.edit-title": {
+      "args": {},
+      "text": "Edit source preview"
+    },
+    "ui.source.protocol-option.nts": {
+      "args": {},
+      "text": "NTS (authenticated responses)"
+    },
+    "ui.source.protocol-option.ntp": {
+      "args": {},
+      "text": "NTP (unauthenticated)"
+    },
+    "ui.source.protocol-help": {
+      "args": {},
+      "text": "Choose the protocol explicitly. Unavailable NTS never switches to plain NTP automatically."
+    },
+    "ui.source.ntp-warning": {
+      "args": {},
+      "text": "Plain NTP does not authenticate the server response. This is an explicit local protocol preview."
+    },
+    "ui.source.ntp-port": {
+      "args": {},
+      "text": "NTP port"
+    },
+    "ui.source.port-help": {
+      "args": {},
+      "text": "Decimal port from 1 to 65535. Defaults: NTS-KE 4460; NTP 123. A manually edited port stays unchanged when switching protocol."
+    },
+    "ui.source.statistics-description": {
+      "args": {},
+      "text": "The local source preview contains identities and protocol-specific ports, without offsets, uncertainties or measurement history."
+    },
+    "ui.recovery.title": {
+      "args": {},
+      "text": "Date recovery"
+    },
+    "ui.recovery.description": {
+      "args": {},
+      "text": "Recovering a certificate-date basis and changing the Windows clock are separate operations."
+    },
+    "ui.recovery.back": {
+      "args": {},
+      "text": "Back"
+    },
+    "ui.recovery.settings-description": {
+      "args": {},
+      "text": "Signed-date recovery details and optional, off-default plain-NTP helper previews open in Power user. Back returns to this Settings view and mode."
+    },
+    "ui.recovery.context-description": {
+      "args": {},
+      "text": "Date-recovery helpers are separate from ordinary synchronization sources and supply no normal-selection votes."
+    },
+    "ui.recovery.open-details": {
+      "args": {},
+      "text": "Open Date recovery"
+    },
+    "ui.recovery.leave-title": {
+      "args": {},
+      "text": "Leave helper edits?"
+    },
+    "ui.recovery.leave-description": {
+      "args": {},
+      "text": "Keep the raw fields for later, discard unsubmitted edits, or stay here. The retained local preview, active policy and services remain unchanged."
+    },
+    "ui.recovery.leave-keep": {
+      "args": {},
+      "text": "Keep draft and leave"
+    },
+    "ui.recovery.leave-discard": {
+      "args": {},
+      "text": "Discard edits and leave"
+    },
+    "ui.recovery.leave-stay": {
+      "args": {},
+      "text": "Stay here"
+    },
+    "ui.recovery.roughtime-title": {
+      "args": {},
+      "text": "Roughtime when needed"
+    },
+    "ui.recovery.roughtime-description": {
+      "args": {},
+      "text": "Roughtime supplies a signed approximate date when an incorrect computer date prevents secure NTS checks. Usable retained or strict NTS paths take priority; healthy tracking needs no periodic Roughtime checks."
+    },
+    "ui.recovery.no-effect": {
+      "args": {},
+      "text": "A signed date alone cannot change your clock. Full NTS verification, fresh source agreement and separate clock authority are still required."
+    },
+    "ui.recovery.unavailable": {
+      "args": {},
+      "text": "No live recovery evidence is connected in this preview."
+    },
+    "ui.recovery.signatures": {
+      "args": {},
+      "text": "Signature verification"
+    },
+    "ui.recovery.date": {
+      "args": {},
+      "text": "Accepted approximate date"
+    },
+    "ui.recovery.handoff": {
+      "args": {},
+      "text": "NTS handoff"
+    },
+    "ui.recovery.unobserved": {
+      "args": {},
+      "text": "Not observed"
+    },
+    "ui.recovery.no-date": {
+      "args": {},
+      "text": "No verified date accepted"
+    },
+    "ui.recovery.show-path": {
+      "args": {},
+      "text": "Show recovery path"
+    },
+    "ui.recovery.hide-path": {
+      "args": {},
+      "text": "Hide recovery path"
+    },
+    "ui.recovery.retained-step": {
+      "args": {},
+      "text": "1. Try usable retained or strict NTS paths first."
+    },
+    "ui.recovery.date-step": {
+      "args": {},
+      "text": "2. When needed, verify Roughtime signatures and admit the approximate-date evidence separately."
+    },
+    "ui.recovery.nts-step": {
+      "args": {},
+      "text": "3. Verify NTS in isolation, retaining name, trust and revocation checks."
+    },
+    "ui.recovery.agreement-step": {
+      "args": {},
+      "text": "4. Obtain fresh agreement. Date-recovery sources supply no ordinary synchronization votes."
+    },
+    "ui.recovery.authority-step": {
+      "args": {},
+      "text": "5. Revalidate clock authority. No preliminary clock change is made."
+    },
+    "ui.recovery.helpers-title": {
+      "args": {},
+      "text": "Explicit plain-NTP helpers"
+    },
+    "ui.recovery.helpers-description": {
+      "args": {},
+      "text": "Off by default. These optional, unauthenticated helpers supply only a certificate-date hint. They are separate from signed Roughtime, never an automatic fallback, and do not authenticate time or vote in normal time selection."
+    },
+    "ui.recovery.one-helper-warning": {
+      "args": {},
+      "text": "One helper provides a weaker, unauthenticated date hint."
+    },
+    "ui.recovery.two-helper-warning": {
+      "args": {},
+      "text": "Both helpers must reply and agree; there is no silent fallback to one. Agreement still does not authenticate the date."
+    },
+    "ui.recovery.count-label": {
+      "args": {},
+      "text": "Date helpers"
+    },
+    "ui.recovery.count-option.off": {
+      "args": {},
+      "text": "Off"
+    },
+    "ui.recovery.count-option.one": {
+      "args": {},
+      "text": "One helper"
+    },
+    "ui.recovery.count-option.two": {
+      "args": {},
+      "text": "Two helpers"
+    },
+    "ui.recovery.first-label": {
+      "args": {},
+      "text": "First helper identity"
+    },
+    "ui.recovery.second-label": {
+      "args": {},
+      "text": "Second helper identity"
+    },
+    "ui.recovery.host-help": {
+      "args": {},
+      "text": "ASCII hostname or IP address, without a URL, path or spaces. Helpers use NTP port 123."
+    },
+    "ui.recovery.preview": {
+      "args": {},
+      "text": "Review helper preview"
+    },
+    "ui.recovery.cancel": {
+      "args": {},
+      "text": "Cancel edits"
+    },
+    "ui.recovery.review-title": {
+      "args": {},
+      "text": "Local helper preview"
+    },
+    "ui.recovery.off": {
+      "args": {},
+      "text": "Helpers are off in this preview."
+    },
+    "ui.recovery.boundary": {
+      "args": {},
+      "text": "This is an in-memory preview. Active policy and services remain unchanged."
+    },
+    "ui.recovery.keep-editing": {
+      "args": {},
+      "text": "Keep editing"
+    },
+    "ui.recovery.discard": {
+      "args": {},
+      "text": "Discard preview"
+    },
+    "ui.recovery.apply": {
+      "args": {},
+      "text": "Apply helper settings"
+    },
+    "ui.recovery.apply-unavailable": {
+      "args": {},
+      "text": "Applying helper settings requires the installed application's authorized management interface, which is not connected."
+    },
+    "ui.shell.quit-ui": {
+      "args": {},
+      "text": "Quit UI"
+    },
+    "ui.shell.quit-title": {
+      "args": {},
+      "text": "Quit NevroTick?"
+    },
+    "ui.shell.keep-open": {
+      "args": {},
+      "text": "Keep NevroTick open"
+    },
+    "ui.shell.manage-service": {
+      "args": {},
+      "text": "Manage background service"
+    },
+    "ui.shell.quit-only": {
+      "args": {},
+      "text": "Quit UI only"
+    },
+    "ui.shell.unknown-consequence": {
+      "args": {},
+      "text": "Quitting closes only the app observer. It does not stop services or confirm whether they are running or stopped."
+    },
+    "ui.shell.draft-loss-title": {
+      "args": {},
+      "text": "Changes kept only in this app session will be lost"
+    },
+    "ui.shell.draft-loss": {
+      "args": {},
+      "text": "This includes source, profile and helper previews, unfinished edits, the selected preview interval, and notification, tray and sign-in choices. They are not saved after this preview exits and have not been applied to Windows or the services."
+    },
+    "ui.shell.observer-consequence": {
+      "args": {},
+      "text": "New local notifications stop when the last NevroTick window or tray observer exits. Background timekeeping is separate."
+    },
+    "ui.shell.stop-path": {
+      "args": {},
+      "text": "To stop temporarily: Settings > Background service > Stop."
+    },
+    "ui.shell.disable-path": {
+      "args": {},
+      "text": "To prevent future starts: Settings > Background service > Disable NevroTick."
+    },
+    "ui.shell.separate-management": {
+      "args": {},
+      "text": "Managing a service opens its settings. Stopping, disabling or changing time management requires a separate authorized operation."
+    },
+    "ui.shell.exit-requested": {
+      "args": {},
+      "text": "App close requested. Its completion has not been confirmed."
+    },
+    "ui.shell.background-service": {
+      "args": {},
+      "text": "Background service"
+    },
+    "ui.shell.notifications": {
+      "args": {},
+      "text": "Notifications"
+    },
+    "ui.shell.main-content": {
+      "args": {},
+      "text": "Current page content"
+    },
+    "ui.shell.service-description": {
+      "args": {},
+      "text": "Review background synchronization separately from this app window. Service controls are unavailable in this fixture."
+    },
+    "ui.shell.service-summary": {
+      "args": {},
+      "text": "Service state is not observed. Closing this app does not stop any running background service."
+    },
+    "ui.shell.manage-power": {
+      "args": {},
+      "text": "Manage in Power user"
+    },
+    "ui.shell.service-unavailable": {
+      "args": {},
+      "text": "No service-management adapter is connected. These controls cannot submit a service or Windows Time operation."
+    },
+    "ui.shell.diagnose": {
+      "args": {},
+      "text": "Open service diagnostics"
+    },
+    "ui.shell.diagnose-power": {
+      "args": {},
+      "text": "Open diagnostics in Power user"
+    },
+    "ui.shell.diagnose-note": {
+      "args": {},
+      "text": "Diagnostics opens observed facts. It does not start, stop or repair a service."
+    },
+    "ui.shell.startup-title": {
+      "args": {},
+      "text": "Start with Windows"
+    },
+    "ui.shell.startup-note": {
+      "args": {},
+      "text": "The current startup configuration is not observed. Changing autostart would not start or stop an already running service."
+    },
+    "ui.shell.autostart-on": {
+      "args": {},
+      "text": "Enable service autostart"
+    },
+    "ui.shell.autostart-off": {
+      "args": {},
+      "text": "Disable service autostart"
+    },
+    "ui.shell.disable-note": {
+      "args": {},
+      "text": "Disable NevroTick is a separate stop and future-start prevention operation. It requires confirmed clock cleanup and supported installed management."
+    },
+    "ui.shell.time-manager-title": {
+      "args": {},
+      "text": "Time management"
+    },
+    "ui.shell.use-windows": {
+      "args": {},
+      "text": "Use Windows Time"
+    },
+    "ui.shell.use-nevrotick": {
+      "args": {},
+      "text": "Use NevroTick"
+    },
+    "ui.shell.handover-note": {
+      "args": {},
+      "text": "Changing the time manager is unavailable here. The installed application must reconcile ownership and perform a separate authorized handover. A running service alone does not prove synchronization."
+    },
+    "ui.policy.heading": {
+      "args": {},
+      "text": "Synchronization profile"
+    },
+    "ui.policy.description": {
+      "args": {},
+      "text": "Compare an explicit local profile preview with the unchanged fixture baseline."
+    },
+    "ui.policy.baseline": {
+      "args": {},
+      "text": "Fixture baseline"
+    },
+    "ui.policy.preview": {
+      "args": {},
+      "text": "Local profile preview"
+    },
+    "ui.policy.no-preview": {
+      "args": {},
+      "text": "No profile preview"
+    },
+    "ui.policy.nts": {
+      "args": {},
+      "text": "NTS only"
+    },
+    "ui.policy.ntp": {
+      "args": {},
+      "text": "NTP - unauthenticated"
+    },
+    "ui.policy.observe": {
+      "args": {},
+      "text": "Observe only"
+    },
+    "ui.policy.choose": {
+      "args": {},
+      "text": "Choose profile preview"
+    },
+    "ui.policy.edit": {
+      "args": {},
+      "text": "Edit profile preview"
+    },
+    "ui.policy.review": {
+      "args": {},
+      "text": "Review profile preview"
+    },
+    "ui.policy.keep": {
+      "args": {},
+      "text": "Keep profile preview"
+    },
+    "ui.policy.discard": {
+      "args": {},
+      "text": "Discard profile preview"
+    },
+    "ui.policy.cancel": {
+      "args": {},
+      "text": "Cancel editing"
+    },
+    "ui.policy.choice-label": {
+      "args": {},
+      "text": "Profile preview"
+    },
+    "ui.policy.nts-consequence": {
+      "args": {},
+      "text": "Only eligible NTS-authenticated sources may supply ordinary votes. Authentication alone does not establish agreement."
+    },
+    "ui.policy.ntp-consequence": {
+      "args": {},
+      "text": "Plain NTP is unauthenticated. NTP and NTS sources do not vote together, and there is no automatic downgrade or fallback."
+    },
+    "ui.policy.observe-consequence": {
+      "args": {},
+      "text": "Observe only authorizes no product clock writes. It does not turn on Windows Time or settle the acquisition and authentication mode."
+    },
+    "ui.policy.authority": {
+      "args": {},
+      "text": "A real change needs a current policy revision and a specific administrator-authorized operation. This local preview simulates neither UAC nor activation."
+    },
+    "ui.policy.apply": {
+      "args": {},
+      "text": "Apply profile"
+    },
+    "ui.policy.apply-unavailable": {
+      "args": {},
+      "text": "Profile activation is unavailable: no protected Apply transaction is connected."
+    },
+    "ui.policy.fixture-note": {
+      "args": {},
+      "text": "The NTS fixture baseline is sample data, not a declaration of a shipped default."
+    },
+    "ui.policy.preview-note": {
+      "args": {},
+      "text": "The selected preview is stored in this app session only; sources and active configuration are unchanged."
+    },
+    "ui.policy.phase-required": {
+      "args": {},
+      "text": "Open the profile editor or review before using this action."
+    },
+    "ui.policy.invalid-choice": {
+      "args": {},
+      "text": "Choose NTS, explicitly selected NTP, or observe only."
+    },
+    "ui.policy.no-preview-error": {
+      "args": {},
+      "text": "Choose a profile preview before reviewing it."
+    },
+    "ui.policy.page-required": {
+      "args": {},
+      "text": "Open Time policy in Settings before editing the profile preview."
+    },
+    "ui.inspection.query-label": {
+      "args": {},
+      "text": "Search source previews"
+    },
+    "ui.inspection.query-placeholder": {
+      "args": {},
+      "text": "Source name or server identity"
+    },
+    "ui.inspection.query-help": {
+      "args": {},
+      "text": "Search by source name or server identity. This preview accepts up to 253 printable ASCII characters; spaces are significant."
+    },
+    "ui.inspection.search": {
+      "args": {},
+      "text": "Search"
+    },
+    "ui.inspection.clear": {
+      "args": {},
+      "text": "Clear search"
+    },
+    "ui.inspection.all": {
+      "args": {},
+      "text": "All sources"
+    },
+    "ui.inspection.used": {
+      "args": {},
+      "text": "Used sources"
+    },
+    "ui.inspection.other": {
+      "args": {},
+      "text": "Other sources"
+    },
+    "ui.inspection.roles-unavailable": {
+      "args": {},
+      "text": "Used and Other filters need selection evidence, which is unavailable. Selecting a row for editing does not make it Main or Supporting."
+    },
+    "ui.inspection.no-matches-heading": {
+      "args": {},
+      "text": "No matching source previews"
+    },
+    "ui.inspection.no-matches": {
+      "args": {},
+      "text": "Clear the search or use another source name or server identity. Source previews and pending changes are retained."
+    },
+    "ui.inspection.accepted-query": {
+      "args": {},
+      "text": "Accepted search"
+    },
+    "ui.inspection.details": {
+      "args": {},
+      "text": "Source details"
+    },
+    "ui.inspection.details-heading": {
+      "args": {},
+      "text": "Source preview details"
+    },
+    "ui.inspection.close-details": {
+      "args": {},
+      "text": "Close details"
+    },
+    "ui.inspection.details-note": {
+      "args": {},
+      "text": "These are checked local preview fields, not an observed endpoint, authentication result or time measurement."
+    },
+    "ui.inspection.hidden-details": {
+      "args": {},
+      "text": "This retained source is hidden by the current search. Clear the search to show its row again."
+    },
+    "ui.inspection.selected-hidden": {
+      "args": {},
+      "text": "The selected editor source is hidden by the search. Choose a visible row or clear the search before editing it."
+    },
+    "ui.inspection.identity": {
+      "args": {},
+      "text": "Server identity"
+    },
+    "ui.inspection.label": {
+      "args": {},
+      "text": "Friendly name"
+    },
+    "ui.inspection.protocol": {
+      "args": {},
+      "text": "Requested protocol"
+    },
+    "ui.inspection.port": {
+      "args": {},
+      "text": "Configured port"
+    },
+    "ui.inspection.local-id-note": {
+      "args": {},
+      "text": "The session editor identity is not a production independent-vote identity."
+    },
+    "ui.inspection.authentication": {
+      "args": {},
+      "text": "Packet authentication"
+    },
+    "ui.inspection.auth-measurement": {
+      "args": {},
+      "text": "Last authenticated measurement"
+    },
+    "ui.inspection.role": {
+      "args": {},
+      "text": "Selection role"
+    },
+    "ui.inspection.operator": {
+      "args": {},
+      "text": "Operator / independence group"
+    },
+    "ui.inspection.endpoint": {
+      "args": {},
+      "text": "Actual exchange endpoint"
+    },
+    "ui.inspection.vote-identity": {
+      "args": {},
+      "text": "Independent-vote identity"
+    },
+    "ui.inspection.request-status": {
+      "args": {},
+      "text": "Current request status"
+    },
+    "ui.inspection.last-reply": {
+      "args": {},
+      "text": "Last reply"
+    },
+    "ui.inspection.last-accepted": {
+      "args": {},
+      "text": "Last accepted measurement"
+    },
+    "ui.inspection.offset": {
+      "args": {},
+      "text": "Clock difference"
+    },
+    "ui.inspection.delay": {
+      "args": {},
+      "text": "Network delay"
+    },
+    "ui.inspection.uncertainty": {
+      "args": {},
+      "text": "Uncertainty"
+    },
+    "ui.inspection.certificate": {
+      "args": {},
+      "text": "Certificate-time basis"
+    },
+    "ui.inspection.scale": {
+      "args": {},
+      "text": "Time scale"
+    },
+    "ui.inspection.leap": {
+      "args": {},
+      "text": "Leap announcement"
+    },
+    "ui.inspection.not-observed": {
+      "args": {},
+      "text": "Not observed"
+    },
+    "ui.inspection.not-measured": {
+      "args": {},
+      "text": "Not measured"
+    },
+    "ui.inspection.not-established": {
+      "args": {},
+      "text": "Not established"
+    },
+    "ui.inspection.not-evaluated": {
+      "args": {},
+      "text": "Not evaluated"
+    },
+    "ui.inspection.not-applicable": {
+      "args": {},
+      "text": "Not applicable"
+    },
+    "ui.inspection.unauthenticated": {
+      "args": {},
+      "text": "Unauthenticated protocol"
+    },
+    "ui.inspection.nts": {
+      "args": {},
+      "text": "NTS preview"
+    },
+    "ui.inspection.ntp": {
+      "args": {},
+      "text": "Plain NTP preview"
+    },
+    "ui.inspection.invalid-query": {
+      "args": {},
+      "text": "Use up to 253 printable ASCII search characters. An empty search shows all sources."
+    },
+    "ui.inspection.invalid-filter": {
+      "args": {},
+      "text": "Choose a listed source filter."
+    },
+    "ui.inspection.hidden-source": {
+      "args": {},
+      "text": "This source is hidden by the current search. Clear the search or choose a visible source."
+    },
+    "ui.inspection.page-required": {
+      "args": {},
+      "text": "Open Sources in Power User mode to search or inspect source previews."
+    },
+    "ui.interval.every": {
+      "args": {
+        "minutes": "minutes-u64"
+      },
+      "forms": {
+        "one": "Every {minutes}",
+        "other": "Every {minutes}"
+      }
+    },
+    "ui.rust.notifications-off": {
+      "args": {},
+      "text": "Problem notifications are off in NevroTick."
+    },
+    "ui.rust.observer-unconfirmed": {
+      "args": {},
+      "text": "A running NevroTick window or tray observer is not confirmed."
+    },
+    "ui.rust.notification-os-unconfirmed": {
+      "args": {},
+      "text": "Windows notification availability is unconfirmed or unavailable."
+    },
+    "ui.rust.notifications-blocked": {
+      "args": {},
+      "text": "Windows settings or organization policy block notifications."
+    },
+    "ui.rust.notifications-native-unavailable": {
+      "args": {},
+      "text": "Windows notifications are unavailable in this fixture. No notification was submitted."
+    },
+    "ui.rust.helper-count": {
+      "args": {},
+      "text": "Choose Off, one helper, or two helpers."
+    },
+    "ui.rust.quit-running-title": {
+      "args": {},
+      "text": "Background services keep running"
+    },
+    "ui.rust.quit-stopped-title": {
+      "args": {},
+      "text": "Services are currently stopped"
+    },
+    "ui.rust.quit-partial-title": {
+      "args": {},
+      "text": "Part of the service pair is running"
+    },
+    "ui.rust.quit-pending-title": {
+      "args": {},
+      "text": "Service state is changing"
+    },
+    "ui.rust.quit-unknown-title": {
+      "args": {},
+      "text": "Service state is unconfirmed"
+    },
+    "ui.rust.quit-running-consequence": {
+      "args": {},
+      "text": "Quitting closes only the app observer. Running background services continue."
+    },
+    "ui.rust.quit-stopped-consequence": {
+      "args": {},
+      "text": "Quitting closes only the app observer. It does not change service startup or clock ownership."
+    },
+    "ui.rust.quit-partial-consequence": {
+      "args": {},
+      "text": "The service pair is not fully stopped. Quitting closes only the app observer and does not stop either service."
+    },
+    "ui.rust.quit-pending-consequence": {
+      "args": {},
+      "text": "A service transition is not settled. Quitting the app neither completes nor cancels that operation, and does not establish the result."
+    },
+    "ui.rust.notification-preference-updated": {
+      "args": {},
+      "text": "Notification preference updated for this preview session only."
+    },
+    "ui.rust.tray-preference-updated": {
+      "args": {},
+      "text": "Tray preference updated for this preview session only."
+    },
+    "ui.rust.sign-in-preference-updated": {
+      "args": {},
+      "text": "Sign-in preference updated for this preview session only."
+    },
+    "ui.rust.change-add": {
+      "args": {},
+      "text": "Add"
+    },
+    "ui.rust.change-edit": {
+      "args": {},
+      "text": "Edit"
+    },
+    "ui.rust.change-baseline": {
+      "args": {},
+      "text": "Baseline"
+    },
+    "ui.rust.review-none": {
+      "args": {},
+      "text": "None"
+    },
+    "ui.rust.change-remove": {
+      "args": {},
+      "text": "Remove"
+    },
+    "ui.rust.source-preview-updated": {
+      "args": {},
+      "text": "Preview updated in memory only. The active fixture and service configuration are unchanged."
+    },
+    "ui.rust.source-review-only": {
+      "args": {},
+      "text": "Review local changes only. Apply is unavailable."
+    },
+    "ui.rust.source-discarded": {
+      "args": {},
+      "text": "All source preview changes discarded."
+    },
+    "ui.rust.source-operation-updated": {
+      "args": {},
+      "text": "Source preview updated. The active fixture is unchanged."
+    },
+    "ui.rust.protocol-choice": {
+      "args": {},
+      "text": "Choose NTS or explicitly selected NTP."
+    },
+    "ui.rust.source-choice": {
+      "args": {},
+      "text": "Choose a current source or preview change."
+    },
+    "ui.rust.duplicate-source": {
+      "args": {},
+      "text": "This protocol and server identity are already in the preview."
+    },
+    "ui.rust.source-capacity": {
+      "args": {},
+      "text": "The source preview has reached its limit."
+    },
+    "ui.rust.source-id-exhausted": {
+      "args": {},
+      "text": "Restart the preview before adding another source."
+    },
+    "ui.rust.recovery-page-required": {
+      "args": {},
+      "text": "Open Date recovery before editing its helper preview."
+    },
+    "ui.rust.recovery-leave-required": {
+      "args": {},
+      "text": "Choose Keep draft, Discard edits, or Stay before continuing."
+    },
+    "ui.rust.recovery-review-required": {
+      "args": {},
+      "text": "Review a valid helper preview before using this action."
+    },
+    "ui.rust.recovery-edit-required": {
+      "args": {},
+      "text": "Choose Keep editing before changing helper fields."
+    },
+    "ui.rust.back-status": {
+      "args": {},
+      "text": "Back to Status"
+    },
+    "ui.rust.back-sources": {
+      "args": {},
+      "text": "Back to Sources"
+    },
+    "ui.rust.back-statistics": {
+      "args": {},
+      "text": "Back to Statistics"
+    },
+    "ui.rust.back-diagnostics": {
+      "args": {},
+      "text": "Back to Diagnostics"
+    },
+    "ui.rust.back-about": {
+      "args": {},
+      "text": "Back to About"
+    },
+    "ui.rust.back-settings": {
+      "args": {},
+      "text": "Back to Settings"
+    },
+    "ui.rust.helper-preview-retained": {
+      "args": {},
+      "text": "Helper preview retained in memory only. Active policy and services are unchanged."
+    },
+    "ui.rust.helper-raw-discarded": {
+      "args": {},
+      "text": "Unsubmitted helper edits discarded. The local preview is unchanged."
+    },
+    "ui.rust.helper-preview-edit": {
+      "args": {},
+      "text": "Editing the retained local helper preview."
+    },
+    "ui.rust.helper-preview-discarded": {
+      "args": {},
+      "text": "Helper preview discarded. Active policy and services are unchanged."
+    },
+    "ui.rust.quit-show-cleanup-failed": {
+      "args": {},
+      "text": "The quit warning could not be shown and window cleanup failed. Window state is unconfirmed; no UI exit was confirmed."
+    },
+    "ui.rust.quit-show-failed": {
+      "args": {},
+      "text": "The quit warning could not be shown. No UI exit was requested; try again."
+    },
+    "ui.rust.close-restored": {
+      "args": {},
+      "text": "App close failed. The window was restored; preview drafts are retained. Service state was not changed."
+    },
+    "ui.rust.close-restore-failed": {
+      "args": {},
+      "text": "App close failed and the window could not be restored. Window state is unconfirmed; no service change was requested."
+    },
+    "ui.rust.exit-restored": {
+      "args": {},
+      "text": "The app exit request failed. The window was restored; preview drafts are retained. No service change was requested."
+    },
+    "ui.rust.exit-restore-failed": {
+      "args": {},
+      "text": "The app exit request failed and the window could not be restored. Window state is unconfirmed; no service change was requested."
+    },
+    "ui.rust.tray-unavailable": {
+      "args": {},
+      "text": "A usable tray icon is not connected. Keep this window open, or choose Quit UI to close only the app."
+    },
+    "ui.rust.quit-review-required": {
+      "args": {},
+      "text": "Open Quit UI and review its warning before confirming exit."
+    },
+    "ui.rust.quit-cancelled": {
+      "args": {},
+      "text": "Quit cancelled. The app remains open; preview drafts are retained."
+    },
+    "ui.rust.settings-section": {
+      "args": {},
+      "text": "Choose a listed Settings section."
+    },
+    "ui.rust.service-action": {
+      "args": {},
+      "text": "Choose a listed service action. No request was submitted."
+    },
+    "ui.rust.service-unavailable": {
+      "args": {},
+      "text": "Service management is unavailable in this preview. No request was submitted; runtime, startup and clock ownership were not changed."
+    },
+    "ui.diagnostic.back": {
+      "args": {},
+      "text": "Back to diagnostics"
+    },
+    "ui.diagnostic.problem": {
+      "args": {},
+      "text": "Time status cannot be checked"
+    },
+    "ui.diagnostic.effect": {
+      "args": {},
+      "text": "This window is not connected to the background service. It cannot confirm the clock state or a correction."
+    },
+    "ui.diagnostic.remedy": {
+      "args": {},
+      "text": "Review Background service settings. Wait for confirmed service state and fresh measurements before assuming synchronization."
+    },
+    "ui.diagnostic.service": {
+      "args": {},
+      "text": "Open Background service settings"
+    },
+    "ui.diagnostic.events-empty": {
+      "args": {},
+      "text": "No event stream is connected"
+    },
+    "ui.diagnostic.events-note": {
+      "args": {},
+      "text": "No live events, last failure or event order have been received. An empty view does not establish that the service is healthy."
+    },
+    "ui.diagnostic.report-open": {
+      "args": {},
+      "text": "Preview diagnostic report"
+    },
+    "ui.diagnostic.report-title": {
+      "args": {},
+      "text": "Diagnostic report preview"
+    },
+    "ui.diagnostic.report-note": {
+      "args": {},
+      "text": "Read-only sample of the available GUI facts. No live report has been requested, copied, saved or uploaded."
+    },
+    "ui.diagnostic.copy": {
+      "args": {},
+      "text": "Copy summary"
+    },
+    "ui.diagnostic.export": {
+      "args": {},
+      "text": "Export diagnostics"
+    },
+    "ui.diagnostic.export-reason": {
+      "args": {},
+      "text": "Copy and file export are unavailable until a bounded redacted report and an ordinary-user output adapter are connected. There is no automatic upload."
+    },
+    "ui.diagnostic.collection-open": {
+      "args": {},
+      "text": "Temporary troubleshooting collection"
+    },
+    "ui.diagnostic.collection-title": {
+      "args": {},
+      "text": "Temporary diagnostic collection"
+    },
+    "ui.diagnostic.collection-note": {
+      "args": {},
+      "text": "Choose an illustrative scope and duration. These choices stay in this window and do not change logging or collect data. Example durations are not production limits."
+    },
+    "ui.diagnostic.scope": {
+      "args": {},
+      "text": "Collection scope"
+    },
+    "ui.diagnostic.scope-option.ui": {
+      "args": {},
+      "text": "UI only"
+    },
+    "ui.diagnostic.scope-option.service": {
+      "args": {},
+      "text": "Service only"
+    },
+    "ui.diagnostic.scope-option.combined": {
+      "args": {},
+      "text": "UI and service"
+    },
+    "ui.diagnostic.duration": {
+      "args": {},
+      "text": "Example duration"
+    },
+    "ui.diagnostic.collection-state": {
+      "args": {},
+      "text": "Not started"
+    },
+    "ui.diagnostic.effective-scope": {
+      "args": {},
+      "text": "Effective collection"
+    },
+    "ui.diagnostic.remaining": {
+      "args": {},
+      "text": "Remaining duration"
+    },
+    "ui.diagnostic.unavailable": {
+      "args": {},
+      "text": "Unavailable"
+    },
+    "ui.diagnostic.collection-reason": {
+      "args": {},
+      "text": "The collection adapter is not connected. UI collection needs no elevation; service collection requires separate administrator authorization. Combined collection must report each component independently."
+    },
+    "ui.diagnostic.required-events": {
+      "args": {},
+      "text": "Required security and service events remain independent of optional verbosity. Closing this view does not stop an active collection session."
+    },
+    "ui.diagnostic.start": {
+      "args": {},
+      "text": "Start collection"
+    },
+    "ui.diagnostic.stop": {
+      "args": {},
+      "text": "Stop collection"
+    },
+    "ui.diagnostic.correction-open": {
+      "args": {},
+      "text": "Review clock-correction availability"
+    },
+    "ui.diagnostic.correction-title": {
+      "args": {},
+      "text": "Clock-correction review"
+    },
+    "ui.diagnostic.correction-empty": {
+      "args": {},
+      "text": "No correction proposal has been received"
+    },
+    "ui.diagnostic.correction-note": {
+      "args": {},
+      "text": "Direction, magnitude, reference interval, evidence age and proposal validity are unavailable. No clock change or authorization is implied."
+    },
+    "ui.diagnostic.correction-rule": {
+      "args": {},
+      "text": "A real proposal must be bound to fresh authenticated evidence, agreement, current policy and clock generation. An expired or changed proposal cannot be approved. Moving the clock can affect timestamps and running applications."
+    },
+    "ui.diagnostic.approve": {
+      "args": {},
+      "text": "Approve once"
+    },
+    "ui.diagnostic.unavailable-action": {
+      "args": {},
+      "text": "This operation is unavailable. No collection, clipboard, file, administrator or clock operation was performed."
+    },
+    "ui.diagnostic.invalid-choice": {
+      "args": {},
+      "text": "Choose one of the available diagnostic options."
+    },
+    "ui.duration.minutes": {
+      "args": {
+        "minutes": "minutes-u64"
+      },
+      "forms": {
+        "one": "{minutes}",
+        "other": "{minutes}"
+      }
+    },
+    "ui.preferences.incidents-heading": {
+      "args": {},
+      "text": "Recent notification problems"
+    },
+    "ui.preferences.incidents-unavailable": {
+      "args": {},
+      "text": "No incident feed is connected. This view cannot confirm whether problems were reported, resolved or dismissed. Dismissing a notification does not resolve its cause."
+    },
+    "ui.policy.editor-active": {
+      "args": {},
+      "text": "Finish or cancel the source preview edit on Sources before editing a profile preview."
+    },
+    "ui.inspection.editor-active": {
+      "args": {},
+      "text": "Finish or cancel the source preview edit before searching or opening details."
+    },
+    "ui.source.page-required": {
+      "args": {},
+      "text": "Open Sources in Power User mode before changing source previews."
+    },
+    "ui.tray.menu.open": {
+      "args": {},
+      "text": "Open NevroTick"
+    },
+    "ui.tray.menu.diagnostics": {
+      "args": {},
+      "text": "Diagnostics (Power user)"
+    },
+    "ui.status.headline.unknown": {
+      "args": {},
+      "text": "Status not observed"
+    },
+    "ui.status.headline.initializing": {
+      "args": {},
+      "text": "Starting and checking configuration"
+    },
+    "ui.status.headline.acquiring": {
+      "args": {},
+      "text": "Checking time sources"
+    },
+    "ui.status.headline.observe-only": {
+      "args": {},
+      "text": "Clock changes by NevroTick are disabled"
+    },
+    "ui.status.headline.tracking": {
+      "args": {},
+      "text": "Time sync active"
+    },
+    "ui.status.headline.holdover": {
+      "args": {},
+      "text": "No fresh time check - using the previous model"
+    },
+    "ui.status.headline.expired": {
+      "args": {},
+      "text": "No usable current time estimate"
+    },
+    "ui.status.headline.conflict": {
+      "args": {},
+      "text": "Time sources disagree"
+    },
+    "ui.status.headline.blocked": {
+      "args": {},
+      "text": "Synchronization needs attention"
+    },
+    "ui.status.headline.service-stopped": {
+      "args": {},
+      "text": "Background services are stopped"
+    },
+    "ui.status.headline.windows-managed": {
+      "args": {},
+      "text": "Windows Time manages the clock"
+    },
+    "ui.status.headline.correction-pending": {
+      "args": {},
+      "text": "A clock correction needs separate review"
+    },
+    "ui.status.headline.uncertain-result": {
+      "args": {},
+      "text": "The operation result is unknown"
+    },
+    "ui.status.headline.rate-limited": {
+      "args": {},
+      "text": "Time checks are currently limited"
+    },
+    "ui.status.headline.reacquiring": {
+      "args": {},
+      "text": "Rechecking after a change"
+    },
+    "ui.status.headline.leap-guard": {
+      "args": {},
+      "text": "Rechecking around a UTC transition"
+    },
+    "ui.status.headline.date-recovery": {
+      "args": {},
+      "text": "Recovering a provisional date"
+    },
+    "ui.status.detail.unavailable": {
+      "args": {},
+      "text": "Current synchronization is unconfirmed. A missing status connection does not establish that services stopped. Inspect diagnostics for the available facts."
+    },
+    "ui.status.detail.waiting": {
+      "args": {},
+      "text": "Waiting for fresh admissible evidence. A running service or a reply alone does not establish synchronization."
+    },
+    "ui.status.detail.tracking": {
+      "args": {},
+      "text": "The reported current policy is met. Authentication does not guarantee UTC accuracy; clock effects remain separate observations."
+    },
+    "ui.status.detail.holdover": {
+      "args": {},
+      "text": "The owner reports the previous model is still usable. No fresh agreement is available; uncertainty and model limits remain important."
+    },
+    "ui.status.detail.withheld": {
+      "args": {},
+      "text": "This status grants no new clock correction. Review the current prerequisite and evidence before continuing."
+    },
+    "ui.status.detail.stopped": {
+      "args": {},
+      "text": "Stopped services cannot perform a fresh time check. Startup configuration, clock cleanup and Windows Time remain separate facts."
+    },
+    "ui.status.detail.windows-managed": {
+      "args": {},
+      "text": "NevroTick does not control the clock in this reported mode. Windows Time ownership does not establish verified synchronization."
+    },
+    "ui.status.detail.review": {
+      "args": {},
+      "text": "Review a current proposal separately. A check, opening this page or dismissing a notification cannot approve a clock change."
+    },
+    "ui.status.detail.uncertain-result": {
+      "args": {},
+      "text": "Reconcile the actual result and clock ownership before repeating the operation. No outcome or cleanup is assumed."
+    },
+    "ui.status.detail.rate-limited": {
+      "args": {},
+      "text": "The reported request limit remains in force. Reopening this window does not reset it; no retry duration is invented here."
+    },
+    "ui.status.detail.date-recovery": {
+      "args": {},
+      "text": "Provisional date recovery does not change Windows time or establish authenticated tracking. Full verification and fresh agreement are still required."
+    },
+    "ui.status.evidence.authenticated": {
+      "args": {},
+      "text": "Current NTS authentication established"
+    },
+    "ui.status.evidence.historical": {
+      "args": {},
+      "text": "Historical evidence only - current state unconfirmed"
+    },
+    "ui.status.evidence.agreement-satisfied": {
+      "args": {},
+      "text": "Current agreement policy met"
+    },
+    "ui.status.evidence.current-estimate": {
+      "args": {},
+      "text": "Current qualified estimate - age not supplied"
+    },
+    "ui.status.check.sources": {
+      "args": {},
+      "text": "Check sources"
+    },
+    "ui.status.action.context-required": {
+      "args": {},
+      "text": "Open Status before using its contextual action."
+    },
+    "ui.status.profile.label": {
+      "args": {},
+      "text": "Reported profile"
+    },
+    "ui.raw.too-long": {
+      "args": {},
+      "text": "This entry is too long for this editor. Your previous draft was kept."
+    },
+    "ui.raw.character": {
+      "args": {},
+      "text": "Unsupported characters. Use A-Z, a-z, digits, spaces and ASCII punctuation. Your previous draft was kept."
+    },
+    "ui.raw.invalid-option": {
+      "args": {},
+      "text": "Choose an available editor or option. No draft was changed."
+    },
+    "ui.raw.context": {
+      "args": {},
+      "text": "This editor is not active. Your draft and accepted settings were kept."
+    },
+    "ui.feedback.no-notification-submitted": {
+      "args": {},
+      "text": "No Windows notification was submitted."
+    },
+    "ui.fixture.gui-build-label": {
+      "args": {},
+      "text": "GUI build"
+    },
+    "ui.fixture.text-contract-label": {
+      "args": {},
+      "text": "Text contract"
+    },
+    "ui.preferences.language-label": {
+      "args": {},
+      "text": "Interface language"
+    },
+    "ui.preferences.language-help": {
+      "args": {},
+      "text": "Only English is available. Additional catalogs require validation and independent review."
+    },
+    "ui.source.list-required": {
+      "args": {},
+      "text": "Return to the source list before changing source previews."
+    },
+    "ui.source.review-required": {
+      "args": {},
+      "text": "Open the changes review before undoing or discarding local previews."
+    },
+    "ui.shell.synchronization-settings": {
+      "args": {},
+      "text": "Synchronization"
+    },
+    "ui.shell.time-policy": {
+      "args": {},
+      "text": "Time policy"
+    },
+    "ui.shell.time-policy-description": {
+      "args": {},
+      "text": "Review the synchronization profile and date-recovery settings. Local previews do not activate service policy."
+    },
+    "ui.shell.time-policy-power": {
+      "args": {},
+      "text": "Open time policy in Power User"
+    },
+    "ui.shell.personal-preferences": {
+      "args": {},
+      "text": "Your preferences"
+    },
+    "ui.shell.personal-preferences-description": {
+      "args": {},
+      "text": "Choose how this app starts and stays available. These choices do not start or stop a background service."
+    },
+    "ui.raw.unavailable": {
+      "args": {},
+      "text": "Input editing is unavailable because a checked draft could not be restored. Reopen the app to reset the local preview."
+    },
+    "ui.raw.stale": {
+      "args": {},
+      "text": "The submitted values do not match the current draft. Review the draft and try again."
+    },
+    "ui.raw.action-undo": {
+      "args": {},
+      "text": "Undo"
+    },
+    "ui.raw.action-redo": {
+      "args": {},
+      "text": "Redo"
+    },
+    "ui.raw.action-cut": {
+      "args": {},
+      "text": "Cut"
+    },
+    "ui.raw.action-copy": {
+      "args": {},
+      "text": "Copy"
+    },
+    "ui.raw.action-paste": {
+      "args": {},
+      "text": "Paste"
+    },
+    "ui.raw.action-select-all": {
+      "args": {},
+      "text": "Select all"
+    },
+    "ui.native-notification.test-title": {
+      "args": {},
+      "text": "NevroTick test notification"
+    },
+    "ui.native-notification.test-body": {
+      "args": {},
+      "text": "This is an example. No clock or service status was checked."
+    },
+    "ui.preferences.notification-windows-allowed": {
+      "args": {},
+      "text": "Windows permits notification requests"
+    },
+    "ui.preferences.notification-windows-blocked": {
+      "args": {},
+      "text": "Windows settings or organization policy block notifications."
+    },
+    "ui.preferences.notification-observer-running": {
+      "args": {},
+      "text": "NevroTick observer is running"
+    },
+    "ui.native-notification.test-accepted": {
+      "args": {},
+      "text": "Windows accepted the test request. A banner or reading is not confirmed."
+    },
+    "ui.native-notification.test-indeterminate": {
+      "args": {},
+      "text": "The test request outcome is unconfirmed. A banner or reading is not confirmed."
+    },
+    "ui.native-notification.test-coalesced": {
+      "args": {},
+      "text": "This test will not be submitted again during this app session."
+    },
+    "ui.preferences.tray-ready-note": {
+      "args": {},
+      "text": "The tray icon is available. Closing this window keeps the app observer running; Quit UI still closes only the app. Windows sign-in registration is still unavailable."
+    },
+    "ui.native-observer.stop-timeout": {
+      "args": {},
+      "text": "Native observer cleanup is still pending. The app stays open; no service state was changed."
+    },
+    "ui.native-observer.stop-failed": {
+      "args": {},
+      "text": "Native observer cleanup could not be confirmed. The app stays open; no service state was changed."
+    }
+  }
+}

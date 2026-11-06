@@ -1,0 +1,51 @@
+import { GuiFacts } from "localization-copy.slint";
+import { FixtureCopy } from "fixture-copy.slint";
+import { Theme } from "theme.slint";
+import { Panel, BodyText, SecondaryText, Heading, SectionHeading, PageHeading, FactRow, Rule, ActionButton, HelpText } from "components.slint";
+
+export component AboutPage inherits VerticalLayout {
+    callback repository-requested() -> bool;
+    private property <bool> repository-failed: false;
+    spacing: 20px;
+    vertical-stretch: 0;
+    PageHeading { title: FixtureCopy.about-heading; description: FixtureCopy.about-tagline; }
+    Panel {
+        panel-background: Theme.about-surface;
+        HorizontalLayout {
+            spacing: 18px;
+            Image { source: @image-url("assets/head.png"); width: 78px; height: 78px; image-fit: contain; }
+            Heading { text: FixtureCopy.brand; font-size: 31px; color: Theme.blue; vertical-alignment: center; }
+        }
+        SectionHeading { text: FixtureCopy.about-title; font-size: 18px; }
+        BodyText { text: FixtureCopy.about-description; }
+        BodyText { text: FixtureCopy.about-stage; font-weight: 600; }
+        Rule { }
+        FactRow { label: FixtureCopy.author-label; value: FixtureCopy.author-value; }
+        FactRow { label: FixtureCopy.repository-label; value: "https://github.com/DavidOsipov/NevroTick"; }
+        ActionButton {
+            text: FixtureCopy.open-repository;
+            clicked => { root.repository-failed = !root.repository-requested(); }
+            Tooltip { HelpText { text: FixtureCopy.repository-help; } }
+        }
+        if root.repository-failed: SecondaryText { text: FixtureCopy.repository-error; color: Theme.red; }
+        FactRow { label: FixtureCopy.version-label; value: FixtureCopy.version-value; }
+        FactRow { label: FixtureCopy.gui-build-label; value: GuiFacts.build-version; }
+        FactRow { label: FixtureCopy.text-contract-label; value: GuiFacts.text-contract-version; }
+        FactRow { label: FixtureCopy.platform-label; value: FixtureCopy.platform-value; }
+        FactRow { label: FixtureCopy.code-license-label; value: FixtureCopy.code-license-value; }
+    }
+    Panel {
+        SectionHeading { text: FixtureCopy.technologies-heading; }
+        BodyText { text: "Slint 1.18.1; garde 0.23.0; Serde 1.0.229; serde_json 1.0.154."; font-size: 13px; }
+        BodyText { text: FixtureCopy.technologies-description; font-size: 13px; }
+        SecondaryText { text: FixtureCopy.chrony-note; }
+    }
+    Panel {
+        SectionHeading { text: FixtureCopy.privacy-heading; }
+        BodyText { text: FixtureCopy.privacy-description; font-size: 13px; }
+    }
+    Panel {
+        SectionHeading { text: FixtureCopy.artwork-heading; }
+        BodyText { text: FixtureCopy.artwork-description; font-size: 13px; }
+    }
+}

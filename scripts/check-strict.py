@@ -211,8 +211,10 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
                     "overflow-checks": True, "debug-assertions": False, "panic": "unwind",
                     "incremental": False, "debug": "limited", "strip": "none"},
         "verify-release": {"inherits": "release", "debug-assertions": True},
+        "test": {"package": {"nevrotick-ui": {"debug": 0}}},
     }
-    if policy["profile"] != profiles:
+    if (policy["profile"] != profiles
+            or type(policy["profile"]["test"]["package"]["nevrotick-ui"]["debug"]) is not int):
         raise ENV.Incomplete("Workspace release/verification profiles differ from admitted policy.")
     inventory = parsed["policy/verification-manifest.toml"]
     if (inventory.get("schema_version") != 1

@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.15<br>
+**Document:** NV-DEC-001, revision 1.17<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 Slint replacement and OD-12 translation catalogs added 5 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** 6 November 2026, Asia/Tbilisi — every JSON/CBOR input is potentially malicious, including contributor/translator catalogs and packaged/generated/English data.<br>
@@ -599,6 +599,34 @@ production S5.1–S5.4 and actual Windows qualification remain separately gated.
 Retain the proposed resource targets, native execution restrictions, separate
 AES fuzz hold and storage pause. Adoption needs Slint-specific evidence; the
 toolkit decision itself is not a passing build, release or Windows result.
+
+### GUI licence/composition decision — 6 November 2026
+
+**Accepted owner decision, 6 November 2026:** David approved licensing the
+original GUI under **GPL-3.0-only**, preserving Chrony-derived Core/engine under
+**GPL-2.0-only**. Do not ask for this choice again. Apply the GUI-specific grant
+and provenance inventory before admitting the actual Slint runtime/build graph;
+the licence direction does not replace package/feature/security review.
+
+**Conflict that led to this decision:** the workspace declared GPL-2.0-only and
+the UI inherited it. The inspected [Slint 1.18.1 grants](https://github.com/slint-ui/slint/blob/372cf0ee5577c3dfec309a45e7b778ba4e81b734/LICENSE.md)
+offer GPL-3.0-only or separately conditioned royalty-free/commercial grants;
+none inspected establishes a GPL-2.0-only-compatible combined distribution.
+The proposed Windows Winit backend also selects [Apache-2.0-only Winit](https://github.com/rust-windowing/winit/blob/e9809ef54b18499bb4f2cac945719ecc2a61061b/Cargo.toml#L370-L374),
+so a Slint-only exception would not clear all affected inputs. These are exact
+source/grant findings, not an admitted NevroTick Slint dependency graph.
+
+| Concrete direction | Required consequence and remaining evidence |
+| --- | --- |
+| **Selected:** separately license the original GUI as GPL-3.0-only, preserving Chrony-derived engine/Core as GPL-2.0-only | Confirm rights over the GUI/presenter/model and any shared contract code; use a package-specific UI licence rather than changing the whole workspace. Keep the GUI an independently composed program using the defined process protocol, without linking GPL-2.0-only Core/Chrony code. Review actual shared code, runtime/build/transitive graph and notices; process separation alone is insufficient evidence. |
+| Retained alternative, not selected: GPL-2.0-only for the linked GUI | Would require compatible permissions covering Slint and required transitives, or a concrete compatible graph. The public royalty-free/commercial descriptions and a purchase alone supply no such evidence. No supplier contact or purchase is authorized here. |
+
+**Next integration:** apply the GUI-specific manifest/licence notices and
+independently reviewed source inventory, then admit the exact Slint product
+runtime/build graph under the selected GPLv3 direction. Keep Core proofs and
+their GPLv2 inputs independent. No framework reselection, Core relicensing,
+blanket dependency-policy relaxation, automatic Win32 fallback or new release
+permission follows. S0.5 rows 1–2 own the remaining graph/rights checks.
 
 ## 16. OD-12 — externalized UI translations and binary catalogs
 

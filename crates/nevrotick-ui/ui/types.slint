@@ -1,0 +1,27 @@
+// Presentation DTOs only. Sources and changes belong to the checked Rust owner.
+export struct SourceRow {
+    view-id: int,
+    label: string,
+    host: string,
+    port: string,
+    protocol-choice: int,
+    protocol-label: string,
+    port-label: string,
+    draft-kind: string,
+    show-draft-badge: bool,
+    change-choice: int,
+}
+
+export struct SourceChangeRow {
+    change-choice: int,
+    before-present: bool,
+    before-source: SourceRow,
+    after-present: bool,
+    after-source: SourceRow,
+    view-id: int,
+    kind: string,
+    before: string,
+    after: string,
+}
+
+export enum Page { status, sources, statistics, diagnostics, settings, about, recovery }

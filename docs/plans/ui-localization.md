@@ -1,5 +1,19 @@
 # Externalized UI translations and binary catalogs
 
+> Implementation checkpoint, 6 November 2026: the original design below is
+> retained as design history. The integrated v1 pipeline has strict JSON/CBOR
+> admission, typed immutable UI snapshot publication, reusable protected codegen,
+> and independent forward/reverse GUI source coverage. The native consumer
+> candidate advances to schema 2 / text contract 2 / English revision 2 / GUI
+> build 2, with 509 active IDs and 596 stable ordinals. Its production semantic
+> approval ledger remains empty; its new native source cohort requires separate
+> configured/native evidence. See
+> [`DESIGN.md`](../../crates/nevrotick-ui/src/localization/DESIGN.md) and
+> [`contract-map.md`](../../crates/nevrotick-ui/src/localization/contract-map.md)
+> for the current source contract. Earlier “no implementation”, schema-1 examples,
+> and proposed paths below do not describe the current files.
+
+
 **Recorded:** 5 November 2026. **Status:** design/source handoff; no implementation.
 **Security amendment:** 6 November 2026 (Asia/Tbilisi); proposed controls and qualification only.
 **Character refinement:** emoji-free, closed translation repertoires required by the owner; design only.
