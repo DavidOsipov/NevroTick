@@ -89,6 +89,20 @@ broker, UI and helper gain no runtime dependency. UI-M0 remains unchanged.
 
 ## Dependency gate before compilation
 
+**Current gate, reconciled 6 November 2026:** use the
+[owner-requested dependency refresh](s0.1-source-readiness.md#refreshed-graph-and-current-evidence),
+the current manifest/lockfile and exact schema-3 policy. The admitted graph now
+uses `tokio-macros 2.7.2` with its engine-scoped Syn 3 host closure; Garde retains
+Syn 2. Both target and per-package rows record that separation without a global
+duplicate-version relaxation. The current engine also depends on `time-domain`
+and Garde, alongside Tokio, `getrandom` and `ntp-wire`. Retain the refresh's exact
+ordinary/cross evidence and pending numerical qualification.
+
+**Historical initial-engine gate:** the proposal and sixteen-package/2.7.1
+directions below record the earlier candidate. They do not override the current
+refresh or authorize a downgrade. Their source/grant/evidence boundaries remain
+part of the historical record.
+
 The baseline proposal is Tokio 1.54.1, defaults disabled, with `rt`, `net`,
 `time`, `sync`, plus getrandom 0.4.3 with defaults disabled and existing local
 `ntp-wire`. It needs neither TLS nor `io-util`. Live primary version metadata

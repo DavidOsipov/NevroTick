@@ -7,18 +7,23 @@ metadata-consumer or verifier work before then. Their descriptions below retain
 historical candidate evidence, not current V1 gates or execution authority.
 The supporter-label v1 attempt ended in a60,118ms verification timeout with zero
 checks; its exported-unwind-field expectation is known unfinished tooling.
-Keep that correction post-V1. Resume [pure-leap product qualification](tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026)
-with the ordinary Rust/test/coverage/mutation/security/native/package controls;
+Keep that correction post-V1. Continue the ordinary product queue in
+[development plan §7](docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+with its current prerequisites and Rust/test/coverage/mutation/security/native/
+package controls. Pure-leap qualification is a completed bounded predecessor;
 all existing execution holds remain.
 
 **UI toolkit decision, 5 November 2026:**
 [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Slint with the measured winit/software and Fluent-style starting
-configuration. Current repository UI commands still check the Win32 reference
-implementation; they establish no Slint qualification. The [UI-M0 task](tasks/ui-m0.md)
-owns exact graph/licence admission, generated-code/lint-boundary review and the
-migrated candidate's checks. No toolchain, Cargo graph or native execution
-authority changes through this documentation amendment.
+configuration. The checked-in Windows entrypoint now selects Slint; current
+verification consumes its admitted schema-3 graph. The [GUI handoff](tasks/slint-gui-handoff.md)
+and [S0.5 task](tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
+own current source, graph/licence admission, generated-code/lint boundaries and
+candidate-specific checks. The [UI-M0 task](tasks/ui-m0.md) retains the original
+Win32 evidence. Portable checks and retained Windows-target receipts do not
+establish current native/backend qualification; this correction grants no new
+execution authority.
 
 Prepared on 28 October 2026 for the initial NevroTick development stage.
 The repository pin is Rust **1.99.1**, the current stable release checked against
@@ -122,16 +127,23 @@ fixed trusted fixture, not arbitrary dependency build scripts.
 David requested **12 parallel workers** on 30 October 2026. The repository
 [Cargo configuration](.cargo/config.toml) sets twelve build jobs and twelve
 libtest threads; [nextest](.config/nextest.toml) separately admits twelve test
-workers. The guarded compiler, Clippy, rustdoc, test and coverage commands carry
-the same budget into cleared sandbox environments. Independent inventory hashing
-uses twelve workers. actionlint and Gitleaks receive `GOMAXPROCS=12`, which budgets
+workers. Twelve is the general budget, with explicitly admitted lower per-lane
+limits: [the product verifier](scripts/verify.py) uses six Cargo build jobs for
+selected portable test builds, and analysis policies separately bound build,
+coverage and mutation concurrency. Test execution is distinct from test-binary
+compilation. Independent inventory hashing uses twelve workers. actionlint and
+Gitleaks receive `GOMAXPROCS=12`, which budgets
 Go execution rather than their external subprocesses. Tools without a supported
 parallel scheduler remain unchanged.
 
-Mutation campaigns use twelve outer workers, twelve shared jobserver tokens and
-**one Cargo build job and one libtest thread per worker**. Both enumeration and
-campaign commands explicitly enable the pinned tool's jobserver. Do not multiply
-both layers to twelve. Sequential
+The original mutation budget was twelve outer workers and jobserver tokens.
+Current [Core](scripts/verify-core-analysis.py) and
+[engine](policy/engine-analysis.json) campaigns use ten outer workers/tokens;
+the engine analysis build budget is six. Follow each selected verifier/policy,
+retaining **one Cargo build job and one libtest thread per mutation worker**.
+Both enumeration and campaign commands explicitly enable the pinned tool's
+jobserver. Do not multiply the inner build budget by the outer worker count.
+Sequential
 fixture edits, shared output ownership, native Windows operations, deterministic
 resource observations, fuzz campaign ownership and Loom's modeled thread count
 keep their existing ordering/bounds. Release codegen units, numerical semantics,
@@ -1222,8 +1234,9 @@ slot and a fixed 512-task sandbox limit for admitted mutation campaigns.
 Other invocations retain 128; this changes no shipping compiler flags, NTS job
 limit or quality threshold. Core coverage explicitly uses
 `-- --test-threads=1` to keep libtest progress from interrupting strict counter
-records; compile jobs remain twelve. Other wrappers retain their default unless
-they explicitly adopt that override. The 180 checkpoint profile/accounting controls
+records; the current Core analysis policy selects six compile jobs separately
+from its one-thread coverage and ten-worker mutation limits. Other wrappers
+retain their declared policy. The 180 checkpoint profile/accounting controls
 passed. The S1.3 record preserves the original failures, native 501-variant
 execution and read-only reconciliation, serialized coverage and history-only
 ASan-enabled semantic fuzz controls. The 4,096 healthy callbacks and intended
@@ -1498,8 +1511,9 @@ python3 -B scripts/verify.py
 | `--lane dependencies --advisory-receipt /path/to/current-receipt.json` | Frozen Linux and Windows metadata/feature checks followed by target-specific cargo-deny, using a separately acquired RustSec/index snapshot bound to the lockfile and at most 24 hours old. |
 | `--lane windows --output-dir /path/to/new-build-output` | Windows-target compiler/Clippy and separate release links for the UI and observe CLI; exports both executables and matching PDBs to new external output, preserving existing UI receipt keys and adding the engine artifact record. Native execution remains separate. |
 
-Portable wire and Core test builds use six Cargo build jobs to bound concurrent
-LLVM test-binary links within the ordinary 128-task sandbox. Other build rows
+Portable UI, wire, time-domain and Core test builds use six Cargo build jobs to
+bound concurrent LLVM test-binary links within the ordinary 128-task sandbox.
+Other build rows
 retain their configured concurrency; test execution and mutation-worker limits
 are separate. The [S1.3 task's S158 checkpoint](tasks/s1.3-source-selection-readiness.md#s158-integrated-authoring--portable-pass-qualification-next)
 retains the observed wire-link failures, command controls and successful bounded
@@ -1529,8 +1543,11 @@ python3 -B scripts/verify.py
 ```
 
 `prepare-product.py` verifies bounded archives and their reviewed extracted-file
-maps for the complete twenty-five-source resolution view without executing
-package code. `--configure` requires an absent private
+maps against the complete current [schema-3 dependency policy](policy/ui-m0-dependencies.json)
+and `Cargo.lock`, including inert metadata-only registry records, without executing
+package code. At the 6 November refresh this is 534 registry identities:
+253 selected records plus 281 metadata-only records. The two separately pinned
+local derivatives retain their own source admission. `--configure` requires an absent private
 `~/.local/share/nevrotick/ui-m0.json` pointer; it never replaces an existing one.
 The verifier reads `vendor_dir` and `scratch_root` from that pointer, while explicit
 `--vendor-dir` and `--scratch-root` select another admitted location. Put large build
@@ -1539,21 +1556,23 @@ of vendor/metadata inputs can avoid DrvFS per-file overhead; preserve and verify
 the same file maps. Refresh metadata into new locations when needed and pass the
 new receipt explicitly. Portable/Windows rows do not silently refresh or rerun the
 dependency row; complete that admission before executing newly admitted graph code.
-An existing sixteen-source vendor pointer cannot admit this new graph. Select an
-already admitted complete vendor explicitly with `--vendor-dir`; do not overwrite
-shared host configuration or fetch during verification.
+An old sixteen- or twenty-five-source vendor pointer cannot admit this graph;
+even a complete older vendor must match the current identities and file maps.
+Select an already admitted complete vendor explicitly with `--vendor-dir`; do
+not overwrite shared host configuration or fetch during verification.
 
-The root [deny.toml](deny.toml) deliberately retains the bootstrap GPL-only and
-no-build-script baseline. The dependency row generates a configuration solely
-inside its owned source snapshot: GPL-2.0-only, MIT, BSL-1.0 and Unicode-3.0 grants
-for this frozen graph, and exact build-script allowances for
-`proc-macro2@1.0.107`, `quote@1.0.47`, `rustversion@1.0.23` and
-`getrandom@0.4.3` on both targets, plus `libc@0.2.191` on Linux only.
-The `MIT AND Unicode-3.0` conjunction is preserved. All held-provider, advisory,
-source and other ban rules remain.
-These license identifiers are scoped by the immutable graph, not package-specific
-license exceptions. Running direct `cargo deny` with the root baseline will reject
-this product graph; use the shared dependency row.
+The root [deny.toml](deny.toml) deliberately retains the bootstrap GPL-2.0-only,
+no-build-script and no-duplicate-exception baseline. The dependency row generates
+its configuration solely inside the owned source snapshot. For schema 3,
+`product_deny` in [the verifier](scripts/verify.py) derives exact per-crate licence
+exceptions from the selected target's reviewed records, including the separate
+GPL-3.0-only grant for `nevrotick-ui`; selected licence conjunctions remain
+conjunctions. Build-script permissions and duplicate exceptions come from that
+target's exact policy row. Reviewed archive-file bypasses retain their pinned
+paths/checksums, and held-provider, advisory, source and remaining ban rules stay
+in force. These are scoped package/target allowances, not global licence or
+duplicate-version relaxations. Running direct `cargo deny` with the root
+baseline will reject this product graph; use the shared dependency row.
 
 The Windows row additionally needs `--xwin-config` and `--xwin-inventory`, or the
 corresponding pointer values. Its full selected-library inventory is bound to the

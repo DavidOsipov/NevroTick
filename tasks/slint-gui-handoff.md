@@ -76,9 +76,15 @@ identities include inert resolution entries; that number is not the runtime
 package count. Distribution obligations remain separate from private checks.
 
 Current Slint runtime/build pin: 1.18.1; Rust: 1.99.1. Current lock SHA256:
-`56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286`.
+`9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e`.
 Current schema3 policy anchor:
-`a3a008828e6d8c72b7441c29bafbc67f8aa22a4c9efddbb99e32bf705cfda3f6`.
+`6cf46ae3b59889507f5e78942ea68cd68f0d9c7afe0169d4cd7f04caaa98488b`.
+These identify the [6 November dependency refresh](s0.1-source-readiness.md#refreshed-graph-and-current-evidence),
+including seven transitive updates and the engine-scoped Tokio-macro Syn 3
+closure. The policy anchor is the checker's canonical JSON digest, not the raw
+file SHA256. Prior lock `56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286`
+and anchor `a3a008828e6d8c72b7441c29bafbc67f8aa22a4c9efddbb99e32bf705cfda3f6`
+remain historical identities; their receipts are not transferred to the refresh.
 The graph includes main's normal engine→time-domain edge and direct engine→garde
 derive/defaults-off edge. Registry identities, features, grants, workspace and
 non-engine package scopes retain their reviewed boundaries. The AccessKit

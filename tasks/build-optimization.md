@@ -354,3 +354,23 @@ not predict a passing rerun.
 Local isolation remains unavailable: the resumed bubblewrap preflight failed
 opening `/proc/5/ns/ns` before repository code ran. No unisolated test substitute,
 local compiler run, PE inspection or Windows qualification is claimed.
+
+### Merge and final hosted verification — 6 November 2026
+
+David merged [PR #12](https://github.com/DavidOsipov/NevroTick/pull/12) as
+`5ef985388d3350b707e91be1b78e8f8e9039f6ff`. GitHub reports a valid signature,
+parent `cb0a4ec254cf45e6efd7f49079b4bdb6e071dd35` and tree
+`721baa7b4d012a645fdb9710f3dfe997ad8426a5`, exactly matching the inspected local
+integration and tested PR merge tree. The final PR head was
+`c091c697a672d3d4a4dd26fbe6ecc2d7bb214501`.
+
+Both required PR checks completed successfully:
+[UI-M0 portable model](https://github.com/DavidOsipov/NevroTick/actions/runs/42283219785)
+and [Security gate](https://github.com/DavidOsipov/NevroTick/actions/runs/42283219754).
+The subsequent main-push [Rust product checks](https://github.com/DavidOsipov/NevroTick/actions/runs/42285216535)
+and [Repository security](https://github.com/DavidOsipov/NevroTick/actions/runs/42285216718)
+also completed successfully on that exact merge. CodeQL remained explicitly
+deferred; a passing Security gate supplies no CodeQL SAST result. These results
+close the hosted harness continuation without transferring portable checks to
+Windows linking, final PE, runtime mitigation, CPU prerequisite or package
+qualification. Those existing required owners remain open.

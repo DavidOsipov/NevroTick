@@ -837,7 +837,11 @@ under existing CHECK-17/18/23/24/26 owners.
 
 Freeze source, lockfile, tools/SDK, feature/target rows, policy, fixtures and exact
 packaged/installed bytes. Reconcile all applicable CHECK-1–CHECK-27 and
-AC-01–AC-20, phase receipts, changed contracts and open findings. Reuse earlier
+AC-01–AC-22, phase receipts, changed contracts and open findings. For AC-21/22,
+retain the [OD-11 scope split](../windows-time-features.md#8-acceptance-scenarios-and-evidence):
+direct-family/interface, path-history and shared Apply/reconciliation cases apply
+to first delivery; proxy-specific cases retain their later SOCKS owners and
+activation criteria. Reuse earlier
 evidence only while its relevant state is unchanged; rerun affected observations
 after invalidating changes. Required missing evidence is incomplete, not N/A.
 
