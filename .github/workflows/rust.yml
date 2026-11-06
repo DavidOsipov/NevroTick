@@ -35,13 +35,9 @@ jobs:
           sudo apt-get install --yes --no-install-recommends bubblewrap apparmor-profiles pkg-config libfontconfig-dev
           sudo apparmor_parser -r /usr/share/apparmor/extra-profiles/bwrap-userns-restrict
           bwrap --version
-          # Match the ordinary verifier's read-only OS mounts and cleared environment.
           bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
-            --ro-bind /usr /usr --ro-bind /bin /bin \
-            --ro-bind /lib /lib --ro-bind /lib64 /lib64 \
-            --ro-bind /etc/alternatives /etc/alternatives \
-            --ro-bind /etc/ld.so.cache /etc/ld.so.cache \
-            --setenv PATH /usr/bin:/bin -- /usr/bin/pkg-config --exists fontconfig
+            --ro-bind / / -- /usr/bin/true
+          env -i PATH=/usr/bin:/bin /usr/bin/pkg-config --exists fontconfig
       - name: Challenge product admission and result accounting
         run: |
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_verify.py -v

@@ -342,8 +342,8 @@ At `9606631`, hosted secret scanning and the security gate pass. The required
 portable job then reaches compilation but cannot find `fontconfig.pc`. Its
 ordinary host-native route already uses read-only OS mounts; it does not select
 the optional, separately pinned Debian SDK. The workflow now installs Ubuntu's
-authenticated `pkg-config`/`libfontconfig-dev` host prerequisites and probes
-Fontconfig through those same mounts with a cleared environment. Product graph,
+authenticated `pkg-config`/`libfontconfig-dev` host prerequisites and checks
+Fontconfig availability with a cleared environment. Product graph,
 compiler and optional SDK pins remain. A fresh complete hosted portable result
 is required before merge; this prerequisite repair supplies no Windows or
 packaged-product qualification.
@@ -351,3 +351,10 @@ packaged-product qualification.
 The workflow correction passes 24 security-helper tests, eight SDK controls and
 the pinned actionlint/ShellCheck/pedantic offline zizmor checks over both
 workflows, including two healthy and three rejection controls.
+
+The first follow-up run installed Fontconfig successfully but the additional
+partial-filesystem sandbox probe exited 139 before any product checks. Restored
+the previously passing full read-only-root sandbox capability smoke check and
+kept Fontconfig availability as a separate cleared-environment host preflight;
+the ordinary verifier still owns its complete sandbox and product execution.
+The setup failure remains a failed run, not evidence of product behavior.
