@@ -1797,6 +1797,54 @@
           "native_windows_product_or_release_claim": false
         }
       }
+    },
+    {
+      "slice": "S1.2 source-quality window variance divisors",
+      "review_date": "2026-11-06",
+      "status": "numerical component contract independently reviewed; implementation and qualification pending",
+      "destinations": [
+        "crates/time-core/src/window_variance.rs"
+      ],
+      "selected_sources": [
+        {
+          "file": "sourcestats.c",
+          "sha256": "9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6",
+          "selected_lines": "496;528-550",
+          "scope": "complete current-window peer-distance/minimum/median/precision-derived squared variance-divisor rule"
+        },
+        {
+          "file": "regress.c",
+          "sha256": "bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7",
+          "selected_lines": "415-442",
+          "scope": "median value and separately rounded even-median operation order; scratch sorting is a deliberate Rust adaptation"
+        },
+        {
+          "file": "util.h",
+          "sha256": "845633dc8bf74f2e94456d389123ee495228af90940500ab8e35eaaa5e1f3093",
+          "selected_lines": "275-284",
+          "scope": "MAX/MIN lower-bound-winning CLAMP and SQUARE semantics, including inverted bounds"
+        }
+      ],
+      "license": "GPL-2.0-only",
+      "provenance": "crates/time-core/PROVENANCE.md",
+      "contract_file": "tasks/s1.2-regression-readiness.md",
+      "contract_section": "Source-quality window divisors \u2014 6 November 2026",
+      "independent_review": "/root/quality_weight_plan_review; ready for this numerical child only; no production bridge acceptance",
+      "scope": "1..64 strictly positive finite input distances and precision, including subnormals; original-order borrowed numeric snapshot; checked source-order finite arithmetic; no fixture weight ceiling or reciprocal-normal gate",
+      "deliberate_deviations": [
+        "Sort only scratch rather than port C median-selection machinery.",
+        "Reject any nonfinite arithmetic intermediate instead of allowing later source clamps to conceal overflow.",
+        "Use explicit typed input/error admission rather than C caller assertions."
+      ],
+      "notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2011-2014, 2016-2018, 2021",
+        "regress.c median notice: Copyright (C) Miroslav Lichvar  2011, 2016-2017",
+        "util.h notice: Copyright (C) Richard P. Curnow  1997-2003"
+      ],
+      "rust_qualification": "pending; compiling feature stub RED and final GREEN/coverage/mutation required",
+      "formal_work": "post-V1 under S1.2/CHECK-7/25; no proof preparation or verifier work",
+      "release_or_product_claim": false
     }
   ],
   "review_followups": [

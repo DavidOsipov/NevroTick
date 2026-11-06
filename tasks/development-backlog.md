@@ -125,6 +125,12 @@ without unrelated fit/geometry or partial diagnostics. Controls include reversed
 weight semantics, `n - 1` scaling, wrong rate sign and statistics from a different
 fit. Fixture tolerances alone do not establish a universal error bound.
 
+The selected [source-quality window divisor child](s1.2-regression-readiness.md#source-quality-window-divisors--6-november-2026)
+adds the actual per-window derivation, original-row correspondence, positive-finite
+input domain including subnormals, and checked source-order overflow outcomes to
+this same post-V1 owner. Its computational divisors establish no physical
+calibration or eligibility. This debt entry schedules no proof preparation or job.
+
 #### FP-D03 — History updates and one coherent terminal fit
 
 **Owner:** numerical Core/history; [S1.2 adaptive-history contract](s1.2-regression-readiness.md#s147-staged-adaptive-history-caller-contract--2-november-2026),

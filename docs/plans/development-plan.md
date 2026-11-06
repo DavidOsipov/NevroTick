@@ -886,6 +886,15 @@ complete 312-variant mutation campaign. Two exact independently reviewed
 coherence-equality survivors retain their native counts and receive no kill
 credit. Earlier dependency/constructor/cross-build receipts retain their source;
 these checks establish no full-S2.1 or native qualification.
+**Completed bounded numerical child:** the current
+[S1.2 whole-window variance divisors](../../tasks/s1.2-regression-readiness.md#source-quality-window-divisors--6-november-2026)
+from the pinned Chrony rule passes34 ordinary/34 optimized cases, six owned
+doctests,98.214% line coverage and the complete60-variant mutation gate. One exact
+equivalent survivor receives no kill credit; no unresolved survivor remains.
+The task retains failed attempts and the merged370-input candidate. This child
+supplies the pure reweighting operation; it selects no physical uncertainty model
+and authorizes no history insertion. Continue the existing contract below.
+
 **Next executable product task:** freeze the existing
 [observation-to-Core admission contract](../../tasks/engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
 Keep genuine date/scale provenance, reference instant, exact Q33 conversion

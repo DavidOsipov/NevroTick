@@ -7422,6 +7422,11 @@ class ProjectedBatchWrapperTests(HistoricalS14cTestCase):
 class CheckedInCorePolicyTests(unittest.TestCase):
     """Exercise the real checked-in source admission outside synthetic fixtures."""
 
+    def bound_source_mismatches(self, root, bindings):
+        """Compare actual regular bytes with explicit frozen pins, without rebinding."""
+        return {name: (expected, actual) for name, expected in bindings.items()
+                if (actual := MODULE.PRODUCT.sha256(root / name)) != expected}
+
     def test_checked_in_control_does_not_require_machine_local_prior_receipt(self):
         """Simulate an absent private receipt without moving any retained bytes."""
         prior = Path(MODULE.HISTORICAL_S148_COORDINATOR_COHORTS['spent_contract_attempt']['receipt'])
@@ -7451,6 +7456,41 @@ class CheckedInCorePolicyTests(unittest.TestCase):
         self.assertEqual(len(MODULE.COMPLETE_CRITICAL_SUBJECTS), 25)
         self.assertEqual(sum(row['count'] for row in
                              MODULE.HISTORICAL_LIFECYCLE_MUTATION_INVENTORIES.values()), 747)
+        # Exercise both outcomes of byte classification independently of the
+        # retired checkpoint. This fixture performs no product/campaign admission.
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); source = root / 'bound.rs'
+            original = b'healthy independently bound source\n'
+            source.write_bytes(original)
+            pins = {'bound.rs': hashlib.sha256(original).hexdigest()}
+            self.assertEqual(self.bound_source_mismatches(root, pins), {})
+            source.write_bytes(b'changed independently bound source\n')
+            changed = self.bound_source_mismatches(root, pins)
+            self.assertEqual(set(changed), {'bound.rs'})
+            self.assertNotEqual(*changed['bound.rs'])
+        path = ROOT / MODULE.POLICY
+        frozen_policy_bytes = path.read_bytes()
+        document = json.loads(frozen_policy_bytes)
+        live_drift = self.bound_source_mismatches(ROOT, MODULE.SETTLED_RATE_LIVE_SOURCE_SHA256)
+        protected_drift = self.bound_source_mismatches(ROOT, document['inputs_sha256'])
+        _, current_product = MODULE.PRODUCT.admit_product(ROOT)
+        changed_product_set = set(current_product) != set(document['inputs_sha256'])
+        if live_drift or protected_drift or changed_product_set:
+            if live_drift:
+                reason = r'^Settled-rate live chart, receiver or unchanged adapter source differs\.$'
+            elif protected_drift:
+                reason = r'^Core source/graph input is unbound or changed\.$'
+            else:
+                reason = (r'^Core analysis requires the exact complete'
+                          + str(MODULE.SOURCE_FILE_COUNT) + r'-file product inventory\.$')
+            for expected, actual in (*live_drift.values(), *protected_drift.values()):
+                self.assertNotEqual(expected, actual)
+            with patch.object(MODULE, 'admit_spent_contract_attempt', return_value=None) as prior:
+                with self.assertRaisesRegex(MODULE.Incomplete, reason):
+                    MODULE.read_policy(ROOT, 'coverage')
+            prior.assert_not_called()
+            self.assertEqual(path.read_bytes(), frozen_policy_bytes)
+            return
         # This control admits checked-in source, not machine-local run evidence.
         # SpentContractAttemptTests separately retains S148 receipt custody;
         # current S1.4c admission must not require that machine-local artifact.

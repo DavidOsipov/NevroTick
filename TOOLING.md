@@ -1145,6 +1145,17 @@ garde's exact closure and libFuzzer, without adding shipping dependencies.
 Use a new private Linux output and the admitted vendor; actual results belong to
 S1.1c. Tooling admission alone establishes no numerical or Windows behavior.
 
+The new whole-window variance-divisor owner uses the same Core wrapper with
+`--subject window_variance --lane enumerate`, then reviewed inventory binding
+and `--lane all` for sequential coverage and mutation under one tool admission.
+Use `--tool-admission-profile full`, the current complete admitted vendor and a
+fresh external Linux `--output-dir`. Its separate
+[policy](policy/window-variance-analysis.json) binds the complete current product
+and protected helpers; older Core/engine policies are preserved on their original
+candidates. The [S1.2 task](tasks/s1.2-regression-readiness.md#source-quality-window-divisors--6-november-2026)
+owns actual results and exact equivalence review. This pure numeric owner adds no
+production history, source eligibility or physical uncertainty qualification.
+
 The pure fixture core uses [verify-core-analysis.py](scripts/verify-core-analysis.py)
 and [time-core-analysis.json](policy/time-core-analysis.json). Its recorded
 six-owner checkpoint covers regression, residuals, normalization, history, runs

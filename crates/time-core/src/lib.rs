@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Bounded synthetic regression contracts without sample or clock authority.
+//! Bounded numerical contracts without sample or clock authority.
 //!
 //! S1.2a supplies mandatory checked point construction, response-independent
 //! geometry and a bounded inverse-divisor affine fit. Exact constant phases
@@ -11,6 +11,9 @@
 //! precede complete state replacement. Rejection preserves the prior rows and
 //! report. These fixture values supply no physical uncertainty, eligibility,
 //! source selection, network, persistence or clock authority.
+//! `WindowVarianceDivisors` separately derives checked dimensionless divisors from
+//! a complete bounded peer-distance window and explicit precision. Its borrowed
+//! numeric snapshot establishes no physical quality or production sample admission.
 //!
 //! ```
 //! # use std::num::NonZeroU64;
@@ -52,6 +55,11 @@ mod principal;
 
 /// Checked common-instant uncertainty admission and inert supporter-combination kernel.
 mod combination;
+
+/// Checked source-quality window derivation and aligned variance divisors.
+mod window_variance;
+
+pub use window_variance::{WindowVarianceDivisors, WindowVarianceError, WindowVarianceStage};
 
 pub use combination::{
     FixtureCombinationContextField, FixtureCombinationDenominatorField, FixtureCombinationError,

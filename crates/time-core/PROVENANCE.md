@@ -909,3 +909,37 @@ The existing Chrony provenance, notices, GPL-2.0-only licence and corresponding
 source/build obligations remain. No dependency, actual clock correction, history
 migration, production eligibility or physical-uncertainty claim is introduced.
 The S154c evidence records its historical candidate; S155 needs its own checks.
+
+## Source-quality window variance divisors — 6 November 2026
+
+The separately reviewed S1.2 child selects the complete window-dependent divisor
+derivation for `window_variance.rs`. This is source-derived work, modified by
+David Osipov with AI assistance on 6 November 2026, under GPL-2.0-only.
+It is not a clean-room implementation or a physical uncertainty guarantee.
+The existing Chrony ledger records the selected scope before translation.
+
+At revision `8df4f1263e206585e6c4e61352d042c2dd12916a`, the selected sources are:
+
+| Source | SHA256 | Adapted scope |
+| --- | --- | --- |
+| `sourcestats.c` | `9d7f6e04db284fcfde74c1a95a428d01d52d56548244610f75116fac1b0bddf6` | Constant at 496 and complete distance/median/precision-to-divisor calculation, 528–550. |
+| `regress.c` | `bcd30c41f1a5c6c528adf199b6ef5215f62cc4c9078a82152a86ea90e46453f7` | Odd/even median semantics and primitive order, 415–442; selection machinery is replaced by bounded scratch sorting. |
+| `util.h` | `845633dc8bf74f2e94456d389123ee495228af90940500ab8e35eaaa5e1f3093` | MAX/MIN/CLAMP/SQUARE semantics, 275–284; precision wins when clamp bounds invert. |
+
+The new Rust source must preserve the original `sourcestats.c` notice, including
+Richard P. Curnow 1997–2003 and Miroslav Lichvar 2011–2014, 2016–2018, 2021,
+and its full GPLv2 grant/disclaimer. The median and utility notice obligations
+remain those retained above. `COPYING` continues to supply the complete GPLv2 text.
+
+The numerical contract accepts strictly positive finite values, including
+subnormals, and returns a borrowed original-order snapshot with inline divisors.
+It checks every source-order arithmetic intermediate and returns typed errors
+on nonfinite results, even where an upstream clamp might conceal overflow.
+No synthetic divisor cap, raw input clipping, normal-reciprocal requirement,
+ambient clock/precision lookup or physical confidence is inherited.
+
+This entry records source scope and authoring obligations, not completed Rust,
+upstream parity, dependency, native or release qualification. The existing S1.2
+task owns actual RED/GREEN and subsequent per-file coverage/mutation evidence.
+Genuine observation/history admission remains held on its separate production
+contract. Formal work remains post-V1.

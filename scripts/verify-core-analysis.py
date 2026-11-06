@@ -7599,8 +7599,298 @@ def prospective_scope_reservation(lane, subjects):
             'scope': 'Complete current source vector prepaid before effect; prior attempts stay historical, and no source upper is an operation observation.'}
 
 
+WINDOW_VARIANCE_SUBJECT = "window_variance"
+WINDOW_VARIANCE_POLICY = "policy/window-variance-analysis.json"
+WINDOW_VARIANCE_FILE = "crates/time-core/src/window_variance.rs"
+WINDOW_VARIANCE_TEST_FILE = "crates/time-core/tests/window_variance.rs"
+WINDOW_VARIANCE_SCOPE = COMMON.Scope(
+    "time-core", ((WINDOW_VARIANCE_SUBJECT, WINDOW_VARIANCE_FILE),), WINDOW_VARIANCE_POLICY)
+WINDOW_VARIANCE_BOUND_INPUTS = (
+    "Cargo.toml", "Cargo.lock", "crates/time-core/Cargo.toml", "crates/time-core/src/lib.rs",
+    WINDOW_VARIANCE_FILE, WINDOW_VARIANCE_TEST_FILE,
+    "scripts/verify-core-analysis.py", "scripts/tests/test_window_variance_analysis.py",
+    "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+    "scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
+    "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
+)
+WINDOW_VARIANCE_FIXED = {
+    "schema_version": 1, "package": "time-core", "source_file_count": 370,
+    "critical_files": [WINDOW_VARIANCE_FILE], "tool_admission_profile": "full",
+    "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+    "coverage_wall_seconds": 300, "enumeration_wall_seconds": 240,
+    "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+    "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+    "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+    "maximum_mutants": 512, "maximum_listed_per_file": 4096, "maximum_listed_total": 8192,
+}
+# Freeze actual independent test identities before admitting an executable candidate.
+WINDOW_VARIANCE_REQUIRED_TESTS = frozenset({
+    'debug_projection_omits_distances_and_precision',
+    'error_diagnostics_are_bounded_without_validation_payloads',
+    'whole_window_quality_uses_precision_and_squared_scale',
+    'upper_clamped_spread_has_exact_dyadic_divisors',
+    'interior_spread_uses_the_point_seven_coefficient',
+    'precision_above_minimum_is_legal_and_wins_the_clamp',
+    'legal_divisors_are_not_capped_at_sixteen',
+    'even_median_preserves_original_order_and_storage',
+    'permutations_preserve_distance_to_divisor_correspondence',
+    'changing_the_window_reweights_retained_rows',
+    'safe_power_of_two_unit_scales_preserve_divisor_bits',
+    'excess_threshold_has_exact_neighbor_results',
+    'lower_spread_clamp_has_a_plateau_and_valid_upper_neighbor',
+    'upper_spread_clamp_has_a_plateau_and_valid_lower_neighbor',
+    'two_rows_are_a_legal_weighting_window',
+    'sixty_four_rows_retain_the_last_distance_and_divisor',
+    'empty_and_sixty_five_row_windows_are_rejected',
+    'count_errors_precede_scalar_validation',
+    'every_invalid_precision_class_is_rejected',
+    'every_invalid_distance_class_is_rejected_at_every_position',
+    'precision_error_precedes_distance_validation',
+    'original_distance_index_precedes_later_errors_and_arithmetic',
+    'positive_precision_extremes_are_accepted',
+    'positive_distance_extremes_are_accepted',
+    'positive_subnormal_inputs_produce_exact_nonunit_divisors',
+    'subnormal_even_median_preserves_sum_then_half_rounding',
+    'subnormal_even_median_does_not_split_half_products',
+    'even_median_sum_overflow_is_rejected_with_healthy_controls',
+    'spread_overflow_cannot_be_hidden_by_the_clamp',
+    'threshold_overflow_is_rejected_with_a_finite_neighbor',
+    'ratio_overflow_is_rejected_with_a_subnormal_healthy_control',
+    'square_overflow_is_rejected_with_a_finite_large_neighbor',
+    'minimum_normal_reciprocal_boundary_is_accepted',
+    'positive_subnormal_reciprocals_do_not_narrow_output_admission',
+})
+WINDOW_VARIANCE_REQUIRED_DOCTESTS = (
+    ("window_variance::WindowVarianceDivisors", False, 1),
+    ("window_variance::WindowVarianceDivisors", True, 5),
+)
+
+
+def window_variance_inventory_bindings(policy, *, required=False):
+    """Accept no review yet or the exact nonempty singleton descriptor binding."""
+    bindings = policy.get("mutation_inventories")
+    if type(bindings) is not dict:
+        raise Incomplete("Window-variance inventory bindings must be an object.")
+    if not bindings and not required:
+        return bindings
+    if set(bindings) != {WINDOW_VARIANCE_SUBJECT}:
+        raise Incomplete("Window-variance mutation requires its complete reviewed singleton inventory.")
+    row = bindings[WINDOW_VARIANCE_SUBJECT]
+    if (type(row) is not dict or set(row) != {"count", "sha256"}
+            or type(row["count"]) is not int or not 0 < row["count"] <= policy["maximum_mutants"]
+            or type(row["sha256"]) is not str or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])):
+        raise Incomplete("Window-variance inventory requires a positive count and exact SHA-256.")
+    return bindings
+
+
+def read_window_variance_policy(root):
+    """Admit a current singleton without altering any historical Core role."""
+    policy = inventory_document(root / WINDOW_VARIANCE_POLICY)
+    extra = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "mutation_equivalences", "scope"}
+    if (type(policy) is not dict or set(policy) != set(WINDOW_VARIANCE_FIXED) | extra
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in WINDOW_VARIANCE_FIXED.items())
+            or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
+        raise Incomplete("Unreviewed window-variance scope, profile, threshold or budget.")
+    _, identity = PRODUCT.admit_product(root)
+    if (len(identity) != policy["source_file_count"]
+            or type(policy["candidate_sha256"]) is not str
+            or policy["candidate_sha256"] != COMMON.canonical_sha256(identity)):
+        raise Incomplete("Window-variance requires the exact current complete 370-input product candidate.")
+    pins = policy["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(WINDOW_VARIANCE_BOUND_INPUTS)
+            or any(type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                   or PRODUCT.sha256(root / name) != digest for name, digest in pins.items())):
+        raise Incomplete("Window-variance protected source/helper bindings changed.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    if (manifest.get("critical_files", []).count(WINDOW_VARIANCE_FILE) != 1
+            or sum(row.get("package") == "time-core" and WINDOW_VARIANCE_FILE in row.get("files", [])
+                   for row in manifest.get("security_modules", [])) != 1):
+        raise Incomplete("Window-variance needs one exact critical/security owner.")
+    if re.search(r"#\s*\[\s*test\s*\]", (root / WINDOW_VARIANCE_FILE).read_text()):
+        raise Incomplete("Window-variance production coverage cannot contain inline test bodies.")
+    window_variance_inventory_bindings(policy)
+    COMMON.admit_mutation_equivalences(root, WINDOW_VARIANCE_SCOPE, policy)
+    return policy
+
+
+def window_variance_test_execution(text, *, doctests):
+    """Require real named healthy tests and source-owned legal/privacy doctests."""
+    records, pending = [], None
+    header = re.compile(r"test ([^\r\n]+?) \.\.\. (.*)")
+    trace = re.compile(r"(?:CORE_[A-Z0-9_]+|S13_[A-Z0-9_]+|SELECTION_HELPER_PROFILE)(?:[ \t].*)?")
+    for line in text.splitlines():
+        if pending is not None:
+            if line == "ok":
+                records.append(pending)
+                pending = None
+            elif trace.fullmatch(line) is None:
+                raise Incomplete("Window-variance native test lacks its named successful completion.")
+            continue
+        match = header.fullmatch(line)
+        if match is not None:
+            if match[2] == "ok":
+                records.append(match[1])
+            elif trace.fullmatch(match[2]) is not None:
+                pending = match[1]
+            else:
+                raise Incomplete("Window-variance native test record has no successful outcome.")
+        elif line in {"ok", "FAILED", "ignored"}:
+            raise Incomplete("Window-variance native completion lacks its test identity.")
+    if pending is not None:
+        raise Incomplete("Window-variance native test completion is truncated.")
+    summaries = [line for line in text.splitlines() if line.startswith("test result:")]
+    pattern = r"test result: ok\. (\d+) passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;.*"
+    counts = [re.fullmatch(pattern, line) for line in summaries]
+    if (not summaries or any(match is None for match in counts) or len(records) != len(set(records))
+            or sum(int(match[1]) for match in counts if match is not None) != len(records)
+            or not WINDOW_VARIANCE_REQUIRED_TESTS <= set(records)):
+        raise Incomplete("Window-variance execution lacks complete required actual passing test records.")
+    docs = [name for name in records if re.fullmatch(
+        r"[^\r\n]+\.rs - (?:[^\r\n]+ )?\(line [1-9][0-9]*\)(?: - compile fail)?", name)]
+    if doctests:
+        if not WINDOW_VARIANCE_REQUIRED_DOCTESTS:
+            raise Incomplete("Window-variance legal/privacy doctest identities await source review.")
+        for owner, compile_fail, count in WINDOW_VARIANCE_REQUIRED_DOCTESTS:
+            pattern = (r"(?:[^\r\n]+/)?crates/time-core/src/window_variance\.rs - "
+                       + re.escape(owner) + r" \(line [1-9][0-9]*\)"
+                       + (r" - compile fail" if compile_fail else ""))
+            if sum(re.fullmatch(pattern, name) is not None for name in docs) != count:
+                raise Incomplete("Window-variance baseline omits its actual legal/privacy doctests.")
+        selected_docs = [name for name in docs if re.match(
+            r"(?:[^\r\n]+/)?crates/time-core/src/window_variance\.rs - ", name)]
+        if len(selected_docs) != sum(row[2] for row in WINDOW_VARIANCE_REQUIRED_DOCTESTS):
+            raise Incomplete("Window-variance baseline includes an unreviewed source-owned doctest.")
+    elif docs:
+        raise Incomplete("Window-variance coverage unexpectedly includes doctests.")
+    return {"tests_executed": len(records), "required_tests": sorted(WINDOW_VARIANCE_REQUIRED_TESTS),
+            "selected_doctests": sum(row[2] for row in WINDOW_VARIANCE_REQUIRED_DOCTESTS) if doctests else 0,
+            "all_package_doctests": len(docs)}
+
+
+def window_variance_baseline(work):
+    """Read the actual owned tool baseline, without crediting listing or setup."""
+    directory = work / "mutation" / WINDOW_VARIANCE_SUBJECT / "mutants.out"
+    outcomes = native_receipt_document(directory / "outcomes.json")
+    rows = [row for row in outcomes.get("outcomes", [])
+            if type(row) is dict and row.get("scenario") == "Baseline"]
+    if len(rows) != 1 or rows[0].get("summary") != "Success":
+        raise Incomplete("Window-variance mutation needs exactly one successful native baseline.")
+    relative = Path(rows[0].get("log_path", ""))
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise Incomplete("Window-variance baseline log escapes owned output.")
+    path = directory / relative
+    if path != path.resolve(strict=True):
+        raise Incomplete("Window-variance baseline log cannot use links.")
+    raw = ANALYSIS.read_once(path, maximum=16 * 1024 * 1024)
+    return {**window_variance_test_execution(raw.decode("utf-8"), doctests=True),
+            "log_sha256": PRODUCT.sha256(path)}
+
+
+def enumerate_window_variance(session, policy, report):
+    """Retain complete bounded discovery; launch no baseline or mutant execution."""
+    command = [str(session.tools / "cargo-mutants"), "mutants", "--package", "time-core",
+               "--file", WINDOW_VARIANCE_FILE, "--test-workspace", "false", "--cap-lints", "false",
+               "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10",
+               "--cargo-arg=--message-format=json"]
+    COMMON.mutation_campaign_command(WINDOW_VARIANCE_SCOPE, session.tools, WINDOW_VARIANCE_SUBJECT,
+        [*command, "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+         "--output", "/work/mutation/" + WINDOW_VARIANCE_SUBJECT],
+        expected_jobs=10, expected_message_format="json", policy=policy)
+    raw = session.run("mutation-enumeration:" + WINDOW_VARIANCE_SUBJECT,
+                      [*command, "--list", "--json"], min(policy["enumeration_wall_seconds"], 120))
+    report["mutation_enumeration"] = {WINDOW_VARIANCE_SUBJECT: {"raw_output": raw}}
+    items, warning = COMMON.parse_mutation_listing(raw, expected_jobs=10)
+    inventory = COMMON.mutation_inventory(WINDOW_VARIANCE_SCOPE, items,
+                                         policy["maximum_listed_per_file"], WINDOW_VARIANCE_FILE)
+    total = COMMON.combined_mutant_count({WINDOW_VARIANCE_SUBJECT: inventory}, policy["maximum_listed_total"])
+    report["mutation_enumeration"][WINDOW_VARIANCE_SUBJECT]["warning"] = warning
+    report["listed_inventories"] = {WINDOW_VARIANCE_SUBJECT: inventory}
+    report["listed_inventory_bindings"] = {WINDOW_VARIANCE_SUBJECT: {
+        "count": total, "sha256": COMMON.canonical_sha256({
+            name: {key: value for key, value in item.items() if key != "diff"}
+            for name, item in inventory.items()})}}
+    report.update(listed_total=total, campaign_cap_exceeded=total > policy["maximum_mutants"],
+                  campaign_admission=False, qualification_passed=False)
+
+
+def execute_window_variance(args, report):
+    """Execute the exact new owner through existing custody, retaining legacy roles."""
+    if (args.subject != WINDOW_VARIANCE_SUBJECT or args.lane not in {"enumerate", "coverage", "mutation", "all"}
+            or args.tool_admission_profile != "full"
+            or any(getattr(args, name, None) for name in
+                   ("inventory_admission", "cohort_plan", "cohort_id", "cohort_receipt"))):
+        raise Incomplete("Window-variance admits only its singleton full-profile enumerate/coverage/mutation/all role.")
+    policy = read_window_variance_policy(ROOT)
+    if args.lane in {"mutation", "all"}:
+        window_variance_inventory_bindings(policy, required=True)
+    session_args = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        session_args.lane = "mutation"
+    report.update(subjects=WINDOW_VARIANCE_SCOPE.select(WINDOW_VARIANCE_SUBJECT),
+                  candidate_sha256=policy["candidate_sha256"], qualification_passed=False,
+                  historical_family_bindings_reused=False)
+    session = COMMON.Session(ROOT, session_args, report, WINDOW_VARIANCE_SCOPE, policy,
+                             WINDOW_VARIANCE_BOUND_INPUTS)
+    try:
+        if (len(session.product_identity) != 370
+                or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]
+                or inventory_document(session.source / WINDOW_VARIANCE_POLICY) != policy
+                or any(PRODUCT.sha256(session.source / name) != policy["inputs_sha256"][name]
+                       for name in WINDOW_VARIANCE_BOUND_INPUTS)):
+            raise Incomplete("Captured window-variance candidate/policy/protected inputs differ.")
+        if args.lane == "enumerate":
+            enumerate_window_variance(session, policy, report)
+        if args.lane in {"coverage", "all"}:
+            command = [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "time-core",
+                       "--frozen", "--jobs", "6", "--test", "window_variance", "--json",
+                       "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                       "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                       "--", "--test-threads=1"]
+            raw = session.run("coverage", command, policy["coverage_wall_seconds"])
+            report["coverage_execution"] = window_variance_test_execution(raw, doctests=False)
+            coverage = json.loads((session.work / "coverage.json").read_text())
+            report["coverage"] = {WINDOW_VARIANCE_SUBJECT: COMMON.coverage_counts(
+                WINDOW_VARIANCE_SCOPE, coverage, "/work/source/" + WINDOW_VARIANCE_FILE)}
+        if args.lane in {"mutation", "all"}:
+            def run(label, command, timeout, **options):
+                raw = session.run(label, command, timeout, **options)
+                if label == "mutation-campaign:" + WINDOW_VARIANCE_SUBJECT:
+                    report["baseline_execution"] = window_variance_baseline(session.work)
+                return raw
+            COMMON.run_analysis_lanes(WINDOW_VARIANCE_SCOPE, report["subjects"], policy,
+                                      session.work, session.tools, run, report, "mutation")
+    finally:
+        session.finish()
+    if args.lane != "enumerate":
+        report["qualification_passed"] = True
+
+
+def main_window_variance(args):
+    """Report the narrow gate independently of all retained Core families."""
+    report = {"status": "incomplete", "selected_lane": args.lane,
+              "scope": "Selected pure window-variance owner " + args.lane,
+              "qualification_passed": False, "native_qualification": "not performed"}
+    try:
+        if args.vendor_dir is None:
+            args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
+        execute_window_variance(args, report)
+        report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
+    except REPORT_FAILURES as error:
+        report["qualification_passed"] = False
+        report["error"] = str(error)
+    if report.get("owned_output") == str(args.output_dir):
+        (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    print(report["status"].upper() + ": " + report["scope"], flush=True)
+    if report.get("error"):
+        print(report["error"], file=sys.stderr)
+    return 0 if report["status"] in {"enumerated", "passed"} else 1
+
+
 def execute(args, report):
     """Run only selected current-admitted rows; preserve partial raw observations."""
+    if args.subject == WINDOW_VARIANCE_SUBJECT:
+        return execute_window_variance(args, report)
     if args.lane not in {'inventory', 'contracts', 'coverage', 'mutation', 'cohort-union'}:
         raise Incomplete('Unsupported checkpoint lane; optional fuzz/all execution is not admitted.')
     requested_profile = getattr(args, "tool_admission_profile", "full")
@@ -7734,8 +8024,8 @@ def native_receipt_text(report):
 def main(argv=None):
     """Fresh owned outputs, fixed scopes and nonzero incomplete status only."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("inventory", "contracts", "coverage", "mutation", "cohort-union"), default="coverage")
-    parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--lane", choices=("inventory", "contracts", "coverage", "mutation", "cohort-union", "enumerate", "all"), default="coverage")
+    parser.add_argument("--subject", choices=(*SUBJECTS, WINDOW_VARIANCE_SUBJECT, "all"), default="all")
     parser.add_argument("--inventory-admission", type=Path)
     parser.add_argument('--cohort-plan', type=Path)
     parser.add_argument('--cohort-id')
@@ -7744,6 +8034,10 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--tool-admission-profile", choices=COMMON.ANALYSIS.ADMISSION_PROFILES, default="full")
     args = parser.parse_args(argv)
+    if args.subject == WINDOW_VARIANCE_SUBJECT:
+        return main_window_variance(args)
+    if args.lane in {"enumerate", "all"}:
+        parser.error("--lane enumerate/all belongs only to --subject window_variance")
     if args.tool_admission_profile == "stable-core" and args.lane not in {"inventory", "contracts", "coverage", "mutation"}:
         parser.error("--tool-admission-profile stable-core requires inventory, contracts, coverage or mutation")
     if args.lane == "inventory" and args.tool_admission_profile != "stable-core":

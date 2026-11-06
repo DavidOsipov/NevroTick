@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "package": "time-core",
+  "source_file_count": 370,
+  "critical_files": [
+    "crates/time-core/src/window_variance.rs"
+  ],
+  "tool_admission_profile": "full",
+  "coverage_minimum_line_percent": 90,
+  "mutation_minimum_viable_killed_percent": 95,
+  "coverage_wall_seconds": 300,
+  "enumeration_wall_seconds": 240,
+  "mutation_wall_seconds": 1200,
+  "mutation_build_seconds": 90,
+  "mutation_test_seconds": 60,
+  "jobs": 6,
+  "test_threads": 1,
+  "coverage_test_threads": 1,
+  "mutation_jobs": 10,
+  "mutation_process_limit": 512,
+  "mutation_message_format": "json",
+  "maximum_mutants": 512,
+  "maximum_listed_per_file": 4096,
+  "maximum_listed_total": 8192,
+  "candidate_sha256": "904a1bb068bb54ef585f39db0dca73a999bdf7b8d2caaf6679c99b6708eaac8d",
+  "inputs_sha256": {
+    "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
+    "Cargo.lock": "0683420c01ac6af80554100b402be4673628bfb5fca514476cd3585572b9c297",
+    "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
+    "crates/time-core/src/lib.rs": "b24b4e8c98849e396a1bbba96a07c9d760b13a8dfe3f5bfe4cc06dc044c9d8fc",
+    "crates/time-core/src/window_variance.rs": "aa88951916a471266f143c8c8dfff6acfb2d6378483335be888f6e90b624922f",
+    "crates/time-core/tests/window_variance.rs": "a8944e36d7cc6dd61315bc503d82d692f4c618e51b14cfb2da12c9cc7f5b03cc",
+    "scripts/verify-core-analysis.py": "783a6a27ded6d3ccd160db27bd20ab30989f0904f9edb8947a38830a75650d5c",
+    "scripts/tests/test_window_variance_analysis.py": "990776e4adb8397da7519035961b19a6cea67451acc691252594d9dbc1b3bbef",
+    "scripts/portable-analysis.py": "36b1affc8fc8c384564ce147f156becf3b871ab40ab536069e778c0e1ab66b3d",
+    "scripts/analysis-runtime.py": "fcfe9eb5018d729e9a20ea9e782e3e767fff4388477e405826600091391c2f38",
+    "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
+    "scripts/verify.py": "e8ddf7a01717b2aa0f077c4c2ab1255ff6ae978edd76ce54c0cce0431ef9f9e2",
+    "scripts/check-environment.py": "b4b1376eeb8516e6c8f4d726e7ae91e258587e3011b5509ca20491168b51c189",
+    "scripts/check-strict.py": "26ee48061c73f15a68ffc9baca87f99c8c276b8edb2a4340e5047ef6e5e06db8",
+    "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
+    "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
+    "policy/verification-manifest.toml": "faab033796450d59f4f9e846afb4965c2a26cf0dbedfcee52e12c4d3f54256f6"
+  },
+  "mutation_inventories": {
+    "window_variance": {
+      "count": 60,
+      "sha256": "52772ddad983890efe62d844be94ecccddb74eccb0272bbff82a488add350c53"
+    }
+  },
+  "mutation_equivalences": [
+    {
+      "id": "WINDOW-VARIANCE-THRESHOLD-EQUALITY",
+      "candidate_sha256": "904a1bb068bb54ef585f39db0dca73a999bdf7b8d2caaf6679c99b6708eaac8d",
+      "source_sha256": "aa88951916a471266f143c8c8dfff6acfb2d6378483335be888f6e90b624922f",
+      "mutant": {
+        "name": "crates/time-core/src/window_variance.rs:373:26: replace > with >= in WindowVarianceDivisors<'a>::derive",
+        "package": "time-core",
+        "file": "crates/time-core/src/window_variance.rs",
+        "function": {
+          "function_name": "WindowVarianceDivisors<'a>::derive",
+          "return_type": "-> Result<Self, WindowVarianceError>",
+          "span": {
+            "start": {
+              "line": 308,
+              "column": 5
+            },
+            "end": {
+              "line": 388,
+              "column": 6
+            }
+          }
+        },
+        "span": {
+          "start": {
+            "line": 373,
+            "column": 26
+          },
+          "end": {
+            "line": 373,
+            "column": 27
+          }
+        },
+        "replacement": ">=",
+        "genre": "BinaryOperator"
+      },
+      "requirement": "REQ-8/BND-1; CHECK-7/8/25; S1.2 whole-window variance-divisor semantics",
+      "rationale": "Only equality with the finite computed threshold changes the branch. Checked zero excess over strictly positive finite spread yields exact positive1, identical errors and effects; no kill credit. The complete enforced derive domain includes positive subnormals and inverted spread bounds.",
+      "proof": {
+        "path": "tasks/window-variance-analysis-equivalences.md",
+        "sha256": "3c821af7e6f9d594151e695ead21c2822b9f023c169a317b8f1f1796209a7ec5",
+        "section": "WINDOW-VARIANCE-THRESHOLD-EQUALITY",
+        "reviewer": "/root/quality_weight_contract_design; /root",
+        "verdict": "independently-justified-equivalent"
+      }
+    }
+  ],
+  "scope": "Singleton pure whole-window source-quality variance-divisor derivation on the frozen 370-input GNU product candidate. All34actual external controls and six legal/privacy/borrow doctests are required. Source-order checked finite arithmetic includes positive subnormals and lower-bound-winning clamp semantics; complete actual inventory review is required before mutation. Historical Core and engine receipts retain their old source/helper maps. No fixture-weight cap, physical confidence, source eligibility, production receiver, native Windows, formal-proof or release qualification follows. Coverage and mutation thresholds/budgets are unchanged."
+}
