@@ -47,7 +47,7 @@ to own requirements, and task records own executed evidence.
 | Can a Store release carry independently checkable evidence of its source and build? | [Enhanced build provenance](plans/release-provenance.md) records the possible attestation, reproducible-build and delivered-payload chain and its limits. [OD-05 §7.5](nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026) makes this additional assurance optional, with no new release blocker; existing artifact custody, SBOM/licence, integrity and installed-product checks remain required. |
 | What owns the behavior, authority and state? | [Component architecture](windows-time-architecture.md#3-component-architecture-and-authority), the task-relevant technical sections and [accepted owner decisions](nevrotick-owner-decisions.md). |
 | How are leap seconds, silent-LI servers and Windows event ownership handled? | [Architecture §10.5](windows-time-architecture.md#105-leap-seconds-and-time-scales) owns the selected contract; [NV-LP-001](plans/leap-second-policy.md) records primary evidence, local knowledge, source/guard/Windows behavior; [S1.4's task](../tasks/s1.4-leap-policy.md) owns implementation cases and remaining native gates. |
-| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) reconcile completed S157/S158/S1.4a–c scopes with the current Core checkpoint, explicit date/data/import bounds and later protocol/native work. The [implementation continuation](../tasks/s1.4-leap-policy.md#15-pure-implementation-authoring--5-november-2026) has an initial portable pass; new-owner qualification remains in progress. |
+| What exactly admits the first pure leap-knowledge child? | [S1.4 entry and finite-input tables](../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) retain its prerequisites and finite bounds. The [selected pure checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026) now qualifies history/coverage/rule construction, interpretation and atomic replacement, with exact receipt reconciliation. Full acquisition and native integration remain separate. |
 | Which phase is ready, and what must it prove? | [Architecture §21](windows-time-architecture.md#21-delivery-phases-and-readiness-gates): P0–P7, including the bounded S0.1–S0.7 experiments. |
 | What integrated slice should the task deliver? | [Feature plan §9](windows-time-features.md#9-delivery-slices-for-agentic-development): UI-M0 and S-0–S-6, with prerequisites, owners and exit evidence. |
 | What must a user-visible product scenario demonstrate? | [Feature plan §8](windows-time-features.md#8-acceptance-scenarios-and-evidence): AC-01–AC-22, mapped to technical checks. |
@@ -75,8 +75,10 @@ defers all formal-proof work until after the first released software version
 (V1). Proofs are not V1 implementation, phase-acceptance or release prerequisites.
 Preserve the historical checkpoints below without extending their scope or
 resuming their jobs, source preparation, metadata repairs or verifier work.
-The next product task is [pure-leap final mutation qualification and candidate
-reconciliation](../tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026).
+The [selected pure-leap checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
+is complete, including four current mutation cohorts and qualified receipt
+reconciliation. The next product child is [S2.1's controlled loopback
+measurement](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
 Runtime validation, independent behavioral tests, coverage/mutation, security,
 native/package and release gates remain; all existing execution holds remain.
 

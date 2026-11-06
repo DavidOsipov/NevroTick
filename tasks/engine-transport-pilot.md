@@ -14,11 +14,17 @@ all existing Windows/fuzz/storage/UI holds remain in force. Current product work
 follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
 
-**Current S2.1 preparation, 5 November 2026:** the [integration card](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
-separates the next experimental real-UDP measurement from later uncertainty and
-actual Core admission. W11-W01 is partially prepared; the [current product
-queue](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-remains first. Historical engine receipts below retain their original candidates.
+**Current product action, 6 November 2026:** after the [selected pure-leap
+checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026),
+development §7 selects this task's [first controlled S2.1 measurement](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
+First preserve lossless staged packet/exchange/capture evidence and freeze the
+experimental date scope, capture convention, mapping validity/error and refusal
+outcomes in that card. Then qualify checked mapping/era/arithmetic and bounded
+diagnostic projection on controlled Linux loopback, retaining
+`authentication=none eligible=0`. This is no estimator admission or clock effect.
+W11-W01 remains partially prepared; uncertainty, production scheduling and native
+qualification remain later scopes. Older proof-first wording below is historical
+under the current OD-10 amendment. Historical receipts retain their candidates.
 
 The [address-family continuation](#address-family-admission-and-bounded-acquisition-progress--5-november-2026)
 adds local-path admission and bounded alternative progress to later S2.1/S2.2

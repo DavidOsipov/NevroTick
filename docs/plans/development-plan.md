@@ -815,28 +815,36 @@ the product is defect-free. Preserve every completed, failed and incomplete
 proof receipt and its exact scope. Resume that backlog through ordinary bounded
 planning after V1. No additional approval prerequisite is introduced.
 
-**Executable product task:** finish the [existing pure-leap new-owner
-qualification](../../tasks/s1.4-leap-policy.md#current-product-continuation--6-november-2026).
-The history/coverage/rule owner and offline generation already exist. Its task
-records portable, contracts and nine-owner coverage closeout; remaining work is
-current candidate admission, final sequential mutation cohorts for `leap`,
-`leap_validation`, `leap_interpretation`, `leap_bundled`, affected-check selection
-where bindings changed, and exact integrated-candidate reconciliation. Owner:
-domain/Core/QA; acceptance: pure LP-C01/02/03 and CHECK-7/25/26, with pure
-replacement CHECK-15/23. Expected results: independent whole-interval leap
-interpretation, bounded checked construction and invalid-replacement preservation
-beside valid controls. Environment: admitted Linux host; no Windows command or
-new formal campaign. The task retains precise entry points, limits, predecessor
-receipts and remaining protocol/native scope. This amendment adds no completed
-qualification result.
+**Completed predecessor:** [pure-leap final qualification](../../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
+closes the selected Linux-host history/coverage/rule and atomic-replacement scope
+under pure LP-C01/02/03, CHECK-7/25/26 and CHECK-15/23's pure replacement subset.
+Its task records the current input maps, qualified receipt reuse, admission-code
+delta, four passing mutation cohorts and current offline generator checks. This
+completes neither full S1.4 nor P1.
+**Next executable product child:** implement the existing [first S2.1 controlled
+measurement](../../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
+Engine/protocol preserves complete immutable packet, exchange and capture
+evidence through final consume-once admission; domain owns checked mapping,
+era and arithmetic. Freeze the explicit experimental date scope, capture
+convention, mapping validity/error and refusal outcomes in that existing card
+before dependent implementation. Deliver a controlled-loopback exchange to a
+typed experimental measurement and bounded `nevrotick-observe` projection,
+retaining `authentication=none eligible=0`. Insufficient mapping evidence produces
+a diagnosed transport-only observation. No estimator vote, correction proposal
+or clock action follows. Requirements: REQ-8/BND-1 and applicable
+CHECK-6/7/8/11/14/25/27; environment: admitted Linux host with controlled peers.
+Changed graph/runner inputs require ordinary admission. DNS/retry scheduling,
+statistical uncertainty/divisors, full NTS and native Windows qualification remain
+later scopes.
 
 Mandatory garde-backed/private construction, checked arithmetic, independent
 unit/property/boundary tests, 90% security-primitive coverage, 95% per-critical-file
 mutation, source/graph/security/native/package/release gates remain required.
 Existing Windows/S134, separate AES fuzz, optional-storage and UI-M0 D1–D3 holds
 remain unchanged. OD-05's complete hardened MSIX and David's release authority
-remain unchanged. After the leap checkpoint, select the next bounded Core or
-acquisition child from the existing queue; formal obligations stay post-V1.
+remain unchanged. The selected next child is the bounded S2.1 measurement above;
+remaining Core discipline/holdover stays in its existing P1 parent. Formal
+obligations remain post-V1.
 
 ### Retained proof history — superseded scheduling
 
