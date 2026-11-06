@@ -409,7 +409,16 @@ topology, TokenOwner mechanism or new authentication protocol.
 
 A future delegated operator group may receive a documented subset of product operations. It must not receive `SERVICE_CHANGE_CONFIG`, general filesystem/registry write authority or `SeSystemtimePrivilege`. Other processes under an authorized user's identity can exercise that identity's allowed rights. Signing the official UI does not make it the only authorized process. [S10]
 
-The UI runs `asInvoker`. It may invoke the approved installed elevated helper through a supported UAC flow for a specific operation. The selected MSIX profile must bind installed package/publisher identity, approved release and actual protected payload to helper/IPC authorization under sections 19.4–19.5; an unrelated Store-signed executable is not authorized. Required Store elevation capability and activation behavior remain unqualified. Retained MSI profiles have their own installed-file trust requirements; missing signatures cannot become successful verification. The helper re-reads authoritative service state and validates a bounded request; it must not trust a user-writable temporary command file or accept arbitrary executable paths, registry keys, shell commands or Windows service names. UAC cancellation leaves policy unchanged.
+The normal UI profile specifies `asInvoker`. This preserves the permission level
+of the launching process; it does not remove inherited elevation, and an
+explicitly elevated launch can still produce an elevated UI. The manifest setting
+or absence of an elevation request in source therefore proves no unelevated
+effective token. Existing P0/P5/P6 native/package qualification must inspect the
+delivered manifest, supported activation path and actual token. Section 19.2's
+installer handoff rule still applies; this does not select an automatic
+de-elevation mechanism. [S139]
+
+The UI may invoke the approved installed elevated helper through a supported UAC flow for a specific operation. The selected MSIX profile must bind installed package/publisher identity, approved release and actual protected payload to helper/IPC authorization under sections 19.4–19.5; an unrelated Store-signed executable is not authorized. Required Store elevation capability and activation behavior remain unqualified. Retained MSI profiles have their own installed-file trust requirements; missing signatures cannot become successful verification. The helper re-reads authoritative service state and validates a bounded request; it must not trust a user-writable temporary command file or accept arbitrary executable paths, registry keys, shell commands or Windows service names. UAC cancellation leaves policy unchanged.
 
 ---
 
@@ -4401,6 +4410,8 @@ Accessed or inspected during this planning work on 28 October 2026. The website 
 - **S137 - Precise adjustment and privilege sample limits, checked 5 November 2026.** Microsoft [legacy setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustment), [precise setter/sample](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [precise getter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-getsystemtimeadjustmentprecise) and [AdjustTokenPrivileges](https://learn.microsoft.com/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges). Legacy units, sample QPC conversion/guard/restoration and documented privilege results have distinct scopes; no sample supplies a tested Windows production envelope.
 
 - **S138 - Recovery observations and conditional bounds, checked 5 November 2026.** Microsoft [precise setter](https://learn.microsoft.com/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtimeadjustmentprecise), [service status](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-setservicestatus), [failure actions](https://learn.microsoft.com/windows/win32/api/winsvc/ns-winsvc-service_failure_actionsw) and [queued restart behavior](https://learn.microsoft.com/windows/win32/api/winsvc/nf-winsvc-changeserviceconfig2w); [NIST stability analysis](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1065.pdf), [NIST tolerance intervals](https://www.itl.nist.gov/div898/handbook/prc/section2/prc264.htm) and [PNNL upper tolerance limits](https://vsp.pnnl.gov/help/vsample/Design_UTL_Non_Parametric.htm). API configuration, observed maxima and statistical population coverage do not establish an all-failures cleanup deadline. The residual calculation remains conditional on qualified rate, exposure and uncertainty assumptions.
+
+- **S139 - UI execution-level semantics, checked 6 November 2026.** Microsoft [/MANIFESTUAC](https://learn.microsoft.com/en-us/cpp/build/reference/manifestuac-embeds-uac-information-in-manifest?view=msvc-170) documents inherited `asInvoker` permissions and explicit elevated launch. Existing native/package qualification must establish the effective token and actual unelevated launch; manifest configuration alone does not supply that evidence.
 
 ## Appendix B. Worksheet attribution and use
 
