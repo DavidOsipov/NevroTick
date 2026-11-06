@@ -329,3 +329,25 @@ full dependency/advisory lane, critical-text approval or package/release result
 follows. Historical GUI44 execution receipts retain their original input maps;
 new source/checker bytes require fresh admission at the next configured product
 checkpoint. The archive and secret repairs do not themselves clear hosted checks.
+
+### Final documentation and hosted-build follow-up
+
+Corrected the eight production JSON seed/visitor `# Errors` comments that
+described test-control preparation. They now identify actual decoding/type,
+integer-range, text-policy, duplicate-key and shared resource-budget failures.
+Independent source review confirmed that executable Rust is unchanged; the
+509/509 text-source gate still passes with the same semantic fingerprint.
+
+At `9606631`, hosted secret scanning and the security gate pass. The required
+portable job then reaches compilation but cannot find `fontconfig.pc`. Its
+ordinary host-native route already uses read-only OS mounts; it does not select
+the optional, separately pinned Debian SDK. The workflow now installs Ubuntu's
+authenticated `pkg-config`/`libfontconfig-dev` host prerequisites and probes
+Fontconfig through those same mounts with a cleared environment. Product graph,
+compiler and optional SDK pins remain. A fresh complete hosted portable result
+is required before merge; this prerequisite repair supplies no Windows or
+packaged-product qualification.
+
+The workflow correction passes 24 security-helper tests, eight SDK controls and
+the pinned actionlint/ShellCheck/pedantic offline zizmor checks over both
+workflows, including two healthy and three rejection controls.

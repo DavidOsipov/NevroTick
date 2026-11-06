@@ -115,7 +115,8 @@ impl<'de> DeserializeSeed<'de> for TextSeed<'_> {
     /// Decode only the selected bounded primitive/string shape with the shared budget.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Propagates malformed or non-string input and the visitor's text-policy,
+    /// per-string, aggregate decoded-byte or work-budget rejection.
     fn deserialize<D: de::Deserializer<'de>>(self, d: D) -> Result<String, D::Error> {
         d.deserialize_string(self)
     }
@@ -130,7 +131,8 @@ impl Visitor<'_> for TextSeed<'_> {
     /// Check decoded borrowed text before creating its owned representation.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects text-policy violations, the selected key/value byte limit, or
+    /// exhausted aggregate decoded-byte or work budgets before copying text.
     fn visit_str<E: de::Error>(self, value: &str) -> Result<String, E> {
         self.budget.text(value, self.key).map_err(E::custom)?;
         Ok(value.to_owned())
@@ -138,7 +140,8 @@ impl Visitor<'_> for TextSeed<'_> {
     /// Check the preflight-bounded decoded string before retaining it.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects text-policy violations, the selected key/value byte limit, or
+    /// exhausted aggregate decoded-byte or work budgets before retaining text.
     fn visit_string<E: de::Error>(self, value: String) -> Result<String, E> {
         self.budget.text(&value, self.key).map_err(E::custom)?;
         Ok(value)
@@ -157,7 +160,8 @@ impl<'de> DeserializeSeed<'de> for Seed<'_> {
     /// Decode only the selected bounded primitive/string shape with the shared budget.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects excessive depth or node count, then propagates malformed or
+    /// unsupported input and nested text, map or shared-budget rejections.
     fn deserialize<D: de::Deserializer<'de>>(self, d: D) -> Result<Wire, D::Error> {
         self.budget.node(self.depth).map_err(D::Error::custom)?;
         d.deserialize_any(self)
@@ -173,7 +177,7 @@ impl<'de> Visitor<'de> for Seed<'_> {
     /// Narrow a JSON unsigned integer to the selected u32 representation.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects an unsigned integer outside the selected `u32` representation.
     fn visit_u64<E: de::Error>(self, value: u64) -> Result<Wire, E> {
         Ok(Wire::Uint(
             u32::try_from(value).map_err(|_| E::custom("integer range"))?,
@@ -182,7 +186,8 @@ impl<'de> Visitor<'de> for Seed<'_> {
     /// Check decoded borrowed text before creating its owned representation.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects text-policy violations, the value byte limit, or exhausted
+    /// aggregate decoded-byte or work budgets before copying text.
     fn visit_str<E: de::Error>(self, value: &str) -> Result<Wire, E> {
         self.budget.text(value, false).map_err(E::custom)?;
         Ok(Wire::Text(value.to_owned()))
@@ -190,7 +195,8 @@ impl<'de> Visitor<'de> for Seed<'_> {
     /// Check the preflight-bounded decoded string before retaining it.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects text-policy violations, the value byte limit, or exhausted
+    /// aggregate decoded-byte or work budgets before retaining text.
     fn visit_string<E: de::Error>(self, value: String) -> Result<Wire, E> {
         self.budget.text(&value, false).map_err(E::custom)?;
         Ok(Wire::Text(value))
@@ -198,7 +204,8 @@ impl<'de> Visitor<'de> for Seed<'_> {
     /// Reject decoded duplicate keys and bound fields/nodes before map growth.
     ///
     /// # Errors
-    /// Propagates a fixed setup or admission failure while preparing the discriminating control.
+    /// Rejects excessive depth, duplicate decoded keys, map/field/key limits or
+    /// exhausted shared budgets; propagates malformed keys and nested values.
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Wire, A::Error> {
         if self.depth >= MAX_DEPTH {
             self.budget.failure = Some(Error::Bounds);
