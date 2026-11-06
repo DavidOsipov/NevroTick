@@ -330,5 +330,12 @@ All93 focused Python checks pass, with24 source files and final custody/tool
 bookends bound. This adds one predicate correspondence, not a new execution
 theorem for `Fraction::new`. Existing generator functions and both older Rust
 outputs remain exact; old proofs retain their frozen candidates. No certificate
-is imported and global adoption remains false. Complement/shift-power and native
-Ordering correspondence, full bridge, caller/addition and Core/P1 remain open.
+is imported and global adoption remains false. The subsequent
+[complement v2 qualification](../../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+passed seven jobs, establishing four predicate equalities and three arithmetic
+lemmas with five contract defects/restoration. All143 selected Python checks pass;
+30 source files/11 executed-Python rows and final guards are bound. The first
+attempt's opaque-power preprocessing failure stays closed; no solver ran there.
+Next rational-order source preparation can use pinned unsigned cmp models,
+independently of the still-held native Ordering PartialEq/comparison-Post route.
+Complete bridge, caller/addition and Core/P1 remain open.

@@ -143,8 +143,20 @@ checks pass (33 projector;18 legacy,21 bit-length and21 constructor consumers).
 The24-source candidate binds all raw Result/Ok/error values without a checked-
 value or constructor-produced-result premise. Both older preparation outputs
 remain exact. This attempt is closed; do not invoke its fixed consumer again.
-The complete bridge, native Ordering correspondence/import and actual addition
-remain open; next prepare complement correspondence and its shift/power proof.
+The subsequent `prepare_complement_post()` path retains original spans
+`[0,1202)`/`[2684,3731)`, four annotations and five exact proof hooks. Two new
+total guarded lemmas bridge shift/power and checked rejection outside1..53;
+neither restricts the raw Post domain. The captured-source
+`verify_fraction_complement_post.py` v2 [campaign](../../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+passed all seven jobs, including five isolated defects and restored health.
+Ten exact function identities report on every job; all143 selected Python
+checks pass. Thirty source files and eleven executed-Python records are bound.
+V1 stopped before SMT because opaque pow did not reduce under compute_only;
+the correction proves its literal through the existing shift lemma and a
+primitive bit-vector fact. Both roots are closed; preserve them without reruns.
+Older output Rust pins remain exact. Next prepare rational-order alignment via
+pinned primitive cmp models. Complete bridge, Ordering PartialEq/comparison Post,
+caller import and actual addition remain open.
 
 The new consumer's focused synthetic checks execute no compiler or solver:
 
@@ -156,6 +168,13 @@ Constructor-Post consumer checks likewise execute no compiler or solver:
 
 ```sh
 python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_verify_fraction_constructor_post.py' -v
+```
+
+Complement/source-binding consumer checks execute no verifier:
+
+```sh
+python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_verify_fraction_complement_post.py' -v
+python3 -X dev -Werror -B -m unittest discover -s tools/formal -p 'test_verify_fraction_source_binding.py' -v
 ```
 
 Use the [proof workflow](../../.agents/skills/testing/references/formal-verification.md)

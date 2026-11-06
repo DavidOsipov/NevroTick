@@ -671,5 +671,308 @@ class FractionConstructorPostPreparationTests(unittest.TestCase):
         self.assertNotIn("--no-cheating", script)
 
 
+class FractionComplementPostPreparationTests(unittest.TestCase):
+    def setUp(self):
+        FractionConstructorPostPreparationTests.setUp(self)
+        path = self.source / PROJECTION.COMPLEMENT_LEMMAS
+        path.write_bytes((ROOT / PROJECTION.COMPLEMENT_LEMMAS).read_bytes())
+        self.fragment = self.prefix[:1202] + self.prefix[2684:3731]
+
+    def prepare(self):
+        return PROJECTION.prepare_complement_post(self.source, self.output)
+
+    def assert_rejected_without_output(self, pattern):
+        with self.assertRaisesRegex(ValueError, pattern):
+            self.prepare()
+        self.assertFalse(self.output.exists())
+
+    def test_closed_nine_source_inventory_exact_schema_and_ten_modes(self):
+        self.assertEqual(PROJECTION.complement_input_names(),
+                         (*PROJECTION.dependency_input_names(), PROJECTION.COMPLEMENT_LEMMAS))
+        result = self.prepare()
+        self.assertEqual(len(result["source_files_sha256"]), 9)
+        self.assertEqual(result["source_files_sha256"], {
+            name: PROJECTION.digest((self.source / name).read_bytes())
+            for name in PROJECTION.complement_input_names()
+        })
+        self.assertEqual(set(result), {
+            "schema_version", "status", "proof_commands", "scope", "source_files_sha256",
+            "original_sources_sha256", "correspondence", "prefix_sha256", "prefix_bytes",
+            "fragment_source_spans", "fragment_sha256", "annotated_fragment_sha256",
+            "ghost_sha256", "lemma_sha256", "complement_lemma_sha256", "predicate_relations",
+            "full_bridge_predicate_relations", "expected_function_modes", "proof_hooks",
+            "raw_domains", "upstream_dependencies", "remaining", "generated_sha256",
+        })
+        self.assertEqual(result["schema_version"], 1)
+        self.assertEqual(result["status"], "unproved_source_candidate")
+        self.assertEqual(result["proof_commands"], 0)
+        self.assertEqual(result["scope"],
+                         "bit-length and complement lemmas and four unrestricted predicate equalities; source preparation only")
+        self.assertEqual(result["expected_function_modes"], {
+            "proof::lemma_bridge_bit_length_power": "proof",
+            "proof::lemma_bridge_u128_shift_power": "proof",
+            "proof::lemma_bridge_complement_reject_outside": "proof",
+            "proof::composition_constructor_admitted": "exec",
+            "proof::composition_checked": "exec",
+            "proof::composition_constructor_post": "exec",
+            "proof::composition_complement_post": "exec",
+            "proof::IntervalError::clone": "exec",
+            "proof::FixtureEnclosureError::clone": "exec",
+            "proof::Fraction::clone": "exec",
+        })
+        self.assertEqual(result["predicate_relations"], [
+            "bridge_constructor_admitted(numerator, shift)", "bridge_checked(value)",
+            "bridge_constructor_post(numerator, shift, result)", "bridge_complement_post(input, result)",
+        ])
+        self.assertEqual(len(result["full_bridge_predicate_relations"]), 6)
+        self.assertEqual(result["remaining"][2],
+                         "four completed full-raw predicate equalities and wrong-contract/restoration controls")
+        self.assertNotIn("entrypoint", result)
+        self.assertNotIn("adoption", result)
+
+    def test_two_exact_source_spans_independent_erasure_and_full_prefix(self):
+        result = self.prepare()
+        candidate = PROJECTION.annotated_complement_post(self.fragment)
+        self.assertEqual(PROJECTION.COMPLEMENT_SOURCE_SPANS, ((0, 1202), (2684, 3731)))
+        self.assertEqual(result["fragment_source_spans"], [
+            {"source_byte_offsets_half_open": [0, 1202],
+             "sha256": "5b8758b1faaa516db3b849dc24d4822519dbbf0dfa55834c91605d8f4bb15217"},
+            {"source_byte_offsets_half_open": [2684, 3731],
+             "sha256": "a9e8e582cc3b7630f37df1b7e446bb18c12b4192bd7a2dbb47dd423225b683fa"},
+        ])
+        self.assertEqual(len(self.fragment), 2249)
+        self.assertEqual(PROJECTION.digest(self.fragment),
+                         "f8a1e46efbbbf8b252d2dae75fb73493613f9fea5f745af85bc8a45616890d0d")
+        self.assertEqual(result["fragment_sha256"], PROJECTION.COMPLEMENT_SLICE_SHA256)
+        self.assertEqual(result["annotated_fragment_sha256"], PROJECTION.digest(candidate))
+        self.assertEqual(PROJECTION.erase_complement_post_annotations(candidate), self.fragment)
+        self.assertEqual(candidate.count(b"#[verifier::allow_in_spec]"), 4)
+        self.assertEqual(candidate.count(b"\n    returns "), 4)
+        self.assertEqual(candidate.count(b"proof {\n"), 5)
+        self.assertEqual((self.output / "predicate_source.rs").read_bytes(), self.prefix)
+        proof = (self.output / "proof.rs").read_bytes()
+        self.assertIn(candidate, proof)
+        self.assertNotIn(b"fn composition_rational_order(", proof)
+        self.assertNotIn(b"fn composition_comparison_post(", proof)
+        for index in (0, 1, 2, 5):
+            self.assertEqual(candidate.count(PROJECTION._annotation(*PROJECTION.DECLARATIONS[index])), 1)
+
+    def test_five_exact_scoped_hooks_have_original_prefix_offsets(self):
+        result = self.prepare()
+        candidate = PROJECTION.annotated_complement_post(self.fragment)
+        self.assertEqual(len(result["proof_hooks"]), 5)
+        for index, (name, anchor, block) in enumerate(
+                (*PROJECTION.BIT_LENGTH_HOOKS, *PROJECTION.COMPLEMENT_HOOKS)):
+            self.assertEqual(self.prefix.count(anchor), 1)
+            self.assertEqual(result["proof_hooks"][index], {
+                "function": "proof::" + name, "source_byte_offset": self.prefix.index(anchor),
+                "insertion": ("before unchanged leading_zeros subtraction" if index < 2
+                              else "at approved complement proof site"),
+                "anchor_sha256": PROJECTION.digest(anchor), "proof_block_sha256": PROJECTION.digest(block),
+            })
+            approved = anchor + block if index == 4 else block + anchor
+            self.assertEqual(candidate.count(approved), 1)
+            if index >= 2:
+                self.assertGreaterEqual(self.prefix.index(anchor), 2684)
+                self.assertNotIn(block, candidate.split(PROJECTION._annotation(*PROJECTION.DECLARATIONS[5]))[0])
+
+    def test_raw_domains_no_premises_all_errors_and_unconditional_machine_bounds(self):
+        result = self.prepare()
+        self.assertEqual(result["raw_domains"], {
+            "lemma": "every n:u64 and s:u32; no precondition",
+            "shift_power": "every s:u32; no precondition; guarded shift/power implication for 1 <= s <= 53",
+            "reject_outside": "every n:u64 and s:u32; no precondition; guarded checked outside-window implication",
+            "constructor_admitted": "every numerator:u64 and shift:u32; no precondition",
+            "checked": "every raw Fraction { numerator:u64, shift:u32 }; no precondition",
+            "constructor_post": "every numerator:u64, shift:u32 and independently chosen &Result<Fraction, FixtureEnclosureError>; raw Ok fields and every error variant; no precondition",
+            "complement_post": "every raw Fraction { numerator:u64, shift:u32 } and independently chosen &Result<Fraction, FixtureEnclosureError>; raw Ok fields and every error variant; no precondition",
+        })
+        proof = (self.output / "proof.rs").read_bytes()
+        self.assertIn(b"if !composition_checked(input) {\n        return false;\n    }", proof)
+        self.assertIn(b"Err(FixtureEnclosureError::Invariant) => !required_success,", proof)
+        self.assertIn(b"value.shift == input.shift", proof)
+        self.assertIn(b"value.numerator <= 4_503_599_627_370_496", proof)
+        self.assertNotRegex(re.sub(rb"(?m)//[^\n]*", b"", proof),
+                            rb"\b(?:requires|assume|admit|external_body|external_fn_specification|assume_specification|axiom)\b")
+        for leaf in (b"Unrepresentable", b"Invariant", b"ZeroLabel", b"ReversedBounds", b"ValidationInvariant"):
+            self.assertIn(leaf, proof)
+        arm = proof.split(b"            Some(denominator) => {\n", 1)[1]
+        self.assertLess(arm.index(b"36_893_488_147_419_103_230"), arm.index(b"composition_checked(*value)"))
+        for _, _, block in PROJECTION.COMPLEMENT_HOOKS:
+            self.assertNotIn(b"u128::from", block)
+        for statement in (
+            b"lemma_bridge_u128_shift_power(52);",
+            b"assert((1_u128 << 52_u32) == 4_503_599_627_370_496_u128) by (bit_vector);",
+            b"assert(pow(2, 52) == 4_503_599_627_370_496);",
+        ):
+            self.assertEqual(proof.count(statement), 1)
+        self.assertNotIn(b"by (compute_only);", proof)
+        self.assertLessEqual(2 * ((1 << 64) - 1), (1 << 128) - 1)
+
+    def test_new_lemmas_keep_total_guards_exact_pinned_apis_and_shift_width_bridge(self):
+        result = self.prepare()
+        lemma = (self.source / PROJECTION.COMPLEMENT_LEMMAS).read_bytes()
+        self.assertEqual(PROJECTION.digest(lemma), PROJECTION.COMPLEMENT_LEMMAS_SHA256)
+        self.assertEqual(result["complement_lemma_sha256"], PROJECTION.COMPLEMENT_LEMMAS_SHA256)
+        self.assertEqual(re.findall(rb"(?m)^proof fn (\w+)\(", lemma), [
+            b"lemma_bridge_u128_shift_power", b"lemma_bridge_complement_reject_outside",
+        ])
+        self.assertIn(b"(1 <= s && s <= 53)\n            ==> ((1_u128 << s) as int == pow(2, s as nat)),", lemma)
+        self.assertIn(b"(bridge_checked(Fraction { numerator: n, shift: s }) && (s == 0 || s > 53))\n"
+                      b"            ==> (2 * (n as int) < bridge_denominator(s)),", lemma)
+        self.assertIn(b"vstd::bits::lemma_u128_pow2_no_overflow(s as nat);", lemma)
+        self.assertIn(b"vstd::bits::lemma_u128_shl_is_mul(1_u128, s as u128);", lemma)
+        self.assertIn(b"==> ((1_u128 << s) == (1_u128 << (s as u128)))) by (bit_vector);", lemma)
+        self.assertIn(b"vstd::arithmetic::power::lemma_pow_increases(2, 54, s as nat);", lemma)
+        self.assertNotIn(b"use vstd::", lemma)
+        self.assertNotRegex(re.sub(rb"(?m)//[^\n]*", b"", lemma), rb"\b(?:requires|assume|admit|external_body)\b")
+        self.assertEqual(result["upstream_dependencies"]["commit"], "8bf68ee741df833ea5d0fe6a2255126fdea87e47")
+        self.assertEqual(result["upstream_dependencies"]["paths"][-2:],
+                         ["source/vstd/bits.rs", "source/vstd/std_specs/convert.rs"])
+
+    def test_erasure_rejects_semantic_body_contract_and_shift_arithmetic_tampering(self):
+        candidate = PROJECTION.annotated_complement_post(self.fragment)
+        for before, after in (
+            (b"returns bridge_complement_post(input, result)", b"returns true"),
+            (b"if !composition_checked(input) {", b"if false {"),
+            (b"Some(1_u128 << input.shift)", b"Some(1_u128 << 52)"),
+            (b"Err(FixtureEnclosureError::Invariant) => !required_success,",
+             b"Err(FixtureEnclosureError::Invariant) => true,"),
+            (b"&& value.shift == input.shift", b"&& value.shift >= input.shift"),
+            (b"u128::from(input.numerator) == denominator", b"u128::from(input.numerator) <= denominator"),
+            (b"assert(36_893_488_147_419_103_230 < u128::MAX as int);", b""),
+            (b"lemma_bridge_u128_shift_power(input.shift);", b"lemma_bridge_u128_shift_power(53);"),
+            (b"by (bit_vector);", b"by (compute_only);"),
+        ):
+            with self.subTest(mutation=after):
+                self.assertIn(before, candidate)
+                with self.assertRaises(ValueError):
+                    PROJECTION.erase_complement_post_annotations(candidate.replace(before, after, 1))
+        for statement, altered in (
+            (b"lemma_bridge_u128_shift_power(52);", b"lemma_bridge_u128_shift_power(51);"),
+            (b"assert((1_u128 << 52_u32) == 4_503_599_627_370_496_u128) by (bit_vector);",
+             b"assert((1_u128 << 51_u32) == 4_503_599_627_370_496_u128) by (bit_vector);"),
+            (b"assert(pow(2, 52) == 4_503_599_627_370_496);",
+             b"assert(pow(2, 51) == 4_503_599_627_370_496);"),
+        ):
+            for replacement in (b"", altered):
+                with self.subTest(statement=statement, replacement=replacement):
+                    self.assertEqual(candidate.count(statement), 1)
+                    with self.assertRaises(ValueError):
+                        PROJECTION.erase_complement_post_annotations(
+                            candidate.replace(statement, replacement, 1))
+        for index, (_, anchor, block) in enumerate(
+                (*PROJECTION.BIT_LENGTH_HOOKS, *PROJECTION.COMPLEMENT_HOOKS)):
+            approved = anchor + block if index == 4 else block + anchor
+            for altered in (candidate.replace(block, b"", 1), candidate.replace(block, block + block, 1),
+                            candidate.replace(approved, block + anchor if index == 4 else anchor + block, 1)):
+                with self.assertRaises(ValueError):
+                    PROJECTION.erase_complement_post_annotations(altered)
+
+    def test_annotation_rejects_all_wrong_fragment_shapes(self):
+        for altered in (self.fragment + b"\n", self.fragment[:-1], self.prefix,
+                        self.prefix[2684:3731] + self.prefix[:1202],
+                        self.fragment.replace(b"input.shift <= 53", b"input.shift <= 52", 1)):
+            with self.assertRaisesRegex(ValueError, "four-predicate complement slice changed"):
+                PROJECTION.annotated_complement_post(altered)
+
+    def test_all_source_product_spec_and_both_lemma_drifts_create_no_output(self):
+        for name, pattern in (
+            ("crates/time-core/src/projection_enclosure.rs", "complete product source changed"),
+            ("crates/time-core/src/selection.rs", "complete product source changed"),
+            ("tools/formal/fraction_arithmetic_projection.py", "arithmetic projection changed"),
+            ("tools/formal/fraction_composition_spec.rs", "composition specification changed"),
+            ("tools/formal/fraction_verus_bridge_spec.rs", "ghost specification changed"),
+            (PROJECTION.BIT_LENGTH_LEMMAS, "bit-length ghost lemma changed"),
+            (PROJECTION.COMPLEMENT_LEMMAS, "complement ghost lemmas changed"),
+            ("tools/formal/fraction_verus_bridge_projection.py", "differs from this executing source"),
+        ):
+            with self.subTest(source=name):
+                path = self.source / name
+                original = path.read_bytes()
+                path.write_bytes(original + b"\n// unreviewed source\n")
+                self.assert_rejected_without_output(pattern)
+                path.write_bytes(original)
+
+    def test_redirected_new_lemma_and_source_containment_preserve_custody(self):
+        path = self.source / PROJECTION.COMPLEMENT_LEMMAS
+        original = path.read_bytes()
+        target = self.base / "complement-lemma.rs"
+        target.write_bytes(original)
+        path.unlink()
+        path.symlink_to(target)
+        self.assert_rejected_without_output("path redirects")
+        path.unlink()
+        path.write_bytes(original)
+        alias = self.base / "source-alias"
+        alias.symlink_to(self.source, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, "path redirects"):
+            PROJECTION.prepare_complement_post(alias, self.output)
+        with self.assertRaisesRegex(ValueError, "outside its source tree"):
+            PROJECTION.prepare_complement_post(self.source, self.source / "candidate")
+        self.assertFalse((self.source / "candidate").exists())
+        self.assertFalse(self.output.exists())
+
+    def test_output_collision_and_redirect_retain_existing_bytes(self):
+        self.output.mkdir()
+        sentinel = self.output / "existing"
+        sentinel.write_bytes(b"retain me")
+        with self.assertRaisesRegex(ValueError, "fresh output leaf"):
+            self.prepare()
+        self.assertEqual(sentinel.read_bytes(), b"retain me")
+        self.assertEqual([path.name for path in self.output.iterdir()], ["existing"])
+        sentinel.unlink()
+        self.output.rmdir()
+        self.output.symlink_to(self.base / "missing")
+        self.assert_rejected_without_output("path redirects")
+        self.assertFalse((self.base / "missing").exists())
+
+    def test_old_three_apis_keep_rust_pins_without_new_lemma_dependency(self):
+        self.prepare()
+        actual = (self.output / "actual_source.rs").read_bytes()
+        (self.source / PROJECTION.COMPLEMENT_LEMMAS).unlink()
+        for leaf, prepare, rust, expected in (
+            ("old", PROJECTION.prepare, "bridge.rs",
+             "bcb1ca3d22a7e15b3948d65da34d1ecf6f34547153374591717948d4a279a4b5"),
+            ("bit", PROJECTION.prepare_bit_length, "proof.rs",
+             "08c78bf2017c86bf62b7374db52a98b89b5dfacf7636970f0fa92adfa2206176"),
+            ("constructor", PROJECTION.prepare_constructor_post, "proof.rs",
+             "e13f323735503aa784bf510957273c5c60206fcfe65521d967044d31c4e90ca8"),
+        ):
+            output = self.base / leaf
+            prepare(self.source, output)
+            self.assertEqual(PROJECTION.digest((output / rust).read_bytes()), expected)
+            self.assertEqual((output / "actual_source.rs").read_bytes(), actual)
+
+    def test_deterministic_payload_full_closure_and_no_execution_surface(self):
+        first = self.prepare()
+        other = self.base / "second-complement-post"
+        second = PROJECTION.prepare_complement_post(self.source, other)
+        self.assertEqual(first, second)
+        self.assertEqual({path.name for path in self.output.iterdir()},
+                         {"proof.rs", "actual_source.rs", "predicate_source.rs", "correspondence.json"})
+        self.assertEqual(json.loads((self.output / "correspondence.json").read_text()), first)
+        proof = (self.output / "proof.rs").read_bytes()
+        self.assertIn(b"// UNPROVED complement-Post dependency source; full bridge acceptance remains open.\n", proof)
+        for name, expected in first["generated_sha256"].items():
+            self.assertEqual(PROJECTION.digest((self.output / name).read_bytes()), expected)
+            self.assertEqual((self.output / name).read_bytes(), (other / name).read_bytes())
+        for leaf in ("fraction_verus_bridge_spec.rs", "fraction_verus_bridge_lemmas.rs",
+                     "fraction_verus_complement_lemmas.rs"):
+            self.assertEqual(proof.count((self.source / "tools/formal" / leaf).read_bytes()), 1)
+        actual = (self.output / "actual_source.rs").read_bytes()
+        self.assertEqual(tuple(row["item"] for row in first["correspondence"]), PROJECTION.SPAN_NAMES)
+        for row in first["correspondence"]:
+            start, end = row["byte_offsets_half_open"]
+            selected = (self.source / row["source"]).read_bytes()[start:end]
+            self.assertEqual(PROJECTION.digest(selected), row["sha256"])
+            self.assertEqual(actual.count(selected), 1)
+            self.assertEqual(selected in proof, row["bridge_type"])
+        script = (HERE / "fraction_verus_bridge_projection.py").read_text()
+        self.assertNotRegex(script, r"(?:^|\n)(?:from|import) (?:subprocess|os|importlib)\b")
+        self.assertNotIn("if __name__", script)
+        self.assertNotIn("--no-cheating", script)
+
+
 if __name__ == "__main__":
     unittest.main()

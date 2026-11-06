@@ -920,8 +920,14 @@ lemma/helpers, three isolated Post defects and restored health. All93 focused
 Python checks pass;24 source files, exact erasure and final custody/tool bookends
 are bound. Both earlier Rust outputs and frozen proofs remain preserved.
 No checked-Result premise or imported product certificate was added. Constructor
-execution/caller integration, complement/shift-power, native Ordering and complete
-bridge/addition/Core/P1 remain open.
+execution/caller integration remained separate. The later
+[complement v2 qualification](../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+passed seven jobs with ten exact function identities: four full-raw predicate
+equalities/three arithmetic lemmas, five contract failures and restoration.
+All143 selected checks pass;30 source files/11 executed-Python rows and final
+guards bind the candidate. V1's pre-SMT failure remains historical. Rational-order
+alignment can be source-prepared via pinned primitive cmp models; native
+Ordering PartialEq/comparison Post, caller and full bridge/addition/Core/P1 stay open.
 The existing no-cheating gate rejects `external_body`;
 no profile weakening, SDK patch, native flags or adoption follows. The old kit,
 ordinary defaults and all holds remain unchanged.

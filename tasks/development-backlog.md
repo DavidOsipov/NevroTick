@@ -135,10 +135,15 @@ source files and final custody/tool bookends bound. Reuse the unchanged scoped
 proofs for remaining full-bridge arithmetic/representation work. The subsequent
 [constructor-Post campaign](s1.3-source-selection-readiness.md#constructor-post-terminal-assessment--6-november-2026)
 completed five jobs: full-raw Post/lemma/helpers, three intended Post defects and
-restored health, with93 focused Python checks and24 bound source files. Next
-follow the [complement-Post source preparation](s1.3-source-selection-readiness.md#next-source-preparation--complement-post), retaining the
-qualified constructor Post/helpers and every independently chosen raw Result;
-native Ordering
+restored health, with93 focused Python checks and24 bound source files. The later
+[complement v2 campaign](s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+has now passed seven jobs: four full-raw predicate equalities/three arithmetic
+lemmas, five intended failures and restoration. All143 selected checks pass;
+30 source files/11 executed Python sources and final custody/tool guards bind
+the candidate. V1's preprocessing failure remains closed and historical.
+Next follow [rational-order source preparation](s1.3-source-selection-readiness.md#next-source-preparation--rational-order),
+retaining qualified predicates/lemmas and every raw pair. Pinned primitive cmp
+models provide a source-feasible route; native Ordering PartialEq/comparison-Post
 correspondence/import remains held. The complete six-equality bridge and its
 remaining controls stay open before relating the actual Verus caller to separately
 Kani-proved callees. The existing Verus `--no-cheating` gate rejects

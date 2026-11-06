@@ -3731,7 +3731,13 @@ restored health, with93 focused Python checks and24 bound source files. Old
 generated Rust/proofs remain preserved; the new unit re-verifies dependencies.
 This is the third predicate equality, with every typed raw Result admitted.
 It does not itself prove the constructor execution or caller integration.
-Complement/shift-power, native Ordering and complete bridge/addition remain open.
+The later [complement v2 qualification](../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+passed seven jobs: four full-raw predicate equalities/three arithmetic lemmas,
+five isolated contract failures and restored health. Its30 source files and11
+executed-Python records bind the exact candidate;143 selected checks pass.
+Rational-order alignment is the next source-preparation owner, using pinned
+primitive cmp models independently of native Ordering PartialEq. Comparison Post,
+caller import and complete bridge/addition/Core/P1 remain open.
 The existing no-cheating gate
 still rejects `external_body`; no weaker profile, SDK patch or adoption follows.
 The old kit, ordinary defaults and all execution holds remain unchanged.

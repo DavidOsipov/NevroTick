@@ -971,12 +971,17 @@ completed all five jobs: three full-raw predicate equalities and the lemma,
 three isolated Post defects and restored health, with93 focused Python checks
 and24 current source files. It quantifies independently over every typed Result,
 not only checked/constructor-produced values, and does not prove `Fraction::new`.
-Next follow the existing task's
-[complement-Post source preparation](../../tasks/s1.3-source-selection-readiness.md#next-source-preparation--complement-post),
-retaining the qualified constructor Post/helpers and every raw input/Result,
-with exact two-span erasure and source-bound shift/power/cast obligations.
-Reprove all selected predicates and name any new proof lemmas before a fresh
-native card. Reuse
+The fresh [complement v2 campaign](../../tasks/s1.3-source-selection-readiness.md#complement-v2-terminal-qualification--6-november-2026)
+completed seven jobs: four full-raw predicate equalities, three arithmetic lemmas,
+five intended contract failures and restored health. All143 selected Python checks
+pass;30 current source files and11 executed Python sources are bound through the
+captured-source guard. V1 remains closed after opaque-power preprocessing failed
+before SMT; the causal correction changes only ghost constant reasoning.
+Next follow [rational-order source preparation](../../tasks/s1.3-source-selection-readiness.md#next-source-preparation--rational-order),
+retaining all qualified predicates/lemmas, every raw left/right pair and exact
+two-span erasure. Pinned unsigned cmp models offer a source-feasible route
+independent of native Ordering PartialEq; actual inference/proof is unexecuted.
+Name new alignment/shift lemmas and controls before a fresh finite card. Reuse
 unchanged scoped evidence for remaining arithmetic/representation contracts.
 The complete six-equality bridge
 and native Ordering correspondence/import remain open. Do not repeat closed
