@@ -3031,3 +3031,45 @@ machine-checked product proofs. Existing source/CHECK owners retain all missing
 physical/date/scale evidence and actual receiver tests. Next settle the named
 reference/weighting/model contract in this card; genuine history insertion stays
 held. Formal work remains post-V1 and all existing execution holds remain.
+
+#### Whole-window numerical child integrated — 6 November 2026
+
+Signed checkpoint `5dcc465` implements and qualifies
+[`WindowVarianceDivisors::derive`](../crates/time-core/src/window_variance.rs)
+under the existing [S1.2 child](s1.2-regression-readiness.md#source-quality-window-divisors--6-november-2026).
+The merged370-input candidate passes34 ordinary/34 optimized cases, six owned
+doctests,110/112 line coverage and all60 mutation variants with one exact
+independently justified equivalent survivor and no unresolved survivor. This
+closes the pure whole-window calculation; physical peer-distance/precision
+production and the actual production history receiver remain held.
+
+Carry these concrete obligations into that existing receiver contract:
+
+- Stage the complete proposed retained window in original row order before
+  deriving divisors. The checked result borrows an immutable numeric snapshot;
+  it does not bind a logical source, clock origin or current generation. Keep
+  those identities in the receiving owner's staged state and recheck them at
+  publication. Sorting scratch must never reorder observation-to-divisor pairs.
+- Recompute every retained row after append, expiry or rollover. Precision1/4
+  and distances `(1,1,2)` give `(1,1,16)`; the window `(1,1,2,3,3)` changes that
+  retained distance-2 divisor to49/16. Caching its incoming16 would violate the
+  selected rule. These independent examples establish a numeric expectation,
+  not executed production history integration.
+- The output admits finite divisors above16 and positive subnormal reciprocals.
+  Existing fixture constructors/fit helpers have narrower contracts. Do not
+  route this result through them by truncating, capping, silently dropping rows
+  or replacing weights with1. Freeze the real production receiver's admitted
+  numerical domain and failure behavior before adding an integration path.
+- Derive weights and stage the complete fit before the single owner-state
+  commit. Any current-context, arithmetic, conversion or fit rejection must
+  preserve prior rows, reference, report and generation state. One/two legal
+  weighting rows still establish no ready regression or estimator vote.
+- A finite positive advertised root value is not a justified physical distance
+  or precision. Retain genuine date/scale/calendar admission, reference and exact
+  representation residuals, signed RTT/adjusted delay, capture/frequency/asymmetry
+  assumptions and age growth as the remaining producer/model obligations above.
+
+Next settle those named producer/reference/model and receiving-transition seams
+in this card. No engine dependency, production `ValidatedSample`, fixture-history
+change, new source authority or Windows execution follows from this handoff.
+Full-domain proof debt remains post-V1 with S1.2/FP-D02/CHECK-7/25.

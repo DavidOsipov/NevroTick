@@ -77,10 +77,16 @@ A task receipt records execution; a catalog specifies expectations.
 **Current Slint source continuation — 6 November 2026:** the
 [GUI handoff](../tasks/slint-gui-handoff.md) records the implemented v0.4 fixture
 GUI, strict text-contract2 producer/loaders, separate GPL-3.0-only original GUI
-grant, GUI42 portable/capture and GUI43 affected source controls. Its exact
-branch evidence remains historical for the combined tree. Backend/native
-qualification, independent critical-text approval and the planned P3/P5/P6
-hardening handoff remain open; retain D1–D3 and all execution holds.
+grant and PR10 merge `3ff7e91`. Its
+[hosted reconciliation](../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026)
+records final-head/merge portable, Security gate and secret-scan passes; the PR
+aggregate CodeQL/GitGuardian checks remain failed and external dispositions open.
+Local source controls on the later numerical checkpoint `5dcc465` pass 509/509
+text IDs and 53 selected controls; its hosted/rendered/native results are not qualified.
+GUI42/43/44 retain historical scopes, with private raw evidence absent locally.
+Backend/native qualification, independent critical-text approval, GUI security
+coverage/critical-file mutation and P3/P5/P6 hardening remain open; retain the two
+recorded polish follow-ups, D1–D3 and all execution holds.
 
 **Controlling owner amendment — 6 November 2026:** [OD-10 §14.1](nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
 defers all formal-proof work until after the first released software version

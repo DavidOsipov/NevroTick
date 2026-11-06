@@ -18,14 +18,19 @@ follows [development §7](../docs/plans/development-plan.md#7-next-executable-ta
 
 **Current Slint continuation — 6 November 2026:** the [GUI handoff](slint-gui-handoff.md)
 and [S0.5 active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
-own the implemented fixture GUI, GPL-3.0-only original GUI grant, bounded graph
-admission and GUI42/43 evidence. The checked-in Windows entrypoint selects Slint;
-Win32 is retained historical source. Backend/native qualification, independent
-critical-text approval and the planned hardening handoff remain open. Earlier
+own the implemented fixture GUI merged in PR10 as `3ff7e91`, the GPL-3.0-only
+original GUI grant and bounded graph admission. Historical GUI42/43/44 receipts
+retain their exact inputs; private raw evidence is absent locally. The
+[hosted reconciliation](slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026)
+records final-head/merge portable, Security gate and secret-scan passes alongside
+the failed PR aggregate CodeQL/GitGuardian checks and open external dispositions.
+The Windows entrypoint selects Slint; Win32 remains historical source.
+Backend/native qualification, independent critical-text approval, GUI security
+coverage/critical-file mutation and process/package hardening remain open. Earlier
 M0-SL preparation states below are historical and do not require repeating their
 completed source stages. Main's Slint/iced measurements and reaffirmation remain
 retained, with no toolkit-choice rerun. One owner serializes shared graph/schema
-changes; branch receipts do not qualify the merged candidate. Live P5 and D1–D3
+changes; receipt reuse requires matching its actual candidate. Live P5 and D1–D3
 retain their existing prerequisites and re-entry gates.
 
 This UI-M0 record retains **Win32 implementation and exact-candidate history**,

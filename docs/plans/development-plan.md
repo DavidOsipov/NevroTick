@@ -17,14 +17,19 @@ package/release requirements and existing execution holds remain.
 
 **Current Slint continuation — 6 November 2026:** the [GUI handoff](../../tasks/slint-gui-handoff.md)
 and [S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui)
-own the implemented fixture GUI, GPL-3.0-only original GUI grant, bounded graph
-admission and GUI42/43 evidence. The checked-in Windows entrypoint selects Slint;
-Win32 is retained historical source. Backend/native qualification, independent
-critical-text approval and the planned hardening handoff remain open. Earlier
+own the implemented fixture GUI merged in PR10 as `3ff7e91`, the GPL-3.0-only
+original GUI grant and bounded graph admission. Historical GUI42/43/44 receipts
+retain their exact inputs; private raw evidence is absent locally. The
+[hosted reconciliation](../../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026)
+records final-head/merge portable, Security gate and secret-scan passes alongside
+the failed PR aggregate CodeQL/GitGuardian checks and open external dispositions.
+The Windows entrypoint selects Slint; Win32 remains historical source.
+Backend/native qualification, independent critical-text approval, GUI security
+coverage/critical-file mutation and process/package hardening remain open. Earlier
 M0-SL preparation states below are historical and do not require repeating their
 completed source stages. Main's Slint/iced measurements and reaffirmation remain
 retained, with no toolkit-choice rerun. One owner serializes shared graph/schema
-changes; branch receipts do not qualify the merged candidate. Live P5 and D1–D3
+changes; receipt reuse requires matching its actual candidate. Live P5 and D1–D3
 retain their existing prerequisites and re-entry gates.
 
 **Proof-purpose amendment — 6 November 2026:** [OD-10 §14.2](../nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026)
@@ -87,7 +92,7 @@ that workstream's experiment pause or select its product default.
 | --- | --- | --- |
 | Cargo | [Workspace](../../Cargo.toml), lockfile, fixture [UI](../../crates/nevrotick-ui/Cargo.toml), inert [wire](../../crates/ntp-wire/Cargo.toml), checked [time-domain](../../crates/time-domain/Cargo.toml), fixture [exchange](../../crates/ntp-exchange/Cargo.toml), pure [time-core](../../crates/time-core/Cargo.toml) and bounded [engine](../../crates/nevrotick-engine/Cargo.toml) owners exist. | Inspect current files and linked task evidence; fixture numerical source and loopback acquisition do not establish the complete core or production acquisition. |
 | UI | `main` → `slint_host` → checked fixture/presentation/native-input owners → v0.4 Slint views. The original GUI is GPL-3.0-only; Core/engine retains GPL-2.0-only. Win32 is retained historical source. | Follow the [GUI handoff](../../tasks/slint-gui-handoff.md) and [S0.5 active goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui). Keep backend effects unavailable until their actual owners/contracts; reconcile the combined candidate before reusing branch receipts. One Slint product UI, no automatic Win32 fallback. |
-| UI evidence | [S0.5](../../tasks/s0.5-ui-comparison.md) records GUI42 portable/capture and GUI43 affected source controls. [UI-M0](../../tasks/ui-m0.md) retains exact Win32 history and its incomplete native-memory instrumentation. | Branch-only passes qualify their recorded inputs; merged-candidate, actual Windows lifecycle/resources/accessibility and independent critical-text approval remain open. The old Win32 instrumentation gap does not qualify or block independent Slint source work. |
+| UI evidence | [S0.5](../../tasks/s0.5-ui-comparison.md) retains historical GUI42/43/44 and separate final-head/merge hosted results in the [GUI handoff](../../tasks/slint-gui-handoff.md#hosted-merge-reconciliation--6-november-2026). [UI-M0](../../tasks/ui-m0.md) retains exact Win32 history and its incomplete native-memory instrumentation. | Reconcile actual receipt inputs before reuse; private cloud raw evidence is absent locally. Hosted portable/security/secret-scan passes coexist with failed PR aggregate CodeQL/GitGuardian and open external dispositions. Native/backend/text approval, GUI coverage/mutation and package qualification remain open. The old Win32 instrumentation gap does not qualify or block independent Slint source work. |
 | Production software | Header/framing, checked arithmetic, fixture exchange, pure regression/history/selection and bounded experimental engine acquisition/measurements exist. Production sample admission, acquisition, broker, SCM services, production IPC and the complete MSIX remain incomplete. | Follow exact-candidate task receipts; create only what an authorized slice needs. |
 | Dependencies | The workspace combines the branch Slint GUI GPL3 graph and retained engine Tokio/getrandom graph. Exchange and Core keep reviewed local edges; production TLS/provider/AEAD and service graphs remain gated. | Preserve both owners' exact feature/grant/source constraints and the compatible compiler repair; qualify the combined graph/configuration separately. Branch receipts and the [engine checkpoint](../../tasks/engine-transport-pilot.md#current-acquisition-evidence--1-november-2026) apply only to their recorded inputs. |
 | Protected optional storage | [NV-STORAGE-PLAN-001 revision 1.3](windows-protected-storage.md) and its pinned upstream inventory exist; exact construction/provider/account/profile freeze and native qualification remain open. | Prepare the bounded design handoff in section 8.4. Root protection does not qualify live-secret isolation, NTS restoration or mandatory broker-state continuity. |

@@ -19,6 +19,15 @@ Historical checkpoints retain their original failures, scope and holds.
 
 ## Branch and integration state
 
+**Merged continuation — 6 November 2026:** PR10 merged as
+`3ff7e91c18f4c478b81c016cdefe31538dcf8086`; its final head was
+`5bc22f5a884067f4dbee82d1073d94bc80a2a6c4`. The later numerical checkpoint
+`5dcc465b534399ccdc4c9be58e3579a1df62c636` changes no GUI product source.
+The [hosted reconciliation](#hosted-merge-reconciliation--6-november-2026)
+below records the two GUI commits separately from that later workspace candidate.
+
+The following bullets retain the historical PR-preparation environment:
+
 - Worktree: `/workspace/NevroTick-slint`; branch: `ui/slint-gui`. The PR head
   identifies committed source. Main worktree `/workspace/NevroTick` was kept clean;
   Core, protocol, time-domain and mathematical/proof source were not edited by
@@ -117,6 +126,51 @@ qualification are not established by the ordinary test or source-control counts.
 
 ## Evidence and replay
 
+### Hosted merge reconciliation — 6 November 2026
+
+Live GitHub checks were read at **14:15:59 UTC**; no alert or incident was
+dismissed. The connected job-step reads confirm successful dependency admission
+and isolated actual-product verification in both portable jobs.
+
+| Exact candidate | Observed hosted result |
+| --- | --- |
+| Final PR head `5bc22f5` | [Portable](https://github.com/DavidOsipov/NevroTick/actions/runs/42228676978/job/127928626695), [Security gate](https://github.com/DavidOsipov/NevroTick/actions/runs/42228676593/job/127928980992) and [secret scan](https://github.com/DavidOsipov/NevroTick/actions/runs/42228676593/job/127928624233) passed. Default Actions/Rust/C++/Python analyses passed. Aggregate CodeQL and GitGuardian failed. |
+| Merge `3ff7e91` | [Portable](https://github.com/DavidOsipov/NevroTick/actions/runs/42230373102/job/127934412937), [Security gate](https://github.com/DavidOsipov/NevroTick/actions/runs/42230373254/job/127934786357) and [secret scan](https://github.com/DavidOsipov/NevroTick/actions/runs/42230373254/job/127934414509) passed. Default Actions/C++/Python analyses passed; Rust remained in progress at the observation. |
+
+The failed [PR CodeQL aggregate](https://github.com/DavidOsipov/NevroTick/runs/127928935171)
+contains 11 Python path annotations and a missing-Rust-configuration warning.
+It completed before the successful final-head Rust analysis, so that warning
+does not establish a Rust extraction failure; the aggregate remains failed.
+Alerts [#105](https://github.com/DavidOsipov/NevroTick/security/code-scanning/105)
+and [#106](https://github.com/DavidOsipov/NevroTick/security/code-scanning/106)
+remain open on merged main. They flag `lstat`/`os.open` in `scripts/ui_source_io.py`
+through the same developer-selected root and fixed generator paths previously
+reviewed below; earlier #95/#96 instances are marked fixed after those reads moved
+into the shared helper. No new unauthorized path access was demonstrated under
+that local CLI contract. External disposition remains open.
+
+The failed [GitGuardian check](https://github.com/DavidOsipov/NevroTick/runs/127928604764)
+still reports [incident 39281800](https://dashboard.gitguardian.com/workspace/311486/incidents/39281800?occurrence=310809530),
+the public fixture regex at `.gitleaks.toml:55`, matching the earlier assessment.
+The incident remains triggered. These individual passes do not make overall CI
+uniformly green or qualify native Windows, GUI coverage/mutation, critical text,
+backend, package or release behavior.
+
+### Local source continuation — 6 November 2026
+
+After the signed/pushed numerical checkpoint `5dcc465`, the local read-only
+text-source gate passed with 509 active/509 used IDs, zero errors, schema/text
+contract/build 2 and the unchanged fingerprint above. The selected
+`test_ui_text_native` and `test_native_input_source` controls passed 53/53 under
+`-X dev -Werror` in 28.943 seconds, with zero errors or failures. Raw log:
+`/tmp/nevrotick-merged-gui-source-controls-20261106-v1.log`.
+These source controls ran no Rust product, rendered GUI or native Windows path.
+Hosted checks for `5dcc465` are not yet qualified; earlier hosted results remain
+bound to their recorded final-head/merge commits. The ordinary fixture source
+does not close backend, exact-text approval, coverage/mutation or native gates.
+
+### Historical cloud receipts
+
 Historical canonical receipts under private cloud directory
 `/workspace/.nevrotick-cloud/slint-uia-fork.2020wssl/`:
 
@@ -126,7 +180,7 @@ Historical canonical receipts under private cloud directory
 | `windows-source7.json` | Linux-hosted Windows-target all-target type checking and Clippy passed; no SDK/CRT/link/run. SHA256 `27f1e89885a69171fa45d9e225ca50e21cc286dd5fae4e9b922444bf8b027732`. |
 | `gui38-dependencies.json` | Both-target graph/scanner checks passed at their admitted advisory snapshot. SHA256 `db98db71574953fe5a09b16c9f55a4e133214d3b9937d3ef2d57a62e9cab4f8c`. Advisory freshness must be re-established for a new dependency check. |
 
-**Fresh PR preparation:** `gui42-pr-portable.json` passed the complete configured
+**Historical PR preparation:** `gui42-pr-portable.json` passed the complete configured
 portable/capture row, with the same 736/164/447 test totals, 183 GUI tests,
 17 GUI doctests,143 controls and50 captures. Receipt SHA256:
 `62a286f37888cc0e3df83b7cb7920c6863ad114946d4c5a2c3c1a0b7e796a77e`.
@@ -141,18 +195,18 @@ restoring those bytes reproduces GUI42's exact hashes. The affected source
 controls were then rerun with the canonical admission/sandbox and no Cargo
 selection: `gui43-pr-source-controls.json`, SHA256
 `0ae7c2158c3556c13ed62e50e029f953412600bd18ccd9d5f28d1a88b397038c`,
-passed all143 controls and509/509 coverage. Its365 admitted sources match current
-bytes; the optional SDK policy is unchanged and belongs to the full GUI42 row.
+passed all143 controls and509/509 coverage. Its365 admitted sources matched that
+recorded candidate; the optional SDK policy belongs to the full GUI42 row.
 GUI43 is a Python-only diagnostic, not another product/native test run.
 
-**Merged candidate, GUI44:** the current ordinary source checkpoint incorporates
+**Historical combined candidate, GUI44:** this ordinary source checkpoint incorporated
 main `b808eb7`. `gui44-merge-portable.json`, SHA256
 `e72e4ba6f3e15aac80c15a7d3118b3cecd59e4405456e8913cf85a02398b2d0b`,
 passes all configured build/Clippy/rustdoc,759 ordinary tests,174 doctests,
 470 optimized tests,143 source controls and50 captures. GUI remains183 tests/
 17 doctests; main's engine now has47 ordinary/47 optimized tests and12 doctests.
-All368 source entries (367 product plus SDK policy) match current bytes. All50
-actual capture files remain byte-identical to the reviewed GUI42 lineage.
+All368 source entries (367 product plus SDK policy) matched its recorded candidate.
+Its 50 actual capture files were byte-identical to the reviewed GUI42 lineage.
 
 Both-target dependency/scanner row `gui44-merge-dependencies.json` passes under a
 new lock-bound public advisory snapshot, SHA256
@@ -179,9 +233,11 @@ fixtures, not Windows screenshots. Handoff preparation updates the previously
 stale UI README; account for that documentation input when comparing source maps.
 
 Raw receipts, images, review reports and the human-review bundle live outside
-Git. Paths and recorded hashes alone do not make them available on another
-machine. Preserve them through an approved artifact channel or reproduce the
-affected configured checks. Never manufacture a missing receipt or claim a new
+Git. The listed `/workspace/.nevrotick-cloud` directory and private `/tmp` review
+bundle/targeted receipt are absent in the current local checkout environment.
+Their input maps and image bytes were not revalidated here. Preserve them through
+an approved artifact channel or reproduce the affected configured checks. Never
+manufacture a missing receipt or claim a new
 test/native pass from this summary.
 
 Use [configured tooling](../TOOLING.md#starting-implementation), not bare Cargo.
@@ -207,15 +263,16 @@ limits, lints, graph roles or trust to obtain green output.
 
 ## Next work and dependencies
 
-1. Review the resolved integration against current main. The b808eb7 snapshot is
-   now incorporated; if main moves, reconcile only its new delta. Preserve newer
-   engine/source/proof-policy work and the canonical decision identities. Keep
+1. Continue from merged PR10 and the later numerical checkpoint. Preserve the
+   observation-to-Core contract priority in development section 7 and reconcile
+   only subsequent deltas. Preserve the canonical decision identities. Keep
    lock, manifest and graph policy changes with one owner; re-admit affected
    graphs before target execution.
-2. Freeze that combined candidate. Repeat affected format/compiler/Clippy,
-   behavioral/doctest, generator/consumer/native-source controls and captures.
-   Reuse unchanged evidence only after matching all relevant inputs; old GUI
-   counts do not establish results for the newer engine.
+2. Preserve the local text/native-source-control pass on `5dcc465`, then select
+   the next configured product checkpoint against its frozen inputs.
+   Reuse unchanged evidence only after matching all relevant inputs; historical
+   GUI42/43/44 counts do not establish results for later workspace bytes. Retain
+   the two named wording-polish follow-ups above for a separate text revision.
 3. Complete the independent exact-text review; revalidate any wording changes and
    their native/action/accessibility consumers. The supplied review bundle is
    review material, not approval.
@@ -230,8 +287,8 @@ limits, lints, graph roles or trust to obtain green output.
    production journeys after integration. Final package, mitigation and release
    gates remain with their existing owners.
 
-Keep the worktree for PR iteration. A PR request authorizes branch publication;
-it does not authorize merging, deployment, Store submission or OS/service changes.
+PR10 is merged. This continuation authorizes no deployment, Store submission or
+OS/service changes; existing Windows/fuzz/storage holds and D1–D3 triggers remain.
 
 ## PR #10 detection review and corrections — 6 November 2026
 
@@ -345,8 +402,9 @@ the optional, separately pinned Debian SDK. The workflow now installs Ubuntu's
 authenticated `pkg-config`/`libfontconfig-dev` host prerequisites and checks
 Fontconfig availability with a cleared environment. Product graph,
 compiler and optional SDK pins remain. A fresh complete hosted portable result
-is required before merge; this prerequisite repair supplies no Windows or
-packaged-product qualification.
+was then required before merge; the later final-head and merge successes are
+recorded above. This prerequisite repair supplied no Windows or packaged-product
+qualification.
 
 The workflow correction passes 24 security-helper tests, eight SDK controls and
 the pinned actionlint/ShellCheck/pedantic offline zizmor checks over both
