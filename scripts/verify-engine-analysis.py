@@ -102,6 +102,8 @@ REQUIRED_TESTS = frozenset({
     "measurement::tests::nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result",
     "measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bounds",
     "measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection",
+    "measurement::tests::nominal_seconds_preserve_corrected_capture_units_and_signed_rtt",
+    "measurement::tests::nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint",
     "prepare_outside_runtime_owns_and_releases_standard_sockets",
     "prepare_rejects_entered_runtime_before_native_startup",
     "execute_rejects_entered_runtime_without_nested_runtime_creation",
@@ -119,7 +121,7 @@ FIXED_POLICY = {
     "maximum_mutants": 512, "maximum_listed_per_file": 4096, "maximum_listed_total": 8192,
     "coverage_wall_seconds": 300, "enumeration_wall_seconds": 240,
     "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
-    "jobs": 12, "test_threads": 1, "coverage_test_threads": 1,
+    "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
     "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
     "tool_admission_profile": "full", "mutation_equivalences": [],
 }

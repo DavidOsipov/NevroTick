@@ -97,3 +97,42 @@ the bracket guard, duration/wall conversions, comparisons, result conversion and
 their effects whenever their source or admitted input contract changes. The
 policy and subsequent campaign, rather than this prose, establish actual
 descriptor identity, observed viability and the final gate disposition.
+
+
+## Seconds conversion candidate revalidation — 6 November 2026
+
+The S1.2 exact-rational-seconds child changes the measurement source and adds
+checked nominal seconds adapters. It does not change the coherence operation.
+On the complete374-input product map
+`abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e`,
+the measurement source hashes to
+`85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648`.
+The complete adjacent contract plus function remains byte-identical to
+`cb223c5`:1,618bytes, SHA256
+`9032c1fe2ef9540906a015c3f7115f2addcd54f2f6b02250fb12c1e032e38865`.
+This selection starts at the function's documentation and includes its closing
+brace; differently delimited historical selections retain their own hashes.
+
+Fresh-context reviewer `/root/normalization_bounded_plan` completed a read-only
+revalidation against the actual source, argument, policy and existing review
+record. Bracket/duration/narrowing/wall-subtraction failures precede either
+comparison and remain identical. Successful bracket admission establishes
+`lower <= upper`. At lower equality, the changed branch computes checked
+`lower-lower` instead of literal zero; at upper equality it computes checked
+`upper-upper`, with identical earlier branch behavior. Both differences are
+representable zero; final unsigned conversion and absence of effects agree.
+The coordinator independently inspected the same operation. This is manual
+mutation-equivalence reasoning, not a machine-checked product proof.
+
+The two existing IDs remain the only permitted exclusions. Current lower/upper
+operators are557:29 and561:26; documentation-inclusive function span is
+524:1–569:2 (`fn` begins532:1). Fresh enumeration must confirm the complete
+descriptors before campaign admission. The bracket-order comparisons at538:18
+and538:50 are **not equivalent** under `>` to `>=`: zero-width ordered brackets
+are a valid neighboring control. Earlier dated line references remain historical.
+
+Retain actual native outcomes and raw denominators. An exact E disposition
+supplies no kill credit; descriptor/source/candidate/review disagreement fails
+closed, and every unresolved survivor or timeout keeps qualification incomplete.
+No historical score is transferred. Ordinary qualification for this candidate
+remains pending until the new terminal receipts. No formal or Windows job ran.

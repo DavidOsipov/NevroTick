@@ -5,6 +5,7 @@ status = "six-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
+    { name = "exact-rational-seconds", package = "time-domain", files = ["crates/time-domain/src/rational_seconds.rs"], scope = "pure signed-u128/nonzero-u64 exact seconds ratio retained with one nearest-ties-even binary64 conversion and arithmetic rounding bound; current development/coverage/mutation qualification pending under tasks/s1.2-regression-readiness.md; no physical accuracy, sample eligibility, conditioned fit or clock authority" },
     { name = "fixture-reference-input-readiness", package = "time-core", files = ["crates/time-core/src/reference_input.rs"], scope = "exact-instance fixture chart admission and borrowed reference-input lifetime; monotone feedback invalidation with unknown dominance and modeled achieved-phase receiving; candidate-specific evidence in tasks/s1.3-source-selection-readiness.md; no installed mapping, native acknowledgement or clock authority" },
     { name = "fixture-settled-active-time-rate-delivery", package = "time-core", files = ["crates/time-core/src/reference_input/rate_delivery.rs"], scope = "checked independent active/monotonic spans, local non-replay settlement cursor and consume-before-arithmetic delivery of stored applied rate into a counterfactual complete-domain chart; portable authoring passed, selected current contract/coverage/mutation and validation-mechanism qualification pending; no native job completion, broker journal, physical ramp or clock authority" },
     { name = "engine-loopback-runtime-owner", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/lib.rs"], scope = "bounded two-peer loopback transport experiment; entropy/socket/runtime lifetime and current-generation admission; final contract, coverage, mutation, resource and native Windows qualification pending; no eligible sample, authentication or clock authority" },
@@ -54,6 +55,7 @@ security_modules = [
     { name = "fixture-chart-combination-shared-lifecycle", package = "time-core", files = ["crates/time-core/src/combination/lifecycle/chart.rs"], scope = "actual chart decision/batch lifetime, original-versus-target context separation, complete receiving before shared filtering and one validated staged-state commit; S158 portable authoring passed, dependent qualification pending; no installed generation, production eligibility or clock authority" },
 ]
 critical_files = [
+    "crates/time-domain/src/rational_seconds.rs",
     "crates/time-core/src/reference_input.rs",
     "crates/time-core/src/reference_input/rate_delivery.rs",
     "crates/nevrotick-engine/src/lib.rs",

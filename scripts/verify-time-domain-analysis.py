@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 from pathlib import Path
 import re
 import shutil
@@ -692,8 +693,309 @@ def fuzz(session, selected, report):
     report["fuzz"]["fault_artifacts_sha256"] = PRODUCT.inventory(session.work / "fuzz-artifacts")
 
 
+# A new exact singleton uses full tool custody; legacy leap/fuzz roles stay fixed.
+RATIONAL_SECONDS_SUBJECT = "rational_seconds"
+RATIONAL_SECONDS_POLICY = "policy/rational-seconds-analysis.json"
+RATIONAL_SECONDS_FILE = "crates/time-domain/src/rational_seconds.rs"
+RATIONAL_SECONDS_TEST_FILE = "crates/time-domain/tests/rational_seconds.rs"
+RATIONAL_SECONDS_PRIVATE_TEST_FILE = "crates/time-domain/tests/private/rational_seconds.rs"
+RATIONAL_SECONDS_SCOPE = COMMON.Scope(
+    "time-domain", ((RATIONAL_SECONDS_SUBJECT, RATIONAL_SECONDS_FILE),), RATIONAL_SECONDS_POLICY)
+RATIONAL_SECONDS_BOUND_INPUTS = (
+    "Cargo.toml", "Cargo.lock", "crates/time-domain/Cargo.toml", "crates/time-domain/src/lib.rs",
+    RATIONAL_SECONDS_FILE, RATIONAL_SECONDS_TEST_FILE, RATIONAL_SECONDS_PRIVATE_TEST_FILE,
+    "scripts/verify-time-domain-analysis.py", "scripts/tests/test_rational_seconds_analysis.py",
+    "scripts/portable-analysis.py", "scripts/analysis-runtime.py", "scripts/check-analysis.py",
+    "scripts/verify.py", "scripts/check-environment.py", "scripts/check-strict.py",
+    "scripts/prepare-product.py", "policy/analysis-tools.json", "policy/verification-manifest.toml",
+)
+RATIONAL_SECONDS_FIXED = {
+    "schema_version": 1, "package": "time-domain", "source_file_count": 374,
+    "critical_files": [RATIONAL_SECONDS_FILE], "tool_admission_profile": "full",
+    "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+    "coverage_wall_seconds": 300, "enumeration_wall_seconds": 240,
+    "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+    "jobs": 6, "test_threads": 1, "coverage_test_threads": 1,
+    "mutation_jobs": 10, "mutation_process_limit": 512, "mutation_message_format": "json",
+    "maximum_mutants": 512, "maximum_listed_per_file": 4096, "maximum_listed_total": 8192,
+}
+RATIONAL_SECONDS_REQUIRED_TESTS = frozenset({
+    "rational_seconds::tests::transformed_seconds_faults_have_valid_scalar_neighbors",
+    "rational_seconds::tests::transformed_bounds_require_power_and_exactness_association",
+    "rational_seconds::tests::raw_roundoff_rule_rejects_invalid_normals_without_publication_guards",
+    "rational_seconds::tests::zero_publication_rejects_noncanonical_associations",
+    "rational_seconds::tests::checked_helper_faults_do_not_use_truncated_shifts",
+    "rational_seconds::tests::diagnostics_omit_numeric_payloads_and_use_fixed_errors",
+    "rational_seconds::tests::raw_unsigned_magnitude_is_admitted_before_sign_application",
+    "rounds_exact_ratio_once_without_operand_double_rounding",
+    "literal_ratios_cover_full_integer_envelope_and_tie_parities",
+    "adjacent_rational_neighbors_preserve_ties_and_original_binade_bound",
+    "equivalent_unreduced_ratios_retain_original_tuples",
+    "engine_denominator_literals_preserve_seconds_without_nanosecond_rounding",
+    "counted_binary_scalings_span_full_unsigned_shift_domain",
+})
+RATIONAL_SECONDS_REQUIRED_DOCTESTS = (
+    ("rational_seconds::RoundedRationalSeconds", False, 1),
+    ("rational_seconds::RoundedRationalSeconds", True, 4),
+)
+
+
+def rational_seconds_document(path, *, maximum=512 * 1024):
+    """Decode bounded canonical regular input without duplicate/nonfinite fields."""
+    if path != path.resolve(strict=True):
+        raise Incomplete("Rational-seconds JSON cannot use a linked path.")
+    raw = ANALYSIS.read_once(path, maximum=maximum)
+
+    def pairs(items):
+        result = {}
+        for name, value in items:
+            if name in result:
+                raise Incomplete("Rational-seconds JSON contains a duplicate field.")
+            result[name] = value
+        return result
+
+    def reject_constant(_token):
+        raise Incomplete("Rational-seconds JSON contains a nonfinite number.")
+
+    def finite_float(token):
+        value = float(token)
+        if not math.isfinite(value):
+            reject_constant(token)
+        return value
+
+    return json.loads(raw, object_pairs_hook=pairs, parse_constant=reject_constant,
+                      parse_float=finite_float)
+
+
+def rational_seconds_inventory_bindings(policy, *, required=False):
+    """Accept no review yet or the exact nonempty singleton descriptor binding."""
+    bindings = policy.get("mutation_inventories")
+    if type(bindings) is not dict:
+        raise Incomplete("Rational-seconds inventory bindings must be an object.")
+    if not bindings and not required:
+        return bindings
+    if set(bindings) != {RATIONAL_SECONDS_SUBJECT}:
+        raise Incomplete("Rational-seconds mutation requires its complete reviewed singleton inventory.")
+    row = bindings[RATIONAL_SECONDS_SUBJECT]
+    if (type(row) is not dict or set(row) != {"count", "sha256"}
+            or type(row["count"]) is not int or not 0 < row["count"] <= policy["maximum_mutants"]
+            or type(row["sha256"]) is not str or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])):
+        raise Incomplete("Rational-seconds inventory requires a positive count and exact SHA-256.")
+    return bindings
+
+
+def read_rational_seconds_policy(root):
+    """Admit a current singleton without altering any historical leap/fuzz role."""
+    policy = rational_seconds_document(root / RATIONAL_SECONDS_POLICY)
+    extra = {"candidate_sha256", "inputs_sha256", "mutation_inventories", "mutation_equivalences", "scope"}
+    if (type(policy) is not dict or set(policy) != set(RATIONAL_SECONDS_FIXED) | extra
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in RATIONAL_SECONDS_FIXED.items())
+            or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
+        raise Incomplete("Unreviewed rational-seconds scope, profile, threshold or budget.")
+    _, identity = PRODUCT.admit_product(root)
+    if (len(identity) != policy["source_file_count"]
+            or type(policy["candidate_sha256"]) is not str
+            or policy["candidate_sha256"] != COMMON.canonical_sha256(identity)):
+        raise Incomplete("Rational-seconds requires the exact current complete 374-input product candidate.")
+    pins = policy["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(RATIONAL_SECONDS_BOUND_INPUTS)
+            or any(type(digest) is not str or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+                   or PRODUCT.sha256(root / name) != digest for name, digest in pins.items())):
+        raise Incomplete("Rational-seconds protected source/helper bindings changed.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    if (manifest.get("critical_files", []).count(RATIONAL_SECONDS_FILE) != 1
+            or sum(row.get("package") == "time-domain" and RATIONAL_SECONDS_FILE in row.get("files", [])
+                   for row in manifest.get("security_modules", [])) != 1):
+        raise Incomplete("Rational-seconds needs one exact critical/security owner.")
+    if re.search(r"#\s*\[\s*test\s*\]", (root / RATIONAL_SECONDS_FILE).read_text()):
+        raise Incomplete("Rational-seconds production coverage cannot contain inline test bodies.")
+    rational_seconds_inventory_bindings(policy)
+    COMMON.admit_mutation_equivalences(root, RATIONAL_SECONDS_SCOPE, policy)
+    return policy
+
+
+def rational_seconds_test_execution(text, *, doctests):
+    """Require real named healthy tests and source-owned legal/privacy doctests."""
+    records, pending = [], None
+    header = re.compile(r"test ([^\r\n]+?) \.\.\. (.*)")
+    trace = re.compile(r"RATIONAL_SECONDS_PROFILE(?:[ \t].*)?")
+    for line in text.splitlines():
+        if pending is not None:
+            if line == "ok":
+                records.append(pending)
+                pending = None
+            elif trace.fullmatch(line) is None:
+                raise Incomplete("Rational-seconds native test lacks its named successful completion.")
+            continue
+        match = header.fullmatch(line)
+        if match is not None:
+            if match[2] == "ok":
+                records.append(match[1])
+            elif trace.fullmatch(match[2]) is not None:
+                pending = match[1]
+            else:
+                raise Incomplete("Rational-seconds native test record has no successful outcome.")
+        elif line in {"ok", "FAILED", "ignored"}:
+            raise Incomplete("Rational-seconds native completion lacks its test identity.")
+    if pending is not None:
+        raise Incomplete("Rational-seconds native test completion is truncated.")
+    summaries = [line for line in text.splitlines() if line.startswith("test result:")]
+    pattern = r"test result: ok\. (\d+) passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;.*"
+    counts = [re.fullmatch(pattern, line) for line in summaries]
+    if (not summaries or any(match is None for match in counts) or len(records) != len(set(records))
+            or sum(int(match[1]) for match in counts if match is not None) != len(records)
+            or not RATIONAL_SECONDS_REQUIRED_TESTS <= set(records)):
+        raise Incomplete("Rational-seconds execution lacks complete required actual passing test records.")
+    docs = [name for name in records if re.fullmatch(
+        r"[^\r\n]+\.rs - (?:[^\r\n]+ )?\(line [1-9][0-9]*\)(?: - compile fail)?", name)]
+    if doctests:
+        if not RATIONAL_SECONDS_REQUIRED_DOCTESTS:
+            raise Incomplete("Rational-seconds legal/privacy doctest identities await source review.")
+        for owner, compile_fail, count in RATIONAL_SECONDS_REQUIRED_DOCTESTS:
+            pattern = (r"(?:[^\r\n]+/)?crates/time-domain/src/rational_seconds\.rs - "
+                       + re.escape(owner) + r" \(line [1-9][0-9]*\)"
+                       + (r" - compile fail" if compile_fail else ""))
+            if sum(re.fullmatch(pattern, name) is not None for name in docs) != count:
+                raise Incomplete("Rational-seconds baseline omits its actual legal/privacy doctests.")
+        selected_docs = [name for name in docs if re.match(
+            r"(?:[^\r\n]+/)?crates/time-domain/src/rational_seconds\.rs - ", name)]
+        if len(selected_docs) != sum(row[2] for row in RATIONAL_SECONDS_REQUIRED_DOCTESTS):
+            raise Incomplete("Rational-seconds baseline includes an unreviewed source-owned doctest.")
+    elif docs:
+        raise Incomplete("Rational-seconds coverage unexpectedly includes doctests.")
+    return {"tests_executed": len(records), "required_tests": sorted(RATIONAL_SECONDS_REQUIRED_TESTS),
+            "selected_doctests": sum(row[2] for row in RATIONAL_SECONDS_REQUIRED_DOCTESTS) if doctests else 0,
+            "all_package_doctests": len(docs)}
+
+
+def rational_seconds_baseline(work):
+    """Read the actual owned tool baseline, without crediting listing or setup."""
+    directory = work / "mutation" / RATIONAL_SECONDS_SUBJECT / "mutants.out"
+    outcomes = rational_seconds_document(directory / "outcomes.json", maximum=64 * 1024 * 1024)
+    if type(outcomes) is not dict or type(outcomes.get("outcomes")) is not list:
+        raise Incomplete("Rational-seconds baseline outcomes have an invalid shape.")
+    rows = [row for row in outcomes["outcomes"]
+            if type(row) is dict and row.get("scenario") == "Baseline"]
+    if len(rows) != 1 or rows[0].get("summary") != "Success":
+        raise Incomplete("Rational-seconds mutation needs exactly one successful native baseline.")
+    relative = Path(rows[0].get("log_path", ""))
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise Incomplete("Rational-seconds baseline log escapes owned output.")
+    path = directory / relative
+    if path != path.resolve(strict=True):
+        raise Incomplete("Rational-seconds baseline log cannot use links.")
+    raw = ANALYSIS.read_once(path, maximum=16 * 1024 * 1024)
+    return {**rational_seconds_test_execution(raw.decode("utf-8"), doctests=True),
+            "log_sha256": PRODUCT.sha256(path)}
+
+
+def enumerate_rational_seconds(session, policy, report):
+    """Retain complete bounded discovery; launch no baseline or mutant execution."""
+    command = [str(session.tools / "cargo-mutants"), "mutants", "--package", "time-domain",
+               "--file", RATIONAL_SECONDS_FILE, "--test-workspace", "false", "--cap-lints", "false",
+               "--jobs", "10", "--jobserver", "true", "--jobserver-tasks", "10",
+               "--cargo-arg=--message-format=json"]
+    COMMON.mutation_campaign_command(RATIONAL_SECONDS_SCOPE, session.tools, RATIONAL_SECONDS_SUBJECT,
+        [*command, "--baseline", "run", "--build-timeout", "90", "--timeout", "60",
+         "--output", "/work/mutation/" + RATIONAL_SECONDS_SUBJECT],
+        expected_jobs=10, expected_message_format="json", policy=policy)
+    raw = session.run("mutation-enumeration:" + RATIONAL_SECONDS_SUBJECT,
+                      [*command, "--list", "--json"], min(policy["enumeration_wall_seconds"], 120))
+    report["mutation_enumeration"] = {RATIONAL_SECONDS_SUBJECT: {"raw_output": raw}}
+    items, warning = COMMON.parse_mutation_listing(raw, expected_jobs=10)
+    inventory = COMMON.mutation_inventory(RATIONAL_SECONDS_SCOPE, items,
+                                         policy["maximum_listed_per_file"], RATIONAL_SECONDS_FILE)
+    total = COMMON.combined_mutant_count({RATIONAL_SECONDS_SUBJECT: inventory}, policy["maximum_listed_total"])
+    report["mutation_enumeration"][RATIONAL_SECONDS_SUBJECT]["warning"] = warning
+    report["listed_inventories"] = {RATIONAL_SECONDS_SUBJECT: inventory}
+    report["listed_inventory_bindings"] = {RATIONAL_SECONDS_SUBJECT: {
+        "count": total, "sha256": COMMON.canonical_sha256({
+            name: {key: value for key, value in item.items() if key != "diff"}
+            for name, item in inventory.items()})}}
+    report.update(listed_total=total, campaign_cap_exceeded=total > policy["maximum_mutants"],
+                  campaign_admission=False, qualification_passed=False)
+
+
+def execute_rational_seconds(args, report):
+    """Execute the exact new owner through existing custody, retaining legacy roles."""
+    if (args.subject != RATIONAL_SECONDS_SUBJECT or args.lane not in {"enumerate", "coverage", "mutation", "all"}
+            or args.tool_admission_profile != "full"
+            or any(getattr(args, name, None) for name in
+                   ("inventory_admission", "cohort_plan", "cohort_id", "cohort_receipt"))):
+        raise Incomplete("Rational-seconds admits only its singleton full-profile enumerate/coverage/mutation/all role.")
+    policy = read_rational_seconds_policy(ROOT)
+    if args.lane in {"mutation", "all"}:
+        rational_seconds_inventory_bindings(policy, required=True)
+    session_args = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        session_args.lane = "mutation"
+    report.update(subjects=RATIONAL_SECONDS_SCOPE.select(RATIONAL_SECONDS_SUBJECT),
+                  candidate_sha256=policy["candidate_sha256"], qualification_passed=False,
+                  historical_family_bindings_reused=False)
+    session = COMMON.Session(ROOT, session_args, report, RATIONAL_SECONDS_SCOPE, policy,
+                             RATIONAL_SECONDS_BOUND_INPUTS)
+    try:
+        if (len(session.product_identity) != policy["source_file_count"]
+                or COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]
+                or rational_seconds_document(session.source / RATIONAL_SECONDS_POLICY) != policy
+                or any(PRODUCT.sha256(session.source / name) != policy["inputs_sha256"][name]
+                       for name in RATIONAL_SECONDS_BOUND_INPUTS)):
+            raise Incomplete("Captured rational-seconds candidate/policy/protected inputs differ.")
+        if args.lane == "enumerate":
+            enumerate_rational_seconds(session, policy, report)
+        if args.lane in {"coverage", "all"}:
+            command = [str(session.tools / "cargo-llvm-cov"), "llvm-cov", "--package", "time-domain",
+                       "--frozen", "--jobs", "6", "--lib", "--test", "rational_seconds", "--json",
+                       "--output-path", "/work/coverage.json", "--failure-mode", "any",
+                       "--ignore-filename-regex", "(^|/)tests/|/rustlib/src/rust/library/",
+                       "--", "--test-threads=1"]
+            raw = session.run("coverage", command, policy["coverage_wall_seconds"])
+            report["coverage_execution"] = rational_seconds_test_execution(raw, doctests=False)
+            coverage = json.loads((session.work / "coverage.json").read_text())
+            report["coverage"] = {RATIONAL_SECONDS_SUBJECT: COMMON.coverage_counts(
+                RATIONAL_SECONDS_SCOPE, coverage, "/work/source/" + RATIONAL_SECONDS_FILE)}
+        if args.lane in {"mutation", "all"}:
+            def run(label, command, timeout, **options):
+                raw = session.run(label, command, timeout, **options)
+                if label == "mutation-campaign:" + RATIONAL_SECONDS_SUBJECT:
+                    report["baseline_execution"] = rational_seconds_baseline(session.work)
+                return raw
+            COMMON.run_analysis_lanes(RATIONAL_SECONDS_SCOPE, report["subjects"], policy,
+                                      session.work, session.tools, run, report, "mutation")
+    finally:
+        session.finish()
+    if args.lane != "enumerate":
+        report["qualification_passed"] = True
+
+
+def main_rational_seconds(args):
+    """Report the narrow gate independently of historical leap/fuzz roles."""
+    report = {"status": "incomplete", "selected_lane": args.lane,
+              "scope": "Selected pure rational-seconds owner " + args.lane,
+              "qualification_passed": False, "native_qualification": "not performed"}
+    try:
+        if args.vendor_dir is None:
+            args.vendor_dir = Path(json.loads(PRODUCT.POINTER.read_text())["vendor_dir"])
+        execute_rational_seconds(args, report)
+        report["status"] = "enumerated" if args.lane == "enumerate" else "passed"
+    except (Incomplete, PRODUCT.ENV.Incomplete, OSError, ValueError, KeyError, TypeError, StopIteration) as error:
+        report["qualification_passed"] = False
+        report["error"] = str(error)
+    if report.get("owned_output") == str(args.output_dir):
+        (args.output_dir / "verification.json").write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
+    print(report["status"].upper() + ": " + report["scope"], flush=True)
+    if report.get("error"):
+        print(report["error"], file=sys.stderr)
+    return 0 if report["status"] in {"enumerated", "passed"} else 1
+
+
 def execute(args, report):
     """Run only the reviewed admitted fixed scope and preserve partial observations."""
+    if args.subject == RATIONAL_SECONDS_SUBJECT:
+        return execute_rational_seconds(args, report)
+    if args.lane == "enumerate":
+        raise Incomplete("Enumeration is admitted only for the exact rational-seconds role.")
     policy = read_policy(ROOT)
     COMMON.admission_profile(args, SCOPE, policy)
     report["fuzz"] = {"status": "not-performed", "subjects": dict(LEGACY_SUBJECTS),
@@ -716,12 +1018,14 @@ def execute(args, report):
 def main(argv=None):
     """Explicit fixed lanes, fresh private outputs, and honest incomplete status."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("contracts", "coverage", "mutation", "fuzz", "all"), default="all")
-    parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
+    parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation", "fuzz", "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, RATIONAL_SECONDS_SUBJECT, "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.subject == RATIONAL_SECONDS_SUBJECT:
+        return main_rational_seconds(args)
     if args.tool_admission_profile == "stable-core" and args.lane not in {"contracts", "coverage", "mutation"}:
         parser.error("--tool-admission-profile stable-core requires contracts, coverage or mutation")
     report = {"status": "incomplete", "scope": "S1.1c/S1.4 pure domain contracts/coverage/mutation; leap fuzzing not performed",

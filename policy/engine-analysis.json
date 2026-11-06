@@ -16,7 +16,7 @@
   "mutation_wall_seconds": 1200,
   "mutation_build_seconds": 90,
   "mutation_test_seconds": 60,
-  "jobs": 12,
+  "jobs": 6,
   "test_threads": 1,
   "coverage_test_threads": 1,
   "mutation_jobs": 10,
@@ -26,34 +26,34 @@
   "mutation_equivalences": [
     {
       "id": "ENGINE-COHERENCE-LOWER-EQUALITY",
-      "candidate_sha256": "b0c6e05fce67260e1b03ef392ba11b78a44f0508fb26aa27a3f17bb3541e9732",
-      "source_sha256": "ad78facc81705a16adb47a752eea14cb28e6ba14c1281dc20ce72941020710b8",
+      "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
+      "source_sha256": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
       "mutant": {
-        "name": "crates/nevrotick-engine/src/measurement.rs:555:29: replace < with <= in coherence_residual",
+        "name": "crates/nevrotick-engine/src/measurement.rs:557:29: replace < with <= in coherence_residual",
         "package": "nevrotick-engine",
         "file": "crates/nevrotick-engine/src/measurement.rs",
         "function": {
           "function_name": "coherence_residual",
           "return_type": "-> Result<u64, MeasurementRefusal>",
           "span": {
-            "end": {
-              "column": 2,
-              "line": 567
-            },
             "start": {
-              "column": 1,
-              "line": 522
+              "line": 524,
+              "column": 1
+            },
+            "end": {
+              "line": 569,
+              "column": 2
             }
           }
         },
         "span": {
-          "end": {
-            "column": 30,
-            "line": 555
-          },
           "start": {
-            "column": 29,
-            "line": 555
+            "line": 557,
+            "column": 29
+          },
+          "end": {
+            "line": 557,
+            "column": 30
           }
         },
         "replacement": "<=",
@@ -63,42 +63,42 @@
       "rationale": "After helper-local bracket admission, changing only the equality branch computes checked zero instead of literal zero with identical errors and effects. Retain native survivors and raw denominators; no kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "5af7d78ba80fb133d5df0ee89f6946640bb71e00f8bc6d930f20ccb82c7ff0bb",
+        "sha256": "3c40a7b6148d24ef8669deee677bc0f29d6a308f5aa230283a2238feb4392d14",
         "section": "ENGINE-COHERENCE-LOWER-EQUALITY",
-        "reviewer": "/root/nominal_integrated_source_review; /root",
+        "reviewer": "/root/normalization_bounded_plan; /root",
         "verdict": "independently-justified-equivalent"
       }
     },
     {
       "id": "ENGINE-COHERENCE-UPPER-EQUALITY",
-      "candidate_sha256": "b0c6e05fce67260e1b03ef392ba11b78a44f0508fb26aa27a3f17bb3541e9732",
-      "source_sha256": "ad78facc81705a16adb47a752eea14cb28e6ba14c1281dc20ce72941020710b8",
+      "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
+      "source_sha256": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
       "mutant": {
-        "name": "crates/nevrotick-engine/src/measurement.rs:559:26: replace > with >= in coherence_residual",
+        "name": "crates/nevrotick-engine/src/measurement.rs:561:26: replace > with >= in coherence_residual",
         "package": "nevrotick-engine",
         "file": "crates/nevrotick-engine/src/measurement.rs",
         "function": {
           "function_name": "coherence_residual",
           "return_type": "-> Result<u64, MeasurementRefusal>",
           "span": {
-            "end": {
-              "column": 2,
-              "line": 567
-            },
             "start": {
-              "column": 1,
-              "line": 522
+              "line": 524,
+              "column": 1
+            },
+            "end": {
+              "line": 569,
+              "column": 2
             }
           }
         },
         "span": {
-          "end": {
-            "column": 27,
-            "line": 559
-          },
           "start": {
-            "column": 26,
-            "line": 559
+            "line": 561,
+            "column": 26
+          },
+          "end": {
+            "line": 561,
+            "column": 27
           }
         },
         "replacement": ">=",
@@ -108,9 +108,9 @@
       "rationale": "After helper-local bracket admission, changing only the equality branch computes checked zero instead of literal zero with identical errors and effects. Retain native survivors and raw denominators; no kill credit.",
       "proof": {
         "path": "tasks/engine-analysis-equivalences.md",
-        "sha256": "5af7d78ba80fb133d5df0ee89f6946640bb71e00f8bc6d930f20ccb82c7ff0bb",
+        "sha256": "3c40a7b6148d24ef8669deee677bc0f29d6a308f5aa230283a2238feb4392d14",
         "section": "ENGINE-COHERENCE-UPPER-EQUALITY",
-        "reviewer": "/root/nominal_integrated_source_review; /root",
+        "reviewer": "/root/normalization_bounded_plan; /root",
         "verdict": "independently-justified-equivalent"
       }
     }
@@ -125,33 +125,33 @@
       "sha256": "91da36406a844a9fd223c81bcfd5cf50f9ee0720883dd0d752e2864020a8802c"
     },
     "measurement": {
-      "count": 93,
-      "sha256": "abbdc4cd641ccc135a0ce0356b4c877f46855b11d6029132a49241edb9ade18a"
+      "count": 99,
+      "sha256": "dfa103fba24077de193f4792760021dd07bfe5e061cd88992ea3d3b636b95bf9"
     }
   },
-  "candidate_sha256": "b0c6e05fce67260e1b03ef392ba11b78a44f0508fb26aa27a3f17bb3541e9732",
+  "candidate_sha256": "abfb2bd3549e2d98b13ce9008a6c57faf09a5fcc5b04577e678ff67b39a10c5e",
   "inputs_sha256": {
     "Cargo.toml": "20c65bf6e7d90e1de3fd5b89ae9d851718997e0efb77b5382c89c4eb92f247c0",
     "Cargo.lock": "56833523c30ef64a3300fcc905d99039470fa1b88fc22ce295ada364bfd8a286",
     "crates/nevrotick-engine/Cargo.toml": "07a8af6be34ba3115ca79d871a43bb3859c9303204e58d2c18b1620a371a8683",
     "crates/nevrotick-engine/src/lib.rs": "f28b546f3a6017ca82e33d1979a5da96de8d9b9ad3f2cdb2e971bc5f5e2ad3f5",
     "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": "4e64e8912a8a50261b33e9753818c30cf247ee3bee99ba254cda446b2b22cd3d",
-    "crates/nevrotick-engine/src/measurement.rs": "ad78facc81705a16adb47a752eea14cb28e6ba14c1281dc20ce72941020710b8",
+    "crates/nevrotick-engine/src/measurement.rs": "85089611c6e2316beeb37f4b060ebec88b1db8686974a81a39c690dbae4fd648",
     "crates/nevrotick-engine/tests/runtime_boundary.rs": "dfa75af253a0d86ea584eea31ec1e262865abe0f91f273d9b8ee8aee56b440b6",
     "crates/nevrotick-engine/tests/prepare_release.rs": "f089024cd0bea7c84bbba360c55cf78683978983966267573c1ae6b9f198991d",
     "crates/nevrotick-engine/tests/prepare_entered.rs": "84a38779f863697a58f36e7ebf8d4acf80d0bab653fe2ae0ac488fa2ece96666",
     "crates/nevrotick-engine/tests/execute_entered.rs": "a8fea0f70cf2bc147900e2e639a3252c0c7dea0b9a10f2d3f25794273f9ba97a",
     "crates/nevrotick-engine/tests/private/processing_guards.rs": "1808cbc2f67edf61c940653588aabc23ce7b07c3ae22adb19fe6c62e332cda9e",
     "crates/nevrotick-engine/tests/private/argument_guards.rs": "604bf76c7dfc7712f1823ee4d17f04adc46b5ff34ef4258b8aef9878502c71ca",
-    "crates/nevrotick-engine/tests/private/measurement.rs": "b39a72f46f4cc9164e0ae5640cd54ff25b3b6b428bcdf6544dd13b554a731c6c",
+    "crates/nevrotick-engine/tests/private/measurement.rs": "d994da65ce59a5651c6edcdad5906fa1b0f5bb3e128ae788182b783a58123315",
     "scripts/portable-analysis.py": "36b1affc8fc8c384564ce147f156becf3b871ab40ab536069e778c0e1ab66b3d",
     "scripts/analysis-runtime.py": "fcfe9eb5018d729e9a20ea9e782e3e767fff4388477e405826600091391c2f38",
     "scripts/check-analysis.py": "debe3b31cb93bd8b1b588e777a8c138a9dd6fbadc9152e253f320e1f73cb77e8",
     "scripts/prepare-product.py": "1003f48480c5bc397e395fccd06cd290b093ffc1487efa27a434cf864bed81fd",
     "policy/analysis-tools.json": "4da7796c6dd41a1a09dea9a7b1670480106fe1d1f260150385d78c8faa474234",
-    "policy/verification-manifest.toml": "faab033796450d59f4f9e846afb4965c2a26cf0dbedfcee52e12c4d3f54256f6"
+    "policy/verification-manifest.toml": "7e32195abff10f6f895612f5d652f397bfb2b784e731455e22d3129b93c5cdab"
   },
-  "scope": "Three engine critical owners on the current370-input GNU product candidate, including exact corrected nominal phase/raw-RTT values and the single existing Garde validation edge. All53 ordinary/optimized cases and22 legal/privacy doctests have focused development evidence. The complete reviewed inventory has203 library,42 CLI and93 measurement variants; per-file90% coverage and95% mutation gates remain pending. Historical measurements, two coherence-equality dispositions and the inert168-input constructor role retain their previous candidates; no historical score is transferred. No native Windows, physical accuracy, production eligibility, formal-proof or release qualification follows. Only two exact independently revalidated wall-delta equality variants may be excluded after their actual native outcomes; reversed-bracket equality variants receive no exemption. Combined coverage/mutation shares one unchanged source/tool Session and all thresholds/budgets remain fixed.",
+  "scope": "Three engine critical owners on the current374-input candidate, including checked once-rounded exact nominal seconds adapters. Six build jobs and ten mutation workers retain all90%/95% gates and512-variant bounds. Fresh descriptor enumeration and terminal coverage/mutation are required; no prior score is transferred. Only the two exact independently revalidated wall-delta equality variants may be excluded after their native outcomes, without kill credit; bracket-order equality variants have no exemption. The inert168-input external-contract role remains historical. No native Windows, physical accuracy, source eligibility, formal-proof or release qualification follows.",
   "external_contracts": {
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",

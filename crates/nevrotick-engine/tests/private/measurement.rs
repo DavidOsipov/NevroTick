@@ -1001,3 +1001,101 @@ fn fresh_owner_age_stamp_preserves_the_actual_arithmetic() -> Result<(), Measure
     assert_eq!(committed.software_window(), staged.software_window());
     Ok(())
 }
+
+/// Actual 100 ns captures retain corrected phase and signed RTT through seconds.
+/// Literal bits were independently obtained from the exact seconds fractions;
+/// error bounds describe conversion arithmetic, never physical capture accuracy.
+///
+/// # Errors
+/// Propagates fixture capture/measurement construction or checked conversion.
+///
+/// # Panics
+/// Panics if decimal correction, sign, units or retained input changes.
+#[test]
+fn nominal_seconds_preserve_corrected_capture_units_and_signed_rtt()
+-> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 200)?);
+    let same = capture(start, 0, BASE, 100)?;
+    let measured = measure(
+        profile,
+        same,
+        same,
+        same,
+        start,
+        header(BASE_BITS + 429, BASE_BITS + 429, 6)?,
+    )?;
+    let phase = measured.nominal_phase().seconds()?;
+    assert_eq!(phase.sign(), time_domain::RationalSign::Negative);
+    assert_eq!(phase.numerator_magnitude(), 993_459_200);
+    assert_eq!(phase.denominator().get(), 8_589_934_592_000_000_000);
+    assert_eq!(phase.seconds().to_bits(), 0xbddf_ca6a_f2bd_215e);
+    assert_eq!(
+        phase.absolute_roundoff_seconds().to_bits(),
+        0x3a80_0000_0000_0000
+    );
+    let zero = measured.nominal_round_trip().seconds()?;
+    assert_eq!(zero.sign(), time_domain::RationalSign::Positive);
+    assert_eq!(zero.numerator_magnitude(), 0);
+    assert_eq!(zero.denominator().get(), 4_294_967_296_000_000_000);
+    assert_eq!(zero.seconds().to_bits(), 0);
+    assert_eq!(zero.absolute_roundoff_seconds().to_bits(), 0);
+
+    for (send_ns, receive_ns, sign, seconds_bits) in [
+        (
+            0,
+            100,
+            time_domain::RationalSign::Positive,
+            0x3e7a_d7f2_9abc_af48,
+        ),
+        (
+            200,
+            100,
+            time_domain::RationalSign::Negative,
+            0xbe7a_d7f2_9abc_af48,
+        ),
+    ] {
+        let send = capture(start, 0, BASE, send_ns)?;
+        let receive = capture(start, 0, BASE, receive_ns)?;
+        let observation = measure(
+            profile,
+            send,
+            send,
+            receive,
+            start,
+            header(BASE_BITS + 429, BASE_BITS + 429, 7)?,
+        )?;
+        let round_trip = observation.nominal_round_trip().seconds()?;
+        assert_eq!(round_trip.sign(), sign);
+        assert_eq!(round_trip.numerator_magnitude(), 429_496_729_600);
+        assert_eq!(round_trip.denominator().get(), 4_294_967_296_000_000_000);
+        assert_eq!(round_trip.seconds().to_bits(), seconds_bits);
+        assert_eq!(
+            round_trip.absolute_roundoff_seconds().to_bits(),
+            0x3b20_0000_0000_0000
+        );
+    }
+    Ok(())
+}
+
+/// A private numeric adapter still rejects a zero scale and admits `i128::MIN`.
+///
+/// # Errors
+/// Propagates an unexpected refusal of the full-domain valid neighboring ratio.
+///
+/// # Panics
+/// Panics if the adapter loses sign/magnitude or admits zero denominator.
+#[test]
+fn nominal_seconds_checks_scale_and_retains_the_signed_integer_endpoint()
+-> Result<(), MeasurementRefusal> {
+    assert!(matches!(
+        super::nominal_seconds(1, 0),
+        Err(MeasurementRefusal::Arithmetic)
+    ));
+    let endpoint = super::nominal_seconds(i128::MIN, 1)?;
+    assert_eq!(endpoint.sign(), time_domain::RationalSign::Negative);
+    assert_eq!(endpoint.numerator_magnitude(), 1_u128 << 127);
+    assert_eq!(endpoint.seconds().to_bits(), 0xc7e0_0000_0000_0000);
+    assert_eq!(endpoint.absolute_roundoff_seconds().to_bits(), 0);
+    Ok(())
+}

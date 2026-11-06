@@ -1182,6 +1182,17 @@ garde's exact closure and libFuzzer, without adding shipping dependencies.
 Use a new private Linux output and the admitted vendor; actual results belong to
 S1.1c. Tooling admission alone establishes no numerical or Windows behavior.
 
+The new shared rational-seconds conversion has its own additive domain role:
+`--subject rational_seconds --lane enumerate`, followed by reviewed descriptor
+binding and `--lane all --tool-admission-profile full` for sequential coverage
+and mutation in one admitted session. Its
+[separate policy](policy/rational-seconds-analysis.json) binds the current product
+and protected inputs; the old166-input domain/fuzz policy retains its historical
+scope. Use a fresh external Linux output and the complete admitted vendor. The
+[S1.2 child](tasks/s1.2-regression-readiness.md#exact-rational-seconds-normalization--6-november-2026)
+records actual results and remaining gates; installing or enumerating the role
+does not supply qualification or production history admission.
+
 The new whole-window variance-divisor owner uses the same Core wrapper with
 `--subject window_variance --lane enumerate`, then reviewed inventory binding
 and `--lane all` for sequential coverage and mutation under one tool admission.

@@ -10,6 +10,7 @@ mod coordinate;
 mod era;
 mod exchange;
 mod leap;
+mod rational_seconds;
 mod rounding;
 
 pub use clock::{ActiveAwakeDurationNs, ActiveAwakeNs, MonotonicDurationNs, MonotonicNs};
@@ -21,6 +22,7 @@ pub use leap::{
     LeapEventKnowledge, LeapFutureExpiry, LeapHistoryBefore, LeapInterpretation, LeapKnowledge,
     LeapOffsetKnowledge, MAX_LEAP_NTP_SECONDS, MAX_LEAP_RECORDS, bundled_leap_knowledge,
 };
+pub use rational_seconds::{RationalSecondsError, RationalSign, RoundedRationalSeconds};
 pub use rounding::{RoundedPhaseOffsetNs, RoundedRoundTripNs};
 
 /// Fixed redacted domain failures; rejected input is never retained.

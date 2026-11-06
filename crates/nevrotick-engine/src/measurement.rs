@@ -10,12 +10,14 @@
 //! The engine owner separately rechecks current identity, generations and deadline
 //! before consuming the request and publishing its terminal outcome once.
 
+use std::num::NonZeroU64;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use garde::Validate;
 use ntp_wire::RawHeader;
 use time_domain::{
-    DomainError, EraWindow, ExchangeArithmetic, UtcCoordinateQ32, exchange_arithmetic, unfold_ntp,
+    DomainError, EraWindow, ExchangeArithmetic, RationalSign, RoundedRationalSeconds,
+    UtcCoordinateQ32, exchange_arithmetic, unfold_ntp,
 };
 
 use super::SoftwareClock;
@@ -653,6 +655,18 @@ impl NominalPhaseNs {
     pub const fn denominator(self) -> u64 {
         1_u64 << 33
     }
+
+    /// Convert the complete exact nominal phase once to binary64 seconds.
+    ///
+    /// Retains its exact ratio and an arithmetic rounding bound. Positive means
+    /// the local clock is behind; no physical accuracy or eligibility is implied.
+    /// Large phases must be anchored exactly before regression normalization.
+    ///
+    /// # Errors
+    /// Returns the bounded arithmetic refusal on checked conversion failure.
+    pub fn seconds(self) -> Result<RoundedRationalSeconds, MeasurementRefusal> {
+        nominal_seconds(self.numerator, 8_589_934_592_000_000_000)
+    }
 }
 
 /// Exact signed nominal raw RTT in rational nanoseconds.
@@ -711,6 +725,40 @@ impl NominalRoundTripNs {
     pub const fn denominator(self) -> u64 {
         1_u64 << 32
     }
+
+    /// Convert the complete signed raw RTT once to binary64 seconds.
+    ///
+    /// Retains the exact ratio and arithmetic rounding bound without adjusting
+    /// negative RTT, inferring physical uncertainty or creating a weight.
+    ///
+    /// # Errors
+    /// Returns the bounded arithmetic refusal on checked conversion failure.
+    pub fn seconds(self) -> Result<RoundedRationalSeconds, MeasurementRefusal> {
+        nominal_seconds(self.numerator, 4_294_967_296_000_000_000)
+    }
+}
+
+/// Keep exact signed nominal numerators through one shared seconds conversion.
+///
+/// The caller supplies the seconds denominator, including the decimal scale;
+/// multiplying the numerator or dividing a floating result again would change
+/// units or rounding. Numeric conversion is pure and grants no authority.
+///
+/// # Errors
+/// Rejects a zero denominator or shared checked-conversion failure without
+/// exposing partial results, input values or validation reports.
+fn nominal_seconds(
+    numerator: i128,
+    denominator: u64,
+) -> Result<RoundedRationalSeconds, MeasurementRefusal> {
+    let sign = if numerator < 0 {
+        RationalSign::Negative
+    } else {
+        RationalSign::Positive
+    };
+    let denominator = NonZeroU64::new(denominator).ok_or(MeasurementRefusal::Arithmetic)?;
+    RoundedRationalSeconds::new(sign, numerator.unsigned_abs(), denominator)
+        .map_err(|_| MeasurementRefusal::Arithmetic)
 }
 
 /// Conservative representational limit, not a physical or correction threshold.

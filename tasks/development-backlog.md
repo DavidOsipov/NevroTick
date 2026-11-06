@@ -114,6 +114,14 @@ the exact corrected phase/raw-RTT scales, original capture association and actua
 producer/consumer path as post-V1 proof obligations. Ordinary implementation and
 nonformal checks do not extend the historical domain proofs.
 
+The [exact rational seconds child](s1.2-regression-readiness.md#exact-rational-seconds-normalization--6-november-2026)
+adds signed-magnitude/nonzero-denominator conversion, once-rounded binary64
+seconds and a separately bounded arithmetic representation error. Prove its
+full-domain source correspondence, tie/carry/sign/zero handling, error-bound
+association and actual engine seconds-unit adapters after V1. Later exact-anchor
+and half-nanosecond-reference composition remains part of the production seam;
+ordinary finite examples and conversion bounds supply no physical accuracy.
+
 #### FP-D02 — Regression and diagnostics from the same admitted population
 
 **Owner:** numerical Core; [S1.2 fit contract](s1.2-regression-readiness.md#frozen-proposal-for-synthetic-numerical-behavior)

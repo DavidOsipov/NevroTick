@@ -3366,3 +3366,11 @@ Shared representation interfaces retain the engine-to-domain/Core dependency
 direction. Fixture limits cannot become production limits by relabelling. Genuine
 date/scale/calendar and physical error/provider/policy evidence still gate live
 history admission. Neither S2.1, P1 nor the full product is complete.
+
+The next [shared exact rational seconds child](s1.2-regression-readiness.md#exact-rational-seconds-normalization--6-november-2026)
+now implements checked `seconds()` adapters on these retained nominal values.
+It preserves the exact corrected input, signed raw RTT and an arithmetic-only
+rounding bound through one conversion. Focused ordinary/optimized/doctest and
+Windows-target compiler checks pass; current critical-owner qualification remains
+underway in S1.2. The diagnostic writer's twenty-field schema is unchanged.
+This does not choose a phase anchor, normalize the production fit or admit history.

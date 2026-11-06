@@ -914,6 +914,10 @@ Its [terminal record](../../tasks/engine-transport-pilot.md#exact-nominal-termin
 retains raw outcomes and two exact equality exclusions without kill credit.
 Next freeze production normalization/conditioning and the checked receiver under
 that same contract; retain exact phase anchors and half-nanosecond references.
+The active [exact rational seconds child](../../tasks/s1.2-regression-readiness.md#exact-rational-seconds-normalization--6-november-2026)
+implements a shared once-rounded representation and real engine adapters; focused
+ordinary/optimized/public-consumer checks pass, while its stable critical-owner
+qualification remains underway. It does not insert observations into history.
 Production history insertion remains held until the complete contract and its
 prerequisites are settled. Preserve the 90% executable-line and 95% per-file
 viable-mutation gates, existing budgets, nonempty denominators and independent
