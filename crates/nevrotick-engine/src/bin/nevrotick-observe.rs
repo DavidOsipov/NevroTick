@@ -13,7 +13,9 @@ use std::net::SocketAddr;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use nevrotick_engine::{Config, ControlSchedule, PilotError, PilotReport, execute, prepare};
+use nevrotick_engine::{
+    Config, ControlSchedule, ExperimentalProfile, PilotError, PilotReport, execute, prepare,
+};
 
 /// Finite command syntax or runtime failures; no rejected input is retained.
 #[derive(Debug)]
@@ -50,6 +52,8 @@ struct Arguments {
     stop_after: Option<Duration>,
     /// Optional bounded generation invalidation after active-control startup.
     invalidate_after: Option<Duration>,
+    /// Explicit caller-declared experimental dates and software-clock model.
+    experimental_profile: Option<ExperimentalProfile>,
 }
 
 /// Private allowance for at most six option/value pairs in this one CLI parse.
@@ -117,6 +121,7 @@ fn arguments() -> Result<Arguments, CliError> {
     let mut timeout = None;
     let mut stop_after = None;
     let mut invalidate_after = None;
+    let mut experimental_profile = None;
     let mut budget = ArgumentBudget::for_cli();
     while let Some(option) = raw.next() {
         budget.charge_pair()?;
@@ -136,6 +141,9 @@ fn arguments() -> Result<Arguments, CliError> {
             "--invalidate-after-ms" if invalidate_after.is_none() => {
                 invalidate_after = Some(milliseconds(value)?);
             }
+            "--experimental-clock" if experimental_profile.is_none() => {
+                experimental_profile = Some(clock_profile(value)?);
+            }
             _ => return Err(CliError::Arguments),
         }
     }
@@ -144,7 +152,37 @@ fn arguments() -> Result<Arguments, CliError> {
         timeout: timeout.ok_or(CliError::Arguments)?,
         stop_after,
         invalidate_after,
+        experimental_profile,
     })
+}
+
+/// Decode exactly three bounded unsigned decimal declarations, without inference.
+///
+/// The inclusive whole NTP seconds and comparison allowance are caller-supplied
+/// experimental assumptions, never trusted date evidence or wire-time accuracy.
+///
+/// # Errors
+/// Reject missing/extra fields, signs, whitespace, overflow or invalid profile bounds.
+fn clock_profile(value: &str) -> Result<ExperimentalProfile, CliError> {
+    let mut fields = value.split(':');
+    let earliest = unsigned_decimal(fields.next().ok_or(CliError::Arguments)?)?;
+    let latest = unsigned_decimal(fields.next().ok_or(CliError::Arguments)?)?;
+    let allowance = unsigned_decimal(fields.next().ok_or(CliError::Arguments)?)?;
+    if fields.next().is_some() {
+        return Err(CliError::Arguments);
+    }
+    ExperimentalProfile::new(earliest, latest, allowance).map_err(|_| CliError::Arguments)
+}
+
+/// Decode one at-most-twenty-digit unsigned value; retain no raw caller text.
+///
+/// # Errors
+/// Reject empty, signed, non-ASCII-decimal or unrepresentable values.
+fn unsigned_decimal(value: &str) -> Result<u64, CliError> {
+    if value.is_empty() || value.len() > 20 || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(CliError::Arguments);
+    }
+    value.parse().map_err(|_| CliError::Arguments)
 }
 
 /// Convert a bounded ASCII decimal duration, rejecting signs and other syntax.
@@ -159,7 +197,9 @@ fn milliseconds(value: &str) -> Result<Duration, CliError> {
     Ok(Duration::from_millis(milliseconds))
 }
 
-/// Write exactly two slot records and one completion record using safe fields.
+/// Write two slot records, at most two measurement records and one completion record.
+/// Every finite measurement line is below 1,024 bytes even at integer extremes;
+/// raw packets, tokens, native error text and endpoint strings are never included.
 ///
 /// # Errors
 /// Return a diagnostic-output failure if the sink rejects any record; earlier
@@ -180,6 +220,8 @@ fn write_report(report: &PilotReport, output: &mut impl Write) -> Result<(), Cli
             write!(output, " stratum={stratum}").map_err(|_| CliError::Output)?;
         }
         writeln!(output).map_err(|_| CliError::Output)?;
+        slot.write_measurement(output)
+            .map_err(|_| CliError::Output)?;
     }
     writeln!(output, "event=done elapsed_ns={}", report.done_elapsed_ns())
         .map_err(|_| CliError::Output)
@@ -193,6 +235,10 @@ fn write_report(report: &PilotReport, output: &mut impl Write) -> Result<(), Cli
 fn run() -> Result<(), CliError> {
     let args = arguments()?;
     let config = Config::new(args.peers, args.timeout).map_err(CliError::Pilot)?;
+    let config = match args.experimental_profile {
+        Some(profile) => config.with_experimental_profile(profile),
+        None => config,
+    };
     let schedule =
         ControlSchedule::new(args.stop_after, args.invalidate_after).map_err(CliError::Pilot)?;
     // OS entropy and synchronous socket setup precede active-control timing.

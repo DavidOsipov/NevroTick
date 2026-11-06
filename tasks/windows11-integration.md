@@ -2228,6 +2228,14 @@ enhanced-provenance policy remain. No native recovery or release pass is claimed
 
 ### 4.26 S2.1 timestamp-provenance preparation — 5 November 2026
 
+**6 November source continuation:** the [first controlled measurement checkpoint](engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026)
+implements generic software wall-read brackets, complete header/identity/context
+retention and conditional nominal arithmetic. GNU tests and Windows cross-builds
+pass; consistency observations prove no uninterrupted UTC mapping or finite
+wire-capture error. W11-W01 remains partially prepared: actual Windows packet
+placement, mapping/error and native completion/lifecycle qualification are open.
+This does not select kernel/NIC timing APIs or lift the Windows execution hold.
+
 **Disposition:** W11-W01 is **partially prepared source work**. The
 [existing engine integration card](engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026)
 records the actual runtime producers, the separate `Composition::deliver`/`record`

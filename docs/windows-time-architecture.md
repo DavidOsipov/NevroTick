@@ -92,10 +92,13 @@ remaining work.
 | [time-domain](../crates/time-domain/Cargo.toml) | Checked timestamps, eras, exchange arithmetic, rounding, distinct clock domains and pure leap knowledge/interpretation | [S1.1c](../tasks/s1.1-time-domain.md) and [S1.4](../tasks/s1.4-leap-policy.md); scoped arithmetic/knowledge evidence establishes no production eligibility or clock effects |
 | [ntp-exchange](../crates/ntp-exchange/Cargo.toml) | Single-slot unauthenticated fixture association and deterministic scenarios | [Association](../tasks/s1.1-exchange-association.md) and [harness](../tasks/s1.1-deterministic-harness.md) tasks; no production acquisition |
 | [time-core](../crates/time-core/Cargo.toml) | Regression/history, fixture selection and principal/supporter combination, reference readiness and modeled correction accounting | [S1.2](../tasks/s1.2-regression-readiness.md) and [current Core task](../tasks/s1.3-source-selection-readiness.md); [settled-rate qualification](../tasks/s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners) completed its selected four-owner Linux fixture scope, not full P1 |
-| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer and `nevrotick-observe` CLI | [Transport pilot](../tasks/engine-transport-pilot.md); unauthenticated observations remain ineligible for clock control |
+| [nevrotick-engine](../crates/nevrotick-engine/Cargo.toml) | Controlled two-peer loopback UDP observer, explicit conditional software-clock measurements and `nevrotick-observe` CLI | [S2.1 source checkpoint](../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026); unauthenticated observations remain ineligible for clock control; current coverage/mutation and native qualification remain open |
 
-The engine depends on `ntp-wire`, Tokio and `getrandom`; it is not connected to
-`ntp-exchange`, `time-domain` or `time-core`. The UI has no engine/Core dependency.
+**6 November S2.1 amendment:** the engine now depends on `time-domain` alongside
+`ntp-wire`, Tokio and `getrandom`. Its explicit experimental model preserves
+exact conversion residuals and nominal phase/signed RTT; observed consistency
+is no qualified UTC continuity or wire-time accuracy. It is not connected to
+`ntp-exchange` or `time-core`. The UI has no engine/Core dependency.
 These components therefore do not yet form a production synchronization pipeline.
 Task records contain scoped host checks and native UI/engine observations for
 named candidates. Historical results do not automatically qualify later source

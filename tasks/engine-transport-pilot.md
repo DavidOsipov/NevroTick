@@ -17,10 +17,10 @@ follows [development §7](../docs/plans/development-plan.md#7-next-executable-ta
 **Current product action, 6 November 2026:** after the [selected pure-leap
 checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026),
 development §7 selects this task's [first controlled S2.1 measurement](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
-First preserve lossless staged packet/exchange/capture evidence and freeze the
-experimental date scope, capture convention, mapping validity/error and refusal
-outcomes in that card. Then qualify checked mapping/era/arithmetic and bounded
-diagnostic projection on controlled Linux loopback, retaining
+The [first source checkpoint](#first-controlled-measurement-source-checkpoint--6-november-2026)
+now implements lossless staged evidence, the explicit experimental model,
+checked mapping/era/arithmetic and bounded diagnostic projection. Next finish
+current three-owner coverage/mutation qualification, retaining
 `authentication=none eligible=0`. This is no estimator admission or clock effect.
 W11-W01 remains partially prepared; uncertainty, production scheduling and native
 qualification remain later scopes. Older proof-first wording below is historical
@@ -1153,7 +1153,140 @@ gap only; S43's historical coverage/mutation scores remain on their old candidat
 
 ## S2.1 preparation — real transport to an admitted time measurement — 5 November 2026
 
-**Disposition:** prepared contract/integration handoff; implementation and qualification remain open. Follow [development §7][s21-development]: the [S1.1c rounding/era continuation][s21-domain-task] remains the first executable task. The selected settled-rate Core checkpoint remains complete within its Linux fixture scope. This card does not authorize another campaign or promote the loopback pilot.
+**Current disposition — 6 November 2026:** development §7 selects this first controlled measurement after the completed pure-leap checkpoint. The first source checkpoint is implemented; candidate qualification remains open. The old proof-first routing is superseded by OD-10 §14.1. The selected settled-rate and pure-leap checkpoints retain their exact Linux scopes. This work supplies no production eligibility or native qualification.
+
+### First controlled measurement source checkpoint — 6 November 2026
+
+**Implemented and host-checked; full S2.1 remains open.** The engine now preserves
+the complete immutable header, actual endpoints, unique socket/request lifetime,
+original date/model declaration and bracketed software captures through final
+consume-once admission. `measurement.rs` reuses `time-domain` for checked
+conversion/era/arithmetic and retains local conversion residuals and signed raw
+RTT. The CLI's optional `--experimental-clock EARLIEST:LATEST:MAX_RESIDUAL_NS`
+requires an explicit caller declaration. Absent or refused context retains a
+transport-only result; nothing becomes an authenticated or eligible observation.
+
+One owned `SlotReport::write_measurement` supplies the actual CLI projection.
+Its bytes are checked against that same real-UDP report's raw captures and
+literal peer timestamps, independently of the production calculation. Controls
+reject coherent local-coordinate/phase substitution, fabricated age and residual,
+then accept restored healthy output. The earlier CLI-only algebra oracle missed
+these coherent substitutions; independent review found that evidence gap and
+confirmed the shared-writer correction. No production numerical defect was found.
+
+**Current candidate:** 167 product inputs, canonical map SHA256
+`8940260e728ddf332b340df34d3ed6a5f04228c73b30231888f05d4b13b65416`.
+The engine adds one exact local `time-domain` edge. All 25 registry package
+identities/checksums, grants and target feature rows remain unchanged. The
+current inert constructor-contract role now admits exactly 167 inputs; old
+engine campaign bindings are preserved, not promoted to the new code.
+
+Receipts are under the existing S12e evidence root. Current observations:
+
+| Receipt | Observed scope |
+| --- | --- |
+| `s21-measurement-focused-green-v6/verification.json` | Format, compiler, Clippy, **43 engine tests**, **12 doctests**, rustdoc and host CLI build; source/vendor/tool bookends unchanged. Actual CLI tests cover IPv4/IPv6, signed results and malformed explicit profiles. |
+| `s21-dependencies-v3.json` | Fresh lock-bound advisory/index evidence and frozen Linux/Windows metadata, feature, licence, advisory, source and build-script checks. |
+| `s21-engine-contracts-v2/verification.json` | Current library build, one inert legal consumer compile/execution and twelve intended external privacy/checked-API diagnostics; no runtime/socket operation in that legal consumer. |
+| `s21-windows-cross-v2.json` | Windows-target compiler/Clippy and release UI/engine linking with retained executables/PDBs; **no Windows execution**. |
+
+The corresponding receipt SHA256 values, in table order, are
+`fd17d6231c598af5aa434afef4ae35464b5a5c3e53d610bd819614ecedbf97ac`,
+`4bcc3e843c0b1667a06226f629aaec0cf2ff312cee0575cef7c531e17b42c601`,
+`0b1e33d06f8c4f525adce3ac4bce10d0e9b5737f54b38734bc030b4b343dffae`
+and `90f225018a2ddd534110aba43b5931ae1b5dc69a285c2a1008a9f2b2c3fdc34d`.
+All four match the current 167 product inputs; the contract receipt also binds
+its eight current analysis/helper inputs. Review rechecked the shared writer and
+same-run observer after its correction. These facts supply no coverage/mutation
+or native Windows result.
+
+The retained GNU CLI has SHA256
+`758c115acc2f6ebdffc14af500aaf1fa93a0eee49f07c4186a3d830672f12db1`;
+the exported image matches the image used by the real CLI tests. The linked
+Windows engine has SHA256
+`c98c1b88558aea3a5e9440f25630f612ec20475b7a1d6789990a3ba42421a10b`.
+Graph-admission controls passed 99 tests; the affected inert-role controls passed
+34 engine and four shared-helper tests. New public types have eight actual
+external compile-fail doctests beside legal consumers.
+
+**Preserved failures and corrections:** the real cross-socket helper
+counterexample failed on the original code, then passed with explicit lifetime
+binding. Its first observer misclassified interleaved `--nocapture` output;
+the original incomplete receipt and separate raw-output adjudication remain in
+`s21-cross-owner-red-v1`. Earlier compiler/Clippy attempts retain their actual
+outcomes; no lint was relaxed. The larger terminal evidence is boxed once per
+ordinary completion, at most twice per pilot, and holds no native handle.
+Pinned Rust's Windows `SystemTime` uses 100 ns duration units: the initial
+GNU-passing 1 ns fixtures were corrected to representable 100 ns values and
+rerun, preserving exact residual and 99/100 ns model-boundary checks. Production
+conversion arithmetic was unchanged. This source correction is no native pass.
+
+**Next required gate:** extend the current engine coverage/mutation selection
+from library/CLI to include the registered critical `measurement.rs` owner,
+freeze the complete current candidate/helper bindings and actual mutation
+inventories, then meet 90% executable-line coverage and 95% viable mutation
+score per selected critical file. Historical S43 scores cannot qualify this
+candidate; empty inventories, unviable mutants and missing alternative evidence
+receive no pass. Full leap/scale admission, production timestamp provenance,
+uncertainty/divisor and estimator integration, DNS/KoD scheduling, NTS, native
+Windows and release gates remain open. Formal work stays post-V1; no execution
+hold is lifted.
+
+### First experimental model contract — 6 November 2026
+
+See the [current source checkpoint](#first-controlled-measurement-source-checkpoint--6-november-2026)
+for executed observations and remaining gates; this contract alone supplies none.
+
+The first result is nominal software-placement arithmetic **conditional on an
+explicit declared experimental clock model**. Bracketing wall reads and checking
+wall/monotonic progress can falsify consistency, but cannot prove uninterrupted
+UTC continuity. A forward/backward adjustment between observations can escape
+this check. The model supplies no qualified UTC accuracy or finite wire-capture
+error; neither authentication nor eligibility follows.
+
+- The caller explicitly supplies inclusive date bounds in whole NTP seconds and
+  a wall/monotonic consistency tolerance of 0–30,000,000,000 ns. Checked
+  `EraWindow` construction enforces numeric/order bounds and includes every
+  fraction of the inclusive last second. The tolerance is an
+  experiment's declared comparison budget, not an observed clock accuracy.
+  No host date, packet token or min/max observed coordinate supplies this scope.
+  Missing context yields a transport-only `mapping_unavailable` result.
+- Bracket each `SystemTime` read with monotonic readings. Nominal real T1 is the
+  saved send-before wall read; T4 is the receive-return wall read. Send-after
+  remains a separate observation. Relative to capture zero, compare each signed
+  wall delta against `[mono_before_i - mono_after_0,
+  mono_after_i - mono_before_0]`, expanded by the declared tolerance. Reject
+  impossible order or excess residual without clamping or rebasing.
+- Convert local readings to Q32 with checked floor arithmetic and retain each
+  remainder over 10^9. Reuse actual `unfold_ntp` and `exchange_arithmetic`.
+  Preserve no/one/multiple-era outcomes, odd half-ticks and signed raw RTT.
+  Exact Q33/Q32 numerators describe the converted coordinates; their retained
+  local residuals prevent claiming exact unrounded wall arithmetic. The chosen
+  reference is T4 and age is the original receive-to-processing interval.
+- Keep the complete immutable raw header, local captures and source/destination,
+  socket-lifetime/request binding through staging and final consumption. A
+  candidate cannot move to another socket or replacement request. The model and
+  date scope are immutable for that prepared experiment; cancellation or
+  generation invalidation retires its pending requests.
+- A current correlated ordinary reply consumes its sole request even when
+  mapping/era/arithmetic refuses measurement. Preserve its transport facts and
+  bounded refusal. Malformed or uncorrelated traffic retains healthy pending
+  state; controls remain outside arithmetic. Recheck current ownership,
+  cancellation/generation and processing deadline immediately before commit.
+- Successful projection retains coordinates, exact numerators, local conversion
+  residuals, original age and declared/observed mapping qualifiers. Wire-capture
+  error stays unknown and output remains `authentication=none eligible=0`.
+  Refusal never fabricates a zero measurement or prints packets/tokens.
+
+Source owners are the engine library/CLI and a small `measurement` module using
+the existing `time-domain` crate. This adds one internal dependency edge, no new
+external package or runtime. Existing private processing tests and real-CLI UDP
+tests own independent controls; the deterministic dyadic tuple uses an explicit
+test clock seam. Actual UDP expectations are reconstructed from retained captures
+and peer bytes. Full leap/scale admission, statistical uncertainty/divisor and
+estimator integration remain later owners. Mathematical proof obligations for
+conversion, bracket residuals and this new composition enter the existing
+post-V1 backlog. All Windows/fuzz/storage/UI execution holds remain.
 
 **Source checkpoint and preparation:** upstream `8b8d0142ab1daae50509b6ec2cea800ada033449`; synthetic local baseline `3316356d58480dcf86b08132272bed613f86ca4f` is not an upstream commit. Three completed bounded research lanes—GitHub primary source, standards/web and Microsoft Learn MCP—fed a fourth analyst, then this fifth documentation integration. Initial context-limit launches supplied no usable result; completed bounded retries supplied the research and synthesis. Intermediate reports do not replace the durable source links below. This records source/documentation work, with no product build, test, proof or native execution. At this preparation handoff independent integration review had not run; any later review outcome is recorded separately below.
 
@@ -1161,7 +1294,7 @@ gap only; S43's historical coverage/mutation scores remain on their old candidat
 
 ### Existing path and bounded objective
 
-`prepare` → `attempt_send`/`complete_send` → `selected_read` → `stage_reply` → `process_reply`/`commit_reply` currently ends in diagnostic `TransportFacts`. The engine manifest has no exchange/domain/Core dependency. Its separate fixture counterpart, `Association::receive`, preserves header metadata and invokes `unfold_ntp`/`exchange_arithmetic`. `FixtureObservation::new` then checks numerical fixture invariants, not native provenance or eligibility. The existing S1.1e `Composition::deliver` consumes a genuine fixture completion, checks binding/generations/mapping, constructs `FixtureObservation` at fixture arrival with divisor `1.0`, and calls `FixtureHistory::try_append`; `Composition::record` reads actual retained rows/statistics. This test-only chain establishes neither a production reference-time rule nor statistical weighting. [Engine][s21-engine], [association][s21-association], [normalization][s21-normalization], [scenario][s21-scenario]
+`prepare` → `attempt_send`/`complete_send` → `selected_read` → `stage_reply` → `process_reply`/`commit_reply` ended in diagnostic `TransportFacts` at the 5 November preparation baseline. The manifest then had no exchange/domain/Core dependency; the 6 November source checkpoint adds the domain bridge. Its separate fixture counterpart, `Association::receive`, preserves header metadata and invokes `unfold_ntp`/`exchange_arithmetic`. `FixtureObservation::new` then checks numerical fixture invariants, not native provenance or eligibility. The existing S1.1e `Composition::deliver` consumes a genuine fixture completion, checks binding/generations/mapping, constructs `FixtureObservation` at fixture arrival with divisor `1.0`, and calls `FixtureHistory::try_append`; `Composition::record` reads actual retained rows/statistics. This test-only chain establishes neither a production reference-time rule nor statistical weighting. [Engine][s21-engine], [association][s21-association], [normalization][s21-normalization], [scenario][s21-scenario]
 
 **First bounded implementation candidate:** preserve complete staged evidence and deliver one current controlled-loopback exchange through checked mapping/era/arithmetic into a typed experimental measurement and diagnostic projection. Keep `authentication=none`, `eligible=0`; no statistical vote, correction proposal or clock action. Define the capture convention, explicit experimental date scope and error/unsupported outcomes before its implementation. If mapping evidence is insufficient, retain a diagnosed transport observation instead of inventing coordinates or certainty.
 
@@ -1185,7 +1318,7 @@ The lossless staged envelope must retain the following facts or their equally lo
 
 ### Honest local timestamps and final admission
 
-`SoftwareClock::capture` reads `Instant` then `SystemTime`; it establishes neither simultaneous sampling nor a stable UTC mapping. The send bracket encloses an application call, not demonstrated wire egress. Receive-return is later than possibly queued ingress; even a before/after receive-call bracket would not enclose earlier queued arrival. Do not infer a wire-time error bound from either syscall duration. W11-W01 may evaluate a bracketing mapping capture, but its uncertainty, valid interval, adjustments and invalidation must be qualified independently. QPC continuity alone proves no unchanged UTC mapping or active-awake delivery. [Engine][s21-engine], [QPC][s21-qpc], [recvfrom][s21-recvfrom], [sendto][s21-sendto]
+`SoftwareClock::capture` now brackets its wall read with monotonic readings. The original two-read capture and the new software bracket establish neither packet placement nor a stable UTC mapping. The send bracket encloses an application call, not demonstrated wire egress. Receive-return is later than possibly queued ingress; even a before/after receive-call bracket would not enclose earlier queued arrival. Do not infer a wire-time error bound from either syscall duration. W11-W01 may evaluate a bracketing mapping capture, but its uncertainty, valid interval, adjustments and invalidation must be qualified independently. QPC continuity alone proves no unchanged UTC mapping or active-awake delivery. [Engine][s21-engine], [QPC][s21-qpc], [recvfrom][s21-recvfrom], [sendto][s21-sendto]
 
 Keep real local T1 separate from the randomized origin-matching token. Establish compatible UTC scale for all four coordinates and continuity of the local T1/T4 mapping; the remote clock does not share the local calibration. Monotonic clocks own ordering, age and deadlines, not UTC substitution. Optional kernel/NIC timing and a direct-overlapped adapter remain conditional. Supported, configured and actually observed timestamp capabilities are different facts. [Winsock timing][s21-timestamping]
 

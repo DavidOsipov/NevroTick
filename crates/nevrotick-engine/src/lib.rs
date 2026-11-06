@@ -10,11 +10,16 @@
 //! clock-domain mapping, era resolution, sample eligibility, authentication or UTC truth.
 #![forbid(unsafe_code)]
 
-use ntp_wire::{FrameLimits, frame_no_legacy_mac_datagram};
+mod measurement;
+
+pub use measurement::{ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal};
+
+use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
 use std::{
     io,
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket as StdSocket},
     pin::Pin,
+    sync::Arc,
     time::{Duration, Instant, SystemTime},
 };
 use tokio::{
@@ -154,6 +159,8 @@ pub struct Config {
     peers: [SocketAddr; 2],
     /// Positive laboratory lifetime, at most `MAX_TIMEOUT`.
     timeout: Duration,
+    /// Explicit conditional laboratory model; absence permits transport facts only.
+    experimental_profile: Option<ExperimentalProfile>,
 }
 impl Config {
     /// Validate all raw values against this fixed laboratory contract.
@@ -201,7 +208,19 @@ impl Config {
         if timeout.is_zero() || timeout > MAX_TIMEOUT {
             return Err(PilotError::InvalidTimeout);
         }
-        Ok(Self { peers, timeout })
+        Ok(Self {
+            peers,
+            timeout,
+            experimental_profile: None,
+        })
+    }
+
+    /// Attach an already checked, immutable experimental date/clock declaration.
+    /// This grants neither trustworthy UTC mapping nor sample eligibility.
+    #[must_use]
+    pub fn with_experimental_profile(mut self, profile: ExperimentalProfile) -> Self {
+        self.experimental_profile = Some(profile);
+        self
     }
 }
 
@@ -259,6 +278,11 @@ struct PreparedSlot {
     local: SocketAddr,
     /// The sole wire request, containing OS-generated opaque correlation bits.
     packet: [u8; PACKET_BYTES],
+    /// One allocated identity per socket lifetime, distinct even after address reuse.
+    /// Clones retain identity only; they never clone or extend the native socket.
+    identity: Arc<()>,
+    /// Immutable declaration selected before any query is sent.
+    profile: Option<ExperimentalProfile>,
 }
 /// Opaque preparation without caller-manufactured native facts.
 pub struct PreparedPilot {
@@ -287,8 +311,10 @@ pub fn prepare(config: &Config) -> Result<(PreparedPilot, ControlHandle), PilotE
     let mut entropy = [0_u8; 16];
     getrandom::fill(&mut entropy).map_err(|_| PilotError::Entropy)?;
     let [first, second] = request_packets(&entropy)?;
-    let a = prepare_slot(config.peers[0], first)?;
-    let b = prepare_slot(config.peers[1], second)?;
+    let mut a = prepare_slot(config.peers[0], first)?;
+    let mut b = prepare_slot(config.peers[1], second)?;
+    a.profile = config.experimental_profile;
+    b.profile = config.experimental_profile;
     if a.local == b.local {
         return Err(PilotError::DuplicateLocalAddress);
     }
@@ -354,6 +380,8 @@ fn prepare_slot(peer: SocketAddr, packet: [u8; PACKET_BYTES]) -> Result<Prepared
         peer,
         local,
         packet,
+        identity: Arc::new(()),
+        profile: None,
     })
 }
 
@@ -414,6 +442,8 @@ pub struct SoftwareClock {
     mono: Instant,
     /// Immediately following system-wall reading; no accuracy assertion.
     utc: SystemTime,
+    /// Monotonic read immediately after the wall read, bounding its placement only.
+    mono_after: Instant,
 }
 impl SoftwareClock {
     /// Capture adjacent local monotonic and wall readings without a mapping claim.
@@ -421,6 +451,7 @@ impl SoftwareClock {
         Self {
             mono: Instant::now(),
             utc: SystemTime::now(),
+            mono_after: Instant::now(),
         }
     }
     /// Return the captured local monotonic observation.
@@ -433,10 +464,16 @@ impl SoftwareClock {
     pub fn utc(self) -> SystemTime {
         self.utc
     }
+
+    /// Return the completed wall-read bracket; this is no wire-time error bound.
+    #[must_use]
+    pub fn monotonic_after(self) -> Instant {
+        self.mono_after
+    }
 }
 
-/// Native-path observations only. Raw peer bits are not unfolded or used in arithmetic.
-/// Read-only native-path observations; peer stamps remain unqualified raw bits.
+/// Read-only transport observations and explicitly conditional nominal arithmetic.
+/// Neither raw header retention nor a measurement grants sample/trust authority.
 pub struct TransportFacts {
     /// Local readings immediately before the successful `try_send_to` call.
     send_before: SoftwareClock,
@@ -450,8 +487,57 @@ pub struct TransportFacts {
     peer_receive_bits: u64,
     /// Exact nonzero peer T3 representation without era interpretation.
     peer_transmit_bits: u64,
+    /// Exact complete immutable header, including uninterpreted LI/root/reference fields.
+    header: RawHeader,
+    /// Actual receive peer, equal to this request's checked destination.
+    peer: SocketAddr,
+    /// Actual bound endpoint for this socket lifetime.
+    local: SocketAddr,
+    /// Historical socket/request identity; retaining it retains no native handle.
+    identity: Arc<()>,
+    /// One terminal conditional measurement or diagnosed semantic refusal.
+    measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
+    /// Original independent date/model declaration, retained even on refusal.
+    profile: Option<ExperimentalProfile>,
 }
 impl TransportFacts {
+    /// Return the original declared scope/model, never a window inferred from results.
+    #[must_use]
+    pub fn experimental_profile(&self) -> Option<ExperimentalProfile> {
+        self.profile
+    }
+
+    /// Return the exact inert header; callers must not log packets or correlation bits.
+    #[must_use]
+    pub fn header(&self) -> RawHeader {
+        self.header
+    }
+
+    /// Return the actual receive peer, without authentication or independent-vote authority.
+    #[must_use]
+    pub fn peer_endpoint(&self) -> SocketAddr {
+        self.peer
+    }
+
+    /// Return this historical socket's actual local endpoint.
+    #[must_use]
+    pub fn local_endpoint(&self) -> SocketAddr {
+        self.local
+    }
+
+    /// Compare actual socket/request lifetime identity, never numeric endpoint reuse.
+    #[must_use]
+    pub fn same_exchange(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.identity, &other.identity)
+    }
+
+    /// Borrow conditional nominal arithmetic or its bounded refusal.
+    ///
+    /// # Errors
+    /// Preserve absent/inconsistent mapping, date/era, protocol or arithmetic refusal.
+    pub fn measurement(&self) -> Result<&ExperimentalMeasurement, MeasurementRefusal> {
+        self.measurement.as_ref().map_err(|reason| *reason)
+    }
     /// Return the local readings before the confirmed native send.
     #[must_use]
     pub fn send_before(&self) -> SoftwareClock {
@@ -499,8 +585,10 @@ enum TerminalOutcome {
     Header {
         /// The validated ordinary header's nonzero stratum.
         stratum: u8,
-        /// The native-path observations captured for this accepted header.
-        facts: TransportFacts,
+        /// One owned bounded allocation for the accepted header's complete evidence.
+        /// At most two per pilot; report drop releases it, retaining no native handle.
+        /// Boxing keeps pending/failed states independent of the large terminal payload.
+        facts: Box<TransportFacts>,
     },
     /// Correlated stratum-zero control with opaque reference-ID bits.
     Control {
@@ -582,6 +670,55 @@ pub struct SlotReport {
     last_rejection: Option<Rejection>,
 }
 impl SlotReport {
+    /// Write this owned report's single bounded measurement diagnostic, if present.
+    ///
+    /// The CLI delegates directly to this writer. Tests can compare these exact
+    /// bytes with this same report's retained captures, independently of the
+    /// measurement calculation. No raw header, token or native error is formatted.
+    /// Non-header outcomes write nothing; a record is always below 1,024 bytes.
+    /// The borrowed report remains unchanged, including on partial output failure.
+    ///
+    /// # Errors
+    /// Return the output sink's error; previously written bytes are not a complete record.
+    pub fn write_measurement(&self, output: &mut impl io::Write) -> io::Result<()> {
+        let Some(facts) = self.facts() else {
+            return Ok(());
+        };
+        let slot = self.slot;
+        match facts.measurement() {
+            Ok(value) => {
+                let [t1, t2, t3, t4] = value.coordinates();
+                let [r1, r4] = value.local_fractional_remainders();
+                let arithmetic = value.arithmetic();
+                writeln!(
+                    output,
+                    "event=measurement slot={slot} status=nominal_software authentication=none eligible=0 mapping=declared_experimental_observed_consistent capture=software_bracketed wire_error=unknown phase_q33={} rtt_q32={} t1_q32={} t2_q32={} t3_q32={} t4_q32={} local_r1={r1} local_r4={r4} residual_denominator=1000000000 declared_limit_ns={} observed_residual_ns={} age_ns={}",
+                    arithmetic.offset().numerator(),
+                    arithmetic.round_trip().numerator(),
+                    t1.ticks(),
+                    t2.ticks(),
+                    t3.ticks(),
+                    t4.ticks(),
+                    value.declared_limit_ns(),
+                    value.observed_residual_ns(),
+                    value.acquisition_age().as_nanos(),
+                )
+            }
+            Err(reason) => {
+                let mapping = if reason == MeasurementRefusal::Unavailable {
+                    "absent"
+                } else {
+                    "declared_experimental"
+                };
+                writeln!(
+                    output,
+                    "event=measurement slot={slot} status=unavailable reason={} authentication=none eligible=0 capture=software_bracketed mapping={mapping} wire_error=unknown",
+                    reason.as_str(),
+                )
+            }
+        }
+    }
+
     /// Return the fixed zero-or-one association index.
     #[must_use]
     pub fn slot(&self) -> u8 {
@@ -699,6 +836,10 @@ struct LiveSlot {
     local: SocketAddr,
     /// Immutable sole request; correlation stays private.
     packet: [u8; PACKET_BYTES],
+    /// Unique prepared socket/request lifetime, never inferred from an address.
+    identity: Arc<()>,
+    /// This prepared request's immutable experimental model and date declaration.
+    profile: Option<ExperimentalProfile>,
     /// One-way sending/pending/terminal state.
     phase: Phase,
     /// A complete native send was confirmed.
@@ -725,6 +866,8 @@ impl LiveSlot {
             peer: value.peer,
             local: value.local,
             packet: value.packet,
+            identity: value.identity,
+            profile: value.profile,
             phase: Phase::Sending,
             sent: false,
             received: 0,
@@ -975,6 +1118,18 @@ pub enum Rejection {
 /// Fully checked immutable packet facts; current control/deadline remain unproved
 /// until the sole owner commits immediately after its final guards.
 struct StagedReply {
+    /// The precise native socket/request owner that admitted this candidate.
+    identity: Arc<()>,
+    /// Checked actual peer and local endpoints retained with that identity.
+    peer: SocketAddr,
+    /// The original socket endpoint; numeric reuse alone supplies no identity.
+    local: SocketAddr,
+    /// Entire structurally admitted header; semantic interpretation cannot discard bits.
+    header: RawHeader,
+    /// Fallible arithmetic is staged before the final current-state/deadline guard.
+    measurement: Result<ExperimentalMeasurement, MeasurementRefusal>,
+    /// Original immutable context that produced the staged conditional result.
+    profile: Option<ExperimentalProfile>,
     /// Actual saved send bracket captured by this owner.
     sent: SendBracket,
     /// Actual selected read-return observations.
@@ -1011,14 +1166,14 @@ fn stage_reply(
         return Err(Rejection::Source);
     }
     let frame = frame_no_legacy_mac_datagram(bytes, limits).map_err(Rejection::Frame)?;
-    let header = frame.header();
+    let header = *frame.header();
     if header.version() != 4 || header.mode() != 4 {
         return Err(Rejection::VersionOrMode);
     }
     if header.origin_timestamp().bits().to_be_bytes().as_slice() != &slot.packet[40..48] {
         return Err(Rejection::Origin);
     }
-    if read.mono < sent.after.mono {
+    if read.mono < sent.after.mono_after {
         return Err(Rejection::ReadBeforeSend);
     }
     let stratum = header.stratum();
@@ -1031,6 +1186,19 @@ fn stage_reply(
         }
     }
     Ok(StagedReply {
+        identity: Arc::clone(&slot.identity),
+        peer: source,
+        local: slot.local,
+        header,
+        measurement: measurement::measure(
+            slot.profile,
+            sent.before,
+            sent.after,
+            read,
+            read.mono_after,
+            header,
+        ),
+        profile: slot.profile,
         sent,
         read,
         stratum,
@@ -1108,10 +1276,18 @@ struct ReadDatagram<'a> {
 /// No await or external effect intervenes; an impossible local read order rejects
 /// the datagram while preserving its pending slot and prior rejection cause.
 fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instant) {
-    if processing < candidate.read.mono {
-        slot.rejected += 1;
+    if !Arc::ptr_eq(&slot.identity, &candidate.identity)
+        || slot.peer != candidate.peer
+        || slot.local != candidate.local
+        || slot.profile != candidate.profile
+        || !matches!(slot.phase, Phase::Pending(_))
+    {
         return;
     }
+    let Some(age) = processing.checked_duration_since(candidate.read.mono_after) else {
+        slot.rejected += 1;
+        return;
+    };
     if candidate.stratum == 0 {
         slot.finish(TerminalOutcome::Control {
             code: candidate.code,
@@ -1119,14 +1295,22 @@ fn commit_reply(slot: &mut LiveSlot, candidate: &StagedReply, processing: Instan
     } else {
         slot.finish(TerminalOutcome::Header {
             stratum: candidate.stratum,
-            facts: TransportFacts {
+            facts: Box::new(TransportFacts {
                 send_before: candidate.sent.before,
                 send_after: candidate.sent.after,
                 read_return: candidate.read,
                 processing,
                 peer_receive_bits: candidate.receive_bits,
                 peer_transmit_bits: candidate.transmit_bits,
-            },
+                header: candidate.header,
+                peer: candidate.peer,
+                local: candidate.local,
+                identity: Arc::clone(&candidate.identity),
+                measurement: candidate
+                    .measurement
+                    .map(|value| value.with_acquisition_age(age)),
+                profile: candidate.profile,
+            }),
         });
     }
 }

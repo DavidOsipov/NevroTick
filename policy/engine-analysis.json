@@ -58,7 +58,7 @@
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",
     "package": "nevrotick-engine",
-    "source_file_count": 166,
+    "source_file_count": 167,
     "critical_files": [
       "crates/nevrotick-engine/src/lib.rs"
     ],

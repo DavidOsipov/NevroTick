@@ -301,6 +301,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             required = {
                 "getrandom": {"version": "=0.4.3", "default-features": False},
                 "ntp-wire": {"version": "=0.0.0", "path": "../ntp-wire"},
+                "time-domain": {"version": "=0.0.0", "path": "../time-domain"},
                 "tokio": {"version": "=1.54.1", "default-features": False,
                           "features": ["rt", "net", "time", "sync", "macros"]},
             }
@@ -310,7 +311,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     or type(member["dependencies"]["getrandom"].get("default-features")) is not bool
                     or type(member["dependencies"]["tokio"].get("default-features")) is not bool
                     or member.get("bin") != [{"name": "nevrotick-observe", "path": "src/bin/nevrotick-observe.rs"}]):
-                raise ENV.Incomplete("The engine requires its exact reviewed runtime/wire dependencies and observe entrypoint.")
+                raise ENV.Incomplete("The engine requires its exact reviewed runtime/wire/domain dependencies and observe entrypoint.")
         local_packages.add((package, member["package"]["version"]))
     policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
     if policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
@@ -334,7 +335,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
             or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
-            or any(p.get("dependencies") != ["getrandom", "ntp-wire", "tokio"] for p in local if p["name"] == "nevrotick-engine")
+            or any(p.get("dependencies") != ["getrandom", "ntp-wire", "time-domain", "tokio"] for p in local if p["name"] == "nevrotick-engine")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):

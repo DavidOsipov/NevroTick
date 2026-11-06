@@ -38,7 +38,7 @@ CONTRACT_SCOPE = COMMON.Scope(
 FIXED_CONTRACT_POLICY = {
     "schema_version": 1,
     "admission_status": "admitted-engine-external-contracts-only",
-    "package": "nevrotick-engine", "source_file_count": 166,
+    "package": "nevrotick-engine", "source_file_count": 167,
     "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
     "tool_admission_profile": "stable-core",
     "contracts_wall_seconds": 300, "jobs": 6, "test_threads": 1,
@@ -228,8 +228,9 @@ def contract_examples() -> dict:
     examples = {
         "legal": {"statement": legal, "code": None, "tokens": [], "success_marker": marker},
         "config_construction": {
-            "statement": "let _ = Config { peers: [peers[0], peers[0]], timeout: Duration::ZERO };",
-            "code": "E0451", "tokens": ["peers", "timeout", "private"]},
+            "statement": "let _ = Config { peers: [peers[0], peers[0]], timeout: Duration::ZERO, "
+                         "experimental_profile: None };",
+            "code": "E0451", "tokens": ["peers", "timeout", "experimental_profile", "private"]},
         "schedule_construction": {
             "statement": "let _ = ControlSchedule { stop_after: Some(Duration::from_secs(31)), "
                          "invalidate_after: Some(Duration::from_secs(31)) };",

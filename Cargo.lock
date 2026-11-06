@@ -93,6 +93,7 @@ version = "0.0.0"
 dependencies = [
  "getrandom",
  "ntp-wire",
+ "time-domain",
  "tokio",
 ]
 

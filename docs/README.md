@@ -77,8 +77,10 @@ Preserve the historical checkpoints below without extending their scope or
 resuming their jobs, source preparation, metadata repairs or verifier work.
 The [selected pure-leap checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
 is complete, including four current mutation cohorts and qualified receipt
-reconciliation. The next product child is [S2.1's controlled loopback
-measurement](../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
+reconciliation. [S2.1's controlled measurement source checkpoint](../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026)
+now passes focused host tests, public-contract probes, dependency checks and
+Windows cross-builds. Current three-owner coverage/mutation is next; native,
+production-scale/uncertainty and estimator qualification remain open.
 Runtime validation, independent behavioral tests, coverage/mutation, security,
 native/package and release gates remain; all existing execution holds remain.
 

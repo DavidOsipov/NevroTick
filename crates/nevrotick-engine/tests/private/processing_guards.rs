@@ -2,6 +2,7 @@
 //! Private current-context and terminal-outcome checks; no sample or AFD qualification.
 
 use super::*;
+use std::collections::BTreeMap;
 use std::error::Error;
 
 /// Maximum fixture I/O wait; unrelated to the processing deadline under test.
@@ -161,18 +162,32 @@ async fn response(
     stratum: u8,
     wrong_origin: bool,
 ) -> Result<Received, Box<dyn Error>> {
+    let mut packet = [0_u8; PACKET_BYTES];
+    packet[0] = 0x24; // LI=0, VN=4, server mode.
+    packet[1] = stratum;
+    packet[12..16].copy_from_slice(&[1, 2, 3, 4]);
+    packet[24..32].copy_from_slice(&request[40..48]);
+    if wrong_origin {
+        packet[24] ^= 1;
+    }
+    packet[32..40].copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
+    packet[40..48].copy_from_slice(&[9, 10, 11, 12, 13, 14, 15, 16]);
+    response_packet(slot, peer, &packet).await
+}
+
+/// Send one complete literal header and retain its actual socket-read observations.
+/// The caller owns the exact packet contents; this helper does not repair them.
+///
+/// # Errors
+/// Preserve bounded send/read failures and reject an incomplete native send.
+async fn response_packet(
+    slot: &LiveSlot,
+    peer: &UdpSocket,
+    packet: &[u8; PACKET_BYTES],
+) -> Result<Received, Box<dyn Error>> {
     Ok(tokio::time::timeout(IO_LIMIT, async {
         let mut bytes = [0_u8; RECEIVE_BYTES];
-        bytes[0] = 0x24; // LI=0, VN=4, server mode.
-        bytes[1] = stratum;
-        bytes[12..16].copy_from_slice(&[1, 2, 3, 4]);
-        bytes[24..32].copy_from_slice(&request[40..48]);
-        if wrong_origin {
-            bytes[24] ^= 1;
-        }
-        bytes[32..40].copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
-        bytes[40..48].copy_from_slice(&[9, 10, 11, 12, 13, 14, 15, 16]);
-        if peer.send_to(&bytes[..PACKET_BYTES], slot.local).await? != PACKET_BYTES {
+        if peer.send_to(packet, slot.local).await? != PACKET_BYTES {
             return Err(io::Error::other("fixture reply was not fully sent"));
         }
         let (length, source) = slot.socket.recv_from(&mut bytes).await?;
@@ -321,6 +336,12 @@ fn snapshot_facts(slot: &LiveSlot) -> Result<TransportFacts, Box<dyn Error>> {
         processing: facts.processing,
         peer_receive_bits: facts.peer_receive_bits,
         peer_transmit_bits: facts.peer_transmit_bits,
+        header: facts.header,
+        peer: facts.peer,
+        local: facts.local,
+        identity: Arc::clone(&facts.identity),
+        measurement: facts.measurement,
+        profile: facts.profile,
     })
 }
 
@@ -511,11 +532,42 @@ fn check_fact_getters(facts: &TransportFacts, saved: &TransportFacts) {
         (facts.read_return(), saved.read_return),
     ] {
         assert_eq!(actual.monotonic(), expected.mono);
+        assert_eq!(actual.mono_after, expected.mono_after);
         assert_eq!(actual.utc(), expected.utc);
     }
     assert_eq!(facts.processing(), saved.processing);
     assert_eq!(facts.peer_receive_bits(), 0x0102_0304_0506_0708);
     assert_eq!(facts.peer_transmit_bits(), 0x090a_0b0c_0d0e_0f10);
+    assert_eq!(facts.peer_endpoint(), saved.peer);
+    assert_eq!(facts.local_endpoint(), saved.local);
+    assert_eq!(facts.experimental_profile(), saved.profile);
+    assert!(facts.same_exchange(saved));
+    assert_eq!(
+        facts.header().leap_indicator(),
+        saved.header.leap_indicator()
+    );
+    assert_eq!(facts.header().version(), saved.header.version());
+    assert_eq!(facts.header().mode(), saved.header.mode());
+    assert_eq!(facts.header().stratum(), saved.header.stratum());
+    assert_eq!(facts.header().poll(), saved.header.poll());
+    assert_eq!(facts.header().precision(), saved.header.precision());
+    assert_eq!(
+        facts.header().root_delay_bits(),
+        saved.header.root_delay_bits()
+    );
+    assert_eq!(
+        facts.header().root_dispersion_bits(),
+        saved.header.root_dispersion_bits()
+    );
+    assert_eq!(facts.header().reference_id(), saved.header.reference_id());
+    assert_eq!(
+        facts.header().reference_timestamp().bits(),
+        saved.header.reference_timestamp().bits()
+    );
+    assert_eq!(
+        facts.header().origin_timestamp().bits(),
+        saved.header.origin_timestamp().bits()
+    );
 }
 
 /// Require the unchanged public terminal getters after consuming the native owner.
@@ -1113,7 +1165,7 @@ fn check_literal_stage_rejections(
     };
     let earlier = sent
         .after
-        .mono
+        .mono_after
         .checked_sub(Duration::from_nanos(1))
         .ok_or_else(|| io::Error::other("send observation has no checked predecessor"))?;
     assert!(matches!(
@@ -1123,6 +1175,7 @@ fn check_literal_stage_rejections(
             received.source,
             SoftwareClock {
                 mono: earlier,
+                mono_after: earlier,
                 utc: received.read.utc
             },
             limits
@@ -1137,7 +1190,8 @@ fn check_literal_stage_rejections(
             &received.bytes[..received.length],
             received.source,
             SoftwareClock {
-                mono: sent.after.mono,
+                mono: sent.after.mono_after,
+                mono_after: sent.after.mono_after,
                 utc: received.read.utc
             },
             limits
@@ -1814,7 +1868,7 @@ async fn check_commit_processing_boundaries(
     .map_err(|_| io::Error::other("real stratum-fifteen boundary neighbor did not stage"))?;
     let earlier = datagram
         .read
-        .mono
+        .mono_after
         .checked_sub(Duration::from_nanos(1))
         .ok_or_else(|| io::Error::other("actual read has no checked predecessor"))?;
     let selected = classify_read_result(
@@ -1826,7 +1880,11 @@ async fn check_commit_processing_boundaries(
     commit_reply(
         &mut slots[0],
         &staged,
-        if equal { datagram.read.mono } else { earlier },
+        if equal {
+            datagram.read.mono_after
+        } else {
+            earlier
+        },
     );
     assert_eq!(slots[0].last_rejection, Some(Rejection::Origin));
     if equal {
@@ -1836,7 +1894,7 @@ async fn check_commit_processing_boundaries(
         );
         assert_eq!((slots[0].received, slots[0].rejected), (3, 2));
         let facts = snapshot_facts(&slots[0])?;
-        assert_eq!(facts.processing, datagram.read.mono);
+        assert_eq!(facts.processing, datagram.read.mono_after);
         assert_eq!(facts.read_return.mono, datagram.read.mono);
         assert_eq!(facts.read_return.utc, datagram.read.utc);
         assert_eq!(facts.send_before.mono, staged.sent.before.mono);
@@ -1872,6 +1930,564 @@ fn commit_processing_accepts_equal_read_and_rejects_its_predecessor() -> Result<
         runtime.block_on(check_commit_processing_boundaries(prepared, peers, equal))?;
     }
     Ok(())
+}
+
+/// A staged reply belongs to its actual pending socket/request, and commits once.
+/// Both requests and reply reads use owned real loopback sockets. The second
+/// commit uses an explicitly supplied later processing instant, not a clock claim.
+///
+/// # Errors
+/// Preserve actual setup, bounded native I/O, parser and checked-time failures.
+///
+/// # Panics
+/// Fail if a reply consumes another pending owner, loses its healthy original
+/// owner, or replaces any facts after that owner has already completed.
+#[test]
+fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dyn Error>> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(async {
+        let [first, second] = prepared;
+        let mut slots = [
+            LiveSlot::from_prepared(first)?,
+            LiveSlot::from_prepared(second)?,
+        ];
+        let [first, second] = peers;
+        let peers = [UdpSocket::from_std(first)?, UdpSocket::from_std(second)?];
+        let deadline = Instant::now()
+            .checked_add(MAX_TIMEOUT)
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let first_query = send_query(&mut slots[0], &peers[0], deadline).await?;
+        let second_query = send_query(&mut slots[1], &peers[1], deadline).await?;
+        let datagram = response(&slots[0], &peers[0], &first_query, 1, false).await?;
+        let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+        let candidate = stage_reply(
+            &slots[0],
+            &datagram.bytes[..datagram.length],
+            datagram.source,
+            datagram.read,
+            limits,
+        )
+        .map_err(|_| io::Error::other("original socket's real reply did not stage"))?;
+        let processing = Instant::now();
+
+        commit_reply(&mut slots[1], &candidate, processing);
+        assert!(
+            matches!(&slots[1].phase, Phase::Pending(_)),
+            "a staged reply consumed another pending socket/request"
+        );
+        assert!(matches!(&slots[0].phase, Phase::Pending(_)));
+
+        commit_reply(&mut slots[0], &candidate, processing);
+        assert_eq!(
+            slots[0].terminal().map(TerminalOutcome::status),
+            Some(Status::Header)
+        );
+        let original = snapshot_facts(&slots[0])?;
+        let later = processing
+            .checked_add(Duration::from_nanos(1))
+            .ok_or(PilotError::DeadlineOverflow)?;
+        commit_reply(&mut slots[0], &candidate, later);
+        check_fact_getters(&snapshot_facts(&slots[0])?, &original);
+
+        let neighbor = response(&slots[1], &peers[1], &second_query, 2, false).await?;
+        let neighbor_candidate = stage_reply(
+            &slots[1],
+            &neighbor.bytes[..neighbor.length],
+            neighbor.source,
+            neighbor.read,
+            limits,
+        )
+        .map_err(|_| io::Error::other("preserved neighboring reply did not stage"))?;
+        commit_reply(&mut slots[1], &neighbor_candidate, Instant::now());
+        assert_eq!(
+            slots[1].terminal().and_then(TerminalOutcome::stratum),
+            Some(2)
+        );
+        check_fact_getters(&snapshot_facts(&slots[0])?, &original);
+        Ok::<(), Box<dyn Error>>(())
+    })
+}
+
+/// Every ordinary header field survives a real native read, staging and report.
+/// High-bit root fields remain uninterpreted raw bits, not signed delay values.
+///
+/// # Errors
+/// Preserve bounded native I/O, wire setup, checked-time and absent-fact failures.
+///
+/// # Panics
+/// Fail if final admission drops any literal metadata or changes capture identity.
+#[test]
+fn complete_header_survives_actual_staging_and_terminal_projection() -> Result<(), Box<dyn Error>> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(async {
+        let [first, second] = prepared;
+        let mut slot = LiveSlot::from_prepared(first)?;
+        drop(second);
+        let [peer, unused] = peers;
+        drop(unused);
+        let peer = UdpSocket::from_std(peer)?;
+        let deadline = Instant::now()
+            .checked_add(MAX_TIMEOUT)
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let query = send_query(&mut slot, &peer, deadline).await?;
+        let mut packet = [0_u8; PACKET_BYTES];
+        packet[0] = 0xa4; // LI=2, VN=4, server mode.
+        packet[1] = 15;
+        packet[2] = 127;
+        packet[3] = 128; // Precision -128, retaining the original signed byte.
+        packet[4..8].copy_from_slice(&0xffff_0000_u32.to_be_bytes());
+        packet[8..12].copy_from_slice(&0x8000_0000_u32.to_be_bytes());
+        packet[12..16].copy_from_slice(&0xdead_beef_u32.to_be_bytes());
+        packet[16..24].copy_from_slice(&0x1234_5678_9abc_def0_u64.to_be_bytes());
+        packet[24..32].copy_from_slice(&query[40..48]);
+        packet[32..40].copy_from_slice(&0x0102_0304_0506_0708_u64.to_be_bytes());
+        packet[40..48].copy_from_slice(&0x090a_0b0c_0d0e_0f10_u64.to_be_bytes());
+        let datagram = response_packet(&slot, &peer, &packet).await?;
+        assert_eq!(&datagram.bytes[..datagram.length], &packet);
+        let candidate = stage_reply(
+            &slot,
+            &datagram.bytes[..datagram.length],
+            datagram.source,
+            datagram.read,
+            FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
+        )
+        .map_err(|_| io::Error::other("complete literal metadata did not stage"))?;
+        commit_reply(&mut slot, &candidate, Instant::now());
+        let saved = snapshot_facts(&slot)?;
+        let report = slot.into_report(0)?;
+        let facts = report
+            .facts()
+            .ok_or_else(|| io::Error::other("complete header lost its terminal facts"))?;
+        check_fact_getters(facts, &saved);
+        let header = facts.header();
+        assert_eq!(header.leap_indicator(), 2);
+        assert_eq!(header.version(), 4);
+        assert_eq!(header.mode(), 4);
+        assert_eq!(header.stratum(), 15);
+        assert_eq!(header.poll(), 127);
+        assert_eq!(header.precision(), -128);
+        assert_eq!(header.root_delay_bits(), 0xffff_0000);
+        assert_eq!(header.root_dispersion_bits(), 0x8000_0000);
+        assert_eq!(header.reference_id(), 0xdead_beef);
+        assert_eq!(header.reference_timestamp().bits(), 0x1234_5678_9abc_def0);
+        assert_eq!(
+            header.origin_timestamp().bits(),
+            u64::from_be_bytes(query[40..48].try_into()?)
+        );
+        assert_eq!(header.receive_timestamp().bits(), 0x0102_0304_0506_0708);
+        assert_eq!(header.transmit_timestamp().bits(), 0x090a_0b0c_0d0e_0f10);
+        assert_eq!(facts.peer_endpoint(), peer.local_addr()?);
+        assert_eq!(facts.local_endpoint(), report.local_endpoint());
+        Ok::<(), Box<dyn Error>>(())
+    })
+}
+
+/// Independently express a post-Unix wall reading as rational NTP Q32 ticks.
+/// The u64 whole-second and subsecond domains fit the intermediate u128 products.
+///
+/// # Errors
+/// Rejects pre-Unix fixture time or a nonrepresentable signed coordinate.
+fn observed_wall_coordinates(wall: SystemTime) -> Result<(i128, u32, i128), Box<dyn Error>> {
+    let since_unix = wall.duration_since(std::time::UNIX_EPOCH)?;
+    let seconds = u128::from(since_unix.as_secs()) + 2_208_988_800;
+    let fraction = u128::from(since_unix.subsec_nanos()) * 4_294_967_296;
+    let ticks = seconds * 4_294_967_296 + fraction / 1_000_000_000;
+    let remainder = fraction % 1_000_000_000;
+    let nanoseconds = seconds * 1_000_000_000 + u128::from(since_unix.subsec_nanos());
+    Ok((
+        i128::try_from(ticks)?,
+        u32::try_from(remainder)?,
+        i128::try_from(nanoseconds)?,
+    ))
+}
+
+/// Independently measure the gap from actual wall progress to each capture bracket.
+///
+/// # Errors
+/// Preserve unsupported actual wall readings and nonrepresentable residuals.
+fn observed_capture_gap(facts: &TransportFacts) -> Result<u64, Box<dyn Error>> {
+    let ns1 = observed_wall_coordinates(facts.send_before.utc)?.2;
+    let mut gap = 0_i128;
+    for clock in [facts.send_after, facts.read_return] {
+        let ns = observed_wall_coordinates(clock.utc)?.2;
+        let lower = i128::try_from(
+            clock
+                .mono
+                .checked_duration_since(facts.send_before.mono_after)
+                .ok_or_else(|| io::Error::other("observed lower capture interval reversed"))?
+                .as_nanos(),
+        )?;
+        let upper = i128::try_from(
+            clock
+                .mono_after
+                .checked_duration_since(facts.send_before.mono)
+                .ok_or_else(|| io::Error::other("observed upper capture interval reversed"))?
+                .as_nanos(),
+        )?;
+        let wall_delta = ns - ns1;
+        gap = gap.max(lower - wall_delta).max(wall_delta - upper);
+    }
+    Ok(u64::try_from(gap)?)
+}
+
+/// Reconstruct a successful actual-UDP result without production conversion/math.
+/// The literal peer readings are NTP second 4,000,000,000 plus 1/16 and 1/8 s.
+///
+/// # Errors
+/// Preserve missing measurement, unsupported actual clock and checked-age failures.
+///
+/// # Panics
+/// Fail on wrong units/sign, substituted token, dropped remainder, age or residual.
+fn check_observed_measurement(facts: &TransportFacts) -> Result<(), Box<dyn Error>> {
+    let measurement = facts.measurement()?;
+    let (t1, r1, _) = observed_wall_coordinates(facts.send_before.utc)?;
+    let (t4, r4, _) = observed_wall_coordinates(facts.read_return.utc)?;
+    let t2 = 17_179_869_184_268_435_456_i128;
+    let t3 = 17_179_869_184_536_870_912_i128;
+    let [a, b, c, d] = measurement.coordinates();
+    assert_eq!(
+        [a.ticks(), b.ticks(), c.ticks(), d.ticks()],
+        [t1, t2, t3, t4]
+    );
+    assert_eq!(
+        measurement.arithmetic().offset().numerator(),
+        (t2 - t1) + (t3 - t4)
+    );
+    assert_eq!(
+        measurement.arithmetic().round_trip().numerator(),
+        (t4 - t1) - (t3 - t2)
+    );
+    assert_eq!(measurement.local_fractional_remainders(), [r1, r4]);
+    assert_eq!(measurement.declared_limit_ns(), 30_000_000_000);
+    assert_eq!(
+        measurement.acquisition_age(),
+        facts
+            .processing
+            .checked_duration_since(facts.read_return.mono_after)
+            .ok_or_else(|| io::Error::other("actual acquisition age reversed"))?
+    );
+    assert_eq!(
+        measurement.observed_residual_ns(),
+        observed_capture_gap(facts)?
+    );
+    Ok(())
+}
+
+/// Decode exactly twenty fields from one bounded printable measurement record.
+///
+/// # Errors
+/// Reject noncanonical framing, duplicate/empty fields or any aggregate excess.
+fn measurement_record_fields(record: &str) -> Result<BTreeMap<&str, &str>, Box<dyn Error>> {
+    if record.len() > 1_024 {
+        return Err(io::Error::other("measurement record exceeds its fixture bound").into());
+    }
+    let line = record
+        .strip_suffix('\n')
+        .ok_or_else(|| io::Error::other("measurement record has no complete line"))?;
+    if !line
+        .bytes()
+        .all(|byte| byte.is_ascii_graphic() || byte == b' ')
+    {
+        return Err(io::Error::other("measurement record is not one printable ASCII line").into());
+    }
+    let mut fields = BTreeMap::new();
+    for field in line.split(' ') {
+        let (key, value) = field
+            .split_once('=')
+            .ok_or_else(|| io::Error::other("measurement field has no separator"))?;
+        if fields.len() >= 20
+            || key.is_empty()
+            || value.is_empty()
+            || fields.insert(key, value).is_some()
+        {
+            return Err(io::Error::other("measurement field set is not unique and bounded").into());
+        }
+    }
+    if fields.len() != 20 {
+        return Err(io::Error::other("measurement record has an unexpected field count").into());
+    }
+    Ok(fields)
+}
+
+/// Verify the actual shared writer against this run's independently captured truth.
+/// No emitted local coordinate, production arithmetic or rounded value is an oracle.
+///
+/// # Errors
+/// Return fixed failures for malformed output or any difference from actual facts.
+fn check_actual_measurement_record(
+    report: &SlotReport,
+    record: &str,
+) -> Result<(), Box<dyn Error>> {
+    let facts = report
+        .facts()
+        .ok_or_else(|| io::Error::other("measurement observer has no actual transport facts"))?;
+    let fields = measurement_record_fields(record)?;
+    let (t1, r1, _) = observed_wall_coordinates(facts.send_before.utc)?;
+    let (t4, r4, _) = observed_wall_coordinates(facts.read_return.utc)?;
+    let t2 = 17_179_869_184_268_435_456_i128;
+    let t3 = 17_179_869_184_536_870_912_i128;
+    let age = facts
+        .processing
+        .checked_duration_since(facts.read_return.mono_after)
+        .ok_or_else(|| io::Error::other("measurement observer's actual age reversed"))?;
+    let numbers = [
+        ("slot", i128::from(report.slot())),
+        ("phase_q33", (t2 - t1) + (t3 - t4)),
+        ("rtt_q32", (t4 - t1) - (t3 - t2)),
+        ("t1_q32", t1),
+        ("t2_q32", t2),
+        ("t3_q32", t3),
+        ("t4_q32", t4),
+        ("local_r1", i128::from(r1)),
+        ("local_r4", i128::from(r4)),
+        ("residual_denominator", 1_000_000_000),
+        ("declared_limit_ns", 30_000_000_000),
+        (
+            "observed_residual_ns",
+            i128::from(observed_capture_gap(facts)?),
+        ),
+        ("age_ns", i128::try_from(age.as_nanos())?),
+    ];
+    for (key, value) in numbers {
+        if fields.get(key).copied() != Some(value.to_string().as_str()) {
+            return Err(io::Error::other(
+                "measurement number differs from independently captured facts",
+            )
+            .into());
+        }
+    }
+    for (key, value) in [
+        ("event", "measurement"),
+        ("status", "nominal_software"),
+        ("authentication", "none"),
+        ("eligible", "0"),
+        ("mapping", "declared_experimental_observed_consistent"),
+        ("capture", "software_bracketed"),
+        ("wire_error", "unknown"),
+    ] {
+        if fields.get(key).copied() != Some(value) {
+            return Err(io::Error::other(
+                "measurement qualifier differs from its declared contract",
+            )
+            .into());
+        }
+    }
+    Ok(())
+}
+
+/// Alter only declared numeric fields while retaining a complete bounded record.
+/// This fixture helper performs no measurement calculation or source mutation.
+///
+/// # Errors
+/// Reject malformed source output, unknown selected fields or an oversized result.
+fn changed_measurement_record(
+    record: &str,
+    updates: &[(&str, i128)],
+) -> Result<String, Box<dyn Error>> {
+    let fields = measurement_record_fields(record)?;
+    if updates.iter().any(|(key, _)| !fields.contains_key(key)) {
+        return Err(io::Error::other("measurement control selected an absent field").into());
+    }
+    let mut changed = String::new();
+    for (key, value) in fields {
+        if !changed.is_empty() {
+            changed.push(' ');
+        }
+        changed.push_str(key);
+        changed.push('=');
+        if let Some((_, replacement)) = updates.iter().find(|(name, _)| *name == key) {
+            changed.push_str(&replacement.to_string());
+        } else {
+            changed.push_str(value);
+        }
+    }
+    changed.push('\n');
+    measurement_record_fields(&changed)?;
+    Ok(changed)
+}
+
+/// Challenge coherent numeric falsification beside the actual shared-writer record.
+///
+/// # Errors
+/// Preserve actual output/parse failures and missing admitted mutation neighbors.
+///
+/// # Panics
+/// Fail if altered coordinates/phase, age or residual pass the actual-fact observer.
+fn check_shared_measurement_writer(report: &SlotReport) -> Result<(), Box<dyn Error>> {
+    let mut output = Vec::new();
+    report.write_measurement(&mut output)?;
+    let record = std::str::from_utf8(&output)?;
+    check_actual_measurement_record(report, record)?;
+    let fields = measurement_record_fields(record)?;
+    let numeric = |key| -> Result<i128, Box<dyn Error>> {
+        Ok(fields
+            .get(key)
+            .ok_or_else(|| io::Error::other("measurement control has no numeric field"))?
+            .parse()?)
+    };
+    let coherent = changed_measurement_record(
+        record,
+        &[
+            ("t1_q32", numeric("t1_q32")? + 4_294_967_296),
+            ("t4_q32", numeric("t4_q32")? + 4_294_967_296),
+            ("phase_q33", numeric("phase_q33")? - 8_589_934_592),
+        ],
+    )?;
+    assert!(check_actual_measurement_record(report, &coherent).is_err());
+    let changed_age = changed_measurement_record(record, &[("age_ns", numeric("age_ns")? + 1)])?;
+    assert!(check_actual_measurement_record(report, &changed_age).is_err());
+    let residual = numeric("observed_residual_ns")? + 1;
+    if residual > numeric("declared_limit_ns")? {
+        return Err(
+            io::Error::other("residual observer control has no admitted upper neighbor").into(),
+        );
+    }
+    let changed_residual =
+        changed_measurement_record(record, &[("observed_residual_ns", residual)])?;
+    assert!(check_actual_measurement_record(report, &changed_residual).is_err());
+    check_actual_measurement_record(report, record)?;
+    Ok(())
+}
+
+/// Actual UDP captures, rather than sleeps, determine this measurement's oracle.
+/// The explicit finite date scope is pinned independently of observed host time.
+///
+/// # Errors
+/// Preserve unavailable host/profile, native I/O, framing and measurement evidence.
+///
+/// # Panics
+/// Fail if the returned checked measurement disagrees with captured rational facts.
+#[test]
+fn real_udp_measurement_matches_independent_captured_coordinates() -> Result<(), Box<dyn Error>> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(async {
+        let [first, second] = prepared;
+        let mut slot = LiveSlot::from_prepared(first)?;
+        drop(second);
+        slot.profile = Some(ExperimentalProfile::new(
+            2_272_060_800,
+            6_311_433_599,
+            30_000_000_000,
+        )?);
+        let [peer, unused] = peers;
+        drop(unused);
+        let peer = UdpSocket::from_std(peer)?;
+        let deadline = Instant::now()
+            .checked_add(MAX_TIMEOUT)
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let query = send_query(&mut slot, &peer, deadline).await?;
+        let mut packet = [0_u8; PACKET_BYTES];
+        packet[0] = 0x24;
+        packet[1] = 1;
+        packet[24..32].copy_from_slice(&query[40..48]);
+        packet[32..40].copy_from_slice(&0xee6b_2800_1000_0000_u64.to_be_bytes());
+        packet[40..48].copy_from_slice(&0xee6b_2800_2000_0000_u64.to_be_bytes());
+        let received = response_packet(&slot, &peer, &packet).await?;
+        let candidate = stage_reply(
+            &slot,
+            &received.bytes[..received.length],
+            received.source,
+            received.read,
+            FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?,
+        )
+        .map_err(|_| io::Error::other("actual measurement reply did not stage"))?;
+        commit_reply(&mut slot, &candidate, Instant::now());
+        let facts = snapshot_facts(&slot)?;
+        check_observed_measurement(&facts)?;
+        let report = slot.into_report(0)?;
+        let projected = report
+            .facts()
+            .ok_or_else(|| io::Error::other("actual measurement absent after owner consumption"))?;
+        assert!(projected.same_exchange(&facts));
+        check_observed_measurement(projected)?;
+        check_shared_measurement_writer(&report)?;
+        Ok::<(), Box<dyn Error>>(())
+    })
+}
+
+/// A diagnosed numerical refusal still consumes the correlated request once.
+/// A later profile selection and matching reply cannot reopen that native owner.
+///
+/// # Errors
+/// Preserve actual setup, profile, bounded native I/O and framing failures.
+///
+/// # Panics
+/// Fail if missing mapping is numeric zero or a late reply replaces its history.
+#[test]
+fn measurement_refusal_consumes_the_correlated_request_once() -> Result<(), Box<dyn Error>> {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_io()
+        .enable_time()
+        .max_blocking_threads(2)
+        .build()?;
+    let Fixture { prepared, peers } = fixture()?;
+    runtime.block_on(async {
+        let [first, second] = prepared;
+        let mut slot = LiveSlot::from_prepared(first)?;
+        drop(second);
+        let [peer, unused] = peers;
+        drop(unused);
+        let peer = UdpSocket::from_std(peer)?;
+        let deadline = Instant::now()
+            .checked_add(MAX_TIMEOUT)
+            .ok_or(PilotError::DeadlineOverflow)?;
+        let query = send_query(&mut slot, &peer, deadline).await?;
+        let received = response(&slot, &peer, &query, 1, false).await?;
+        let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
+        let candidate = stage_reply(
+            &slot,
+            &received.bytes[..received.length],
+            received.source,
+            received.read,
+            limits,
+        )
+        .map_err(|_| io::Error::other("transport-only reply did not stage"))?;
+        commit_reply(&mut slot, &candidate, Instant::now());
+        let original = snapshot_facts(&slot)?;
+        assert!(matches!(
+            original.measurement(),
+            Err(MeasurementRefusal::Unavailable)
+        ));
+        slot.profile = Some(ExperimentalProfile::new(
+            2_272_060_800,
+            6_311_433_599,
+            30_000_000_000,
+        )?);
+        let late = response(&slot, &peer, &query, 1, false).await?;
+        assert!(matches!(
+            stage_reply(
+                &slot,
+                &late.bytes[..late.length],
+                late.source,
+                late.read,
+                limits
+            ),
+            Err(Rejection::NoPending)
+        ));
+        commit_reply(&mut slot, &candidate, Instant::now());
+        let retained = snapshot_facts(&slot)?;
+        assert!(matches!(
+            retained.measurement(),
+            Err(MeasurementRefusal::Unavailable)
+        ));
+        check_fact_getters(&retained, &original);
+        Ok::<(), Box<dyn Error>>(())
+    })
 }
 
 /// Produce a genuine stopped-slot report after both Rust socket owners are dropped.

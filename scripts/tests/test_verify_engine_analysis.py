@@ -111,7 +111,8 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_new_analysis_files_are_outside_the_current_product_census(self):
         _, identity = MODULE.PRODUCT.admit_product(ROOT)
-        self.assertEqual(len(identity), 166)
+        self.assertEqual(len(identity), 167)
+        self.assertIn("crates/nevrotick-engine/src/measurement.rs", identity)
         for name in ["scripts/verify-engine-analysis.py", "scripts/tests/test_verify_engine_analysis.py",
                      "policy/engine-analysis.json"]:
             self.assertNotIn(name, identity)
@@ -486,7 +487,7 @@ class EngineExternalContractTests(unittest.TestCase):
         parent=MODULE.read_json(ROOT/MODULE.POLICY)
         self.assertEqual(parent["candidate_sha256"],
                          "509affa74871944548317221b58b45d878ee2b75d15103cc9bc2bde694be30a1")
-        self.assertEqual(policy["source_file_count"],166)
+        self.assertEqual(policy["source_file_count"],167)
         self.assertEqual(policy["critical_files"],["crates/nevrotick-engine/src/lib.rs"])
         self.assertEqual(policy["jobs"],6)
         self.assertEqual(policy["test_threads"],1)
@@ -505,7 +506,8 @@ class EngineExternalContractTests(unittest.TestCase):
             historical={key:copy.deepcopy(value) for key,value in parent.items() if key!="external_contracts"}
             healthy=MODULE.read_contract_policy(root)
             for key,value in (("schema_version",2),("admission_status","passed"),
-                              ("source_file_count",True),("jobs",12),("test_threads",12),
+                              ("source_file_count",True),("source_file_count",166),
+                              ("source_file_count",168),("jobs",12),("test_threads",12),
                               ("tool_admission_profile","full"),("critical_files",list(MODULE.SUBJECTS.values())),
                               ("mutation_equivalences",[{}]),("mutation_error_values",{"library":["panic!()"]}),
                               ("contracts_wall_seconds",0),("unexpected",1)):
@@ -546,7 +548,10 @@ class EngineExternalContractTests(unittest.TestCase):
         self.assertNotIn("execute(",legal)
         self.assertNotIn("Runtime",legal)
         self.assertIn("fn rejected(pilot: PreparedPilot)",cases["raw_schedule_execute"]["source"])
-        self.assertTrue({"peers","timeout"} <= set(cases["config_construction"]["tokens"]))
+        self.assertTrue({"peers","timeout","experimental_profile"} <= set(cases["config_construction"]["tokens"]))
+        self.assertEqual(cases["config_construction"]["source"].splitlines()[3],
+                         "let _ = Config { peers: [peers[0], peers[0]], timeout: Duration::ZERO, "
+                         "experimental_profile: None };")
         self.assertTrue({"stop_after","invalidate_after"} <= set(cases["schedule_construction"]["tokens"]))
         self.assertTrue(all("let _ = &value;" in cases[name]["source"].splitlines()[3]
                             for name in expected if name.endswith("_mutation")))

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "scope": "Six-member fixture and controlled loopback engine-pilot graph. The original 16 registry records and selected grants remain unchanged; seven selected registry packages add only the engine runtime/UDP/OS-entropy experiment. The two metadata-only locked resolution packages have no selected grant, build-script or runtime admission. Target rows pin the actual Linux/Windows package, feature and build-script closures. No TLS/NTS provider, production sample eligibility, clock authority or release qualification is admitted.",
-  "lockfile_sha256": "416b349d87cc0e53562d79d494316fd20c210ede2e45c2568f5973652753ec8f",
+  "lockfile_sha256": "3fedb26eb5b8b8a3bbce1672f21e2103d7c93178e71e93658e500cc9b6953ca6",
   "packages": [
     {
       "name": "castaway",
@@ -472,6 +472,6 @@
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
     "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
-    "crates/nevrotick-engine/Cargo.toml": "8399d79a18b2746d2a93aa5299df631fd4297f146b880831a84b3b6b2abd42e1"
+    "crates/nevrotick-engine/Cargo.toml": "0664748e86df5ccedc3cd9e3e69b7c97bf122f87a596632128ee4a49ef268447"
   }
 }

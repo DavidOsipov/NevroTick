@@ -821,21 +821,27 @@ under pure LP-C01/02/03, CHECK-7/25/26 and CHECK-15/23's pure replacement subset
 Its task records the current input maps, qualified receipt reuse, admission-code
 delta, four passing mutation cohorts and current offline generator checks. This
 completes neither full S1.4 nor P1.
-**Next executable product child:** implement the existing [first S2.1 controlled
-measurement](../../tasks/engine-transport-pilot.md#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
-Engine/protocol preserves complete immutable packet, exchange and capture
-evidence through final consume-once admission; domain owns checked mapping,
-era and arithmetic. Freeze the explicit experimental date scope, capture
-convention, mapping validity/error and refusal outcomes in that existing card
-before dependent implementation. Deliver a controlled-loopback exchange to a
-typed experimental measurement and bounded `nevrotick-observe` projection,
-retaining `authentication=none eligible=0`. Insufficient mapping evidence produces
-a diagnosed transport-only observation. No estimator vote, correction proposal
-or clock action follows. Requirements: REQ-8/BND-1 and applicable
-CHECK-6/7/8/11/14/25/27; environment: admitted Linux host with controlled peers.
-Changed graph/runner inputs require ordinary admission. DNS/retry scheduling,
-statistical uncertainty/divisors, full NTS and native Windows qualification remain
-later scopes.
+**Next executable product task:** finish the existing [first S2.1 measurement
+checkpoint](../../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026).
+The lossless envelope, checked conditional mapping/era/arithmetic, consume-once
+binding and bounded `nevrotick-observe` projection are implemented. The explicit
+experimental model is frozen in that task; 43 engine tests, 12 doctests, external
+constructor probes, fresh dependency checks and Windows cross-builds pass.
+These scoped checks establish no completed full-S2.1 or native qualification.
+Extend current engine analysis selection from library/CLI to include the newly
+registered critical `measurement.rs` owner, bind the complete current candidate
+and actual inventories, then complete coverage and mutation for all three owners.
+Preserve the 90% executable-line and 95% per-file viable-mutation gates, their
+existing budgets, nonempty denominators and independent alternatives for
+ungenerated behavior. Historical campaign scores cannot be transferred.
+Owner: engine/domain/QA; requirements: REQ-8/BND-1 and applicable
+CHECK-6/7/8/11/14/25/27. Environment: admitted Linux with controlled peers;
+`authentication=none eligible=0`, no estimator vote or clock effect. Independent
+truth includes exact dyadic cases, actual captured-clock reconstruction and the
+shared diagnostic writer checked against the same real-UDP report, including
+coherent-substitution faults. Full leap/scale admission, DNS/KoD scheduling,
+statistical uncertainty/divisors, NTS and native Windows evidence remain later
+owners. No new model, runtime framework or formal campaign is needed for this gate.
 
 Mandatory garde-backed/private construction, checked arithmetic, independent
 unit/property/boundary tests, 90% security-primitive coverage, 95% per-critical-file

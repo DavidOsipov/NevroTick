@@ -287,6 +287,8 @@ impl Drop for CliChild {
 enum CliCase {
     /// Two independently correlated ordinary headers.
     Healthy,
+    /// Explicit experimental clocks retain nominal arithmetic without eligibility.
+    Measurement,
     /// Wrong origin, two oversized datagrams and wrong source precede a valid neighbor.
     RejectedThenHealthy,
     /// Literal stratum-zero control information stays unauthenticated/ineligible.
@@ -303,7 +305,7 @@ impl CliCase {
     /// Literal selected terminal labels for both slots.
     fn statuses(self) -> [&'static str; 2] {
         match self {
-            Self::Healthy | Self::RejectedThenHealthy => ["header", "header"],
+            Self::Healthy | Self::Measurement | Self::RejectedThenHealthy => ["header", "header"],
             Self::Control => ["control", "control"],
             Self::Timeout => ["timeout", "timeout"],
             Self::Stop => ["stopped", "header"],
@@ -327,6 +329,14 @@ impl CliCase {
             timeout.into(),
         ];
         match self {
+            Self::Measurement => args.extend([
+                "--experimental-clock".into(),
+                "2272060800:6311433599:30000000000".into(),
+                "--stop-after-ms".into(),
+                "1000".into(),
+                "--invalidate-after-ms".into(),
+                "1000".into(),
+            ]),
             Self::Stop => args.extend(["--stop-after-ms".into(), "150".into()]),
             Self::Invalidate => args.extend(["--invalidate-after-ms".into(), "100".into()]),
             _ => {}
@@ -428,7 +438,12 @@ impl CliTraffic {
         self.requests[slot] = Some(query);
         self.clients[slot] = Some(client);
         let now = Instant::now();
-        let reply = literal_reply(&query, [1, 2][slot]);
+        let mut reply = literal_reply(&query, [1, 2][slot]);
+        if case == CliCase::Measurement {
+            // Deliberately inconsistent remote processing makes signed negative
+            // RTT observable without pretending the software capture is wire time.
+            reply[40..48].copy_from_slice(&[0xe0, 0x12, 0x34, 0x96, 0x20, 0, 0, 0]);
+        }
         match case {
             CliCase::Timeout | CliCase::Invalidate => {}
             CliCase::Stop if slot == 0 => self.flood_due = Some(now),
@@ -557,10 +572,23 @@ impl CliTraffic {
 /// # Errors
 /// Reject duplicate/unknown/missing fields, controls and unexpected line lengths.
 fn fields<'a>(line: &'a str, expected: &[&str]) -> Check<BTreeMap<&'a str, &'a str>> {
+    bounded_fields(line, expected, 256)
+}
+
+/// Decode a fixed record kind under its independently selected byte ceiling.
+///
+/// # Errors
+/// Reject unsupported ceilings, controls, duplicate/unknown/missing fields and excess bytes.
+fn bounded_fields<'a>(
+    line: &'a str,
+    expected: &[&str],
+    maximum: usize,
+) -> Check<BTreeMap<&'a str, &'a str>> {
     let line = line.strip_suffix('\r').unwrap_or(line);
     check(
-        !line.is_empty()
-            && line.len() <= 256
+        matches!(maximum, 256 | 1024)
+            && !line.is_empty()
+            && line.len() <= maximum
             && line.bytes().all(|b| b.is_ascii_graphic() || b == b' '),
         "CLI record is not bounded printable ASCII",
     )?;
@@ -596,6 +624,173 @@ fn integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<u128> {
         "CLI integer is not canonical unsigned decimal",
     )?;
     Ok(raw.parse()?)
+}
+
+/// Read a canonical signed diagnostic integer without the product formatter/parser.
+///
+/// # Errors
+/// Reject missing, signed-plus, padded, negative-zero, nondecimal and overflowing values.
+fn signed_integer(values: &BTreeMap<&str, &str>, key: &str) -> Check<i128> {
+    let raw = values
+        .get(key)
+        .copied()
+        .ok_or_else(|| io::Error::other("missing CLI signed integer"))?;
+    let digits = raw.strip_prefix('-').unwrap_or(raw);
+    check(
+        raw.len() <= 40
+            && !digits.is_empty()
+            && digits.bytes().all(|byte| byte.is_ascii_digit())
+            && (digits == "0" || !digits.starts_with('0'))
+            && raw != "-0",
+        "CLI integer is not canonical signed decimal",
+    )?;
+    Ok(raw.parse()?)
+}
+
+/// Exact public fields for the experimental nominal observation; no accuracy claim.
+const MEASUREMENT_FIELDS: &[&str] = &[
+    "event",
+    "slot",
+    "status",
+    "authentication",
+    "eligible",
+    "mapping",
+    "capture",
+    "wire_error",
+    "phase_q33",
+    "rtt_q32",
+    "t1_q32",
+    "t2_q32",
+    "t3_q32",
+    "t4_q32",
+    "local_r1",
+    "local_r4",
+    "residual_denominator",
+    "declared_limit_ns",
+    "observed_residual_ns",
+    "age_ns",
+];
+
+/// Verify exact conditional arithmetic and retained uncertainty on a Header result.
+///
+/// # Errors
+/// Reject invented authority, changed literal remote dates, algebra/residual faults or excess bytes.
+fn measurement_record(line: &str, case: CliCase, slot: usize) -> Check<()> {
+    check(
+        slot < 2,
+        "measurement observer slot exceeds the two associations",
+    )?;
+    if case != CliCase::Measurement {
+        let values = bounded_fields(
+            line,
+            &[
+                "event",
+                "slot",
+                "status",
+                "reason",
+                "authentication",
+                "eligible",
+                "capture",
+                "mapping",
+                "wire_error",
+            ],
+            1024,
+        )?;
+        check(
+            values["event"] == "measurement"
+                && integer(&values, "slot")? == u128::try_from(slot)?
+                && values["status"] == "unavailable"
+                && values["reason"] == "mapping_unavailable"
+                && values["authentication"] == "none"
+                && values["eligible"] == "0"
+                && values["capture"] == "software_bracketed"
+                && values["mapping"] == "absent"
+                && values["wire_error"] == "unknown",
+            "CLI unavailable measurement differs from independent refusal contract",
+        )?;
+        return Ok(());
+    }
+    let values = bounded_fields(line, MEASUREMENT_FIELDS, 1024)?;
+    check(
+        values["event"] == "measurement"
+            && integer(&values, "slot")? == u128::try_from(slot)?
+            && values["status"] == "nominal_software"
+            && values["authentication"] == "none"
+            && values["eligible"] == "0"
+            && values["mapping"] == "declared_experimental_observed_consistent"
+            && values["capture"] == "software_bracketed"
+            && values["wire_error"] == "unknown",
+        "CLI nominal measurement qualifiers differ",
+    )?;
+    measurement_arithmetic(&values)
+}
+
+/// Reconstruct the delivered nominal algebra and local residuals independently.
+///
+/// # Errors
+/// Reject malformed numbers, incorrect coordinates/algebra and unsupported model claims.
+fn measurement_arithmetic(values: &BTreeMap<&str, &str>) -> Check<()> {
+    let t1 = signed_integer(values, "t1_q32")?;
+    let t2 = signed_integer(values, "t2_q32")?;
+    let t3 = signed_integer(values, "t3_q32")?;
+    let t4 = signed_integer(values, "t4_q32")?;
+    let lower = i128::from(2_272_060_800_u64) << 32;
+    let upper = (i128::from(6_311_433_599_u64) << 32) | 0xffff_ffff;
+    check(
+        [t1, t2, t3, t4]
+            .iter()
+            .all(|value| (lower..=upper).contains(value))
+            && t2 == i128::from(u64::from_be_bytes([0xe0, 0x12, 0x34, 0x56, 0x10, 0, 0, 0]))
+            && t3 == i128::from(u64::from_be_bytes([0xe0, 0x12, 0x34, 0x96, 0x20, 0, 0, 0])),
+        "CLI measurement coordinates differ from independent scope and wire literals",
+    )?;
+    let phase = t2
+        .checked_sub(t1)
+        .and_then(|first| {
+            t3.checked_sub(t4)
+                .and_then(|second| first.checked_add(second))
+        })
+        .ok_or_else(|| io::Error::other("fixture phase arithmetic overflow"))?;
+    let round_trip = t4
+        .checked_sub(t1)
+        .and_then(|local| {
+            t3.checked_sub(t2)
+                .and_then(|remote| local.checked_sub(remote))
+        })
+        .ok_or_else(|| io::Error::other("fixture RTT arithmetic overflow"))?;
+    check(
+        signed_integer(values, "phase_q33")? == phase
+            && signed_integer(values, "rtt_q32")? == round_trip
+            && round_trip < 0,
+        "CLI phase/RTT differs from independent signed integer algebra",
+    )?;
+    check(
+        integer(values, "residual_denominator")? == 1_000_000_000
+            && integer(values, "declared_limit_ns")? == 30_000_000_000
+            && integer(values, "observed_residual_ns")? <= 30_000_000_000
+            && integer(values, "age_ns")? < 700_000_000,
+        "CLI experimental model residual or age exceeds independent bounds",
+    )?;
+    for (coordinate, key) in [(t1, "local_r1"), (t4, "local_r4")] {
+        let remainder = integer(values, key)?;
+        check(
+            remainder < 1_000_000_000,
+            "CLI local conversion remainder exceeds denominator",
+        )?;
+        let reconstruction = coordinate
+            .checked_mul(1_000_000_000)
+            .and_then(|scaled| {
+                i128::try_from(remainder)
+                    .ok()
+                    .and_then(|tail| scaled.checked_add(tail))
+            })
+            .ok_or_else(|| io::Error::other("fixture local conversion reconstruction overflow"))?;
+        check(
+            reconstruction.rem_euclid(4_294_967_296) == 0,
+            "CLI local conversion remainder cannot reconstruct integer nanoseconds",
+        )?;
+    }
+    Ok(())
 }
 
 /// Check each independently promised result/counter/trust fact for a slot.
@@ -668,7 +863,7 @@ fn result_record(line: &str, case: CliCase, slot: usize) -> Check<()> {
     Ok(())
 }
 
-/// Check the actual five-record stream against observed sockets and literal cases.
+/// Check the actual bounded stream against observed sockets and literal cases.
 ///
 /// # Errors
 /// Reject nonzero exit/stderr, partial/extra output and any changed promised fact.
@@ -683,9 +878,14 @@ fn transcript(output: &CliOutput, case: CliCase, clients: [SocketAddr; 2]) -> Ch
         .strip_suffix('\n')
         .ok_or_else(|| io::Error::other("unterminated CLI stream"))?;
     let lines: Vec<_> = text.split('\n').collect();
+    let measurements = case
+        .statuses()
+        .iter()
+        .filter(|status| **status == "header")
+        .count();
     check(
-        lines.len() == 5,
-        "CLI stream does not have exactly five records",
+        lines.len() == 5 + measurements,
+        "CLI stream has missing or extra records",
     )?;
     for (slot, client) in clients.iter().enumerate() {
         let bound = fields(lines[slot], &["event", "slot", "local"])?;
@@ -695,9 +895,17 @@ fn transcript(output: &CliOutput, case: CliCase, clients: [SocketAddr; 2]) -> Ch
                 && bound["local"].parse::<SocketAddr>()? == *client,
             "bound record differs from physical request source",
         )?;
-        result_record(lines[slot + 2], case, slot)?;
     }
-    let done = fields(lines[4], &["event", "elapsed_ns"])?;
+    let mut current = 2;
+    for slot in 0..2 {
+        result_record(lines[current], case, slot)?;
+        current += 1;
+        if case.statuses()[slot] == "header" {
+            measurement_record(lines[current], case, slot)?;
+            current += 1;
+        }
+    }
+    let done = fields(lines[current], &["event", "elapsed_ns"])?;
     let elapsed = integer(&done, "elapsed_ns")?;
     check(
         done["event"] == "done" && elapsed < CASE_WALL.as_nanos(),
@@ -729,7 +937,11 @@ fn transcript_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()
         ),
         (
             format!("{healthy}event=done elapsed_ns=1\n"),
-            "CLI stream does not have exactly five records",
+            "CLI stream has missing or extra records",
+        ),
+        (
+            healthy.replace("reason=mapping_unavailable", "reason=utc_trusted"),
+            "CLI unavailable measurement differs from independent refusal contract",
         ),
     ];
     for (text, diagnostic) in faults {
@@ -747,6 +959,69 @@ fn transcript_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()
             Err(error) => check(
                 error.to_string() == diagnostic,
                 "CLI observer rejected for an unrelated reason",
+            )?,
+        }
+    }
+    Ok(())
+}
+
+/// Challenge the numerical observer only after its actual nominal stream passed.
+///
+/// # Errors
+/// Require intended algebra/qualifier/residual rejection beside the actual healthy stream.
+fn measurement_transcript_controls(output: &CliOutput, clients: [SocketAddr; 2]) -> Check<()> {
+    let healthy = std::str::from_utf8(&output.stdout)?;
+    let first = healthy
+        .lines()
+        .find(|line| {
+            line.split(' ').any(|token| token == "event=measurement")
+                && line.split(' ').any(|token| token == "slot=0")
+        })
+        .ok_or_else(|| io::Error::other("actual slot0 nominal measurement absent"))?;
+    let values = bounded_fields(first, MEASUREMENT_FIELDS, 1024)?;
+    let phase = signed_integer(&values, "phase_q33")?;
+    let wrong_phase = phase
+        .checked_add(1)
+        .ok_or_else(|| io::Error::other("fixture phase fault overflow"))?;
+    let faults = [
+        (
+            healthy.replace(
+                &format!("phase_q33={phase}"),
+                &format!("phase_q33={wrong_phase}"),
+            ),
+            "CLI phase/RTT differs from independent signed integer algebra",
+        ),
+        (
+            healthy.replace(&format!("rtt_q32={}", values["rtt_q32"]), "rtt_q32=0"),
+            "CLI phase/RTT differs from independent signed integer algebra",
+        ),
+        (
+            healthy.replace("wire_error=unknown", "wire_error=0"),
+            "CLI nominal measurement qualifiers differ",
+        ),
+        (
+            healthy.replace(
+                &format!("local_r1={}", values["local_r1"]),
+                "local_r1=1000000000",
+            ),
+            "CLI local conversion remainder exceeds denominator",
+        ),
+    ];
+    for (text, diagnostic) in faults {
+        let changed = CliOutput {
+            status: output.status,
+            stdout: text.into_bytes(),
+            stderr: Vec::new(),
+        };
+        match transcript(&changed, CliCase::Measurement, clients) {
+            Ok(()) => {
+                return Err(
+                    "CLI numerical observer admitted an independently authored fault".into(),
+                );
+            }
+            Err(error) => check(
+                error.to_string() == diagnostic,
+                "CLI numerical observer rejected for an unrelated reason",
             )?,
         }
     }
@@ -836,6 +1111,9 @@ fn cli_case(ip: IpAddr, case: CliCase) -> Check<()> {
     if case == CliCase::Healthy {
         transcript_controls(&output, clients)?;
     }
+    if case == CliCase::Measurement {
+        measurement_transcript_controls(&output, clients)?;
+    }
     if case == CliCase::Timeout {
         timeout_elapsed_controls(&output, clients)?;
     }
@@ -857,6 +1135,7 @@ fn cli_worker_binary_preserves_literal_transport_contracts() -> Check<()> {
     ] {
         for case in [
             CliCase::Healthy,
+            CliCase::Measurement,
             CliCase::RejectedThenHealthy,
             CliCase::Control,
             CliCase::Timeout,
@@ -1040,6 +1319,42 @@ fn cli_argument_boundary_rejections() -> Check<()> {
     )?;
     let exact_value_limit = "0".repeat(128);
     argument_rejection(&["--peer", &exact_value_limit], "invalid_endpoint")?;
+    experimental_argument_rejections(&base)?;
+    Ok(())
+}
+
+/// Challenge the new option's actual parser without opening a live measurement path.
+///
+/// # Errors
+/// Require fixed argument refusal for missing/extra/signed/overflowing/invalid declarations.
+fn experimental_argument_rejections(base: &[&str]) -> Check<()> {
+    for value in [
+        "",
+        "1:2",
+        "1:2:0:4",
+        "-1:2:0",
+        "+1:2:0",
+        "1:2:-1",
+        "1:2:+1",
+        "1:2: 1",
+        "1:2:18446744073709551616",
+        "18446744073709551616:2:0",
+        "2:1:0",
+        "2272060800:6311433599:30000000001",
+        "0:18446744073709551615:0",
+    ] {
+        let mut arguments = base.to_vec();
+        arguments.extend(["--experimental-clock", value]);
+        argument_rejection(&arguments, "invalid_arguments")?;
+    }
+    let mut arguments = base.to_vec();
+    arguments.extend([
+        "--experimental-clock",
+        "2272060800:6311433599:30000000000",
+        "--experimental-clock",
+        "2272060800:6311433599:30000000000",
+    ]);
+    argument_rejection(&arguments, "invalid_arguments")?;
     Ok(())
 }
 
