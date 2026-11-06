@@ -320,3 +320,32 @@ This change neither refreshes old proof receipts nor runs formal work. OD-10's
 post-V1 deferral, the native/S134 stop, separate fuzz/storage holds and UI-M0
 scope remain. Source preparation is authorized now; final release still needs
 the existing nonformal product, native, package and owner-approval gates.
+
+### Interrupted-work continuation and hosted harness correction
+
+The resumed review recovered published candidate
+`6a698337b59a199992a90d61802bf81d3385cb3e`, tree
+`1b301c7c6cd365876525b4575962e865a35db802`, exactly matching the retained staged
+changes. [PR #12](https://github.com/DavidOsipov/NevroTick/pull/12) owns its hosted
+checks and final integration. A separate worktree merged main's dependency
+refresh `cb0a4ec254cf45e6efd7f49079b4bdb6e071dd35` without conflicts; the three
+overlapping documents retain both changes. Independent guard and Windows-source
+reviews found no material defect in their bounded scopes. The integration review
+also checked the new compiler minimum and dependency-policy bindings; none of
+these source reviews executed product or native code.
+
+The [first hosted Rust run](https://github.com/DavidOsipov/NevroTick/actions/runs/42282353428)
+failed in the new isolated environment-control step: 24 tests ran, with six
+subcase errors in the environment-override test. Clearing the environment removed
+`TMPDIR` before Python's first temporary-directory lookup, while the sandbox had
+no standard `/tmp`. Those errors occurred before the intended policy rejection;
+they are a harness failure, not behavioral RED. The correction maps `/tmp` to
+the existing `/scratch/tmp` inside the same 64 MiB tmpfs. It adds no host mount,
+network access or writable repository path and preserves all resource limits.
+The unchanged override controls must now reach their intended rejection, with
+the existing healthy controls retained. Fresh final-candidate hosted results
+remain authoritative in the PR; this record does not predict a passing rerun.
+
+Local isolation remains unavailable: the resumed bubblewrap preflight failed
+opening `/proc/5/ns/ns` before repository code ran. No unisolated test substitute,
+local compiler run, PE inspection or Windows qualification is claimed.

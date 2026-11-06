@@ -46,6 +46,7 @@ jobs:
                 --ro-bind /usr /usr --ro-bind /lib /lib --ro-bind /lib64 /lib64 \
                 --ro-bind "${GITHUB_WORKSPACE}" /repo \
                 --size 67108864 --tmpfs /scratch --dir /scratch/home --dir /scratch/tmp \
+                --symlink /scratch/tmp /tmp \
                 --proc /proc --dev /dev --chdir /repo \
                 --setenv PATH /usr/bin:/bin --setenv HOME /scratch/home \
                 --setenv TMPDIR /scratch/tmp --setenv LANG C.UTF-8 \
