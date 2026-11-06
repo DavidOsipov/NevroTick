@@ -112,6 +112,20 @@ and [hardening section 6.4](docs/windows-time-development-hardening.md#64-per-pr
 Keep per-process roles, activation phase, required/optional policy, effective state
 and native evidence distinct; existing compiler flags prove no complete runtime profile.
 
+**Required CPU and hardening policy, clarified 6 November 2026:** OD-07's Windows
+product minimum is **x86-64-v3**, now selected in the target configuration and
+exact admission controls. Do not restore generic x86-64/v2 or substitute v4,
+`native` or ambient flags. OD-05 requires every applicable final-product
+protection at the strongest supported compatible setting. Implement and qualify
+it under the existing build/runtime/package owners; missing evidence is open
+work, never permission to call the control optional. Record concrete platform,
+toolchain or necessary-feature exclusions; David owns security tradeoffs and
+weaker release exceptions. Follow [hardening §6.2–6.4](docs/windows-time-development-hardening.md#62-target-specific-windows-compilerlinker-settings)
+and [the build task](tasks/build-optimization.md#required-v3-and-maximum-compatible-hardening--6-november-2026).
+Historical generic receipts, pending Windows runs and hardware-conditional CET
+do not change this requirement or establish a new CPU floor. Preserve the
+post-V1 proof deferral and unrelated native/fuzz/storage/UI execution holds.
+
 Shared OS/IPC work: read [architecture section 3.4](docs/windows-time-architecture.md#34-shared-windows-adapters-and-diagnostics). Reuse narrow role-specific `windows-platform` adapters and portable `ipc-contract`; shared code grants no privilege or generic Windows command surface.
 
 Engine runtime/concurrency work: read [architecture section 18.6.1](docs/windows-time-architecture.md#1861-engine-runtime-decision-and-alternatives), section 17.1 and the TLS execution gate in section 18.7.1. Tokio remains an engine-only current-thread prototype; qualify bounded native work and the complete NTS-KE arrangement. Its selection does not require `tokio-rustls` or extend runtime dependencies to the core, broker, UI or helper.

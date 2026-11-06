@@ -21,6 +21,15 @@ For profile, CPU, LTO or PGO changes, read the
 [Windows build guidance](../../implementation/optimize-rust-performance/references/measurement.md#build-optimization-and-windows-x64).
 Preserve the admitted CPU floor, arithmetic/fault policy, symbols and complete
 mitigation flags. Explicit setting preparation establishes no measured gain.
+Enforce OD-07's **x86-64-v3** Windows minimum and OD-05's maximum-compatible
+hardening requirement. The target config and exact policy controls now include
+strict CET markers, restricted static-import search and disabled Rust switch
+jump tables in the pinned bundled-LLD lane; use hardening §6.2–6.3 for exact
+flags and concrete exclusions. Every applicable final-product protection needs
+implementation and qualification. Missing evidence is open work, not permission
+to call it optional or remove a flag; a weaker supported release profile needs
+the owner's decision. Hardware-conditional enforcement does not silently expand
+the v3 floor. Preserve the unrelated native/fuzz/storage and post-V1 proof holds.
 Admit PGO training/profile custody separately; Rust LTO admits no cross-language
 LTO or BOLT PE lane. Rebuilds invalidate affected artifact/signature evidence:
 reinspect the final PE and bind package/signing records to its exact bytes.

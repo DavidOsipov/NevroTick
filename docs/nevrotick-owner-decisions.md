@@ -4,6 +4,7 @@
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
+**6 November CPU/hardening correction:** OD-07's v3 minimum is mandatory and now configured; OD-05 requires every applicable final-product protection at its strongest supported compatible setting. Missing implementation or qualification is open work, not an optional policy.
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
@@ -35,7 +36,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-04 | Bring concrete policy choices to David when agents encounter them and record the outcomes | **Accepted decision process** | Individual exception decisions stay open until a bounded proposal and evidence exist |
 | OD-05 | Prepare one complete MSIX with the strongest compatible verified protections; David will try Microsoft Store submission with services and reconsider delivery if rejected. Retain the previously accepted Foundation/OpenPGP MSI policies as alternatives, with David as release approver | **Accepted delivery and hardening direction, amended 3 November 2026** | Supported least-privilege service provisioning and recovery, actual package/catalog and per-process mitigation evidence, account/capability admission and the Store outcome; direction is selected, implementation and release are not qualified |
 | OD-06 | Leave remaining research questions documented for another AI to investigate | **Deferred research** | The companion brief names questions, owners, evidence and stop conditions; deferral grants no implementation waiver |
-| OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
+| OD-07 | Require x86-64-v3 as the Windows product minimum and configure it now; retain runtime-selected higher-feature optimizations | **Accepted 30 October; implementation correction explicitly required 6 November 2026** | The target config and exact admission controls select v3. Qualify CPU/OS/VM startup admission, final artifacts, exact-feature dispatch, numerical equivalence and measured benefit; historical generic receipts do not qualify this configuration |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
 | OD-10 | Defer formal proof work until after the first released software version (V1); require useful product guarantees when it resumes | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; [proof purpose and completion](#142-proof-purpose-and-completion--6-november-2026) governs scope, stopping and honest accounting; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
@@ -233,6 +234,17 @@ unsupported service topology or unsafe lifecycle.
   A required protection failure must prevent the affected authority/operation;
   no silent disabling, broader service privilege or weakened recovery to make
   packaging or certification succeed.
+- **6 November enforcement clarification:** every applicable protection is a
+  required final-product obligation, not an optional optimization or an item an
+  agent may indefinitely leave as a research candidate. Select supported build
+  protections now and implement/qualify role-specific runtime and package
+  protections at their existing gates. Missing implementation or native evidence
+  means **open work**, not inapplicability or accepted risk. A non-adoption record
+  must name the exact role/toolchain/OS/hardware limitation, evidence and owner;
+  a weaker release profile or security tradeoff needs David's explicit decision.
+  Hardware-conditional enforcement does not silently raise the v3 CPU floor.
+  This clarifies the existing objective without enabling incompatible switches,
+  adopting an unpinned/nightly compiler or lifting unrelated execution holds.
 - **Store outcome:** prepare the candidate and accurate service/capability
   justification without waiting for speculative preapproval. David makes the
   account/submission/visibility and release actions. An actual refusal is a
@@ -428,12 +440,15 @@ to document the research and adjust the current documents and plan because this
 optimization is required. During documentation, David revised the selected
 baseline to v3. This records the final instruction without another approval round. It establishes a required workstream, not an observed performance result.
 
-**Decision and alternatives:** Select `x86-64-v3` as the intended minimum for the
-Windows x64 product and ahead-of-time, runtime-selected specialized functions.
-The previous generic `x86-64` floor remains the currently admitted implementation
-until its controlled migration. Keeping that floor indefinitely would not deliver
-the selected compatibility change; globally compiling for v4 would exclude
-the intended v3 fallback machines. Do not use `target-cpu=native` for distributed
+**Decision and alternatives:** Require `x86-64-v3` as the minimum for the
+Windows x64 product and retain ahead-of-time, runtime-selected specialized functions.
+**6 November implementation correction:** David explicitly instructed agents to
+install the already selected v3 minimum and resolve contradictory build/security
+policy. `.cargo/config.toml`, the exact checker and independent controls now
+select `target-cpu=x86-64-v3`; generic x86-64 is no longer the product build floor.
+Missing native qualification cannot justify reverting that decision or deferring
+the configuration indefinitely. Globally compiling for v4 would exclude
+the supported v3 baseline machines. Do not use `target-cpu=native` for distributed
 artifacts. Additional v4 capabilities authorize only functions whose full enabled feature
 set is available; CPU capability alone does not establish a speed benefit.
 
@@ -444,8 +459,8 @@ performance results. The decision does not admit an unreviewed dependency,
 unsafe numerical shortcut, weaker mitigation, new floating-point environment or
 crypto provider. AES acceleration remains a separate per-feature provider choice.
 
-**Implementation/validation:** The build owner implements baseline admission and
-the affected checker/configuration changes; each measured kernel owner and an
+**Implementation/validation:** The build owner maintains v3 and the complete
+hardening vector as one exact configuration contract; each measured kernel owner and an
 independent reviewer qualify the dispatch, fallback and mathematical contract.
 The package owner proves that a baseline-compatible prerequisite check rejects
 unsupported CPU/OS/guest combinations before any v3 payload is started. Preserve one complete
@@ -883,11 +898,11 @@ were checked on 5 November 2026.
 
 **Engineering fixtures:** start with Windows 11 26H2 **Pro x64** and Windows
 Server 2025 **Standard x64 with Desktop Experience**, using the MSVC target and
-OD-07's intended v3 baseline. These edition/install choices keep the complete
+OD-07's required v3 baseline. These edition/install choices keep the complete
 desktop UI/services product concrete; they are not David's separate edition
 instructions or all-edition support promises. Exact UBR/KB, hardware, effective
-protections and availability remain inputs. Current generic binaries are not
-v3-qualified. Server Core and further editions are outside these first fixtures.
+protections and availability remain inputs. Historical generic binaries do not
+qualify the current v3 configuration. Server Core and further editions are outside these first fixtures.
 
 The [existing W11 task §4.32](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
 owns two rows and shared controls under existing CHECK/P0/P4/P6/P7 owners.

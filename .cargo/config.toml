@@ -9,10 +9,11 @@ jobs = 12
 RUST_TEST_THREADS = "12"
 
 # Keep portable-core checks on the host; select the native target explicitly.
-# Use admitted native MSVC inputs or the explicit bundled-LLD/xwin cross lane.
-# Release optimization lives in Cargo.toml. Preserve generic x64 compatibility:
-# target-cpu=native depends on the build host; v2/v3/AVX2 would raise the CPU floor.
-# Higher-ISA experiments need a separate admitted candidate and Windows evidence.
+# This complete vector targets the pinned Rust bundled-LLD/xwin lane. Native
+# link.exe substitution needs admission; never silently drop strict CET flags.
+# Release optimization lives in Cargo.toml. Windows payloads require x86-64-v3:
+# no generic/v2 fallback, build-host native setting or global v4/AVX-512 floor.
+# Installation/startup must establish CPU and OS support before executing them.
 # RUSTFLAGS/encoded flags REPLACE this vector: an ad-hoc CPU or PGO setting can
 # silently remove CFG/ASLR/DEP. Keep the complete vector under the guarded runner.
 # LLVM uses the O3/ThinLTO pipeline selected by Cargo: no raw llvm-args/pass list,
@@ -20,11 +21,23 @@ RUST_TEST_THREADS = "12"
 # See hardening section 6.6 for the pinned LLVM defaults and measured-only options.
 [target.x86_64-pc-windows-msvc]
 rustflags = [
-    "-C", "target-cpu=x86-64",
+    "-C", "target-cpu=x86-64-v3",
     "-C", "control-flow-guard=yes",
+    # Limits Rust-generated dispatch tables; prebuilt inputs need separate review.
+    "-C", "jump-tables=no",
     "-C", "link-arg=/GUARD:CF",
     "-C", "link-arg=/DYNAMICBASE",
     "-C", "link-arg=/HIGHENTROPYVA",
     "-C", "link-arg=/NXCOMPAT",
+    # Explicit ASLR prerequisites, already defaults in the admitted linker.
+    "-C", "link-arg=/FIXED:NO",
+    "-C", "link-arg=/LARGEADDRESSAWARE",
+    # Image declarations need final CPU/OS/module and runtime-policy evidence.
+    "-C", "link-arg=/CETCOMPAT",
+    "-C", "link-arg=/CETCOMPATSTRICT",
+    # Restrict static-import directory search to the application directory and System32.
+    # Deployment must protect the application directory; dynamic loads need
+    # the separate runtime loading policy.
+    "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00",
     "-C", "link-arg=/WX",
 ]

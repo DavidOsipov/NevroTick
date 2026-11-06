@@ -16,12 +16,15 @@ The motivating problem is a time service that stops working without a useful exp
 **Owner delivery decision, 3 November 2026; OS scope amended 5 November:** the intended launch scope is Windows 11 26H2 x64 and Windows Server 2025 x64 with Desktop Experience under [OD-14](nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope), a native English-first UI, NTPv4/NTS client support and **one complete hardened MSIX prepared for a Microsoft Store submission attempt**, including services. [Architecture §19.4](windows-time-architecture.md#194-future-complete-msix-gate) and [OD-05](nevrotick-owner-decisions.md#7-od-05--signing-and-release-ownership) separate this selected direction from unresolved provisioning, Store acceptance and actual release qualification. The [platform matrix](../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) retains row-specific evidence and Server delivery questions. Preparation does not require prior Store approval. Retained MSI/signing designs are fallback/reference options for David to reconsider after rejection or concrete technical evidence, not parallel deliverables. Current Core priority, Windows/fuzz/storage holds and UI-M0 deferrals remain. The application must work with its window closed and before login; synchronization requires no NevroTick account or remote control plane. Store acquisition has its own distribution requirements.
 
 [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
-selects an intended **x86-64-v3** minimum for that x64 product, with qualified
+requires an **x86-64-v3** minimum for that x64 product, with qualified
 runtime-selected higher-feature optimizations. The package must identify an
 unsupported CPU/OS/VM before starting v3 payloads; AVX-512 remains optional.
-The [build and native workstream](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
-is pending: current generic binaries and fixture UI observations do not establish
-that compatibility claim or a measured performance improvement.
+Following David's 6 November 2026 clarification, the Windows build configuration
+and matching checker select v3. Lower-baseline-compatible launch admission,
+native compatibility and measured optional-kernel benefits remain open in the
+[build and native workstream](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+and its existing task. Historical generic binaries and fixture UI observations
+do not establish those results for the changed configuration.
 
 This document translates [architecture revision 1.4](windows-time-architecture.md) into user capabilities, screens, defaults, failure behavior and implementable slices. It does not replace that specification, select new dependencies, clear the license/crypto holds, adopt TUF, or close any native/signing gate. Existing source/trust and correction requirements remain authoritative. New presentation choices are proposals for the first implementation.
 

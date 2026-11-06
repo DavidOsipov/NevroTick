@@ -253,6 +253,30 @@ class ProductAdmissionTests(unittest.TestCase):
         for directory in EXPECTED_PACKAGES.values():
             self.assertIn(directory + "/src/lib.rs", files)
 
+    def test_product_admission_enforces_actual_cargo_configuration_before_execution(self):
+        path = self.root / ".cargo/config.toml"
+        healthy = path.read_text()
+        self.assertEqual(healthy, (ROOT / ".cargo/config.toml").read_text())
+        with patch.object(VERIFY.ENV.subprocess, "Popen") as launch:
+            _, files = VERIFY.admit_product(self.root)
+            self.assertEqual(files[".cargo/config.toml"], digest(healthy.encode()))
+            launch.assert_not_called()
+        changes = (
+            ("generic CPU", "target-cpu=x86-64-v3", "target-cpu=x86-64"),
+            ("missing strict CET", '    "-C", "link-arg=/CETCOMPATSTRICT",\n', ""),
+            ("missing DLL search policy", '    "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00",\n', ""),
+            ("trailing CFG override", '    "-C", "link-arg=/WX",\n',
+             '    "-C", "link-arg=/WX",\n    "-C", "control-flow-guard=no",\n'),
+        )
+        for name, before, after in changes:
+            self.assertEqual(healthy.count(before), 1, "Counterexample must change one configuration input")
+            path.write_text(healthy.replace(before, after))
+            with self.subTest(case=name), patch.object(VERIFY.ENV.subprocess, "Popen") as launch:
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "differs from the admitted"):
+                    VERIFY.admit_product(self.root)
+                launch.assert_not_called()
+        path.write_text(healthy)
+
     def test_first_party_license_roles_are_exact_even_with_refreshed_pins(self):
         paths = [self.root / "Cargo.toml", *(self.root / directory / "Cargo.toml"
                                             for directory in EXPECTED_PACKAGES.values())]

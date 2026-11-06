@@ -83,18 +83,47 @@ class GuardTests(unittest.TestCase):
         ENV.require_test_count("test result: ok. 2 passed; 0 failed; 0 ignored;", 2, "unit")
 
     def test_cpu_floor_and_mitigations_are_admitted_together(self):
-        flags = ["-C", "target-cpu=x86-64", "-C", "control-flow-guard=yes",
+        # This expected policy is independent of ENV.MSVC_FLAGS. A valid vector
+        # must reach the next deliberate gate; invalid vectors must stop earlier.
+        flags = ["-C", "target-cpu=x86-64-v3", "-C", "control-flow-guard=yes",
+                 "-C", "jump-tables=no",
                  "-C", "link-arg=/GUARD:CF", "-C", "link-arg=/DYNAMICBASE",
                  "-C", "link-arg=/HIGHENTROPYVA", "-C", "link-arg=/NXCOMPAT",
+                 "-C", "link-arg=/FIXED:NO", "-C", "link-arg=/LARGEADDRESSAWARE",
+                 "-C", "link-arg=/CETCOMPAT", "-C", "link-arg=/CETCOMPATSTRICT",
+                 "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00",
                  "-C", "link-arg=/WX"]
-        variants = [("healthy", flags, "Missing reviewed policy/tool-manifest.json")]
-        variants += [(cpu, [value.replace("target-cpu=x86-64", "target-cpu=" + cpu)
+        refused = "differs from the admitted"
+        variants = [("healthy v3 profile", flags, "Missing reviewed policy/tool-manifest.json")]
+        variants += [(cpu, [value.replace("target-cpu=x86-64-v3", "target-cpu=" + cpu)
                              for value in flags], "differs from the admitted")
-                     for cpu in ("native", "x86-64-v2", "x86-64-v3")]
-        variants.append(("missing CPU", flags[2:], "differs from the admitted"))
-        for offset in range(2, len(flags), 2):
+                     for cpu in ("native", "x86-64", "x86-64-v2", "x86-64-v4")]
+        for offset in range(0, len(flags), 2):
             variants.append(("missing " + flags[offset + 1],
-                             flags[:offset] + flags[offset + 2:], "differs from the admitted"))
+                             flags[:offset] + flags[offset + 2:], refused))
+        for name, before, after in (
+            ("CFG metadata only", "control-flow-guard=yes", "control-flow-guard=nochecks"),
+            ("jump tables enabled", "jump-tables=no", "jump-tables=yes"),
+            ("CET disabled", "link-arg=/CETCOMPAT", "link-arg=/CETCOMPAT:NO"),
+            ("CET strict disabled", "link-arg=/CETCOMPATSTRICT", "link-arg=/CETCOMPATSTRICT:NO"),
+            ("CET relaxed", "link-arg=/CETCOMPATSTRICT", "link-arg=/CETIPVALIDATIONRELAXED"),
+            ("CET dynamic in-process allowance", "link-arg=/CETCOMPATSTRICT",
+             "link-arg=/CETDYNAMICAPISINPROC"),
+            ("default DLL search", "link-arg=/DEPENDENTLOADFLAG:0xA00",
+             "link-arg=/DEPENDENTLOADFLAG:0"),
+            ("additional DLL search directories", "link-arg=/DEPENDENTLOADFLAG:0xA00",
+             "link-arg=/DEPENDENTLOADFLAG:0x1000"),
+        ):
+            self.assertEqual(flags.count(before), 1, "Counterexample must change one policy input")
+            variants.append((name, [after if value == before else value for value in flags], refused))
+        for name, extra in (
+            ("trailing CPU override", "target-cpu=native"),
+            ("v3 feature disabled", "target-feature=-avx2"),
+            ("higher ISA added", "target-feature=+avx512f"),
+            ("trailing CFG disable", "control-flow-guard=no"),
+            ("duplicate option", "jump-tables=no"),
+        ):
+            variants.append((name, flags + ["-C", extra], refused))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "rust-toolchain.toml").write_text(
@@ -106,9 +135,11 @@ class GuardTests(unittest.TestCase):
                 (root / ".cargo/config.toml").write_text(
                     '[build]\njobs=12\n[env]\nRUST_TEST_THREADS="12"\n'
                     '[target.x86_64-pc-windows-msvc]\nrustflags=' + json.dumps(candidate) + '\n')
-                with self.subTest(case=name), patch.dict(os.environ, {}, clear=True):
+                with (self.subTest(case=name), patch.dict(os.environ, {}, clear=True),
+                      patch.object(ENV.subprocess, "Popen") as launch):
                     with self.assertRaisesRegex(ENV.Incomplete, diagnostic):
                         ENV.inspect(root)
+                    launch.assert_not_called()
 
 
 class ProcessTests(unittest.TestCase):

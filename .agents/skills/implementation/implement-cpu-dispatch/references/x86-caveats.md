@@ -3,7 +3,7 @@
 Research checked 30 October 2026 against Rust 1.99.1 and primary platform sources.
 Use the sections relevant to the changed boundary. These findings refine the
 [skill](../SKILL.md); they do not adopt a dependency, nightly compiler, new loader,
-CPU affinity rule or measured speedup. OD-07's intended v3 floor and existing
+CPU affinity rule or measured speedup. OD-07's required v3 floor and existing
 numerical, privilege and package contracts remain authoritative.
 
 ## 1. A separate checker can still inherit the unsupported baseline

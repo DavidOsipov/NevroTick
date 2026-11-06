@@ -42,12 +42,12 @@ until relevant native correctness and useful-work comparisons pass; neither a
 clean cross-link nor switching LTO/linkers alone establishes runtime correctness.
 
 [OD-07](../../../../../docs/nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
-selects an intended `x86-64-v3` minimum and required runtime optimization. The
-currently admitted configuration remains generic `x86-64` until the controlled
-[workstream](../../../../../docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
-migrates flags, checker expectations and qualification. Inspect current bytes;
-do not use this selected direction to relabel historical artifacts or silently
-change an active candidate. `target-cpu=native` remains unsuitable for distributed
+requires `x86-64-v3` as the Windows product minimum and required runtime optimization.
+The current target configuration and exact controls select v3 with the complete
+hardening vector. The [workstream](../../../../../docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+still owns compatible pre-payload admission, final artifacts and native qualification.
+Do not restore the generic floor, relabel historical artifacts or silently change
+an active candidate. `target-cpu=native` remains unsuitable for distributed
 artifacts. Review native dependencies and prebuilt objects as well as Rust flags.
 
 Use [CPU dispatch implementation](../../implement-cpu-dispatch/SKILL.md) and

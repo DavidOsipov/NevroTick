@@ -18,9 +18,10 @@ Use the [existing workstream](../../../../docs/plans/development-plan.md#81-x64-
 and [research](../../../../docs/supporting-reviews/x86-runtime-optimization.md)
 rather than creating another plan or copying a feature catalogue here.
 
-OD-07 selects an intended **x86-64-v3** minimum with optional runtime-selected
-higher-feature functions. Inspect actual configuration: the admitted build may
-still use the earlier generic floor until coordinated migration completes.
+OD-07 requires **x86-64-v3** as the Windows product minimum, now selected in the
+target configuration and exact admission controls. Preserve that floor and the
+complete hardening vector; do not restore generic x86-64/v2 or describe the
+configuration migration as pending. Higher-feature functions remain runtime-selected.
 AVX2 is already part of v3; detecting it does not identify a new higher tier.
 The owner decision proves neither artifact compatibility nor measured speed.
 
@@ -43,7 +44,7 @@ at their real owner; do not turn every research topic into an unrelated campaign
   every rejected machine. The package/startup owner needs a check compiled for
   a compatible lower baseline before starting any v3 payload. Verify the full
   required CPU **and OS** capability, including masked VM features and usable
-  vector state. Keep the complete MSI and existing privilege boundaries.
+  vector state. Keep the owner-selected complete MSIX and existing privilege boundaries.
 - For each specialized function, record its explicit enabled features and the
   detector predicates establishing them. Compile variants ahead of time with
   supported `#[target_feature]` attributes; runtime selection does not recompile

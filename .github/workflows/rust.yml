@@ -38,6 +38,23 @@ jobs:
           bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
             --ro-bind / / -- /usr/bin/true
           env -i PATH=/usr/bin:/bin /usr/bin/pkg-config --exists fontconfig
+      - name: Verify required CPU and hardening policy in isolation
+        run: |
+          check_isolated() {
+            timeout --kill-after=5s 180s \
+              bwrap --unshare-all --die-with-parent --new-session --cap-drop ALL --clearenv \
+                --ro-bind /usr /usr --ro-bind /lib /lib --ro-bind /lib64 /lib64 \
+                --ro-bind "${GITHUB_WORKSPACE}" /repo \
+                --size 67108864 --tmpfs /scratch --dir /scratch/home --dir /scratch/tmp \
+                --proc /proc --dev /dev --chdir /repo \
+                --setenv PATH /usr/bin:/bin --setenv HOME /scratch/home \
+                --setenv TMPDIR /scratch/tmp --setenv LANG C.UTF-8 \
+                -- /usr/bin/prlimit --cpu=60 --as=1073741824 --nproc=128 \
+                  --nofile=128 --fsize=16777216 -- "$@"
+          }
+          check_isolated /usr/bin/python3 -X dev -Werror -B -m unittest discover \
+            -s scripts/tests -p test_check_environment.py -v
+          check_isolated /usr/bin/python3 -B .agents/skills/scripts/check_skills.py
       - name: Challenge product admission and result accounting
         run: |
           python3 -X dev -Werror -B -m unittest discover -s scripts/tests -p test_verify.py -v

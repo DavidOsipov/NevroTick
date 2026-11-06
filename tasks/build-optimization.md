@@ -1,6 +1,9 @@
 # Windows x64 application build optimization
 
-Date: 29 October 2026. Status: **configuration and scoped build checks passed; native performance unmeasured**.
+Initial record: 29 October 2026; its executed checks below are historical.
+**Current checkpoint, 6 November:** required v3 and the expanded hardening vector
+are configured and admission controls are updated; final-image, startup and
+native qualification remain open. See the [current amendment](#required-v3-and-maximum-compatible-hardening--6-november-2026).
 
 David requested heavy x64 build optimization settings, comments in build config,
 and documented Windows issues in the maintained docs and repository skills.
@@ -249,3 +252,71 @@ remained unchanged and no grader answers were exposed in the agent's input scope
 
 The current skill/package/local-link checks pass. Evidence and source identities
 are retained under `~/.local/share/nevrotick/cpu-caveats-20261030-pg3xgcyy/`.
+
+## Required v3 and maximum compatible hardening — 6 November 2026
+
+**Authority and scope:** David explicitly confirmed that the Windows product's
+minimum is **x86-64-v3**, required its immediate configuration and instructed
+agents to deliver every applicable hardening. This implements OD-07 and clarifies
+OD-05; it supersedes the earlier pending-migration instructions above without
+rewriting the historical generic-build results. Base: main
+`66f69b37d27309ca0882b6fb237b922c16f4ddbb`, isolated worktree/branch
+`fix/v3-required-hardening-20261106`. Existing worktrees remain untouched.
+
+**Changed enforcement:** `.cargo/config.toml` and `check-environment.py` now
+select v3, full CFG, disabled Rust switch jump tables, ASLR/DEP, explicit
+relocation/large-address prerequisites, CET plus strict-CET image declarations,
+the `0xA00` static-import search mask and fatal linker warnings. The exact
+supported vector and primary-source exclusions are owned by
+[hardening §6.2–6.3](../docs/windows-time-development-hardening.md#62-target-specific-windows-compilerlinker-settings).
+The pinned bundled-LLD/xwin lane is the selected linker route; another linker
+needs admission rather than silently deleting an unsupported switch.
+
+The common configuration validator is used by environment inspection, actual
+`verify.py` product admission and the prepared CodeQL admission consumer.
+Previously, product admission hashed Cargo configuration without checking this
+exact vector, while CodeQL's duplicate comparison omitted the build/test budget
+tables. Both now consume the same complete contract. CodeQL execution remains
+deferred; fixing its policy consumer does not activate hosted extraction.
+
+**Independent expectations:** the complete selected v3 profile passes the
+configuration boundary; generic/v2/v4/host-native replacements, missing required
+flags, metadata-only CFG, CET relaxations, broad/empty import-search settings and
+trailing overrides fail before a compiler or target process starts. Controls
+exercise the real environment and product-admission entry points. The existing
+Rust CI job now explicitly runs the environment controls and repository skill
+checker inside an offline, empty-environment sandbox with read-only inputs,
+bounded scratch storage and process/resource/time limits. Product-admission
+controls remain in its existing selected test file.
+
+**Policy reconciliation:** active architecture, tooling, plans, UI/Windows task
+handoffs and repository skills now agree on mandatory v3 and final-product
+hardening. Untested or unimplemented protection is **open required work**.
+Record exact toolchain, platform or necessary-feature exclusions with evidence
+and an owner; a weaker supported release profile needs David's decision.
+Hardware-conditional CET must be enforced on its supported class without
+silently making CET hardware a new universal CPU floor. Runtime fallbacks may
+disable optional higher-feature kernels, never replace the product's v3 minimum.
+
+| Existing owner / acceptance | Remaining observation and exit |
+| --- | --- |
+| Build/artifact; CHECK-19/20/26 | Cross-compile/link the actual graph with the pinned toolchain; inspect final CFG instrumentation/tables, ASLR/DEP/relocations, both CET bits and the real `DependentLoadFlags` field. Linker acceptance alone cannot pass. Old artifact/signature/configuration receipts remain historical. |
+| Platform/package; S0.6/P6 and CHECK-19/20/26 | Implement a lower-baseline-compatible prerequisite that rejects unsupported CPU/OS/VM state before any v3 payload, including direct/service/update launch. Observe a valid v3 baseline, below-v3 rejection and masked/disabled vector-state cases; an illegal-instruction crash is not admission. |
+| Loader/package; CHECK-16/18/20/23/26 | Freeze the actual CRT/native/import closure and protected executable directories. Tighten each role to `0x800` when app-local executable imports are unnecessary, otherwise record the exact required modules. Exercise legitimate cold/lazy loads and harmless forbidden-path canaries; static imports do not replace dynamic-load or package-identity checks. |
+| Runtime/security; CHECK-16/18/23/26, W11-W05/W11-W10 | Implement and qualify the strongest applicable per-role runtime/package profile, including Strict CFG, supported strict CET, ACG, selected CIG, image/extension/handle/heap controls and compatible service Win32k/child restrictions. Record real SCM/UAC/package activation, effective fields/audit state, normal work and denied operations. Preserve GUI-required Win32k and approved activation. Missing production adapters are not implemented by flags. |
+| Numerical/performance; CHECK-21/25 | Preserve checked arithmetic, unwind/callback contracts, symbols and normal FP semantics. Qualify new code generation and native correctness/resources before claiming a speedup or complete release pass; keep useful measured higher-feature work under §8.1. |
+
+**Verification boundary:** local source/diff and configuration consistency checks
+are possible, but local target-code execution is unavailable: bubblewrap cannot
+create the required network namespace and unshare cannot establish its UID map;
+Rust/Cargo are also absent from the inspected PATH. No local RED/GREEN, native
+execution, PE observation or benchmark is claimed. The policy test was prepared
+before its repair and its expected discrimination inspected in source; that is
+not an executed failing test. Exact automated results belong to the associated
+PR's checks and review record. Required failed/missing checks cannot be reported
+as passes.
+
+This change neither refreshes old proof receipts nor runs formal work. OD-10's
+post-V1 deferral, the native/S134 stop, separate fuzz/storage holds and UI-M0
+scope remain. Source preparation is authorized now; final release still needs
+the existing nonformal product, native, package and owner-approval gates.

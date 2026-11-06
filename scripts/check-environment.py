@@ -27,10 +27,14 @@ import tomllib
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 CPU_JOBS = 12
 MSVC_FLAGS = [
-    "-C", "target-cpu=x86-64",
-    "-C", "control-flow-guard=yes", "-C", "link-arg=/GUARD:CF",
+    "-C", "target-cpu=x86-64-v3",
+    "-C", "control-flow-guard=yes", "-C", "jump-tables=no",
+    "-C", "link-arg=/GUARD:CF",
     "-C", "link-arg=/DYNAMICBASE", "-C", "link-arg=/HIGHENTROPYVA",
-    "-C", "link-arg=/NXCOMPAT", "-C", "link-arg=/WX",
+    "-C", "link-arg=/NXCOMPAT", "-C", "link-arg=/FIXED:NO",
+    "-C", "link-arg=/LARGEADDRESSAWARE",
+    "-C", "link-arg=/CETCOMPAT", "-C", "link-arg=/CETCOMPATSTRICT",
+    "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00", "-C", "link-arg=/WX",
 ]
 REQUIRED_COMPONENTS = {"clippy", "rustfmt", "rust-analyzer", "rust-src", "llvm-tools-preview"}
 FORBIDDEN_ENV = {
@@ -163,6 +167,13 @@ def require_admitted_binary(path: Path, expected: str, label: str) -> str:
     return actual
 
 
+def require_cargo_configuration(parsed: dict) -> None:
+    """Admit the complete CPU budget and Windows flag vector without execution."""
+    if parsed != {"build": {"jobs": CPU_JOBS}, "env": {"RUST_TEST_THREADS": str(CPU_JOBS)},
+                  "target": {WINDOWS_TARGET: {"rustflags": MSVC_FLAGS}}}:
+        raise Incomplete("Cargo configuration differs from the admitted CPU budget and Windows flags.")
+
+
 def inspect(root: Path) -> dict:
     if os.name != "posix" or not sys.platform.startswith("linux"):
         raise Incomplete("This checker owns the Linux/WSL lane; use setup-windows.ps1 for native Windows.")
@@ -188,10 +199,7 @@ def inspect(root: Path) -> dict:
     config = root / ".cargo/config.toml"
     if not config.is_file():
         raise Incomplete("Missing repository target-specific Cargo configuration.")
-    parsed = tomllib.loads(config.read_text())
-    if parsed != {"build": {"jobs": CPU_JOBS}, "env": {"RUST_TEST_THREADS": str(CPU_JOBS)},
-                  "target": {WINDOWS_TARGET: {"rustflags": MSVC_FLAGS}}}:
-        raise Incomplete("Cargo configuration differs from the admitted CPU budget and Windows flags.")
+    require_cargo_configuration(tomllib.loads(config.read_text()))
     policy_file = root / "policy/tool-manifest.json"
     if not policy_file.is_file():
         raise Incomplete("Missing reviewed policy/tool-manifest.json.")

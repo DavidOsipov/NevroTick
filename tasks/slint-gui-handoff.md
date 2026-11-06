@@ -100,8 +100,13 @@ receipts retain the old graph and cannot qualify this current candidate.
 3. **Process/package hardening:** desktop-role mitigation startup/readback,
    required-protection refusal, actual loader/activation paths and complete
    hardened MSIX/Store-delivered qualification remain with their existing
-   process/UI/package/release owners and applicable P0–P7 gates. Do not
-   copy headless Win32k/child restrictions into the GUI or add mitigation switches.
+   process/UI/package/release owners and applicable P0–P7 gates. OD-05's
+   6 November clarification makes every applicable protection mandatory at the
+   strongest supported compatible setting; unimplemented/untested is open work.
+   The current Windows build selects v3 and the expanded hardening vector under
+   [the existing build task](build-optimization.md#required-v3-and-maximum-compatible-hardening--6-november-2026).
+   Do not copy headless Win32k/child restrictions into the GUI or add user-facing
+   mitigation-disabling switches.
    `host_ready` means fixture binding readiness, not security readiness.
 4. **Critical text approval:** production `REVIEWS` is deliberately empty. Exact
    critical English/catalog/bootstrap meaning needs independent human approval

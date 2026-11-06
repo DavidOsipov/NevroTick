@@ -21,6 +21,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     try:
+        spec = importlib.util.spec_from_file_location("strict_policy", ROOT / "scripts/check-strict.py")
+        strict = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(strict)
+        strict.ENV.require_cargo_configuration(tomllib.loads((ROOT / ".cargo/config.toml").read_text()))
         policy = json.loads((ROOT / "policy/tool-manifest.json").read_text())
         version = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
         if version != policy["rust"]["channel"]:
@@ -37,12 +41,6 @@ def main():
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                           timeout=10).returncode != 0:
             raise ValueError("Cargo.lock exists but is not versioned.")
-        spec = importlib.util.spec_from_file_location("strict_policy", ROOT / "scripts/check-strict.py")
-        strict = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(strict)
-        expected = {"target": {strict.ENV.WINDOWS_TARGET: {"rustflags": strict.ENV.MSVC_FLAGS}}}
-        if tomllib.loads((ROOT / ".cargo/config.toml").read_text()) != expected:
-            raise ValueError("Repository Cargo configuration differs from admitted target policy.")
         config = strict.read_configuration(ROOT)
         adopted = strict.require_workspace_adoption(
             ROOT, config["policy/rust-workspace.toml"],

@@ -1016,17 +1016,18 @@ no stripping and Windows CFG/ASLR/DEP flags remain required. Development builds
 retain Cargo's incremental defaults. These settings favor runtime optimization
 opportunities at higher compile/link cost; no speedup has been measured.
 
-The currently admitted Windows configuration still uses `target-cpu=x86-64`.
+The Windows target configuration and its exact checker now select
+`target-cpu=x86-64-v3`, as required by
 [OD-07](docs/nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
-now selects an intended v3 minimum and required runtime-selected optimization.
-The [execution plan](docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
-owns migration of `.cargo/config.toml`, strict checker/control expectations,
-affected input bindings, skills guidance and qualified Windows artifacts.
-This documentation change implements no CPU flag or dispatch function; do not
-copy v3 into the current configuration without that coordinated admission.
+and David's 6 November 2026 clarification. The
+[execution plan](docs/plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+owns remaining artifact qualification, lower-baseline-compatible launch admission
+and runtime-selected optimizations. Historical generic-x64 receipts remain
+evidence only for their original inputs; the configuration change does not
+establish native CPU/OS/VM compatibility or measured speed.
 Preserve all mitigations and use exact-feature functions for optional AVX-512
 work, rather than global v4 or `native` compilation. AVX2 is already part of the
-intended v3 baseline. This does not
+required v3 baseline. This does not
 rebuild the supplied standard library for another CPU. The policy checker still
 rejects unreviewed CPU/profile overrides, including ambient PGO flags that would
 replace the complete mitigation vector. See [hardening §6.7](docs/windows-time-development-hardening.md#67-v3-baseline-and-runtime-cpu-dispatch)
