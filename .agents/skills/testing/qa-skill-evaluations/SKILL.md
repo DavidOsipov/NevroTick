@@ -23,6 +23,10 @@ edit needs no evaluation campaign. Keep one existing task/plan record.
    candidate's artifacts and actual commands/results. Shared filesystem access is
    not an isolation boundary: separate supplied inputs from grader material and
    record accidental exposure. Do not call a task with leaked answers independent.
+   For discovery or prescribed-method evaluation, record instructions actually
+   supplied or loaded and required actions observed. Separate selection failure,
+   noncompliance and a correctly executed but ineffective method. Names or
+   availability alone do not prove delivery; missing traces remain unknown.
 4. Check the artifact through an independent oracle and healthy/fault controls.
    Inspect code and actual effects as applicable; correct prose, selected tool
    names or a promised test are not executed evidence. Grade semantic outcomes,
@@ -37,6 +41,9 @@ edit needs no evaluation campaign. Keep one existing task/plan record.
    budgets. Record order and trial counts; repeat when variability matters. A
    single successful exercise demonstrates that case, not a measured uplift or
    general reliability. Changed grading criteria require regrading both sides.
+   Match baseline to claim. Old/new compares revisions; added-method benefit may
+   need ordinary authorized work without that directive. Preserve mandatory
+   checks in every arm; report actual baseline actions, not “default = no tests.”
 
 For agent-cost, context-reduction or failure-loop changes, use
 [workflow observation](../references/workflow-observation.md): account for failed
@@ -49,6 +56,9 @@ Use [campaign budgeting](../references/campaign-budget.md) for multiple trials.
 Review grader sensitivity through [harness qualification](../references/harness-qualification.md).
 Keep independent holdout variants for regression checks; an example whose answer
 is taught in the reference is a practice exercise, not a blind generalization test.
+Case or feedback used to revise skill: development or regression evidence,
+never unseen holdout. Subsequent generalization claims need fresh independently
+checked variants.
 Improve the narrow instruction responsible for a failure and rerun affected cases;
 do not accumulate unrelated universal rules.
 

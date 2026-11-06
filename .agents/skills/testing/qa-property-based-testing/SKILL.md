@@ -17,6 +17,12 @@ use the production garde validator as the expected-result oracle or filter away
 the invalid cases the boundary must reject. Model mutation/context invalidation
 separately from immutable value invariants.
 
+Conditional or stateful properties: identify cases satisfying preconditions and
+reaching each selected semantic partition. Sparse generation: retain concrete
+witnesses and reached-case counts. Unreached antecedents or selected partitions
+remain evidence gaps. Reuse analytic anchors and qualified fault controls; no new
+framework, percentage target or full generator census required.
+
 Keep independent expectations; encode/decode round trips alone may share bugs. Bound generated/rejected/replayed cases, sequence length, allocation, shrink work, total deadline. Each case/shrink/replay needs fresh state/resources; failed reset invalidates later reductions.
 
 Retain concrete original/minimized input, seed, strategy/tool/configuration/source identity, actual reached failure. Replay concrete counterexample alone from clean state; keep named regression. Strategy edits can change seed meaning. Read [Rust techniques](../references/rust-techniques.md).

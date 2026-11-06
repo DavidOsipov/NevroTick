@@ -34,9 +34,10 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
   inventories or admission paperwork. Preserve a failed preflight as incomplete;
   retry only after its relevant condition changes. Continue useful independent
   work without repeatedly submitting the same blocked campaign.
-- Keep genuine focused RED→GREEN during implementation. Complete a coherent
-  bounded slice and its planned cases, then format before freezing the expensive
-  qualification candidate. Select affected checks and indirect consumers through
+- Meaningful behavioral repairs: retain focused RED→GREEN procedure and
+  exceptions above. Complete a coherent bounded slice and its planned cases,
+  then format before freezing the expensive qualification candidate. Select
+  affected checks and indirect consumers through
   [regression selection](qa-regression-selection/SKILL.md); run the applicable full
   phase/release gates at their declared checkpoints. Name required gates, owners
   and checkpoint exits in the existing plan; never move a checkpoint just to

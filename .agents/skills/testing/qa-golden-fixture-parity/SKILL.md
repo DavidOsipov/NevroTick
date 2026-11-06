@@ -1,6 +1,6 @@
 ---
 name: "qa-golden-fixture-parity"
-description: "Compare NevroTick captured outputs or pinned reference trajectories with independent semantic facts and a deliberately tested comparator."
+description: "Compare NevroTick golden outputs or differential results from pinned references with independent semantic facts and a tested comparator."
 ---
 
 # Verify stable output and semantic parity
@@ -8,6 +8,13 @@ description: "Compare NevroTick captured outputs or pinned reference trajectorie
 Read [the testing contract](../CONTRACT.md).
 
 Freeze fixture rights/provenance, input bytes, producer revision, configuration, expected semantic facts. Useful goldens: protocol vectors, selection/correction trajectories, status/error projections, package inventories. Pinned chrony output: differential evidence, never sole truth.
+
+Differential comparison: declare shared input domain and intentional contract
+differences before execution. Disagreements: use [failure triage](../qa-failure-triage/SKILL.md)
+and [failure localization](../references/failure-localization.md): distinguish
+product defect, reference defect, harness error, permitted difference and
+unresolved cause before changing implementation or expectation. Retain raw
+disagreement, bounded reproducible witness and healthy neighbor.
 
 Decide contract-derived normalization before comparison. Retain raw output/diff. Units/signs/source identity/order/trust/freshness/unknown fields/error semantics/generation values may be contractual; do not erase for stable snapshots. Incidental variation needs stated basis.
 
