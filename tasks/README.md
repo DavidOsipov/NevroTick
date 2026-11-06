@@ -6,7 +6,9 @@ P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
 **Current continuation:** use [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the [implemented pure-leap qualification continuation](s1.4-leap-policy.md#current-product-continuation--6-november-2026). Historical
+and the engine's [next source checkpoint](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
+The [pure-leap qualification](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
+is its completed predecessor. Historical
 checkpoint numbers and passes never replace the current candidate or next action.
 **Deferred** below means a recorded parent, not ready for implementation; expand
 only its next activated child under the [grouped backlog](development-backlog.md).

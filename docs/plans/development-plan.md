@@ -829,19 +829,22 @@ under pure LP-C01/02/03, CHECK-7/25/26 and CHECK-15/23's pure replacement subset
 Its task records the current input maps, qualified receipt reuse, admission-code
 delta, four passing mutation cohorts and current offline generator checks. This
 completes neither full S1.4 nor P1.
-**Next executable product task:** finish the existing [first S2.1 measurement
-checkpoint](../../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026).
-The lossless envelope, checked conditional mapping/era/arithmetic, consume-once
-binding and bounded `nevrotick-observe` projection are implemented. The explicit
-experimental model is frozen in that task; 43 engine tests, 12 doctests, external
-constructor probes, fresh dependency checks and Windows cross-builds pass.
-These scoped checks establish no completed full-S2.1 or native qualification.
-Extend current engine analysis selection from library/CLI to include the newly
-registered critical `measurement.rs` owner, bind the complete current candidate
-and actual inventories, then complete coverage and mutation for all three owners.
-Preserve the 90% executable-line and 95% per-file viable-mutation gates, their
-existing budgets, nonempty denominators and independent alternatives for
-ungenerated behavior. Historical campaign scores cannot be transferred.
+**Completed bounded child:** the existing
+[three-owner S2.1 measurement qualification](../../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
+passes 47 ordinary host tests, 12 doctests, current per-file coverage and the
+complete 312-variant mutation campaign. Two exact independently reviewed
+coherence-equality survivors retain their native counts and receive no kill
+credit. Earlier dependency/constructor/cross-build receipts retain their source;
+these checks establish no full-S2.1 or native qualification.
+**Next executable product task:** freeze the existing
+[observation-to-Core admission contract](../../tasks/engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
+Keep genuine date/scale provenance, reference instant, exact Q33 conversion
+residuals, signed raw RTT versus adjusted delay/root/capture uncertainty, justified
+divisor and the actual checked receiver explicit. Source/contract preparation is
+ready; production history insertion remains held until that contract and its
+prerequisites are settled. Preserve the 90% executable-line and 95% per-file
+viable-mutation gates, existing budgets, nonempty denominators and independent
+alternatives for ungenerated behavior. Historical scores cannot be transferred.
 Owner: engine/domain/QA; requirements: REQ-8/BND-1 and applicable
 CHECK-6/7/8/11/14/25/27. Environment: admitted Linux with controlled peers;
 `authentication=none eligible=0`, no estimator vote or clock effect. Independent

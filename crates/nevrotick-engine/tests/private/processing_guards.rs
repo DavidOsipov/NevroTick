@@ -1932,9 +1932,105 @@ fn commit_processing_accepts_equal_read_and_rejects_its_predecessor() -> Result<
     Ok(())
 }
 
+/// Challenge each saved context field independently against its actual pending owner.
+/// Only this private test view changes; the socket, request and owner stay intact.
+/// Each rejected view preserves the pending phase and all admission accounting.
+///
+/// # Errors
+/// Preserve failure to construct the distinct checked experimental profile.
+///
+/// # Panics
+/// Fail if a case changes multiple context fields, consumes the pending request
+/// or changes its send/read/rejection history before the restored healthy commit.
+fn check_independent_staged_context_guards(
+    slot: &mut LiveSlot,
+    candidate: &mut StagedReply,
+    neighbor: &LiveSlot,
+    processing: Instant,
+) -> Result<(), MeasurementRefusal> {
+    let original_identity = Arc::clone(&candidate.identity);
+    let original_peer = candidate.peer;
+    let original_local = candidate.local;
+    let original_profile = candidate.profile;
+    let alternate_profile = Some(ExperimentalProfile::new(0, 0, 0)?);
+    let accounting = (
+        slot.sent,
+        slot.received,
+        slot.rejected,
+        slot.send_attempts,
+        slot.last_rejection,
+    );
+    for (field, identity, peer, local, profile) in [
+        (
+            "identity",
+            Arc::new(()),
+            original_peer,
+            original_local,
+            original_profile,
+        ),
+        (
+            "peer",
+            Arc::clone(&original_identity),
+            neighbor.peer,
+            original_local,
+            original_profile,
+        ),
+        (
+            "local",
+            Arc::clone(&original_identity),
+            original_peer,
+            neighbor.local,
+            original_profile,
+        ),
+        (
+            "profile",
+            Arc::clone(&original_identity),
+            original_peer,
+            original_local,
+            alternate_profile,
+        ),
+    ] {
+        candidate.identity = identity;
+        candidate.peer = peer;
+        candidate.local = local;
+        candidate.profile = profile;
+        let differences = [
+            !Arc::ptr_eq(&slot.identity, &candidate.identity),
+            slot.peer != candidate.peer,
+            slot.local != candidate.local,
+            slot.profile != candidate.profile,
+        ];
+        assert_eq!(
+            differences.into_iter().filter(|changed| *changed).count(),
+            1
+        );
+        commit_reply(slot, candidate, processing);
+        assert!(
+            matches!(&slot.phase, Phase::Pending(_)),
+            "an independent {field} mismatch consumed the pending request"
+        );
+        assert_eq!(
+            (
+                slot.sent,
+                slot.received,
+                slot.rejected,
+                slot.send_attempts,
+                slot.last_rejection,
+            ),
+            accounting
+        );
+    }
+    candidate.identity = original_identity;
+    candidate.peer = original_peer;
+    candidate.local = original_local;
+    candidate.profile = original_profile;
+    Ok(())
+}
+
 /// A staged reply belongs to its actual pending socket/request, and commits once.
 /// Both requests and reply reads use owned real loopback sockets. The second
 /// commit uses an explicitly supplied later processing instant, not a clock claim.
+/// Independent context mismatches cannot rely on another field's rejection.
 ///
 /// # Errors
 /// Preserve actual setup, bounded native I/O, parser and checked-time failures.
@@ -1965,7 +2061,7 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
         let second_query = send_query(&mut slots[1], &peers[1], deadline).await?;
         let datagram = response(&slots[0], &peers[0], &first_query, 1, false).await?;
         let limits = FrameLimits::new(PACKET_BYTES, 0).map_err(|_| PilotError::WireSetup)?;
-        let candidate = stage_reply(
+        let mut candidate = stage_reply(
             &slots[0],
             &datagram.bytes[..datagram.length],
             datagram.source,
@@ -1982,6 +2078,10 @@ fn staged_reply_cannot_cross_socket_owner_or_commit_twice() -> Result<(), Box<dy
         );
         assert!(matches!(&slots[0].phase, Phase::Pending(_)));
 
+        {
+            let [slot, neighbor] = &mut slots;
+            check_independent_staged_context_guards(slot, &mut candidate, neighbor, processing)?;
+        }
         commit_reply(&mut slots[0], &candidate, processing);
         assert_eq!(
             slots[0].terminal().map(TerminalOutcome::status),
@@ -2359,6 +2459,92 @@ fn check_shared_measurement_writer(report: &SlotReport) -> Result<(), Box<dyn Er
     Ok(())
 }
 
+/// A bounded sink that preserves its accepted prefix before a fixed I/O failure.
+struct PartialMeasurementSink {
+    /// Bytes actually accepted before the fixed sink closes.
+    written: Vec<u8>,
+    /// Exact maximum accepted bytes, independent of formatter chunk boundaries.
+    limit: usize,
+}
+
+impl io::Write for PartialMeasurementSink {
+    /// Accept only the remaining prefix; later nonempty writes fail unchanged.
+    ///
+    /// # Errors
+    /// Returns the fixed broken-pipe cause once the allowed prefix is complete.
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        if bytes.is_empty() {
+            return Ok(0);
+        }
+        let available = self.limit.saturating_sub(self.written.len());
+        if available == 0 {
+            return Err(io::Error::new(
+                io::ErrorKind::BrokenPipe,
+                "fixture measurement sink is closed",
+            ));
+        }
+        let accepted = available.min(bytes.len());
+        self.written.extend_from_slice(&bytes[..accepted]);
+        Ok(accepted)
+    }
+
+    /// Complete the inert sink's no-op flush without altering accepted bytes.
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Fail the actual measurement writer partway, preserving its captured facts.
+/// A restored healthy sink must still emit the independently expected record.
+///
+/// # Errors
+/// Preserves missing facts, unavailable measurement or restored-sink output errors.
+///
+/// # Panics
+/// Fails if the writer hides the partial failure, completes its prefix as a record,
+/// or alters any original capture, header, model, identity or measurement.
+fn check_partial_measurement_write_failure(
+    report: &SlotReport,
+    saved: &TransportFacts,
+) -> Result<(), Box<dyn Error>> {
+    let mut sink = PartialMeasurementSink {
+        written: Vec::new(),
+        limit: 17,
+    };
+    let result = report.write_measurement(&mut sink);
+    assert_eq!(
+        result.err().map(|error| error.kind()),
+        Some(io::ErrorKind::BrokenPipe)
+    );
+    assert_eq!(sink.written.as_slice(), b"event=measurement");
+    assert!(!sink.written.contains(&b'\n'));
+    let facts = report
+        .facts()
+        .ok_or_else(|| io::Error::other("failed writer discarded actual measurement facts"))?;
+    for (actual, original) in [
+        (facts.send_before, saved.send_before),
+        (facts.send_after, saved.send_after),
+        (facts.read_return, saved.read_return),
+    ] {
+        assert_eq!(actual.mono, original.mono);
+        assert_eq!(actual.utc, original.utc);
+        assert_eq!(actual.mono_after, original.mono_after);
+    }
+    assert_eq!(facts.processing, saved.processing);
+    assert_eq!(facts.peer_receive_bits, saved.peer_receive_bits);
+    assert_eq!(facts.peer_transmit_bits, saved.peer_transmit_bits);
+    assert_eq!(facts.header, saved.header);
+    assert_eq!(facts.peer, saved.peer);
+    assert_eq!(facts.local, saved.local);
+    assert!(Arc::ptr_eq(&facts.identity, &saved.identity));
+    assert_eq!(facts.profile, saved.profile);
+    assert_eq!(facts.measurement, saved.measurement);
+    let mut restored = Vec::new();
+    report.write_measurement(&mut restored)?;
+    check_actual_measurement_record(report, std::str::from_utf8(&restored)?)?;
+    Ok(())
+}
+
 /// Actual UDP captures, rather than sleeps, determine this measurement's oracle.
 /// The explicit finite date scope is pinned independently of observed host time.
 ///
@@ -2416,6 +2602,7 @@ fn real_udp_measurement_matches_independent_captured_coordinates() -> Result<(),
         assert!(projected.same_exchange(&facts));
         check_observed_measurement(projected)?;
         check_shared_measurement_writer(&report)?;
+        check_partial_measurement_write_failure(&report, &facts)?;
         Ok::<(), Box<dyn Error>>(())
     })
 }

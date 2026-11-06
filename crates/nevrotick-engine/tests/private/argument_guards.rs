@@ -69,6 +69,43 @@ fn argument_text_preserves_exact_byte_boundaries_and_original_borrows() -> Resul
     Ok(())
 }
 
+/// Decimal fields preserve their raw digit budget even when extra zeros still parse.
+/// Legal padded profiles retain the declared values rather than rejecting their spelling.
+///
+/// # Errors
+/// Preserve an unexpected rejection of an admitted decimal or profile boundary.
+///
+/// # Panics
+/// Fail if twenty digits are refused, twenty-one are accepted, or values change.
+#[test]
+fn decimal_profile_fields_preserve_raw_digit_boundaries() -> Result<(), CliError> {
+    for width in [19, 20] {
+        let text = format!("{:0width$}", 1_u64);
+        assert_eq!(text.len(), width);
+        assert_eq!(unsigned_decimal(&text)?, 1);
+        let text = format!(
+            "{:0width$}:{:0width$}:{:0width$}",
+            2_272_060_800_u64, 6_311_433_599_u64, 0_u64
+        );
+        let profile = clock_profile(&text)?;
+        assert_eq!(profile.earliest_ntp_seconds(), 2_272_060_800);
+        assert_eq!(profile.latest_ntp_seconds(), 6_311_433_599);
+        assert_eq!(profile.maximum_residual_ns(), 0);
+    }
+    assert_eq!(unsigned_decimal("18446744073709551615")?, u64::MAX);
+    let text = format!("{:021}", 1_u64);
+    assert_eq!(text.len(), 21);
+    assert!(matches!(unsigned_decimal(&text), Err(CliError::Arguments)));
+    for text in [
+        format!("{:021}:6311433599:0", 2_272_060_800_u64),
+        format!("2272060800:{:021}:0", 6_311_433_599_u64),
+        format!("2272060800:6311433599:{:021}", 0_u64),
+    ] {
+        assert!(matches!(clock_profile(&text), Err(CliError::Arguments)));
+    }
+    Ok(())
+}
+
 /// Actual Unix non-text OS strings reject in both roles even below their byte caps.
 /// This constructs OS-string representations; it induces no native operation failure.
 ///

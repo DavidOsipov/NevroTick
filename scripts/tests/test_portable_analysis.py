@@ -3138,7 +3138,7 @@ class EngineContractAdmissionTests(unittest.TestCase):
                              "policy/engine-analysis.json")
         policy = {
             "schema_version": 1, "admission_status": "admitted-engine-external-contracts-only",
-            "package": "nevrotick-engine", "source_file_count": 167,
+            "package": "nevrotick-engine", "source_file_count": 168,
             "critical_files": ["crates/nevrotick-engine/src/lib.rs"],
             "tool_admission_profile": "stable-core", "contracts_wall_seconds": 300,
             "jobs": 6, "test_threads": 1, "mutation_equivalences": [], "mutation_error_values": {},
@@ -3195,9 +3195,9 @@ class EngineContractAdmissionTests(unittest.TestCase):
             root = parent / "checkout"
             root.mkdir()
             args = SimpleNamespace(lane="contracts", tool_admission_profile="stable-core", output_dir=parent / "output")
-            for count in (166, 167, 168):
+            for count in (167, 168, 169):
                 identity = {f"source/{index}.rs": "a" * 64 for index in range(count)}
-                expected = "healthy engine reached proofs" if count == 167 else "product input count"
+                expected = "healthy engine reached proofs" if count == 168 else "product input count"
                 with (self.subTest(count=count),
                       patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, identity)),
                       patch.object(MODULE, "admit_mutation_equivalences",
@@ -3205,7 +3205,7 @@ class EngineContractAdmissionTests(unittest.TestCase):
                       patch.object(MODULE.ANALYSIS, "admit") as tools,
                       self.assertRaisesRegex(MODULE.Incomplete, expected)):
                     MODULE.Session(root, args, {}, scope, policy, ())
-                self.assertEqual(proofs.call_count, int(count == 167))
+                self.assertEqual(proofs.call_count, int(count == 168))
                 tools.assert_not_called()
                 self.assertFalse(args.output_dir.exists())
 

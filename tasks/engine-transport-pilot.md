@@ -16,11 +16,13 @@ follows [development §7](../docs/plans/development-plan.md#7-next-executable-ta
 
 **Current product action, 6 November 2026:** after the [selected pure-leap
 checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026),
-development §7 selects this task's [first controlled S2.1 measurement](#s21-preparation--real-transport-to-an-admitted-time-measurement--5-november-2026).
+development §7 selects this task's [observation-to-Core admission contract](#next-source-checkpoint-observation-to-core-admission).
 The [first source checkpoint](#first-controlled-measurement-source-checkpoint--6-november-2026)
 now implements lossless staged evidence, the explicit experimental model,
-checked mapping/era/arithmetic and bounded diagnostic projection. Next finish
-current three-owner coverage/mutation qualification, retaining
+checked mapping/era/arithmetic and bounded diagnostic projection. The subsequent
+[three-owner qualification](#three-owner-measurement-qualification--6-november-2026)
+passes on its current host candidate. Next freeze the
+[observation-to-Core contract](#next-source-checkpoint-observation-to-core-admission), retaining
 `authentication=none eligible=0`. This is no estimator admission or clock effect.
 W11-W01 remains partially prepared; uncertainty, production scheduling and native
 qualification remain later scopes. Older proof-first wording below is historical
@@ -64,10 +66,10 @@ doctests in both Cargo profiles, with compiler/Clippy and all custody checks.
 Its [line-coverage gate](#s33-current-engine-line-coverage) passed on that
 recorded source; later qualification is candidate-specific.
 
-The current [S40 contract checkpoint](#s40-mandatory-completion-owners-and-current-native-baseline)
+The historical [S40 contract checkpoint](#s40-mandatory-completion-owners-and-current-native-baseline)
 passes 24 GNU unit/integration tests plus two doctests in both Cargo profiles,
 compiler/Clippy and 213 verification-harness controls. Fresh enumeration lists
-185 library and 31 CLI variants. Current line coverage and both complete
+185 library and 31 CLI variants. Its line coverage and both complete
 [per-file mutation gates](#s43-complete-current-engine-mutation-checkpoint) pass.
 Earlier receipts retain their original candidates.
 
@@ -1153,9 +1155,18 @@ gap only; S43's historical coverage/mutation scores remain on their old candidat
 
 ## S2.1 preparation — real transport to an admitted time measurement — 5 November 2026
 
-**Current disposition — 6 November 2026:** development §7 selects this first controlled measurement after the completed pure-leap checkpoint. The first source checkpoint is implemented; candidate qualification remains open. The old proof-first routing is superseded by OD-10 §14.1. The selected settled-rate and pure-leap checkpoints retain their exact Linux scopes. This work supplies no production eligibility or native qualification.
+**Current disposition — 6 November 2026:** the first controlled measurement is
+implemented and its [selected three-owner host gates](#three-owner-measurement-qualification--6-november-2026)
+pass. Development §7 next selects the [observation-to-Core admission contract](#next-source-checkpoint-observation-to-core-admission).
+Full S2.1 and native qualification remain open. OD-10 §14.1 supersedes old
+proof-first routing; earlier settled-rate/pure-leap receipts retain their scopes.
+This work supplies no production eligibility or native qualification.
 
 ### First controlled measurement source checkpoint — 6 November 2026
+
+This section records the implemented `a43916a` source. The later
+[three-owner qualification](#three-owner-measurement-qualification--6-november-2026)
+records the current 168-input candidate and its separate observations.
 
 **Implemented and host-checked; full S2.1 remains open.** The engine now preserves
 the complete immutable header, actual endpoints, unique socket/request lifetime,
@@ -1221,7 +1232,8 @@ GNU-passing 1 ns fixtures were corrected to representable 100 ns values and
 rerun, preserving exact residual and 99/100 ns model-boundary checks. Production
 conversion arithmetic was unchanged. This source correction is no native pass.
 
-**Next required gate:** extend the current engine coverage/mutation selection
+**Historical next gate, now completed by the
+[three-owner checkpoint](#three-owner-measurement-qualification--6-november-2026):** extend the engine coverage/mutation selection
 from library/CLI to include the registered critical `measurement.rs` owner,
 freeze the complete current candidate/helper bindings and actual mutation
 inventories, then meet 90% executable-line coverage and 95% viable mutation
@@ -2768,3 +2780,145 @@ remain open under the card above.
 > ## One permitted next action
 >
 > Record this completed, candidate-scoped READY review verbatim in the existing engine task as part of integrating the ordinary S2.2 documentation handoff.
+
+## Three-owner measurement qualification — 6 November 2026
+
+**Selected host coverage/mutation checkpoint passed; full S2.1 remains open.**
+Owner: engine/domain/QA. Scope: REQ-8/BND-1 and the applicable
+CHECK-6/7/8/11/14/25/27 subset for the library, CLI and experimental measurement
+owners. Environment: admitted GNU host, isolated controlled IPv4/IPv6 peers,
+`authentication=none eligible=0`. No Windows execution or formal job ran.
+
+The current product map contains 168 inputs, canonical SHA256
+`2d7e5cf796fc9f32dbfea780de1c6206dd7060e94fc03001185e384491d147e8`.
+Coverage/mutation bind the same 177 product/helper/review inputs; every bound
+current file matches both receipts. The current engine policy SHA256 is
+`9615c8bd93d3b8a2ab6c625c0f759be4a30f8a021f185c9ed480d34b05af098c`.
+These bindings do not extend the earlier 167-input dependency, constructor or
+Windows cross-build receipts.
+
+Measurement unit tests moved to `tests/private/measurement.rs`, preserving their
+module identities and Cargo execution while keeping test code outside the
+production executable-line denominator. The analysis wrapper now requires all
+three critical owners, 47 named ordinary tests and 12 public/legal/privacy
+doctests. Its inert external-constructor role remains library-only and admits
+exactly 168 current inputs; it gains no runtime or socket authority.
+
+### Actual failures and repairs
+
+The first complete campaign listed 305 variants and remained incomplete. Four
+request-binding OR variants survived because the foreign-slot test changed
+several contextual fields together. Independent identity, peer, local endpoint
+and profile challenges now preserve pending state/accounting beside restored
+healthy and consume-once controls. Three CLI variants exposed missing raw-digit
+neighbors: 20-digit padded values must succeed, while 21-digit padded values
+must fail even when numeric parsing would fit. A date-scope variant exposed the
+untested exact inclusive Q32 endpoint; direct helper tests now challenge both
+endpoints and their one-tick neighbors in all three positions.
+
+Review of two residual-comparison survivors found an internal contract gap:
+`coherence_residual` promised reversed-bracket rejection but depended on its
+caller. Its direct regression actually returned `[Ok(1000), Ok(1000)]` instead
+of two `CaptureOrder` errors. The helper now admits each bracket itself; the
+public `measure` entry point already performed the full ordering check. This
+is internal boundary hardening, not a demonstrated user-visible arithmetic
+failure. The retained admitted RED and subsequent complete GREEN identify the
+exact original failure and repaired source.
+
+Only after that guard did independent review justify the two exact equality
+cases in [the mutation equivalence record](engine-analysis-equivalences.md).
+The engine admits either no equivalences or precisely those two complete pinned
+records, with actual descriptor, candidate, source and reviewed artifact custody.
+Native misses and exit 2 remain visible; neither equivalent receives kill credit.
+The real isolated admission controls reject stale, partial, duplicate, foreign
+and changed-review cases. All 42 wrapper and 122 shared-analysis tests pass.
+
+### Final current observations
+
+| Owner | Executable lines | Generated | Viable / killed | Native survivors | Unviable | Reviewed equivalents | Raw killed score |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Library | 841 / 875 (96.11%) | 203 | 90 / 90 | 0 | 113 | 0 | 100% |
+| CLI | 127 / 127 (100%) | 42 | 28 / 28 | 0 | 14 | 0 | 100% |
+| Measurement | 256 / 259 (98.84%) | 67 | 49 / 47 | 2 | 18 | 2 | 95.92% |
+
+All three per-file gates pass; no timeouts or unresolved survivors remain.
+The measurement adjusted score is 47/47 (100%); its raw denominator remains 49.
+Every actual mutation baseline executes 47 ordinary tests and 12 doctests.
+LLVM's report supplies executable-line evidence, not instrumented branch evidence.
+The unchanged campaign uses ten workers, one nested Cargo job, 90-second build/
+60-second test limits and the 1,200-second total campaign budget. Forty-eight
+five-second resource samples observed at most 4.21 GiB summed process RSS,
+at least 4.89 GiB host memory available and 9.00 GiB disk available. Summed RSS
+can double-count shared pages; sampling establishes no hard aggregate peak.
+
+Receipts remain under the existing S12e evidence root:
+
+| Receipt | SHA256 |
+| --- | --- |
+| `s21-analysis-baseline-v2/verification.json` — eight ordinary development lanes | `24280bdada4d3d063703337389a144e920c2f602510724aa1d31950f64a4418f` |
+| `s21-three-owner-enumeration-v2/verification.json` — 312 complete descriptors, no campaign credit | `28194196b3df4fc178cfb4ccad6b8a2ee0a7a3b856d822435e372fd6a1868923` |
+| `s21-three-owner-coverage-v2/verification.json` — all three files | `a01b52612ac6fad76d6a5b1c8c6a9f70dd846745e8a0f842af7efaa44515a9cb` |
+| `s21-three-owner-mutation-v2/verification.json` — all three complete campaigns | `61d726e2646cd37d28d817e8868c6ff122fa32434ba121f0ac415064f3488742` |
+
+The original incomplete campaign remains `s21-three-owner-mutation-v1`, SHA256
+`4441280166c920a1af49f3af7a11b8a516e05ebdf1933f5bcf688c53dabc4ff4`.
+Its outcomes are not replaced by the repaired campaign. Resource observations
+are in `s21-three-owner-mutation-v2-resource-samples.jsonl`. Full retained-history
+and working-tree secret scans pass with the existing exact controls and no
+baseline or weakened rules.
+
+### Generation limits and remaining evidence
+
+The pinned generator skips methods named `new`: `Config::new`,
+`ControlSchedule::new` and `ExperimentalProfile::new` have no descriptors.
+Direct boundary/rejection tests, legal consumers and external privacy/bypass
+checks supply separate evidence. Other gaps include `select!`, watch/spawn
+closures, formatting macros, checked arithmetic call chains and individual
+match arms. Real loopback trajectories, literal arithmetic, captured-output
+reconstruction and partial-sink controls challenge selected behavior without
+creating generated kills for these omissions.
+
+Broader engine/QA evidence remains open for individual ordering-edge/error
+projections, actually failed timer-task cleanup and an emitted refusal record
+for a present but semantically rejected model. These need direct discriminating
+controls before claiming their full behavior. Native Windows completion/AFD,
+resources/soak, physical clock accuracy, genuine date/scale admission, production
+scheduling/KoD, uncertainty/statistical consumption, NTS and release remain open.
+All existing Windows/S134, AES fuzz, storage and UI holds remain. Formal work is
+post-V1; this ordinary mutation review resumes no solver or verifier work.
+
+### Next source checkpoint: observation-to-Core admission
+
+**Ready:** source/contract preparation in this existing S2.1 card, jointly owned
+by engine/protocol and the S1.2 statistical owner. **Held:** production sample
+construction/history insertion until the actual admission contract is settled.
+No later implementation becomes ready solely from the percentages above.
+
+Freeze one producer-to-receiver contract before integration:
+
+1. Identify every real envelope input's owner, units, identity, freshness and
+   invalidation. Keep genuine date/era evidence separate from host time and
+   observed software min/max. Reuse S1.4's distinct claim-day and whole-exchange
+   `LeapKnowledge::interpret` contracts, scale/calendar/mapping identities and
+   useful silent-source rules.
+2. Select the observation's reference instant, retain exact Q33 phase and its
+   conversion residual, and distinguish signed raw RTT from adjusted delay,
+   root uncertainty, capture placement error and later fit/model residuals.
+   State physical assumptions, the admitted envelope and justified dimensionless
+   divisor. Experimental consistency tolerance supplies no physical accuracy.
+3. Name the actual checked receiver and its output/failure/state obligations.
+   The current Core `FixtureHistory::try_append(FixtureObservation)` is explicitly
+   fixture-only; a production `ValidatedSample` remains a planned boundary,
+   not an existing type. Do not silently relabel fixture assertions as admission.
+4. Specify independent accepted/rejected neighbors, stale/mismatched identity,
+   atomic unchanged-state failure and insufficient-history results. Preserve
+   signed arithmetic and source age; one or two observations remain insufficient
+   for current regression. No estimator vote or clock effect follows this card.
+
+Observable exit: one reviewed exact input-to-checked-result-to-receiver contract
+under the existing REQ/BND/CHECK owners, with unresolved provenance/model decisions
+and their dependent implementation explicitly held. Use architecture §7.3 and
+this task's [existing Core bridge](#era-leap-and-checked-core-bridge), S1.2's
+[held integrations](s1.2-regression-readiness.md#held-integrations-review-gate-and-next-action)
+and S1.4's source admission. No new runtime framework or formal campaign is
+required for this source checkpoint.

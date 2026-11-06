@@ -80,8 +80,11 @@ The [selected pure-leap checkpoint](../tasks/s1.4-leap-policy.md#pure-leap-final
 is complete, including four current mutation cohorts and qualified receipt
 reconciliation. [S2.1's controlled measurement source checkpoint](../tasks/engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026)
 now passes focused host tests, public-contract probes, dependency checks and
-Windows cross-builds. Current three-owner coverage/mutation is next; native,
-production-scale/uncertainty and estimator qualification remain open.
+Windows cross-builds on its recorded source. The subsequent
+[three-owner measurement qualification](../tasks/engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026)
+passes current host tests, coverage and complete mutation gates. Next freeze the
+existing observation-to-Core admission contract; native, production-scale/
+uncertainty and estimator qualification remain open.
 Runtime validation, independent behavioral tests, coverage/mutation, security,
 native/package and release gates remain; all existing execution holds remain.
 

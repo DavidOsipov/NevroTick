@@ -46,14 +46,17 @@ resume through normal bounded planning after V1. The owner's report of more than
 a day without a newly identified product mathematical defect explains the
 priority change; it supplies no general correctness claim.
 
-**Ready product continuation:** [S2.1's first controlled measurement qualification](engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026),
-following the [completed pure-leap checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026).
-The envelope/model and typed arithmetic/projection are implemented with passing
-focused host/contract/dependency/cross-build checks. Next admit all three current
-critical engine owners and finish coverage/mutation; retain exact candidate and
-nonempty per-file denominators. Authentication and eligibility remain absent; estimator admission,
-production scheduling and native Windows work retain their separate contracts
-and holds. Runtime validation,
+**Ready product continuation:** freeze the existing
+[S2.1 observation-to-Core admission contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission),
+following the [completed pure-leap checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
+and [three-owner measurement qualification](engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026).
+The current host candidate passes 47 ordinary tests, 12 doctests and complete
+per-file coverage/mutation gates, with two exactly reviewed equivalent survivors
+and no kill credit for them. Freeze reference time, genuine date/scale provenance,
+uncertainty/divisor and actual receiver semantics before production history
+insertion. Authentication and eligibility remain absent; estimator admission,
+production scheduling and native Windows retain their separate contracts and
+holds. Runtime validation,
 checked arithmetic, independent tests/property/boundary cases, the existing
 90%/95% thresholds, security/native/package/release gates and all execution holds
 remain required. No general parent below is activated by this note.
@@ -546,7 +549,7 @@ must still fail explicitly instead of becoming Direct.
 
 | Future card / role owner | Prerequisites and next bounded action | Independent observation required for exit |
 | --- | --- | --- |
-| S2.1 UDP/DNS observation / engine/platform | [First conditional measurement source checkpoint](engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026) is implemented and host-checked; current library/CLI/measurement coverage and mutation remain next. W11-W01/native, production scheduling/KoD, leap/scale and statistical admission retain separate contracts. | Actual controlled IPv4/IPv6 exchanges yield independently checked, explicitly ineligible nominal measurements or diagnosed refusal. Production wrong-endpoint/correlation/generation and forged/stale KoD controls remain required at their reached owners; no threshold or retry bypass. CHECK-6/8/21/25/27. |
+| S2.1 UDP/DNS observation / engine/platform | [Three-owner measurement qualification](engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026) passes on its recorded host candidate. Next freeze the existing observation-to-Core admission contract. W11-W01/native, production scheduling/KoD, leap/scale and statistical admission retain separate contracts. | Actual controlled IPv4/IPv6 exchanges yield independently checked, explicitly ineligible nominal measurements or diagnosed refusal. Production wrong-endpoint/correlation/generation and forged/stale KoD controls remain required at their reached owners; no threshold or retry bypass. CHECK-6/8/21/25/27. |
 | [S2.2 ordinary composition](engine-transport-pilot.md#ordinary-full-nts-composition--s22-preparation-5-november-2026) / engine/protocol/security | Source card prepared; implementation deferred. Exact TLS/provider/verifier/AEAD graph, ordinary Windows profile, finite runtime/lifetime contracts and local zero-cookie disposition precede dependent integration. | Fresh KE publishes one complete association; protected UDP completes once and eligible evidence reaches the actual Core consumer beside authentic numerical refusal. Paired path/packet/resource/trust controls retain independent vectors/interoperability. CHECK-6/7/8/9/17/20/21/25/26/27, AC-04. |
 | S2.3 reuse/recovery / engine/security/storage | Qualified ordinary NTS first; OPEN-8/relevant recovery decisions and any optional-state construction/provider/pause gates; freeze one compatible-restart or provisional-recovery child. | Compatible reuse succeeds beside unavailable/stale/substituted state; strict authentication remains, no restored pending request, plain hint vote or global clock effect. Two-helper failure creates no silent one-helper path. CHECK-8/9/15/25/26, AC-02/09/10; applicable ST-T cases. |
 | S2.4 adversarial closure / protocol/security/QA | Reached S2.1–S2.3 entrypoints and frozen retry/endpoint/native-job contracts; choose the remaining discriminating failure case. | Replay/endpoint changes, storms, stuck native work and cancellation preserve bounded real-job custody, atomic state and redacted output while valid neighboring acquisition works. CHECK-6/8/9/17/26/27; complete the linked checklist. |
