@@ -54,9 +54,13 @@ priority change; it supplies no general correctness claim.
 [S2.1 observation-to-Core admission contract](engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission),
 following the [completed pure-leap checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026)
 and [three-owner measurement qualification](engine-transport-pilot.md#three-owner-measurement-qualification--6-november-2026).
-The current host candidate passes 47 ordinary tests, 12 doctests and complete
-per-file coverage/mutation gates, with two exactly reviewed equivalent survivors
-and no kill credit for them. Freeze reference time, genuine date/scale provenance,
+That recorded three-owner candidate passed 47 ordinary tests, 12 doctests and
+complete per-file coverage/mutation gates, with two exactly reviewed equivalent
+survivors and no kill credit for them. Those receipts do not qualify later source
+or dependency graphs. The [refreshed graph's numerical critical-owner gates](s0.1-source-readiness.md#refreshed-graph-and-current-evidence)
+remain pending; reconcile them before the reviewed reference/anchoring bridge,
+in the order owned by [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+Freeze reference time, genuine date/scale provenance,
 uncertainty/divisor and actual receiver semantics before production history
 insertion. Authentication and eligibility remain absent; estimator admission,
 production scheduling and native Windows retain their separate contracts and

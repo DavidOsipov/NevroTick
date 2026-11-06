@@ -29,7 +29,7 @@ Do not scaffold Cargo or substitute a fixture graph to claim a product pass.
 
 ## Rust implementation and dependency rows
 
-For the current UI-M0 workspace, use
+For the current Cargo workspace, use
 [the shared verifier](../../../../TOOLING.md#starting-implementation):
 `python3 -B scripts/verify.py` for the portable row, `--lane dependencies` with
 a current advisory receipt for graph checks, and `--lane windows` with a new
@@ -38,7 +38,12 @@ admitted inputs and full arguments. These rows preserve isolated execution;
 unavailable prerequisites are an evidence gap, not a direct-Cargo fallback.
 The root `deny.toml` retains the bootstrap policy and rejects the UI-M0 graph;
 the dependency row applies the exact admitted graph policy inside its snapshot.
-Native observations remain separate in [the task record](../../../../tasks/ui-m0.md).
+Current Slint native preparation and evidence belong to
+[S0.5](../../../../tasks/s0.5-ui-comparison.md) and the
+[GUI handoff](../../../../tasks/slint-gui-handoff.md). The
+[original UI-M0 task](../../../../tasks/ui-m0.md) and `ui-m0-windows.ps1` retain
+historical Win32 control-ID observations; that helper cannot qualify Slint controls.
+Native evidence and existing execution holds remain separate from cross-builds.
 
 For the selected Windows release candidate, retain the Windows lane's debug
 compiler/all-target Clippy checks and its explicit release UI link. Inspect the
@@ -222,5 +227,6 @@ The wrapper currently fixes `x86_64-pc-windows-msvc` through
 admission, not an invented `--target` argument. It admits cargo-cyclonedx and
 freezes source/graph/configuration, requiring real manifests, lockfile and cached
 dependencies. Reconcile its Rust
-inventory with native/generated/MSI contents and final artifacts; generation
-alone proves neither complete-product inventory nor permission to publish.
+inventory with native/generated/resources and the selected submitted and actual
+Store-delivered MSIX inventories and final artifacts; generation alone proves
+neither complete-product inventory nor permission to publish.

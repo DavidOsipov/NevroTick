@@ -207,3 +207,257 @@ The lock digest agrees with the policy; the canonical policy digest agrees with
 the code-owned pin and corrected GUI handoff. No repository program or product
 test was executed for this documentation-only audit. `docs/SHA256SUMS.txt` is
 absent, so no bundle-manifest integrity result is claimed.
+
+## Repeated documentation and requirement/source review — 7 November 2026
+
+David merged [PR13](https://github.com/DavidOsipov/NevroTick/pull/13), then requested
+many AI reviewers to recheck documentation, update stale information and identify
+implemented behavior that conflicts with requirements. The frozen review base is
+`b4f78a5864d0e994b577a5494233220c45319ec4`, tree
+`60d7197e5f2cb6444ff35dd6c6faf92d5b0f52a4`. GitHub reported a valid signature and
+successful main-push [Repository security](https://github.com/DavidOsipov/NevroTick/actions/runs/42288533412)
+and [Rust product checks](https://github.com/DavidOsipov/NevroTick/actions/runs/42288533649).
+These are base results, not tests of the correction candidate. The review date
+uses Asia/Tbilisi; the corresponding initial remote observations were on
+6 November UTC.
+
+The coordinator kept that worktree read-only and integrated corrections in a
+separate worktree. Eight domain reviewers and a ninth integrated reviewer
+completed bounded reviews with inherited context; their actual results are
+recorded below. Three initial fresh-context launches, `recheck_build_contracts`,
+`recheck_core_contracts` and `recheck_ui_contracts`, failed before reviewing with
+`Codex ran out of room in model context`. They are **NOT RUN**, not clean reviews.
+Inherited-context replacements are disclosed complementary reviews, not fresh
+contexts or statistically independent correctness evidence. Subsequent archival
+closeouts retrieved the completed results and are not additional reviews.
+
+| Completed reviewer | Actually inspected scope | Result |
+| --- | --- | --- |
+| `audit2_build` | Manifests, graph/admission consumers, verification/CI, SBOM and native observation routes | BUILD-01/02; qualified SBOM raw-admission follow-up |
+| `audit2_core` | Time-domain arithmetic/leap and selected normalization, history, selection, variance, reference/rate paths | CORE-01; no further substantiated finding in that subset |
+| `audit2_ui` | Private receiving guards, raw-field bounds, source drafts, localization construction/approval/publication and sample notification context | UI-01; no further substantiated finding in that subset |
+| `audit2_transport` | NTP/NTS framing, exchange identity, engine socket/request/deadline ownership, budgets, cleanup and CLI | No substantiated new finding in that subset |
+| `audit2_windows` | Actual UI/native entry, Windows role boundaries, v3/hardening and package task contracts | WIN-01; no demonstrated native behavior failure |
+| `audit2_network_storage` | Bootstrap, source/DNS/catalogue and storage authority, manifests/selected entrypoints and delivery order | PLAN-01; future absent components retain their existing scope |
+| `audit2_current_docs` | Current README/ROADMAP, documentation/task maps, backlog and development queue against source and receipts | DOC-01/02; 559 source-level heading fragments resolved |
+| `audit2_agent_rules` | Selected skill indexes/contracts/leaves against manifests, policy, verifier and owner decisions | RULE-01/02; no additional substantiated enforcement defect |
+| `audit2_integrated_review` | All 28 correction paths in staged tree `817b1b4`, their affected requirements, metadata and source consumers | READY for correction-candidate integration; no material finding |
+
+The coordinator independently checked the affected sources and rejected transfer
+of historical results to current bytes. Ten confirmed findings are corrected:
+
+| Finding | Observed discrepancy and current disposition |
+| --- | --- |
+| BUILD-01 | The live [SBOM receipt](../scripts/generate-sbom.py) and supporting policy/tooling still named MSI. The emitted scope now calls for complete native/resource/package and submitted/Store-delivered MSIX reconciliation. Generation/admission logic is unchanged; the inventory is still Rust-only. |
+| BUILD-02 | TOOLING prescribed the old Win32 child-control-ID helper for the current Slint executable. [The active route](../TOOLING.md) now uses S0.5/GUI handoff; the old command and helper help text explicitly retain historical Win32 scope. |
+| CORE-01 | [The leap task](s1.4-leap-policy.md) retained current/present wording in superseded incomplete checkpoints. Historical labels and links now distinguish those receipts from pure-leap completion and development §7's later queue. |
+| UI-01 | [Localization DESIGN](../crates/nevrotick-ui/src/localization/DESIGN.md) described text-contract-2 evidence as wholly pending. It now routes to recorded candidate-specific portable evidence, while keeping graph boundaries, native and independent semantic-approval gaps explicit. |
+| WIN-01 | UI source comments and Cargo description claimed unelevated execution without an effective-token admission mechanism in the inspected route. They now describe fixture observer scope; native activation/token qualification remains open. This is a claim correction, not a new token guard or elevation exploit. |
+| PLAN-01 | The active [catalogue register](../docs/server-catalogue-open-questions.md) and related dated next-action text retained proof-first routing. Current routing now states development §7 and OD-10 §14.1's post-V1 deferral. The dated task has a supersession note; raw historical testimony is preserved. The documentation guide's analogous current summary is also clarified. |
+| DOC-01 | [ROADMAP](../ROADMAP.md) still called Win32 current and Slint migration pending. It now identifies checked-in Slint fixture source, S0.5/handoff ownership and scoped graph/licence evidence separately from remaining native/backend/package qualification. |
+| DOC-02 | [The backlog](development-backlog.md) assigned the historical 47-test/12-doctest three-owner receipt to the current candidate. It and related active summaries now retain that receipt's original source identity and route the pending refreshed numerical gate before the reviewed bridge. |
+| RULE-01 | Two implementation skill summaries said Garde's selected graph still awaited admission. They now link recorded exact-graph evidence while requiring current-candidate validation and changed-graph/feature/target re-admission. |
+| RULE-02 | Four active planning/acceptance summaries selected complete MSI despite OD-05. They now route to the selected MSIX/Store package and retain exact artifact/native lifecycle evidence plus the conditional later MSI alternative. |
+
+One qualified follow-up remains **OPEN** in the
+[existing build task](build-optimization.md#sbom-admission-follow-up-from-source-review--7-november-2026):
+raw SBOM report admission loses duplicate-key distinctions and has no explicit
+nesting/node policy, but the review did not demonstrate a contributor-controlled
+path to arbitrary malformed reports from the pinned offline generator. The
+existing byte/file/count/custody and Cargo-inventory controls remain real; no
+complete raw-parser qualification or exploitable defect is asserted. CHECK-19/20/26
+and P6 S6.4 retain the producer tracing, actual-boundary controls and any necessary
+repair before the corresponding SBOM/release claim.
+
+The UI Cargo edit changes only `package.description`. Its single bound manifest
+digest and code-owned canonical policy anchor are synchronized:
+`c1735811cefab5f108906b44c40bb634a18bed3490a253e724bc429c4a6dc5cf`.
+The lock remains
+`9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e`.
+Independent standard-library JSON/TOML/AST comparison found no graph, version,
+feature, grant, package-scope, patch or executable UI/PowerShell change. The SBOM
+Python AST changes only its module explanation and emitted scope string; the
+dependency checker changes only its deliberately reviewed anchor. All seven
+bound manifests and the lock match the corrected policy. These are source and
+custody checks, not execution of the repository validators.
+
+The base route scan resolved 1,882 local file-link targets across 38 maintained
+documents; the current-doc reviewer separately matched 559 heading fragments in
+six current entry documents. Both checks are bounded source checks, not a full
+archive/renderer audit. Changed-document links/anchors, whitespace, integrated
+review and final-candidate hosted results are accounted for at closeout below.
+No repository program, compiler, product test, network/native/formal/fuzz or
+storage experiment ran locally for this audit. `docs/SHA256SUMS.txt` is absent;
+archived design bundles' separate manifests are not a current-doc integrity pass.
+
+The inspections did not substantiate another implemented runtime/contract defect
+in their selected Core/transport/UI paths. They do not prove whole-product
+correctness, complete RFC compliance, ASVS conformance or absence of defects.
+Production observation-to-Core admission, refreshed numerical qualification,
+authenticated acquisition, services/IPC, clock authority, effective process
+protections, independent critical-text approval and native/package qualification
+remain with their existing owners. Formal work stays post-V1; existing numerical,
+security, native, release and scoped execution requirements are preserved.
+
+### Attributed raw domain closeouts
+
+The following are the reviewers' compact archival responses, retained without
+rewriting their comprehension paragraphs. Earlier detailed findings were
+reconciled under the stable IDs above. The closeouts describe the frozen base,
+not execution or independent approval of the coordinator's subsequent edits.
+
+<details>
+<summary>audit2_build — completed</summary>
+
+**Archival closeout of the completed inherited-context, read-only review at `b4f78a5864d0e994b577a5494233220c45319ec4`. No additional audit or execution was performed.**
+
+The current build contract separates source and dependency admission, portable verification, Windows cross-build evidence, native observation, and release qualification. Schema-3 policy owns the exact workspace graph, targets, feature selections, licensing split, first-party build-script identity and admitted local/registry dependencies. The verifier validates the graph before running bounded, offline work against a copied source tree, exact vendored inventory and applicable fresh advisory evidence. Portable tests and cross-compilation do not establish successful Windows interaction, accessibility, packaging, signing or release qualification. CodeQL remains explicitly deferred: its four jobs must be skipped, and their absence must not become a SAST success claim.
+
+The selected product direction is the Slint GUI and complete Store MSIX delivery, with separate GPL-3.0-only GUI and GPL-2.0-only Core/engine admission. Historical Win32 observation machinery and historical MSI preparation remain valid only within their original scope. The release SBOM helper currently establishes bounded Rust dependency inventory with exact target/feature comparison; complete shipped native/resources/package reconciliation and final artifact identities remain later gates. The owner’s hostile-JSON rule includes generated output, but the detailed catalog schema and CBOR requirements should not silently be presented as an already implemented general CycloneDX schema validator.
+
+The completed review confirmed **BUILD-01**, stale MSI wording in newly generated SBOM receipts and associated guidance, and **BUILD-02**, an active native-observation recipe that directs the current Slint executable through the historical Win32 control-ID helper; both corrections were accepted by the coordinator. The **SBOM raw-admission follow-up remains qualified**: byte limits precede plain JSON decoding, but duplicate-key distinctions are lost and no explicit nesting policy is enforced. No contributor-controlled path to arbitrary malformed reports from the pinned generator was demonstrated; private snapshotting, exclusion of original JSON and offline execution constrain that path. This is an admission/evidence gap for the SBOM owner, not a demonstrated exploitable defect. No edits, publication, repository imports, builds or tests were performed, and the review supplies source-level evidence only.
+
+</details>
+
+<details>
+<summary>audit2_core — completed</summary>
+
+The current implementation separates checked numerical values from evidence or authority. `UtcCoordinateQ32`, explicit era windows, Q33 offsets/Q32 round trips, monotonic and active-awake coordinates, and exact rational-seconds conversion carry their documented numeric invariants; their public construction does not assert authentication, clock continuity or native permissions. Canonical architecture §6.3.1 (`docs/windows-time-architecture.md:610–633`) distinguishes scalar invariants, shared DTO/settings validation and contextual checks. I traced actual producers, validation helpers, retained fields and consumers for the time-domain arithmetic/leap subset and selected Core normalization, bounded history, interval selection, window variance and reference/rate-delivery paths. In those inspected paths, private immutable representation, bounded admission and checked transformations correspond to the scoped requirements.
+
+The Core selection and correction machinery remains explicitly a fixture implementation. Synthetic labels, caller-supplied chart/generation assertions and modeled settlement receipts must not be interpreted as authenticated sources or actual Windows acknowledgements. The leap ledger is a real implemented pure owner; later source acquisition, leap guards and native integration remain separate open work. I used the inherited context and source text, not a fresh-context independent review. I executed **no repository code, imports, scripts, tests, builds, proof tools, native operations or fuzzing**, and made **no edits**. The checkout remained clean on `audit/requirements-source-recheck-20261107`; review base was `b4f78a5864d0e994b577a5494233220c45319ec4`.
+
+Completed result: **CORE-01** identified historical leap-status paragraphs retaining “current”/“present evidence” wording in `tasks/s1.4-leap-policy.md:121–147`, despite the implemented pure ledger and superseding completion record. The remedy is explicit historical labeling and current routing, preserving the original receipts and open integration scope. No other substantiated findings emerged from the inspected Q32/Q33 arithmetic, era unfolding, rounding, rational conversion, leap admission/interpretation, normalization, bounded history, interval selection, window variance or reference/rate-delivery boundaries. This records the completed bounded source review; it does not establish whole-Core correctness or new execution qualification.
+
+</details>
+
+<details>
+<summary>audit2_ui — completed</summary>
+
+The selected Windows UI is the Slint fixture application. Its authority comes from private Rust owners of navigation, modal state, draft fields, source identities and native observer state. Slint properties and submitted arguments are untrusted inputs. Catalogs supply checked text; they cannot choose commands, routes, permissions or clock effects. Native notification support is explicitly for a sample test notice, and OS request acceptance is kept separate from delivery, reading and service health.
+
+This was a **bounded read-only source review of `b4f78a5864d0e994b577a5494233220c45319ec4`**, with **inherited context**. I read the applicable repository instructions, testing contract, native UI and Slint skills, current GUI handoff, input audit and localization contracts, then traced selected receiving paths. I executed no repository scripts, imports, tests, builds, formal tools, browser, GUI or Windows behavior. The checkout remained clean. This review establishes source observations, not runtime or native qualification.
+
+The completed review substantiated **UI-01**, a low-severity documentation discrepancy: `crates/nevrotick-ui/src/localization/DESIGN.md:139–144` retains an obsolete description of text-contract-2 evidence despite later candidate-specific portable results recorded in S0.5 and the handoff. The correction should route readers to those evidence owners while preserving dependency-graph boundaries and outstanding native and semantic-approval holds. Inspected boundaries included private route/phase/modal receiver checks, raw-field budgets and Submit matching, checked source identities and draft mutations, closed catalog construction, exact approval authority, complete publication and English fallback, and sample native-notification context and status. **No other substantiated finding or reachable code/contract violation emerged within that selected scope.** No additional review or execution was performed for this archival closeout.
+
+</details>
+
+<details>
+<summary>audit2_transport — completed</summary>
+
+`ntp-wire` реализует инертные, ограниченные по размеру и количеству элементов представления: полный NTP header/datagram, NTS-KE framing и накопление, сопоставление ответа с фактическим offer, exporter context, authenticator envelope и plaintext framing. Их успех означает только заявленные структурные или переговорные свойства. Эти типы не создают TLS/AEAD-аутентификацию, разрешённый endpoint, production association или временной sample. В частности, пустые cookie bodies, нулевая длина nonce, неприменённые endpoint hints и отсутствие TLS shutdown в этих владельцах **соответствуют** явно ограниченным контрактам, а не доказывают дефект законченной NTS-реализации. Это согласовано между `tasks/s0.1-protocol-comparison.md:636–657,1578–1620` и соответствующими модулями `ntp-wire`.
+
+`ntp-exchange` — отдельный чистый fixture owner одной ожидающей заявки. Он принимает утверждённые драйвером binding/generation/time facts, сохраняет настоящий T1 отдельно от wire token и потребляет слот только после завершения всех применимых проверок. `nevrotick-engine` не выдаёт эту fixture-модель за OS-происхождение: он самостоятельно владеет двумя реальными loopback sockets и фиксирует фактические software timestamps, token, endpoint и одноразовую идентичность socket/request. Его единственный сериализованный owner допускает результаты после актуальных control/deadline guards; завершённый результат остаётся историческим. CLI сохраняет `authentication=none eligible=0`. Полное NTS, DNS, production scheduling, source independence, статистическое принятие и квалификация Windows teardown остаются последующими явно названными работами.
+
+Проверка завершена на исходном состоянии `b4f78a5864d0e994b577a5494233220c45319ec4`: рассмотрены framing/negotiation, привязка endpoint/socket/request, generations/deadlines, одноразовое завершение, бюджеты send/receive, stop и cleanup таймеров, границы диагностического вывода и CLI. **Обоснованных новых транспортных находок не выявлено.** Это ограниченный read-only source review с унаследованным контекстом; изменения не вносились. Код репозитория, импорты, компиляция, тесты, сетевые эксперименты, native/fuzz/formal инструменты не запускались. Результат не устанавливает полную RFC-совместимость, native Windows completion или готовность релиза; данный текст лишь архивирует уже завершённую проверку.
+
+</details>
+
+<details>
+<summary>audit2_windows — completed</summary>
+
+The reviewed candidate, `b4f78a5864d0e994b577a5494233220c45319ec4`, contains a fixture Slint UI, portable protocol/numerical owners and an explicit observation CLI. The Windows service topology, privileged clock broker, lifecycle helper, secured production IPC, runtime mitigation admission and complete hardened MSIX are required future product capabilities. Their absence must remain assigned implementation work; it does not justify weakening the requirements or treating an observation CLI as a service.
+
+The maintained architecture and Windows/package handoffs generally make that distinction correctly. They preserve OD-05’s complete MSIX direction, OD-07’s configured v3 floor, OD-14’s intended two-family platform scope, candidate-specific evidence and existing native/fuzz/storage holds. I reviewed this slice with inherited context, read-only source/document inspection and the repository security/testing and Windows metadata workflows. **I found one narrow unsupported source-documentation claim, no newly demonstrated production behavior failure, and no reason to reopen native execution or compiler-flag research.**
+
+**Completed result — WIN-01:** current UI comments and package description call execution “unelevated”, but the inspected entry route does not establish an unelevated effective token; canonical architecture already leaves actual activation/token qualification open. This is a low-priority wording overstatement, with the counterinterpretation that the wording describes the intended role. The minimal correction qualifies that claim while preserving the existing native requirement. No Windows executable, delivered manifest or runtime token was inspected or executed; no elevation exploit, privileged effect or native protection result was demonstrated. The review made no edits and ran no tests, builds, formal jobs, fuzzing or native experiments.
+
+</details>
+
+<details>
+<summary>audit2_network_storage — completed</summary>
+
+At frozen commit `b4f78a5864d0e994b577a5494233220c45319ec4`, NevroTick contains six Cargo workspace members, a Slint fixture UI, pure protocol/domain/Core components and a controlled loopback engine experiment. The engine takes exactly two explicit numeric loopback peers, bounds its lifetime and emits measurements marked `authentication=none eligible=0`; its manifest does not provide a production TLS/NTS, DNSSEC/DoQ, Roughtime, SOCKS5 or protected-storage implementation. The offline catalogue utility implements unapproved publisher evidence **R**, with production catalogue **C**, approval binding and client integration still separate. Relevant direct evidence: `Cargo.toml:1–4`; `crates/nevrotick-engine/Cargo.toml:9–16`; `crates/nevrotick-engine/src/lib.rs:158–218,698–718`; `crates/nevrotick-engine/src/bin/nevrotick-observe.rs:1–6`; `tools/server-catalogue/README.md:1–12`.
+
+This was an **inherited-context, bounded read-only review**, not fresh-context independence or whole-product qualification. I compared active authority, readiness and sequencing across networking/bootstrap, DNS, catalogue and protected-storage plans; examined the corresponding manifests, source inventory and selected actual entry points; and distinguished dated receipts from current instructions. I made no edits and ran no repository code, imports, tests, builds, network/native/formal/fuzz campaigns. The review tree remained clean at completion.
+
+**Archived result:** PLAN-01 identified stale active catalogue continuation wording—`docs/server-catalogue-open-questions.md:113`, with related dated task wording at `tasks/server-catalogue-and-statistics.md:1663`—that still describes current Core/proof priority after OD-10 §14.1 deferred formal work until after V1. The bounded review found no substantiated implementation defect in the inspected networking/bootstrap, DNS, catalogue or protected-storage surfaces. Its source-inventory and selected-entry-point evidence does not establish exhaustive consumer reachability, executed runtime behavior or qualification of intentionally future features. This closeout records the completed review; no new review or execution occurred.
+
+</details>
+
+<details>
+<summary>audit2_current_docs — completed</summary>
+
+### Comprehension
+
+The current workspace has six crates. Its Windows GUI entry calls `slint_host::run_native`; the manifest selects Slint 1.18.1 and separately grants GPL-3.0-only for original GUI code. The old Win32 adapter remains historical source. The GUI is still a fixture implementation with unavailable production effects. The engine is a bounded observation experiment, and its source explicitly reports unauthenticated observations as ineligible. The root README, architecture’s current-state capsule, feature-plan UI amendment and task-index opening describe these distinctions consistently. Their missing services, authenticated production acquisition, clock control and complete MSIX are recorded future work, not newly discovered code defects.
+
+The architecture and accepted owner decisions own requirements; development §7 owns execution order; task records own candidate-specific evidence. The current queue is observation-to-Core admission with refreshed numerical qualification before the reviewed anchoring bridge. Formal work is deferred until after V1. Historical passes therefore remain useful only for their recorded sources and graphs. The two findings concern an obsolete GUI route and an overbroad current-candidate evidence statement.
+
+### Archival result
+
+This **inherited-context, read-only review** examined clean commit **`b4f78a5864d0e994b577a5494233220c45319ec4`**. It confirmed **DOC-01**, the active roadmap’s obsolete Win32/current-migration route, and **DOC-02**, the backlog’s transfer of a historical three-owner qualification to the “current host candidate.” A source-level heading check matched **559 local Markdown heading fragments** across root README, ROADMAP, documentation guide, task index, development backlog and development plan; this was a bounded heuristic check, not rendered-browser verification. No repository programs, tests, builds, formal jobs or native commands ran, no files changed, and **no substantiated implementation defect** was established within the reviewed scope.
+
+</details>
+
+<details>
+<summary>audit2_agent_rules — completed</summary>
+
+**Archival closeout — reviewer `/root/audit2_agent_rules`.** Completed inherited-context, read-only review of frozen candidate `b4f78a5864d0e994b577a5494233220c45319ec4`. This is extraction of the completed result; no new review or execution.
+
+### Original comprehension paragraphs
+
+The requested work is to reconcile operational instructions with the project’s actual state and accepted decisions. An outdated implementation-status statement should be corrected, while an unmet normative requirement should remain an explicit implementation or qualification obligation. Historical receipts retain their original candidate and environment; neither rewriting documentation nor collecting reviewer agreement establishes new execution evidence.
+
+The reviewed repository contains six bounded Rust workspace members, including the Slint fixture UI and experimental loopback engine. Its schema-3 dependency policy already includes Garde 0.23.0 and the selected Slint graph. That exact graph does not confer general permission for changed dependencies or establish native Windows/package qualification. OD-10 §14.1 defers formal work until after V1 while preserving ordinary compilation, validation, behavioral tests, coverage/mutation, security, native/package gates and existing execution holds.
+
+### Recorded result
+
+Confirmed **RULE-01**, two Garde skill summaries incorrectly describing the current graph as still awaiting admission, and **RULE-02**, four active planning/acceptance summary locations still naming MSI despite the selected MSIX/Store direction. Corrections must preserve exact-candidate re-admission, native lifecycle obligations and the conditional MSI alternative. Within the inspected scope, workspace/Slint routing, post-V1 formal scheduling and English-only locale adoption were consistent; conditional documentation-only/workspace caveats and the distinction between Garde adoption and qualification remained valid. No additional enforcement defect was substantiated. The review made no edits and established no new test, build, native, formal, fuzz or release qualification.
+
+</details>
+
+### Integrated review and final-candidate custody
+
+The coordinator's final source-level check resolves 1,033 non-fenced local links,
+including 547 heading fragments, across 19 changed Markdown files. Literal
+historical review packets retain their original links. Changed-file whitespace
+is clean. The final review below inspected the frozen correction tree; the only
+subsequent file change appends this result and updates its completion accounting
+in this existing task index. Final staged-tree/blob identities and actual hosted
+results belong to the publication PR, avoiding a self-referential commit hash or
+a predicted test result in this pre-publication record.
+
+Reviewer wording below is retained; Markdown hard-break spacing is normalized
+to blank paragraph separators. Its two comprehension paragraphs are unchanged.
+
+<details>
+<summary>audit2_integrated_review — completed raw result</summary>
+
+The correction candidate reconciles active instructions and status summaries with the checked-in Slint fixture, selected MSIX delivery, admitted dependency graph and candidate-specific execution records. It preserves historical evidence while correcting routes that could restart completed work or transfer old test results to newer code. The small source changes correct claims and receipt wording: they do not implement token enforcement, alter the UI’s executable behavior or expand dependency permissions. The SBOM raw-admission question remains an explicitly owned evidence gap.
+
+The current system still separates portable protocol/numerical components, controlled unauthenticated engine observations and fixture UI behavior from production synchronization. Development §7 retains observation-to-Core admission and the refreshed numerical prerequisites before the reviewed bridge. Formal work remains post-V1. Effective Windows tokens, native interaction, process/package protections, independent critical-text approval and complete release qualification retain their existing requirements and open status.
+
+## Verdict: READY for correction-candidate integration
+
+**Reviewer:** `/root/audit2_integrated_review`
+
+**Context:** inherited, read-only; not fresh-context independence.
+
+**Base:** `b4f78a5864d0e994b577a5494233220c45319ec4`
+
+**Reviewed staged tree:** `817b1b4ada79d7ce1577a0bcaa54d401a25eac00`
+
+**Scope:** all **28 staged paths**, their affected requirements, direct source consumers and evidence-routing records.
+
+**No material finding was substantiated in this correction candidate.** This verdict does not close the recorded SBOM follow-up or establish product, native or release qualification.
+
+### Independently checked
+
+- **Dependency custody:** Recursive comparison of parsed policy objects found exactly one changed field: the UI manifest digest. Parsed Cargo TOML differs only at `package.description`. All **seven bound manifests** match their staged bytes. `Cargo.lock` is unchanged and matches `9f31370aaf3649527926acf48a927ce2b627d8de633d8f7a50b467cf2f07c24e`.
+- **Canonical anchor:** Independently calculated canonical JSON SHA-256 is `c1735811cefab5f108906b44c40bb634a18bed3490a253e724bc429c4a6dc5cf`, matching the code-owned pin and current handoff. Versions, features, grants, scopes and patches were not broadened.
+- **Executable deltas:** Inert AST comparison confirms that `generate-sbom.py` changes only its module explanation and scope string; `slint_dependency_profile.py` changes only its anchor. Rust executable text and the PowerShell body remain unchanged after excluding the altered documentation comments. SBOM TOML semantics are unchanged; the tool manifest changes only the generator’s descriptive scope.
+- **Requirement preservation:** The corrections retain OD-05’s complete MSIX direction and conditional MSI alternative, OD-10’s post-V1 formal deferral, current numerical prerequisites, native/token qualification and execution holds. The old Win32 helper’s actual control-ID dependencies support its historical-only designation.
+- **Evidence boundaries:** The refreshed dependency/numerical records support the corrected historical qualification wording. Localization’s text-contract-2 receipts are appropriately bounded to their recorded candidates; native and semantic-approval gaps remain explicit.
+- **Navigation and history:** All **45 added local-link occurrences** and **24 added heading fragments** resolve. `git diff --cached --check` passes. The pre-existing task-index and build-task contents remain byte-for-byte prefixes of their amended files. The staged tree remained unchanged throughout review.
+
+### SBOM follow-up disposition
+
+The open entry accurately reflects the inspected source: byte/file/count limits precede ordinary JSON decoding, duplicate-key distinctions are lost, and no explicit nesting/node policy is established. The private offline producer, exclusion of original JSON reports, source custody and actual Cargo inventory comparison constrain the path. The record does not assert an exploit, completed parser qualification or exemption from the hostile-input rule. Its existing build/release owner and required actual-boundary controls are appropriate.
+
+### Limits and next action
+
+I executed **no repository scripts, imports, tests, builds, network/native/formal/fuzz or storage experiments**, and made no edits. The comparisons above used my own inert standard-library parsing/hashing and Git inspection. I did not independently re-fetch the remote base signature or workflow results; their final verification remains the coordinator’s publication responsibility.
+
+**Next action:** append this completed review to the existing coordinator record, finalize the correction candidate and proceed through the repository’s configured hosted checks before normal integration.
+
+</details>

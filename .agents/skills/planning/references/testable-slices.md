@@ -9,6 +9,6 @@ Keep environment claims separate:
 - Pure Rust behavior can be tested on a supported host with injected observations and deterministic oracles.
 - Cross-compiling proves only the compiler/linker path actually run, not Windows token, service, IPC or clock behavior.
 - Native Windows experiments require the relevant effective identities, API observations, bounded side effects and cleanup. Clock experiments use disposable VMs under architecture section 14.9.
-- Packaging needs the exact complete MSI and install/repair/upgrade/rollback/uninstall observations. Signing and release readiness are separate evidence and authority.
+- Packaging needs the exact selected complete package and applicable install/repair/upgrade/rollback/uninstall observations. The current hardened MSIX/Store route distinguishes submitted and actually delivered artifacts; MSI remains a later owner-selected alternative. Use the [package evidence contract](../../testing/qa-package-artifacts/SKILL.md). Signing and release readiness are separate evidence and authority.
 
 Without Cargo workspace, Cargo checks unavailable for task. Tool smoke tests/throwaway Rust examples do not qualify NevroTick. Documentation integrity/skill-pack checks remain valid bounded work.

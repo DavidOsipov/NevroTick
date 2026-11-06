@@ -374,3 +374,40 @@ deferred; a passing Security gate supplies no CodeQL SAST result. These results
 close the hosted harness continuation without transferring portable checks to
 Windows linking, final PE, runtime mitigation, CPU prerequisite or package
 qualification. Those existing required owners remain open.
+
+## SBOM admission follow-up from source review — 7 November 2026
+
+**Status: OPEN, bounded admission/evidence gap; no demonstrated exploit.** The
+documentation/source recheck of main `b4f78a5864d0e994b577a5494233220c45319ec4`
+compared [the SBOM helper](../scripts/generate-sbom.py) with the owner's hostile
+JSON/CBOR rule. The helper reads regular reports with a 16 MiB per-file,
+64 MiB aggregate and 128-report budget, then calls plain `json.loads` and checks
+the consumed CycloneDX structure and exact Cargo inventory closure. It retains
+the original report bytes for output. These are real controls, but decoded
+object validation cannot recover duplicate-key distinctions, and no explicit
+raw nesting/node policy is established by that source. Its own validator
+correctly disclaims full CycloneDX schema validation.
+
+The pinned generator runs offline against a private snapshot, source JSON is
+excluded from generated reports, and source/lock custody is checked. The review
+did not establish a contributor-controlled path to arbitrary malformed generator
+output, inspect the generator's entire producer path or execute it. A recursion
+failure before output publication is a failure, not successful admission. The
+catalog-specific closed-schema rule is not silently extended into a claim that
+this helper already implements a complete CycloneDX validator.
+
+**Owner and exit:** build/release under CHECK-19/20/26 and P6 S6.4, using the
+existing [package task](windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026).
+Before claiming complete raw-report admission for an SBOM/release candidate,
+trace the actual pinned producer and define the applicable original-encoding,
+duplicate-key, nesting/node and consumed-field contracts. Challenge the real raw
+report boundary with independently specified healthy and malformed/overbudget
+neighbors; observe atomic rejection, bounded work and unchanged accepted output.
+Repair demonstrated deviations in that owner rather than weakening the hostile
+input rule or using successful inventory comparison as parser qualification.
+This note adds no formal-work campaign or native/release authorization.
+
+The current receipt and tooling guidance now name the selected complete
+native/resource/package and submitted/Store-delivered MSIX reconciliation.
+That scope-label correction performs no new inventory generation and closes
+neither this raw-admission follow-up nor the complete-product SBOM gate.

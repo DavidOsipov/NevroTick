@@ -1,7 +1,8 @@
-//! Unelevated Windows observer entry; backend/service/clock effects stay unavailable.
+//! Windows fixture observer entry; backend/service/clock effects stay unavailable.
+//! Effective launch-token and activation qualification remain open.
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
-/// Launch the unelevated fixture window, propagating startup and lifetime errors.
+/// Launch the fixture window, propagating startup and lifetime errors.
 ///
 /// # Errors
 /// Returns the native adapter's startup, control or message-loop failure after

@@ -532,7 +532,9 @@ pub fn create() -> Result<SlintHost, HostError> {
 
 /// Construct the Windows observer host around the same checked fixture owner.
 ///
-/// Native observers stay unelevated and separate from service/clock authority.
+/// Native observers remain separate from service/clock authority. This fixture
+/// does not establish an unelevated launch token; effective-token and activation
+/// qualification remain with the native Windows owner.
 /// The tray worker starts only after accepted opt-in; notification identity is
 /// observed from the current package and content is an explicit sample example.
 /// Ordinary `create()` remains free of workers, timers and native ports.
@@ -553,7 +555,7 @@ pub fn create_native() -> Result<SlintHost, HostError> {
     Ok(host)
 }
 
-/// Run the production Windows observer owner until its acknowledged UI-only exit.
+/// Run the Windows fixture observer owner until its acknowledged UI-only exit.
 ///
 /// # Errors
 /// Returns fixture/platform errors without claiming successful native cleanup.

@@ -9,7 +9,11 @@ Read [the implementation contract](../CONTRACT.md) and
 [contract enforcement](references/contract-enforcement.md). Canonical architecture
 sections 5–6 and 18.5 select strict Serde DTOs, mandatory shared garde validation
 inside private fallible construction, and separate current effect guards.
-The chosen garde 0.23.0 graph/features still need dependency admission.
+The selected garde 0.23.0 defaults-off/derive baseline has
+[exact-graph admission evidence](../../../../tasks/s0.1-source-readiness.md#refreshed-graph-and-current-evidence).
+Validate each current candidate against the code-owned policy; changed graphs,
+features or target scopes require their own admission. Version selection alone
+does not qualify a candidate.
 Preserve review/planning/tests-only modes.
 
 Trace actual raw bytes → decoding → construction → contextual guard → effect →

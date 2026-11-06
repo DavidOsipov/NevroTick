@@ -50,7 +50,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 | [qa-golden-fixture-parity](qa-golden-fixture-parity/SKILL.md) | Compare NevroTick captured outputs or pinned reference trajectories with independent semantic facts and a deliberately tested comparator. |
 | [qa-static-checks](qa-static-checks/SKILL.md) | Select and validate NevroTick compiler, Clippy, source-policy, bounded static analysis and CodeQL data-flow evidence for the actual target/features. |
 | [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) | Trace Rust external, untrusted or secret inputs through functions, state and guards to privileged effects or output sinks with scoped CodeQL MCP analysis and independent path checks. |
-| [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, MSI contents, metadata, provenance and delivered-package consistency independently of source configuration. |
+| [qa-package-artifacts](qa-package-artifacts/SKILL.md) | Verify emitted NevroTick binaries, selected complete-package contents, metadata, provenance and submitted/Store-delivered MSIX consistency independently of source configuration. |
 | [qa-accessibility](qa-accessibility/SKILL.md) | Assess NevroTick native control semantics, keyboard use, Narrator behavior and accessibility error/status communication. |
 | [qa-visual-dpi](qa-visual-dpi/SKILL.md) | Test NevroTick visual usability across Windows DPI, text scaling, contrast, window sizing and multi-monitor changes. |
 | [qa-i18n-localization](qa-i18n-localization/SKILL.md) | Test NevroTick message catalogs, units and native layout for adopted locales while preserving wire and security semantics. |
@@ -66,7 +66,7 @@ Read [CONTRACT.md](CONTRACT.md): shared scope/evidence/closeout rules. Choose on
 - [Harness qualification](references/harness-qualification.md) for actual-input binding, comparator sensitivity and failure propagation.
 - [Mutation equivalence](references/mutation-equivalence.md) for a surviving mutant's boundary-specific domain and effect proof.
 - [Campaign budgeting](references/campaign-budget.md) for aggregate work across profiles, repaired candidates, fault controls and retries.
-- [Windows evidence](references/windows-evidence.md) for native tokens/IPC/clock/SCM, complete MSI lifecycle, UIA/Narrator and DPI proof.
+- [Windows evidence](references/windows-evidence.md) for native tokens/IPC/clock/SCM, the selected complete MSIX lifecycle and conditional owner-selected MSI alternative, UIA/Narrator and DPI proof.
 - [Windows memory diagnostics](references/windows-memory.md) for Application Verifier, GFlags/PageHeap and CDB on owned native executables. Select fault detection separately from repeated allocation, handle, GUI-object and task-retention measurements; include profile restoration in the run.
 - [Performance measurement](../implementation/optimize-rust-performance/references/measurement.md) for representative profiler/benchmark selection and comparable before/after samples. Use [performance optimization](../implementation/optimize-rust-performance/SKILL.md) when the task also authorizes changing the measured bottleneck.
 - [Rust techniques](references/rust-techniques.md) for Cargo/feature/MSRV selection, generated tests, modeled concurrency and optional tools.

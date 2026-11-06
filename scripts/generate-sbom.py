@@ -2,7 +2,7 @@
 """Generate a frozen, offline Rust dependency inventory in external storage.
 
 This creates crate-level CycloneDX files and an input receipt. It does not scan
-MSI/native payloads, authorize publication or claim a complete product SBOM.
+native/package payloads, authorize publication or claim a complete product SBOM.
 """
 
 from __future__ import annotations
@@ -200,7 +200,8 @@ def generate(root: Path, output: Path, features: list[str], no_default: bool) ->
             path = output / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-        receipt = {"scope": "Rust dependency inventory only; complete native/MSI release reconciliation required",
+        receipt = {"scope": ("Rust dependency inventory only; complete native/resource/package "
+                             "and submitted/Store-delivered MSIX reconciliation required"),
                    "source_commit": commit, "source_date_epoch": int(epoch),
                    "generator": entry, "target": POLICY["target"], "features": features,
                    "default_features": not no_default,
