@@ -67,7 +67,7 @@ retain their existing prerequisites and re-entry gates.
 | P4 S4.1–S4.5 | [Clock parent](development-backlog.md#p4-clock-integration); clock/platform/security/QA | Deferred measured backend/accounting → finite policy → power generations → ownership/recovery → soak; relevant P0/P3 evidence and bounded native admission precede effects. |
 | P5 S5.1–S5.4 | [Production-UI parent](development-backlog.md#p5-production-ui); UI/accessibility/platform | Deferred Slint status → settings/helper → diagnostics/tray → accessibility/resources, consuming the admitted adapter and its exact feature graph. Restore D2 before live status/commands and D1/D3 at their preview/qualification triggers. |
 | P6 S6.1–S6.4 | [Existing Windows package owner](windows11-integration.md); W11-W10 with W11-W05/release/security | Selected complete hardened MSIX remains in this task: mitigations, lifecycle, one-product behavior, then submission/delivered provenance. CHECK-20/SBOM covers the full payload, including non-Cargo files; local and Store-delivered exits differ. |
-| P7 | [Final-qualification parent](development-backlog.md#p7-final-qualification); independent QA/release, David approves release | Deferred exact integrated candidate after applicable phase evidence; reconcile CHECK-1–27/AC-01–20, installed bytes, unresolved blockers and actual release-profile trust. |
+| P7 | [Final-qualification parent](development-backlog.md#p7-final-qualification); independent QA/release, David approves release | Deferred exact integrated candidate after applicable phase evidence; reconcile CHECK-1–27 and applicable AC-01–22, installed bytes, unresolved blockers and actual release-profile trust. AC-21/22 preserve the canonical OD-11 direct-path/proxy deferral split. |
 
 The [clock-limit preparation card](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026)
 supplies S0.4/S0.7/P4 and W11-W02/04/05 with unresolved fields, evidence provenance,
@@ -153,3 +153,57 @@ passed; staging and source/document bytes outside the task edits were preserved.
 Frozen inputs, source-coverage notes, edit identities and review/custody results
 are retained locally under `/tmp/nevrotick-docs-task-sync-6lm64nwo/`. This review
 executes no product/native gate and changes no readiness or execution permission.
+
+## Documentation and source reconciliation — 6 November 2026
+
+David requested verification of his PR12 merge, followed by a comparison of
+documentation with actual code. Reviewed main:
+`5ef985388d3350b707e91be1b78e8f8e9039f6ff`, tree
+`721baa7b4d012a645fdb9710f3dfe997ad8426a5`. The
+[build task's closeout](build-optimization.md#merge-and-final-hosted-verification--6-november-2026)
+records the exact merge, valid GitHub signature and successful required PR and
+main-push checks. The documentation correction is a separate candidate; it does
+not inherit a fresh product/native pass from that base.
+
+The review compared current entry points and task instructions with the six
+workspace manifests, selected Rust interfaces, dependency policy, verification
+scripts, workflows and later task evidence. It distinguished current assertions,
+explicit historical receipts and planned/deferred product requirements. Three
+read-only reviewers completed build/tooling, Core/engine and UI/Windows scopes
+with inherited conversation context; these are complementary source reviews,
+not fresh-context review or statistically independent test evidence. The
+coordinator independently reconciled the findings and the P7 acceptance map.
+This was a bounded audit, not an exhaustive review of every callback, archived
+design, raw historical receipt, upstream dependency or security requirement.
+
+| Finding | Evidence and consequence | Documentary correction |
+| --- | --- | --- |
+| DCA-01 — current UI route | [TOOLING.md](../TOOLING.md) still directed current commands to Win32; [the actual entry](../crates/nevrotick-ui/src/main.rs) selects `slint_host`. | Route current work to S0.5/GUI handoff; retain Win32 evidence as historical and native/backend gaps separately. |
+| DCA-02 — next task | TOOLING's opening instruction restarted pure-leap qualification, a completed predecessor under [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent). | Route to the maintained current queue and its prerequisites; preserve the post-V1 formal deferral. |
+| DCA-03 — execution budgets | The general twelve-worker claim omitted six-job selected test builds in [verify.py](../scripts/verify.py) and ten-worker current Core/engine mutation policies. | State the general budget and admitted per-lane exceptions without changing code or limits. |
+| DCA-04 — dependency admission | The active setup explanation still described 25 sources and global grants. [Preparation](../scripts/prepare-product.py), [schema-3 policy](../policy/ui-m0-dependencies.json) and `product_deny` use the current 534 registry identities and target/per-crate controls. | Explain current source maps, separate local patches, licence/build-script/duplicate permissions and pinned archive-file bypasses; preserve historical schema-2 evidence. |
+| DCA-05 — engine macro gate | [The engine task](engine-transport-pilot.md#dependency-gate-before-compilation) still ordered macro2.7.1/Syn2 and the sixteen-source cohort; the current manifest/lock and [accepted refresh](s0.1-source-readiness.md#refreshed-graph-and-current-evidence) use macro2.7.2 with a separate Syn3 host closure. | Mark the original gate historical and route compilation to the current exact graph, with Garde's Syn2 closure retained. |
+| DCA-06 — GUI graph identity | [The GUI handoff](slint-gui-handoff.md) labelled old lock and canonical-policy hashes current. Executable policy and code-owned anchor agree on the refreshed graph. | Update both current identities, distinguish canonical from raw-file hashing, and preserve the prior identities as history. |
+| DCA-07 — engine evidence routing | [The current-state capsule](../docs/windows-time-architecture.md#1-current-state-capsule) linked only the first source checkpoint, hiding later bounded measurement/exact-nominal host qualification. | Link the completed named scopes while keeping refreshed numerical critical-owner and native gaps open; no blanket current pass. |
+| DCA-08 — final acceptance inventory | The P7 plan, backlog and task-map ranges ended at AC-20, while [the canonical catalogue](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence) also owns AC-21/22. | Reconcile applicable AC-01–22 and preserve OD-11's direct-path/shared scope versus deferred proxy cases. |
+
+All eight corrections are documentary. No implementation defect or build-policy
+bypass was demonstrated by these findings, and no runtime, dependency, CI,
+mitigation, permission, acceptance threshold or execution hold was changed.
+Pure protocol/numerical components, controlled unauthenticated engine observations
+and the Slint fixture GUI remain distinct from production synchronization.
+The missing production observation-to-Core bridge, NTS, services/IPC, clock
+effects, effective runtime protections, independent critical-text approval and
+complete Windows/MSIX qualification retain their existing owners and gaps.
+
+The localization plan's old "no packer/runtime" paragraph and the MSIX plan's
+old Win32 inventory were examined and excluded from findings: each is expressly
+bound to an earlier historical snapshot. Their presence does not contradict the
+current source routes. No historical receipt was rewritten as a newer pass.
+
+Verification used source comparison, independent standard-library hashing and
+JSON canonicalization, added-link/heading resolution and `git diff --check`.
+The lock digest agrees with the policy; the canonical policy digest agrees with
+the code-owned pin and corrected GUI handoff. No repository program or product
+test was executed for this documentation-only audit. `docs/SHA256SUMS.txt` is
+absent, so no bundle-manifest integrity result is claimed.

@@ -749,8 +749,11 @@ black-box observation. **Exit:** [plan §6/P7](../docs/plans/development-plan.md
 Independent valid journeys must match admitted inputs, actual status/effects,
 persisted state and installed payload. Malformed/unauthorized/stale/tampered
 neighbors must fail without protected effects while valid controls remain usable.
-Reconcile CHECK-1–27, AC-01–20, applicable ST-T cases, critical-file gates,
-native accessibility/authority/lifecycle and baseline/soak evidence. Missing
+Reconcile CHECK-1–27, applicable AC-01–22, applicable ST-T cases, critical-file
+gates, native accessibility/authority/lifecycle and baseline/soak evidence.
+AC-21/22 retain their [OD-11 scope split](../docs/windows-time-features.md#8-acceptance-scenarios-and-evidence):
+current direct-path/shared cases remain required; proxy-specific cases keep
+their later activation criteria. Missing
 required evidence stays incomplete; only David's explicit applicable decisions
 can accept exceptions. Fresh review and release approval bind the exact artifact.
 CHECK-4 uses the [pinned ASVS worksheet](../docs/asvs-5.0.0-applicability.md):
