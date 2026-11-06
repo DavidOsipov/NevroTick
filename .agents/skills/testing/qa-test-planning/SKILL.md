@@ -24,6 +24,13 @@ remaining obligations under the existing source/CHECK owners as post-V1 work;
 retain completed evidence only within its exact historical scope. Continue
 independent behavioral/property/boundary checks and all nonformal gates.
 Use the [proof workflow](../references/formal-verification.md) on post-V1 resumption.
+For each selected [product proof debt](../../../../tasks/development-backlog.md#product-guarantees-still-open),
+plan an independent complete contract and a plausible defect in the actual
+operation or caller that the contract must reject. Do not select only defects
+already tailored to a helper harness. Track constructor/callee assumptions and
+composition explicitly; a source-hash rejection is a custody control, not a
+semantic kill. Reuse ordinary tests and completed exact-scope lemmas; neither
+their count nor a tool-consumer mock closes the remaining product guarantee.
 
 Use [case design](../references/case-design.md) for potentially hidden optional/default/state/interacting-rule cases. Record feasible combinations/independent decision-table outcomes; directly cover known higher-order interactions. Pairwise/count-based coverage proves no completeness.
 

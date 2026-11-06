@@ -25,6 +25,14 @@ work. Preserve historical proof scope without extending it to changed source.
 Do not plan or run pre-V1 formal campaigns, verifier extensions or pending
 proof admission/metadata-consumer repairs. On post-V1 resumption use the
 [proof workflow](../../testing/references/formal-verification.md).
+Select a named [product guarantee](../../../../tasks/development-backlog.md#product-guarantees-still-open)
+before choosing proof tools or helper lemmas. State the complete observable
+contract, actual producer/callee/consumer dependencies, independent failure
+controls and a finite completion/stop budget. A helper is a sub-obligation only
+when its closure advances that contract; a failed pilot leaves the parent open.
+Do not substitute unrelated easy proofs, verifier maintenance or larger check
+counts for the selected result. Preserve the original budget across retries and
+handoffs; replan only for a concrete cause and changed approach.
 
 For multiple stages, uncertain impact, security-sensitive work or migration:
 

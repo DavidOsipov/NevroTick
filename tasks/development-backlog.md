@@ -58,6 +58,272 @@ checked arithmetic, independent tests/property/boundary cases, the existing
 90%/95% thresholds, security/native/package/release gates and all execution holds
 remain required. No general parent below is activated by this note.
 
+### Product guarantees still open
+
+**Owner-requested debt, 6 November 2026; review baseline:**
+`882f99f227daa00bde7d9d00a1659ca0b21fa55b`.
+[OD-10 §14.2](../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026)
+requires useful product-operation guarantees and honest completion accounting.
+All rows below are **OPEN / DEFERRED until after V1**. `FP-D01`–`FP-D10` are local
+backlog identifiers, not new architecture CHECKs or first-release gates. Existing
+tasks own the detailed contracts, exact candidates and historical receipts; this
+section consolidates their missing composition without opening a second plan.
+
+The review found substantive scoped proofs, not a demonstrated vacuous proof
+system. Historical successful runs below are recorded evidence, not fresh solver
+reproduction. Ordinary qualification remains valuable and separately scoped.
+The proposed failure examples are discriminators for future proofs, **not claims
+of current product bugs or executed mutants**. Several already have ordinary
+regression tests; reuse those expectations instead of adding duplicate tests.
+A changed-source hash rejection detects custody drift, not the semantic defect.
+
+#### FP-D01 — Raw timestamp admission through numerical measurement
+
+**Owner:** domain/exchange; [S1.1 domain](s1.1-time-domain.md) and
+[RequestTiming evidence](s1.1-exchange-association.md#request-timing-terminal-qualification--6-november-2026),
+CHECK-6/7/25. Sources: `time-domain/src/{coordinate,era,exchange,rounding,clock}.rs`
+under `crates/`.
+
+Retain the scoped coordinate, clock, relative-range, exchange/scaling, rounding,
+valid-window era and RequestTiming proofs. Complete the real raw-input → public
+constructor/Garde → consumer chain, including `EraWindow::new`, exact retained
+fields, caller admission and all required success/rejection classes. Closure
+requires the actual admitted path to produce the specified offset/RTT and exact
+rounding/error result over its full domain. Controls should distinguish a
+reject-all constructor, changed retained endpoint, negative era boundary error
+and swapped timestamp roles. Physical capture/date/authentication provenance
+remains with acquisition/native owners; this numerical guarantee cannot supply it.
+
+**Concurrent integration:** commit `a43916a5190b6f559174a6801eaf8d5295179d83`
+adds the [S2.1 experimental measurement consumer](engine-transport-pilot.md#first-controlled-measurement-source-checkpoint--6-november-2026)
+in `crates/nevrotick-engine/src/measurement.rs`. Its declared clock/date model,
+capture/conversion residuals and actual domain-to-result composition are newly
+affected post-V1 obligations under that engine owner. The original review baseline
+predates this addition; existing domain proofs do not qualify the new consumer.
+
+#### FP-D02 — Regression and diagnostics from the same admitted population
+
+**Owner:** numerical Core; [S1.2 fit contract](s1.2-regression-readiness.md#frozen-proposal-for-synthetic-numerical-behavior)
+and [same-fit standard errors](s1.2-regression-readiness.md#s151-same-fit-standard-errors--frozen-authoring-contract),
+CHECK-7/25. Sources: `time-core/src/regression.rs`,
+`regression/{normalization,residuals}.rs` under `crates/`.
+
+Retain independent rational facts and ordinary S1.2/S151 qualification. Prove
+the actual coordinate normalization, geometry admission, inverse-divisor
+weighted fit, same-fit residual SSE, `n - 2` scale and standard errors together.
+Specify ordered binary64 operations, constant/tiny-series behavior, supported
+cancellation, explicit unsupported underflow and justified numerical bounds.
+Closure requires the prescribed results/errors for every admitted population,
+without unrelated fit/geometry or partial diagnostics. Controls include reversed
+weight semantics, `n - 1` scaling, wrong rate sign and statistics from a different
+fit. Fixture tolerances alone do not establish a universal error bound.
+
+#### FP-D03 — History updates and one coherent terminal fit
+
+**Owner:** numerical Core/history; [S1.2 adaptive-history contract](s1.2-regression-readiness.md#s147-staged-adaptive-history-caller-contract--2-november-2026),
+CHECK-7/14/25. Sources: `crates/time-core/src/regression/{history,adaptive_history,runs,normalization,residuals}.rs`.
+
+Retain fixed-history, runs, retained-prefix and multi-round ordinary evidence.
+Complete context/time admission, bounded eviction, auxiliary versus fitted
+populations, runs selection, pruning indices and terminal statistics as one
+update. Closure requires correct retained evidence and associated report on
+success; every rejection preserves prior rows/counts/report/reference. Prove
+the declared capacity and fit-attempt bounds. Controls include dropping
+decision-only prefix rows, admitting auxiliary rows to fitted geometry,
+duplicate-time admission and partial mutation before a numerical failure.
+
+#### FP-D04 — Projection through conservative outward enclosure
+
+**Owner:** numerical Core; [S1.2 anchor bridge](s1.2-regression-readiness.md#s150-fitted-anchor-bridge-contract-and-behavioral-red),
+[chart view](s1.2-regression-readiness.md#s154a-frozen-mathematical-view-contract)
+and [S1.3 enclosure inventory](s1.3-source-selection-readiness.md#remaining-enclosure-proof-inventory),
+CHECK-7/8/10/25. Sources: `crates/time-core/src/regression/{projection,chart,chart/roundoff}.rs`,
+`crates/time-core/src/{projection_enclosure,chart_enclosure}.rs`.
+
+Retain ordinary projection/chart qualification and exact fraction constructor,
+comparison/complement, split, representation and endpoint-finish leaves. Complete
+full-domain fraction addition, actual operand/Garde admission, `EndpointParts::new`
+and `enclose_scalars`, then connect them to real projections and inherited chart
+roundoff. Closure requires exact time/source/chart association and endpoints
+`floor((c - r) * 2^33)` / `ceil((c + r) * 2^33)` for the exact values represented
+by the admitted center/radius bits, with exact representability/error behavior.
+Require the corresponding rounding classifications; mere containment by an
+arbitrarily wide interval is insufficient. Separately preserve justified inherited
+arithmetic bounds and conservative chart-view containment; statistical/physical uncertainty remains
+distinct from arithmetic roundoff.
+
+The completed addition partition prefix does not close the carry branch:
+`1/2 + 1/2` must produce carry without a residual. Other controls should
+distinguish wrong negative residual signs, inward endpoint rounding, using a
+fitted intercept as the raw anchor and discarding inherited error. Completed
+callees or unchanged endpoint finishing cannot close a defective producer.
+
+#### FP-D05 — Selection, supporters and principal retention
+
+**Owner:** selection/Core; [S1.3 expected facts](s1.3-source-selection-readiness.md#independent-expected-facts)
+and [S157 checkpoint](s1.3-source-selection-readiness.md#s157-selected-three-owner-linux-fixture-checkpoint--complete),
+CHECK-8/14/25. Sources: `crates/time-core/src/{selection,projected_batch,chart_batch,principal,principal/chart}.rs`.
+
+Retain ordinary batch/selection/principal qualification and the exact
+`append_depth` lemma. The supporter-label attempt is incomplete. Prove the actual
+interval-to-cell depths, maximum components, strict majority, minimum agreement,
+witness intersection and complete supporter identity/order, then principal and
+hysteresis transitions on that evidence. Closure requires the independently
+specified result for the whole admitted batch and preserved state on rejection.
+Controls include lost singleton endpoints, merged separated components,
+foreign same-label entries and principal retention after invalidating evidence.
+With minimum agreement set to two, a four-interval population whose maximum
+depth is two must remain `NoMajority`; correct slot append arithmetic alone says
+nothing about that decision.
+
+#### FP-D06 — Combination from the exact admitted contributors
+
+**Owner:** numerical Core/combination; [S1.3 kernel contract](s1.3-source-selection-readiness.md#kernel-contract-for-translation),
+[S157 arithmetic](s1.3-source-selection-readiness.md#s157-combination-arithmetic--reviewed-next-child-contract)
+and [S158 checkpoint](s1.3-source-selection-readiness.md#s158-final-qualification--nine-selected-owners),
+CHECK-7/8/14/25. Sources: `crates/time-core/src/combination.rs`,
+`combination/{admission,chart}.rs` and `combination/chart/{reduction,roundoff,receiving}.rs`.
+
+Retain independent kernel facts and ordinary S158 qualification. Complete witness
+admission, original-entry identity, deterministic reduction, singleton behavior,
+weighted phase/rate/dispersion and companion bounds. Closure requires the
+prescribed numerical operations and a proved bound on the difference between
+each rounded result and its independent exact rational reference from the actual
+stored input bits; a rounded mean need not equal that rational exactly.
+Rejected denominators/intermediates preserve the
+transaction. Controls include altered `1/s_i^2` weights, replacing original
+principal phase with the combined mean in dispersion, filtering before metadata
+validation, treating a filtered larger witness as a true singleton and clamping
+a denominator lower bound upward.
+
+#### FP-D07 — Transactional lifecycle and evidence credit
+
+**Owner:** Core lifecycle; [S1.3 lifecycle implementation](s1.3-source-selection-readiness.md#full-fixture-combination-lifecycle-implementation-31-october-2026)
+and [V5 checkpoint](s1.3-source-selection-readiness.md#v5-lifecycle-checkpoint--1-november-2026),
+CHECK-8/14/25. Sources: `crates/time-core/src/combination/lifecycle.rs`,
+`combination/lifecycle/chart.rs` and `principal.rs`.
+
+Retain ordinary lifecycle/receiving evidence and the exact checked-successor and
+source-counter-predicate proofs. The prepared full source-state constructor has
+no completed constructor proof. Complete actual construction, event admission,
+maturity/penalty updates, contributor preparation, round emission and state
+commit. Closure requires correct evidence association, no replay-derived credit
+or wrapping identifiers, correct reset/currentness behavior and complete rollback
+on rejection. Controls include duplicate ordinals, credit for projection refresh,
+penalty mutation before failed combination, premature publication and omission
+of the emitted-round state update. Proving `checked_next` alone cannot establish
+uniqueness of successive results from its mutable caller.
+
+#### FP-D08 — Reference invalidation and settled active-time feedback
+
+**Owner:** Core reference/chart; [S1.4a readiness](s1.3-source-selection-readiness.md#s14a-reference-input-readiness--admitted-implementation-contract),
+[S1.4b composition](s1.3-source-selection-readiness.md#s14b-same-reference-chart-composition--authoring-contract)
+and [settled-rate checkpoint](s1.3-source-selection-readiness.md#settled-rate-final-qualification--four-selected-owners),
+CHECK-7/8/10/14/25. Sources: `crates/time-core/src/reference_input{,/rate_delivery}.rs`,
+`regression/chart.rs` and `regression/chart/roundoff.rs`.
+
+Retain ordinary four-owner settled-rate/reference/chart qualification and clock
+arithmetic leaves. Complete exact-instance reference admission, monotone
+readiness, chart composition with inherited bounds, supplied active-duration
+contributions, cursor overlap/ordinal semantics and failure handling. Closure
+requires correct quantitative contributions, no double credit and no restoration
+of Ready by consumed/unknown evidence. Rejected admission preserves its owners;
+post-admission failures must follow their specified invalidation contract.
+Controls include integrating sleep time, replaying a settled interval, dropping
+composition error and restoring Ready after arithmetic failure. Future controller
+and holdover equations, physical delivery and broker/durable/native settlement
+retain their separate P1/P4 owners and require new obligations when implemented.
+
+#### FP-D09 — Whole-interval leap interpretation and atomic knowledge replacement
+
+**Owner:** domain/leap; [S1.4 pure checkpoint](s1.4-leap-policy.md#pure-leap-final-qualification--6-november-2026),
+LP-C01–04 and their existing integration owners, CHECK-7/25 plus their scoped
+protocol/native CHECKs. Sources: `crates/time-domain/src/leap.rs` and
+`leap/{validation,interpretation,bundled,generated}.rs`.
+
+Retain qualified ordinary pure-leap/generator evidence and scoped Gregorian,
+scalar-conversion and coverage-prefix proofs. Complete real ledger/scope/metadata
+construction, generated-data correspondence, calendar factoring correspondence,
+interval completeness, event traversal and final offset/event classification.
+Closure requires correct known/unknown/varying outcomes for every admitted
+interval, exact boundary semantics, bounded traversal and atomic invalid
+replacement. Controls include extending expired knowledge, miscounting boundary
+events, claiming a constant offset across an interior transition and partially
+publishing a replacement. Silent-source acquisition, guard/reacquisition and
+Windows mapping remain separately owned; no pure proof establishes them.
+
+#### FP-D10 — Repeatable proof execution and trustworthy result consumption
+
+**Owner:** proof tooling/QA within the selected domain/Core task; this is an
+enabling debt, **not an additional product theorem**. Follow the
+[proof workflow](../.agents/skills/testing/references/formal-verification.md)
+and retain the [supporter terminal record](s1.3-source-selection-readiness.md#supporter-terminal-record-and-first-release-deferral--6-november-2026).
+
+After V1, separate fresh, bounded candidate invocations from immutable historical
+campaigns. Existing fixed boot/time/output bindings are one-off evidence, not a
+current-candidate regression gate. Preserve source/tool/configuration custody
+without resetting expired attempts or overwriting receipts. Repair the known
+supporter consumer's dependence on `attributes.unwind_value` using actual pinned
+exporter output/schema; its synthetic fixture currently supplies a field absent
+from that export. Do not weaken required evidence or invent substitute metadata.
+
+Closure requires a genuine emitted fixture accepted by the consumer, relevant
+malformed/partial/empty fixtures rejected, and a fresh candidate's healthy →
+intended semantic defect → restored healthy run with exact scope accounting.
+Count attempted, completed and qualified jobs separately; helper lemmas, controls,
+covers and Python tests never become counts of proved product algorithms. Claim
+automatic regression protection only when that specific gate is configured and
+actually runs. No new generic framework or CI campaign is required merely to
+record this debt; a tooling repair must unblock the selected product guarantee.
+
+### Completion and resumption of proof debt
+
+After the first released V1, activate **one bounded next child** in its existing
+owner task. The first candidate should address a named missing product relation,
+such as full addition through enclosure or selection through its actual outcome,
+using unchanged qualified premises where applicable. This is a choice to justify
+from then-current source/risk/feasibility, not an automatic restart of old pilots.
+
+Before work, record the independent complete contract, admitted domain, exact
+source and dependency chain, meaningful fault controls, remaining trust boundary
+and finite total cost/stop criterion. Required success, errors, machine semantics,
+state effects and work bounds belong to the guarantee. Constructor/callee
+assumptions need evidence for the same bytes and an explicit composition link.
+Healthy/mutant/restored results must reach the intended operations; source guard,
+compile or setup failures are not semantic kills. If the hard downstream theorem
+remains open, retain useful completed premises and leave the parent row open.
+
+Report closure by the exact product guarantee and candidate, with its supporting
+lemmas and limitations. Preserve failed/partial attempts and ordinary coverage;
+timeouts, infrastructure checks and larger counts cannot discharge a row.
+This documentation/instruction update executes no formal jobs and supplies no
+new product qualification.
+
+### Policy-change validation — 6 November 2026
+
+This is documentation/skill evidence, not closure of FP-D01–10. The unchanged
+package checker passed for all 65 skills; local-link and whitespace checks passed.
+A bounded owner-mapping review corrected three draft ambiguities: exact scalar
+floor/ceil versus mere containment, the minimum in the half-population example,
+and floating-point error bounds versus exact rational equality. That reviewer
+also supplied the initial debt inventory, so it is not an independent inventory
+audit.
+
+Two fresh-context agents received the changed testing skills and raw hypothetical
+post-V1 fixtures, without the coordinator's expected verdict or debt inventory.
+The queue fixture contained a successful arithmetic-helper proof, an omitted
+caller state update and an exhausted whole-operation pilot; the agent identified
+the concrete capacity/count failure, retained the helper's narrow result and
+stopped the proposed budget reset/unrelated proof continuation. The neighboring
+utility fixture contained one complete public-operation proof, passing consumer
+mocks incompatible with a genuine exporter schema and an expired wrapper; the
+agent accepted the useful small theorem, rejected the integration/automation and
+inflated-count claims, and proposed a bounded schema-grounded correction.
+Each exercise had one initial context-allocation setup failure and one completed
+retry. Both reviews were textual; no product code or proof job ran. These two
+cases support the instruction change in those scenarios, not a measured
+old/new improvement or a guarantee of future agent behavior.
+
 ## P0 platform and policy
 
 **Owner:** platform/security, with IPC, clock, UI and architecture/policy owners
@@ -261,7 +527,8 @@ recorded domains. Retain the existing remaining proof inventory: addition,
 Garde/caller admission, endpoint/enclosure construction and complete producer/Core
 acceptance remain open. The pilot adds
 no global CI gate or phase blocker and lifts no execution hold; missing required
-mathematical evidence still leaves its existing dependent acceptance open.
+mathematical evidence remains post-V1 debt under OD-10 §14.1, without blocking
+V1 implementation, phase acceptance or release.
 
 ## P2 acquisition
 

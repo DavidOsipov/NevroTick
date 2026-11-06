@@ -59,6 +59,15 @@ invariants, checked arithmetic, independent behavioral/property/boundary tests,
 90% security-primitive coverage, 95% critical-file mutation, security, native,
 package and release gates remain. This lifts no Windows/fuzz/storage/UI hold.
 
+Apply [OD-10's proof-purpose rule](docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026)
+when planning or reviewing formal work: select a named product guarantee from
+the [post-V1 debt](tasks/development-backlog.md#product-guarantees-still-open),
+require its actual source/caller/constructor chain and independent semantic
+controls, and stop at the bounded pilot's exit. Helper proofs, green tooling and
+check counts do not close the parent guarantee. Use the existing
+[proof workflow](.agents/skills/testing/references/formal-verification.md);
+this policy/documentation maintenance does not resume formal execution.
+
 ## Read the right authority
 
 NevroTick: chrony-derived Rust NTP/NTS client, native GUI; intended initial scope

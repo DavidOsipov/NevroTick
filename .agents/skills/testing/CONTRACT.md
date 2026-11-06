@@ -79,6 +79,18 @@ proof jobs, extend verifiers or repair pending proof admission/metadata consumer
 before V1. Continue the ordinary product plan and all required nonformal checks.
 The [proof workflow](references/formal-verification.md) governs post-V1 resumption.
 
+For proof planning/review, apply
+[OD-10 §14.2](../../../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026):
+start with an independently specified useful product-operation guarantee. A helper
+must close a named requirement or have an explicit dependency and completion route
+to that guarantee. Bound all preparation/tooling/solver/control effort together;
+an incomplete attempt stays open and stops, without automatically retrying,
+switching to unrelated easy proofs or repairing the verifier. Preserve scoped
+historical proofs; finding a bug is not required. Report unique guarantees,
+qualified jobs, semantic controls and tool-only checks separately; retain debt in the
+[post-V1 debt record](../../../tasks/development-backlog.md#product-guarantees-still-open).
+This policy change activates no formal work or V1 gate.
+
 Use [numerical and protocol truth](references/numerical-protocol.md) for time models, packets and strict contracts; [Windows evidence](references/windows-evidence.md) for OS/UI/package claims; and [Rust techniques](references/rust-techniques.md) when selecting runner, property, fuzz, model or mutation tooling. Load only the relevant reference.
 
 Apply the current [UI-M0 scope](../../../docs/windows-time-architecture.md#165-restricted-first-ui-milestone-ui-m0) before UI analysis or qualification. Additional tools do not activate deferred D1/D2/D3 work or permit live service, network or clock effects in that fixture-only milestone.

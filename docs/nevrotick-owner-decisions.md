@@ -1,7 +1,7 @@
 # NevroTick — owner decisions and remaining policy choices
 
 **Document:** NV-DEC-001, revision 1.15<br>
-**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral added 6 November 2026, Asia/Tbilisi<br>
+**Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
@@ -37,7 +37,7 @@ The current UI-M0 restriction remains intact: fixture-only native UI, with D1/D2
 | OD-07 | Select an x86-64-v3 baseline and runtime-selected higher-feature optimizations; document the research and make the work part of the plan | **Accepted compatibility and optimization direction, 30 October 2026** | Migrate the admitted build/checker configuration; qualify CPU/OS/VM admission, exact-feature dispatch, numerical equivalence and measured benefit. Current generic builds and historical receipts are not v3 or fast-path qualification |
 | OD-08 | Build the future Windows DNS feature for the whole computer and its applications; include DNSSEC with hardware acceleration and multiple CPU cores; document the adaptive-cache proposal | **Accepted product and optimization direction, 2 November 2026; detailed cache design remains an evaluated proposal** | Windows integration and observed application coverage, DoQ/bootstrap/pin policy, DNSSEC/crypto admission, CPU dispatch and worker bounds, statistics privacy, cache parameters and measured benefit |
 | OD-09 | Use several research agents, including GitHub MCP and Windows Learn MCP, to select a concrete leap policy that handles silent servers and integrate it into repository documents | **Authorized research and documentation, 4 November 2026; engineering design selected in §13** | Implementation, native mapping/event behavior, finite guard/recovery limits and exact event-time evidence remain S1.4/OPEN-7/S0.4/P4; no new clock-authority or execution waiver |
-| OD-10 | Defer formal proof work until after the first released software version (V1) | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
+| OD-10 | Defer formal proof work until after the first released software version (V1); require useful product guarantees when it resumes | **Amended by explicit owner instruction, 6 November 2026** | [First-release deferral](#141-first-release-deferral--6-november-2026) supersedes proof-first sequencing and first-release proof prerequisites; [proof purpose and completion](#142-proof-purpose-and-completion--6-november-2026) governs scope, stopping and honest accounting; preserve historical scoped evidence, post-V1 obligations and every nonformal gate |
 | OD-11 | Design a concrete SOCKS5-only proxy profile and its checks; defer it to the roadmap if implementation/support cost is excessive | **Authorized conditional deferral, 5 November 2026; engineering assessment selects deferral** | First Windows delivery remains Direct; SOCKS-0 retains a limited future loopback/no-auth/local-DNS profile and SOCKS-C01. Protocol, dependency, Windows, resolver/verifier, timing and support qualification remain unexecuted |
 | OD-12 | Put the geography-assisted time-source selection experiment in the roadmap after Khronos | **Accepted future experiment placement, 5 November 2026** | GEO-0/GEO-C01 compare optional geographic ordering with ordinary acquisition/history reuse. Evaluation/disposition precedes Android; adoption, data/provider choice and any production implementation remain separate decisions supported by evidence |
 | OD-13 | Use Slint as the default UI toolkit after the live-Windows comparison | **Accepted toolkit direction, 5 November 2026** | Qualify the exact Slint/backend/feature/licence graph, generated-code safety boundary and migrated Windows UI; preserve UI-M0 limits, D1–D3 re-entry, resource and complete-package gates |
@@ -613,6 +613,44 @@ Windows execution, fuzz, protected-storage and UI-M0 holds/deferrals remain.
 Amended OD-05's complete hardened MSIX direction and David's release authority
 remain canonical; this amendment grants no native execution, publication-account
 action or release approval.
+
+### 14.2 Proof purpose and completion — 6 November 2026
+
+**Explicit owner instruction:** after the scoped review of the existing formal
+proofs, David asked to make the agent skills prevent low-value proof activity and
+to document the product guarantees that still need coverage. This amendment
+changes planning, review and accounting; §14.1's post-V1 execution deferral stays
+in force. It neither discards useful existing proofs nor asserts that their
+author fabricated results or that the product contains a demonstrated new bug.
+
+**Required behavior:** choose a meaningful product-operation contract before a
+verifier, harness or convenient helper. Record its required success/errors,
+admitted domain, actual constructor/callee/caller chain, independent expected
+relation, plausible semantic defects and finite completion/stop budget. A local
+lemma is useful when it closes a named requirement or a necessary dependency of
+that contract. Its pass never closes omitted callers, validation, state effects
+or a parent algorithm. A sound proof need not discover a previously unknown bug;
+its value is the precise guarantee established and its demonstrated sensitivity
+to relevant incorrect behavior.
+
+When a pilot exhausts its budget or cannot establish the selected property,
+record the incomplete obligation and blocker. Do not continue by silently
+changing the target to easy helpers, restarting clocks, repeating an unchanged
+failed approach or expanding proof infrastructure. Any later attempt must name
+the diagnosed cause, material change, expected path to closure and bounded cost
+in the same task. Infrastructure work must unblock that selected guarantee; it
+is not product-proof progress by itself. Reconcile reports by distinct completed
+product guarantees, remaining assumptions and unproved scope, separately from
+attempted/qualified jobs, controls and tooling checks.
+
+The [existing post-V1 backlog](../tasks/development-backlog.md#product-guarantees-still-open)
+owns the consolidated debt and closure criteria; existing S1.1/S1.2/S1.3/S1.4
+tasks retain detailed source/evidence ownership. The
+[formal-proof workflow](../.agents/skills/testing/references/formal-verification.md)
+owns operational guidance for planning, independent semantic review, real
+verifier-output compatibility and reusable future invocation. Updating these
+instructions and recording debt is authorized now; formal proof authoring,
+execution and deferred consumer/toolchain repairs remain post-V1.
 
 ## 15. OD-11 — SOCKS5 scope and deferral
 

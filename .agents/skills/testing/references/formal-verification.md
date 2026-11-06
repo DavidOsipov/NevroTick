@@ -23,14 +23,32 @@ Keep candidate-specific decisions/results in the existing task record.
 
 ## Source-bound acceptance on post-V1 resumption
 
-Reconcile the existing algorithm inventory with its independently specified full
-admitted domain, required success/error outcomes, machine/rounding semantics,
+Apply [OD-10 §14.2](../../../../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026).
+Start from one named useful guarantee at a bounded product-operation boundary,
+with an independent specification and an existing requirement/CHECK owner. Trace
+admitted input through actual validation/construction and computation to the
+observable result, state or effect. Define required success, exact error behavior,
+preserved state, lifecycle and machine/rounding semantics where applicable. This
+can be a small operation; it need not prove the whole program at once.
+
+Select a helper theorem when it closes a named real requirement or supplies a
+necessary premise of that guarantee. Record its consuming operation, remaining
+constructor/callee/composition obligations and a credible bounded route to their
+completion in the existing task. Do not substitute an easier unrelated helper
+for a blocked product guarantee. Preserve useful local proofs, but do not promote
+them to the containing operation's assurance while its dependencies remain open.
+Finding an actual product bug is not a condition of useful proof work; reducing
+material uncertainty or closing the named guarantee is the purpose.
+
+Reconcile the existing algorithm inventory with this full admitted domain,
 invariants, work bounds and executable correspondence. Review assumptions and
-unproved constructors/callers. Require nonempty completed results, meaningful
+unproved constructors/callers. Require nonempty completed results, independent
 healthy/error/compiled-defect controls and restored health before claiming a new
 proof. Subset/model proofs retain only their stated scope. Changed relevant
 source/specification/dependencies/configuration/tool inputs invalidate evidence
-unless reviewed as irrelevant; reuse unaffected historical proofs.
+unless reviewed as irrelevant; reuse unaffected historical proofs and source
+hashes. Keep open guarantees under their existing owners and the
+[post-V1 debt record](../../../../tasks/development-backlog.md#product-guarantees-still-open).
 
 A deferred obligation is not completed assurance or a permanent waiver. The
 remaining proof-acceptance methodology applies after V1; it creates no current
@@ -197,11 +215,22 @@ Any production refactor needs its own behavioral/API/performance review and chec
 
 ## Challenge and bound the pilot
 
-Choose one subject. Set integration/solver time, memory, attempts and worker limits
-before tool acquisition or expensive execution, preserving the adopted limits and
-shipping compiler. Unsupported syntax/macros, setup failure and timeout are
-incomplete evidence, not counterexamples or proof failures about product behavior.
-Do not migrate unrelated modules to make a small pilot work.
+Choose the named product guarantee. Set one finite time/attempt/worker budget
+covering source review, specification and harness preparation, acquisition and
+admission, consumer/framework work, compilation, solver jobs, controls, review
+and cleanup before starting the pilot. Keep memory and other adopted limits,
+the original budget clock and shipping compiler. Record costs in the existing
+task; do not add a new accounting framework for this rule.
+
+At timeout, unsupported mechanism, unqualified result or budget exhaustion, stop
+dispatch and mark the guarantee open. Preserve the failure and consumed budget.
+Unused budget alone permits no retry. Do not reset the clock, split one attempt
+across new cards to regain time, switch to unrelated easy proofs, repair a
+toolchain or extend a verification framework as an automatic continuation.
+Any later attempt needs a changed relevant condition and a finite plan explaining
+how it can close the same useful guarantee; a new budget alone is not that change.
+If no credible route remains, record the debt and return to the product queue.
+All such formal work remains post-V1 under the current deferral.
 
 Classify a non-passing proof before changing tools. Check the exact failed
 obligation and admitted domain: a real implementation/contract counterexample
@@ -213,9 +242,22 @@ Retain confirmed counterexamples across comparisons; a passing alternative must
 explain them under equivalent assumptions and obligations, not hide them through
 weaker inputs, scope or required-success guarantees.
 
+Validate report/schema consumers against genuine emitted fixtures from the pinned
+tool or its documented exporter schema, recording the source identity. Distinguish
+internal compiler metadata from fields actually exported in the consumed report.
+Synthetic and mutated fixtures supplement this evidence; do not invent fields
+that make mocks and consumers agree. Missing required metadata leaves integration
+unqualified, even when those mocks pass.
+
 Require a healthy actual implementation and two or three compiled, non-equivalent
 defects violating distinct promised properties. Each defect needs an admitted
 witness/reason, the intended failed obligation and a restored healthy pass.
+Choose plausible defects from the independent contract and actual data/state
+flow before tailoring them to the harness. For a composed guarantee, include a
+producer or caller defect that correct helpers alone would not reject. A surviving
+semantic defect exposes a specification, reachability or composition gap; repair
+that gap without weakening the contract. A source-hash rejection is custody
+evidence, not a semantic kill.
 Always-error, incorrect signed-boundary arithmetic and wrong outcome classification
 are useful controls only when the chosen contract must reject them. Syntax errors,
 unsupported calls and deletion of a postcondition are not sensitivity controls.
@@ -227,11 +269,31 @@ Compare tools only on equivalent properties/domains; an unexecuted alternative
 remains a hypothesis. Retain earlier failures. Bind reuse to unchanged proof,
 implementation, dependency, compiler and configuration inputs.
 
-For automated proof groups, reconcile expected, discovered, selected and completed
-obligations, including contracts used to replace callees. Keep preparation,
-code-generation-only, model inspection, solver completion, defect sensitivity and
-restored health distinct. Missing, skipped or timed-out results remain incomplete
-even when a job is green; a workflow file or harness name proves no execution.
+For proof groups, reconcile expected, discovered, selected, attempted, completed
+and qualified jobs, including contracts used to replace callees. Report unique
+product guarantees separately from helper lemmas, repeated/restored runs, defect
+controls, covers and tool-consumer tests. A timeout is an attempted unqualified
+job; its presence in a summary does not make it completed. Keep preparation,
+code generation, model inspection, solver completion, defect sensitivity and
+restored health distinct. Missing, skipped or timed-out obligations remain open
+even when other jobs are green. Infrastructure success supplies no product proof;
+a workflow file or harness name proves no execution.
+
+### Fresh candidates and historical receipts
+
+On post-V1 resumption, maintain a repeatable invocation for each newly reviewed
+candidate: explicit source/configuration/dependency/tool identity, selected
+obligations, current finite budget and fresh output. Keep immutable historical
+receipts separate. Do not reset expired campaign clocks, overwrite old evidence
+or reuse an old summary as a new proof. Source-hash guards remain necessary, but
+rejecting every changed candidate is not semantic regression protection.
+
+Use the maintenance exercise to establish that the reviewed invocation can check
+a fresh candidate and that a compiled semantic defect reaches and fails its
+intended proof obligation. Reuse existing runners where adequate; add no generic
+framework or parallel receipt system without a concrete gap in this guarantee.
+Claim automatic regression protection only for the configured candidate-specific
+proofs actually run; otherwise report manual or historical evidence explicitly.
 
 ## Bound claims about floats, termination and platforms
 

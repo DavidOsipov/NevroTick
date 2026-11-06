@@ -11,6 +11,16 @@ Resolve that defect before any post-V1 reuse. Existing successful proofs retain
 only their historical source/domain/configuration scopes. Ordinary product
 compilation/testing and every nonformal acceptance requirement continue.
 
+**Purpose and remaining debt:** [OD-10 §14.2](../../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026)
+requires complete, named product-operation guarantees with independent semantic
+controls and bounded attempts. Select from the
+[existing debt register](../../tasks/development-backlog.md#product-guarantees-still-open)
+when work resumes; follow the
+[agent proof workflow](../../.agents/skills/testing/references/formal-verification.md).
+The historical helper/tooling/check totals below do not establish whole
+algorithms or a maintained regression gate. Preserve their exact evidence and
+failure history without restarting expired campaigns.
+
 [OD-10](../../docs/nevrotick-owner-decisions.md#14-od-10--mandatory-mathematical-proofs)
 and [architecture §20.1.1](../../docs/windows-time-architecture.md#2011-mandatory-mathematical-proofs--5-november-2026)
 record the original proof requirement, now scheduled after V1 by the amendment

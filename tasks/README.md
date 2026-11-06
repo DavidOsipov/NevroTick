@@ -25,6 +25,12 @@ coverage, 95% critical-file mutation, security/native/package/release gates and
 all existing Windows/fuzz/storage/UI holds remain in force. Current product work
 follows [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
 
+For formal coverage and resumption, use the consolidated
+[product-guarantee debt and completion criteria](development-backlog.md#product-guarantees-still-open)
+under [OD-10 §14.2](../docs/nevrotick-owner-decisions.md#142-proof-purpose-and-completion--6-november-2026).
+Keep detailed receipts with the existing source owners below; a local helper or
+tooling pass does not close its parent algorithm.
+
 **Slint task queue, 5 November 2026:** the
 [existing UI-M0 continuation](ui-m0.md#slint-migration-handoff--5-november-2026)
 owns M0-SL-01/02 (**ready for source-only preparation**) and M0-SL-03–05
