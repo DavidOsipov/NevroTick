@@ -1,5 +1,15 @@
 # Development-environment hardening for the Rust Windows time client
 
+**Owner clarification, 6 November 2026:** OD-07's required Windows CPU baseline
+is now `x86-64-v3` in the target configuration and exact admission controls.
+OD-05 requires every applicable final-product protection at the strongest
+supported compatible setting. Sections 6.2–6.4 select the concrete stable
+Rust/bundled-LLD vector and retain mandatory image, runtime and package
+qualification. Missing implementation or evidence is open work, not an optional
+control. The [existing build task](../tasks/build-optimization.md#required-v3-and-maximum-compatible-hardening--6-november-2026)
+owns this change; native/fuzz/storage/UI holds and the post-V1 formal-proof
+deferral remain.
+
 **Selected-MSIX amendment, 3 November 2026:** [OD-05 section 7.1](nevrotick-owner-decisions.md#71-accepted-choices) selects one complete hardened MSIX for David's first Microsoft Store submission attempt, with the strongest compatible supported and verified protections for each role. The [MSIX plan](plans/windows-msix-store.md) owns package integrity, Store-compatible CIG, role profiles and independent controls. Preparation needs no speculative Store preapproval; Store acceptance remains external, David controls submission/publication, and the actual Store-delivered artifact needs qualification before broad release. SignPath/OpenPGP MSI profiles remain alternatives only if David later revisits the decision, not prerequisites or automatic fallbacks. Current Core priority, Windows execution stop, fuzzing, storage and UI holds remain unchanged; no production implementation or native execution is claimed.
 
 **Retained owner-decision amendment, 29 October 2026:** [NV-DEC-001](nevrotick-owner-decisions.md) confirms source-derived reuse with independent stress/bug verification and records the initial OpenPGP MSI alternative. If the owner later selects an MSI route, Authenticode-specific checks still apply to that profile and remain not qualified if unavailable; qualify the separate OpenPGP artifact/installed-file trust path under architecture section 19.5 and research R-06. No missing-signature check may be converted to unconditional success. All other applicable compiler, lint, audit, evidence and hardening requirements remain. No application test is claimed by this amendment.
@@ -353,24 +363,41 @@ For optimization tasks, use [the performance optimization skill](../.agents/skil
 
 ### 6.2 Target-specific Windows compiler/linker settings
 
-The following target settings are already present in [`.cargo/config.toml`](../.cargo/config.toml). Pin and record the admitted linker: the [tooling record](../TOOLING.md) distinguishes native MSVC inputs and the explicit bundled-LLD/xwin bootstrap lane. Its recorded std-only PE/native-execution fixture does not qualify future application binaries or all runtime policies.
+The following required target settings are selected in
+[`.cargo/config.toml`](../.cargo/config.toml) and its exact admission controls.
+Use the [selected LLVM+xwin route](../TOOLING.md#windows-development-route):
+pinned Rust 1.99.1, bundled LLD 23.1.1 and admitted Microsoft CRT/SDK inputs,
+retaining the MSVC ABI. The new CET switches are supported by that exact LLD
+source; an arbitrary native `link.exe` is not an interchangeable admitted lane.
+Record and verify the actual linker identity. Historical std-only PE/native
+fixtures do not qualify this vector, current application binaries or runtime
+enforcement. [C41]
 
 ```toml
 [target.x86_64-pc-windows-msvc]
 rustflags = [
-  # Currently admitted legacy baseline; OD-07's v3 migration is pending §6.7.
-  # Do not use the build host's ISA or drop the mitigation flags below.
-  "-C", "target-cpu=x86-64",
+  "-C", "target-cpu=x86-64-v3",
   "-C", "control-flow-guard=yes",
+  "-C", "jump-tables=no",
   "-C", "link-arg=/GUARD:CF",
   "-C", "link-arg=/DYNAMICBASE",
   "-C", "link-arg=/HIGHENTROPYVA",
   "-C", "link-arg=/NXCOMPAT",
+  "-C", "link-arg=/FIXED:NO",
+  "-C", "link-arg=/LARGEADDRESSAWARE",
+  "-C", "link-arg=/CETCOMPAT",
+  "-C", "link-arg=/CETCOMPATSTRICT",
+  "-C", "link-arg=/DEPENDENTLOADFLAG:0xA00",
   "-C", "link-arg=/WX",
 ]
 ```
 
-`/WX` makes linker warnings fail, including warnings that might reveal an ignored setting. Qualify any substituted linker; do not assume identical flag behavior. Explicit protections document intent even where a linker default already supplies them. [C17]
+`/WX` makes linker warnings fail, including warnings about ignored settings.
+A different linker needs explicit admission and equivalent emitted-image
+evidence; never drop a required switch or warning failure to accept it.
+`/FIXED:NO` and `/LARGEADDRESSAWARE` explicitly preserve relocation/address-space
+prerequisites already supplied by the pinned LLD's x64 defaults. They document
+the ASLR contract rather than adding two independent mitigations. [C17, C41, C45]
 
 **Critical bypass:** Cargo's flag sources are alternatives, not a simple append chain. `RUSTFLAGS="-D warnings"` or `CARGO_ENCODED_RUSTFLAGS` can replace the configured target flags and remove the intended hardening. With explicit `--target`, target flags also do not apply to host build scripts/proc macros. [C18]
 
@@ -382,11 +409,41 @@ The trusted build entry point must reject unreviewed environment/configuration o
 | --- | --- | --- |
 | Control Flow Guard | Stable Rust `control-flow-guard=yes`, compatible native compilation/linking | Inspect load config and an admitted indirect-call fixture. `nochecks` is prohibited. A CFG image flag does not retrofit checks into prebuilt native objects or the supplied standard library. [C10, C11] |
 | DEP | `/NXCOMPAT`; no product need for writable-executable generated code | Check every shipped image and applicable runtime policy. [C12] |
-| ASLR | `/DYNAMICBASE`, x64 `/HIGHENTROPYVA`, required relocations/address compatibility | HIGHENTROPYVA depends on other image properties; inspect actual payloads. [C13, C14] |
-| CET shadow stack | Qualify `/CETCOMPAT` separately on the supported x64 stack | Compatibility marker, not proof of enabled hardware enforcement; do not copy to ARM64. Record CPU/OS/VM support and actual policy. [C15] |
+| ASLR | `/DYNAMICBASE`, `/HIGHENTROPYVA`, `/FIXED:NO`, `/LARGEADDRESSAWARE` | Inspect actual relocation/address properties and runtime policy; explicit defaults alone establish no effective randomization observation. [C13, C14, C41, C45] |
+| CET shadow stack | Selected `/CETCOMPAT` **and** `/CETCOMPATSTRICT`; require strict enforcement on the supported CPU/OS/VM class | Inspect both extended image bits and effective HSP/strict/audit state. The flags mark compatibility; they do not instrument every module or prove enabled hardware enforcement. Strict mode and non-CET/EHCONT module restrictions are separate policies. [C15, C38, C41] |
+| Jump-table suppression | Stable Rust `jump-tables=no` is selected | Disables generated jump tables in code compiled under the option; it does not eliminate all indirect branches, instrument prebuilt inputs or replace CFG. Inspect the emitted code and retain correctness/resource qualification; no measured security or performance gain is claimed. [C44] |
+| Static-import search | Selected `/DEPENDENTLOADFLAG:0xA00`; require `0x800` for a role whose actual imports permit it | Inspect `DependentLoadFlags` and the complete legitimate/denied-load paths. This is static-import policy, not a universal DLL allowlist or a replacement for runtime loading controls. [C41, C42] |
 | Native stack-buffer protection | Preserve/check native MSVC `/GS` in applicable native compilation | Passing a native option to a Rust link does not instrument Rust functions. [C16] |
-| Spectre mitigation | Qualify `/Qspectre` and libraries only for the relevant native graph/threat | Native compiler mitigation has limited pattern coverage and cost; not a generic Rust switch. [C20] |
-| Rust stack protector / LLVM CFI | Separate research only | Current stack-protector/CFI interfaces have unstable/internal constraints; do not present them as a qualified stable Windows release setting. [C19, C21] |
+| Native Spectre mitigation | Require applicable `/Qspectre` compilation and compatible libraries through the native owner | This native compiler mitigation has limited pattern coverage and cost; it is not a Rust linker switch. Record the actual threat, native coverage and remaining limitations. [C20] |
+
+`0xA00` combines application-directory (`0x200`) and System32 (`0x800`)
+search, preserving prospective protected app-local CRT/DLL imports. The final
+CRT/import layout is still unqualified; data assets do not justify the extra
+directory. Tighten each role to `0x800` when its actual dependency closure
+permits System32-only directory search. Admit any necessary app-local code only
+inside the sealed declared package/dependency graph. Package-graph resolution,
+delayed/explicit loads and DLL subdirectories need their own observations.
+Packaged-app standard search already excludes ordinary CWD/PATH fallbacks;
+do not attribute that existing property solely to this flag. Pinned LLD requires
+an available, sufficiently large load-config structure to write the field, so
+successful flag parsing is not sufficient evidence. [C41, C42]
+
+Keep unsupported or incompatible additions explicit rather than claiming that
+every option name can be combined:
+
+| Excluded from this stable vector | Concrete reason and remaining owner |
+| --- | --- |
+| `/GUARD:EHCONT` | Rust 1.99.1's explicit generation is the false-by-default unstable `-Z ehcont-guard`. A linker-only flag cannot supply missing Rust continuation metadata; an empty declared table differs from an absent legacy table. Require supported complete generation before selecting it; do not bypass stable-channel admission. [C43] |
+| Rust stack protector / LLVM CFI | Unstable/internal interfaces and target/graph constraints require a separately supported compiler configuration. This is a recorded toolchain limitation, not claimed protection or permission to remove other controls. [C19, C21, C43] |
+| `/GUARD:XFG`, `/SAFESEH` | The pinned LLD guard parser does not support XFG; SafeSEH is the x86 mechanism, not the x64 exception model. [C41, C46] |
+| `/GUARD:LONGJMP` as an additional protection | Pinned LLD's `/GUARD:CF` already selects its long-jump handling. Verify actual emitted metadata instead of counting the duplicate switch. [C41] |
+| `/CETIPVALIDATIONRELAXED`, `/CETDYNAMICAPISINPROC` | These advertise relaxed context-IP validation or an in-process dynamic-API allowance; they do not strengthen the selected profile. [C38, C41] |
+| `/INTEGRITYCHECK` | The package/signing owner must resolve its supported per-image signature contract and enable it in the final profile where compatible. The selected MSIX catalog route and unsigned development fixtures do not establish that compatibility. Keep this gate open; package/CIG/trust qualification is not proof of this separate control. [C46] |
+
+The v3 CPU floor does not imply CET hardware availability. Record the concrete
+CPU/OS/VM applicability condition, and enforce the strongest supported CET
+profile when that condition holds. An unavailable mechanism is not a successful
+enforcement result; this selection introduces no separate CET hardware floor.
 
 Verify three layers: **effective build inputs, emitted images and effective runtime policy**. Use supported Windows process-policy APIs and handle failures. UI and broker can need different settings; do not turn on every process policy without testing legitimate operation. DLL search/load restrictions, valid-load controls, unexpected DLL canaries and the architecture's no-sideloading checks remain required. [C22; architecture CHECK-16/18/23]
 
@@ -394,8 +451,13 @@ Verify three layers: **effective build inputs, emitted images and effective runt
 
 Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) as the canonical role/activation/failure contract and manifest schema. This 29 October refinement incorporates useful specificity from the supplied PDFCraft proposal without adopting its CRT, dependencies or UI architecture. Existing tooling observations remain scoped to their recorded fixture. All application-level cases below are **planned / not executed**.
 
-The **3 November selected-MSIX amendment** requires the strongest compatible
-supported and verified profile for each delivered role. The [MSIX plan sections
+The **6 November owner clarification** makes the strongest applicable supported
+compatible profile mandatory for each delivered role. An unimplemented setter,
+missing observation or failed qualification remains open required work, not an
+optional control. The selected build vector installs no production per-role
+mitigation initializer or effective-state observer; their implementation and
+native acceptance remain open. Use the existing platform adapter and mitigation
+manifest rather than adding a second policy owner. The [MSIX plan sections
 3.1–3.4](plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
 own sealed executable content, explicit `uap10:Content Enforcement="on"` under
 `uap10:PackageIntegrity`, Store-compatible CIG, role targets and independent
@@ -412,9 +474,29 @@ and maintenance work. Do not copy a headless profile to the GUI, set every flag
 blindly, or change a shared installer host's policy. A required-control failure
 denies the affected protected work; compatibility recovery cannot silently drop
 the control or expand privilege. Any necessary exception is narrow, supported
-by a reproduced valid case and visible in the canonical role record.
+by a reproduced valid case and visible in the canonical role record with its
+technical owner and evidence. David must approve a weaker release profile;
+an unresolved compatibility problem is not permission for silent fallback.
 
-For every delivered executable and applicable DLL, inspect the exact final PE and load configuration with `dumpbin /headers /loadconfig` or an admitted equivalent tool. Record the CFG `Guard`, `CF Instrumented` and `FID table present` indicators where applicable, DEP/ASLR properties, relocations and any selected CET marker. These checks must agree with actual build inputs and the native/prebuilt/static/standard-library inventory; a CFG-positive executable or one successful negative fixture does not prove complete linked-code coverage. `nochecks` remains prohibited. This requirement does not mandate installing Visual Studio just to obtain `dumpbin`. [C10, C11, C15]
+The required targets include ACG without thread opt-out/remote downgrade,
+Store-compatible CIG, Strict CFG for the supported executable-module closure,
+strict HSP on the supported hardware class, image-load restrictions, safe DLL
+search, applicable extension-point restrictions, strict handles and heap
+corruption termination. Qualify headless Win32k and leaf child-process denial
+for engine/broker; preserve required Win32k and approved activation in the UI.
+Unsupported mechanisms or necessary-feature conflicts need a concrete recorded
+applicability decision, not an indiscriminate bitmask or an optional-work label.
+
+For every delivered executable and applicable DLL, inspect the exact final PE
+and load configuration with `dumpbin /headers /loadconfig` or an admitted
+equivalent, including the extended DLL-characteristics debug data. Record CFG
+`Guard`, `CF Instrumented` and `FID table present` indicators where applicable,
+DEP/ASLR properties, relocations, large-address awareness, both selected CET
+bits and the actual `DependentLoadFlags` value. These checks must agree with
+effective build inputs and the native/prebuilt/static/standard-library inventory;
+a CFG-positive executable or one negative fixture does not prove complete
+linked-code coverage. `nochecks` remains prohibited. No Visual Studio installation
+is required merely to obtain `dumpbin`. [C10, C11, C15, C41, C42]
 
 Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Preserve query status when an observer's convenience API maps selected unsupported/error/terminating statuses to zero. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations. The [Chromium/NtCoreLib examples](plans/windows-protected-storage-upstream-lessons-2.md#7-mitigations-need-ordered-startup-and-behavioral-evidence) supply concrete cases, not an admitted observer or final-artifact evidence.
 
@@ -439,16 +521,16 @@ signing does not establish Store signer-category admission. [C40]
 
 | Case | Required observation | Legitimate control and scope |
 | --- | --- | --- |
-| Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable. Challenge invalid order and attempted return to a weaker phase in release builds | Expected enforced state admits work. An explicitly optional unavailable hardware enhancement is diagnosed without masquerading as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
+| Required-policy startup admission | Inject a failed setting/query, mismatched required field and audit-only result through the real initialization decision path; normal readiness and new protected work remain unavailable. Challenge invalid order and attempted return to a weaker phase in release builds | Expected enforced state admits work. A documented hardware applicability condition is distinguished from a failed required control and never reported as enforcement. Pure tests prove branching only; real OS failure/launch cases still require Windows. |
 | ACG | Separately exercise harmless executable/writable allocation, protection change on existing executable memory, anonymous executable/writable mapping and file-backed mapping under the no-opt-out/no-downgrade profile; record native denial and effective bits | Ordinary heap use and exact engine/broker/provider workflows succeed, including cold startup and first lazy use. Do not execute injected payloads. Excluded/ignored instrumentation configurations remain unexecuted, not green. |
 | Image loading | Separate controlled remote-image and low-mandatory-label canaries fail to load; CWD/PATH canaries exercise section 15.2 separately | The intended protected dependency loads from its expected path. Mark of the Web is not the low-label fixture; System32 preference is not a directory allowlist. |
 | Store-compatible CIG | Under the actual enforced role policy, controlled unsigned or non-admitted signer-class DLLs fail to load. Record effective state and actual SCM/package/helper activation, including the pre-opt-in module inventory where applicable | Expected Store-catalog-backed product images and approved Microsoft system DLLs load through legitimate cold/lazy paths. A separately valid unrelated Store image may pass CIG but must fail NevroTick helper/IPC authorization; do not report CIG as product-identity enforcement. |
 | Trusted Launch on the supported MSIX profile | With the [documented build/manifest prerequisites](plans/windows-msix-store.md#311-trusted-launch-for-the-supported-package-profile), an unlisted harmless executable cannot run under the package's identity. Inspect actual catalog inclusion and identity for UI, SCM services and elevated helper separately | Intended catalog-listed executables launch under their expected identities. Unknown namespace, unsupported build, ordinary process success or a UI-only check proves no other role's enforcement. Retain the published source example's casing defect as a schema-validation concern; repeat on actual Store-delivered bytes. |
 | Strict CFG and handles | Target Strict CFG where the complete executable-module graph supports it; an incompatible code-bearing DLL is denied. Strict-handle failure occurs in an isolated native fixture | Qualified executable modules/resource-only DLLs and valid handle ownership still work. Record debugger/Application Verifier presence and actual fields; do not use a non-permanent verifier state as permanent-enforcement evidence. |
 | Headless/child restrictions | Prove selected Win32k denial and actual child-creation denial for an SCM-launched service under the installed profile; harmless requests for `PROCESS_CREATE_PROCESS`/`PROCESS_VM_WRITE` on dummy peers and inherited/duplicated-handle review must also establish the required isolation | Final service APIs, permitted read-only queries, boot-before-login, stop/restart and recovery work. A custom-parent fixture or queried child-policy bit does not close the SCM/composition gap. Test approved UI/helper activation separately; do not apply the headless profile to the GUI or shared installer host. |
-| CET/HSP | Reconcile x64 marking, CPU/OS/VM support, effective enabled state, compatibility/strict mode and audit status; qualify the strongest compatible supported CET/EHCONT restrictions against actual metadata and the complete module closure | Legitimate native callbacks/unwinding paths work. Marking alone is not enforcement; unsupported hardware remains explicitly unsupported. The selected target does not assert that any untested flag is already admitted or enabled. |
+| CET/HSP | Reconcile the selected `/CETCOMPAT` and `/CETCOMPATSTRICT` bits with CPU/OS/VM support, effective enabled/strict state and audit disabled. Qualify the strongest supported module restrictions against actual metadata and the complete closure; retain section 6.3's EHCONT compiler gate | Legitimate native callbacks/unwinding paths work. Source selection is complete; hardware/OS enforcement is not yet qualified. An unsupported hardware condition is recorded without inventing CET support from the v3 CPU floor. |
 | Lifecycle and mitigation failures | Preflight blocks an unusable required profile before clock takeover; reached update/fault cases preserve ownership, budgets, cleanup and bounded SCM recovery | A valid complete-MSIX install/update/repair/remove completes; a later owner-selected MSI alternative needs separate evidence. Existing CHECK-12/13/18/23 remain authoritative. |
-| RedirectionGuard candidate | If separately admitted, distinguish audit from enforcement for an in-scope unprivileged junction; record unsupported/query failure and administrator-created/legacy controls | Ordinary file/provider/lifecycle operations succeed; application path checks still reject out-of-scope forbidden paths. Required/optional disposition and OS/build floor remain open; this candidate is not an added release or UI-M0 gate. |
+| RedirectionGuard applicability | Resolve support and applicable file-owning roles in the canonical record; qualify enforcement for an in-scope unprivileged junction alongside unsupported/query failure and administrator-created/legacy controls | Ordinary file/provider/lifecycle operations succeed; application path checks still reject out-of-scope forbidden paths. The exact supported profile remains open required assessment, not an assumed universal junction boundary or an extra UI-M0 gate. |
 
 Run native denial/termination tests only in the owned disposable Windows environment of architecture section 14.9, with independent observation, resource/time bounds and cleanup. No test changes the user's clock or global Exploit Protection policy. Audit-first trials apply only to controls with a documented audit mode; an audit event never passes an enforcement case. Preserve UI-M0 deferrals: full production accessibility/IME integration tests run at the existing reentry gates.
 
@@ -518,7 +600,16 @@ The selected workspace release candidate is `opt-level=3`, `lto="thin"`, `codege
 
 The supplied **Optimized build of the compiler** guide concerns rebuilding `rustc`, including `bootstrap.toml`, its allocator and `opt-dist`; it is not an application build recipe. Its Windows LTO warning links open issue **rust-lang/rust#109114**, checked 29 October 2026: unstable `-Zdylib-lto` with ThinLTO and dynamic Rust-library imports on MSVC. That issue does not establish a general failure of ordinary stable Cargo application ThinLTO. Keep the unstable/dynamic-library experiment outside the selected configuration, and qualify the actual compiler/linker/target/graph rather than assuming either immunity or universal breakage. [C24, C25]
 
-The current admitted `target-cpu=x86-64` matches the pinned Rust 1.99.1 MSVC target's base CPU. [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization), accepted 30 October, now selects an intended `x86-64-v3` minimum and runtime-selected higher-feature functions. Section 6.7 owns its pending build/checker migration and supported CPU/OS/VM qualification; the older configuration and receipts do not qualify that change. Global v4 and build-host `native` compilation remain excluded. Application flags do not rebuild the supplied standard library or prebuilt native objects; rebuilding `std` is a separate unstable workflow and is not adopted. [C10, C28]
+The selected `target-cpu=x86-64-v3` implements
+[OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
+in the target configuration and exact checker expectations. Section 6.7 retains
+required prelaunch admission and supported CPU/OS/VM qualification; older generic
+receipts do not qualify this floor. Runtime-selected higher-feature functions
+remain separate measured work. Global v4 and build-host `native` compilation are
+excluded. Application flags do not rebuild the supplied standard library or
+prebuilt native objects; rebuilding `std` is a separate unstable workflow and is
+not adopted. Preserve section 6.2's complete selected hardening vector, including
+jump-table suppression, during optimization comparisons. [C10, C28, C44]
 
 PGO remains an optional future experiment. Rust's pinned profiler runtime includes Windows/MSVC support, but a selected Windows instrumentation/link/runtime lane and compatible `llvm-profdata` must be admitted and observed. Train the actual Windows executable on representative bounded inputs; retain source, lock/features, complete effective flags, binary/tool identities, workload/seed, raw profiles and merged-profile hash. Use absolute paths, fresh owned profile output and matching generate/use settings; LLVM raw profiles have no forward/backward format guarantee, so prefer tools from the pinned toolchain. Missing/stale profiles or unexecuted training provide no result. [C26]
 
@@ -545,20 +636,22 @@ For the pinned **Rust 1.99.1 / LLVM 23.1.1** Windows x64 toolchain, section 6.5'
 
 For ordinary optimized MSVC-flavor links, the pinned rustc already requests `/OPT:REF,ICF`; unoptimized links request `/OPT:REF,NOICF`. Retained debug information causes `/DEBUG`, which the pinned LLD interprets as a full PDB request. That LLD derives nonincremental linking when REF/ICF are active; Cargo's `incremental=false` separately controls compiler caching. Do not duplicate these flags as a presumed performance improvement. A full PDB packages the information emitted: `debug="limited"` still omits Rust type/variable-level information. ICF can merge function/read-only-data addresses and complicate names/breakpoints; address uniqueness is not a safe identity contract. [C10, C32, C33]
 
-Do not add `/LTCG` as a substitute for Rust LTO or `/DEBUG:FASTLINK` as PDB boilerplate. The pinned LLD warns and substitutes full PDB for FASTLINK, conflicting with `/WX`; native MSVC LTCG and cross-language LLVM LTO have their own input/toolchain requirements. Future native dependencies need their own admitted compiler flags, graph and emitted-object evidence; Rust flags do not retrofit their protections. Record effective inputs and exact artifacts under CHECK-19/20, and retain CHECK-21's separate native performance/soak obligations. This policy adds no code-generation argument, native qualification or performance result. [C17, C29, C32, C33]
+Do not add `/LTCG` as a substitute for Rust LTO or `/DEBUG:FASTLINK` as PDB boilerplate. The pinned LLD warns and substitutes full PDB for FASTLINK, conflicting with `/WX`; native MSVC LTCG and cross-language LLVM LTO have their own input/toolchain requirements. Future native dependencies need their own admitted compiler flags, graph and emitted-object evidence; Rust flags do not retrofit their protections. Record effective inputs and exact artifacts under CHECK-19/20, and retain CHECK-21's separate native performance/soak obligations. These tuning rules add no raw LLVM override or performance result; section 6.2 owns the selected code-generation and linker vector. [C17, C29, C32, C33]
 
 ### 6.7 v3 baseline and runtime CPU dispatch
 
 [OD-07](nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization)
-makes CPU optimization a required workstream. The intended Windows x64 minimum
-is `x86-64-v3`; the current admitted build remains generic until the
-[planned migration](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream).
+makes CPU optimization a required workstream. The Windows x64 minimum
+is `x86-64-v3`, now selected in the build configuration and exact admission
+controls. The [existing workstream](plans/development-plan.md#81-x64-baseline-and-runtime-optimization-workstream)
+still owns prelaunch CPU admission, native qualification and useful optimization.
 The [research report](supporting-reviews/x86-runtime-optimization.md) records the
-sources and limits. This section establishes no new flags, kernel or native pass.
+sources and limits. Source selection establishes no native pass, measured gain
+or runtime-dispatched kernel implementation.
 
 | Owner/guarantee | Required implementation and independent observation |
 | --- | --- |
-| Build owner: baseline and artifacts | Change the target-specific CPU entry and exact checker/control expectations together. Preserve the complete CFG/ASLR/DEP and linker-warning vector, profiles, overflow checks, unwind policy and symbols. Inspect effective Rust/native/generated-object flags and final payloads; do not replace the vector through ambient `RUSTFLAGS`. Audit standard-library and prebuilt inputs separately. |
+| Build owner: baseline and artifacts | Preserve the selected v3 target entry, exact checker/control expectations and complete section 6.2 vector together with profiles, overflow checks, unwind policy and symbols. Inspect effective Rust/native/generated-object flags and final payloads; do not replace the vector through ambient `RUSTFLAGS`. Audit standard-library and prebuilt inputs separately. |
 | Lifecycle/package owner: supported machines | Declare actual CPU/OS/VM rows. A prerequisite check that itself runs on the rejected machine must precede execution of any v3 payload. Observe useful behavior on a v3-capable baseline and clear refusal below it, including masked guest features. Keep one complete product package; catching an illegal-instruction crash is not admission. Windows 11 branding alone proves no complete feature set. |
 | Kernel/dispatch owner: available functions | Compile optional specializations ahead of time with explicit `#[target_feature]` sets. Use Rust runtime feature detection, including its OS vector-state checks; select only a function whose whole enabled set is available. `avx512f` alone is not full v4. The baseline path remains reachable; never globally enable AVX-512, alter XCR0, or treat detection as runtime recompilation. |
 | Safety/algorithm owner: unchanged contracts | Keep unsafe code out of the pure core. Any necessary feature-specific unsafe boundary needs a narrow reviewed owner and checked safe interface outside that prohibition. Preserve length/alignment/bounds/lifetimes, exact integer time arithmetic, chronological floating-point operations, intermediate checks and error/failure atomicity. New reductions or FMA rounding require separately justified algorithm changes; no fast-math, reassociation or FTZ/DAZ shortcuts. |
@@ -1373,6 +1466,16 @@ amendment; these establish documented semantics, not executed native results:
 - **C38:** [User shadow-stack policy fields and runtime-setting limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_user_shadow_stack_policy).
 - **C39:** [MSIX PackageIntegrity](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-uap10-packageintegrity) and [Content enforcement](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-uap10-content).
 - **C40:** [Code Integrity Guard and Store allowance](https://learn.microsoft.com/en-us/defender-endpoint/exploit-protection-reference#code-integrity-guard), [Exploit Protection PowerShell names](https://learn.microsoft.com/en-us/defender-endpoint/customize-exploit-protection#powershell-reference), [binary-signature policy fields](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_binary_signature_policy) and [process-creation mitigation attributes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-updateprocthreadattribute).
+
+Primary sources checked for the 6 November required v3/hardening selection;
+compiler/linker source support does not establish Windows enforcement:
+
+- **C41:** Exact Rust LLVM pin `1b9c0d5ff9bbe7634aead059efe6b11a7eeba145`: [LLD COFF options](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Options.td), [option parsing and defaults](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Driver.cpp), [extended CET bits and load-config writing](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Writer.cpp), [guard-option parser](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/DriverUtils.cpp#L99-L114) and [PE bit definitions](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/llvm/include/llvm/BinaryFormat/COFF.h).
+- **C42:** Microsoft [/DEPENDENTLOADFLAG static-import scope](https://learn.microsoft.com/en-us/cpp/build/reference/dependentloadflag?view=msvc-170), [LoadLibraryEx flag values](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw) and [packaged/unpackaged DLL search order](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order).
+- **C43:** Pinned Rust [unstable option declarations, including EHCONT and stack protectors](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs), [conditional EHCONT LLVM module flag](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/context.rs#L486-L489) and Microsoft [EH continuation metadata requirements and empty-table semantics](https://learn.microsoft.com/en-us/cpp/build/reference/guard-enable-eh-continuation-metadata?view=msvc-170).
+- **C44:** Pinned Rust [stable jump-tables documentation](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/src/doc/rustc/src/codegen-options/index.md#jump-tables), [option declaration](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs#L2251) and [LLVM attribute lowering](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/attributes.rs#L330).
+- **C45:** Microsoft [/FIXED and relocation generation](https://learn.microsoft.com/en-us/cpp/build/reference/fixed-fixed-base-address?view=msvc-170) and [/LARGEADDRESSAWARE](https://learn.microsoft.com/en-us/cpp/build/reference/largeaddressaware-handle-large-addresses?view=msvc-170). For the selected linker's actual defaults, use C41's pinned driver; its comment explicitly distinguishes observed EXE behavior from Microsoft's `/FIXED` default wording.
+- **C46:** Microsoft [/SAFESEH architecture restriction](https://learn.microsoft.com/en-us/cpp/build/reference/safeseh-image-has-safe-exception-handlers?view=msvc-170) and [/INTEGRITYCHECK signing contract](https://learn.microsoft.com/en-us/cpp/build/reference/integritycheck-require-signature-check?view=msvc-170).
 
 ### Dependency and CI sources
 

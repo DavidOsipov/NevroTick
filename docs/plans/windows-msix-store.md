@@ -294,26 +294,36 @@ Use the existing [per-process mitigation manifest](../windows-time-architecture.
 not a second configuration owner. The following are production qualification
 targets; none are asserted active by this document. [S31, S43–S48]
 
+**6 November clarification:** every applicable control below is a mandatory
+final-product requirement at its strongest supported compatible setting under
+OD-05. Missing implementation or execution is open work, not optional status.
+The selected build vector now includes v3, CET/strict-CET markers, restricted
+static imports and disabled Rust switch jump tables; [hardening §6.2–6.3](../windows-time-development-hardening.md#62-target-specific-windows-compilerlinker-settings)
+owns its exact flags, source support and exclusions. This does not assert native
+enforcement or lift the current execution holds.
+
 | Control | Required target and compatibility boundary |
 | --- | --- |
 | DEP/NX, ASLR, high entropy, CFG | Preserve the build baseline; inspect final images and instrumented call sites/dependencies. Strict CFG is the target when every executable module supports it; do not manufacture compatibility by dropping instrumentation. CFG has no audit mode. |
 | CIG | Store-compatible enforced profile in §3.2 for each role, with independently authorized helper/package identity. |
 | ACG / dynamic code | Target `ProhibitDynamicCode` with no thread opt-out or remote downgrade. Inventory JIT/dynamic-code users; do not add a JIT or escape flag for convenience. Services are strongest candidates; UI compatibility needs its own observations. |
-| CET / hardware stack protection | Qualify shadow stacks on supported hardware and OS; test strict mode and non-CET/EHCONT image restrictions against the actual toolchain/modules. `/CETCOMPAT` alone is no hardware or runtime proof. Unsupported hardware is a declared platform class, not a fictitious pass. |
+| CET / hardware stack protection | Preserve the selected `/CETCOMPAT` and `/CETCOMPATSTRICT` markers; require strict effective shadow stacks on the supported hardware/OS class and qualify supported non-CET/EHCONT restrictions against the actual metadata/module closure. Rust EHCONT generation is unavailable in the pinned stable profile; a linker-only flag cannot repair it. Image markers are no runtime proof, and v3 does not imply CET hardware. |
 | Image loading | Target `NoRemoteImages`, `NoLowMandatoryLabelImages`, `PreferSystem32Images` alongside sealed content and safe search. The last is a search preference; low-IL blocking does not reject every medium-IL writable path. |
 | Extension points, handles and heap | Disable legacy extension points where compatible, use strict handle checks and heap corruption termination. Qualify supported UI/IME/accessibility paths; this does not block every injection technique. |
 | Win32k | Target prohibition for headless engine/broker when their dependencies permit. Never apply to the desktop UI, including its Slint/Windows backend. |
 | Child creation | Block children in leaf engine/broker processes. Inventory UI/helper launch needs and qualify their narrow launch path separately; no broad shell/command interpreter escape. |
 
-For every row record role, OS/architecture/hardware support, required or optional
-status, exact field/flag, compile/creation/early-runtime phase, effective readback,
+For every row record role, OS/architecture/hardware support, required or
+hardware-conditional status (or a concrete supported exclusion), exact field/flag,
+compile/creation/early-runtime phase, effective readback,
 positive work, denied action and failure/recovery behavior. CFG enablement and
 initial shadow-stack/context-IP validation cannot all be added with a late
 `SetProcessMitigationPolicy` call. Creation and compiler/linker support are
 separate prerequisites. Treat unsupported, audit-only and enforced outcomes
 separately. [S43, S46, S47]
 
-Select the strictest demonstrated compatible setting. A necessary exception
+Select and qualify the strictest supported compatible setting. Do not leave a
+supported protection disabled merely because qualification has not run. A necessary exception
 must be narrow, justified by a reproduced legitimate case, linked to the owner
 decision and visible in the release evidence; never silently weaken every role.
 Required-protection failure denies new protected work while preserving the
@@ -708,10 +718,10 @@ Use the actual Cargo feature graph before naming runtime providers: UI/domain/co
 use garde with `derive`; the engine's current-thread Tokio feature set is `rt`,
 `net`, `time`, `sync`, `macros`. No production TLS/NTS provider, storage provider,
 Windows service wrapper, CRT layout or PSF fixup closure is admitted by this
-inventory. The existing `.cargo/config.toml` supplies generic `x86-64`, CFG,
-ASLR and DEP flags; OD-07's intended v3 migration still has its own build and
-below-baseline startup-admission work. `ProcessorArchitecture="x64"` alone is
-not a v3 CPU/OS-state prerequisite check.
+inventory. `.cargo/config.toml` now selects required `x86-64-v3` and the complete
+hardening vector maintained in hardening §6.2. Final PE/import/policy evidence
+and OD-07's lower-baseline startup admission remain required work.
+`ProcessorArchitecture="x64"` alone is not a v3 CPU/OS-state prerequisite check.
 
 The package author uses this field-level profile when real components exist:
 

@@ -8,6 +8,13 @@ Those canonical records own the adopted policy and acceptance gates. The existin
 [build-optimization task](../../tasks/build-optimization.md) remains the execution
 record for subsequent configuration, artifact and measurement evidence.
 
+**6 November supersession note:** the current target configuration and exact
+admission controls now select required `x86-64-v3` and the expanded hardening
+vector. See the [implementation checkpoint](../../tasks/build-optimization.md#required-v3-and-maximum-compatible-hardening--6-november-2026).
+The generic settings and pending migration below describe the 30 October
+research snapshot, not permission to restore that product floor. Native/startup
+qualification and measured higher-feature work remain open.
+
 ## Decision and present implementation
 
 David selected an **`x86-64-v3` minimum**, superseding the earlier v2 proposal,
@@ -132,8 +139,8 @@ Below-v3 rejection must run in qualified lower-baseline-compatible prerequisite
 code before any v3 payload executes. It must establish the full cumulative v3
 CPU set and OS-enabled AVX state, including the required OSXSAVE/XCR0 conditions.
 A check inside an already v3-compiled application does not prove safe admission
-on an unsupported processor. Keep the existing
-complete-MSI delivery model and lifecycle ownership; this requirement creates no
+on an unsupported processor. Keep the currently selected
+complete-MSIX delivery model under OD-05 and lifecycle ownership; this requirement creates no
 separate download, installer package or generic privileged execution surface.
 
 ## Fit to NevroTick and numerical constraints

@@ -33,8 +33,9 @@ a bounded, independently checked experiment justifies a change. Raw LLVM flags,
 extra pass lists and numerical shortcuts are not a default optimization recipe.
 
 For CPU-baseline migration or per-function runtime feature selection, use
-[implement-cpu-dispatch](../implement-cpu-dispatch/SKILL.md). OD-07 selects an
-intended v3 floor; inspect the actual admitted configuration before changing it.
+[implement-cpu-dispatch](../implement-cpu-dispatch/SKILL.md). OD-07 requires the
+now-configured v3 floor; preserve it and the full hardening vector while inspecting
+the actual candidate. Missing native qualification does not permit a generic downgrade.
 That specialized workflow does not replace the measurement and acceptance below.
 
 ## Establish the cause before changing it

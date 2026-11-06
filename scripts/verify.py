@@ -346,6 +346,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             raise ENV.Incomplete("Linked product ancestors are not admitted.")
     for name in SOURCE_FILES:
         sha256(root / name)
+    ENV.require_cargo_configuration(tomllib.loads((root / ".cargo/config.toml").read_text()))
     workspace = tomllib.loads((root / "Cargo.toml").read_text())
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
     if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):

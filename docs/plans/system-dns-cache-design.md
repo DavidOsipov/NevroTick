@@ -192,7 +192,7 @@ Treat both as required workstreams for the future DNSSEC feature, with qualified
 - avoid repeated eligible work through content-bound validation reuse and shared DNSKEY/DS acquisition; count reuse, acquisition and actual cryptographic verification separately;
 - select a maintained, license-compatible cryptographic/validation graph for the supported Windows target;
 - use accelerated implementations where the relevant operations and exact CPU/OS features support them; check every optional instruction set before dispatch;
-- preserve [OD-07](../nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization), its currently pending baseline migration and compatible fallback behavior; do not infer every cryptographic instruction from an x86-64-v3 label;
+- preserve [OD-07](../nevrotick-owner-decisions.md#11-od-07--x64-baseline-and-runtime-optimization), its required v3 baseline and fallback from optional higher-feature kernels to v3; do not infer every cryptographic instruction from an x86-64-v3 label;
 - schedule independent validation jobs across a bounded worker set; dependencies in a chain remain dependencies, and a small individual request need not be split across cores;
 - bound queue length, active jobs, aggregate work, per-query attempts and hostile-input cost before admitting more work;
 - retain resource custody until native/cryptographic work actually finishes: cancelling an awaiting task is not proof the underlying computation stopped;

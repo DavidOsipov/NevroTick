@@ -25,6 +25,15 @@ Server 2025 Desktop Experience, both x64. [Section 4.32](#432-two-family-windows
 owns the compact profile/evidence matrix; availability and complete-product
 results remain unverified/not run. Earlier W11 records retain their original scope.
 
+**CPU/hardening correction, 6 November 2026:** the [existing build task](build-optimization.md#required-v3-and-maximum-compatible-hardening--6-november-2026)
+records the now-configured v3 minimum, expanded required build protections and
+shared admission controls. W11-W05/W11-W10 and existing CHECK-16/18/20/23/26
+owners must implement and qualify every applicable final per-role protection at
+the strongest supported compatible setting. Unknown or unexecuted is open work;
+document concrete exclusions instead of silently retaining a weaker profile.
+Final PE/DLL/runtime/CPU-startup observations remain pending under the existing
+native hold; this amendment grants no Windows execution or release approval.
+
 ## 1. Authority, scope and reconciliation
 
 **UI amendment — 5 November 2026:** [OD-13](../docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
@@ -548,14 +557,16 @@ UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
 The [conditional research](../docs/plans/windows11-integration.md#9-conditional-mechanisms-worth-understanding)
 and [second-pass reserves](../docs/plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
 own source contracts and limits. These reserves are not a prerequisite list.
-The later OD-05 decision selects the MSIX row for preparation; the other rows
-retain their own conditional triggers. The heading is preserved for existing links.
+The later OD-05 decision selects the MSIX row for preparation; the 6 November
+clarification also selects strict-CET build declarations and required applicable
+runtime hardening. Other rows retain their own conditional triggers. The heading
+is preserved for existing links.
 
 | Reserve / existing owner | Re-entry condition and bounded exit |
 | --- | --- |
 | Job Objects or SCM triggers / platform | A measured optional-role resource/activation need; compare healthy useful work with limit exhaustion, stopping/maintenance races and owner death. Preserve independent broker cleanup; an address or endpoint trigger is not Internet readiness or first-UDP/53 activation. |
 | LPAC/AppContainer or preview Win32 app isolation / architecture/security | A named untrusted-work boundary justifies capabilities, IPC, supported launch/deployment and lifetime costs. Observe actual denied access beside admitted work; standalone creation APIs do not prove SCM compatibility. No new privileged broker follows automatically. |
-| Stricter CET/EHCONT / build/security | A selected mitigation property for the exact Rust/native closure; inspect metadata and actual enforcement beside legitimate provider/callback behavior. Existing CHECK-16/20/26 owners remain. |
+| Strict CET and EHCONT support / build/security | CET plus strict-CET image markers are now selected; require effective strict enforcement on the supported hardware/OS class. EHCONT generation remains limited by the pinned stable compiler and cannot be supplied by a linker-only switch. Inspect the exact metadata/module closure and legitimate provider/callback behavior under CHECK-16/20/26 and the current build-task amendment. |
 | Full VBS enclave / storage/release | A secret operation needs enclave execution beyond isolated CNG roots. Separate runtime build/VBS/HVCI from development/signing eligibility, and use the existing storage task and ST-T11/12/13; the native storage pause remains. |
 | External-location identity or WinGet / UI/packaging | External executable content is excluded by the selected MSIX profile; reconsider only through a later explicit architecture decision, not to bypass packaging gates. An additional WinGet acquisition path needs the same complete-package identity/lifecycle and CHECK-18/23 evidence. Local notifications alone do not select another updater. |
 | Complete hardened MSIX with Store distribution / packaging/release/security | **Selected preparation target under amended OD-05.** Execute the source/design work in [section 4.8](#48-owner-selected-hardened-msix--3-november-2026) using the [focused plan](../docs/plans/windows-msix-store.md). Explicit content integrity, immutable executable paths, Store-compatible CIG and per-role protections join supported service provisioning and complete recovery. Store preapproval is not a preparation gate; actual signed-artifact qualification follows David's controlled Store attempt. All existing §19.4/CHECK owners and execution holds remain; MSI is a retained alternative for a later owner decision. |
@@ -2745,9 +2756,10 @@ records no environment probe, product execution or first-stable approval.
 
 #### Two intended rows
 
-Both use `x86_64-pc-windows-msvc`, OD-07's intended **x86-64-v3**, the complete
-hardened MSIX and selected Slint UI. The [current generic configuration](../.cargo/config.toml)
-still uses `target-cpu=x86-64`; it does not qualify the intended migration.
+Both use `x86_64-pc-windows-msvc`, OD-07's required **x86-64-v3**, the complete
+hardened MSIX and selected Slint UI. The [current target configuration](../.cargo/config.toml)
+now selects v3 with the expanded required hardening vector; this is not native
+CPU/startup or process-mitigation qualification.
 Exact serviced UBR/KB selection remains an input: the latest listed optional
 preview is not automatically the required baseline. [WM1]
 
