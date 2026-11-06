@@ -461,6 +461,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                 raise ENV.Incomplete("The ntp-exchange member requires only exact local ntp-wire and time-domain normal dependencies and the time-core dev dependency.")
         if package == "nevrotick-engine":
             required = {
+                "garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]},
                 "getrandom": {"version": "=0.4.3", "default-features": False},
                 "ntp-wire": {"version": "=0.0.0", "path": "../ntp-wire"},
                 "time-domain": {"version": "=0.0.0", "path": "../time-domain"},
@@ -470,10 +471,11 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             if (set(member) != {"package", "lints", "dependencies", "bin"}
                     or member["package"].get("version") != "0.0.0"
                     or member.get("dependencies") != required
+                    or type(member["dependencies"]["garde"].get("default-features")) is not bool
                     or type(member["dependencies"]["getrandom"].get("default-features")) is not bool
                     or type(member["dependencies"]["tokio"].get("default-features")) is not bool
                     or member.get("bin") != [{"name": "nevrotick-observe", "path": "src/bin/nevrotick-observe.rs"}]):
-                raise ENV.Incomplete("The engine requires its exact reviewed runtime/wire/domain dependencies and observe entrypoint.")
+                raise ENV.Incomplete("The engine requires its exact reviewed validation/runtime/wire/domain dependencies and observe entrypoint.")
         local_packages.add((package, member["package"]["version"]))
     local_packages.update((record["name"], record["version"]) for record in patches)
     if policy.get("lockfile_sha256") != sha256(root / "Cargo.lock"):
@@ -501,7 +503,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
             or any(p.get("dependencies") != ["garde", "time-domain"] for p in local if p["name"] == "time-core")
             # Cargo.lock combines dependency kinds; the manifest guard above owns their roles.
             or any(p.get("dependencies") != ["ntp-wire", "time-core", "time-domain"] for p in local if p["name"] == "ntp-exchange")
-            or any(p.get("dependencies") != [engine_random, "ntp-wire", "time-domain", "tokio"] for p in local if p["name"] == "nevrotick-engine")
+            or any(p.get("dependencies") != ["garde", engine_random, "ntp-wire", "time-domain", "tokio"] for p in local if p["name"] == "nevrotick-engine")
             or not any(p["name"] == "garde" and p["version"] == "0.23.0" for p in packages if "source" in p)):
         raise ENV.Incomplete("The lock graph contains missing or unexpected packages.")
     if any(p.get("source") != "registry+https://github.com/rust-lang/crates.io-index" for p in packages if "source" in p):

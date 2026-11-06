@@ -2590,6 +2590,7 @@ dependencies = [
 name = "nevrotick-engine"
 version = "0.0.0"
 dependencies = [
+ "garde",
  "getrandom 0.4.3",
  "ntp-wire",
  "time-domain",

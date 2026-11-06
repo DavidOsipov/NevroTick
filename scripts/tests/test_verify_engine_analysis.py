@@ -26,7 +26,7 @@ def independent_digest(value):
 
 def literal_execution(*, doctests):
     """Literal native libtest records, independent of the runner's required-name set."""
-    text = """running 38 tests
+    text = """running 44 tests
 test processing_guard_tests::processing_uses_fresh_deadline_and_current_control ... ok
 test processing_guard_tests::terminal_io_causes_and_send_history_remain_distinct ... ok
 test processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries ... ok
@@ -65,7 +65,13 @@ test measurement::tests::fresh_owner_age_stamp_preserves_the_actual_arithmetic .
 test measurement::tests::refusal_codes_and_display_remain_literal_and_redacted ... ok
 test measurement::tests::software_window_retains_each_local_and_peer_extremum ... ok
 test measurement::tests::coherence_helper_rejects_each_reversed_bracket ... ok
-test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+test measurement::tests::decimal_remainders_change_the_exact_nominal_phase ... ok
+test measurement::tests::asymmetric_decimal_captures_keep_exact_signed_nominal_values ... ok
+test measurement::tests::pre_unix_nominal_remainders_keep_epoch_and_sign_association ... ok
+test measurement::tests::nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result ... ok
+test measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bounds ... ok
+test measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection ... ok
+test result: ok. 44 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 running 4 tests
 test argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure ... ok
 test argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows ... ok
@@ -82,7 +88,7 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 """
     if doctests:
         text += """   Doc-tests nevrotick_engine
-running 12 tests
+running 22 tests
 test crates/nevrotick-engine/src/lib.rs - Config::new (line 168) ... ok
 test crates/nevrotick-engine/src/lib.rs - ControlSchedule::new (line 1238) ... ok
 test crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalProfile (line 91) ... ok
@@ -95,7 +101,17 @@ test crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasu
 test crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 226) - compile fail ... ok
 test crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 234) - compile fail ... ok
 test crates/nevrotick-engine/src/measurement.rs - measurement::ExperimentalMeasurement (line 239) - compile fail ... ok
-test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 600) ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 610) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 620) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 630) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalPhaseNs (line 640) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 660) ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 670) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 680) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 690) - compile fail ... ok
+test crates/nevrotick-engine/src/measurement.rs - measurement::NominalRoundTripNs (line 700) - compile fail ... ok
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 """
     return text
 
@@ -121,6 +137,16 @@ def literal_inventories():
 
 class EngineAnalysisTests(unittest.TestCase):
     """Healthy neighbors discriminate scope, candidate, listing and baseline gates."""
+
+    def test_nominal_type_doctests_cannot_be_omitted_with_consistent_summaries(self):
+        healthy = literal_execution(doctests=True)
+        for owner in ("NominalPhaseNs", "NominalRoundTripNs"):
+            line = next(row for row in healthy.splitlines()
+                        if "measurement::" + owner + " " in row and "compile fail" in row)
+            bad = healthy.replace(line + "\n", "", 1).replace("ok. 22 passed;", "ok. 21 passed;")
+            with self.subTest(owner=owner), self.assertRaisesRegex(MODULE.Incomplete, "construction/privacy"):
+                MODULE.validate_test_execution(bad, doctests=True)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 22)
 
     def test_three_source_owners_have_exact_selections_and_command_targets(self):
         expected = {"library": "crates/nevrotick-engine/src/lib.rs",
@@ -405,14 +431,14 @@ class EngineAnalysisTests(unittest.TestCase):
 
     def test_baseline_has_healthy_coverage_and_full_cargo_neighbors(self):
         self.assertEqual(MODULE.validate_test_execution(literal_execution(doctests=False), doctests=False)
-                         ["tests_executed"], 47)
+                         ["tests_executed"], 53)
         full = MODULE.validate_test_execution(literal_execution(doctests=True), doctests=True)
-        self.assertEqual((full["tests_executed"], full["doctests"]), (59, 12))
+        self.assertEqual((full["tests_executed"], full["doctests"]), (75, 22))
 
     def test_constructor_and_guard_alternatives_cannot_be_omitted_from_baseline(self):
         """A healthy full transcript discriminates the earlier seven-case baseline."""
         healthy = literal_execution(doctests=False)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 47)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 53)
         added = (
             "processing_guard_tests::configuration_enforces_endpoint_and_timeout_boundaries",
             "processing_guard_tests::control_schedule_preserves_legal_zero_and_maximum_delays",
@@ -422,14 +448,14 @@ class EngineAnalysisTests(unittest.TestCase):
             "processing_guard_tests::literal_header_rejections_preserve_the_actual_pending_neighbor",
         )
         for name in added:
-            text = healthy.replace("test " + name + " ... ok\n", "").replace("38 passed;", "37 passed;", 1)
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("44 passed;", "43 passed;", 1)
             with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
     def test_argument_budget_cases_cannot_be_omitted_from_baseline(self):
         """Checked resource owners require their actual native unit records."""
         healthy = literal_execution(doctests=False)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 47)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 53)
         for name in (
             "argument_guard_tests::pair_budget_admits_six_and_preserves_exhausted_failure",
             "argument_guard_tests::argument_text_preserves_exact_byte_boundaries_and_original_borrows",
@@ -468,16 +494,16 @@ class EngineAnalysisTests(unittest.TestCase):
             "measurement::tests::coherence_helper_rejects_each_reversed_bracket",
         )
         for name in required:
-            text = healthy.replace("test " + name + " ... ok\n", "").replace("38 passed;", "37 passed;", 1)
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("44 passed;", "43 passed;", 1)
             with self.subTest(name=name), self.assertRaisesRegex(MODULE.Incomplete, "required actual"):
                 MODULE.validate_test_execution(text, doctests=False)
 
     def test_measurement_doctests_require_success_and_all_private_construction_failures(self):
         healthy = literal_execution(doctests=True)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 12)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=True)["doctests"], 22)
         docs = [line for line in healthy.splitlines() if line.startswith("test crates/")]
         for line in docs:
-            text = healthy.replace(line + "\n", "").replace("12 passed;", "11 passed;", 1)
+            text = healthy.replace(line + "\n", "").replace("22 passed;", "21 passed;", 1)
             with self.subTest(omitted=line), self.assertRaisesRegex(MODULE.Incomplete, "doctest"):
                 MODULE.validate_test_execution(text, doctests=True)
         for text in (
@@ -495,7 +521,7 @@ class EngineAnalysisTests(unittest.TestCase):
     def test_library_native_result_alternatives_cannot_be_omitted(self):
         """Every newly required admission/completion owner has a native record."""
         healthy = literal_execution(doctests=False)
-        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 47)
+        self.assertEqual(MODULE.validate_test_execution(healthy, doctests=False)["tests_executed"], 53)
         for name in (
             "processing_guard_tests::entropy_admission_checks_each_half_and_exact_request_bytes",
             "processing_guard_tests::local_endpoint_admission_requires_both_loopback_and_nonzero_port",
@@ -506,7 +532,7 @@ class EngineAnalysisTests(unittest.TestCase):
             "processing_guard_tests::commit_processing_accepts_equal_read_and_rejects_its_predecessor",
             "processing_guard_tests::completed_cleanup_results_preserve_primary_and_each_independent_error",
         ):
-            text = healthy.replace("test " + name + " ... ok\n", "").replace("38 passed;", "37 passed;", 1)
+            text = healthy.replace("test " + name + " ... ok\n", "").replace("44 passed;", "43 passed;", 1)
             with self.subTest(name=name), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
@@ -518,7 +544,7 @@ test execute_rejects_entered_runtime_without_nested_runtime_creation ... ok
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 """
         for text in [old, old + "\n".join(MODULE.REQUIRED_TESTS),
-                     literal_execution(doctests=False).replace("38 passed;", "0 passed;", 1)]:
+                     literal_execution(doctests=False).replace("44 passed;", "0 passed;", 1)]:
             with self.subTest(text=text[:40]), self.assertRaises(MODULE.Incomplete):
                 MODULE.validate_test_execution(text, doctests=False)
 
@@ -539,7 +565,7 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
             path = directory / "outcomes.json"
             path.write_text(json.dumps({"outcomes": [{"scenario": "Baseline", "summary": "Success",
                                                     "duration": 0.25, "log_path": "log/baseline.log"}]}))
-            self.assertEqual(MODULE.validate_baseline(work, "library")["tests_executed"], 59)
+            self.assertEqual(MODULE.validate_baseline(work, "library")["tests_executed"], 75)
             bad = json.loads(path.read_text()); bad["outcomes"][0]["log_path"] = "../escape.log"
             path.write_text(json.dumps(bad))
             with self.assertRaisesRegex(MODULE.Incomplete, "escapes"):
@@ -594,6 +620,49 @@ test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
         self.assertFalse(report["campaign_admission"])
         self.assertFalse(report["qualification_passed"])
         self.assertEqual(finished, [True])
+
+    def test_combined_lane_keeps_coverage_first_and_one_final_custody_boundary(self):
+        """Control-plane checks only: mocked commands supply no native qualification."""
+        for failure_at in (None, "coverage", "finish", "inventory"):
+            with self.subTest(failure_at=failure_at), tempfile.TemporaryDirectory() as temp:
+                source = Path(temp); policy, identity = self.fixture(source)
+                if failure_at != "inventory":
+                    policy["mutation_inventories"] = {name: {"count": 1, "sha256": "a" * 64}
+                                                       for name in MODULE.SUBJECTS}
+                self.write_policy(source, policy)
+                report, calls, finished, sessions = {}, [], [], []
+
+                class FakeSession:
+                    def __init__(self, root, args, received_report, scope, chosen_policy, extra):
+                        sessions.append(args.lane)
+                        self.source, self.product_identity = source, identity
+                        self.work, self.tools = Path("/owned/work"), Path("/owned/tools")
+                    def run(self, *args, **options):
+                        raise AssertionError("Synthetic control must not execute a command")
+                    def finish(self):
+                        finished.append(True)
+                        if failure_at == "finish":
+                            raise MODULE.Incomplete("final custody failure")
+
+                def selected(scope, subjects, chosen, work, tools, run, received_report, lane):
+                    calls.append(lane)
+                    if lane == failure_at:
+                        raise MODULE.Incomplete("selected coverage failure")
+
+                with patch.object(MODULE, "read_policy", return_value=policy), \
+                        patch.object(MODULE.COMMON, "Session", FakeSession), \
+                        patch.object(MODULE.COMMON, "run_analysis_lanes", side_effect=selected):
+                    if failure_at is None:
+                        MODULE.execute(SimpleNamespace(lane="all", subject="all"), report)
+                        self.assertTrue(report["qualification_passed"])
+                    else:
+                        with self.assertRaises(MODULE.Incomplete):
+                            MODULE.execute(SimpleNamespace(lane="all", subject="all"), report)
+                        self.assertFalse(report.get("qualification_passed", False))
+                self.assertEqual(sessions, [] if failure_at == "inventory" else ["all"])
+                self.assertEqual(finished, [] if failure_at == "inventory" else [True])
+                self.assertEqual(calls, [] if failure_at == "inventory" else
+                                 ["coverage"] if failure_at == "coverage" else ["coverage", "mutation"])
 
     def test_failed_final_custody_cannot_leave_a_qualification_claim(self):
         report = {}

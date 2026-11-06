@@ -12,7 +12,10 @@
 
 mod measurement;
 
-pub use measurement::{ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal};
+pub use measurement::{
+    ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, NominalPhaseNs,
+    NominalRoundTripNs,
+};
 
 use ntp_wire::{FrameLimits, RawHeader, frame_no_legacy_mac_datagram};
 use std::{

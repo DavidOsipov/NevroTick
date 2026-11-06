@@ -108,6 +108,12 @@ capture/conversion residuals and actual domain-to-result composition are newly
 affected post-V1 obligations under that engine owner. The original review baseline
 predates this addition; existing domain proofs do not qualify the new consumer.
 
+The [exact nominal representation child](engine-transport-pilot.md#exact-nominal-representation-activation)
+adds source-bound decimal-remainder composition to this same guarantee. Retain
+the exact corrected phase/raw-RTT scales, original capture association and actual
+producer/consumer path as post-V1 proof obligations. Ordinary implementation and
+nonformal checks do not extend the historical domain proofs.
+
 #### FP-D02 — Regression and diagnostics from the same admitted population
 
 **Owner:** numerical Core; [S1.2 fit contract](s1.2-regression-readiness.md#frozen-proposal-for-synthetic-numerical-behavior)

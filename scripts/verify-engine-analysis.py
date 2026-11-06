@@ -96,6 +96,12 @@ REQUIRED_TESTS = frozenset({
     "measurement::tests::refusal_codes_and_display_remain_literal_and_redacted",
     "measurement::tests::software_window_retains_each_local_and_peer_extremum",
     "measurement::tests::coherence_helper_rejects_each_reversed_bracket",
+    "measurement::tests::decimal_remainders_change_the_exact_nominal_phase",
+    "measurement::tests::asymmetric_decimal_captures_keep_exact_signed_nominal_values",
+    "measurement::tests::pre_unix_nominal_remainders_keep_epoch_and_sign_association",
+    "measurement::tests::nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result",
+    "measurement::tests::nominal_result_garde_enforces_both_strict_numerator_bounds",
+    "measurement::tests::nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection",
     "prepare_outside_runtime_owns_and_releases_standard_sockets",
     "prepare_rejects_entered_runtime_before_native_startup",
     "execute_rejects_entered_runtime_without_nested_runtime_creation",
@@ -482,7 +488,8 @@ def validate_test_execution(text: str, *, doctests: bool) -> dict:
     doc_pattern = re.compile(
         r"(?:[^\r\n]+/)?crates/nevrotick-engine/src/(lib|measurement)\.rs - "
         r"(Config::new|ControlSchedule::new|measurement::ExperimentalProfile|"
-        r"measurement::ExperimentalMeasurement) \(line [1-9][0-9]*\)( - compile fail)?")
+        r"measurement::ExperimentalMeasurement|measurement::NominalPhaseNs|"
+        r"measurement::NominalRoundTripNs) \(line [1-9][0-9]*\)( - compile fail)?")
     signatures = Counter((match[1], match[2], bool(match[3]))
                          for name in docs if (match := doc_pattern.fullmatch(name)) is not None)
     expected = Counter({("lib", "Config::new", False): 1,
@@ -490,7 +497,11 @@ def validate_test_execution(text: str, *, doctests: bool) -> dict:
                         ("measurement", "measurement::ExperimentalProfile", False): 1,
                         ("measurement", "measurement::ExperimentalProfile", True): 4,
                         ("measurement", "measurement::ExperimentalMeasurement", False): 1,
-                        ("measurement", "measurement::ExperimentalMeasurement", True): 4})
+                        ("measurement", "measurement::ExperimentalMeasurement", True): 4,
+                        ("measurement", "measurement::NominalPhaseNs", False): 1,
+                        ("measurement", "measurement::NominalPhaseNs", True): 4,
+                        ("measurement", "measurement::NominalRoundTripNs", False): 1,
+                        ("measurement", "measurement::NominalRoundTripNs", True): 4})
     if doctests and (signatures != expected or len(docs) != sum(expected.values())):
         raise Incomplete("Engine mutation baseline omits its actual construction/privacy doctests.")
     if not doctests and docs:
@@ -521,11 +532,11 @@ def execute(args, report: dict) -> None:
     if args.lane == "contracts":
         execute_contracts(args, report)
         return
-    if args.lane not in {"enumerate", "coverage", "mutation"}:
+    if args.lane not in {"enumerate", "coverage", "mutation", "all"}:
         raise Incomplete("Unknown engine analysis lane.")
     policy = read_policy(ROOT)
     subjects = SCOPE.select(args.subject)
-    if args.lane == "mutation":
+    if args.lane in {"mutation", "all"}:
         bindings = inventory_bindings(policy, required=True)
         if sum(bindings[name]["count"] for name in subjects) > policy["maximum_mutants"]:
             raise Incomplete("Selected complete mutation inventory exceeds the shared campaign cap.")
@@ -556,7 +567,11 @@ def execute(args, report: dict) -> None:
         if args.lane == "enumerate":
             enumerate_only(session, subjects, policy, report)
         else:
-            COMMON.run_analysis_lanes(SCOPE, subjects, policy, session.work, session.tools, run, report, args.lane)
+            # Share the exact source/tool snapshot and final custody boundary.
+            # A failed coverage gate never starts a mutation campaign.
+            lanes = ("coverage", "mutation") if args.lane == "all" else (args.lane,)
+            for lane in lanes:
+                COMMON.run_analysis_lanes(SCOPE, subjects, policy, session.work, session.tools, run, report, lane)
     finally:
         session.finish()
     if args.lane != "enumerate":
@@ -566,7 +581,7 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation"), required=True)
+    parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation", "all"), required=True)
     parser.add_argument("--subject", choices=(*SUBJECTS, "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)

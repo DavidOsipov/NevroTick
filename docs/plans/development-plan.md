@@ -904,8 +904,17 @@ and authorizes no history insertion. Continue the existing contract below.
 [observation-to-Core admission contract](../../tasks/engine-transport-pilot.md#next-source-checkpoint-observation-to-core-admission).
 Keep genuine date/scale provenance, reference instant, exact Q33 conversion
 residuals, signed raw RTT versus adjusted delay/root/capture uncertainty, justified
-divisor and the actual checked receiver explicit. Source/contract preparation is
-ready; production history insertion remains held until that contract and its
+divisor and the actual checked receiver explicit. The
+[current refinement](../../tasks/engine-transport-pilot.md#admission-contract-refinement--6-november-2026)
+fixes midpoint/residual and source-quality population semantics. Its
+[exact nominal representation child](../../tasks/engine-transport-pilot.md#exact-nominal-representation-activation)
+now passes53 ordinary/53 optimized tests,22 doctests, both-target graph/type
+checks, current per-file coverage and the complete338-variant mutation gate.
+Its [terminal record](../../tasks/engine-transport-pilot.md#exact-nominal-terminal-qualification--6-november-2026)
+retains raw outcomes and two exact equality exclusions without kill credit.
+Next freeze production normalization/conditioning and the checked receiver under
+that same contract; retain exact phase anchors and half-nanosecond references.
+Production history insertion remains held until the complete contract and its
 prerequisites are settled. Preserve the 90% executable-line and 95% per-file
 viable-mutation gates, existing budgets, nonempty denominators and independent
 alternatives for ungenerated behavior. Historical scores cannot be transferred.

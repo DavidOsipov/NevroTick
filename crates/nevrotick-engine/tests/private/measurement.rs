@@ -3,13 +3,16 @@
 
 use std::time::{Duration, Instant, UNIX_EPOCH};
 
+use garde::Validate;
 use ntp_wire::{RawHeader, decode_fixed_header};
-use time_domain::UtcCoordinateQ32;
+use time_domain::{
+    MAX_COORDINATE_TICKS, MIN_COORDINATE_TICKS, UtcCoordinateQ32, exchange_arithmetic,
+};
 
 use super::{
     ExperimentalProfile, MAX_DECLARED_RESIDUAL_NS, MeasurementRefusal, NANOS_PER_SECOND,
-    NTP_UNIX_OFFSET_SECONDS, Q32_SCALE, SoftwareClock, coherence_residual, convert_wall, measure,
-    require_in_scope,
+    NOMINAL_NUMERATOR_LIMIT, NTP_UNIX_OFFSET_SECONDS, NominalResultCandidate, Q32_SCALE,
+    SoftwareClock, coherence_residual, convert_wall, measure, nominal_arithmetic, require_in_scope,
 };
 
 /// Nonzero NTP-era-zero base, independent of the host's current UTC reading.
@@ -238,6 +241,276 @@ fn negative_raw_rtt_and_half_q32_phase_are_preserved() -> Result<(), Measurement
     )?;
     assert_eq!(half.arithmetic().offset().numerator(), 1);
     assert_eq!(half.arithmetic().round_trip().numerator(), -1);
+    Ok(())
+}
+
+/// Actual measurements distinguish a zero-remainder control from a 100 ns source.
+/// Both peer timestamps are the local Q32 floor, so only retained decimal
+/// remainders account for the nonzero exact nominal phase.
+///
+/// # Errors
+/// Propagates fixture construction or unexpected healthy measurement refusal.
+///
+/// # Panics
+/// Panics if units change or the real producer drops its local conversion terms.
+#[test]
+fn decimal_remainders_change_the_exact_nominal_phase() -> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 0)?);
+    let whole = capture(start, 0, BASE, 0)?;
+    let healthy = measure(
+        profile,
+        whole,
+        whole,
+        whole,
+        start,
+        header(BASE_BITS, BASE_BITS, 1)?,
+    )?;
+    assert_eq!(healthy.nominal_phase().numerator(), 0);
+    assert_eq!(healthy.nominal_round_trip().numerator(), 0);
+    assert_eq!(healthy.nominal_phase().denominator(), 8_589_934_592);
+    assert_eq!(healthy.nominal_round_trip().denominator(), 4_294_967_296);
+
+    let fractional = capture(start, 0, BASE, 100)?;
+    let result = measure(
+        profile,
+        fractional,
+        fractional,
+        fractional,
+        start,
+        header(BASE_BITS + 429, BASE_BITS + 429, 2)?,
+    )?;
+    assert_eq!(result.arithmetic().offset().numerator(), 0);
+    assert_eq!(result.local_fractional_remainders(), [496_729_600; 2]);
+    assert_eq!(
+        result.nominal_phase().numerator(),
+        -993_459_200,
+        "exact nominal phase dropped local conversion remainders"
+    );
+    assert_eq!(result.nominal_phase().denominator(), 8_589_934_592);
+    assert_eq!(result.nominal_round_trip().numerator(), 0);
+    assert_eq!(result.nominal_round_trip().denominator(), 4_294_967_296);
+    Ok(())
+}
+
+/// Literal direct-timestamp facts retain asymmetric remainder and raw-RTT signs.
+/// Monotonic progress is zero; the declared 200 ns tolerance admits either
+/// direction of these synthetic wall readings without physical accuracy claims.
+///
+/// # Errors
+/// Propagates checked fixture/profile construction or unexpected refusal.
+///
+/// # Panics
+/// Panics if an exact relative value loses sign, scale or decimal precision.
+#[test]
+fn asymmetric_decimal_captures_keep_exact_signed_nominal_values() -> Result<(), MeasurementRefusal>
+{
+    let start = Instant::now();
+    let profile = Some(ExperimentalProfile::new(BASE, BASE + 1, 200)?);
+    // T1/T4 are integer nanoseconds above BASE; T2/T3 are exact Q32 fractions.
+    // Expected values were independently reduced from those original units.
+    for (t1_ns, t4_ns, t2_fraction, t3_fraction, phase, round_trip) in [
+        (0, 100, 429, 429, 428_503_270_400, 429_496_729_600),
+        (100, 200, 429, 429, -430_490_188_800, 429_496_729_600),
+        (200, 100, 858, 858, 427_509_811_200, -429_496_729_600),
+        (100, 200, 429, 858, -1_490_188_800, 496_729_600),
+        (200, 100, 429, 858, -1_490_188_800, -858_496_729_600),
+    ] {
+        let before = capture(start, 0, BASE, t1_ns)?;
+        let read = capture(start, 0, BASE, t4_ns)?;
+        let result = measure(
+            profile,
+            before,
+            before,
+            read,
+            start,
+            header(BASE_BITS + t2_fraction, BASE_BITS + t3_fraction, 3)?,
+        )?;
+        assert_eq!(result.nominal_phase().numerator(), phase);
+        assert_eq!(result.nominal_phase().denominator(), 8_589_934_592);
+        assert_eq!(result.nominal_round_trip().numerator(), round_trip);
+        assert_eq!(result.nominal_round_trip().denominator(), 4_294_967_296);
+    }
+    Ok(())
+}
+
+/// Measurements immediately before/after Unix retain different floor residuals.
+/// The returned phase compares the floor-Q32 peer with the exact local wall time.
+///
+/// # Errors
+/// Propagates checked epoch-neighbor capture/profile construction or refusal.
+///
+/// # Panics
+/// Panics if epoch association or a remainder's signed contribution changes.
+#[test]
+fn pre_unix_nominal_remainders_keep_epoch_and_sign_association() -> Result<(), MeasurementRefusal> {
+    let start = Instant::now();
+    let epoch_bits = 2_208_988_800_u64 << 32;
+    let profile = Some(ExperimentalProfile::new(2_208_988_799, 2_208_988_801, 0)?);
+    for (seconds, nanos, peer_bits, remainder, phase) in [
+        (
+            2_208_988_799,
+            999_999_900,
+            epoch_bits - 430,
+            503_270_400,
+            -1_006_540_800,
+        ),
+        (
+            2_208_988_800,
+            100,
+            epoch_bits + 429,
+            496_729_600,
+            -993_459_200,
+        ),
+    ] {
+        let clock = capture(start, 0, seconds, nanos)?;
+        let result = measure(
+            profile,
+            clock,
+            clock,
+            clock,
+            start,
+            header(peer_bits, peer_bits, 4)?,
+        )?;
+        assert_eq!(result.arithmetic().offset().numerator(), 0);
+        assert_eq!(result.local_fractional_remainders(), [remainder; 2]);
+        assert_eq!(result.nominal_phase().numerator(), phase);
+        assert_eq!(result.nominal_phase().denominator(), 8_589_934_592);
+        assert_eq!(result.nominal_round_trip().numerator(), 0);
+        assert_eq!(result.nominal_round_trip().denominator(), 4_294_967_296);
+    }
+    Ok(())
+}
+
+/// Raw-helper range checks run before publishing either typed result.
+/// These abstract remainder boundary cases are not claims of actual captures.
+///
+/// # Errors
+/// Propagates legitimate zero-coordinate arithmetic or a valid helper refusal.
+///
+/// # Panics
+/// Panics if an invalid pair is accepted or a valid neighbor is changed/rejected.
+#[test]
+fn nominal_arithmetic_rejects_each_remainder_boundary_without_partial_result()
+-> Result<(), MeasurementRefusal> {
+    let zero = UtcCoordinateQ32::new(0).map_err(|_| MeasurementRefusal::Arithmetic)?;
+    let arithmetic =
+        exchange_arithmetic(zero, zero, zero, zero).map_err(|_| MeasurementRefusal::Arithmetic)?;
+    for (remainders, phase, round_trip) in [
+        ([0, 0], 0, 0),
+        ([999_999_999, 999_999_999], -1_999_999_998, 0),
+        ([999_999_999, 0], -999_999_999, -999_999_999),
+        ([0, 999_999_999], -999_999_999, 999_999_999),
+    ] {
+        let (actual_phase, actual_round_trip) = nominal_arithmetic(arithmetic, remainders)?;
+        assert_eq!(actual_phase.numerator(), phase);
+        assert_eq!(actual_phase.denominator(), 8_589_934_592);
+        assert_eq!(actual_round_trip.numerator(), round_trip);
+        assert_eq!(actual_round_trip.denominator(), 4_294_967_296);
+    }
+    for remainders in [
+        [1_000_000_000, 0],
+        [0, 1_000_000_000],
+        [u32::MAX, 0],
+        [0, u32::MAX],
+    ] {
+        assert_eq!(
+            nominal_arithmetic(arithmetic, remainders),
+            Err(MeasurementRefusal::Arithmetic)
+        );
+    }
+    assert_eq!(nominal_arithmetic(arithmetic, [0, 0])?.0.numerator(), 0);
+    Ok(())
+}
+
+/// The actual output validator owns both strict signed-numerator bounds.
+/// Raw candidate tests establish that guard, not an impossible public capture.
+///
+/// # Panics
+/// Panics if either field escapes its own guard or valid boundary neighbors fail.
+#[test]
+fn nominal_result_garde_enforces_both_strict_numerator_bounds() {
+    for valid in [0, -NOMINAL_NUMERATOR_LIMIT + 1, NOMINAL_NUMERATOR_LIMIT - 1] {
+        assert!(
+            NominalResultCandidate {
+                phase: valid,
+                round_trip: valid,
+            }
+            .validate()
+            .is_ok()
+        );
+    }
+    for invalid in [
+        i128::MIN,
+        -NOMINAL_NUMERATOR_LIMIT,
+        NOMINAL_NUMERATOR_LIMIT,
+        i128::MAX,
+    ] {
+        for candidate in [
+            NominalResultCandidate {
+                phase: invalid,
+                round_trip: 0,
+            },
+            NominalResultCandidate {
+                phase: 0,
+                round_trip: invalid,
+            },
+        ] {
+            assert!(candidate.validate().is_err());
+        }
+    }
+}
+
+/// The checked component preserves the complete coordinate arithmetic envelope.
+/// These are raw numerical-helper controls, not supported-date or wire admission.
+///
+/// # Errors
+/// Propagates valid coordinate/arithmetic construction or helper rejection.
+///
+/// # Panics
+/// Panics if an intermediate i64 projection, sign swap or extra scaling loses data.
+#[test]
+fn nominal_arithmetic_retains_full_coordinate_domain_without_i64_projection()
+-> Result<(), MeasurementRefusal> {
+    let low =
+        UtcCoordinateQ32::new(MIN_COORDINATE_TICKS).map_err(|_| MeasurementRefusal::Arithmetic)?;
+    let high =
+        UtcCoordinateQ32::new(MAX_COORDINATE_TICKS).map_err(|_| MeasurementRefusal::Arithmetic)?;
+    for (coordinates, remainders, phase, round_trip) in [
+        (
+            [low, high, high, low],
+            [0, 0],
+            158_456_325_028_528_675_187_087_900_670_000_000_000,
+            0,
+        ),
+        (
+            [high, low, low, high],
+            [999_999_999, 999_999_999],
+            -158_456_325_028_528_675_187_087_900_671_999_999_998,
+            0,
+        ),
+        (
+            [low, high, low, high],
+            [0, 999_999_999],
+            -999_999_999,
+            158_456_325_028_528_675_187_087_900_670_999_999_999,
+        ),
+        (
+            [high, low, high, low],
+            [999_999_999, 0],
+            -999_999_999,
+            -158_456_325_028_528_675_187_087_900_670_999_999_999,
+        ),
+    ] {
+        let [t1, t2, t3, t4] = coordinates;
+        let arithmetic =
+            exchange_arithmetic(t1, t2, t3, t4).map_err(|_| MeasurementRefusal::Arithmetic)?;
+        let (actual_phase, actual_round_trip) = nominal_arithmetic(arithmetic, remainders)?;
+        assert_eq!(actual_phase.numerator(), phase);
+        assert_eq!(actual_phase.denominator(), 8_589_934_592);
+        assert_eq!(actual_round_trip.numerator(), round_trip);
+        assert_eq!(actual_round_trip.denominator(), 4_294_967_296);
+    }
     Ok(())
 }
 
@@ -705,19 +978,26 @@ fn profile_bounds_and_maximum_allowance_are_checked() -> Result<(), MeasurementR
 #[test]
 fn fresh_owner_age_stamp_preserves_the_actual_arithmetic() -> Result<(), MeasurementRefusal> {
     let start = Instant::now();
-    let clock = capture(start, 0, BASE, 0)?;
+    let clock = capture(start, 0, BASE, 100)?;
     let staged = measure(
         Some(ExperimentalProfile::new(BASE, BASE, 0)?),
         clock,
         clock,
         clock,
         start,
-        header(BASE_BITS, BASE_BITS, 1)?,
+        header(BASE_BITS + 429, BASE_BITS + 429, 1)?,
     )?;
     let committed = staged.with_acquisition_age(Duration::from_micros(25));
     assert_eq!(committed.acquisition_age(), Duration::from_micros(25));
     assert_eq!(committed.coordinates(), staged.coordinates());
     assert_eq!(committed.arithmetic(), staged.arithmetic());
+    assert_eq!(staged.nominal_phase().numerator(), -993_459_200);
+    assert_eq!(committed.nominal_phase(), staged.nominal_phase());
+    assert_eq!(committed.nominal_round_trip(), staged.nominal_round_trip());
+    assert_eq!(
+        committed.local_fractional_remainders(),
+        staged.local_fractional_remainders()
+    );
     assert_eq!(committed.software_window(), staged.software_window());
     Ok(())
 }

@@ -7,12 +7,30 @@ This record supplies no machine-checked product proof and resumes no formal work
 remains in force. Neither case receives kill credit. Retain actual native
 survivors, raw denominators and separately adjusted results in campaign receipts.
 
-Reviewed product identity: 168 inputs, canonical SHA256
+Historical reviewed product identity: 168 inputs, canonical SHA256
 `2d7e5cf796fc9f32dbfea780de1c6206dd7060e94fc03001185e384491d147e8`.
-The source is [measurement.rs](../crates/nevrotick-engine/src/measurement.rs),
+The historical source is [measurement.rs](../crates/nevrotick-engine/src/measurement.rs),
 SHA256 `967610067ee0713002c7bec44dd54e2a03416787beb48d57db9b09e5c715a681`.
 The engine policy binds each complete actual descriptor, candidate, source and
 this record's bytes; changed inputs require renewed review.
+
+## Exact nominal candidate revalidation
+
+The exact nominal representation child has370 product inputs, canonical SHA256
+`b0c6e05fce67260e1b03ef392ba11b78a44f0508fb26aa27a3f17bb3541e9732`.
+Current measurement source SHA256 is
+`ad78facc81705a16adb47a752eea14cb28e6ba14c1281dc20ce72941020710b8`.
+The complete `coherence_residual` body and its adjacent contract are byte-identical
+to the historical source. New nominal construction runs after its unchanged
+calls; the helper's full raw-input/error/effect domain has not narrowed.
+
+Fresh enumeration locates the exact lower equality case at555:29 and upper case
+at559:26, function span522:1–567:2. The engine policy binds the full typed
+current descriptors, not these line summaries. The separate comparisons rejecting
+reversed individual brackets are not equivalent; their equality changes remain
+ordinary variants requiring actual killing. This revalidation applies only to the
+two wall-delta equality cases below and grants no kill credit. New native outcomes
+and the complete338-variant campaign remain independently required.
 
 ## Boundary and independent controls
 

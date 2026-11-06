@@ -1183,7 +1183,17 @@ workspace and optimized checks. Follow the exact candidate and scope in those
 receipts; neither tool admission nor these pure
 fixtures establish production, native Windows or release qualification.
 
-**Engine analysis entry point, 1 November 2026:**
+**Current engine analysis — 6 November 2026:** the existing wrapper selects
+`library`, `cli`, `measurement` or `all`. Use `--lane enumerate`, bind the complete
+reviewed inventories, then `--lane all` for sequential coverage and mutation on
+one full-profile source/tool snapshot. Explicit vendor and fresh external Linux
+output remain required; failed coverage or final custody prevents qualification.
+The [exact nominal task](tasks/engine-transport-pilot.md#exact-nominal-representation-activation)
+owns current source, graph, contract/doctest and per-file results. Historical
+policies/receipts and the inert168-input constructor role retain their original
+scopes. No threshold, worker/process budget or native gate changes.
+
+**Historical engine analysis admission, 1 November 2026:**
 [verify-engine-analysis.py](scripts/verify-engine-analysis.py) and
 [engine-analysis.json](policy/engine-analysis.json) select the engine library and
 CLI critical files through the existing **full** tool-admission profile. Use

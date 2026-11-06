@@ -3073,3 +3073,296 @@ Next settle those named producer/reference/model and receiving-transition seams
 in this card. No engine dependency, production `ValidatedSample`, fixture-history
 change, new source authority or Windows execution follows from this handoff.
 Full-domain proof debt remains post-V1 with S1.2/FP-D02/CHECK-7/25.
+
+#### Admission contract refinement — 6 November 2026
+
+Three fresh-context read-only workers completed separate temporal, quality and
+receiver questions on clean`2685981`; no Rust/native/formal commands ran. Their
+conclusions below bind source meaning, not physical calibration or a live
+production history. Pinned`ntp_core.c` SHA256
+`ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0`
+and`util.c` SHA256
+`c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd`
+match the existing S0.1 ledger; S1.2's retained sourcestats/regress hashes also
+match. Source anchors below refer to that exact revision.
+
+**Reference and exact representation.** Select the local-exchange midpoint,
+following`ntp_core.c:2161–2188`. The genuine receiving owner retains one actual
+monotonic`Instant` origin and its clock/mapping identity across observations.
+Convert capture endpoints through checked same-origin durations and checked
+`u64` nanoseconds; never create an independent origin for each row. Use the
+existing lower monotonic capture endpoints`a=send_before.monotonic−origin` and
+`b=read_return.monotonic−origin` as deterministic nominal placements, with`a≤b`.
+Compute`whole=a+(b−a)/2` and`half=(b−a)%2`, retaining the half-nanosecond bit in
+ordering, differences and reports. This avoids overflow even at`a=b=u64::MAX`.
+Bracket widths remain distinct: actual wall-read midpoint placement may lie up
+to`(send_width+read_width)/2` later. These are not packet-placement error bounds.
+Using both bracket centers instead would require quarter-nanosecond precision.
+Receive-completion acquisition age remains separate and is never renewed by a fit.
+
+Let`B=10^9`, original phase numerator`n` over`2^33` seconds, signed raw RTT
+numerator`d` over`2^32` seconds and local remainders`r1,r4` in`[0,B)`:
+
+```text
+A_phase = B*n − r1 − r4     exact nominal phase = A_phase / 2^33 nanoseconds
+A_rtt   = B*d + r4 − r1     exact signed raw RTT = A_rtt / 2^32 nanoseconds
+```
+
+Preserve these distinct fixed-scale exact values beside the original arithmetic
+and remainder association. They are known representation effects, not accuracy
+bounds or regression residuals. Current coordinate bounds give`|n|,|d|≤2^97−2`,
+so both corrected numerators lie strictly inside`±(2^97*B)` and signed`i128`.
+Keep checked operations. Do not multiply a corrected numerator by`B` again.
+Any later integer-nanosecond projection divides this combined numerator directly,
+uses nearest/ties-even and retains its signed residual; an out-of-`i64` result
+rejects only that projection, not the original exact value. The current bare-Q33
+rounding API cannot perform this corrected operation.
+
+**Source-derived quality terms.** Freeze the basic-client calculation below in
+seconds, from`ntp_core.c:2161–2199`, `util.c:651–654,908–920` and
+`sourcestats.c:528–550,627–642`. Define`L` and`R` from corrected nominal local and
+peer intervals; preserve signed`raw_rtt=L−R`. Local quantum`c` is finite/positive;
+capture errors are finite/nonnegative; the prior same-source frequency interval
+is finite/ordered and bound to the applicable generations.
+
+```text
+p = 2^clamp(raw_header_precision, −31, 31)
+P = c + p
+D = max(abs(raw_rtt), P)
+K = (prior_frequency_hi − prior_frequency_lo) / 2
+E = max(P, tx_capture_error, rx_capture_error) + K*abs(L)
+RD = advertised_root_delay + D
+RE = advertised_root_dispersion + E
+peer_distance = D/2 + E
+root_distance = RD/2 + RE
+```
+
+Check each evaluated operation for supported finite output. Both advertised root
+fields are unsigned16.16 in the selected Chrony conversion and
+[RFC5905 §6](https://www.rfc-editor.org/rfc/rfc5905.html#section-6); do not insert
+a signed reinterpretation. Only`peer_distance` enters within-source weighting;
+changing only root claims must not change those divisors. Keep the observation's
+historical quantum distinct from the current quantum frozen for a weighting call.
+`K` is an uncertainty half-width around an estimated relative frequency, not a
+bound on absolute relative rate. Unavailable prior evidence cannot silently become
+zero skew. Neither this formula nor upstream's startup assumption calibrates
+Windows capture accuracy or bounds path asymmetry.
+
+Adopt no source constant as a new product threshold. The policy owner must supply
+validated maximum advertised distance, delay and server-processing interval;
+source predicates include strict advertised-distance comparison and inclusive
+`P≤maximum_delay`, `D−E≤maximum_delay`. Delay aging/relearning remains its named
+owner. Genuine scale/date/calendar, clock continuity, capture/mapping/frequency/
+asymmetry assumptions and their evidence are required before production admission.
+A finite numeric quality result is not that admission.
+
+**Frozen quality population during suffix selection.** The pinned source resolves
+this seam: derive divisors once over current fitted-population indices`0..n`,
+excluding older runs-only indices`−m..0`. Candidate suffix fits and final statistics
+reuse that exact vector. Runs decisions may inspect older unweighted residuals;
+no candidate recomputes a median. Only after complete success does pruning change
+counts; the report retains the pre-prune derivation-window association. A later
+independent evaluation derives fresh weights from its then-current population.
+Capacity pruning before a new arrival is a different transition. Sources:
+`sourcestats.c:270–309,521–597` and`regress.c:249–312`. Do not invent a refit-until-
+stable loop. Existing bounded suffix/runs machinery supplies adaptation evidence;
+its fixture scalar/normalization contract still needs a real production kernel.
+
+The live source owner must retain history privately, consume a correlated
+completion once and stage exact rows/context, one weight vector, bounded suffix
+selection and same-input statistics before one state commit. A numeric-ID tuple
+can establish equality, never genuine source/clock provenance. Core representation
+construction must not mint authenticated/physically validated evidence. Rejection
+preserves all prior statistical state and cannot renew freshness; an expiry failure
+must still expose true age/unusable status. The current fixture types cannot supply
+corrected phase, half-nanosecond references, divisors above16 or subnormal weights.
+Production conditioning/expiry policy and that kernel remain explicit prerequisites.
+
+Independent accepted/rejected controls now include: the existing oscillator slope
+case; exact midpoint10.5ns and`u64::MAX` neighbor; bare-zero phase with100ns local
+remainders giving`−970175/8388608 ns`; negative raw RTT and its positive neighbor
+with equal adjusted delay; exponent pairs`−128/−31` and`31/127`; root claims changing
+without changing peer weights; one fixed derivation vector across suffix candidates;
+missing/stale physical/context evidence; and actual atomic refusal at every stage.
+These specification facts are not executed production-receiver tests.
+
+#### Exact nominal representation activation
+
+The next implementation child closes the known representation seam at the actual
+existing producer without waiting for physical-profile selection. Owner:
+`nevrotick-engine`; REQ-8/BND-1, CHECK-7/8/25 and the current S2.1 ineligible-output
+contract. No native operation, acquisition mode or clock effect changes.
+
+Independent plan review found one prerequisite: the engine does not directly
+name Garde. Explicitly add its already adopted exact`garde=0.23.0`, defaults off,
+`derive`-only normal edge. Root owns the engine Cargo manifest, lockfile and exact
+existing dependency-policy/admission guards and their regression fixtures. This
+is an intended local dependency-edge change, not an assertion that all graph bytes
+stay identical. Resolve in the existing admitted offline sandbox on a private
+candidate; inspect the complete lock delta and both-target metadata/feature rows.
+Require unchanged registry packages/checksums/versions/features, patches, grants
+and build-script inventory apart from that single direct edge. Unexpected changes
+stop admission. Preserve exact graph rejection controls; never permit arbitrary
+engine dependencies. Reuse the complete current534-source vendor only after
+its bytes/roles are admitted against the final policy. Complete configured graph/
+licence/advisory checks with a fresh snapshot before product compilation. No new
+registry acquisition, package version, feature, tool or global configuration is
+selected. If actual resolution disproves the unchanged-closure premise, replan
+that cohort before executing package code.
+
+Writable production scope:`measurement.rs` and the library's public reexports,
+plus that engine manifest and lockfile edge. Writable verification scope is the
+existing dependency policy, exact product-admission guards/tests and engine
+analysis wrapper/policy/tests; no new runner or broadened graph exception.
+Add private-state`NominalPhaseNs` and`NominalRoundTripNs` types with exact`i128`
+numerators and fixed read-only denominators`2^33` and`2^32`. No raw public
+constructor, mutation, Default, From or serialization. Mandatory garde-backed
+construction validates the raw remainder pair and transformed numerator envelope;
+checked integer arithmetic preserves the source formulas above. Successful work
+is constant, allocation-free and effect-free; rejected garde reports may have
+bounded temporary allocation. Errors use existing redacted`MeasurementRefusal`.
+
+`measure` constructs both values before returning its complete result.
+`ExperimentalMeasurement::nominal_phase()` and`nominal_round_trip()` expose those
+immutable typed results; `with_acquisition_age` preserves them without recomputation
+or new validation. Keep original coordinates/Q33/Q32/remainders for reconstruction.
+The CLI's existing20-field record and all its field meanings remain unchanged;
+this is an additive Rust API with no stored/wire migration or independently deployed
+reader. Tests consuming real UDP facts must inspect the new typed results against
+actual retained source timestamps, independently of emitted Q33 fields.
+
+Tests own the existing private measurement/processing files. Start with a compiling
+stub omitting corrections: zero-remainder healthy control passes; an actual100ns
+measurement must then fail the independent exact numerator assertion. This is feature
+TDD, not a pre-existing defect claim. Add signed/nonzero/asymmetric remainder and
+boundary controls, age-copy preservation, garde rejection neighbors and external
+legal/privacy/mutation/default/conversion doctests for both output types. Keep exact
+values without introducing an`i64` projection or second rounding implementation.
+
+Observable exit: actual measurement→retained typed result→real-UDP consumer checks,
+format/compiler/Clippy, ordinary/optimized/doctests, ≥90% line coverage and complete
+≥95% viable mutation for each changed critical file with no unresolved survivors.
+Use the existing engine wrapper/policy, current complete vendor, full admission and
+10 mutation workers; preserve old receipts/equivalence counts on their candidates.
+One development RED, one focused GREEN, then format/freeze before enumeration and
+qualification. Budgets remain300s coverage,240s enumeration and1200s per mutation
+campaign,90s build/60s test. A materially new failure requires causal triage before
+retry. No runner/profile/tool expansion or pre-V1 formal work is part of this child.
+Mathematical/composition proof debt stays post-V1 under FP-D01/CHECK-7/25.
+
+The full production receiver remains held on its stated physical/provenance,
+policy and numerical prerequisites; completing this representation child cannot
+close that gate, S2.1 or P1.
+
+#### Exact nominal development evidence — 6 November 2026
+
+Independent fresh-context plan review initially returned REVISE: the proposed
+engine-owned Garde construction lacked a direct engine dependency. The amendment
+explicitly admits the existing0.23.0 derive/defaults-off edge, manifest/lock and
+exact guard scope. Changed-part review returned READY before implementation;
+physical/history integration stays held. The frozen activation body SHA256 is
+`3613ebcc8f0f9fc1e476c4ae5c4db98f658e141988405ceef65afdc2af5d6a8e`.
+The ordinary source review later found no concrete defect or bypass and independently
+recomputed signed/asymmetric/full-coordinate expectations and the actual UDP oracle.
+
+The complete offline resolution changes only`nevrotick-engine → garde`. Baseline
+and changed metadata on both targets retain every registry package/version/checksum
+and every resolved feature. The generated lock delta is a single`garde` edge.
+Exact manifest/lock/policy pins and the code-owned canonical policy digest were
+updated; no graph restriction was relaxed. The147 product/profile controls pass,
+including rejection of missing/renamed/version/default/feature variants. A first
+119-control run exposed a stale negative fixture that no longer changed the lock;
+it now asserts that the intended fault actually changes bytes. This was harness
+repair, not a product failure. The initial code-pin update also stopped at a literal
+match assertion before its annotated constant was corrected; no product code ran.
+
+Under existing S12e BASE:
+
+| Receipt | Current evidence |
+| --- | --- |
+| `nominal-garde-edge-resolution-v1/verification.json` | Offline two-target resolution; one existing direct edge, unchanged external closure/features, unchanged input/tool/vendor bookends. |
+| `nominal-garde-dependency-check-v1.json`, SHA256 `96b8b54a912d84f7cb0c1f01d00f7b3c537de02692c18bc4530f54e446b86d07` |26 configured lanes pass, including complete per-package feature/role projections and fresh licence/advisory checks on both targets before product compilation. Subsequent formula/format edits change no graph input. |
+| `nominal-representation-feature-red-v1/verification.json`, SHA256 `0c618225b0137529ea00809a7aa96bf6f6e567de4df9b15fdc995b5690acd7fc` | Compiling omission stub reaches the intended100ns exact-phase assertion after zero-remainder health. This is new-feature RED, not an earlier product defect. |
+| `nominal-representation-focused-green-v1/verification.json`, SHA256 `09f7b113149a0c088cd9c5bf6fe077e0532cfc4923a7e9ea35eb85a4ea67fe7c` | Format/compiler/Clippy,53 ordinary/53 optimized cases,22 legal/privacy doctests, rustdoc and tested CLI export pass; all bookends unchanged. |
+| `nominal-engine-windows-typechecks-v1/verification.json`, SHA256 `9575561c8f1be5ec7db92ddd5fe8cda39bec09a7873285c56c1be6f3c4c8e635` | Engine all-target Windows-target compiler/Clippy pass on Linux; no SDK linking, native execution or lifecycle qualification. |
+| `nominal-engine-enumeration-v2/verification.json`, SHA256 `284ad5d47e11e04204ba5989479c748ff7a27ffd054c872da8f2d8724033f701` |338 variants:203 library,42 CLI,93 measurement. Listing is not execution or a score. |
+
+The first enumeration stopped before owned output/product execution with
+Windows-mounted tool-cache`Errno12` during directory traversal. Its dedicated
+`nominal-engine-enumeration-admission-failure-v1.json` retains that failure.
+Resource inspection found no cgroup OOM event; the specific directory was readable
+again before one bounded successful retry. No shared process, tool store, admission
+profile or Windows setting was changed.
+
+To avoid duplicate full tool admission for the same stable candidate, the existing
+engine wrapper now supports`--lane all`: reviewed inventory is required first,
+then coverage must pass before mutation begins, under one source/tool snapshot and
+one final custody boundary. Command/worker/score limits are unchanged. A combined
+control covers correct order, failed coverage, missing inventory and failed final
+custody. Its synthetic dispatch checks execute no native command. The44 engine
+analysis controls pass; literal baseline fixtures now require all53 cases and22
+doctests, including the two new output types.
+
+The current370-input product identity is
+`b0c6e05fce67260e1b03ef392ba11b78a44f0508fb26aa27a3f17bb3541e9732`.
+Two exact wall-delta equality dispositions were independently revalidated on the
+unchanged helper body and newly enumerated descriptors; reversed-bracket equality
+variants have no exemption. Full per-file coverage and mutation remain pending.
+No physical accuracy, production history, S2.1/P1, native or release pass follows.
+
+#### Exact nominal terminal qualification — 6 November 2026
+
+The selected representation child is complete on the370-input candidate
+`b0c6e05fce67260e1b03ef392ba11b78a44f0508fb26aa27a3f17bb3541e9732`.
+The complete1727-entry staged tree was materialized with all blob bytes/modes
+checked; its own configured wrapper executed the gates. Terminal receipt under
+S12e BASE:`nominal-engine-coverage-mutation-v1/verification.json`, SHA256
+`a27449de77997b7b5ca4b33412ec2c517abbbe8ed60d4c0fb113b3216bef8958`.
+The final source/vendor/tool admission bookends are unchanged.
+
+| Critical file | Line coverage | Native mutation results |
+| --- | --- | --- |
+| Library |841/875=96.114% |203 generated;90 caught,113 unviable,0 survivors/timeouts;90/90 viable caught. |
+| CLI |127/127=100% |42 generated;28 caught,14 unviable,0 survivors/timeouts;28/28 viable caught. |
+| Measurement |335/338=99.112% |93 generated;68 caught,23 unviable,2 exact equivalent survivors,0 timeouts. Raw68/70=97.143%; adjusted68/68=100%; native exit2 retained. |
+
+All338 actual variants are reconciled, with no unresolved survivor. Each native
+baseline executes53 ordinary tests and22 doctests. The separate reversed-bracket
+`>→>=` variants at536:18 and536:50 are actually caught; they receive no equality
+exemption. All150 unviable build logs were scanned for allocation/resource/space,
+signal, compiler-panic and infrastructure-failure markers; none were found.
+They remain compile-unviable, not killed. No branch-coverage percentage is inferred.
+
+Generator gaps remain explicit: methods named`new` for existing Config/control/
+profile constructors, derive-generated Garde bodies, iterator closures, match arms
+and operations inside checked/std callees have no complete mutant representation.
+Existing legal/private constructor controls, raw remainder-position and strict
+output-bound rejection neighbors, signed/asymmetric/full-domain literal cases,
+nonzero age-copy preservation and actual captured-UDP reconstruction supply the
+selected independent alternatives. The new `nominal_arithmetic` and output getters
+are present in the actual inventory. A generated score does not establish physical
+capture accuracy, native lifecycle or complete source estimation.
+
+The materialized candidate passes210 affected Python controls under`-X dev
+-Werror` (147 product/profile,44 engine-analysis,19 window-role), zero failures/
+errors/skips. Pinned Gitleaks controls and full retained-history/working-tree scans
+pass without baseline or new suppression. Afterward, task/status-only updates
+preserve every product, graph, qualification helper and exact equivalence input.
+The engine policy retains its pre-execution scope prose/bytes; this terminal
+receipt records the now-completed gates. Historical source/campaign policies
+retain their exact candidates rather than receiving transferred scores.
+
+Observable result: actual measurement construction retains corrected exact nominal
+phase and signed raw RTT; real-UDP consumers verify them against original captures.
+The existing20-field diagnostic representation is unchanged. Both-target graph
+and Windows-target type checks retain their narrower scope; no Windows command
+or native observation was executed. FP-D01 remains post-V1.
+
+Next use the fixed temporal/quality/window rules above to freeze production
+normalization, numerical conditioning and the actual checked receiver in the
+existing S1.2 chain. Preserve large exact phase anchors, half-nanosecond reference
+labels, all legal derived divisors/subnormal weights and explicit fit failure.
+Shared representation interfaces retain the engine-to-domain/Core dependency
+direction. Fixture limits cannot become production limits by relabelling. Genuine
+date/scale/calendar and physical error/provider/policy evidence still gate live
+history admission. Neither S2.1, P1 nor the full product is complete.

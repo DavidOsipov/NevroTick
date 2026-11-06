@@ -9,6 +9,7 @@ repository.workspace = true
 description = "Bounded NevroTick observe-only engine transport experiment"
 
 [dependencies]
+garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
 getrandom = { version = "=0.4.3", default-features = false }
 ntp-wire = { version = "=0.0.0", path = "../ntp-wire" }
 time-domain = { version = "=0.0.0", path = "../time-domain" }

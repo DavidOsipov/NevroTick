@@ -12,6 +12,7 @@
 
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use garde::Validate;
 use ntp_wire::RawHeader;
 use time_domain::{
     DomainError, EraWindow, ExchangeArithmetic, UtcCoordinateQ32, exchange_arithmetic, unfold_ntp,
@@ -248,6 +249,10 @@ pub struct ExperimentalMeasurement {
     arithmetic: ExchangeArithmetic,
     /// Remainders for T1/T4: exact local coordinate is floor + remainder/10^9.
     local_fractional_remainders: [u32; 2],
+    /// Exact nominal phase after composing the original local remainders.
+    nominal_phase: NominalPhaseNs,
+    /// Exact signed nominal raw RTT after composing the local remainders.
+    nominal_round_trip: NominalRoundTripNs,
     /// Maximum minimum gap between observed wall progress and capture intervals.
     observed_residual_ns: u64,
     /// Explicit model allowance against which the observed gap was checked.
@@ -279,6 +284,24 @@ impl ExperimentalMeasurement {
     #[must_use]
     pub const fn local_fractional_remainders(self) -> [u32; 2] {
         self.local_fractional_remainders
+    }
+
+    /// Return exact nominal phase in fractional nanoseconds, without rounding.
+    ///
+    /// Positive means the local clock is behind. This immutable representation
+    /// supplies no capture accuracy, source identity or sample eligibility.
+    #[must_use]
+    pub const fn nominal_phase(self) -> NominalPhaseNs {
+        self.nominal_phase
+    }
+
+    /// Return exact signed raw RTT in fractional nanoseconds, without adjustment.
+    ///
+    /// Negative values remain negative; this is not precision-adjusted delay,
+    /// root distance, physical uncertainty or a statistical weight.
+    #[must_use]
+    pub const fn nominal_round_trip(self) -> NominalRoundTripNs {
+        self.nominal_round_trip
     }
 
     /// Return the observed interval-gap residual; zero is no accuracy claim.
@@ -316,6 +339,8 @@ impl ExperimentalMeasurement {
             coordinates: self.coordinates,
             arithmetic: self.arithmetic,
             local_fractional_remainders: self.local_fractional_remainders,
+            nominal_phase: self.nominal_phase,
+            nominal_round_trip: self.nominal_round_trip,
             observed_residual_ns: self.observed_residual_ns,
             declared_limit_ns: self.declared_limit_ns,
             acquisition_age: age,
@@ -378,6 +403,8 @@ pub(crate) fn measure(
         unfold_ntp(transmit.seconds(), transmit.fraction(), &profile.dates).map_err(era_refusal)?;
     let arithmetic = exchange_arithmetic(t1.coordinate, t2, t3, t4.coordinate)
         .map_err(|_| MeasurementRefusal::Arithmetic)?;
+    let (nominal_phase, nominal_round_trip) =
+        nominal_arithmetic(arithmetic, [t1.remainder, t4.remainder])?;
     let earliest = t1
         .coordinate
         .min(after.coordinate)
@@ -399,6 +426,8 @@ pub(crate) fn measure(
         coordinates: [t1.coordinate, t2, t3, t4.coordinate],
         arithmetic,
         local_fractional_remainders: [t1.remainder, t4.remainder],
+        nominal_phase,
+        nominal_round_trip,
         observed_residual_ns,
         declared_limit_ns: profile.maximum_residual_ns,
         acquisition_age,
@@ -568,6 +597,237 @@ fn era_refusal(error: DomainError) -> MeasurementRefusal {
     }
 }
 
+/// Exact nominal phase in rational nanoseconds, positive when local time is behind.
+///
+/// The fixed denominator is 2^33. Private construction composes the original
+/// local decimal-conversion remainders without rounding. Equality compares only
+/// this numeric value; it establishes no shared capture, provenance or authority.
+/// No physical accuracy, accepted sample or clock-correction bound is implied.
+///
+/// A measurement consumer can name and read the immutable result:
+/// ```
+/// use nevrotick_engine::{ExperimentalMeasurement, NominalPhaseNs};
+/// let _project: fn(ExperimentalMeasurement) -> NominalPhaseNs =
+///     ExperimentalMeasurement::nominal_phase;
+/// let _read: fn(NominalPhaseNs) -> i128 = NominalPhaseNs::numerator;
+/// let _scale: fn(NominalPhaseNs) -> u64 = NominalPhaseNs::denominator;
+/// ```
+/// Raw fields cannot manufacture a result:
+/// ```compile_fail,E0451
+/// use nevrotick_engine::NominalPhaseNs;
+/// let _bypass = NominalPhaseNs { numerator: 0 };
+/// ```
+/// Published values cannot be mutated:
+/// ```compile_fail,E0616
+/// use nevrotick_engine::NominalPhaseNs;
+/// let _bypass: fn(NominalPhaseNs) -> NominalPhaseNs = |mut value| {
+///     value.numerator = 0;
+///     value
+/// };
+/// ```
+/// Missing results have no default replacement:
+/// ```compile_fail,E0599
+/// use nevrotick_engine::NominalPhaseNs;
+/// let _bypass = NominalPhaseNs::default();
+/// ```
+/// A raw integer cannot bypass construction:
+/// ```compile_fail,E0277
+/// use nevrotick_engine::NominalPhaseNs;
+/// let _bypass: NominalPhaseNs = 0_i128.into();
+/// ```
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct NominalPhaseNs {
+    /// Signed numerator strictly inside the checked representational envelope.
+    numerator: i128,
+}
+
+impl NominalPhaseNs {
+    /// Return the exact signed numerator in 1/2^33 nanoseconds, without effects.
+    #[must_use]
+    pub const fn numerator(self) -> i128 {
+        self.numerator
+    }
+
+    /// Return the fixed positive denominator of the rational nanosecond value.
+    #[must_use]
+    pub const fn denominator(self) -> u64 {
+        1_u64 << 33
+    }
+}
+
+/// Exact signed nominal raw RTT in rational nanoseconds.
+///
+/// The fixed denominator is 2^32. Negative values remain negative; this is not
+/// precision-adjusted delay, root distance, physical uncertainty or a weight.
+/// Equality compares only the numeric value, not observation identity. No
+/// rounding, time lookup, state change or authority is provided by these getters.
+///
+/// A measurement consumer can name and read the immutable result:
+/// ```
+/// use nevrotick_engine::{ExperimentalMeasurement, NominalRoundTripNs};
+/// let _project: fn(ExperimentalMeasurement) -> NominalRoundTripNs =
+///     ExperimentalMeasurement::nominal_round_trip;
+/// let _read: fn(NominalRoundTripNs) -> i128 = NominalRoundTripNs::numerator;
+/// let _scale: fn(NominalRoundTripNs) -> u64 = NominalRoundTripNs::denominator;
+/// ```
+/// Raw fields cannot manufacture a result:
+/// ```compile_fail,E0451
+/// use nevrotick_engine::NominalRoundTripNs;
+/// let _bypass = NominalRoundTripNs { numerator: 0 };
+/// ```
+/// Published values cannot be mutated:
+/// ```compile_fail,E0616
+/// use nevrotick_engine::NominalRoundTripNs;
+/// let _bypass: fn(NominalRoundTripNs) -> NominalRoundTripNs = |mut value| {
+///     value.numerator = 0;
+///     value
+/// };
+/// ```
+/// Missing results have no default replacement:
+/// ```compile_fail,E0599
+/// use nevrotick_engine::NominalRoundTripNs;
+/// let _bypass = NominalRoundTripNs::default();
+/// ```
+/// A raw integer cannot bypass construction:
+/// ```compile_fail,E0277
+/// use nevrotick_engine::NominalRoundTripNs;
+/// let _bypass: NominalRoundTripNs = 0_i128.into();
+/// ```
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct NominalRoundTripNs {
+    /// Signed numerator strictly inside the checked representational envelope.
+    numerator: i128,
+}
+
+impl NominalRoundTripNs {
+    /// Return the exact signed numerator in 1/2^32 nanoseconds, without effects.
+    #[must_use]
+    pub const fn numerator(self) -> i128 {
+        self.numerator
+    }
+
+    /// Return the fixed positive denominator of the rational nanosecond value.
+    #[must_use]
+    pub const fn denominator(self) -> u64 {
+        1_u64 << 32
+    }
+}
+
+/// Conservative representational limit, not a physical or correction threshold.
+///
+/// The original relative numerators have magnitude at most 2^97-2. Composing
+/// two remainders below 10^9 leaves both corrected values strictly inside this
+/// limit, which itself fits i128 because 10^9 is below 2^30.
+const NOMINAL_NUMERATOR_LIMIT: i128 = (1_i128 << 97) * NANOS_PER_SECOND;
+
+/// Raw fixed-size remainder pair admitted before nominal arithmetic.
+#[derive(Validate)]
+struct NominalRemaindersCandidate {
+    /// T1/T4 fractional Q32 remainders; each has denominator 10^9.
+    #[garde(custom(nominal_remainders_rule))]
+    remainders: [u32; 2],
+}
+
+/// Transformed numerators admitted before either typed result is published.
+#[derive(Validate)]
+struct NominalResultCandidate {
+    /// Signed nominal phase numerator over 2^33 nanoseconds.
+    #[garde(custom(nominal_numerator_rule))]
+    phase: i128,
+    /// Signed nominal raw RTT numerator over 2^32 nanoseconds.
+    #[garde(custom(nominal_numerator_rule))]
+    round_trip: i128,
+}
+
+/// Enforce both raw remainder bounds in fixed work without normalizing input.
+///
+/// # Errors
+/// Rejects either remainder at or above 10^9 with fixed payload-free text.
+/// A rejected garde report may allocate bounded temporary storage.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "garde custom rules require borrowed values and context"
+)]
+fn nominal_remainders_rule(remainders: &[u32; 2], (): &()) -> garde::Result {
+    if remainders
+        .iter()
+        .all(|value| i128::from(*value) < NANOS_PER_SECOND)
+    {
+        Ok(())
+    } else {
+        Err(garde::Error::new("invalid nominal remainders"))
+    }
+}
+
+/// Enforce the shared strict output envelope for every raw i128 without overflow.
+///
+/// # Errors
+/// Rejects either endpoint or any value outside it with fixed payload-free text.
+/// No raw value or report is retained in a published result.
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "garde custom rules require borrowed values and context"
+)]
+fn nominal_numerator_rule(value: &i128, (): &()) -> garde::Result {
+    if (-NOMINAL_NUMERATOR_LIMIT + 1..NOMINAL_NUMERATOR_LIMIT).contains(value) {
+        Ok(())
+    } else {
+        Err(garde::Error::new("invalid nominal numerator"))
+    }
+}
+
+/// Stage both fixed-scale nominal results without rounding or external effects.
+///
+/// The caller associates this checked arithmetic and the ordered T1/T4
+/// remainders with the same immutable converted coordinates. Numeric admission
+/// cannot establish that capture association or physical model truth. Both raw
+/// remainder bounds and the transformed output envelope execute mandatory garde
+/// validation. Successful work is fixed and allocation-free; rejection may
+/// allocate bounded temporary reports which are dropped before returning.
+///
+/// # Errors
+/// Returns the existing redacted arithmetic refusal for invalid remainders,
+/// checked overflow or an invalid output; neither partial result is published.
+fn nominal_arithmetic(
+    arithmetic: ExchangeArithmetic,
+    local_remainders: [u32; 2],
+) -> Result<(NominalPhaseNs, NominalRoundTripNs), MeasurementRefusal> {
+    let remainders = NominalRemaindersCandidate {
+        remainders: local_remainders,
+    };
+    remainders
+        .validate()
+        .map_err(|_| MeasurementRefusal::Arithmetic)?;
+    let [r1, r4] = remainders.remainders.map(i128::from);
+    // Compose the decimal remainders before any projection: the phase numerator
+    // has scale 2^33 nanoseconds, and signed raw RTT has scale 2^32 nanoseconds.
+    let phase = arithmetic
+        .offset()
+        .numerator()
+        .checked_mul(NANOS_PER_SECOND)
+        .and_then(|value| value.checked_sub(r1))
+        .and_then(|value| value.checked_sub(r4))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let round_trip = arithmetic
+        .round_trip()
+        .numerator()
+        .checked_mul(NANOS_PER_SECOND)
+        .and_then(|value| value.checked_add(r4))
+        .and_then(|value| value.checked_sub(r1))
+        .ok_or(MeasurementRefusal::Arithmetic)?;
+    let candidate = NominalResultCandidate { phase, round_trip };
+    candidate
+        .validate()
+        .map_err(|_| MeasurementRefusal::Arithmetic)?;
+    Ok((
+        NominalPhaseNs {
+            numerator: candidate.phase,
+        },
+        NominalRoundTripNs {
+            numerator: candidate.round_trip,
+        },
+    ))
+}
 #[cfg(test)]
 #[path = "../tests/private/measurement.rs"]
 mod tests;

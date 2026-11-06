@@ -2250,8 +2250,8 @@ fn observed_capture_gap(facts: &TransportFacts) -> Result<u64, Box<dyn Error>> {
 /// Fail on wrong units/sign, substituted token, dropped remainder, age or residual.
 fn check_observed_measurement(facts: &TransportFacts) -> Result<(), Box<dyn Error>> {
     let measurement = facts.measurement()?;
-    let (t1, r1, _) = observed_wall_coordinates(facts.send_before.utc)?;
-    let (t4, r4, _) = observed_wall_coordinates(facts.read_return.utc)?;
+    let (t1, r1, source_ns1) = observed_wall_coordinates(facts.send_before.utc)?;
+    let (t4, r4, source_ns4) = observed_wall_coordinates(facts.read_return.utc)?;
     let t2 = 17_179_869_184_268_435_456_i128;
     let t3 = 17_179_869_184_536_870_912_i128;
     let [a, b, c, d] = measurement.coordinates();
@@ -2266,6 +2266,21 @@ fn check_observed_measurement(facts: &TransportFacts) -> Result<(), Box<dyn Erro
     assert_eq!(
         measurement.arithmetic().round_trip().numerator(),
         (t4 - t1) - (t3 - t2)
+    );
+    // Use the original exact wall nanoseconds and literal peer Q32 times.
+    // Neither emitted fields nor production Q33/remainder arithmetic is an oracle.
+    assert_eq!(
+        measurement.nominal_phase().numerator(),
+        (t2 + t3) * 1_000_000_000 - (source_ns1 + source_ns4) * 4_294_967_296
+    );
+    assert_eq!(measurement.nominal_phase().denominator(), 8_589_934_592);
+    assert_eq!(
+        measurement.nominal_round_trip().numerator(),
+        (source_ns4 - source_ns1) * 4_294_967_296 - (t3 - t2) * 1_000_000_000
+    );
+    assert_eq!(
+        measurement.nominal_round_trip().denominator(),
+        4_294_967_296
     );
     assert_eq!(measurement.local_fractional_remainders(), [r1, r4]);
     assert_eq!(measurement.declared_limit_ns(), 30_000_000_000);
