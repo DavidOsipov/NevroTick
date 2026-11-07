@@ -1,10 +1,13 @@
 # UI-M0, pure wire/domain/exchange/core owners and the bounded loopback engine pilot.
 # This inventory records scope, not completed coverage or mutation qualification.
 schema_version = 1
-status = "six-member-scope-recorded-qualification-candidate-specific"
+status = "seven-member-scope-recorded-qualification-candidate-specific"
 security_module_minimum_executable_line_percent = 90
 critical_file_minimum_mutation_percent = 95
 security_modules = [
+    { name = "service-privilege-observation", package = "windows-platform", files = ["crates/windows-platform/src/privilege_observation.rs"], scope = "bounded inert privilege-capture decoding and engine forbidden-privilege absence predicate; current recovery source and qualification pending in tasks/windows11-integration.md; no native token provenance, lasting authority, full process isolation, broker allowlist or installed-service admission" },
+    { name = "service-scm-projection-and-controls", package = "windows-platform", files = ["crates/windows-platform/src/scm.rs"], scope = "pure own-process seven-field SCM status projection, fixed stop/interrogate decoding and coalesced atomic stop notification; candidate-specific qualification belongs to W11-W05 in tasks/windows11-integration.md; no native callback/FFI, SCM acknowledgement, account, provisioning, effect or installed-service authority" },
+    { name = "service-lifecycle-owner", package = "windows-platform", files = ["crates/windows-platform/src/service.rs"], scope = "pure shared engine/broker service lifecycle, acknowledged status transitions and finite modeled startup/stop custody; candidate-specific qualification belongs to W11-W05 in tasks/windows11-integration.md; no SCM adapter, installed service, native completion, account, clock or package authority" },
     { name = "conditioned-affine-fit", package = "time-core", files = ["crates/time-core/src/conditioned_fit.rs", "crates/time-core/src/conditioned_fit/arithmetic.rs"], scope = "borrowed actual-N1 chart suffixes, original-divisor geometry-first affine fitting, exact-original-rational enclosures and atomic unit-safe lifting; implementation and candidate-specific qualification pending in tasks/engine-transport-pilot.md; no history insertion, physical uncertainty, source authority, native or clock effects" },
     { name = "exact-conditioned-window", package = "time-core", files = ["crates/time-core/src/conditioned_window.rs"], scope = "checked immutable declared-context rows, exact half-tick/phase anchoring, once-rounded ratios and bounds, exact dyadic conditioning and unchanged original-row window divisors; N1b qualified within its retained two-owner Linux candidate in tasks/engine-transport-pilot.md; current N2 fitting has separate unfinished qualification; no genuine provenance, physical accuracy, production admission, history or clock authority" },
     { name = "exact-rational-seconds", package = "time-domain", files = ["crates/time-domain/src/rational_seconds.rs"], scope = "pure signed-u128/nonzero-u64 exact seconds ratio retained with one nearest-ties-even binary64 conversion and arithmetic rounding bound; current development/coverage/mutation qualification pending under tasks/s1.2-regression-readiness.md; no physical accuracy, sample eligibility, conditioned fit or clock authority" },
@@ -15,6 +18,7 @@ security_modules = [
     { name = "engine-experimental-measurement", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/measurement.rs"], scope = "conditional nominal software-clock conversion, explicit date/era scope and checked phase/raw-RTT arithmetic; declared model and observed consistency remain distinct; current contract, coverage and mutation qualification pending; no qualified UTC/wire accuracy, estimator eligibility, authentication or clock authority" },
     { name = "engine-experimental-relative-measurement", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/relative.rs"], scope = "borrowed same-run terminal observations, actual shared-origin identity, checked exact half-nanosecond midpoint and self-minus-anchor phase/reference conversion; candidate-specific evidence belongs to the existing engine task; no production history, physical accuracy, current freshness, authentication or clock authority" },
     { name = "engine-same-source-series-receiver", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/series.rs"], scope = "N3a fixed three-attempt sequential controlled-loopback acquisition, actual shared origin and unique request ownership, consume-once terminal delivery and retained partial results; implementation and candidate-specific contract, coverage, mutation and lifecycle checks pending in tasks/engine-transport-pilot.md; no production sample/history admission, physical quality, authentication, Windows or clock authority" },
+    { name = "engine-conditional-source-quality", package = "nevrotick-engine", files = ["crates/nevrotick-engine/src/quality.rs"], scope = "Q1 borrowed actual transport and explicit checked numeric assumptions, corrected exact interval conversion and conditional basic-client quality; source authoring and candidate-specific behavioral, contract, coverage and mutation qualification pending in tasks/engine-transport-pilot.md; no calibrated physical quality, current authority, production admission, history, authentication or clock effects" },
     { name = "preview-admission", package = "nevrotick-ui", files = ["crates/nevrotick-ui/src/model.rs"], scope = "local prototype fields only; no production authority" },
     { name = "ntp-fixed-header", package = "ntp-wire", files = ["crates/ntp-wire/src/header.rs"], scope = "inert fixed binary header only; no exchange, authentication, time or clock authority" },
     { name = "ntp-outer-framing", package = "ntp-wire", files = ["crates/ntp-wire/src/datagram.rs"], scope = "bounded complete no-legacy-MAC outer framing only; no exchange, authentication, era or sample admission" },
@@ -59,6 +63,9 @@ security_modules = [
     { name = "fixture-chart-combination-shared-lifecycle", package = "time-core", files = ["crates/time-core/src/combination/lifecycle/chart.rs"], scope = "actual chart decision/batch lifetime, original-versus-target context separation, complete receiving before shared filtering and one validated staged-state commit; S158 portable authoring passed, dependent qualification pending; no installed generation, production eligibility or clock authority" },
 ]
 critical_files = [
+    "crates/windows-platform/src/privilege_observation.rs",
+    "crates/windows-platform/src/scm.rs",
+    "crates/windows-platform/src/service.rs",
     "crates/time-core/src/conditioned_fit.rs",
     "crates/time-core/src/conditioned_fit/arithmetic.rs",
     "crates/time-core/src/conditioned_window.rs",
@@ -70,6 +77,7 @@ critical_files = [
     "crates/nevrotick-engine/src/measurement.rs",
     "crates/nevrotick-engine/src/relative.rs",
     "crates/nevrotick-engine/src/series.rs",
+    "crates/nevrotick-engine/src/quality.rs",
     "crates/nevrotick-ui/src/model.rs",
     "crates/nevrotick-ui/src/native.rs",
     "crates/nevrotick-ui/src/native/controls.rs",
@@ -117,6 +125,8 @@ critical_files = [
     "crates/time-core/src/combination/lifecycle/chart.rs",
 ]
 feature_matrix = [
+    { package = "windows-platform", target = "x86_64-unknown-linux-gnu", scope = "portable shared service lifecycle model, integration contracts and doctests; actual SCM and service qualification remain open", dependency_owner = "policy/ui-m0-dependencies.json" },
+    { package = "windows-platform", target = "x86_64-pc-windows-msvc", scope = "shared pure service lifecycle library/test-consumer compilation; no SCM adapter, native execution, provisioning or installed lifecycle qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-engine", target = "x86_64-unknown-linux-gnu", scope = "laboratory loopback engine library and observe CLI, runtime-boundary tests, doctests and separate real entrypoint observations; no production acquisition qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-engine", target = "x86_64-pc-windows-msvc", scope = "engine library/test-consumer compilation and observe CLI link; actual Windows AFD, entropy, teardown, resources and runtime qualification remain separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "nevrotick-ui", target = "x86_64-unknown-linux-gnu", scope = "portable preview contracts and doctests", dependency_owner = "policy/ui-m0-dependencies.json" },

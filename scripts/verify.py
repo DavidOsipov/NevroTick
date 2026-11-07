@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the six admitted fixture/engine owners in an isolated sandbox.
+"""Run the admitted fixture, engine and platform owners in an isolated sandbox.
 
 Acquisition is separate. Missing tools, vendor bytes or product tests fail closed.
 Windows cross-linking supplies no native UI, service or release qualification.
@@ -39,7 +39,7 @@ PACKAGE = "nevrotick-ui"
 MEMBER = "crates/nevrotick-ui"
 PACKAGES = {PACKAGE: MEMBER, "ntp-wire": "crates/ntp-wire", "time-domain": "crates/time-domain",
             "ntp-exchange": "crates/ntp-exchange", "time-core": "crates/time-core",
-            "nevrotick-engine": "crates/nevrotick-engine"}
+            "nevrotick-engine": "crates/nevrotick-engine", "windows-platform": "crates/windows-platform"}
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 REGISTRY_VERSIONS = {
     "castaway": "0.2.4", "cfg-if": "1.0.5", "compact_str": "0.9.1", "garde": "0.23.0",
@@ -359,7 +359,7 @@ def validate_patched_lock(packages: list[dict], patches: list[dict]) -> None:
 
 
 def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
-    """Admit six reviewed members, explicit engine effects and the exact locked graph."""
+    """Admit reviewed members, explicit engine effects and the exact locked graph."""
     try:
         STRICT.read_configuration(root)
     except STRICT.ENV.Incomplete as error:
@@ -374,7 +374,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
     workspace = tomllib.loads((root / "Cargo.toml").read_text())
     fragment = tomllib.loads((root / "policy/rust-workspace.toml").read_text())
     if workspace.get("workspace", {}).get("members") != list(PACKAGES.values()):
-        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, wire, domain, exchange, core and engine workspace members.")
+        raise ENV.Incomplete("Expected exactly the reviewed UI-M0, wire, domain, exchange, core, engine and platform workspace members.")
     policy = read_dependency_policy(root / "policy/ui-m0-dependencies.json")
     validate_dependency_policy(policy)
     slint_profile = policy["schema_version"] == 3
@@ -464,7 +464,7 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                 raise ENV.Incomplete("The UI requires only its exact reviewed baseline dependencies, defaults and target features.")
         if package == "ntp-wire" and set(member) != {"package", "lints"}:
             raise ENV.Incomplete("The pure NTP-wire member may not add dependencies, features or targets.")
-        if package in {"time-domain", "time-core"}:
+        if package in {"time-domain", "time-core", "windows-platform"}:
             required = {"garde": {"version": "=0.23.0", "default-features": False, "features": ["derive"]}}
             if package == "time-core":
                 required["time-domain"] = {"version": "=0.0.0", "path": "../time-domain"}
@@ -474,6 +474,8 @@ def admit_product(root: Path) -> tuple[dict, dict[str, str]]:
                     or type(member.get("dependencies", {}).get("garde", {}).get("default-features")) is not bool):
                 if package == "time-domain":
                     raise ENV.Incomplete("The time-domain member requires only exact garde with the reviewed features.")
+                if package == "windows-platform":
+                    raise ENV.Incomplete("The windows-platform member requires only exact garde with the reviewed features.")
                 raise ENV.Incomplete("The time-core member requires its exact reviewed garde/local dependency graph.")
         if package == "ntp-exchange":
             required = {"ntp-wire": {"version": "=0.0.0", "path": "../ntp-wire"},

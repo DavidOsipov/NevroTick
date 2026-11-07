@@ -1072,6 +1072,34 @@ scope; a compiler accepting an option establishes no performance benefit.
 
 ## Starting implementation
 
+The shared [service lifecycle owner](crates/windows-platform/src/service.rs)
+has its source/test/evidence chain in [W11-W05](tasks/windows11-integration.md#434-active-two-service-completion-goal--7-november-2026).
+Use the fixed [service analysis policy](policy/service-analysis.json) and runner
+for its selected per-file gates:
+
+```sh
+python3 -B scripts/verify-service-analysis.py --lane enumerate --output-dir /tmp/new-service-enumeration
+python3 -B scripts/verify-service-analysis.py --lane coverage --output-dir /tmp/new-service-coverage
+python3 -B scripts/verify-service-analysis.py --lane mutation --output-dir /tmp/new-service-mutation
+```
+
+Each output must be new, private and outside the checkout. Actual ordinary tests
+and doctests, the complete product identity and protected helper bytes must be
+bound first; changed source requires fresh ordinary evidence and a reviewed
+rebind. Enumeration lists the fixed `service.rs` and `scm.rs` owners. Review both
+complete descriptor inventories and function/guard/macro generation gaps, then
+bind their exact counts/hashes before mutation. The stable-only service role
+retains full admitted stable-tool/vendor/source custody, 90% executable lines,
+95% per-file viable mutation and finite six-build/four-mutation-worker limits.
+The current parallel profile permits 512 tasks with worker-owned targets and
+one inner Cargo job/test thread per worker. Historical diagnostic profiles keep
+their original limits. Compiler-unviable
+variants receive no kill credit. Raw metrics never establish independent source
+qualification: required Garde/guard omission controls, generation reconciliation
+and independent review remain explicit in the task. These portable commands do
+not execute Windows, register/start services, qualify provisioning or lift holds.
+
+
 The [top-level metadata pipeline](metadata/README.md) owns the single editable
 [product record](metadata/product.toml) and portable generation/readback tools.
 Use the [metadata plan's stages](docs/plans/windows-package-metadata.md#13-metadata-pipeline-implementation--7-november-2026)

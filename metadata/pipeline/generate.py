@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import csv
 from collections import Counter
+from collections.abc import Collection
 from dataclasses import asdict
+from typing import Literal, TypedDict
 import hashlib
 import io
 import json
@@ -22,7 +24,8 @@ import shutil
 import stat
 import xml.etree.ElementTree as ET
 
-from .contract import Component, Metadata, MetadataError, load_metadata, validate_model
+from .contract import (Component, FieldValue, InputDigest, Metadata, MetadataError, PendingField,
+                       Product, load_metadata, validate_model)
 from .delivery import delivery_contract, verify_delivery
 from .fields import FIELD_BY_KEY
 
@@ -59,6 +62,25 @@ PUBLIC_STRINGS = (
 )
 
 
+class FieldCounts(TypedDict):
+    """The two independently named source-disposition counts."""
+    field_count: int
+    unresolved_field_count: int
+
+
+class CommandReport(FieldCounts):
+    """Successful publication/read-only comparison; uncertainty raises separately."""
+    status: Literal["generated-source", "checked-source"]
+    file_count: int
+    pending_count: int
+
+
+def _record(value: Product | Component | PendingField | InputDigest | FieldValue) -> dict[str, object]:
+    """Bind stdlib dataclass reflection to an object-valued serialization boundary."""
+    result: dict[str, object] = asdict(value)
+    return result
+
+
 class PublicationUncertainError(MetadataError):
     """Rename completed, but the final containing-directory flush was not acknowledged.
 
@@ -86,13 +108,15 @@ def _field_rows(model: Metadata, prefixes: tuple[str, ...] = ()) -> list[dict[st
         if prefixes and not field.key.startswith(prefixes):
             continue
         spec = FIELD_BY_KEY[field.key]
-        rows.append({**asdict(field), "surface": spec.surface, "kind": spec.kind,
+        rows.append({"key": field.key, "value": field.value, "status": field.status,
+                     "owner": field.owner, "source": field.source, "reason": field.reason,
+                     "surface": spec.surface, "kind": spec.kind,
                      "value_type": spec.value_type, "applicability": spec.applicability,
                      "derivation": spec.derivation, "source_ref": spec.source_ref})
     return rows
 
 
-def field_counts(model: Metadata) -> dict[str, int]:
+def field_counts(model: Metadata) -> FieldCounts:
     """Count fields only after enforcing the public model contract.
 
     Unresolved means pending or derived with no observation/value yet. It is
@@ -177,6 +201,8 @@ def _filename(binary_name: str) -> str:
 
 def _version_resource(model: Metadata, component: Component) -> bytes:
     """Produce a prerelease user-mode EXE resource candidate, not an emitted PE."""
+    assert component.file_version is not None and component.version is not None
+    assert component.binary_name is not None
     version = ",".join(str(part) for part in component.file_version)
     strings = [("CompanyName", model.product.publisher),
                ("FileDescription", component.description),
@@ -212,8 +238,10 @@ def _display_xml(model: Metadata) -> bytes:
     root = ET.Element("{" + XML_NAMESPACE + "}metadata",
                       {"schema-version": "1", "stage": model.stage})
     product = ET.SubElement(root, "product")
+    product_values = {"name": model.product.name, "publisher": model.product.publisher,
+                      "description": model.product.description, "repository": model.product.repository}
     for key in ("name", "publisher", "description", "repository"):
-        ET.SubElement(product, key).text = getattr(model.product, key)
+        ET.SubElement(product, key).text = product_values[key]
     components = ET.SubElement(root, "components")
     for component in model.components:
         element = ET.SubElement(components, "component", {
@@ -221,7 +249,8 @@ def _display_xml(model: Metadata) -> bytes:
         ET.SubElement(element, "name").text = component.display_name
         ET.SubElement(element, "description").text = component.description
     ET.indent(root, space="  ")
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\n"
+    rendered: bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return rendered + b"\n"
 
 
 def _store_csv(model: Metadata) -> bytes:
@@ -229,14 +258,17 @@ def _store_csv(model: Metadata) -> bytes:
     stream = io.StringIO(newline="")
     writer = csv.writer(stream, lineterminator="\n", quoting=csv.QUOTE_ALL)
     writer.writerow(("field", "value", "status"))
+    product_values = {"name": model.product.name, "publisher": model.product.publisher,
+                      "description": model.product.description, "repository": model.product.repository,
+                      "homepage": model.product.homepage}
     for key in ("name", "publisher", "description", "repository", "homepage"):
-        value = getattr(model.product, key)
+        value = product_values[key]
         if value is not None:
             if value.lstrip().startswith(("=", "+", "-", "@")):
                 raise MetadataError("store-export-formula-prefix")
             writer.writerow(("product." + key, value, "derived"))
-    for field in model.pending:
-        writer.writerow((field.path, "", "pending"))
+    for pending_field in model.pending:
+        writer.writerow((pending_field.path, "", "pending"))
     for key in ("project.release.notes", "project.urls.support", "project.urls.privacy",
                 "project.urls.license", "project.urls.release_notes"):
         value = _field_value(model, key)
@@ -262,10 +294,10 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
                      if _field_value(model, key)}
     descriptor = {
         "schema_version": 1, "stage": model.stage, "target": model.target,
-        "cpu_floor": model.cpu_floor, "product": asdict(model.product),
-        "components": [asdict(component) for component in model.components],
-        "pending": [asdict(field) for field in model.pending],
-        "inputs": [asdict(item) for item in model.inputs],
+        "cpu_floor": model.cpu_floor, "product": _record(model.product),
+        "components": [_record(component) for component in model.components],
+        "pending": [_record(field) for field in model.pending],
+        "inputs": [_record(item) for item in model.inputs],
         "public_metadata": public_values,
         "qualification": {"scope": "source-authoring-projections", "native": "not-run",
                           "release": "not-qualified"},
@@ -289,6 +321,8 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
                     "fields": _field_rows(model, ("project.",))})}
     for component in model.components:
         if component.emittable:
+            assert component.version is not None and component.license is not None
+            assert component.binary_name is not None
             outputs[f"rust/{component.id}.rs"] = _rust_constants((
                 ("COMPONENT_ID", component.id), ("ROLE", component.role),
                 ("DISPLAY_NAME", component.display_name), ("DESCRIPTION", component.description),
@@ -305,7 +339,7 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
         "display_name": model.product.name, "publisher_display_name": model.product.publisher,
         "description": model.product.description, "identity": None,
         "target": model.target, "cpu_floor": model.cpu_floor,
-        "pending": [asdict(item) for item in model.pending],
+        "pending": [_record(item) for item in model.pending],
         "fields": _field_rows(model, ("catalogue.B.6.",))})
     outputs["authoring/service-inputs.json"] = _json({
         "schema_version": 1, "kind": "partial-service-authoring-inputs",
@@ -317,7 +351,7 @@ def build_outputs(model: Metadata) -> dict[str, bytes]:
     outputs["authoring/event-inputs.json"] = _json({
         "schema_version": 1, "kind": "partial-event-authoring-inputs", "provider_name": None,
         "provider_guid": None, "event_schema_version": None, "message_resource": None,
-        "pending": [asdict(item) for item in model.pending
+        "pending": [_record(item) for item in model.pending
                     if item.path.startswith(("diagnostics.", "event.", "provider."))],
         "fields": _field_rows(model, ("catalogue.C.",))})
     if len(outputs) >= MAX_OUTPUT_FILES or sum(map(len, outputs.values())) > MAX_OUTPUT_TOTAL:
@@ -337,7 +371,8 @@ def _absolute(path: Path) -> Path:
 
 def _open_directory(path: Path, *, private: bool = False) -> int:
     """Walk POSIX directory descriptors without following any ancestor symlink."""
-    if not hasattr(os, "O_NOFOLLOW") or os.open not in os.supports_dir_fd:
+    supported_directory_operations: Collection[object] = os.supports_dir_fd
+    if not hasattr(os, "O_NOFOLLOW") or os.open not in supported_directory_operations:
         raise MetadataError("filesystem-custody-unavailable")
     path = _absolute(path)
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
@@ -371,8 +406,9 @@ def _read_regular(directory: int, name: str, maximum: int) -> bytes:
                 break
             value.extend(block)
         after = os.fstat(descriptor)
-        identity = lambda item: (item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns,
-                                 item.st_ctime_ns, item.st_nlink)
+        def identity(item: os.stat_result) -> tuple[int, int, int, int, int, int]:
+            return (item.st_dev, item.st_ino, item.st_size, item.st_mtime_ns,
+                    item.st_ctime_ns, item.st_nlink)
         current = os.stat(name, dir_fd=directory, follow_symlinks=False)
         if len(value) > maximum or len(value) != before.st_size or identity(before) != identity(after):
             raise MetadataError("output-file-changed")
@@ -403,7 +439,7 @@ def _expected(model: Metadata) -> dict[str, bytes]:
     """Bind the generated payload to source/schema identities without a self-hash."""
     outputs = build_outputs(model)
     receipt = {"schema_version": 1, "stage": model.stage,
-               "inputs": [asdict(item) for item in model.inputs], "tools": _code_identity(),
+               "inputs": [_record(item) for item in model.inputs], "tools": _code_identity(),
                "files": [{"path": name, "bytes": len(data),
                           "sha256": hashlib.sha256(data).hexdigest()}
                          for name, data in sorted(outputs.items())]}
@@ -507,8 +543,14 @@ def _remove_staging(parent: int, name: str, staging: int) -> None:
     shutil.rmtree(name, dir_fd=parent)
 
 
+def _receipt_tools(raw: bytes) -> object:
+    """Read the already generated internal receipt without exporting parser Any."""
+    receipt: dict[str, object] = json.loads(raw)
+    return receipt["tools"]
+
+
 def generate(root: Path, output: Path, source: Path | None = None, *,
-             stage: str = "source") -> dict[str, object]:
+             stage: str = "source") -> CommandReport:
     """Publish a fresh complete tree; reject existing output and preserve it on failure.
 
     The parent must be owned and unwritable by other users. Protecting it from a
@@ -536,7 +578,7 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
             _write_payload(staging, name, data)
         if load_metadata(root, source, stage=stage) != model:
             raise MetadataError("source-changed-during-generation")
-        if _code_identity() != json.loads(outputs["receipt.json"])["tools"]:
+        if _code_identity() != _receipt_tools(outputs["receipt.json"]):
             raise MetadataError("generator-changed-during-generation")
         # An existing tree is never an update target. The private parent plus
         # caller-enforced isolation is required across this final publication.
@@ -554,7 +596,7 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
             os.fsync(parent)
         except OSError as error:
             raise PublicationUncertainError() from error
-        return {"status": "generated-" + stage, "file_count": len(outputs),
+        return {"status": "generated-source", "file_count": len(outputs),
                 "pending_count": len(model.pending), **field_counts(model)}
     finally:
         try:
@@ -567,7 +609,7 @@ def generate(root: Path, output: Path, source: Path | None = None, *,
 
 
 def check(root: Path, output: Path, source: Path | None = None, *,
-          stage: str = "source") -> dict[str, object]:
+          stage: str = "source") -> CommandReport:
     """Read a path-bound frozen candidate and recheck source/code/root identity.
 
     This is observational: it neither repairs bytes nor establishes durability,
@@ -586,7 +628,7 @@ def check(root: Path, output: Path, source: Path | None = None, *,
         nonlocal total
         if depth > 2:
             raise MetadataError("output-tree-budget")
-        names = []
+        names: list[str] = []
         with os.scandir(directory) as entries:
             for entry in entries:
                 if len(names) >= MAX_OUTPUT_FILES:
@@ -623,10 +665,10 @@ def check(root: Path, output: Path, source: Path | None = None, *,
         verify_delivery(model, observed_outputs)
         if load_metadata(root, source, stage=stage) != model:
             raise MetadataError("source-changed-during-check")
-        if _code_identity() != json.loads(expected["receipt.json"])["tools"]:
+        if _code_identity() != _receipt_tools(expected["receipt.json"]):
             raise MetadataError("generator-changed-during-check")
         _parent_unchanged(output, root_fd)
-        return {"status": "checked-" + stage, "file_count": len(seen),
+        return {"status": "checked-source", "file_count": len(seen),
                 "pending_count": len(model.pending), **field_counts(model)}
     finally:
         os.close(root_fd)

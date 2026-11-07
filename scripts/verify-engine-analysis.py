@@ -222,6 +222,77 @@ SERIES_FIXED_POLICY = {
     "minimum_free_bytes": 5 * 1024**3, "tool_admission_profile": "full",
 }
 
+# Q1 is a separate one-owner role. Historical policies and receipts are not
+# rewritten or credited to it; the ordinary receipt fixes its complete inventory.
+QUALITY_POLICY = "policy/quality-analysis.json"
+QUALITY_SUBJECTS = {"quality": "crates/nevrotick-engine/src/quality.rs"}
+QUALITY_SCOPE = COMMON.Scope("nevrotick-engine", tuple(QUALITY_SUBJECTS.items()), QUALITY_POLICY)
+QUALITY_BOUND_INPUTS = tuple(dict.fromkeys((
+    *SERIES_BOUND_INPUTS, TESTS, *QUALITY_SUBJECTS.values(),
+    "crates/nevrotick-engine/src/quality/tests.rs", "crates/nevrotick-engine/tests/quality.rs",
+    "crates/nevrotick-engine/PROVENANCE.md", "crates/nevrotick-engine/COPYING",
+    "tasks/s0.1-chrony-ledger.json",
+)))
+QUALITY_CANDIDATE = "8c05b4eedd9c3f231e4d809d9cc3ef028a8a9d1d21672ed6ebf045a525a96c29"
+QUALITY_SOURCE_PINS = {
+    "crates/nevrotick-engine/src/quality.rs": "f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135",
+    "crates/nevrotick-engine/src/quality/tests.rs": "7716653c1607c5f2552ea11e0a95b73a8423aa12a05ebac93aad4b282ea19da5",
+    "crates/nevrotick-engine/tests/quality.rs": "83a50ff2b783fde80431f5a46eae632a2fd6e774ffc4fec756317221daee9343",
+}
+QUALITY_INVENTORY_DIGESTS = {
+    "ordinary": "a4334cb64efd67d27173699d934ee3750c9aab0e3714e8075a9412fb3db06f5c",
+    "doctests": "20f3ff09ec18c5edaf90acecbf2e918124ea03386699f27aa6cb1e3ddd6577c4",
+    "baseline": "2dd44a4b578ac0345ed6b24bf74ca95ab23795ab9de333e598b2b08e9a05eb6d",
+}
+QUALITY_REQUIRED_TESTS = frozenset({
+    "quality::tests::computed_policy_boundaries_preserve_strict_and_inclusive_comparisons",
+    "quality::tests::declared_getters_and_constructor_precedence_preserve_original_bits",
+    "quality::tests::dyadic_calculation_borrows_original_facts_and_assumptions",
+    "quality::tests::evaluator_failure_precedence_preserves_original_observation",
+    "quality::tests::finite_input_overflow_is_refused_at_the_first_computed_stage",
+    "quality::tests::generated_garde_dispatch_covers_nested_and_computed_fields",
+    "quality::tests::gradual_underflow_does_not_claim_exact_zero_uncertainty",
+    "quality::tests::mandatory_assumption_admission_preserves_bits_and_rejects_invalid_fields",
+    "quality::tests::negative_local_wall_interval_grows_declared_frequency_dispersion",
+    "quality::tests::negative_server_interval_processing_limit_uses_absolute_magnitude",
+    "quality::tests::original_measurement_refusal_and_redacted_diagnostics_are_preserved",
+    "quality::tests::precision_clamps_have_exact_boundary_and_neighbor_values",
+    "quality::tests::raw_round_trip_is_converted_once_before_cancellation",
+    "quality::tests::raw_scalar_and_interval_helpers_preserve_full_admitted_domains",
+    "quality::tests::refusal_families_keep_bounded_diagnostics_and_typed_sources",
+    "quality::tests::signed_server_interval_and_unsigned_root_words_are_retained",
+    "quality::tests::zero_raw_rtt_uses_combined_precision_floor",
+    "absent_measurement_refuses_quality_with_actual_valid_neighbor",
+    "actual_quality_limits_refuse_without_rewriting_completion_or_age",
+    "actual_series_quality_retains_signed_intervals_source_and_original_age",
+})
+QUALITY_DOCTESTS = {
+    "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 389)": "legal_execution",
+    "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 749) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 755) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/quality.rs - quality::ConditionalQuality (line 760) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/quality.rs - quality::DeclaredFrequencyInterval (line 255) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 401) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityAssumptions (line 405) - compile fail": "compile_fail",
+    "crates/nevrotick-engine/src/quality.rs - quality::DeclaredQualityLimits (line 305) - compile fail": "compile_fail",
+}
+QUALITY_FIXED_POLICY = {
+    **SERIES_FIXED_POLICY,
+    "admission_status": "admitted-q1-conditional-quality-source",
+    "source_file_count": 416, "critical_files": list(QUALITY_SUBJECTS.values()),
+}
+QUALITY_EVIDENCE_ROOT = Path.home() / ".local/share/nevrotick/dependency-refresh-20261106-v1"
+QUALITY_ORDINARY_RECEIPT = QUALITY_EVIDENCE_ROOT / "q1-quality-ordinary-v7/verification.json"
+QUALITY_ORDINARY_SHA256 = "d60e763c073f28277793a9e4b71cd53b505ff408bf06a7e10426be482055505c"
+QUALITY_ORDINARY_RECIPES = {
+    "quality_ordinary_v2.py": "717cc1902e7c01194967309375d8a1660910276ba4045e7efbe81fe9af743a1b",
+    "quality_ordinary_v1.py": "bb903f4bd09b6e59ccc956f4de582eb9b421fa9d49ba926920318fefdda0fc08",
+    "relative_bridge_ordinary.py": "937709d9bc11054253b2e0cd9ad05357792f81bcb6e1ff88f997ac8f2a8292a9",
+    "conditioned_fit_ordinary_v2.py": "3062bb0bb1869161e273ad4e80b238a4d7ef94661a21ffa4127341832a9356d6",
+    "series_ordinary_v1.py": "d3ab16cc3e08a03f950808cdaeb570dc86ba4aefec4a1c6bf9c0810631e64cc2",
+    "series_ordinary_v3.py": "17574af8bb9e4b41b3f55337531a82e2c0a2a275741f255b3b3cea226002e568",
+}
+
 
 def invalid_number(value: str) -> NoReturn:
     """Reject nonfinite tokens at every depth of policy and native report input."""
@@ -474,9 +545,11 @@ def copy_contract_dependencies(session, artifact: str) -> Path:
     return destination
 
 
-def contracts(session, policy: dict, report: dict, *, examples=None, effect_scope=None) -> None:
+def contracts(session, policy: dict, report: dict, *, examples=None, effect_scope=None,
+              deadline: float | None = None) -> None:
     """Compile intended external causes and execute only checked constructors."""
-    deadline = time.monotonic() + policy["contracts_wall_seconds"]
+    if deadline is None:
+        deadline = time.monotonic() + policy["contracts_wall_seconds"]
     output = session.run(
         "contract-library", [str(session.stable / "bin/cargo"), "build", "--package", "nevrotick-engine",
         "--frozen", "--jobs", str(policy["jobs"]), "--lib", "--message-format=json"],
@@ -979,11 +1052,536 @@ def execute_series_profile(args, report: dict) -> None:
         report["qualification_passed"] = True
 
 
+def quality_inventory_bindings(policy: dict, *, required: bool = False) -> dict:
+    """Permit discovery without pins; campaigns require the complete reviewed owner."""
+    bindings = policy.get("mutation_inventories")
+    if type(bindings) is not dict:
+        raise Incomplete("Quality mutation inventory bindings must be an object.")
+    if not bindings and not required:
+        return {}
+    if set(bindings) != set(QUALITY_SUBJECTS):
+        raise Incomplete("Quality mutation requires its reviewed nonempty selected inventory.")
+    binding = bindings["quality"]
+    if (type(binding) is not dict or set(binding) != {"count", "sha256"}
+            or type(binding["count"]) is not int or not 0 < binding["count"] <= 512
+            or type(binding["sha256"]) is not str
+            or re.fullmatch(r"[a-f0-9]{64}", binding["sha256"]) is None):
+        raise Incomplete("Quality inventory requires an exact positive count and SHA-256 pin.")
+    return bindings
+
+
+def quality_test_inventory(policy: dict) -> tuple[list[str], list[str]]:
+    """Require the frozen complete package inventory and every Q1 contract identity."""
+    inventory = policy.get("test_inventory")
+    if (type(inventory) is not dict
+            or set(inventory) != {"ordinary", "doctests", "baseline_count", "sha256", "q1_doctests"}
+            or type(inventory["baseline_count"]) is not int or inventory["baseline_count"] != 161
+            or inventory["sha256"] != QUALITY_INVENTORY_DIGESTS
+            or inventory["q1_doctests"] != QUALITY_DOCTESTS):
+        raise Incomplete("Quality test inventory or actual legal/negative contract identities changed.")
+    ordinary, docs = inventory["ordinary"], inventory["doctests"]
+    for names, count, kind in ((ordinary, 111, "ordinary"), (docs, 50, "doctests")):
+        if (type(names) is not list or len(names) != count
+                or any(type(name) is not str or not name or len(name) > 1024 for name in names)
+                or len(set(names)) != count or names != sorted(names)
+                or COMMON.canonical_sha256(names) != QUALITY_INVENTORY_DIGESTS[kind]):
+            raise Incomplete("Quality needs its exact complete unique native test identities.")
+    if (set(ordinary) != REQUIRED_TESTS | SERIES_REQUIRED_TESTS | QUALITY_REQUIRED_TESTS
+            or not set(QUALITY_DOCTESTS) <= set(docs)
+            or COMMON.canonical_sha256(sorted(ordinary + docs)) != QUALITY_INVENTORY_DIGESTS["baseline"]):
+        raise Incomplete("Quality inventory omits a selected or existing actual control.")
+    return ordinary, docs
+
+
+def validate_quality_policy(policy: dict) -> dict:
+    """Admit the separately frozen Q1 role without inherited exclusions or scores."""
+    extras = {"candidate_sha256", "inputs_sha256", "mutation_inventories",
+              "mutation_equivalences", "scope", "test_inventory", "ordinary_evidence"}
+    if (type(policy) is not dict or set(policy) != set(QUALITY_FIXED_POLICY) | extras
+            or any(type(policy.get(key)) is not type(value) or policy[key] != value
+                   for key, value in QUALITY_FIXED_POLICY.items())
+            or policy.get("candidate_sha256") != QUALITY_CANDIDATE
+            or policy.get("mutation_equivalences") != []
+            or type(policy.get("scope")) is not str or not 0 < len(policy["scope"]) <= 2048):
+        raise Incomplete("Unreviewed quality source, scope, threshold, budget or exclusion.")
+    pins = policy["inputs_sha256"]
+    if (type(pins) is not dict or set(pins) != set(QUALITY_BOUND_INPUTS)
+            or any(type(h) is not str or re.fullmatch(r"[a-f0-9]{64}", h) is None for h in pins.values())
+            or any(pins.get(name) != digest for name, digest in QUALITY_SOURCE_PINS.items())):
+        raise Incomplete("Quality protected source, test or helper bindings are invalid.")
+    expected_evidence = {"receipt": str(QUALITY_ORDINARY_RECEIPT),
+                         "sha256": QUALITY_ORDINARY_SHA256, "recipes_sha256": QUALITY_ORDINARY_RECIPES}
+    if policy["ordinary_evidence"] != expected_evidence:
+        raise Incomplete("Quality ordinary receipt or immutable recipe binding changed.")
+    quality_test_inventory(policy)
+    quality_inventory_bindings(policy)
+    return policy
+
+
+def admit_quality_ordinary(policy: dict) -> dict:
+    """Re-read exact historical ordinary bytes/recipes; do not infer a fresh pass."""
+    data = COMMON.read_analysis_bytes(QUALITY_ORDINARY_RECEIPT, maximum=512 * 1024)
+    if hashlib.sha256(data).hexdigest() != policy["ordinary_evidence"]["sha256"]:
+        raise Incomplete("Quality ordinary receipt bytes changed.")
+    try:
+        receipt = json.loads(data.decode("utf-8"), object_pairs_hook=COMMON.ANALYSIS.unique_object,
+                             parse_float=finite_number, parse_constant=invalid_number)
+    except (ValueError, UnicodeError, RecursionError) as error:
+        raise Incomplete("Quality ordinary receipt is not strict bounded UTF-8 JSON.") from error
+    if type(receipt) is not dict:
+        raise Incomplete("Quality ordinary receipt must be an object.")
+    recipes = {str(QUALITY_EVIDENCE_ROOT / name): digest for name, digest in QUALITY_ORDINARY_RECIPES.items()}
+    if (receipt.get("status") != "passed-q1-quality-all" or receipt.get("bookends_unchanged") is not True
+            or receipt.get("candidate_sha256") != policy["candidate_sha256"]
+            or type(receipt.get("source_sha256")) is not dict
+            or len(receipt["source_sha256"]) != policy["source_file_count"]
+            or COMMON.canonical_sha256(receipt["source_sha256"]) != policy["candidate_sha256"]
+            or receipt.get("recipes_sha256") != recipes
+            or any(Path(path) != Path(path).resolve(strict=True) or PRODUCT.sha256(Path(path)) != digest
+                   for path, digest in recipes.items())):
+        raise Incomplete("Quality ordinary candidate, recipes or unchanged bookends are unsupported.")
+    ordinary, docs = quality_test_inventory(policy)
+    for lane, expected in (("engine-tests", ordinary), ("engine-optimized-tests", ordinary), ("engine-doctests", docs)):
+        rows = [row for row in receipt.get("lanes", []) if type(row) is dict and row.get("lane") == lane]
+        if (len(rows) != 1 or type(rows[0].get("tests")) is not dict
+                or rows[0]["tests"].get("executed") != len(expected)
+                or sorted(rows[0]["tests"].get("test_names", [])) != expected):
+            raise Incomplete("Quality ordinary receipt lacks its actual complete selected native execution.")
+    return {"receipt": str(QUALITY_ORDINARY_RECEIPT), "sha256": hashlib.sha256(data).hexdigest(),
+            "candidate_sha256": receipt["candidate_sha256"], "fresh_execution": False}
+
+
+def read_quality_policy(root: Path) -> dict:
+    """Bind Q1 product/helpers, exact actual baseline and existing critical owners."""
+    policy = validate_quality_policy(read_json(root / QUALITY_POLICY))
+    _, identity = PRODUCT.admit_product(root)
+    if len(identity) != policy["source_file_count"] or COMMON.canonical_sha256(identity) != policy["candidate_sha256"]:
+        raise Incomplete("Quality policy differs from the complete current product candidate.")
+    if any(PRODUCT.sha256(root / name) != digest for name, digest in policy["inputs_sha256"].items()):
+        raise Incomplete("Quality protected source, test or analysis helper bytes changed.")
+    manifest = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
+    filename = QUALITY_SUBJECTS["quality"]
+    if (manifest.get("critical_files", []).count(filename) != 1
+            or sum(module.get("package") == QUALITY_SCOPE.package and filename in module.get("files", [])
+                   for module in manifest.get("security_modules", [])) != 1):
+        raise Incomplete("Quality needs exactly one current critical/security owner registration.")
+    admit_quality_ordinary(policy)
+    return policy
+
+
+def validate_quality_test_execution(text: str, policy: dict, *, doctests: bool) -> dict:
+    """Require every actual selected native identity and zero-failure summary."""
+    ordinary, docs = quality_test_inventory(policy)
+    if type(text) is not str:
+        raise Incomplete("Quality native output must be bounded captured text.")
+    records = []
+    for line in text.splitlines():
+        if line.startswith("test ") and not line.startswith("test result:"):
+            match = re.fullmatch(r"test ([^\r\n]+?) \.\.\. ok", line)
+            if match is None:
+                raise Incomplete("Quality native record lacks its named successful completion.")
+            records.append(match[1])
+        elif line in {"ok", "FAILED", "ignored"}:
+            raise Incomplete("Quality native completion lacks its selected identity.")
+    summaries = [line for line in text.splitlines() if line.startswith("test result:")]
+    counts = [re.fullmatch(r"test result: ok\. (\d+) passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;.*", line)
+              for line in summaries]
+    expected = sorted(ordinary + docs) if doctests else ordinary
+    if (not records or not summaries or any(row is None for row in counts)
+            or len(set(records)) != len(records) or sorted(records) != expected
+            or sum(int(row[1]) for row in counts if row is not None) != len(expected)):
+        raise Incomplete("Quality execution lacks its complete actual native inventory or summaries.")
+    return {"tests_executed": len(records), "ordinary_tests": len(ordinary),
+            "doctests": len(docs) if doctests else 0, "test_names": records,
+            "inventory_sha256": COMMON.canonical_sha256(sorted(records)),
+            "required_q1": sorted(QUALITY_REQUIRED_TESTS), "q1_doctests": QUALITY_DOCTESTS if doctests else {}}
+
+
+def quality_rust_functions(source: str) -> tuple[str, dict[str, dict]]:
+    """Extract bounded top-level test/helper bodies, masking comments and strings.
+
+    This intentionally handles the admitted Q1 test syntax only. A changed shape,
+    duplicate function or unmatched delimiter remains an admission failure.
+    """
+    masked = re.sub(r'//[^\n]*|/\*.*?\*/|"(?:\\.|[^"\\])*"',
+                    lambda match: re.sub(r"[^\n]", " ", match[0]), source, flags=re.DOTALL)
+    functions = {}
+    for match in re.finditer(r"(?m)^fn ([A-Za-z_][A-Za-z0-9_]*)\s*(?:<[^\n]*>)?\s*\(", masked):
+        opening = masked.find("{", match.end())
+        if opening < 0 or match[1] in functions:
+            raise Incomplete("Quality semantic function inventory changed or is malformed.")
+        depth, end = 1, opening + 1
+        while end < len(masked) and depth:
+            depth += (masked[end] == "{") - (masked[end] == "}")
+            end += 1
+        if depth:
+            raise Incomplete("Quality semantic function body is incomplete.")
+        functions[match[1]] = {"start": opening + 1, "end": end - 1}
+    return masked, functions
+
+
+def quality_semantic_assertion_sites(source_root: Path, policy: dict) -> dict:
+    """Bind named semantic sites to exactly the admitted immutable test bytes.
+
+    Only explicit numeric helpers are traversed. Acquisition, peer, original
+    transport and I/O helpers are excluded. The external check helper returns a
+    unique static io::Error fact instead of a panic location; its exact marker
+    binds the admitted source line. None of this supplies independent mutant
+    equivalence or causality review.
+    """
+    private = "crates/nevrotick-engine/src/quality/tests.rs"
+    external = "crates/nevrotick-engine/tests/quality.rs"
+    helpers = {private: {"exact"}, external: {"check_quality", "check_ratio", "check_near"}}
+    # These checks describe predecessor/peer fixture truth, not mutated Q1 output.
+    excluded_facts = {
+        "conditional quality changed literal peer claims",
+        "quality completion lost the literal peer timestamps",
+        "original nominal RTT did not reconstruct from actual wall captures",
+    }
+    result = {"candidate_sha256": policy["candidate_sha256"], "source_sha256": {}, "tests": {}}
+    for filename, allowed_helpers in helpers.items():
+        data = COMMON.read_analysis_bytes(source_root / filename, maximum=512 * 1024)
+        digest = hashlib.sha256(data).hexdigest()
+        if digest != policy["inputs_sha256"].get(filename):
+            raise Incomplete("Quality semantic assertion source differs from its admitted bytes.")
+        result["source_sha256"][filename] = digest
+        source = data.decode("utf-8")
+        masked, functions = quality_rust_functions(source)
+        selected = [name for name in QUALITY_REQUIRED_TESTS if name.startswith("quality::tests::") == (filename == private)]
+        for test in selected:
+            name = test.removeprefix("quality::tests::")
+            if name not in functions:
+                raise Incomplete("Quality selected test has no admitted semantic function body.")
+            pending, visited, sites = [name], set(), []
+            while pending:
+                owner = pending.pop()
+                if owner in visited:
+                    continue
+                visited.add(owner)
+                body = functions[owner]
+                start, end = body["start"], body["end"]
+                code = masked[start:end]
+                for helper in allowed_helpers:
+                    if re.search(r"\b" + helper + r"\s*\(", code):
+                        if helper not in functions:
+                            raise Incomplete("Quality numeric helper has no admitted source body.")
+                        pending.append(helper)
+                for match in re.finditer(r"\b(assert|assert_eq|assert_ne)!\s*\(", code):
+                    offset = start + match.start()
+                    line = source.count("\n", 0, offset) + 1
+                    column = offset - source.rfind("\n", 0, offset)
+                    marker = {"assert": "assertion failed:", "assert_eq": "assertion `left == right` failed",
+                              "assert_ne": "assertion `left != right` failed"}[match[1]]
+                    sites.append({"source": filename, "line": line, "column": column,
+                                  "owner": owner, "kind": "panic_assertion", "marker": marker})
+                if filename == external:
+                    for match in re.finditer(r"\bcheck\s*\(", code):
+                        offset = start + match.start()
+                        opening = start + match.end() - 1
+                        depth, close = 1, opening + 1
+                        while close < end and depth:
+                            depth += (masked[close] == "(") - (masked[close] == ")")
+                            close += 1
+                        if depth:
+                            raise Incomplete("Quality semantic check call is incomplete.")
+                        strings = re.findall(r'"((?:\\.|[^"\\])*)"', source[opening:close])
+                        if len(strings) != 1 or "\\" in strings[0]:
+                            raise Incomplete("Quality semantic check requires one literal fixed fact.")
+                        fact = strings[0]
+                        if fact in excluded_facts:
+                            continue
+                        sites.append({"source": filename, "line": source.count("\n", 0, offset) + 1,
+                            "column": offset - source.rfind("\n", 0, offset), "owner": owner,
+                            "kind": "typed_semantic_assertion",
+                            "marker": 'Error: Custom { kind: Other, error: ' + json.dumps(fact) + ' }'})
+            if not sites:
+                raise Incomplete("Quality selected test has no admitted semantic assertion site.")
+            result["tests"][test] = sorted(sites, key=lambda row: (row["source"], row["line"], row["column"]))
+    if set(result["tests"]) != set(QUALITY_REQUIRED_TESTS):
+        raise Incomplete("Quality semantic site inventory is incomplete.")
+    return result
+
+
+def quality_secondary_product_refusal(line: str) -> bool:
+    """Admit only closed payload-free Q1 refusal Debug forms as secondary evidence.
+
+    Such a refusal never earns a kill itself. Any I/O, peer, resource or unknown
+    error remains a harness/cause gap, even beside a valid semantic assertion.
+    """
+    assumption = ("HistoricalQuantum|TransmitCaptureAllowance|ReceiveCaptureAllowance|FrequencyInterval|"
+                  "AdvertisedDistanceLimit|DelayLimit|ServerProcessingLimit")
+    interval = "Local|Server|RawRoundTrip"
+    measurement = "Unavailable|InvalidProfile|CaptureOrder|MappingDiscontinuity|DateScope|EraNoCandidate|EraAmbiguous|Arithmetic|Protocol"
+    stage = ("CombinedPrecision|FrequencyWidth|FrequencyHalfWidth|FrequencyDispersion|PeerDispersion|"
+             "AdvertisedRootDelay|AdvertisedRootDispersion|AdvertisedDistance|RootDelay|RootDispersion|"
+             "PeerDistance|RootDistance|AdjustedDelay")
+    pattern = (r"Error: (?:InvalidAssumption\((?:" + assumption + r")\)|Measurement\((?:" + measurement
+        + r")\)|ExactArithmetic\((?:" + interval + r")\)|NonFinite\((?:" + stage
+        + r")\)|Rational \{ interval: (?:" + interval + r"), source: (?:ArithmeticInvariant|OutputInvariant) \}"
+        + r"|AdvertisedDistance|PrecisionDelay|AdjustedDelay|ServerProcessing|OutputInvariant|ValidationInvariant)")
+    return re.fullmatch(pattern, line) is not None
+
+
+def validate_quality_caught_causes(directory: Path, outcomes: dict, semantic_sites: dict) -> dict:
+    """Require source-bound primary assertions; unrelated failures earn no kill."""
+    if (type(semantic_sites) is not dict or set(semantic_sites) != {"candidate_sha256", "source_sha256", "tests"}
+            or type(semantic_sites["tests"]) is not dict or set(semantic_sites["tests"]) != set(QUALITY_REQUIRED_TESTS)):
+        raise Incomplete("Quality caught causes require the complete admitted semantic site map.")
+    rows = outcomes.get("outcomes")
+    if type(rows) is not list or len(rows) > 513 or any(type(row) is not dict for row in rows):
+        raise Incomplete("Quality caught-cause records are malformed or oversized.")
+    checked = {}
+    for row in rows:
+        if row.get("summary") != "CaughtMutant":
+            continue
+        scenario = row.get("scenario")
+        mutant = scenario.get("Mutant") if type(scenario) is dict else None
+        name = mutant.get("name") if type(mutant) is dict else None
+        if (type(name) is not str or not 0 < len(name) <= 4096 or name in checked
+                or mutant.get("file") != QUALITY_SUBJECTS["quality"] or mutant.get("package") != QUALITY_SCOPE.package):
+            raise Incomplete("Quality caught identity is missing, repeated or outside its selected owner.")
+        relative = COMMON.analysis_output_path(row.get("log_path", ""))
+        if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+            raise Incomplete("Quality caught log escapes its owned output.")
+        data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
+        text = data.decode("utf-8")
+        if ("N3_HARNESS_INCOMPLETE" in text or "Q1_HARNESS_INCOMPLETE" in text
+                or re.search(r"error\[E\d+\]|could not compile|process didn't exit successfully.*rustc|"
+                             r"timed out|no space left|cannot allocate memory|out of memory|"
+                             r"failed to spawn|resource temporarily unavailable", text, re.IGNORECASE)):
+            raise Incomplete("Quality caught fault contains compiler or unclassified harness failure.")
+        causes, secondary = [], []
+        sections = set()
+        failed_sections = list(re.finditer(r"^---- ([^\r\n]+) stdout ----\n(.*?)(?=^---- |^failures:|\Z)", text, re.MULTILINE | re.DOTALL))
+        if (text.count("panicked at ") != sum(match[2].count("panicked at ") for match in failed_sections)
+                or len(re.findall(r"(?m)^Error: ", text)) != sum(len(re.findall(r"(?m)^Error: ", match[2])) for match in failed_sections)):
+            raise Incomplete("Quality caught fault has an error or panic outside a named failed-test section.")
+        for match in failed_sections:
+            test, body = match.groups()
+            if test not in semantic_sites["tests"] or test in sections:
+                raise Incomplete("Quality caught fault has an unrelated or repeated failed test section.")
+            sections.add(test)
+            admitted = semantic_sites["tests"][test]
+            section_causes = []
+            locations = list(re.finditer(r"(?m)^thread '([^'\r\n]+)'(?: \(\d+\))? panicked at "
+                                        r"(?:/work/source/)?([^\r\n]+):(\d+):(\d+):\n([^\r\n]+)", body))
+            if body.count("panicked at ") != len(locations):
+                raise Incomplete("Quality caught panic lacks an exact admitted source location.")
+            for location in locations:
+                thread, source, line, column, message = location.groups()
+                sites = [site for site in admitted if site["kind"] == "panic_assertion"
+                         and (site["source"], site["line"], site["column"]) == (source, int(line), int(column))
+                         and message.startswith(site["marker"])]
+                if thread != test or len(sites) != 1:
+                    raise Incomplete("Quality caught panic is not its named test's admitted semantic assertion site.")
+                section_causes.append({"test": test, **sites[0]})
+            for line in body.splitlines():
+                if not line.startswith("Error: "):
+                    continue
+                sites = [site for site in admitted if site["kind"] == "typed_semantic_assertion" and line == site["marker"]]
+                if len(sites) == 1:
+                    section_causes.append({"test": test, **sites[0]})
+                elif not sites and quality_secondary_product_refusal(line):
+                    secondary.append({"test": test, "refusal": line})
+                else:
+                    raise Incomplete("Quality caught fault contains an unrelated fixture, peer or I/O error.")
+            if not section_causes and not any(row["test"] == test for row in secondary):
+                raise Incomplete("Quality failed test has no admitted semantic cause or closed product refusal.")
+            causes.extend(section_causes)
+        if not causes:
+            raise Incomplete("Quality caught fault lacks a selected Q1 assertion with its actual owned source cause.")
+        checked[name] = {"log_sha256": hashlib.sha256(data).hexdigest(), "causes": causes,
+                         "secondary_product_refusals_without_credit": secondary}
+    return {"checked_caught_logs": checked, "compiler_or_harness_kill_credit": 0,
+            "semantic_site_map_sha256": COMMON.canonical_sha256(semantic_sites),
+            "scope": "Named Q1 assertions only; independent descriptor/cause review remains required."}
+
+
+def validate_quality_baseline(work: Path, subject: str, policy: dict) -> dict:
+    """Require one complete successful actual selected baseline before fault scoring."""
+    if subject != "quality":
+        raise Incomplete("Quality baseline requires only its selected quality owner.")
+    directory = work / "mutation" / subject / "mutants.out"
+    outcomes = COMMON.read_analysis_json(directory / "outcomes.json", maximum=64 * 1024 * 1024)
+    rows = outcomes.get("outcomes")
+    if type(rows) is not list or any(type(row) is not dict for row in rows):
+        raise Incomplete("Quality baseline outcome inventory is malformed.")
+    baseline = [row for row in rows if row.get("scenario") == "Baseline"]
+    if len(baseline) != 1 or baseline[0].get("summary") != "Success":
+        raise Incomplete("Quality mutation requires one successful actual selected native baseline.")
+    COMMON.mutation_phases(QUALITY_SCOPE, baseline[0])
+    relative = COMMON.analysis_output_path(baseline[0].get("log_path", ""))
+    if relative.is_absolute() or not relative.parts or ".." in relative.parts:
+        raise Incomplete("Quality baseline log escapes its owned output.")
+    data = COMMON.read_analysis_bytes(directory / relative, maximum=16 * 1024 * 1024)
+    return {**validate_quality_test_execution(data.decode("utf-8"), policy, doctests=True),
+            "log_sha256": hashlib.sha256(data).hexdigest(),
+            "caught_cause_admission": validate_quality_caught_causes(directory, outcomes,
+                quality_semantic_assertion_sites(work / "source", policy))}
+
+
+def quality_contract_examples() -> dict:
+    """Execute checked constructor neighbors; compile actual external field/borrow bypasses."""
+    setup = ("let prior = DeclaredFrequencyInterval::new(-0.0, 0.0)?; "
+             "let limits = DeclaredQualityLimits::new(1.0, 2.0, 3.0)?; "
+             "let assumptions = DeclaredQualityAssumptions::new(0.25, -0.0, 0.0, prior, limits)?; "
+             "let _ = (&prior, &limits, &assumptions);")
+    marker = "legal-quality-contracts:explicit-checked-assumptions-only"
+    examples = {
+        "quality_legal": {"statement": 'assert!(DeclaredFrequencyInterval::new(1.0, -1.0).is_err()); '
+            'assert!(DeclaredQualityLimits::new(0.0, 2.0, 3.0).is_err()); '
+            'assert!(DeclaredQualityAssumptions::new(0.0, 0.0, 0.0, prior, limits).is_err()); '
+            'assert_eq!(assumptions.transmit_capture_allowance_seconds().to_bits(), (-0.0_f64).to_bits()); '
+            "fn retained<'a>(facts: &'a TransportFacts, assumptions: &'a DeclaredQualityAssumptions) "
+            "-> Result<ConditionalQuality<'a>, QualityRefusal> { evaluate_conditional_quality(facts, assumptions) } "
+            "let _ = retained; "
+            'println!("' + marker + '");', "code": None, "tokens": [], "success_marker": marker},
+        "quality_frequency_construction": {"statement": "let _ = DeclaredFrequencyInterval { endpoints: [1.0, -1.0] };", "code": "E0451", "tokens": ["endpoints", "private"]},
+        "quality_limits_construction": {"statement": "let _ = DeclaredQualityLimits { advertised_distance: 0.0, delay: 0.0, server_processing: 0.0 };", "code": "E0451", "tokens": ["advertised_distance", "private"]},
+        "quality_frequency_mutation": {"statement": "let mut value = prior; value.endpoints = [1.0, -1.0]; let _ = value;", "code": "E0616", "tokens": ["endpoints", "private"]},
+        "quality_assumptions_mutation": {"statement": "let mut value = assumptions; value.local_quantum = 0.0; let _ = value;", "code": "E0616", "tokens": ["local_quantum", "private"]},
+        "quality_facts_substitution": {"statement": "fn substitute<'a>(mut value: ConditionalQuality<'a>, other: &'a TransportFacts) { value.facts = other; let _ = value; }", "code": "E0616", "tokens": ["facts", "private"]},
+        "quality_assumptions_substitution": {"statement": "fn substitute<'a>(mut value: ConditionalQuality<'a>, other: &'a DeclaredQualityAssumptions) { value.assumptions = other; let _ = value; }", "code": "E0616", "tokens": ["assumptions", "private"]},
+        "quality_facts_owner_escape": {"statement": "fn escape<'a>(facts: TransportFacts, assumptions: &'a DeclaredQualityAssumptions) -> Result<ConditionalQuality<'a>, QualityRefusal> { evaluate_conditional_quality(&facts, assumptions) }", "code": "E0515", "tokens": ["return value", "function parameter", "facts"]},
+        "quality_assumptions_owner_escape": {"statement": "fn escape<'a>(facts: &'a TransportFacts, assumptions: DeclaredQualityAssumptions) -> Result<ConditionalQuality<'a>, QualityRefusal> { evaluate_conditional_quality(facts, &assumptions) }", "code": "E0515", "tokens": ["return value", "function parameter", "assumptions"]},
+        "quality_raw_facts": {"statement": "let _ = evaluate_conditional_quality(&0_u8, &assumptions);", "code": "E0308", "tokens": ["TransportFacts", "mismatched types"]},
+        "quality_default": {"statement": "let _: DeclaredQualityAssumptions = Default::default();", "code": "E0277", "tokens": ["DeclaredQualityAssumptions", "Default"]},
+        "quality_raw_conversion": {"statement": "let _: DeclaredFrequencyInterval = (1.0, -1.0).into();", "code": "E0277", "tokens": ["DeclaredFrequencyInterval", "From"]},
+    }
+    for specimen in examples.values():
+        specimen["source"] = "\n".join(["use nevrotick_engine::*;", "fn main() -> Result<(), QualityRefusal> {",
+            setup, specimen.pop("statement"), "Ok(())", "}"]) + "\n"
+        specimen["line"] = 4
+    return examples
+
+
+def quality_validation_variants(source: str) -> dict[str, str]:
+    """Omit exactly one actual constructor validation, leaving immutable originals intact."""
+    variants = {}
+    for name, owner in (("frequency", "DeclaredFrequencyInterval"), ("limits", "DeclaredQualityLimits"),
+                        ("assumptions", "DeclaredQualityAssumptions")):
+        owner_start = source.index("impl " + owner + " {")
+        start = source.index("        candidate.validate().map_err(|_| {", owner_start)
+        end = source.index("        Ok(candidate)", start)
+        omitted = source[start:end]
+        if omitted.count("candidate.validate()") != 1 or not omitted.rstrip().endswith("})?;"):
+            raise Incomplete("Quality validation omission no longer matches its exact constructor guard.")
+        variants[name] = source[:start] + source[end:]
+    return variants
+
+
+def quality_validation_contracts(session, report: dict, *, deadline: float) -> None:
+    """Run actual validation-omission failures against sealed standalone source copies."""
+    source = (session.source / QUALITY_SUBJECTS["quality"]).read_text()
+    variants = quality_validation_variants(source)
+    dependencies = session.work / "contract-deps"
+    externs = []
+    for package in ("garde", "time_domain"):
+        matches = sorted(dependencies.glob("lib" + package + "-*.rlib"))
+        if len(matches) != 1:
+            raise Incomplete("Quality validation probes require one actual copied dependency artifact.")
+        externs += ["--extern", package + "=/work/contract-deps/" + matches[0].name]
+    directory = session.work / "quality-validation-inputs"
+    directory.mkdir(mode=0o700)
+    checks = {
+        "frequency": "assert!(quality::DeclaredFrequencyInterval::new(1.0, -1.0).is_err(), \"Q1_VALIDATION_OMISSION:frequency\");",
+        "limits": "assert!(quality::DeclaredQualityLimits::new(0.0, 1.0, 1.0).is_err(), \"Q1_VALIDATION_OMISSION:limits\");",
+        "assumptions": "let prior = quality::DeclaredFrequencyInterval::new(0.0, 0.0)?; let limits = quality::DeclaredQualityLimits::new(1.0, 1.0, 1.0)?; assert!(quality::DeclaredQualityAssumptions::new(0.0, 0.0, 0.0, prior, limits).is_err(), \"Q1_VALIDATION_OMISSION:assumptions\");",
+    }
+    for name, body in {"healthy": source, **variants}.items():
+        (directory / (name + "_module.rs")).write_text(body)
+        statements = " ".join(checks.values()) if name == "healthy" else checks[name]
+        (directory / (name + ".rs")).write_text(
+            "use nevrotick_engine::{MeasurementRefusal, TransportFacts};\n"
+            '#[path="' + name + '_module.rs"] mod quality;\n'
+            "fn main() -> Result<(), quality::QualityRefusal> { " + statements
+            + ' println!("Q1_VALIDATION_CONTROL:healthy"); Ok(()) }\n')
+    session.protect(directory)
+    for name in ("healthy", *variants):
+        command = [str(session.stable / "bin/rustc"), "--edition", "2024", "--crate-name", "quality_validation_" + name,
+            "/work/quality-validation-inputs/" + name + ".rs", "--extern",
+            "nevrotick_engine=/work/contract-deps/libnevrotick_engine.rlib", *externs,
+            "-L", "dependency=/work/contract-deps", "--out-dir", "/work/contracts"]
+        session.run("quality-validation-compile:" + name, command, COMMON.remaining_timeout(deadline, 60),
+                    sealed=[directory, dependencies])
+        marker = None if name == "healthy" else "Q1_VALIDATION_OMISSION:" + name
+        output = session.run("quality-validation-execute:" + name,
+            ["/work/contracts/quality_validation_" + name], COMMON.remaining_timeout(deadline, 30),
+            sealed=[directory, dependencies], negative=marker)
+        if name == "healthy" and "Q1_VALIDATION_CONTROL:healthy" not in output:
+            raise Incomplete("Quality healthy constructor validation companion did not execute.")
+    report["quality_validation_controls"] = {"healthy_executed": 1, "intended_runtime_failures": list(variants),
+        "source_sha256": PRODUCT.sha256(session.source / QUALITY_SUBJECTS["quality"]),
+        "scope": "Three actual constructor validation omissions; no mutation score or producer qualification credit."}
+
+
+def execute_quality_profile(args, report: dict) -> None:
+    """Use the existing custodian for one frozen Q1 owner and all exact native controls."""
+    if args.lane not in {"contracts", "enumerate", "coverage", "mutation", "all"}:
+        raise Incomplete("Unknown quality analysis lane.")
+    subjects = QUALITY_SCOPE.select(args.subject)
+    policy = read_quality_policy(ROOT)
+    if args.lane in {"mutation", "all"}:
+        quality_inventory_bindings(policy, required=True)
+    if shutil.disk_usage(args.output_dir.parent).free < policy["minimum_free_bytes"]:
+        raise Incomplete("Quality analysis requires five GiB of available preflight space.")
+    session_args = argparse.Namespace(**vars(args))
+    if args.lane == "enumerate":
+        session_args.lane = "mutation"
+    report.update(subjects=subjects, candidate_sha256=policy["candidate_sha256"], qualification_passed=False,
+        profile="quality", scope="Bounded host Q1 conditional quality " + args.lane,
+        ordinary_evidence=admit_quality_ordinary(policy),
+        generation_gap_controls="Separate function/Garde inventory and direct controls remain required; no score inferred.")
+    session = COMMON.Session(ROOT, session_args, report, QUALITY_SCOPE, policy, QUALITY_BOUND_INPUTS)
+
+    def run(label, command, timeout, **options):
+        result = session.run(label, command, timeout, **options)
+        if label == "coverage":
+            report["coverage_execution"] = validate_quality_test_execution(result, policy, doctests=False)
+        elif label.startswith("mutation-campaign:"):
+            subject = label.removeprefix("mutation-campaign:")
+            report.setdefault("baseline_execution", {})[subject] = validate_quality_baseline(session.work, subject, policy)
+        return result
+
+    try:
+        if COMMON.canonical_sha256(session.product_identity) != policy["candidate_sha256"]:
+            raise Incomplete("Captured quality Session differs from its admitted product candidate.")
+        if any(PRODUCT.sha256(session.source / name) != digest for name, digest in policy["inputs_sha256"].items()):
+            raise Incomplete("Captured quality protected source or helper bytes changed.")
+        if COMMON.canonical_sha256(read_json(session.source / QUALITY_POLICY)) != COMMON.canonical_sha256(policy):
+            raise Incomplete("Captured quality policy differs from admitted policy.")
+        if args.lane in {"contracts", "all"}:
+            contracts_deadline = time.monotonic() + policy["contracts_wall_seconds"]
+            contracts(session, policy, report, examples=quality_contract_examples(),
+                effect_scope="Explicit quality assumption constructors only; actual facts/result/borrow probes compile only. No clocks or network.",
+                deadline=contracts_deadline)
+            quality_validation_contracts(session, report, deadline=contracts_deadline)
+        if args.lane == "enumerate":
+            listing = COMMON.enumerate_mutation_inventories(QUALITY_SCOPE, subjects, policy, session.tools, run, report,
+                deadline=time.monotonic() + policy["enumeration_wall_seconds"],
+                maximum_per_file=policy["maximum_listed_per_file"], maximum_total=policy["maximum_listed_total"])
+            report.update(listed_inventories=listing.inventories, listed_inventory_bindings=listed_summary(listing.inventories),
+                listed_total=listing.total, campaign_cap_exceeded=listing.campaign_budget_exceeded, campaign_admission=False)
+        elif args.lane != "contracts":
+            for lane in (("coverage", "mutation") if args.lane == "all" else (args.lane,)):
+                COMMON.run_analysis_lanes(QUALITY_SCOPE, subjects, policy, session.work, session.tools, run, report, lane)
+    finally:
+        session.finish()
+        admit_quality_ordinary(policy)
+    if args.lane in {"contracts", "all"}:
+        report["contracts_qualification_passed"] = True
+    if args.lane not in {"enumerate", "contracts"}:
+        report["qualification_passed"] = True
+
+
 def execute(args, report: dict) -> None:
     """Execute only the fixed selected lane, with full shared custody bookends."""
     profile = getattr(args, "profile", "legacy")
-    if profile not in {"legacy", "series"}:
+    if profile not in {"legacy", "series", "quality"}:
         raise Incomplete("Unknown engine analysis profile.")
+    if profile == "quality":
+        execute_quality_profile(args, report)
+        return
     if profile == "series":
         execute_series_profile(args, report)
         return
@@ -1039,17 +1637,21 @@ def execute(args, report: dict) -> None:
 def main(argv=None) -> int:
     """Keep listing completion distinct from selected host coverage/mutation gates."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--profile", choices=("legacy", "series"), default="legacy")
+    parser.add_argument("--profile", choices=("legacy", "series", "quality"), default="legacy")
     parser.add_argument("--lane", choices=("contracts", "enumerate", "coverage", "mutation", "all"), required=True)
-    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "all"), default="all")
+    parser.add_argument("--subject", choices=(*SUBJECTS, "series", "quality", "all"), default="all")
     parser.add_argument("--tool-admission-profile", choices=("full", "stable-core"), default="full")
     parser.add_argument("--vendor-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.profile == "legacy" and args.subject == "series":
         parser.error("--subject series requires --profile series")
+    if args.profile == "legacy" and args.subject == "quality":
+        parser.error("--subject quality requires --profile quality")
     if args.profile == "series" and args.subject not in {*SERIES_SUBJECTS, "all"}:
         parser.error("--profile series selects only library, series or all")
+    if args.profile == "quality" and args.subject not in {"quality", "all"}:
+        parser.error("--profile quality selects only quality or all")
     report = {"status": "incomplete", "scope": "Bounded host engine " + args.lane,
               "selected_lane": args.lane, "qualification_passed": False,
               "native_windows_qualification": "not performed"}

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 import csv
 import dataclasses
+import hashlib
 import importlib
 import json
 import re
@@ -272,6 +273,7 @@ class ExpandedModelTests(SourceFixture):
         try:
             cls.contract = importlib.import_module("metadata.pipeline.contract")
             cls.generator = importlib.import_module("metadata.pipeline.generate")
+            cls.registry = importlib.import_module("metadata.pipeline.fields")
         finally:
             sys.path.remove(str(REPOSITORY))
 
@@ -286,6 +288,60 @@ class ExpandedModelTests(SourceFixture):
                 forged = dataclasses.replace(target, **patch)
                 fields = tuple(forged if field.key == target.key else field for field in model.fields)
                 self.generator.build_outputs(dataclasses.replace(model, fields=fields))
+
+    def frozen_records(self) -> tuple[object, ...]:
+        model = self.contract.load_metadata(self.root)
+        return (model, model.product, model.components[0], model.pending[0], model.inputs[0],
+                model.fields[0], self.registry.FIELD_SPECS[0])
+
+    def test_all_seven_record_types_reject_ordinary_assignment_and_deletion(self) -> None:
+        """Admitted records retain their values across normal Python caller use."""
+        records = self.frozen_records()
+        self.assertEqual({type(record).__name__ for record in records},
+                         {"Metadata", "Product", "Component", "PendingField", "InputDigest", "FieldValue", "FieldSpec"})
+        for record in records:
+            with self.subTest(record=type(record).__name__):
+                field = dataclasses.fields(record)[0].name
+                original = getattr(record, field)
+                legal_copy = dataclasses.replace(record)
+                self.assertEqual(legal_copy, record)
+                self.assertIsNot(legal_copy, record)
+                with self.assertRaises(dataclasses.FrozenInstanceError):
+                    setattr(record, field, original)
+                with self.assertRaises(dataclasses.FrozenInstanceError):
+                    delattr(record, field)
+                self.assertEqual(getattr(record, field), original)
+
+    def test_all_seven_record_types_have_fixed_attribute_layout(self) -> None:
+        """Slots bound the record layout; they are not a hostile-code sandbox."""
+        for record in self.frozen_records():
+            with self.subTest(record=type(record).__name__):
+                self.assertFalse(hasattr(record, "__dict__"))
+                with self.assertRaises((AttributeError, TypeError)):
+                    setattr(record, "unowned_extra_metadata_field", "unowned")
+                self.assertFalse(hasattr(record, "unowned_extra_metadata_field"))
+
+    def test_complete_field_register_has_reviewed_shape_values_and_catalogue_binding(self) -> None:
+        """Bind all reviewed register data; a digest is not semantic approval."""
+        expected_columns = ("key", "surface", "kind", "value_type", "owner", "applicability", "derivation", "source_ref")
+        self.assertEqual(tuple(field.name for field in dataclasses.fields(self.registry.FieldSpec)), expected_columns)
+        rows = [[getattr(spec, column) for column in expected_columns] for spec in self.registry.FIELD_SPECS]
+        self.assertEqual(len(rows), 731)
+        self.assertTrue(all(len(row) == 8 and all(type(value) is str for value in row) for row in rows))
+        canonical = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        self.assertEqual(hashlib.sha256(canonical).hexdigest(), "50ac89bb2a7eb3fe92aaf9319754cdb840f2aa44c3be89c5951a14ed9bf68724")
+        indexed = self.registry.FIELD_BY_KEY
+        self.assertEqual(set(indexed), {row[0] for row in rows})
+        catalogue = {spec.key for spec in self.registry.FIELD_SPECS if spec.key.startswith("catalogue.")}
+        self.assertEqual(catalogue, catalogue_keys())
+        for spec in self.registry.FIELD_SPECS:
+            if spec.key in catalogue:
+                self.assertTrue(spec.source_ref.startswith("catalogue:"))
+                self.assertTrue(spec.key.startswith("catalogue." + spec.source_ref.removeprefix("catalogue:") + "."))
+        with self.assertRaises(TypeError):
+            indexed[rows[0][0]] = indexed[rows[0][0]]
+        with self.assertRaises(TypeError):
+            del indexed[rows[0][0]]
 
     def test_public_field_counts_reject_forged_models(self) -> None:
         model = self.contract.load_metadata(self.root)

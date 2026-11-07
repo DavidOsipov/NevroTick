@@ -1,0 +1,3 @@
+# CPython 3.12 Linux x86_64 wheel; PyPI release 2026-11-04.
+# https://files.pythonhosted.org/packages/73/65/774fc4ec86807b6ee66b46465bc49b34bb6d291e9bff6ddfa9708ccb4053/coverage-7.17.2-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
+coverage==7.17.2 --hash=sha256:36314997533266bde3d07765289674304d61bfe49165bb1b4fa9be12cb4ba0d1

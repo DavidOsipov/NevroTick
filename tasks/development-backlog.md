@@ -83,10 +83,23 @@ remain required. No general parent below is activated by this note.
 is qualified on407-input `e71aab7...`, with214 fresh library outcomes and143
 explicitly reused receiver outcomes. This closes the controlled acquisition
 child only. The next
-[existing receiving-contract card](engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit)
-must settle private producer-to-row binding, per-report/cross-report collection
-and fit insufficiency, atomic capacity/eviction, and final serialized authority.
-Its actual generation/date/scale/quality suppliers and Engine-to-Core/history
+[existing receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026)
+settles private pre-acquisition chart/completion binding, per-completion collection
+and fit insufficiency, atomic oldest-only fitted-row replacement and final
+serialized authority. Q1's producer-bound conditional quality calculation is the
+selected dependency, with mandatory explicit checked assumptions and no
+production-calibration claim. Its [frozen416-input checkpoint](engine-transport-pilot.md#q1-verification-readiness-and-frozen-integrated-candidate)
+`8c05b4ee...` passes111 ordinary/111 optimized tests,50 doctests and all ten selected
+lanes. The strengthened negative-server control passed healthy and detected an
+isolated absolute-value omission without generated mutation credit. The role
+binds161 baseline names,20 Q1 cases and the reviewed167-variant inventory;68 Python
+controls pass. The frozen final contracts/coverage/mutation session has started
+under the unchanged five-GiB floor; its final outcome, mutation score and full Q1
+exit remain pending. Earlier v6 contracts and366/382 coverage, and the
+412-input103-test checkpoint, retain their recorded historical scopes.
+Windows-target compiler
+checks establish no native Windows or service qualification. Actual
+generation/date/scale/quality suppliers and Engine-to-Core/history
 implementation remain held; declared labels, retained lifetimes and empty input
 supply neither authority nor a precision default. Preserve all separate phase
 and execution holds.

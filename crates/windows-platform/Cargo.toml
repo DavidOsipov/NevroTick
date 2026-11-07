@@ -1,0 +1,15 @@
+[package]
+name = "windows-platform"
+version = "0.0.0"
+publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Shared portable service lifecycle preparation for NevroTick Windows adapters"
+
+[dependencies]
+garde = { version = "=0.23.0", default-features = false, features = ["derive"] }
+
+[lints]
+workspace = true

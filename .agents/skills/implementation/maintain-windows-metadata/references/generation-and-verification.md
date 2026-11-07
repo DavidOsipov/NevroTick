@@ -148,6 +148,36 @@ existing tests through [the configured metadata test entry](../../../../../metad
 and the existing W11-W10 checkpoint. A routine value edit needs no new collector,
 fresh catalogue survey or repetition of unchanged native/tool qualification.
 
+### Qualify the Python source tool
+
+Use the [declared qualification scope](../../../../../metadata/qualification/manifest.json)
+and [admitted commands](../../../../../metadata/qualification/README.md) at the
+existing MD-P1–MD-P3/W11-W10 checkpoint. Check all eight production modules and
+the immediate typed consumer; intended static failures must name their actual
+consumer/rule. Keep runtime admission beside type checking. Standard Python
+annotation readback tests check authored source interfaces, not raw TOML safety.
+
+Require at least 90% executable-line coverage for each declared security module
+and 95% adjusted viable-mutation score for each critical file, with separate
+branch evidence and complete generated/function/data reconciliation. Field
+dispositions are not execution coverage. Preserve ordinary healthy tests and
+reject skipped, expected-failure, missing, empty or stale required observations.
+
+Instrument real isolated CLI children and reconcile actual loaded source bytes.
+`-B` suppresses bytecode writes, not reads: use cache-free copied inputs or an
+owned fresh bytecode prefix when admitting a source mutant. Exclude altered
+producer observations from healthy coverage; do not silently omit their tests.
+Keep syntax/dependency/setup failures separate from behavior. A compile-valid
+application startup fault needs an independent valid-source CLI control and
+causal traceback review before receiving kill credit. A broken source selector
+or unreached observation hook supplies no behavioral kill.
+
+Keep raw mutation outcomes immutable. Bind reviewed equivalences to exact
+source, mutant and interpreter/domain assumptions; exclusions change only the
+adjusted denominator and supply no kill credit. Preserve unresolved survivors,
+timeouts, ungenerated behavior and first failures. Later source/build/native
+stages retain their own gates; these checks approve no release.
+
 ## Read the source-delivery report
 
 `field-coverage.json.delivery` describes required source expectations, not a

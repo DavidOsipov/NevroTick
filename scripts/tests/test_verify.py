@@ -18,8 +18,9 @@ EXPECTED_PACKAGES = {
     "nevrotick-ui": "crates/nevrotick-ui", "ntp-wire": "crates/ntp-wire",
     "time-domain": "crates/time-domain", "ntp-exchange": "crates/ntp-exchange",
     "time-core": "crates/time-core", "nevrotick-engine": "crates/nevrotick-engine",
+    "windows-platform": "crates/windows-platform",
 }
-EXPECTED_MEMBERS = 'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine"]'
+EXPECTED_MEMBERS = 'members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine", "crates/windows-platform"]'
 EXCHANGE_LOCK = ('[[package]]\nname="ntp-exchange"\nversion="0.0.0"\n'
                  'dependencies=["ntp-wire","time-core","time-domain"]\n')
 
@@ -162,7 +163,7 @@ class ProductAdmissionTests(unittest.TestCase):
                                  'windows-sys={version="=0.61.2",default-features=false,features=['
                                  '"Win32_Foundation","Win32_Graphics_Gdi","Win32_System_LibraryLoader",'
                                  '"Win32_UI_WindowsAndMessaging","Win32_UI_Controls"]}\n')
-            if package in {"time-domain", "time-core"}:
+            if package in {"time-domain", "time-core", "windows-platform"}:
                 with (member / "Cargo.toml").open("a") as stream:
                     stream.write('[dependencies]\ngarde={version="=0.23.0",default-features=false,features=["derive"]}\n')
                     if package == "time-core":
@@ -190,7 +191,8 @@ class ProductAdmissionTests(unittest.TestCase):
         lock = ('version = 4\n' + CORE_LOCK + ENGINE_LOCK +
                 '[[package]]\nname="nevrotick-ui"\nversion="0.0.0"\n'
                 '[[package]]\nname="ntp-wire"\nversion="0.0.0"\n'
-                '[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n' + EXCHANGE_LOCK)
+                '[[package]]\nname="time-domain"\nversion="0.0.0"\ndependencies=["garde"]\n'
+                '[[package]]\nname="windows-platform"\nversion="0.0.0"\ndependencies=["garde"]\n' + EXCHANGE_LOCK)
         for entry in records:
             lock += ('[[package]]\nname="'+entry["name"]+'"\nversion="'+entry["version"]+'"\n'
                      'source="registry+https://github.com/rust-lang/crates.io-index"\nchecksum="'+entry["checksum"]+'"\n')
@@ -246,7 +248,7 @@ class ProductAdmissionTests(unittest.TestCase):
         self.assertIn("crates/ntp-wire/src/lib.rs", files)
         self.assertIn("crates/nevrotick-ui/src/lib.rs", files)
 
-    def test_reviewed_six_member_graph_is_accepted(self):
+    def test_reviewed_seven_member_graph_is_accepted(self):
         with patch.object(VERIFY.ENV, "run") as run:
             _, files = VERIFY.admit_product(self.root)
             run.assert_not_called()
@@ -385,7 +387,8 @@ class ProductAdmissionTests(unittest.TestCase):
             local_closures = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"},
                               "time-domain": {"time-domain"}, "time-core": {"time-core", "time-domain"},
                               "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"},
-                              "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"}}
+                              "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"},
+                              "windows-platform": {"windows-platform"}}
             self.policy["rows"][target] = {
                 "features": features,
                 "local_features": {name + "@0.0.0": {"target": [[]]} for name in EXPECTED_PACKAGES},
@@ -572,9 +575,34 @@ class ProductAdmissionTests(unittest.TestCase):
 
     def test_prior_five_members_cannot_hide_engine(self):
         path = self.root / "Cargo.toml"
-        path.write_text(path.read_text().replace(', "crates/nevrotick-engine"]', ']'))
+        path.write_text(path.read_text().replace(', "crates/nevrotick-engine"', ''))
         with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "reviewed.*workspace members"):
             VERIFY.admit_product(self.root)
+
+    def test_platform_admission_rejects_new_authority_and_missing_validation(self):
+        """The pure shared owner cannot acquire runtime/FFI edges by manifest drift."""
+        path = self.root / "crates/windows-platform/Cargo.toml"
+        healthy = path.read_text()
+        validation = 'garde={version="=0.23.0",default-features=false,features=["derive"]}\n'
+        VERIFY.admit_product(self.root)
+        alternatives = (
+            healthy.replace(validation, ""),
+            healthy.replace("default-features=false", "default-features=true"),
+            healthy + 'tokio={version="=1.54.1",default-features=false,features=["rt"]}\n',
+            healthy + '[target.\'cfg(windows)\'.dependencies]\nwindows-sys="=0.61.2"\n',
+            healthy + '[features]\nservice=[]\n',
+        )
+        for candidate in alternatives:
+            with self.subTest(candidate=candidate):
+                path.write_text(candidate)
+                self.policy["manifests_sha256"][str(path.relative_to(self.root))] = VERIFY.sha256(path)
+                self.write_policy()
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "windows-platform member"):
+                    VERIFY.admit_product(self.root)
+        path.write_text(healthy)
+        self.policy["manifests_sha256"][str(path.relative_to(self.root))] = VERIFY.sha256(path)
+        self.write_policy()
+        VERIFY.admit_product(self.root)
 
     def test_engine_garde_edge_is_exact_and_mandatory_with_healthy_control(self):
         """Independent direct-edge contract; no product or macro code is executed."""
@@ -1619,6 +1647,7 @@ class ExecutionAccountingTests(unittest.TestCase):
                                     "doctests:ntp-exchange", "doctests:time-core", "optimized-tests:time-domain",
                                     "optimized-tests:ntp-exchange", "optimized-tests:time-core",
                                     "product-tests:nevrotick-engine", "doctests:nevrotick-engine",
+                                    "product-tests:windows-platform", "doctests:windows-platform",
                                     "optimized-tests:nevrotick-engine"})
 
     def test_ui_report_is_removed_before_protocol_test_command(self):
@@ -1655,7 +1684,7 @@ class ExecutionAccountingTests(unittest.TestCase):
 
     def test_package_and_aggregate_accounting_require_both_test_layers(self):
         records = [{"lane": kind + ":" + package, "tests": {"package": package, "executed": count}}
-                   for package, count in (("nevrotick-ui", 3), ("ntp-wire", 2), ("time-domain", 4), ("ntp-exchange", 6), ("time-core", 8), ("nevrotick-engine", 3))
+                   for package, count in (("nevrotick-ui", 3), ("ntp-wire", 2), ("time-domain", 4), ("ntp-exchange", 6), ("time-core", 8), ("nevrotick-engine", 3), ("windows-platform", 5))
                    for kind in ("product-tests", "doctests")]
         records.append({"lane": "optimized-tests:time-domain", "tests": {
             "package": "time-domain", "executed": 5,
@@ -1675,8 +1704,9 @@ class ExecutionAccountingTests(unittest.TestCase):
                                          "time-domain": {"product-tests": 4, "doctests": 4, "optimized-tests": 5},
                                          "ntp-exchange": {"product-tests": 6, "doctests": 6, "optimized-tests": 7},
                                          "time-core": {"product-tests": 8, "doctests": 8, "optimized-tests": 9},
-                                         "nevrotick-engine": {"product-tests": 3, "doctests": 3, "optimized-tests": 3}},
-                          "tests_executed": 26, "doctests_executed": 26, "optimized_tests_executed": 24})
+                                         "nevrotick-engine": {"product-tests": 3, "doctests": 3, "optimized-tests": 3},
+                                         "windows-platform": {"product-tests": 5, "doctests": 5}},
+                          "tests_executed": 31, "doctests_executed": 31, "optimized_tests_executed": 24})
         for incomplete in (records[:-1], records[:-2] + records[-1:], records[:2], records + records[:1],
                            [{"lane": "product-tests:ntp-wire", "tests": {"package": "nevrotick-ui", "executed": 99}}]):
             with self.subTest(records=incomplete), self.assertRaises(VERIFY.ENV.Incomplete):

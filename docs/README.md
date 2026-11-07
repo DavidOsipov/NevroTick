@@ -74,6 +74,11 @@ experiments. UI-M0's M0 checks do not complete the AC/CHECK catalogs or P0/P5.
 Select only the criteria applicable to the authorized task and retain deferred
 requirements with their owners and restoration triggers.
 
+The owner-requested [7 November service source checkpoint](../tasks/windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
+adds the shared portable lifecycle owner in `windows-platform` for the engine and
+clock broker. Checked host logic and cross-compilation remain distinct from the
+unimplemented SCM adapter, installed identities and native service qualification.
+
 The [UI-M0 task](../tasks/ui-m0.md#remaining-evidence-and-next-work) retains the
 Win32 prototype and its incomplete full native-memory instrumentation. The
 [current Slint handoff](../tasks/slint-gui-handoff.md) and S0.5 own the successor
@@ -142,9 +147,19 @@ The357 accounted variants comprise214 fresh library outcomes and143 explicitly
 reused receiver outcomes, with four reviewed equivalents, no unresolved survivor
 or timeout and no equivalent kill credit. Independent cause/function review
 retains the earlier failed attempts and scoped validator controls. The next
-[receiving-contract card](../tasks/engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit)
-must settle its four ownership/transaction choices and actual suppliers before
-Rust integration or an Engine-to-Core edge.
+[receiving transaction reconciliation](../tasks/engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026)
+settles its four ownership/transaction choices. Q1's producer-bound conditional
+quality calculation's [frozen integrated checkpoint](../tasks/engine-transport-pilot.md#q1-verification-readiness-and-frozen-integrated-candidate)
+passes111 ordinary/111 optimized tests,50 doctests and all ten selected lanes
+on416-input `8c05b4ee...`. Its role binds161 baseline names,20 Q1 cases and the
+reviewed167-variant inventory;68 Python controls pass. The frozen final
+contracts/coverage/mutation session has started under the unchanged five-GiB
+floor; its final outcome, mutation score and full Q1 exit remain pending.
+Earlier v6 contracts and366/382 coverage retain their recorded historical scope.
+Actual production
+suppliers remain required before
+history integration or an Engine-to-Core edge; Windows-target compiler checks
+establish no native Windows or service qualification.
 Production history insertion remains open.
 The existing history receiver remains fixture-only;
 physical/date/source/policy admission, NTS, native Windows and full P1/product

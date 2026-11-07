@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "scope": "portable-metadata-source",
+  "requirements": ["CHECK-18", "CHECK-20", "CHECK-23", "CHECK-26", "CHECK-27"],
+  "owner": "W11-W10 / P6 metadata owner",
+  "environment": "Linux/POSIX, CPython 3.12",
+  "source_modules": [
+    "metadata/__init__.py",
+    "metadata/pipeline/__init__.py",
+    "metadata/pipeline/__main__.py",
+    "metadata/pipeline/contract.py",
+    "metadata/pipeline/delivery.py",
+    "metadata/pipeline/fields.py",
+    "metadata/pipeline/generate.py",
+    "metadata/pipeline/text_policy.py"
+  ],
+  "input_files": [
+    "metadata/product.toml",
+    "Cargo.toml",
+    "crates/nevrotick-ui/Cargo.toml",
+    "crates/nevrotick-engine/Cargo.toml"
+  ],
+  "security_modules": [
+    "metadata/pipeline/__main__.py",
+    "metadata/pipeline/contract.py",
+    "metadata/pipeline/delivery.py",
+    "metadata/pipeline/generate.py",
+    "metadata/pipeline/text_policy.py"
+  ],
+  "critical_files": [
+    "metadata/pipeline/__main__.py",
+    "metadata/pipeline/contract.py",
+    "metadata/pipeline/delivery.py",
+    "metadata/pipeline/fields.py",
+    "metadata/pipeline/generate.py",
+    "metadata/pipeline/text_policy.py"
+  ],
+  "minimum_executable_line_percent": 90,
+  "minimum_adjusted_mutation_percent": 95,
+  "branch_evidence": "Report per-module branch counts separately; line coverage does not establish branch coverage.",
+  "nonexecuting_modules": {
+    "metadata/__init__.py": "Package marker and licence notice; reconcile its bytes, do not invent a nonempty execution or mutation denominator.",
+    "metadata/pipeline/__init__.py": "Package marker and licence notice; reconcile its bytes, do not invent a nonempty execution or mutation denominator."
+  },
+  "registry_and_unicode_data": "Retain complete field-register and pinned Unicode-table integrity controls. Reconcile data and requirement-bearing functions with the actual generated mutation inventory; uncovered data is not a killed or equivalent mutant.",
+  "excluded_claims": [
+    "Rust/RC compilation or linked-resource readback",
+    "native Windows, installed package or Store-delivered qualification",
+    "sandbox containment of competing same-identity code",
+    "formal verification",
+    "release approval"
+  ]
+}

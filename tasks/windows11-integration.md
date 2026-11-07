@@ -652,7 +652,7 @@ UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
 **Pre-V1 WinGet assignment, 7 November 2026:** [OD-17](../docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
 adds [WGT-0](../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1) to the
 existing P6/P7 delivery work. Use [the plan](../docs/plans/winget-distribution.md)
-and [§4.33](#433-winget-distribution-before-v1--7-november-2026) for the bounded
+and [§4.36](#433-winget-distribution-before-v1--7-november-2026) for the bounded
 source/metadata, native lifecycle and release-operation sequence. Capability is
 due before V1; external public-source availability is a separate observed result.
 Store-first complete MSIX, current Core priority and execution holds remain.
@@ -722,6 +722,54 @@ controls are under `/tmp/nevrotick-metadata-independent-20261107-o4wfvxgx/`.
 No Cargo/resource compilation, native Windows, service/clock, package, signing,
 Store, fuzz or formal operation occurred. Existing MD-P4–MD-P5 consumers,
 native/package owners and all execution holds remain.
+
+**Full portable metadata qualification, 7 November 2026 — in progress:** David
+requested the remaining quantitative and static checks after the source-tool
+audit. This extends the same MD-P1–MD-P3/W11-W10 evidence chain, with
+CHECK-18/20/23/26/27; it does not enter MD-P4–MD-P5 or lift an execution hold.
+The reviewed scope is declared in
+[the metadata qualification manifest](../metadata/qualification/manifest.json):
+all eight execution-module identities, five security-module line denominators
+and six critical-file mutation denominators, including the field registry.
+Package markers have no invented nonempty denominator. Registry and pinned
+Unicode data require their actual structural controls and reconciliation with
+the generated fault inventory.
+
+The coordinator owns the integrated candidate, manifest, commands and final
+readback. Separate workers own strict source/interface typing, subprocess-aware
+coverage and isolated per-file mutation. Required exits are enforced static
+controls and a healthy consumer, at least 90% executable-line coverage in each
+selected security module with separate branch evidence, at least 95% adjusted
+viable mutation score in each critical file with complete outcome accounting
+and survivor review, and actual input-to-output acceptance. Coverage must reach
+the isolated CLI interpreters. Import, setup or observer-hook failures are not
+behavioral mutation kills; missing, timed-out or empty required rows remain
+incomplete. Tool versions/configuration/source identities, first failures,
+exclusions, candidate changes and consumed time are retained under
+`/tmp/nevrotick-metadata-qualification-20261107-zu2t_iqg/`. This paragraph records
+the authorized work and its exits, not a completed qualification result.
+
+**Resource stop, 7 November 2026:** David asked to stop resource-constrained
+qualification and resume when he starts it again. The filesystem was 96% full
+with concurrent load; this is not a memory-exhaustion claim. Strict checking
+passed the eight production modules, legal consumer and five negative controls.
+Frozen corpus v4 passed 231 tests and corrected source-bound coverage readback
+passed all five 90% security-module line thresholds, observing all 275 CLI
+children. The default mutation inventory has 8,890 faults; its full execution
+and per-file 95% qualification remain incomplete.
+
+The expanded live corpus has a genuine healthy-source RED: seven consecutive
+quotes in valid multiline TOML can conceal the seventeenth lexical container
+from preflight, reaching the parser before the decoded-depth guard refuses it.
+Fix this early-budget defect before claiming completion; preserve its independent
+regression rather than removing or skipping it. Current added tests and raw
+mutation results have not received a complete integrated final qualification.
+Use [the restart checkpoint](../metadata/qualification/CHECKPOINT.md) for exact
+evidence paths, completed metrics, remaining fault reviews and source-bound
+invalidation after the repair. Source/input snapshots and first failures remain
+under the existing evidence root above. Other agents' staged and working-tree
+changes are preserved. This stop supplies no MD-P4–MD-P5, native, formal or
+release pass and lifts no execution hold.
 
 **Adoption source receipt, 7 November 2026:** the dirty working-tree candidate
 at `df6e28a4641f2f046373a9c5640aa60736716a22` passed the configured metadata suite:
@@ -3338,7 +3386,962 @@ change, stable-support approval or release qualification follows from this work.
 >
 > Retain both raw reviews separately and verbatim in existing W11 §4.32, then carry the reconciled documentation handoff forward under its existing gates.
 
-### 4.33 WinGet distribution before V1 — 7 November 2026
+
+### 4.33 Portable service lifecycle source start — 7 November 2026
+
+**Request/disposition:** David requested reading the service docs/skills and
+starting implementation. W11-W05/platform owns this bounded portable source
+child of S0.2/S3.1 and CHECK-27. It prepares logic for the two separate own-process
+roles already required by DEC-2 and architecture §§3–4: engine without clock
+privilege, narrow clock broker with independent recovery. The on-demand helper
+is not a third resident service. This request authorizes source work; the current
+Windows execution stop, separate fuzz hold, storage pause, UI deferrals and
+post-V1 formal deferral remain. The Core/engine continuation in development §7
+is not completed or displaced by this source result.
+
+**Authority/skills:** architecture §§3.4, 4.1, 4.2.1, 11, 12.3 and 17.1; the
+[service skill](../.agents/skills/implementation/implement-windows-service/SKILL.md)
+and its maintained adapter guide; Rust implementation/contract, planning and
+contract-testing instructions. CHECK-1/2/13/15 and W11-W08/W11-W10 dependencies
+remain open, including supported MSIX accounts/pre-start provisioning. No service
+name/account, wrapper, dispatcher, native API feature or production timeout is
+selected by this child.
+
+**Implementation:** [windows-platform](../crates/windows-platform/Cargo.toml)
+is a real seventh workspace member owning only the shared portable
+[service lifecycle](../crates/windows-platform/src/service.rs), without engine,
+Tokio, GUI or new registry dependencies. Its sole external edge is the existing
+exact Garde 0.23.0/defaults-off/derive. The existing admission/check owners now
+bind its local package, unchanged external feature closures, both target rows
+and `service.rs` security/critical-file obligations. Existing external lockfile
+records remain unchanged; the new record is only `windows-platform -> garde`.
+
+**Independent expected results and enforcement:**
+
+- One serialized, non-cloneable invocation owner holds the status reporter;
+  attempted state and last successful acknowledgement remain distinct. Only
+  healthy readiness reporting admits Running work. A report error permanently
+  fences new work while cleanup remains possible.
+- StartPending/StopPending accept no Stop control and use nonzero checkpoints/
+  hints; stable states clear those fields. Only Running enables Stop. Progress
+  never renews a fixed monotonic deadline; checking a stuck phase emits no fake
+  progress. No pause/shutdown/preshutdown or arbitrary management surface exists.
+- Duplicate internal stops neither report again nor restart the stop deadline.
+  Outstanding bounded job permits prohibit readiness/terminal completion;
+  cancellation, timeout and Drop release no capacity. Explicit actual completion
+  releases only the originating invocation's charge, including after owner drop.
+- Terminal Stopped is attempted once, even on status failure. An earlier report
+  error requires an explicit nonzero failed terminal outcome. Cleanup/recovery
+  must finish first; a terminal report failure cannot be retried using its context.
+- Garde runs in private checked budget construction. Raw status construction and
+  permit duplication are unavailable to external consumers. Raw/invalid inputs
+  produce bounded typed refusals without OS effects.
+
+**Candidate/custody:** based on dirty HEAD
+`e5d9a0112e198ab41a50ee0b0057e06eab68ab84`; pre-existing engine/quality, metadata
+and documentation work was retained. Other agents changed unrelated inputs during
+this session, so these are scoped checks, not a frozen whole-workspace pass.
+The exact 15-input source/configuration digest is
+`a8771e9de83236c0e2f31c5fa47f8d14e590fcaca2dbec5643302c4ef50ec9f0`.
+To reconstruct it, SHA-256 each path below in order, form
+`PATH + " " + HEX_DIGEST + "\n"` per file, concatenate and SHA-256 that UTF-8 text:
+`crates/windows-platform/Cargo.toml`, `crates/windows-platform/src/lib.rs`,
+`crates/windows-platform/src/service.rs`, `crates/windows-platform/tests/service.rs`,
+`Cargo.toml`, `Cargo.lock`, `policy/ui-m0-dependencies.json`,
+`policy/verification-manifest.toml`, `scripts/verify.py`,
+`scripts/slint_dependency_profile.py`, `scripts/tests/test_verify.py`,
+`scripts/tests/test_slint_dependency_profile.py`, `rust-toolchain.toml`,
+`.cargo/config.toml`, `policy/rust-workspace.toml`.
+Main service source SHA-256:
+`45daf9fae8416e16b50a344560e9393fe7c0479d299f3c45c1763d247e68eb4e`.
+
+**Executed ordinary checks:**
+
+- `cargo test --frozen -p windows-platform`: 12 public-consumer tests and three
+  doctests passed; two doctests reject private construction/permit duplication.
+  Configured nextest with `--lib --tests --user-config-file none --no-tests=fail`
+  separately executed all 12 tests, zero skipped.
+- `cargo test --frozen -p windows-platform --profile verify-release`: the same
+  12 tests and three doctests passed with optimized code and mandatory checks.
+- Host and `x86_64-pc-windows-msvc` `cargo clippy --frozen -p windows-platform
+  --all-targets -- -D warnings` passed; rustdoc and focused rustfmt passed.
+  Windows compilation used the existing v3/hardening vector and performed no
+  link, executable launch, SCM call or native Windows test.
+- External rustc consumers compiled a legal constructor neighbor, rejected raw
+  budget/status construction with E0451 and permit cloning with E0599.
+- `python3 -B -m unittest scripts.tests.test_verify
+  scripts.tests.test_slint_dependency_profile
+  scripts.tests.test_verify_vendor_admission`: 168 passed. Strict workspace
+  adoption and actual source/manifest/lock admission passed. Graph-owner frozen
+  metadata/workspace/platform trees matched both targets (215 Linux/249 Windows
+  selected external identities), without new registry identities/features.
+- Independent review found the earlier report-failure/clean-terminal issue. The
+  actual public-consumer regression first failed because Clean was accepted;
+  the smallest `FailureOutcomeRequired` guard then made it pass beside valid
+  clean and explicit-failed terminal controls. Final independent review found
+  no remaining material issue within this portable scope.
+
+**Retained first failures:** the initial compile rejected the pinned compiler's
+now-deprecated atomic `fetch_update`; replacing it with `try_update` restored
+compilation. Clippy first rejected missing contract documentation and one test
+assertion style; those were corrected without lint exemptions. An initial Python
+`-I -m unittest scripts...` invocation could not import the local package and
+executed no controls; the corrected command above passed. None of these setup/
+lint failures is credited as a behavioral regression kill.
+
+**Incomplete/next action:** this is source authoring and ordinary-check evidence,
+not CHECK-27/S0.2/S3.1 completion. Preserve the 90% per-security-file coverage and
+95% per-critical-file mutation gates; no service campaign or full sandboxed
+workspace verifier was run here. Complete that focused qualification before
+claiming this owner qualified. Actual readiness/native completion are still
+adapter assertions; counter isolation does not qualify stale-result publication.
+Then admit one narrow SCM wrapper/binding path and implement dispatcher,
+registration, callback custody, Interrogate/unsupported-control behavior and
+native error/status mapping under these contracts. Normal installed service work
+still needs the supported MSIX provisioning/account/isolation boundary; native
+execution additionally needs the existing hold lifted and its disposable-machine
+card. Real tokens/rights, effective mitigation/error policies, diagnostics,
+service arguments, durable broker recovery, IPC, package/remove/update and clock
+effects remain with their existing owners. No service was installed or started.
+
+
+### 4.34 Active two-service completion goal — 7 November 2026
+
+The explicit owner goal now covers both own-process services and their complete
+contract/test integration, not only §4.33's portable source child. The goal is
+active; §4.33 supplies predecessor evidence, not a parent completion claim.
+Use this existing W11-W05/S0.2/S3.1 chain with W11-W08/W11-W10 and their canonical
+security/lifecycle owners. Keep the separate engine/Core work and existing
+Windows/fuzz/storage/formal dispositions intact.
+
+| Obligation / owner | Current disposition and next action | Required observable exit |
+| --- | --- | --- |
+| Portable lifecycle and actual-completion custody; platform/CHECK-27 | Source and 12 ordinary public tests exist; independent gap review and source-bound coverage/mutation preparation are active. | Explicit contracts, direct/bypass/healthy/fault/boundary/concurrency cases, >=90% executable lines for service.rs and >=95% viable mutation score with complete inventory/omitted behavior reconciliation; integrated source and custody unchanged. |
+| Process entry, dispatcher, ServiceMain, bounded callback notification and checked status mapping; platform/CHECK-27 | Next source adapter slice after the lifecycle checkpoint and exact binding/wrapper admission. Do not silently adopt a wrapper or add console service fallback. | Prompt dispatcher connection; registration and status failures remain failures; one transition owner; no FFI unwind, dangling context, false Running/Stopped or use after terminal status. Host injection, Windows compilation/link and actual SCM observations remain separate exits. |
+| Service identity, required privileges, creation-time object security, process/token isolation, unattended-error and mitigation profiles; platform/security/CHECK-1/15/16 | Supported complete-MSIX provisioning/account mapping is unresolved; ordinary installed service work and native probes remain held. | Effective engine token lacks clock/debug/impersonation rights; broker narrow allowed controls succeed, injection/network/foreign-owner paths fail beside valid neighbors; actual configured/effective phases and profiles observed. Use existing decision procedure for material topology/security choice. |
+| Protected management, arguments, maintenance inhibition and service-specific diagnostics; IPC/security/W11-W05/W11-W08 | Contracts apply before dependent adapters; actual IPC and diagnostic owners remain separate incomplete work. | Process/SCM/durable arguments cannot substitute identity, roots, endpoints or clock authority; unauthorized/stale/direct-handler bypasses have no protected effects, benign Interrogate/unsupported control handling, bounded redacted required-event failures and safe cleanup. |
+| Startup/shutdown/restart, broker journal/recovery and worker cancellation; lifecycle/CHECK-12/13/23/27 | Portable counters do not supply actual service/native completion or durable broker recovery. | Real-operation custody and fixed limits survive timeout; actual jobs/callbacks drain before terminal acknowledgement, finite per-role restart and maintenance behavior, no renewed correction budget, successor authority reconciliation and independent crash recovery. |
+| Two executable compositions and integrated/package qualification; W11-W10/P3/P6 | No service binaries or final package exist; cannot claim complete services. | Separate own-process engine/broker closures without privilege/runtime leakage, full handler/IPC integration with simulated clock before P4, complete selected MSIX provisioning/update/removal recovery and actual native evidence on the adopted Windows matrix. |
+| Final independent acceptance; coordinator/security/QA | Entire parent remains incomplete. | Requirement-by-requirement audit of actual delivered/built/native behavior and persisted outcomes, full applicable security/resource/package gates, no missing required evidence; portable or aggregate green cannot substitute. |
+
+Current bounded campaign: one service.rs owner, one writer for source, one for
+public tests, one coordinator for tooling/output. Inspect cheap tool/resource
+readiness first. Planned initial ceilings are six ordinary build jobs, four
+mutation workers with one build/test slot per worker, <=512 generated variants,
+300 seconds coverage, 120 seconds enumeration, 1200 seconds total mutation,
+90 seconds per build and 60 seconds per mutant test. Preserve all attempts and
+first failures; revise only for an identified cause. No formal or fuzz execution,
+Windows command, clock write, service registration or package mutation is admitted.
+
+
+#### 4.34.1 Current lifecycle repair and qualification progress
+
+The independent public-consumer review expanded the suite from12 to21 tests.
+Actual REDs: a duplicate stop at an earlier monotonic time returned false success;
+startup/stop expiry followed by cleanup accepted a clean service exit. The owner
+now observes duplicate-stop time without repeating status or extending its
+fixed deadline, and latches every observed pending-phase deadline failure into
+the required nonzero terminal outcome. The effect-side guards also detect expiry
+when callers omit a separate deadline poll. All21 tests, three doctests,
+optimized verify-release tests, host and Windows-target Clippy passed after these
+repairs; the earlier §4.33 source identity is historical, not the current candidate.
+The suite now includes an81-input independent raw-budget grid, cap2/3/8 partial
+refill plus barrier-synchronized real-thread completion, failed pending reporting,
+permanent failure fencing, exact/reversed observations and preserved typed causes.
+
+The first listing attempt used the new fixed wrapper with the generic full
+analysis profile. Standalone hash-only preflight passed in118.92seconds. The real
+listing invocation then failed before creating its owned output while scanning
+an unrelated nightly toolchain vendor/getopts directory with `ENOMEM`. No
+compiler, mutation baseline/campaign, formal or fuzz command executed, and no
+mutation/coverage evidence was obtained. The live handle91987 is terminal.
+The corrective tooling slice admits only this exact stable-only service role
+through the existing Session; it retains the complete pinned stable inventory,
+separate pinned coverage/mutation binaries, sealed vendor/source bookends,
+90/95 gates and finite budgets. Existing historical role semantics remain under
+regression controls; no unrelated proof payload or receipt is repaired/refreshed.
+The new source-policy binding is being renewed after that deliberate helper edit.
+
+
+#### 4.34.2 Owner-requested stop for PC resources
+
+David requested stopping when PC resources are insufficient and said he will
+restart the agent when they are free. Goal work is paused at that request; no
+new check or guard-control retry was started afterward. The running qualifier
+handle28500 was collected and is terminal. The one-off guard-control handle58294
+had already failed and is terminal. No service qualification job remains live.
+
+Preserved current results:21 ordinary and21 verify-release lifecycle tests,
+three doctests, host/Windows-target Clippy;151 portable-helper/service verifier
+controls; coverage227/237 executable lines (95.78059%); complete53-variant listing
+bound to hash6b0c26ca69165cc0b1eca40786c7883413835757a7c5be5b7a38a713a41ed031.
+The full campaign produced raw53 outcomes (31 caught,22 unviable, zero misses/
+timeouts observed), but final attribution rejected a foreign compiler error.
+Do not call the mutation gate passed or credit these provisional raw counts as
+qualified evidence. Final receipt status is incomplete, metrics_passed=false,
+qualification_passed=false. Actual guarded omission controls are also incomplete:
+the first recipe used a host manifest path inside the namespace and failed before
+behavioral execution. A corrected v2 recipe was prepared but has NOT been run.
+
+Retain `/tmp/nevrotick-service-final-20261107-v2/verification.json` and its complete
+raw mutation outputs; `/tmp/nevrotick-service-coverage-20261107-v2/verification.json`;
+`/tmp/nevrotick-service-enumerate-20261107-v3/verification.json`; the frozen source
+root `/tmp/nevrotick-service-candidate-20261107-v1` (416-input bdd6ceaeee4e6d09c50ea8c9c3899c326bd39198b2cbb9edec0203def80339a3);
+the exact533-package vendor `/tmp/nevrotick-service-vendor-20261107-v1` (27101
+admitted files); and both guard recipe/evidence v1 paths. Corrected unexecuted
+recipe: `/tmp/nevrotick-service-guard-controls-20261107-v2.py`.
+The original shared vendor and all unrelated checkout changes remain preserved.
+The live checkout changed an unrelated engine quality test during admission, so
+final metrics used the already-admitted immutable source snapshot. Selected
+service/helper bytes matched; no whole-live-worktree pass follows. Live service
+policy remains bound to that frozen candidate and must be reconciled on resume.
+
+On David's resume: inspect current source/resources and these terminal receipts;
+diagnose the actual unviable compiler attribution before changing its classifier
+or rerunning any campaign. Complete source-bound generation/Garde omission
+controls and independent qualification, then the source-only direct SCM adapter
+slice. The independent API-fit review favors the permitted narrow windows-sys
+fallback over the pinned windows-service macro because of eager raw-argument
+allocation and hidden callback/error custody; no native dependency, identity,
+provisioning or wake mechanism was adopted. Preserve all Windows/native, fuzz,
+storage and post-V1 formal holds. Both actual services and the full goal remain
+incomplete.
+
+
+#### 4.34.3 Resumed source qualification and resource custody
+
+David resumed the goal and authorized WSL cleanup if space becomes insufficient.
+Initial available memory was about10GiB and disk4.5GiB, adequate for these bounded
+checks. The read-only cleanup inventory found only86.55MiB of optional temporary
+build output and actively mapped repository target libraries; no deletion was
+necessary or performed. Preserve all raw receipts, frozen source/vendor and
+staged work. At resume the index SHA-256 was
+`92902e18b318515fc58af46c9460e2a1ef504c04ee2cfb04666b32e93d6e92cc`, HEAD unchanged;
+there were no unstaged edits. New authorized implementation/helper work is left
+unstaged over the owner's staging.
+
+Independent triage confirmed v2's classifier was correct. Of53 raw variants,
+31 were behavioral caught,21 legitimate selected source/compiler unviable and
+one unresolved proc-macro2 linker/resource failure. Its firstbad log SHA-256 is
+`5d1d6aefee14f4b18bac7b3c6cfa80a8e2ca64fb0fd07086bb7caa883413fe6a`.
+No classifier fix, fabricated unviable credit or raised resource limit was used.
+After resource availability changed and the actual Garde build/valid controls
+succeeded, the same frozen53-variant profile was rerun with the existing four
+outer workers, one inner job and128-task bound.
+
+The fresh `/tmp/nevrotick-service-final-20261107-v3/verification.json` now passes
+its selected actual metrics:227/237 executable lines (95.78059%),53 complete
+variants comprising32behavioral caught,21source/compiler unviable, zero missed,
+timeouts or exclusions; viable score32/32. Complete baseline executed21ordinary
+and3doctests. Receipt SHA-256:
+`53052737e9266bc07db8eb91eb2e3aa5473707f96fa5534158d15c60e73bd546`.
+The old failed attempt remains incomplete. Raw metric success still leaves the
+independent source/generation audit and required external-contract evidence as
+separate obligations.
+
+The corrected sealed omission-control recipe v2 passed allthree actual constructor
+faults: omitted mandatory Garde invocation, weakened zero-hint rule, and relational
+validation bound to the wrong field. Every fault built, retained an executed
+valid neighbor and failed the actual81-input raw-budget grid. None receives
+credit in generated mutation counts. Guard receipt:
+`/tmp/nevrotick-service-guard-evidence-20261107-v2/verification.json`, SHA-256
+`a48180b05d8acf1cbb8c8f2f88ba7471a0e8612d59f7be4ceeb97ac836efb94d`.
+An external privacy-consumer replay is preserving exact diagnostics; its initial
+v1 recipe omitted the checker's required source-line binding and therefore did
+not qualify. The corrected v2 remains a separately observed run, not assumed pass.
+
+Parallel admitted source preparation now adds portable SCM seven-field status
+projection, bounded Stop/Interrogate classification and a sticky atomic Stop
+notification with no callback, allocation, native call, name/account or wake
+mechanism. Seven independent SCM tests and three new doctests passed alongside
+the existing21/3, for28public tests and6doctests; packageClippy passed after one
+documentation lint correction. This new scm.rs owner is not covered by the
+historical lifecycle-only qualification. Its separate critical/security gates and
+current two-owner integration are being added before any qualification claim.
+
+
+#### 4.34.4 Independent lifecycle checkpoint exit
+
+The independent reviewer completed the frozen portable lifecycle audit after the
+retained privacy v2 controls passed. Exact qualified service.rs SHA-256:
+`947a54b02859ec6fbfe998fa7a19a24ca522ab3c84dfca1fd70033fe7f545c31`;
+tests/service.rs:
+`d531c98ed085c16dc8dfc4d3f1330b59ebd88ec40e78d38a0aba511cf5009c7a`.
+Both still match the live files. The old frozen lib.rs remains
+`7e1096c73e9c310e056a6da1b887d1aa979b394e77c30e28545c5aa2ddb1c527`;
+its later SCM addition is outside that checkpoint. Raw metric receipts retain
+qualification_passed=false; this source-bound independent audit supplies the
+bounded qualification, not native or whole-crate approval.
+
+All27concrete source bodies were reconciled to the complete53-descriptor
+inventory:25names have generated variants; PendingBudget::new and
+ServiceLifecycle::new have no generated faults. Constructor omission controls,
+raw81-input and extreme-boundary cases, both-role inert construction and
+separate-capacity/counter traces cover those omissions independently.
+StatusReporter::report is abstract; actual native acknowledgement remains open.
+Every getter/status projection of the existing owner, state transition, pending
+budget/deadline/current-time guard, reporting-failure fence, terminal attempt,
+job capacity/completion and bounded error/cause path maps to its named public
+positive/negative/control tests. All53cause-log hashes and426captured source/
+helper hashes match the receipts; compiler-unviable cases have zero kill credit.
+The failed original hint relation fault compiled and was behaviorally caught in
+v3, resolving the earlier resource failure without changing source or gates.
+
+The retained external privacy receipt
+`/tmp/nevrotick-service-privacy-evidence-20261107-v2/verification.json` contains
+an actual Cargo-attributed frozen rlib, a compiled/executed legitimate consumer,
+raw budget/status field rejection with E0451 and non-cloneable permit rejection
+with E0599 at their intended lines. Earlier v1 remains a failed harness setup.
+
+Qualification limits remain explicit: no LLVM branch denominator,32/32function
+summaries but only32/88generic instantiations covered; fixed error-formatting
+arms, defensive unreachable current=None and checkpoint/deadline overflow error
+regions unexecuted. Checked arithmetic remains. No native Windows, callback,
+account/provisioning, live process/IPC/clock, packaged artifact or final service
+qualification follows. The new SCM owner and integrated two-owner candidate
+retain fresh per-file gates under service-analysis schema2; full goal stays active.
+
+
+#### 4.34.5 Two-owner source extension and conservative resource replan
+
+The coherent source candidate now freezes418product inputs at
+`ce638e487fdeb9be206ba99cb8bdea479e2c7e1a8e77968bd4a3fc341cd250f4`
+under `/tmp/nevrotick-service-candidate-20261107-v2`. It executes28public tests
+and6doctests. Fresh coverage passed independently per declared owner:
+service.rs227/237 (95.78059%) and scm.rs63/63 (100%); no branch-denominator claim.
+Complete discovery has53lifecycle descriptors (unchanged hash above) and24SCM
+descriptors with hash
+`826a85bdb95825d972a1460054a8c05c76a6b33692d9592b23579e140281a5db`.
+Both inventories were reviewed and bound; this source extends, not retroactively
+expands, the independently qualified old lifecycle snapshot.
+
+The first two-owner campaign at
+`/tmp/nevrotick-service-two-owner-final-20261107-v1` is terminal/incomplete because
+its strict classifier again rejected a foreign compiler resource failure. Keep
+all raw logs/outcomes and never credit it as selected-source unviability or a
+passing per-file score. The exact underlying host-versus-per-namespace limit is
+not established. The revised source-bound schema3 reduces four outer mutation
+workers to one while preserving one inner job,128tasks,90/95per-file gates,
+complete77-variant selection and all existing per-command/aggregate time bounds.
+Historical schema1/2 profiles remain exact; no limit is raised or test filtered.
+The next actual run will determine whether that conservative peak-load reduction
+resolves the infrastructure failure.
+
+SCM source-generation omissions receive separate real semantic controls:
+wrong outgoing own-process/package namespace, a failed exit projected as Win32
+success, discarded Stop publication and an already-stopped fresh notification.
+Their source-bound sealed builds/valid neighbors/actual selected-test failures
+must be observed before independent qualification; they add no generated score
+credit. The control run is separate from any assumption that generated mutation
+scores cover literal projection tables or excluded constructors.
+
+#### 4.34.6 Independent two-owner portable checkpoint
+
+The completed schema3 campaign is retained at
+`/tmp/nevrotick-service-two-owner-final-20261107-v2/verification.json`, with
+the coherent source under `/tmp/nevrotick-service-candidate-20261107-v3`.
+The product input digest remains
+`ce638e487fdeb9be206ba99cb8bdea479e2c7e1a8e77968bd4a3fc341cd250f4`.
+Both owners passed their unchanged per-file gates: lifecycle coverage 227/237
+(95.78059%), with 32 behavioral kills and 21 selected-source compiler-unviable
+variants; SCM coverage 63/63 (100%), with 21 behavioral kills and three
+selected-source compiler-unviable variants. All 77 descriptors were accounted
+for, with no misses, timeouts or exclusions. Actual mutation wall time was
+43.175 seconds plus 30.323 seconds, or 73.499 seconds in total.
+
+Independent review reconciled all generated descriptors and raw causes against
+the two source owners. The separately retained constructor/Garde omission,
+four SCM semantic-fault and seven external privacy controls passed with healthy
+neighbors; none contributes generated mutation credit. Relevant receipts are
+`/tmp/nevrotick-service-guard-evidence-20261107-v2/verification.json`,
+`/tmp/nevrotick-scm-semantic-evidence-20261107-v2/verification.json` and
+`/tmp/nevrotick-service-privacy-evidence-20261107-v3/verification.json`.
+This closes only this portable checkpoint. Branch coverage, complete generic
+instantiation coverage, atomic memory-order guarantees and native enforcement
+are not established by those results. Earlier infrastructure failures retain
+their original incomplete status.
+
+One outer worker was a temporary diagnostic profile for this completed small
+cohort, not a general concurrency policy. The next larger campaign will first
+admit four outer workers with 512 tasks, worker-owned targets, one inner Cargo
+job and one test thread. The existing 512-task runtime guard requires those
+last three conditions. Preserve historical schemas, exact source/tool/vendor
+binding, full inventory, timeouts, thresholds and target hardening. Record
+resource peaks before increasing concurrency further. The earlier linker
+failure establishes a foreign build failure; its precise exhausted resource
+remains unproved. Ambient Rust flags must not replace the Windows v3/protection
+vector.
+
+#### 4.34.7 Four-worker replay and measured resources
+
+Schema4 restores four outer workers and admits the existing 512-task mutation
+profile. The current wrapper and policy select exactly that row; shared admission
+retains schemas1–3 at their original worker/task values. All 162 selected helper
+and runtime controls passed, including rejection of crossed profiles, changed
+gates and ambient compiler-flag overrides. Inner Cargo/test concurrency remains
+one per worker. Ordinary lanes retain their original task limit. No Windows
+compiler flag, hardening requirement, assertion, exclusion or timeout changed.
+
+The actual frozen replay is
+`/tmp/nevrotick-service-two-owner-parallel-20261107-v1/verification.json`, using
+`/tmp/nevrotick-service-candidate-20261107-v4`. All 77 variants passed the same
+accounting: lifecycle 32 behavioral kills/21 selected-source compiler failures;
+SCM 21 behavioral kills/three selected-source compiler failures. Both healthy
+baselines executed all 28 ordinary tests and six doctests. There were no misses,
+timeouts or exclusions. Raw metrics remain distinct from independent review.
+
+The external observer receipt at
+`/tmp/nevrotick-service-parallel-resources-20261107-v1/resources.json` records
+61.529 seconds for the complete invocation, including admission. At nominal
+0.1-second sampling it observed peaks of 18 processes, 72 threads, 1,690,184 KiB
+summed RSS and 2,216,076 KiB maximum individual virtual size. Minimum host
+available memory was 8,266,432 KiB (about 7.88 GiB); minimum free disk was
+2,287,112,192 bytes (about 2.13 GiB). PID/start-time and namespace identities are
+retained. These are sampled observations, not guaranteed peaks; summed RSS
+counts shared pages more than once and host headroom includes unrelated work.
+No cleanup was needed for this run.
+
+This supports the selected four-worker cohort under its actual conditions; it
+does not establish eight-worker capacity, a general speedup or the cause of the
+earlier 128-task linker failures. The older 73.499-second number measures the
+serial mutation commands only, while 61.529 seconds includes admission; do not
+present them as a controlled timing comparison.
+
+
+#### 4.34.8 Product identity and provisioning gate
+
+**Disposition: Researching — OPEN-3/12/14; owners:**
+[W11-W05](#w11-w05-observe-effective-scm-maintenance-and-process-policy)
+platform/security/lifecycle and
+[W11-W10](#w11-w10-re-enter-conditional-mechanisms-only-for-a-concrete-need)
+package/release. The portable and laboratory checkpoints do not resolve this
+product gate. [Architecture §4.1](../docs/windows-time-architecture.md#41-selected-account-topology)
+requires two own-process services. Its virtual-broker account example belongs
+to the retained MSI design; neither a supported MSIX mapping nor two
+LocalService services is an adopted, qualified substitute. Final SCM names,
+SIDs and per-role configuration remain pending with the existing
+[metadata owner](../metadata/product.toml), including `services.identities`.
+
+The effective engine token must lack `SeSystemtimePrivilege`,
+`SeDebugPrivilege`, `SeImpersonatePrivilege` and unnecessary process/token rights;
+present-but-disabled is insufficient. The broker retains
+`SeSystemtimePrivilege` plus demonstrably necessary rights, with the documented
+OS-retained `SeChangeNotifyPrivilege` exception. Required-privilege allowlists,
+service-SID restrictions, object ownership/ACLs and creation-time process/thread/
+token protection remain separate configuration and effective-state obligations.
+Descriptive metadata applicability does not make these controls optional.
+
+The [pre-start gate](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026)
+still needs both the intended helper's necessary rights on deployment-created
+objects and supported unattended invocation/reentry through servicing. Elevation,
+SCM Running, a saved admission marker or a later descriptor fix supplies neither
+guarantee. The [selected package profile](../docs/plans/windows-msix-store.md#71-concrete-source-inventory-and-manifest-profile)
+excludes `localSystemServices`; a broker launching a restricted engine child is
+unselected and changes the two-SCM-service topology. No mandatory first-UI setup
+or account broadening follows from the current implementation goal.
+
+**Permitted continuation:** finish the real source hosting path; prepare typed
+fail-closed admission, read-only token/configuration observations, fixed
+per-service records, bounded diagnostics and servicing/allowed-denied controls
+within those contracts. The [initially disabled services plus fixed elevated
+helper](../docs/plans/windows-msix-store.md#provisioning-candidates-and-decision-boundaries)
+remain a candidate requiring evidence, not an adopted working bridge. Keep
+normal product hosting dependent on that bridge. If concrete evidence makes an
+extra LocalSystem bootstrap, child-process topology or changed activation UX
+necessary, bring the bounded choice to David through
+[NV-DEC-001/OD-04](../docs/nevrotick-owner-decisions.md#6-od-04--decisions-when-evidence-makes-them-concrete).
+Do not ask him to approve an unproven platform fact. No owner decision or
+Windows/native, fuzz, storage or formal execution disposition changes here.
+
+
+### 4.35 S0.2 fixed-role laboratory host source card — 7 November 2026
+
+**Source-only authority:** the existing service start/full-goal request admits an
+inert S0.2 source prototype with real callers. It does not admit ordinary product
+hosting before supported MSIX provisioning/account isolation, or lift the current
+Windows execution stop. No Windows command, package installation, service
+creation/start/stop, privilege change, W32Time/clock effect or public network is
+authorized by this card. Source preparation and host-only/cross-compiler checks
+remain separate from later native observations. The product goal stays complete
+in scope and incomplete in status.
+
+**Selected bounded source definitions (laboratory only):**
+
+| Property | Engine composition | Broker composition |
+| --- | --- | --- |
+| Fixed SCM fixture identity | `NevroTick-Lab-S02-Engine` | `NevroTick-Lab-S02-Broker` |
+| Role source | Distinct compiled engine entrypoint | Distinct compiled broker entrypoint |
+| Startup/stop pending hint | 1000ms in each phase | 1000ms in each phase |
+| Fixed startup/stop deadline | 10000ms per phase, never extended by progress | Same |
+| Maximum laboratory Running duration | 60000ms; finite self-stop | Same |
+| Effects | Status/control-only laboratory host | Same; no actual clock backend |
+| Account, service SID, privileges, package provisioning | Unselected/unqualified; no source-side install/configuration action | Same |
+
+These limits select only a finite laboratory experiment; they are not production
+defaults, correction budgets or a new timing/security policy. Technical fixture
+identities do not assign final product SCM names or SIDs. Metadata product
+identities remain with their existing owner. Process/SCM arguments cannot select
+role, identity, roots, endpoints or clock authority. Extra SCM start arguments
+are rejected by count before pointer traversal/string allocation; metadata-only
+argument zero is ignored. No debug/console fallback can qualify SCM behavior.
+
+**Implementation owner/path:** the standalone experimental
+`tools/windows-service-fixture` owns two fixed-role caller compositions and
+private native hosting mechanics, consuming the checked `windows-platform`
+lifecycle/SCM model. It is not a new production workspace member or a second
+maintained product adapter. Qualified reuse/adoption later must preserve one
+owner and the package/account gate; dormant raw-handle wrappers are not an
+integration substitute. Existing root pure-library unsafe prohibitions remain.
+The experimental workspace mirrors adopted lints/profiles; reviewed unsafe is
+confined to its Windows module, with per-operation safety and error-capture
+contracts. The proposed Windows-only binding edge is existing exact
+windows-sys0.61.2/defaults-off with Foundation+System_Services, no new registry
+identity, wrapper, installer, runtime or privilege dependency. Inspect/admit that
+actual standalone graph before resolution/build.
+
+**Real source flow and required outcomes:** fixed process entry -> exactly one
+SCM dispatcher with one service row and null terminator -> fixed-role ServiceMain
+-> immediate bounded registration -> private non-cloneable status token ->
+existing lifecycle -> checked seven-field projection -> native status call.
+Native errors are captured immediately; terminal tokens are invalidated before
+the sole Stopped attempt and never CloseHandle'd or reused. The callback retains
+only process-lifetime bounded notification custody and never formats, allocates,
+logs, calls application code, reports status or mutates lifecycle. A selected
+standard-thread notification/finite parking arrangement needs source support for
+its callback contract; no Win32 wait API is adopted by assumption. Owner checks
+Stop/time after every spurious wake. Unexpected ServiceMain panic cannot cross
+FFI or resume work; inert-fixture abort selects no shipping broker fault policy.
+Fixture Running describes only this control loop, never production readiness,
+identity isolation, authenticated time, IPC availability or clock authority.
+
+**Source exit before any future permission request:** exact role/budget/argument
+and status contracts; healthy and injected dispatcher/register/status/wait/panic
+ordering cases with valid neighbors; single terminal cleanup and coalesced Stop;
+owned callback/thread lifetime; non-Windows refusal; actual Linux unit/contract,
+strict lint/rustdoc and admitted Windows-target compilation/link evidence on the
+frozen source/graph. Native calls/tokens/callbacks/package behavior remain NOT RUN
+until a concrete separate disposable-machine card is prepared and David lifts
+the relevant hold. The existing W11-W05/W11-W10/S0.2 and CHECK-1/27 owners retain
+actual identities, mitigations, resources, recovery and two-family observations.
+
+#### 4.35.1 Source implementation and qualification checkpoint
+
+The standalone fixture now contains both fixed executable entries, the actual
+shared host and narrow Windows SCM calls. Offline GNU/MSVC graph admission is
+retained in `/tmp/nevrotick-service-fixture-graph-20261107-v1/graph-admission.json`:
+two local packages and 16 existing registry identities, with no new versions,
+checksums, licences or execution roles. Only the tool's resolved lock was copied
+back. Its SHA256 is
+`12f770f2eebb343c19b6c962bda9c367115daad4c88bfad1aebd734bad1e330f`.
+The root product workspace and account/provisioning decisions are unchanged.
+
+Observed source regressions and controls remain separate from native evidence:
+
+| Frozen evidence | Actual result and causal repair |
+| --- | --- |
+| Graph-v1 `source-red.json` | 14 host tests: 12 passed; late Stop hid run expiry and persistent reversed time stranded Running. Both repaired. |
+| Fixture-source-v3 `source-test.json` | 19 host tests: 18 passed; a dispatcher error was hidden by an existing successful owner receipt. Separate failure custody repaired this; the owner receipt remains immutable. |
+| Fixture-source-v4 `source-test.json` | 21 host tests plus the actual GNU executable refusal test passed, including healthy/aborting children of the production-used panic guard. Windows-target check and strict rustdoc passed. Formatting/Clippy failures remained explicit. |
+| Fixture-source-v5 `source-test.json` | 22 host tests: 21 passed; all six Ready-delay cases exposed an incorrectly renewed Running budget. One absolute Ready-anchored deadline now governs work admission and waits. |
+| Fixture-source-v6 `source-test.json` | 22 host tests plus the executable refusal test passed; GNU Clippy passed. One formatting wrap remained. |
+| Fixture-source-v8 `source-test.json` | 23 host tests: 22 passed; exact/late stop finalization omitted the Failed terminal report. The existing pending deadline is now checked before selecting the sole terminal outcome. |
+
+Each `fixture-source-vN` prefix above denotes
+`/tmp/nevrotick-service-fixture-source-20261107-vN`. The earlier source-v2
+harness refusal occurred before compilation because its work directory was not
+private; the replacement explicitly creates mode0700. It receives no behavioral
+RED credit. Formatting/compiler refusals likewise receive no behavioral credit.
+All first failures, source maps and recipes remain retained.
+
+The next frozen source is v9, with 435 bound inputs at
+`/tmp/nevrotick-service-fixture-source-20261107-v9/source.json`. It contains 24
+host tests, including advance-then-partial-rollback and explicit pre-work read
+counts. The latter observes refusal before entering the loop, rather than only
+the eventual identical failure. Current host SHA256 is
+`253c9d09d2eadaaaed7fb84cb713e5a75737d80726fb669976d93bf87c45e869`;
+host-test SHA256 is
+`7d560f4282f06c8ac678fe682d6a2dd54e32d021d3550a9633f5d95c3f0596a4`.
+**V9 execution, complete source-exit qualification and host coverage/mutation
+remain pending.** A review question about preexisting Stop combined with startup
+expiry also remains unexecuted; resolve it against the existing phase contract.
+
+The retained source checker is
+`/tmp/nevrotick-service-fixture-check-20261107-v9.py`. Next run its formatting,
+ordinary tests, GNU/Windows Clippy, doctest/rustdoc and optimized lanes. The
+external `/tmp/nevrotick-service-fixture-cross-link-20261107.py` supplies explicit
+final-freeze binding, cross-link and PE inspection with the full v3/hardening
+vector. Its first cross-v1 binding used superseded v6 and performed no build;
+bind fresh final bytes before link/inspection. Image declarations do not qualify
+runtime enforcement, installed identity, native callbacks or complete packaging.
+
+The completed four-worker replay received independent raw-outcome review: all
+77 outcomes, exact worker/task commands, 428 captured inputs, tool bookends,
+53 behavioral causes and 24 selected-source compiler causes reconciled. Do not
+rerun this unchanged portable cohort solely because the separate host advances.
+Native host function/guard generation reconciliation and applicable per-file
+gates remain separate future evidence; no host score is inferred from that run.
+
+Under the owner's cleanup authorization, inactive ordinary `.rlib`/`.rmeta`/`.d`
+caches from earlier owned runs were removed. The receipt is
+`/tmp/nevrotick-service-cache-cleanup-20261107-v1.json`: 454 cache paths removed,
+1,107 retained neighboring file hashes unchanged, about 170 MiB net free-space
+increase over the measured window. Sources, reports, executables, build logs,
+coverage artifacts, active checkout targets and unrelated services were retained.
+An expected hardlink ctime change stopped the first deletion pass; its exact
+same-inode cause was checked before resuming by inode group. Two non-dumpable
+user-manager processes were documented without intervention. Git custody matched
+across cleanup, including the original index and staged diff.
+
+Subsequent external staging changed the index from `92902e18...` to
+`633197e6778ae9cc7387995da6f7af96ee86fd305a51f79e9bf7c16be109ac62`.
+V9 binds the latter and all its source bytes still match. Preserve that staging;
+the current host/test repairs remain unstaged above it. No coordinator staging,
+commit, push, native execution or service installation was performed.
+
+#### 4.35.2 Current source, image and metric evidence
+
+The startup-expiry review question above became an actual regression in
+`/tmp/nevrotick-service-fixture-source-20261107-v10/source-test.json`:
+24 of 25 host tests passed; exact/late startup expiry with preexisting Stop
+omitted Stopped. The host now checks StartPending at its existing fresh stop
+observation before replacing that phase's deadline. It preserves earlier errors,
+adds no clock read and still attempts terminal reporting once. The preceding
+stop-finalization repair and advance/rollback/read-count controls passed in that
+same RED run. Formatting/documentation and Windows FFI lint repairs are separate
+from behavioral RED credit.
+
+Current frozen source is
+`/tmp/nevrotick-service-fixture-source-20261107-v14/source.json`, with 435 inputs.
+Host SHA256 is
+`5f65bd0d498395eb9b5ba59953e02e174a49038e7c73eeb684f06f146377bd72`;
+native adapter SHA256 is
+`8c9d11fd383707894b37fd8d8bd03d41bc3de51319087baf0b93044fce62c493`.
+All seven source-check lanes passed on v14: formatting, ordinary 25 host tests
+plus one actual GNU executable-refusal test, GNU Clippy, Windows-target Clippy,
+strict rustdoc, stable doctest execution (explicitly zero examples), and the same
+26 tests under `verify-release`. The panic guard's isolated healthy/aborting
+children ran with core dumps disabled. These remain GNU behavioral and Windows
+cross-compilation evidence. Independent source review found no remaining
+material defect within the declared laboratory hosting scope.
+
+Both fixed Windows images cross-linked under `verify-release`. The exact
+v3/hardening vector was checked in each final rustc invocation. Receipts are
+`/tmp/nevrotick-service-fixture-cross-20261107-v4/cross-link-result.json` and
+`pe-inspection.json` in that directory. Raw PE/LLVM inspection observed AMD64
+PE32+, relocation data, ASLR/DEP/CFG declarations, nonempty CFG tables,
+DependentLoadFlags `0xA00`, both CET declaration bits (`0x3`) and CodeView records.
+Engine executable SHA256 is
+`0b52116d75a887245a4d6a6b518e803dd79bf16279b713473b960cffdd0a6fb3`;
+broker executable SHA256 is
+`324b170cf139ba0e62d4383f4c02e4b83f9ce07915f171700cb501e5c6f3c330`.
+PDB bytes/hashes are retained; independent PDB GUID readback is not performed.
+No PE was executed, signed, packaged, installed or submitted. These declarations
+do not establish effective process mitigations, account isolation or service
+qualification.
+
+The first actual host coverage run is retained at
+`/tmp/nevrotick-service-host-coverage-20261107-v1/verification.json` and
+`work/coverage.json` there. It executed all 26 tests. Host lines were 157/162
+(96.91358%) and library lines 31/31. The command correctly failed its unchanged
+per-file 90% gate: `error.rs` was 19/37 (51.35135%), and each binary entrypoint
+was 4/5 (80%). Improve meaningful diagnostic-contract tests; keep the native
+success branches explicitly pending. Do not hide production lines, fabricate a
+console-success mode or infer a package pass from the host row.
+
+Actual host enumeration produced 24 descriptors at digest
+`bae824489a81c0dc8575fb872649ebde64484caa668c9eb6876bfef171776eb5`.
+The independent review at
+`/tmp/nevrotick-service-host-inventory-review-20261107-v1.json` admitted a bounded
+four-worker/512-task campaign: all coordinates/diffs match, eight of nine concrete
+bodies are generated, and `ObservedClock::new` is omitted. Constructor, closure,
+deadline, permit, first-error and fixed-literal omissions remain separate
+semantic obligations with zero generated credit. The first campaign attempt
+stopped before any tool job because staging had advanced since the source
+freeze. Its refusal supplies no mutation score. The immutable source still
+matches; analysis-epoch staging custody is being separated from original-freeze
+provenance without weakening source/tool/configuration checks or per-job custody.
+
+David confirmed the workspace-member removal was a temporary test edit and
+authorized reverting needed code/docs. The coordinator restored only the
+`windows-platform` member and corresponding root lock entry, recovering their
+original `ed63de18...`/`fa9103e4...` hashes. Unrelated Q1 test strengthening and
+staged content were preserved. Source-v12/13 held later work when staging moved;
+v14 binds the then-current staging. No coordinator staging/commit/push followed.
+The second authorized cache cleanup removed only inactive compiler/procedural-
+macro/build-script artifacts, preserving 1,713 neighboring hashes and staged/
+working content; its receipt is
+`/tmp/nevrotick-service-cache-cleanup-20261107-v2.json`, with 530,280,448 bytes of
+observed net recovery. Later global free-space changes are not attributed to it.
+
+Next: finish the frozen host campaign and independent cause/omission review,
+improve diagnostic tests, retain native coverage/entry/SCM/resource and packaging
+gaps, and continue the permitted admission/configuration work under §4.34.8.
+Neither this source checkpoint nor the full two-service completion goal is
+complete. All native, fuzz, storage and post-V1 formal dispositions remain.
+
+#### 4.35.3 Host mutation reconciliation and diagnostic continuation
+
+The actual Source14 host campaign completed with 24 descriptors: 11 behaviorally
+caught and 13 compiler-unviable, with no survivors, timeouts or exclusions.
+Compiler failures receive no kill credit; the viable denominator is 11. The
+original v2 receipt remains incomplete because its post-processing rejected
+secondary unused-item diagnostics outside `host.rs`. A separately identified
+v3 offline replay reconciled those diagnostics only where each variant also had
+its primary error anchored in the mutated host source. No Rust job was rerun or
+original receipt rewritten. The independent receiving review accepted this
+bounded numeric result; it does not establish whole-fixture qualification.
+
+Retained receipts are
+`/tmp/nevrotick-service-host-reconciliation-20261107-v3/verification.json`
+(SHA256 `84475fdeb40850afa60faa229c0f3311c0db26e2704bbbf2ea1f2f43b61279d2`)
+and `/tmp/nevrotick-service-host-receiving-review-20261107-v3.json`.
+Original-freeze index provenance remains immutable. Subsequent commands bind
+their current analysis-epoch index before and after each job; staging changes
+between commands require fresh admission, rather than rewriting historical
+provenance or dropping source/tool/configuration custody.
+
+Five independent source-omission controls also passed on Source14. Each compiled,
+passed its healthy neighbor and failed at the intended assertion: initial clock
+reversal, omitted last-trusted update, omitted pre-work Running guard, omitted
+StartPending expiry before Stop, and omitted terminal stop-deadline check. The
+seven-test healthy baseline and five neighboring controls passed. These are
+separate semantic evidence, with zero generated-mutation credit. All 23 jobs and
+their source/diff/log/index identities are retained in
+`/tmp/nevrotick-service-host-omission-evidence-20261107-v1/verification.json`
+(SHA256 `13c7c540d05177c8e8b3e1cd04ac32cd54d77e8225f59fd70a01257b1a764ab8`).
+
+Five diagnostic tests have now been adopted in `error_tests.rs`, exercising fixed
+ASCII/one-line/64-byte categories independently from original numeric codes,
+all fixture error categories, and actual budget/lifecycle/native typed causes.
+This changes the test cohort to 30 library tests plus the actual GNU executable
+refusal test. Source15 freezes 436 inputs at
+`/tmp/nevrotick-service-fixture-source-20261107-v15/source.json`. All seven fresh
+source lanes passed: ordinary and `verify-release` 31-test cohorts, formatting,
+GNU/Windows-target Clippy, strict rustdoc and stable doctests (zero examples).
+Each `source-<lane>.json` receipt records unchanged per-job index bytes and passed
+source/tool/configuration bookends. The producer/freeze provenance is retained
+separately from the continuation checker and each current analysis epoch.
+Fresh coverage at
+`/tmp/nevrotick-service-source15-coverage-20261107-v1/verification.json` executed
+all 31 tests successfully. Its raw production rows show `error.rs` 37/37 (100%),
+`host.rs` 157/162 (96.91358%) and `lib.rs` 31/31 (100%). Each executable remains
+4/5 (80%): the unchanged per-file 90% tool gate returned exit 1, and the receipt
+correctly remains incomplete. The diagnostic-file gap is closed for this GNU
+cohort; the earlier failure and all raw rows remain retained. Native-only binary
+branches are neither excluded nor replaced with a console-success path, and no
+whole-fixture coverage or native pass follows.
+
+The separate receiving assessment is
+`/tmp/nevrotick-service-source15-coverage-20261107-v1/coverage-assessment.json`
+(SHA256 `b7a03c1043fe2cfcb2d2e26cc31187a62028d13d68d684b50ce187596c65da41`).
+It independently rechecked source, tools, vendor, configuration and index after
+the expected gate failure, preserving the raw incomplete receipt. Its remaining
+owner map retains unenumerated/unqualified 95% mutation obligations for
+`lib.rs`, `error.rs`, the native adapter and both executable entrypoints. The
+host campaign remains historical Source14 evidence on identical host bytes;
+neither new coverage nor the five semantic controls creates new mutation credit.
+
+The next-candidate resource preflight had about 2.3GiB free. Authorized cleanup
+v3 removed 722 inactive ordinary compiler/procedural-macro/build-script cache
+paths from completed source-check targets, retaining test binaries, reports,
+source and coverage evidence. All 1,532 retained-file hashes and staged/working
+Git content matched after cleanup. The measured net recovery was 608,223,232
+bytes, leaving 3,048,677,376 available bytes at that observation; receipt:
+`/tmp/nevrotick-service-cache-cleanup-20261107-v3.json`. No running process,
+checkout, installed tool, database or Windows resource was removed.
+
+**Authority refresh:** concurrent documentation commits advanced HEAD to
+`75ccd769fc998cf8290680a5b7dd3e4a6d38e892`. Reconciliation with development §7,
+its imported queue and OD-16/17 preserves this service source continuation:
+WinGet capability preparation belongs to W11-W10/P6 before V1, its native and
+public-availability evidence remains open in §4.36, and MT-0 remains deferred
+until actual V1 release. These amendments change neither the frozen compiler
+inputs above nor the service provisioning and execution holds.
+
+#### 4.35.4 Next source slice: fixed-role self-token observation
+
+**Owners and requirements:** W11-W05 platform/security/lifecycle under
+REQ-1/2/15, architecture §3.4/4.1 and CHECK-1/27; bounded diagnostic projection
+supports CHECK-17. W11-W10 retains the unresolved package/provisioning gate.
+This card admits source preparation only under §4.34.8, with all execution holds
+unchanged. It selects no service account, product identity or privilege change.
+
+The smallest next real caller path is registration → StartPending → fresh pending
+guard → synchronous self-token observation and actual cleanup → fresh deadline/
+Stop guard → existing Ready. Its checked result is consumed in this startup
+attempt, not cached as an authorization capability. Engine subset acceptance
+requires complete enumeration showing `SeSystemtimePrivilege`, `SeDebugPrivilege`
+and `SeImpersonatePrivilege` all absent. Present-but-disabled and unknown fail.
+Broker observation is descriptive and establishes no broker allowlist or clock
+authority. Incomplete capture/cleanup prevents Ready in either laboratory role.
+
+The unsafe-forbidden shared owner validates a bounded privilege representation;
+the existing private native owner queries only its current process/thread token,
+with no arbitrary PID, name, handle or caller-selected privilege. Check for an
+unexpected thread token around the primary-token capture; only definite
+`ERROR_NO_TOKEN` counts as no thread token. This is an immediate observation,
+not proof against transient external changes, other threads or future mutations.
+Use query-only non-inheritable token custody, fixed local privilege lookup and
+one initialized aligned capture bounded to 128 entries (a laboratory limit, not
+a Windows maximum). Validate lengths, count arithmetic, target uniqueness and
+attributes before constructing the immutable result. Unknown is never absence.
+
+Close each opened handle once before Ready. Failed close remains unsuccessful
+cleanup, with possible handle retention until process termination; preserve the
+original error, refuse Ready and do not retry or start a replacement observation.
+The work permit remains occupied through actual synchronous operation/cleanup,
+including Stop or expiry. A deadline does not interrupt an arbitrary native call.
+
+Before adoption, require actual offline graph admission for only the existing
+windows-sys0.61.2 `Win32_Security`/`Win32_System_Threading` feature additions,
+independent raw-buffer/absent-disabled-enabled/unknown and cleanup cases, and
+host controls for observation failure, Stop/expiry during observation and direct
+caller bypass. Reuse the configured static/behavioral/cross checks on the new
+candidate; review its applicable coverage/mutation inventory. Native handle,
+effective-token, latency and ABI behavior remains NOT RUN. This source slice
+does not close the provisioning bridge or authorize ordinary product hosting.
+
+#### 4.35.5 Restart and main-repository recovery
+
+David reported restarting Windows after it froze. Fresh inspection at
+18:18 UTC on 7 November found no `nevrotick` service directories in `/tmp` or
+`/var/tmp`: the temporary recipes, source freezes, vendor, raw verification
+reports and unfinished self-token prototype above were lost. Their dated
+results remain historical observations recorded in this task and conversation;
+the referenced raw receipts are no longer available for current inspection.
+Do not reconstruct those receipts as executed evidence or use their absence as
+a passed gate. The cause of the Windows freeze is not established by this fact.
+
+The main repository survived. Its existing host/native bytes still match
+`5f65bd0d...`/`8c9d11fd...`, and the diagnostic tests, shared lifecycle/SCM source,
+workspace restoration and staged work remain. David explicitly corrected the
+workflow: work in the main repository. Recover and implement the self-token slice
+directly in its real source/test files; keep the existing task as the plan owner.
+New raw records are retained under the repository's narrowly ignored
+`artifacts/windows-services/recovery-20261107-v1/`, starting with
+`restart-observation.json`. Preserve these records during cleanup. Any isolated
+execution copies are derived from the main repository and are not the only copy
+of unfinished work; existing sandbox and input-admission controls still apply.
+
+The post-restart preflight observed 18GiB available RAM, zero swap use and 8.3GiB
+available disk. Re-admit tools/dependency sources and run new candidate-specific
+checks after recovery; new records must identify actual fresh executions.
+The first new behavioral controls and repair are recorded below. Native/package
+qualification and unexecuted critical-owner mutation obligations remain open.
+Windows/native, fuzz and storage holds and the post-V1 formal deferral are
+unchanged.
+
+#### 4.35.6 Recovered startup observation: actual RED and GREEN
+
+The implementation is now authored directly in the main repository. The new
+`windows-platform::privilege_observation` owner has private checked snapshot
+construction, mandatory garde-backed count/byte bounds and independent raw-byte
+tests. Its security/critical registration retains the existing 90% coverage and
+95% mutation requirements; those measurements are not yet executed on this
+candidate. The fixture's private `native_token` producer opens only current
+process/thread query tokens, resolves three fixed privilege names and consumes
+one bounded complete capture. It retains the first failure and both cleanup
+outcomes; failed close is not retried or reported as released custody.
+
+Both actual ServiceMain compositions call the explicit observer during
+StartPending under the existing work permit. Unknown capture/context/cleanup
+refuses Ready for either role. The engine immediately requires all three
+forbidden privileges absent, including refusal of present-but-disabled values.
+Broker capture is descriptive, without a broker allowlist or clock-authority
+claim. Fresh deadline/Stop guards remain after actual observation completion.
+
+The versionable `tools/windows-service-fixture/qualification.py` retains fresh
+raw records under `artifacts/windows-services/recovery-20261107-v1/`. Initial
+readiness v1 correctly stopped before any command because the default vendor
+contained an obsolete extra package. No vendor or pointer was modified. Explicit
+selection of an existing exact 533-package store passed complete admission;
+readiness v2 and the actual four-command GNU/MSVC metadata/feature-tree graph
+passed with source/tool/vendor/index bookends. Registry identities are unchanged;
+only `Win32_Security` and `Win32_System_Threading` were added. Exact local target
+sets and negative extra-bin controls also passed.
+
+Actual first RED is `recovered-engine-admission-red-v1.json`: compilation
+succeeded, the real startup test failed with “engine admitted a present forbidden
+privilege,” exit 101, and complete bookends passed without a custody error.
+`recovered-role-healthy-v1.json` then passed its actual startup/stop neighbor.
+Only the engine snapshot absence predicate was added to the host. A fresh
+matching graph and `recovered-engine-admission-green-v1.json` passed on the
+441-input `0453cb59935ef7ab9e3881a6b24f5e6da01972fffdabdadde6ab2cc17f808158`
+candidate. These are selected controls, not the full test cohort or native proof.
+
+A separate exact two-arm `service_role` swap compiled and failed the independent
+ClockBroker-versus-Engine assertion, with complete custody. Its graph and RED
+records are `recovered-role-mutant-graph-v1.json` and
+`recovered-role-mutant-red-v1.json`. The healthy library bytes were restored
+exactly before further tests; this semantic control receives no generated
+mutation credit. The unfiltered ordinary cohorts then passed: 39 platform tests
+(21 lifecycle, 7 SCM, 3 primary privilege and 8 independent raw-byte contracts)
+and 36 fixture tests (35 library plus the actual GNU entrypoint test), with no
+failed, ignored or filtered cases and complete custody. Their records are
+`recovered-platform-full-v1.json` and `recovered-fixture-full-v1.json`.
+Formatting, documentation markup and the stable checked-chunk iteration idiom
+were subsequently repaired through actual fmt/Clippy feedback without changing
+the exact count/length admission guard. Final-source static/documentation and
+optimized checks are in progress; per-file metrics and native/package obligations
+remain pending.
+
+#### 4.35.7 Run-deadline representability repair and metric scope
+
+Independent review identified a possible CHECK-27/S0.2 readiness-ordering defect:
+the host acknowledged Running before constructing its finite run deadline.
+A new actual-host oracle uses a bounded 64-step checked construction and directly
+verifies an Instant where the 10-second startup allowance is representable but
+the 60-second run allowance is not. Both roles also exercise a valid 60-second
+neighbor and simultaneous exact startup expiry, with all six traces collected
+before comparison. Expected failure has no Running row, control-loop work or
+wait, and one failed terminal report; startup expiry retains priority.
+
+`recovered-overflow-red-v1.json` compiled successfully, passed the previous 35
+library tests and failed the new oracle. Both overflow traces returned
+ClockOverflow but falsely included Running. Healthy and startup-expiry neighbors
+matched independently expected outcomes. Complete source/tool/vendor/index
+bookends passed. The host now checks the existing pending deadline, constructs
+the checked run deadline, then publishes Ready using the same observation.
+Capture, cleanup, permits and raw-clock read counts are unchanged.
+`recovered-overflow-green-v1.json` passed all 37 fixture tests (36 library plus
+the real GNU entrypoint case), with zero failures, skips or filtered cases and
+complete custody, on candidate
+`2f492f0e6e7145052586e7ec076fdd4b0cfed5ada51faa7340c396c416216e5b`.
+Exact executed before/after sources are retained in the main repository's
+`artifacts/windows-services/recovery-20261107-v1/semantic-controls/`.
+
+The existing portable service-analysis wrapper now requires schema 5 with exactly
+lifecycle, SCM and privilege owners. Common's historical schemas 1–4 retain
+their original scopes. Current candidate binding and descriptor inventories were
+cleared rather than borrowing old measurements. The 90% per-file coverage,
+95% per-file mutation, four outer workers, one inner worker, 512-task campaign
+profile and combined 512-descriptor limit remain unchanged, with no exclusions.
+All 21 live service-wrapper and 144 Common Python controls passed after the
+five-file adoption; `schema5-live-controls-v1.json` and logs retain execution.
+This is analysis admission/control evidence, not a product mutation score.
+On the repaired frozen candidate, fresh ordinary platform 39 / fixture 37 and
+actual `--release` platform 39 / fixture 37 cohorts all passed with zero failures,
+skips or filtered cases. All three Clippy targets, both formatting checks,
+platform eight doctests, fixture zero-doctest execution and strict fixture
+rustdoc also passed. The `recovered-qualified-<lane>-v1.json` records retain
+per-job source/tool/vendor/index custody; `recovered-overflow-green-v1.json`
+owns the current ordinary fixture cohort. Optimized commands use `--release`
+with debug assertions disabled, not `verify-release`.
+Actual per-file measurements, Windows artifact and native/package qualification
+remain open. Windows/native, fuzz, storage and formal holds remain.
+
+The next metric checkpoint now binds the current 421 portable product inputs at
+`ff8148597f0950d46e50b7986a5b318f8ea5fb61dc2e10c507242e9697a65346`,
+the exact protected helper inputs, 39 actually executed ordinary/release names
+and eight executed doctests. Current `read_policy(..., campaign=False)` passed;
+`portable-binding-v1.json` retains the full map and source-checkpoint lineage.
+Descriptor inventories remain empty: this admits enumeration/coverage, not a
+mutation campaign or a metric pass. New primary records stay under the main
+repository's `artifacts/windows-services/recovery-20261107-v1/`.
+
+<a id="433-winget-distribution-before-v1--7-november-2026"></a>
+
+### 4.36 WinGet distribution before V1 — 7 November 2026
 
 **Status:** researched/planned, not implemented or natively qualified.
 [OD-17](../docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)

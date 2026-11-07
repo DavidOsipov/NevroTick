@@ -18,12 +18,13 @@ SPEC.loader.exec_module(VERIFY)
 PROFILE = VERIFY.SLINT
 HOST = "x86_64-unknown-linux-gnu"
 WINDOWS = "x86_64-pc-windows-msvc"
-MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine")
+MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine", "windows-platform")
 RUNTIME_FEATURES = ["accessibility", "backend-winit", "compat-1-18", "renderer-software", "std", "unstable-winit-030"]
 HOST_FEATURES = ["compat-1-18", "renderer-software", "std"]
 LOCAL_CLOSURES = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"}, "time-domain": {"time-domain"},
                   "time-core": {"time-core", "time-domain"},
                   "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"},
+                  "windows-platform": {"windows-platform"},
                   "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"}}
 
 
@@ -168,6 +169,7 @@ def fixture_package_trees(target=HOST):
 
     return {"nevrotick-ui": fixture_tree(target).split("ntp-wire v0.0.0")[0],
             "ntp-wire": root("ntp-wire"), "time-domain": root("time-domain"),
+            "windows-platform": root("windows-platform"),
             "time-core": root("time-core") + "`-- " + root("time-domain"),
             "nevrotick-engine": root("nevrotick-engine") + "|-- " + root("ntp-wire") + "`-- " + root("time-domain"),
             "ntp-exchange": root("ntp-exchange") + "|-- " + root("ntp-wire") + "`-- " + root("time-domain") +
@@ -355,7 +357,7 @@ class SlintProfileControls(unittest.TestCase):
             PROFILE.validate_tree(HOST, trees["spin_on"], policy, scope="spin_on")
             projected = PROFILE.selected_metadata(HOST, json.dumps(data), patch_tree(fixture_tree()), policy,
                                                   package_trees=trees)
-            self.assertEqual(len(projected["workspace_members"]), 6)
+            self.assertEqual(len(projected["workspace_members"]), 7)
             patch_pkg = next(package for package in projected["packages"] if package["name"] == "spin_on")
             self.assertIsNone(patch_pkg["source"])
             self.assertEqual(patch_pkg["license"], "Apache-2.0 OR MIT")
@@ -426,7 +428,7 @@ class SlintProfileControls(unittest.TestCase):
                 output = accesskit_patch_tree(fixture_tree(target), target)
                 projected = PROFILE.selected_metadata(target, json.dumps(data), output, policy,
                                                       package_trees=trees)
-                self.assertEqual(len(projected["workspace_members"]), 6)
+                self.assertEqual(len(projected["workspace_members"]), 7)
                 consumer = [package for package in projected["packages"]
                             if package["name"] == "accesskit_consumer"]
                 self.assertEqual(len(consumer), int(target == WINDOWS))
@@ -563,13 +565,13 @@ class SlintProfileControls(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(PROFILE.Incomplete):
                 PROFILE.validate_policy_shape(changed)
 
-    def test_patch_checks_follow_all_eight_source_scopes(self):
+    def test_patch_checks_follow_all_nine_source_scopes(self):
         for lane in ("portable", "windows", "dependencies"):
             rows = VERIFY.commands(lane, schema_version=3, patched_packages=("spin_on",))
             self.assertEqual(sum(label.startswith("dependency-tree-") for label, _ in rows),
-                             16 if lane == "dependencies" else 8)
+                             18 if lane == "dependencies" else 9)
             if lane == "portable":
-                self.assertEqual(rows[9][0], "patch-compiler")
+                self.assertEqual(rows[10][0], "patch-compiler")
                 for name in ("product-tests:spin_on", "doctests:spin_on"):
                     command = dict(rows)[name]
                     self.assertIn("--manifest-path", command)
@@ -577,7 +579,7 @@ class SlintProfileControls(unittest.TestCase):
 
     def test_frozen_tree_distinguishes_target_build_and_proc_macro_contexts(self):
         result = PROFILE.validate_tree(HOST, fixture_tree(), self.policy)
-        self.assertEqual(result["role_feature_contexts"], 12)
+        self.assertEqual(result["role_feature_contexts"], 13)
         self.assertNotIn("skia-bindings@1.0.0", result["selected_packages"])
 
     def test_package_scope_requires_its_own_roots_and_feature_contexts(self):
@@ -791,7 +793,7 @@ class SlintProfileControls(unittest.TestCase):
 
     def test_projection_requires_every_package_tree_and_matching_cargo_edge(self):
         data = fixture_metadata(self.policy)
-        with self.assertRaisesRegex(PROFILE.Incomplete, "all six"):
+        with self.assertRaisesRegex(PROFILE.Incomplete, "all admitted"):
             PROFILE.selected_metadata(HOST, json.dumps(data), fixture_tree(), self.policy)
         data["packages"][-len(MEMBERS)]["dependencies"] = []
         with self.assertRaisesRegex(PROFILE.Incomplete, "exact Cargo declaration"):
@@ -830,14 +832,14 @@ class SlintProfileControls(unittest.TestCase):
             self.assertIn("--offline", rows[0][1])
             self.assertIn("normal,build", rows[1][1])
             if lane == "dependencies":
-                self.assertEqual(len(rows), 18)
+                self.assertEqual(len(rows), 20)
                 for label, command in rows:
                     if label in ("dependency-" + HOST, "dependency-" + WINDOWS):
                         self.assertIn("--metadata-path", command)
             else:
-                self.assertIn(rows[8][0], ("format", "windows-compiler"))
+                self.assertIn(rows[9][0], ("format", "windows-compiler"))
             self.assertEqual(sum(label.startswith("dependency-tree-") for label, _ in rows),
-                             14 if lane == "dependencies" else 7)
+                             16 if lane == "dependencies" else 8)
 
     def test_deny_grants_and_duplicate_exceptions_are_exact_and_keep_other_bans(self):
         base = (ROOT / "deny.toml").read_text()

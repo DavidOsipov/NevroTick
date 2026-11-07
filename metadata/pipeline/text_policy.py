@@ -909,7 +909,7 @@ def _forbidden(codepoint: int) -> bool:
     return index >= 0 and codepoint <= _FORBIDDEN_RANGES[index][1]
 
 
-def require_text(value: str) -> None:
+def require_text(value: object) -> None:
     """Reject forbidden decoded text, including escaped TOML values and keys.
 
     Empty values are allowed here so typed field rules can represent unresolved

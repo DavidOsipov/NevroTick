@@ -80,6 +80,8 @@ jobs:
         run: python3 -I -B metadata/pipeline/__main__.py validate --root .
       - name: Verify metadata admission, projections and output custody
         run: python3 -I -X dev -Werror -B -m unittest discover -s metadata/tests -v
+      - name: Verify metadata qualification gate controls
+        run: python3 -I -X dev -Werror -B -m unittest discover -s metadata/qualification -p '*_tests.py' -v
       - name: Enforce pinned actionlint, ShellCheck and pedantic zizmor
         run: python3 -B .github/security/check_workflows.py
 

@@ -1946,6 +1946,95 @@
       "code_imported": false,
       "selected_equations_adapted": true,
       "release_or_product_claim": false
+    },
+    {
+      "task": "Q1 producer-bound conditional basic-client quality",
+      "status": "source authored; frozen ordinary-v7 passed on 416-input 8c05b4ee candidate; 68 Python controls pass; frozen final qualification session started with reviewed inventory, final outcome and full Q1 exit pending",
+      "implementation_candidate": "8c05b4eedd9c3f231e4d809d9cc3ef028a8a9d1d21672ed6ebf045a525a96c29",
+      "ordinary_receipt": "q1-quality-ordinary-v7/verification.json",
+      "ordinary_receipt_sha256": "d60e763c073f28277793a9e4b71cd53b505ff408bf06a7e10426be482055505c",
+      "ordinary_results": {
+        "source_file_count": 416,
+        "ordinary_tests": 111,
+        "optimized_tests": 111,
+        "doctests": 50,
+        "selected_lanes_passed": 10,
+        "bookends_unchanged": true,
+        "scope": "Selected engine Linux ordinary execution and Windows-target compiler checks; no native Windows, service, production admission or full critical-file qualification"
+      },
+      "verification_readiness": {
+        "baseline_test_count": 161,
+        "q1_case_count": 20,
+        "python_controls_passed": 68,
+        "reviewed_mutation_inventory_count": 167,
+        "reviewed_mutation_inventory_sha256": "52851ec7a7408ed86034de072648f0e3071e3f4b314142f9ee529fb9b90971f5",
+        "mutation_equivalences": [],
+        "final_session": "q1-quality-qualification-v1",
+        "final_session_status": "started; final outcome, mutation score and full Q1 exit pending"
+      },
+      "negative_server_limit_control": {
+        "healthy_evidence": "q1-quality-ordinary-v7/verification.json",
+        "isolated_abs_omission_receipt": "q1-abs-omission-red-v1/verification.json",
+        "isolated_abs_omission_receipt_sha256": "7463d820e82a3f598090a6b766d86a9357efda7f043461f26a55e7e6fa2e5eff",
+        "result": "90 other library tests passed and one intended ServerProcessing assertion failed; main production source unchanged; no generated mutation kill or product-defect claim"
+      },
+      "historical_v6_checkpoint": {
+        "candidate_sha256": "4fe786c3bd2a0643f81eec6b606cd9274d7439aca4eac433fdfdf3c0918492d0",
+        "ordinary_receipt": "q1-quality-ordinary-v6/verification.json",
+        "ordinary_receipt_sha256": "90183929f02f05e7270c5a2b6b57643ff3c151a2b9862bd0693179a32670670e",
+        "source_file_count": 416,
+        "ordinary_tests": 110,
+        "optimized_tests": 110,
+        "doctests": 50,
+        "contracts_receipt": "q1-quality-contracts-v1/verification.json",
+        "contracts_receipt_sha256": "f496a2508431959baa8f3ecb303e170c80288058303e6bedcc488df44c13cd2d",
+        "coverage_receipt": "q1-quality-coverage-v1/verification.json",
+        "coverage_receipt_sha256": "7a7539c3513c8c48b96d62b51ad052d3e80245098b477b5a54f80f100c3e3c8c",
+        "coverage_lines": {"covered": 366, "executable": 382},
+        "scope": "Retained exact v6 ordinary, host contract and coverage evidence; no automatic transfer to the strengthened v7 candidate or full Q1 exit"
+      },
+      "historical_ordinary_checkpoint": {
+        "receipt": "q1-quality-ordinary-v4/verification.json",
+        "source_file_count": 412,
+        "ordinary_tests": 103,
+        "optimized_tests": 103,
+        "doctests": 50,
+        "scope": "Retained historical checkpoint only; superseded by later ordinary checkpoints for the current selected engine scope"
+      },
+      "remaining_qualification": "Frozen final contracts/coverage/mutation session is running under the unchanged five-GiB floor with the reviewed complete 167-variant inventory. Final actual outcomes, independent reconciliation and full Q1 exit remain pending. No historical score or equivalence transfers.",
+      "destination": "crates/nevrotick-engine/src/quality.rs",
+      "provenance": "crates/nevrotick-engine/PROVENANCE.md",
+      "task_record": "tasks/engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026",
+      "project": "Chrony",
+      "reference_version": "4.9",
+      "revision": "8df4f1263e206585e6c4e61352d042c2dd12916a",
+      "selected_source_sha256": {
+        "ntp_core.c": "ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0",
+        "util.c": "c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd"
+      },
+      "selected_statements": [
+        {"file": "ntp_core.c", "function": "process_response", "lines": "2061,2161-2199,2221-2225", "retained": "basic-client precision, absolute raw delay, frequency half-width, dispersion/root equations and selected computed-value comparisons"},
+        {"file": "util.c", "function": "UTI_Ntp32ToDouble; UTI_Log2ToDouble", "lines": "651-654,908-920", "retained": "unsigned 16.16 roots and precision exponent clamp"}
+      ],
+      "license": "GPL-2.0-only",
+      "copyright_notices": [
+        "Copyright (C) Richard P. Curnow  1997-2003",
+        "Copyright (C) Miroslav Lichvar  2009-2024 (ntp_core.c)",
+        "Copyright (C) Miroslav Lichvar  2009, 2012-2023 (util.c)"
+      ],
+      "copying_sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6",
+      "deliberate_deviations": [
+        "borrow actual immutable TransportFacts and checked declared assumptions; retain producer and assumption association",
+        "checked exact corrected local/peer/RTT differences with separate once-rounded rational representations",
+        "explicit finite numeric quantum/capture/frequency/limit inputs; no upstream threshold or startup zero-skew default",
+        "check every intermediate; closed typed failure; no partial state, ambient reads, age renewal or panic-based admission",
+        "conditional computed-value quality only, including gradual underflow; no conservative physical/arithmetic enclosure, chronology policy, authentication, source eligibility or Core/history edge",
+        "omit interleaved/symmetric/PTP corrections, warm-up, delay-ratio/deviation/quantile and loop admission; their existing product owners remain open"
+      ],
+      "upstream_execution": false,
+      "code_imported": false,
+      "selected_equations_adapted": true,
+      "release_or_product_claim": false
     }
   ]
 }

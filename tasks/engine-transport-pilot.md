@@ -4961,9 +4961,13 @@ commit hold remain.
 
 **Post-N3a activation — 7 November 2026:** after N3a's complete current-candidate
 exit and independent reconciliation, the next ready action is source-contract
-review in this existing observation-to-Core card. Rust integration and an
-engine-to-Core Cargo edge remain held until that contract and its actual
-suppliers are settled; this is not a new numerical-helper or tooling milestone.
+review in this existing observation-to-Core card. The
+[receiving transaction reconciliation](#receiving-transaction-reconciliation--7-november-2026)
+below now settles the four engineering choices and selects the missing
+producer-bound conditional quality calculation as the next dependency. Rust
+history integration and an engine-to-Core Cargo edge remain held until the
+actual production suppliers are available; settling ownership choices does not
+create those suppliers.
 
 The actual same-source producer is
 `execute_series(PreparedSeries, &ControlSchedule) -> Result<SeriesReport, PilotError>`.
@@ -4980,15 +4984,15 @@ numeric context labels establish no matching owner or production eligibility.
 | Logical-source/configuration/association/clock/mapping generations and final current authority | Production suppliers held. `DeclaredObservationContext::new` accepts five nonzero declarations; it cannot create those facts. |
 | Date/era, claim-day LI and whole-exchange scale/calendar/mapping evidence | Production admission held; neither host time, LI=0 nor an experimental declaration supplies it. |
 | Justified peer distance, current precision, capture/quantum/frequency assumptions and limits | Existing quality/statistical suppliers held; no unit distance, zero skew or quality default is selected. |
-| Private completion-to-row association | Held: name the private adapter/entry capability consuming or authenticating the actual report/attempt and binding row keys. Public Core rows and five nonzero labels are copyable declarations; keeping a report alive is insufficient. |
-| Per-report versus accumulated history and reference chart | Held: each `execute_series` creates a fresh actual run context/origin. Settle same-run collection, cross-report mapping and0→1→2→3 admission separately from fit publication. |
-| Capacity/eviction and canonical parent population | Held: choose the atomic outcome when accepted incoming rows exceed64; derive N1 divisors over that chosen complete parent and inherit them unchanged in suffixes. |
-| Final serialized publication authority | Held: name the current receiver revision/context/quality/age guard covering staged rows and the history snapshot, with no await or check-to-commit gap. |
+| Private completion-to-row association | Contract selected below: consume genuine completion capability and retain private row association; actual pre-acquisition source-context supplier and receiving implementation remain held. Public rows/labels cannot substitute. |
+| Per-report versus accumulated history and reference chart | Contract selected below: one receiver-owned chart established before acquisition, one completion per statistical transaction and explicit0→1→2→3 collection. Existing separately created N3 run contexts cannot be joined. |
+| Capacity/eviction and canonical parent population | Contract selected below: stage newest64 fitted rows, removing oldest only in scratch before one N1 parent derivation; refusal preserves the committed population. Auxiliary runs-only history retains its separate owner. |
+| Final serialized publication authority | Contract selected below: exclusive receiver turn checks current revision/context/quality and original ages before one complete commit, with no await or check-to-commit gap. Actual authoritative suppliers remain absent. |
 
 Independent source review confirms the operation-local borrowed fit approach,
-but the four transaction choices above remain unresolved. This is ready contract
-work, not an implementation activation. Even empty N1 input requires positive
-finite current precision; absence supplies no default.
+and the reconciliation below settles the four transaction choices. This does
+not activate history integration. Even empty N1 input requires positive finite
+current precision; absence supplies no default.
 
 Freeze actual monotonic-origin/source/configuration/association/clock/mapping
 ownership, consume-once correlated completion, exact half-nanosecond midpoint,
@@ -5007,8 +5011,8 @@ not a newly selected history/eviction policy. Call
 divisors once over the fitted population and exclude auxiliary runs-only rows.
 `prepare_conditioned_suffix(&batch, start)` retains that actual parent chart,
 anchors and divisor bits; `fit_conditioned_suffix(&suffix)` evaluates that suffix.
-Keep the original report alive throughout. Settle
-numerical-refusal/eviction semantics and preserve prior state, generations and
+Keep the original report alive throughout. Apply the selected
+numerical-refusal/eviction semantics below and preserve prior state, generations and
 honest age on rejection. Do not search smaller subsets merely to get a pass.
 `ConditionedFit` borrows suffix → batch → rows: storing it next to its own row
 array would be self-referential. The working choice for independent review is
@@ -5018,11 +5022,12 @@ report projection must retain private association to its original producer;
 copied public scalars and matching labels cannot establish it. Preserve explicit
 `ConditionedBatchOutcome::Insufficient`/`ConditionedSuffixOutcome::Insufficient`
 for0/1/2 rows without a fit. Distinguish collection acceptance from fit publication:
-settle whether admitted history is retained on fit refusal and how0→1→2→3 rows
-accumulate, while a missing fit supplies no new published fit. Missing suppliers,
+successful one/two-row collection commits without a fit; third-or-later numerical
+refusal preserves the prior history and fit. A missing fit supplies no new
+published fit. Missing suppliers,
 duplicate/stale context and arithmetic rejection preserve the prior transaction;
 no partial append/eviction or renewed age can manufacture success. Freeze those
-choices before implementing their transition table.
+choices and actual suppliers before implementing their transition table.
 
 Independent exit: one reviewed real producer → checked rows → N1 → N2 → receiving
 state contract with actual enforcement/held suppliers named. Retain the midpoint
@@ -5035,6 +5040,404 @@ and native/NTS holds remain. Freeze and independently review this producer-to-
 publication contract before activating its separate Rust implementation. This
 source-contract preparation completes no production receiver or P1 exit and
 lifts no formal, Windows, fuzz, storage or UI hold.
+
+#### Receiving transaction reconciliation — 7 November 2026
+
+Current source review inspected clean `e5d9a0112e198ab41a50ee0b0057e06eab68ab84`.
+Three fresh-context read-only workers completed distinct identity/publication,
+population/atomicity and actual-supplier questions. They ran no Cargo, native,
+formal or fuzz jobs. The coordinator reconciled their source findings with
+architecture §§6,7.2,7.3,9,10.1 and17.1 and the existing refinement above.
+This closes the four engineering choices, not their implementation or the
+unavailable production suppliers. It supersedes the earlier unresolved-choice
+status, while retaining every physical, date/scale and current-authority hold.
+
+1. **Actual capability and chart.** The authoritative source/association owner
+   must establish a private chart and source-context capability **before**
+   acquisition, and carry them through preparation, execution and completion.
+   A private receiving adapter consumes the genuine report/completion once and
+   derives each row itself, retaining actual run/request identity, original
+   attempt position, captures and a code-owned row-key association. It accepts
+   no caller-paired facts/row or posthoc context-label substitute. Current
+   `RequestOwner`/`Completion`/`SeriesReceiver::receive` already bind real
+   request/run `Arc` identities; `PreparedSeries` and `RunClockContext` do not
+   supply production source/configuration/association/clock/mapping authority.
+   Each current `execute_series` creates a fresh chart. Existing independent
+   reports therefore cannot be accumulated by equal endpoints, labels or origin
+   values. The future accumulated source history requires an actual shared
+   pre-acquisition chart or separately justified original-capture mapping.
+2. **Transaction and insufficiency.** One terminal completion is one statistical
+   transaction; visit report positions in original order. Successful N1 one/two-
+   row `Insufficient` collection commits rows without a fit. Third-or-later
+   collection commits only after complete N1/N2 and current-authority success.
+   Any quality, conversion, geometry, arithmetic or final-guard refusal preserves
+   the prior rows/reference/fit/revision and their original ages. Earlier
+   successful transactions in the same report remain committed. Refusal never
+   restores a consumed request or grants a threshold-seeking retry.
+3. **Capacity and parent.** Select oldest-only replacement for the fitted
+   population's existing64-row bound. Stage old rows plus the incoming row,
+   remove the oldest in scratch when necessary, then derive one complete N1
+   parent and evaluate its suffixes without changing anchors or divisor bits.
+   Any later refusal leaves the committed64 untouched. This is a reviewed
+   engineering selection using the existing atomic-history precedent, not a
+   consequence of N1's numeric limit alone. Runs-only auxiliary rows retain
+   their separate bounded owner and never enter the fitted-quality population;
+   this choice introduces no new auxiliary budget, age threshold or pruning
+   policy. Do not search smaller populations until a fit succeeds.
+4. **Publication.** Keep N2's borrowed fit operation-local. Under the canonical
+   receiver's exclusive turn, check the exact staged history/revision and actual
+   source/configuration/association/clock/mapping ownership, quality/precision
+   and scale/calendar revisions, stop/invalidation and original age of every
+   retained row. Use trusted monotonic time, reject backwards time and checked
+   age/revision overflow, and keep current freshness policy distinct from the
+   historical transport deadline. Commit rows, associations, same-fit diagnostics
+   and next revision together without an await, callback or unlock after the
+   final guard. A failed replacement cannot hide an old fit's genuine expiry.
+
+These choices preserve the selected source-statistics algorithm and rollback
+rules; they select no weaker trust, new physical limits or source-vote policy.
+No additional David decision is needed for this mechanism. Genuine production
+date/scale evidence, calibrated quality assumptions, freshness/limit policy or a
+changed recovery/security rule still belongs to its existing authority and
+OD-04 when a material unresolved choice becomes dependent.
+
+**Next actual dependency — Q1 conditional source quality.** Implement the missing
+engine-local calculation from the already frozen basic-client formula, before
+attempting the production receiver. Its actual path is
+`SeriesReport::attempts()` → `SeriesAttempt::report()` → `SlotReport::facts()` →
+the same borrowed `TransportFacts` header and successful conditional measurement.
+The private result must retain that facts association and immutable checked
+assumptions; accepting copied headers/measurements or arbitrary label tuples
+would sever it. Q1 adds no Core edge, rows, history, vote, new current-age reading
+or eligibility. The result is **computed nominal quality conditional on declared
+numeric assumptions**, not calibrated production uncertainty or admission.
+
+Freeze Q1's numerical contract before implementation:
+
+- Mandatory explicit inputs are positive finite historical local quantum `c`,
+  nonnegative finite TX/RX capture allowances, finite ordered prior-frequency
+  endpoints, and positive finite maximum advertised distance, delay and absolute
+  server-processing interval. Private fallible construction invokes shared
+  garde rules; there is no default, builder/deserializer bypass or substitution
+  for missing evidence. Checked numeric assumptions do not assert their physical
+  truth, common-source provenance or present validity. Historical `c` does not
+  supply N1's separate current precision.
+- With `B=10^9`, compute checked signed exact differences first:
+  `L=[B*(T4_ticks−T1_ticks)+r4−r1]/(B*2^32)` and
+  `R=(T3_ticks−T2_ticks)/2^32`. Independently use the actual corrected nominal
+  RTT numerator over `B*2^32`; never subtract rounded `L` and `R`, use the bare
+  Q32 RTT, monotonic elapsed or subtract independently rounded absolute times.
+  Use the existing once-rounded rational-seconds owner and retain each exact
+  tuple and representation-error bound separately.
+- Evaluate the existing `p/P/D/K/E/RD/RE/peer_distance/root_distance` formula in
+  its stated order with separate binary64 operations. Root words are unsigned
+  16.16; precision clamps to[-31,31]. Check every intermediate for finiteness
+  before `max` or a policy comparison. Output distances/dispersion are positive;
+  other legal zero results are canonical positive zero. Positive subnormals and
+  gradual underflow, including nonzero frequency half-width or product rounded
+  to zero, follow this **computed-value** contract; retain original assumptions
+  so no physical exact-zero claim follows. No FMA/reassociation, total arithmetic
+  enclosure or statistical-confidence promise is introduced.
+- Compare computed advertised `root_delay/2+root_dispersion` **strictly below**
+  its explicit maximum; compare `P`, `D−E` and `abs(R)` **inclusively** to their
+  respective delay/delay/server-processing maxima. Preserve signed `R` and raw
+  RTT. The pinned basic-client source uses absolute response time; Q1 introduces
+  neither a new `T3>=T2` rule nor blanket negative-RTT rejection. A failed
+  measurement remains its original typed refusal; invalid assumptions, checked
+  arithmetic/nonfinite output and each policy refusal remain distinct bounded
+  typed failures with no state mutation or payload-bearing diagnostic.
+
+Pinned source was rechecked locally: `ntp_core.c` SHA256
+`ca206410bddc03c56996bba2bddbca2ab01029f9c5b619d4a55025f37d8c4ac0`,
+lines2061,2161–2199,2221–2225, and `util.c` SHA256
+`c0e80e237ceb9705fb42407ab9dd4dffbb29c711e48ccca30f925d716d0cd9dd`,
+lines651–654,908–920, match the retained S0.1 ledger. Import no upstream threshold
+or startup zero-skew assumption. Preserve the actual GPL-2.0-only notices and
+record adaptation in the existing port ledger before source translation.
+
+Q1's finite implementation exit is actual producer-to-conditional-result host
+evidence: mandatory validation and external construction/substitution controls;
+independent exact dyadic values, precision clamp neighbors, unsigned high-bit
+roots, both signs of RTT/peer interval, threshold neighbors, finite-input overflow,
+underflow and unchanged peer distance when only root claims change. A useful
+exact oracle is `L=1/8,R=1/16,c=p=1/1024,tx=1/256,rx=1/512`, frequency interval
+`[-1/64,1/64]`, advertised delay`1/8`/dispersion`1/256`: `D=1/16,E=3/512`,
+peer distance`19/512`, total root delay`3/16`, root dispersion`5/512`, root
+distance`53/512`. Setting `R=3/16` reverses raw RTT while retaining `D`/`E` and
+peer distance. These are independent specification facts, not executed Rust.
+
+Use existing admitted ordinary/compiler/Clippy/rustdoc entry points, then
+90% executable-line/95% per-critical-file mutation and independent exact-candidate
+review at Q1's stable checkpoint. Complete formatting and focused controls before
+freezing expensive qualification. Source-only work can proceed now; a five-GiB
+campaign preflight is currently unmet (4.9GiB available) and no heavy campaign
+is started. Required qualification remains open until actual admission succeeds.
+Owner engine/domain/QA; REQ-8/BND-1 and CHECK-6/7/8/11/14/25/27. Formal obligations
+remain post-V1. All Windows/S134, AES-fuzz, optional-storage and UI holds remain.
+
+##### Q1 source and ordinary checkpoint
+
+The source now contains `DeclaredFrequencyInterval`, `DeclaredQualityLimits`,
+`DeclaredQualityAssumptions`, `ConditionalQuality` and
+`evaluate_conditional_quality` in the engine's `quality` module. Mandatory garde
+construction and transformed-output checks preserve both original borrows,
+exact interval tuples and separate converter bounds. Nine private numerical/
+admission tests and three external real-UDP tests were authored by separate
+workers. A third read-only reviewer found no concrete implementation defect in
+the frozen pre-format source; this is source review, not execution evidence.
+No dependency, Core edge, history receiver or production supplier was added.
+The ledger and engine provenance retain both actual upstream notices and GPL2.
+
+The existing ordinary series recipe is reused as external
+`dependency-refresh-20261106-v1/quality_ordinary_v1.py`, with unchanged admission,
+sandbox, boundary controls, six build jobs, time/output bounds and reserves.
+It additionally requires every discovered Q1 private/external test identity and
+legal/negative doctests; no missing or empty selection can pass. Its separate
+four-GiB ordinary preflight does not waive the five-GiB analysis-campaign floor.
+Formatting in `q1-quality-format-v1` passed with unchanged412-input bookends and
+changed only the three owned Q1 Rust files.
+
+First ordinary attempt `q1-quality-ordinary-v1` on412-input `da8b36f1...` passed
+the actual sandbox control, formatting and all-target compiler, then stopped at
+Clippy: the required Garde unit-context borrow and two test pointer comparisons
+needed their existing narrow lint conventions. No tests executed in that attempt.
+The failed receipt is retained (SHA256
+`8f838c02b55b8523d55c9022b2edc6fc45bce17dbfecb4ec9a5bbdbd8f0e1e21`),
+with unchanged source/helper/vendor/tool bookends. Repair uses the local Garde
+callback expectation and explicit safe `ptr::from_ref` comparisons; no numerical
+contract, guard, assumption or expected value changed. Ordinary-v2 then stopped
+at one external-test `manual_midpoint` lint; the independent root-distance
+expectation now uses its exact literal half-root term. Ordinary-v3 passed
+compiler/Clippy,103 engine tests and49 doctests, but the unchanged reader
+correctly refused the missing positive Q1 doctest. Adding a legal external
+construction example retains all seven new negative examples. Neither failure
+was a numerical production defect; both incomplete receipts and their unchanged
+bookends remain retained.
+
+**Ordinary-v4 passed** all ten selected lanes on412-input
+`6123e8eca8eb742e82c2924c18625df13c22bc3f2c9c4e7cfe28a926ff8df138`:
+format/compiler/Clippy,103 ordinary tests,50 doctests,103 optimized tests,
+rustdoc and Windows-target all-target compiler/Clippy. All nine private and
+three external Q1 cases executed once per ordinary/optimized selection; legal
+and negative Q1 doctests are nonempty. Source/helper/recipe/vendor/tool bookends
+remain unchanged. Receipt
+`dependency-refresh-20261106-v1/q1-quality-ordinary-v4/verification.json` SHA256:
+`87260e72592383b2ff4e17218c83ff197214763adc2f30619d39954382a50750`.
+Current quality source is
+`f3abb4b00c769b3a4fb655cb923df7626c4209cb792594a55f065449051e2135`,
+private tests `7c950a17881b965edcc8804acc64c9811b7adbe058dacbfa9b575a490e852ef0`,
+external tests `83a50ff2b783fde80431f5a46eae632a2fd6e774ffc4fec756317221daee9343`
+and library export owner
+`f14ab14174eab86abdd14b8b70a567e88deeda4062520ed13323e7c4a8d11622`.
+
+The next action is Q1's selected critical-file contract/coverage/mutation
+qualification through the existing engine analysis custodian, with fresh actual
+inventories and no inherited equivalences. The role needs source-specific
+registration before execution. The five-GiB campaign preflight remains unmet;
+3,813,404,672 bytes were available after ordinary-v4. No heavy campaign starts
+under that failed condition. Bounded cleanup deleted only rebuildable targets
+of terminal ordinary-v1/v2, recovered176,132,096 allocated bytes and preserved
+their sources, raw receipts and the main index. No compression occurred. This
+ordinary checkpoint does not qualify the per-file gates, native Windows,
+production calibration/admission, P1, package or release.
+
+David notified the coordinator that a separate AI is implementing the planned
+Windows services in parallel. This owner continues engine Q1; shared Cargo/
+policy/task changes require integration reconciliation, and the notification
+lifts no Windows execution hold. Concurrent metadata-pipeline edits also remain
+with their existing owner and are preserved.
+
+##### Q1 verification readiness and frozen integrated candidate
+
+The next readiness review found concrete missing detectors before enumeration:
+negative nominal local wall progress, deterministic precision-floor dominance,
+distinct public limit/capture getters, competing-refusal precedence, broader raw
+scalar/ratio-helper domains and generated Garde dispatch. The main source now
+has16 private Q1 cases plus the original three real-UDP cases. The added raw
+private candidates qualify macro dispatch, not reachable public malformed-domain
+states. Manual diagnostic values qualify formatting/cause mapping only. The
+production calculation remains byte-identical `f3abb4b...`; no missing physical
+or current-authority supplier was invented.
+
+The parallel service owner added `windows-platform` and its source/admission
+files. All existing Cargo lock package records, workspace profiles and dependency
+patch routing were unchanged at reconciliation; the lock adds only that local
+package. Live-copy formatting-v2 refused two service-file changes before any
+native lane. Formatting-v3 passed on416 inputs. Ordinary-v5 then retained both
+its actual Clippy123-line test failure and its independent source-bookend refusal.
+The raw lane remains authoritative: the older wrapper's final custody error
+masked that first error in its summary. Splitting getter/precedence assertions
+into their own test repaired the lint without deleting checks or adding a lint
+exception.
+
+To avoid serializing independent implementation, the coordinator captured1858
+repository files and416 product inputs in
+`dependency-refresh-20261106-v1/q1-integrated-snapshot-v1/checkout`, with matching
+main-source capture bookends. This is a verification copy; every implementation
+edit remains in the main repository. The explicit-project
+`quality_ordinary_v2.py` retains the original admission, sandbox, commands,
+reserves and native-record reader, binds its previous recipe and records the
+first execution error separately. Guarded formatter copyback changed only the
+owned private Q1 test file in main. No Git operation changed the shared index.
+
+**Fresh ordinary-v6 passed** all ten lanes on416-input
+`4fe786c3bd2a0643f81eec6b606cd9274d7439aca4eac433fdfdf3c0918492d0`:
+110 ordinary tests,110 optimized tests,50 doctests, format/compiler/Clippy,
+rustdoc and both Windows-target checks. All19 Q1 cases and legal/negative
+doctests are required and executed. Source/helper/recipe/vendor/tool bookends
+are unchanged. Receipt `q1-quality-ordinary-v6/verification.json` SHA256:
+`90183929f02f05e7270c5a2b6b57643ff3c151a2b9862bd0693179a32670670e`.
+Private tests now hash
+`0ddaa37fed3553f0a949b424929d77e9c4142694d4efbc14550bb3045115966c`.
+This supersedes ordinary-v4 only for the new selected engine checkpoint; retain
+its earlier successful scope and all incomplete attempts. It qualifies no
+service implementation, native Windows behavior or production sample admission.
+
+The additive `--profile quality` role selects only `quality.rs`, retains full
+custody,90% executable-line/95% viable-mutation gates, eight outer/one inner
+worker, six build jobs and the five-GiB preflight. It binds actual110/50/160
+ordinary/doctest/baseline names and all six v6 recipes. Sixty-eight Python
+controls pass. Independent review found and then verified repairs for four
+concrete preparation defects: unbound caught locations, split hash/parse receipt
+observations, missing independent owner-lifetime/substitution probes and a
+reset contract deadline. Caught credit now requires actual named source-bound
+semantic evidence, rejects infrastructure/harness causes and handles typed
+product refusals only as secondary evidence. These are verifier controls, not
+native Q1 gate execution. No old equivalence or mutation score is inherited.
+
+At role preparation, native contracts/coverage/enumeration remained pending
+resource admission; subsequent execution is recorded below. Mutation additionally
+requires the actual complete reviewed nonempty inventory.
+Source/function reconciliation covers52 authored functions and the separate
+generated validations/borrow/privacy obligations. Defensive unreachable guards
+retain source-bound alternatives; they are not invented kills or exclusions.
+
+Bounded cleanup recovered about3.0GB net over two measured passes, then retired
+673,452,032 further bytes of terminal ordinary-v5/v6 compiler targets. Receipts,
+unique source deltas, tool/vendor stores, both publication Git checkouts and the
+main index were preserved.40,235 deleted duplicate files are reconstructible
+from signed reachable `af3fdb1` through the retained maps in
+`q1-space-preflight-v1/reconstruction.json` and
+`q1-space-preflight-v2/s12-duplicates.json`. Six obsolete CodeQL verbose traces
+were retired after retaining all89 warning lines, query/source/failure receipts
+and retired-database evidence in `q1-space-preflight-v2/codeql-traces.json`.
+Only per-predicate/tuple/performance detail is lost; those interrupted/failed
+queries produced no BQRS findings. Memory warnings do not prove the cause of
+native137. Shared CodeQL servers/caches were neither stopped nor removed. No
+compression, CodeQL execution, formal job or Windows command occurred. Parallel
+allocations continue, so actual free space must be rechecked before every
+campaign; cleanup has not waived its five-GiB floor.
+
+A subsequent bounded compiler-cache pass removed940 reviewed paths:156 rlibs,
+432 rmeta files,246 incremental data files and53 internal build-script alias
+pairs. Fresh file/hash and process-use checks excluded active compiler jobs,
+mapped libraries and other executables. All21 mapped shared-library paths and
+the complete main Git custody remained unchanged;51 process observations were
+inaccessible or disappeared. Actual recovery was1,125,679,104 bytes, bringing
+available space to5,717,655,552 bytes and passing the unchanged five-GiB floor.
+The exact inventory and execution result remain under
+`q1-main-target-cache-preflight-v1/`. These files are regenerable compiler cache;
+no unique source/evidence or installed tool was retired. The frozen candidate's
+`q1-quality-contracts-v1` lane then passed with full unchanged tool/source custody:
+one legal external consumer compiled and executed, all11 privacy/type/lifetime
+bypasses failed for their intended compiler diagnostics, one healthy constructor
+companion passed and three actual validation omissions failed their named runtime
+assertions (native101 each). These controls contribute no mutation kills.
+Receipt SHA256:
+`f496a2508431959baa8f3ecb303e170c80288058303e6bedcc488df44c13cd2d`.
+The completed lane's rebuildable target was retired after retaining its receipt,
+source, standalone probes and immutable copied dependency artifacts; actual free
+space increased126,291,968 bytes. Mutation enumeration started next so its actual
+inventory can be reviewed while coverage executes. Enumeration completed with
+167 actual variants, unchanged source/tool custody and no cap overrun. Receipt
+`q1-quality-enumerate-v1/verification.json` SHA256:
+`c4eb9afa428785380c4b86a419f3962ba5946d4fb2c7d7bf7797be9e01c1c906`;
+complete inventory SHA256:
+`52851ec7a7408ed86034de072648f0e3071e3f4b314142f9ee529fb9b90971f5`.
+This is discovery only, with campaign admission still false and no score.
+Coverage is now executing. Two fresh-context read-only workers own the1–609
+constructor/guard and610–EOF arithmetic/result halves of inventory reconciliation;
+their launch is not a completed review.
+
+Both inventory reviews completed in fresh contexts. All167 raw and canonical
+descriptors match the source, names, spans and old/context diff lines. The first
+half has74 descriptors across28 of31 functions; its three zero-generated
+constructors have the separately executed omission controls above. The second
+half has93 across all21 functions. No mutation skip, unsafe-function skip or
+hidden feature branch was found. Macro rules, individual propagation/association
+guards and library methods remain separate from these49 generated function
+bodies and receive no invented variants or kills.
+
+The arithmetic review found one concrete alternative-evidence gap: removing
+the server-processing `.abs()` at903 is ungenerated, and the original negative-R
+test used a permissive maximum. The source is correct. A seventeenth private test
+now requires exact R=-1/16 with a predecessor magnitude limit to refuse
+`ServerProcessing`, while equality and the successor succeed with unchanged
+original facts/age. The isolated omission control now supplies genuine RED:
+format/compiler/Clippy pass; the named new library test fails its intended
+`ServerProcessing` assertion while90 other library tests pass, native101.
+Cargo stops before integration tests. Source/helper/vendor/tool/recipe bookends
+remain unchanged. Receipt `q1-abs-omission-red-v1/verification.json` SHA256:
+`7463d820e82a3f598090a6b766d86a9357efda7f043461f26a55e7e6fa2e5eff`.
+Only the isolated verification fixture changes `.abs()`; main production remains
+`f3abb4b...`. After admitted formatting, private tests hash
+`7716653c1607c5f2552ea11e0a95b73a8423aa12a05ebac93aad4b282ea19da5`.
+Healthy ordinary-v7 then passed all ten lanes on416-input
+`8c05b4eedd9c3f231e4d809d9cc3ef028a8a9d1d21672ed6ebf045a525a96c29`:
+111 ordinary/111 optimized tests and50 doctests, including the strengthened
+negative-processing case, with unchanged source/helper/vendor/tool/recipe
+bookends. Receipt SHA256:
+`d60e763c073f28277793a9e4b71cd53b505ff408bf06a7e10426be482055505c`.
+The role is being rebound to its actual111/50/161 names and the reviewed167
+descriptors. This control grants no generated mutation kill or source-defect
+claim.
+Coverage-v1 passed on the preceding110-test checkpoint:366/382 executable lines
+(95.8115%), all19 then-required Q1 cases and unchanged full tool/source custody.
+Receipt SHA256:
+`7a7539c3513c8c48b96d62b51ad052d3e80245098b477b5a54f80f100c3e3c8c`.
+Retain that exact historical scope while the strengthened test candidate is
+formatted and ordinarily checked before one final contracts/coverage/mutation
+session. No mutation score or full Q1 exit is established yet.
+
+The strengthened role now binds actual111/50/161 identities, all20 Q1 cases and
+the reviewed167-descriptor inventory, without any equivalence. Its68 Python
+controls passed both author and frozen-root runs (root6.480s), and frozen
+admission passed. Root then started `q1-quality-qualification-v1 --lane all` on
+the8c05b4... candidate; final native results remain pending. The unchanged
+production source supports reuse of the reviewed descriptor mapping, while the
+campaign still re-enumerates and verifies its complete inventory before running.
+
+Disk preparation also observed the shared main target grow from about439MB to
+1.071GB after the new Rust test was added; no compiler was active at the later
+inspection. A final guarded pass retired1,176 inactive cache paths across1,006
+inodes, including170 complete internal hardlink groups. All21 mapped libraries,
+named application executables, authored inputs, tool stores and main Git custody
+were preserved. Generated Slint includes were retired only with all32 selected
+UI fingerprint files, including both matching build-script stamps, to force
+regeneration rather than reuse missing generated output. Actual recovery was
+807,555,072 bytes, leaving5,407,166,464 bytes when the final run started. The
+manifest and execution are `q1-main-target-cache-preflight-v1/manifest-v2.json`
+and `execution-v2.json`; process visibility remains limited to readable entries.
+The earlier ordinary/control compiler caches were also retired between runs.
+Old contract dependency copies/executables now require rebuilding from preserved
+inputs and commands; their receipt is unchanged. Duplicate omission-fixture docs
+remain reconstructible from the healthy frozen copy. Coverage-v1's full JSON and
+all78 raw/merged profiles were retained outside its retired target. These
+retirements establish no additional application qualification or Windows claim.
+
+Independent nonformal review also traced all13 actual computed output fields
+through their preceding finite/sign/clamp checks to final Garde validation.
+Under the unchanged checked constructors/converter and selected binary64
+semantics, no public-admitted final-validation failure was found. Direct raw
+macro-dispatch tests therefore do not demonstrate sensitivity to omitting that
+final publication check. Retain that call as defense against future arithmetic
+changes and this source-bound alternative as a separate obligation; it grants
+no generated-mutant equivalence, kill or proof credit before actual descriptor
+review. Before the negative-processing test addition, main's416 product inputs
+still exactly matched ordinary-v6. Its only new
+protected-helper change was the ledger's documentation update; its policy was
+rebound and current main Q1 admission passed without altering the executing
+frozen snapshot.
 
 #### N2a complete first campaign and strengthened candidate
 
@@ -6182,13 +6585,14 @@ All records are under the existing external evidence root
 - Current library wrapper: `n3-series-qualification-v4-library/verification.json`,
   SHA256 `2f65f2571e1bdec32ea831ab54c0fff382f6725dc5303863496050a5e6157486`.
 
-Next, settle the four explicit choices and real suppliers in the
-[existing receiving-contract card](#conditional-next-product-contract-after-n2s-finite-exit).
-Independent source review accepts the borrowed-fit approach and identifies the
-private association, accumulation/insufficiency, capacity/eviction and final
-authority choices as held before implementation. Even empty N1 input requires
-positive finite current precision. Do not fabricate inputs, activate production
-history or add an Engine-to-Core edge before that contract is settled.
+The earlier next-action instruction to settle the four transaction choices is
+superseded by the
+[receiving transaction reconciliation](#receiving-transaction-reconciliation--7-november-2026).
+Those engineering choices are now settled; Q1's producer-bound conditional
+quality calculation is the next dependency. Actual production source/date/scale,
+calibration and current-authority suppliers remain held. Even empty N1 input
+requires positive finite current precision. Do not fabricate inputs, activate
+production history or add an Engine-to-Core edge from this qualification.
 
 This is working-tree qualification, not a staged-tree or publication approval.
 The coordinator leaves Git and AccessKit/CNG changes to their other owner and

@@ -569,8 +569,17 @@ No actionable vulnerability was confirmed from these 16 detections under their
 current scopes. The independent source/lock review found the inherited range
 comparison defect above; it was not a CodeQL-reported discovery. Hosted analysis,
 local inventories, fixture controls, failed product flow queries and behavioral
-repair evidence remain separate. Raw SARIF, comparisons, query hashes, BQRS and
-failed execution logs are retained in the external evidence directory.
+repair evidence remain separate. Raw SARIF, comparisons, query hashes and BQRS
+are retained in the external evidence directory. On 7 November, authorized WSL
+cleanup retired six verbose evaluator/tuple/performance traces from the three
+failed or interrupted `LocalSelectors`, `selectors` and `LocalFlow` jobs. Their
+commands, timestamps, all 89 warning lines and failure context remain in
+`dependency-refresh-20261106-v1/q1-space-preflight-v2/codeql-traces.json` under
+the same external NevroTick evidence store, with deletion results in that
+directory's `execution.json`. Unique source, queries, meaningful failure receipts,
+successful result artifacts and hosted SARIF were preserved. Per-predicate and
+performance replay detail was discarded; no failed job became a flow result or
+qualification pass. Active CodeQL services and their caches were not changed.
 
 ### Executed verification and remaining work
 

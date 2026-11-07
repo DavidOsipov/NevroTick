@@ -944,6 +944,14 @@ explicit residual populations.
 
 ## 7. Next executable task for a development agent
 
+**Owner-requested service source start — 7 November 2026:** David requested
+reading the service contracts/skills and starting implementation. The bounded
+[W11-W05 lifecycle source checkpoint](../../tasks/windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
+adds shared portable `windows-platform` logic for both own-process services.
+This parallel source preparation does not admit ordinary installed service work:
+MSIX provisioning/account isolation, native execution and the remaining S0.2/P3
+gates stay open. The existing Core/engine continuation below retains its scope.
+
 **Controlling owner amendment — 6 November 2026:**
 [OD-10 §14.1](../nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026)
 defers **all formal-proof work until after the first released software version
@@ -1055,18 +1063,32 @@ with no unresolved survivor or timeout. Equivalents receive no kill credit.
 Independent review closes the former fixture-only deadline catch through an
 actual predeadline assertion; all prior failures and scoped control reuse remain.
 
-**Next executable product task:** settle and independently review the four
-transaction choices in the existing
-[same-source receiving-contract card](../../tasks/engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit).
-Name the actual private completion-to-row capability, per-report versus
-cross-report accumulation/reference chart, atomic capacity/eviction outcome and
-final serialized revision/context/quality/age guard. Distinguish0/1/2-row
-collection from fit publication. Existing source review finds those choices and
-actual provenance/quality suppliers unsettled; Rust integration, production
-history and an Engine-to-Core Cargo edge remain held. Operation-local borrowed
-fit evaluation is suitable, but declarations and retained report lifetime do not
-supply private producer association. No quality defaults or fabricated suppliers
-follow from the completed acquisition slice.
+**Next executable product task:** complete Q1's critical-file qualification in the existing
+[receiving transaction reconciliation](../../tasks/engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026).
+Its strengthened frozen integrated checkpoint passes111 ordinary/111 optimized
+tests,50 doctests and all ten selected host/Windows-target compiler lanes
+on416-input `8c05b4ee...`; this supplies no native Windows or service pass.
+The additive source-specific role passes68 Python controls and binds actual v7
+evidence and the complete reviewed167-descriptor inventory. A new negative-server
+processing magnitude neighbor test also catches an isolated `.abs()` omission;
+that ungenerated control receives no mutation kill credit. The final combined
+contracts/coverage/mutation run is executing after the unchanged five-GiB
+preflight. Reconcile its actual complete results, viable denominator and separate
+function/guard alternatives before claiming the Q1 exit. The 90% line and95%
+per-file mutation gates and all existing protections remain.
+The earlier412-input103-test checkpoint retains only its historical scope.
+Three completed source reviews settle private pre-acquisition chart/completion
+association, per-completion accumulation with explicit0/1/2 insufficiency,
+failure-atomic oldest-only fitted-row replacement at64, and the final exclusive
+revision/context/quality/original-age publication guard. These engineering
+choices do not create missing production suppliers. Q1 closes the specific
+calculation dependency through actual `TransportFacts` plus mandatory explicit
+checked assumptions and the already specified source-derived formula. Its result
+remains conditional nominal quality, with no default assumptions or physical
+calibration claim. Rust history integration, production admission and an
+Engine-to-Core Cargo edge remain held. Operation-local borrowed fit evaluation
+remains selected; copied declarations and retained report lifetime cannot supply
+actual private producer association or retrospective source authority.
 
 The qualified acquisition retains its original scope:
 It selects three planned sequential attempts to one controlled loopback

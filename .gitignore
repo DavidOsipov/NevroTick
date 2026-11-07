@@ -16,3 +16,6 @@ node_modules/
 __pycache__/
 *.pyc
 *.pyo
+
+# Retained local Windows-service verification records; preserve during cleanup.
+/artifacts/windows-services/

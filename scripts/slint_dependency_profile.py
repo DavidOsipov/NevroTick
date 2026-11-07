@@ -12,13 +12,13 @@ role="metadata-only" and confer no execution or licence grant.
 Each target row contains features and local_features maps from name@version to
 {target: [SORTED_FEATURE_SET, ...], host: [SORTED_FEATURE_SET, ...]}; omit absent
 roles, sort/deduplicate all sets and their list. features contains only actually
-selected registry packages, local_features all six roots. metadata_features maps
+selected registry packages, local_features all admitted roots. metadata_features maps
 every registry package in the filtered Cargo metadata to its sorted feature list,
 including inert metadata extras. allowed_build_scripts and allowed_proc_macros
 are exact sorted selected identities (build scripts also include nevrotick-ui).
 duplicate_exceptions is the sorted list of all selected identities whose names
 have multiple selected versions. No wildcard or subtree exceptions are admitted.
-Each row also has package_scopes={PACKAGE: {features, local_features}} for all six
+Each row also has package_scopes={PACKAGE: {features, local_features}} for all admitted
 packages. These are exact package selections with normal/build/dev edges; the
 workspace row uses normal/build edges. Fixed manifests admit only the exchange
 dev edge to time-core, which is already a feature-free workspace root. Runtime
@@ -34,7 +34,7 @@ no registry checksum is assigned to modified bytes. Spin product contexts remain
 host-only, with its standalone target test scope. AccessKit has only the existing
 Windows GUI normal target role and no standalone scope; consumer additionally
 retains its existing empty-feature inert Linux metadata observation. features/metadata_features
-include explicit non-first-party identities; local_features still contains the six product
+include explicit non-first-party identities; local_features still contains the product
 owners. Optional archive_file_bypasses bind literal paths and SHA-256 values.
 They grant no execution and do not replace separate build/proc-macro admission.
 
@@ -55,11 +55,11 @@ import re
 
 # Exact private build/test cohort. Source, role and primary-grant evidence is
 # recorded in S0.5; supplemental conveyance obligations remain explicitly open.
-REVIEWED_POLICY_SHA256: str | None = "11d1fb54cbf5dc253198662dc780be60f5f07b43708bb10eb1adbeb571beae1b"
+REVIEWED_POLICY_SHA256: str | None = "474038ae9039940a7d3e5d76ebd603abbbf75891e53131827cd46820e7a48239"
 HOST_TARGET = "x86_64-unknown-linux-gnu"
 WINDOWS_TARGET = "x86_64-pc-windows-msvc"
 TARGETS = (HOST_TARGET, WINDOWS_TARGET)
-MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine")
+MEMBERS = ("nevrotick-ui", "ntp-wire", "time-domain", "ntp-exchange", "time-core", "nevrotick-engine", "windows-platform")
 PATCH_NAME = "spin_on"
 PATCH_ID = "spin_on@0.1.1"
 PATCH_PATH = "third-party/spin_on"
@@ -168,7 +168,8 @@ LOCAL_IDENTITIES = {name + "@0.0.0" for name in MEMBERS}
 LOCAL_SCOPE_MEMBERS = {"nevrotick-ui": {"nevrotick-ui"}, "ntp-wire": {"ntp-wire"},
                        "time-domain": {"time-domain"}, "time-core": {"time-core", "time-domain"},
                        "ntp-exchange": {"ntp-exchange", "ntp-wire", "time-domain", "time-core"},
-                       "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"}}
+                       "nevrotick-engine": {"nevrotick-engine", "ntp-wire", "time-domain"},
+                       "windows-platform": {"windows-platform"}}
 UI_BUILD = "crates/nevrotick-ui/build.rs"
 REGISTRY = "registry+https://github.com/rust-lang/crates.io-index"
 MAX_POLICY_BYTES = 2 * 1024 * 1024
@@ -245,7 +246,7 @@ def duplicate_identities(features: dict) -> list[str]:
 
 
 def package_scopes(policy: dict) -> tuple[str, ...]:
-    """Keep six product scopes and Spin's standalone scope; AccessKit has none."""
+    """Keep admitted product scopes and Spin's standalone scope; AccessKit has none."""
     return (*MEMBERS, PATCH_NAME) if PATCH_NAME in patch_names(policy) else MEMBERS
 
 
@@ -714,7 +715,7 @@ def _project_feature_refs(definitions: dict, active: set[str], dependencies: dic
 
 def selected_metadata(target: str, metadata_output: str, tree_output: str, policy: dict,
                       *, package_trees: dict[str, str] | None = None) -> dict:
-    """Build a closed scanner view from the six product and optional Spin edge graphs.
+    """Build a closed scanner view from the product and optional Spin edge graphs.
 
     This scratch projection preserves package identity, licences and all source
     provenance. It prunes inactive packages, edges and feature arcs/declaration
@@ -725,7 +726,7 @@ def selected_metadata(target: str, metadata_output: str, tree_output: str, polic
     validate_metadata(target, metadata_output, policy)
     scopes = package_scopes(policy)
     if type(package_trees) is not dict or set(package_trees) != set(scopes):
-        raise Incomplete("Selected projection requires all six product and the admitted standalone Spin package-tree observations.")
+        raise Incomplete("Selected projection requires all admitted product and the admitted standalone Spin package-tree observations.")
     graphs = [validate_tree(target, tree_output, policy, include_edges=True)]
     graphs.extend(validate_tree(target, package_trees[name], policy, scope=name, include_edges=True)
                   for name in scopes)

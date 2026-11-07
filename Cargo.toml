@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine"]
+members = ["crates/nevrotick-ui", "crates/ntp-wire", "crates/time-domain", "crates/ntp-exchange", "crates/time-core", "crates/nevrotick-engine", "crates/windows-platform"]
 exclude = ["third-party/spin_on", "third-party/accesskit_windows", "third-party/accesskit_consumer"]
 resolver = "3"
 

@@ -462,6 +462,199 @@ class EvidenceTests(unittest.TestCase):
                                          scope, selected_policy)
 
     @staticmethod
+    def service_lifecycle_role():
+        """Independent service-only authority card; no product or tool operations."""
+        subjects = (("lifecycle", "crates/windows-platform/src/service.rs"),)
+        scope = MODULE.Scope("windows-platform", subjects, "policy/service-analysis.json")
+        policy = {
+            "schema_version": 1, "package": "windows-platform", "subjects": dict(subjects),
+            "critical_files": ["crates/windows-platform/src/service.rs"], "tool_admission_profile": "stable-core",
+            "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+            "coverage_wall_seconds": 300, "enumeration_wall_seconds": 120,
+            "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+            "jobs": 6, "test_threads": 1, "coverage_test_threads": 1, "mutation_jobs": 4,
+            "mutation_process_limit": 128, "mutation_message_format": "json", "maximum_mutants": 512,
+            "mutation_equivalences": [], "binding": None, "mutation_inventories": {},
+        }
+        return scope, policy
+
+    def test_service_profile_uses_stable_payload_only_for_its_exact_lanes(self):
+        scope, policy = self.service_lifecycle_role()
+        with patch.object(MODULE.ANALYSIS, "admit") as tools:
+            for lane in ("coverage", "mutation", "all"):
+                self.assertEqual(MODULE.admission_profile(
+                    SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy), "stable-core")
+            tools.assert_not_called()
+        for lane in ("enumerate", "contracts", "fuzz", "proof", "inventory"):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile="stable-core"), scope, policy)
+        with self.assertRaises(MODULE.Incomplete):
+            MODULE.admission_profile(SimpleNamespace(lane="coverage", tool_admission_profile="full"), scope,
+                                     {**policy, "tool_admission_profile": "full"})
+
+    def test_service_profile_cannot_borrow_another_package_file_or_policy(self):
+        scope, policy = self.service_lifecycle_role()
+        args = SimpleNamespace(lane="coverage", tool_admission_profile="stable-core")
+        for changed in (MODULE.Scope("time-core", scope.subjects, scope.policy),
+                        MODULE.Scope(scope.package, (("other", scope.subjects[0][1]),), scope.policy),
+                        MODULE.Scope(scope.package, (("lifecycle", "crates/windows-platform/src/other.rs"),), scope.policy),
+                        MODULE.Scope(scope.package, scope.subjects, "policy/time-core-analysis.json"),
+                        MODULE.Scope(scope.package, scope.subjects * 2, scope.policy)):
+            with self.subTest(scope=changed), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, changed, policy)
+
+    def test_service_profile_rejects_weakened_limits_exceptions_and_missing_fields(self):
+        scope, policy = self.service_lifecycle_role()
+        args = SimpleNamespace(lane="mutation", tool_admission_profile="stable-core")
+        for key, value in (("schema_version", True), ("package", "time-core"),
+                ("critical_files", []), ("subjects", {}), ("coverage_minimum_line_percent", 89),
+                ("mutation_minimum_viable_killed_percent", 94), ("mutation_jobs", 12),
+                ("mutation_process_limit", 512), ("jobs", 12), ("test_threads", 6),
+                ("coverage_test_threads", 6), ("coverage_wall_seconds", 600),
+                ("enumeration_wall_seconds", 300), ("mutation_wall_seconds", 3600),
+                ("mutation_build_seconds", 120), ("mutation_test_seconds", 90),
+                ("maximum_mutants", 1024), ("mutation_message_format", "human"),
+                ("mutation_equivalences", [{"excluded": True}]), ("mutation_error_values", {})):
+            with self.subTest(key=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for key in policy:
+            with self.subTest(missing=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {field: value for field, value in policy.items() if field != key})
+
+    def test_service_schema2_requires_both_exact_portable_owners_and_keeps_schema1(self):
+        old_scope, old_policy = self.service_lifecycle_role()
+        subjects = (('lifecycle', 'crates/windows-platform/src/service.rs'),
+                    ('scm', 'crates/windows-platform/src/scm.rs'))
+        scope = MODULE.Scope('windows-platform', subjects, 'policy/service-analysis.json')
+        policy = {**old_policy, 'schema_version': 2, 'subjects': dict(subjects),
+                  'critical_files': [path for _, path in subjects]}
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        self.assertEqual(MODULE.admission_profile(args, scope, policy), 'stable-core')
+        self.assertEqual(MODULE.admission_profile(args, old_scope, old_policy), 'stable-core')
+        for changed_scope in (old_scope, MODULE.Scope(scope.package, subjects[1:], scope.policy),
+                              MODULE.Scope(scope.package, tuple(reversed(subjects)), scope.policy),
+                              MODULE.Scope(scope.package, (*subjects, ('native', 'crates/windows-platform/src/native.rs')), scope.policy)):
+            with self.subTest(scope=changed_scope), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, changed_scope, policy)
+        for change in ({'schema_version': 1}, {'schema_version': 3},
+                       {'subjects': dict(subjects[:1])}, {'critical_files': [subjects[0][1]]},
+                       {'mutation_minimum_viable_killed_percent': 94}, {'mutation_jobs': 12},
+                       {'mutation_error_values': {}}, {'mutation_equivalences': [{'excluded': True}]}):
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, **change})
+
+    def test_service_schema3_reduces_workers_without_widening_limits_or_omitting_owners(self):
+        old_scope, old_policy = self.service_lifecycle_role()
+        subjects = (('lifecycle', 'crates/windows-platform/src/service.rs'),
+                    ('scm', 'crates/windows-platform/src/scm.rs'))
+        scope = MODULE.Scope('windows-platform', subjects, 'policy/service-analysis.json')
+        schema2 = {**old_policy, 'schema_version': 2, 'subjects': dict(subjects),
+                   'critical_files': [path for _, path in subjects]}
+        policy = {**schema2, 'schema_version': 3, 'mutation_jobs': 1}
+        for lane in ('coverage', 'mutation', 'all'):
+            args = SimpleNamespace(lane=lane, tool_admission_profile='stable-core')
+            self.assertEqual(MODULE.admission_profile(args, scope, policy), 'stable-core')
+            self.assertEqual(MODULE.admission_profile(args, scope, schema2), 'stable-core')
+            self.assertEqual(MODULE.admission_profile(args, old_scope, old_policy), 'stable-core')
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for change in ({'mutation_jobs': 4}, {'mutation_jobs': 2}, {'mutation_jobs': True},
+                       {'mutation_process_limit': 512}, {'jobs': 12}, {'mutation_wall_seconds': 3600},
+                       {'mutation_minimum_viable_killed_percent': 94}, {'coverage_minimum_line_percent': 89},
+                       {'subjects': dict(subjects[:1])}, {'critical_files': [subjects[0][1]]}):
+            with self.subTest(change=change), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, **change})
+        for wrong in (old_scope, MODULE.Scope(scope.package, subjects[1:], scope.policy)):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+
+    def test_service_schema4_parallel_role_preserves_all_historical_rows(self):
+        old_scope, old_policy = self.service_lifecycle_role()
+        subjects = (('lifecycle', 'crates/windows-platform/src/service.rs'),
+                    ('scm', 'crates/windows-platform/src/scm.rs'))
+        scope = MODULE.Scope('windows-platform', subjects, 'policy/service-analysis.json')
+        for schema, jobs, limit in ((1, 4, 128), (2, 4, 128), (3, 1, 128), (4, 4, 512)):
+            selected = old_scope if schema == 1 else scope
+            policy = {**old_policy, 'schema_version': schema, 'subjects': dict(selected.subjects),
+                      'critical_files': [path for _, path in selected.subjects],
+                      'mutation_jobs': jobs, 'mutation_process_limit': limit}
+            for lane in ('coverage', 'mutation', 'all'):
+                with self.subTest(schema=schema, lane=lane):
+                    self.assertEqual(MODULE.admission_profile(
+                        SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), selected, policy),
+                        'stable-core')
+
+    def test_service_schema5_adds_only_the_exact_privilege_owner(self):
+        _, historical = self.service_lifecycle_role()
+        subjects = (('lifecycle', 'crates/windows-platform/src/service.rs'),
+                    ('scm', 'crates/windows-platform/src/scm.rs'),
+                    ('privilege', 'crates/windows-platform/src/privilege_observation.rs'))
+        scope = MODULE.Scope('windows-platform', subjects, 'policy/service-analysis.json')
+        policy = {**historical, 'schema_version': 5, 'subjects': dict(subjects),
+                  'critical_files': [path for _, path in subjects], 'mutation_jobs': 4,
+                  'mutation_process_limit': 512}
+        for lane in ('coverage', 'mutation', 'all'):
+            self.assertEqual(MODULE.admission_profile(
+                SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy), 'stable-core')
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for wrong in (MODULE.Scope(scope.package, subjects[:2], scope.policy),
+                      MODULE.Scope(scope.package, subjects[2:], scope.policy),
+                      MODULE.Scope(scope.package, tuple(reversed(subjects)), scope.policy),
+                      MODULE.Scope(scope.package, (*subjects, ('native', 'native.rs')), scope.policy)):
+            with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, wrong, policy)
+        for key, value in (('schema_version', 4), ('schema_version', 6), ('schema_version', True),
+                           ('schema_version', 5.0), ('mutation_jobs', 1), ('mutation_jobs', 8),
+                           ('mutation_jobs', True), ('mutation_process_limit', 128),
+                           ('subjects', dict(subjects[:2])), ('critical_files', [path for _, path in subjects[:2]]),
+                           ('coverage_minimum_line_percent', 89), ('mutation_minimum_viable_killed_percent', 94),
+                           ('maximum_mutants', 513), ('mutation_equivalences', [{'excluded': True}])):
+            with self.subTest(key=key), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(args, scope, {**policy, key: value})
+        for lane in ('enumerate', 'contracts', 'fuzz', 'proof'):
+            with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'), scope, policy)
+
+    def test_service_schemas_reject_crossed_worker_and_task_profiles(self):
+        old_scope, old_policy = self.service_lifecycle_role()
+        subjects = (('lifecycle', 'crates/windows-platform/src/service.rs'),
+                    ('scm', 'crates/windows-platform/src/scm.rs'))
+        scope = MODULE.Scope('windows-platform', subjects, 'policy/service-analysis.json')
+        args = SimpleNamespace(lane='mutation', tool_admission_profile='stable-core')
+        for schema, jobs, limit in ((1, 4, 128), (2, 4, 128), (3, 1, 128), (4, 4, 512)):
+            selected = old_scope if schema == 1 else scope
+            policy = {**old_policy, 'schema_version': schema, 'subjects': dict(selected.subjects),
+                      'critical_files': [path for _, path in selected.subjects],
+                      'mutation_jobs': jobs, 'mutation_process_limit': limit}
+            for wrong_jobs, wrong_limit in ((1, 128), (4, 128), (4, 512), (8, 512), (12, 512), (4, 256)):
+                if (wrong_jobs, wrong_limit) == (jobs, limit):
+                    continue
+                with self.subTest(schema=schema, jobs=wrong_jobs, limit=wrong_limit), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, selected, {**policy, 'mutation_jobs': wrong_jobs,
+                                                             'mutation_process_limit': wrong_limit})
+            for key, value in (('schema_version', True), ('schema_version', float(schema)),
+                               ('schema_version', 0), ('schema_version', 5), ('schema_version', '4'),
+                               ('mutation_jobs', True), ('mutation_jobs', float(jobs)),
+                               ('mutation_process_limit', True), ('mutation_process_limit', float(limit))):
+                with self.subTest(schema=schema, key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                    MODULE.admission_profile(args, selected, {**policy, key: value})
+            if schema == 4:
+                for wrong in (old_scope, MODULE.Scope(scope.package, subjects[1:], scope.policy),
+                              MODULE.Scope(scope.package, tuple(reversed(subjects)), scope.policy)):
+                    with self.subTest(scope=wrong), self.assertRaises(MODULE.Incomplete):
+                        MODULE.admission_profile(args, wrong, policy)
+                for lane in ('enumerate', 'contracts', 'fuzz', 'proof'):
+                    with self.subTest(lane=lane), self.assertRaises(MODULE.Incomplete):
+                        MODULE.admission_profile(SimpleNamespace(lane=lane, tool_admission_profile='stable-core'),
+                                                 selected, policy)
+                for key, value in (('jobs', 12), ('test_threads', 4), ('coverage_test_threads', 4),
+                                   ('coverage_minimum_line_percent', 89), ('mutation_minimum_viable_killed_percent', 94),
+                                   ('mutation_build_seconds', 120), ('mutation_test_seconds', 90),
+                                   ('mutation_wall_seconds', 3600), ('tool_admission_profile', 'full'),
+                                   ('mutation_error_values', {}), ('mutation_equivalences', [{'excluded': True}])):
+                    with self.subTest(key=key, value=value), self.assertRaises(MODULE.Incomplete):
+                        MODULE.admission_profile(args, selected, {**policy, key: value})
+
+    @staticmethod
     def tracking_inventory_control():
         """Literal four-owner S152 admission; no source, tool or process effect."""
         subjects = {"projection": "crates/time-core/src/regression/projection.rs",

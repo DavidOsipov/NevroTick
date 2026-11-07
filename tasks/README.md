@@ -5,11 +5,29 @@ the [development plan](../docs/plans/development-plan.md). Architecture §21 own
 P0–P7 and stage meanings; the plan owns ordering/readiness; linked tasks own
 bounded work and candidate-specific evidence. This index does not certify exits.
 
+**Service source start — 7 November 2026:** the owner-requested
+[W11-W05 portable lifecycle checkpoint](windows11-integration.md#433-portable-service-lifecycle-source-start--7-november-2026)
+introduces shared logic for the engine and clock broker in `windows-platform`.
+Actual SCM adapters, service binaries, account/provisioning admission and native
+qualification remain open under the existing execution hold.
+
 **Current continuation:** use [plan §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
 and the engine's
-[receiving-contract card](engine-transport-pilot.md#conditional-next-product-contract-after-n2s-finite-exit)
-to settle four explicit identity/accumulation/capacity/commit choices and held
-suppliers before Rust integration. The
+[receiving transaction reconciliation](engine-transport-pilot.md#receiving-transaction-reconciliation--7-november-2026).
+Its four identity/accumulation/capacity/commit choices are settled. Q1's conditional
+quality calculation's [frozen integrated checkpoint](engine-transport-pilot.md#q1-verification-readiness-and-frozen-integrated-candidate)
+passes111 ordinary/111 optimized tests,50 doctests and all ten selected lanes
+on416-input `8c05b4ee...`. The new negative-server limit control passed healthy
+and detected an isolated absolute-value omission; it earns no generated mutation
+kill. The role binds161 baseline names,20 Q1 cases and the reviewed167-variant
+inventory;68 Python controls pass. The frozen final contracts/coverage/mutation
+session has started under the unchanged five-GiB floor; its final outcome,
+mutation score and full Q1 exit remain pending. Earlier v6 contracts and366/382
+coverage retain their historical scope. Windows-target compiler checks
+establish no native Windows or service qualification.
+It uses actual completed `TransportFacts` and explicit checked assumptions;
+production suppliers, history integration and
+the Engine-to-Core edge remain held. The
 [N3a final exit](engine-transport-pilot.md#n3a-final-qualification--two-selected-engine-owners)
 qualifies its selected Linux scope on407-input `e71aab7...`:91 ordinary/91
 optimized tests,42 doctests, external contracts, both line gates and357 accounted

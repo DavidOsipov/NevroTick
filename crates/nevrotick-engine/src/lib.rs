@@ -12,12 +12,18 @@
 #![forbid(unsafe_code)]
 
 mod measurement;
+mod quality;
 mod relative;
 mod series;
 
 pub use measurement::{
     ExperimentalMeasurement, ExperimentalProfile, MeasurementRefusal, NominalPhaseNs,
     NominalRoundTripNs,
+};
+pub use quality::{
+    ConditionalQuality, DeclaredFrequencyInterval, DeclaredQualityAssumptions,
+    DeclaredQualityLimits, QualityAssumption, QualityInterval, QualityRefusal, QualityStage,
+    evaluate_conditional_quality,
 };
 pub use relative::{
     ExperimentalReferenceNs, ExperimentalRelativeMeasurement, RelativeMeasurementRefusal,

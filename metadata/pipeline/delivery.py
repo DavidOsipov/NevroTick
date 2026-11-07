@@ -16,7 +16,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 
-from .contract import Metadata, MetadataError, validate_model
+from .contract import Component, InputDigest, Metadata, MetadataError, PendingField, Product, validate_model
 from .fields import FIELD_BY_KEY
 
 _MAX_FILE = 1024 * 1024
@@ -42,6 +42,12 @@ _INTERNAL = (
     "authoring/msix-inputs.json", "authoring/service-inputs.json",
     "authoring/event-inputs.json", "authoring/store.csv", "authoring/project-inputs.json",
 )
+
+
+def _record(value: Product | Component | PendingField | InputDigest) -> dict[str, object]:
+    """Observe dataclass members without exporting untyped reflection values."""
+    result: dict[str, object] = asdict(value)
+    return result
 
 
 def _values(model: Metadata) -> dict[str, str]:
@@ -177,9 +183,11 @@ def _rows(model: Metadata, prefixes: tuple[str, ...] = ()) -> list[dict[str, str
 def _plain(value: object) -> object:
     """Map immutable dataclass tuples to their JSON observation representation."""
     if type(value) is dict:
-        return {key: _plain(item) for key, item in value.items()}
-    if type(value) in (tuple, list):
-        return [_plain(item) for item in value]
+        members: dict[str, object] = value
+        return {key: _plain(item) for key, item in members.items()}
+    if type(value) is tuple or type(value) is list:
+        items: tuple[object, ...] | list[object] = value
+        return [_plain(item) for item in items]
     return value
 
 
@@ -187,7 +195,7 @@ def _expected_json(model: Metadata) -> dict[str, object]:
     """Independent semantic expectations, not serialized production output."""
     values = _values(model)
     rows = _rows(model)
-    pending = [asdict(item) for item in model.pending]
+    pending = [_record(item) for item in model.pending]
     coverage = {"schema_version": 1, "scope": "declared-source-field-register",
                 "complete_declared_field_set": True, "field_count": len(model.fields),
                 "unresolved_field_count": sum(row.status == "pending" or
@@ -203,9 +211,9 @@ def _expected_json(model: Metadata) -> dict[str, object]:
                 "delivery": delivery_contract(model)}
     return {
         "metadata.json": {"schema_version": 1, "stage": model.stage, "target": model.target,
-            "cpu_floor": model.cpu_floor, "product": asdict(model.product),
-            "components": [_plain(asdict(item)) for item in model.components],
-            "pending": pending, "inputs": [asdict(item) for item in model.inputs],
+            "cpu_floor": model.cpu_floor, "product": _record(model.product),
+            "components": [_plain(_record(item)) for item in model.components],
+            "pending": pending, "inputs": [_record(item) for item in model.inputs],
             "public_metadata": {key: values[key] for key, _ in _PUBLIC_FACTS if key in values},
             "qualification": {"scope": "source-authoring-projections", "native": "not-run",
                               "release": "not-qualified"}},
@@ -227,7 +235,7 @@ def _expected_json(model: Metadata) -> dict[str, object]:
         "authoring/event-inputs.json": {"schema_version": 1, "kind": "partial-event-authoring-inputs",
             "provider_name": None, "provider_guid": None, "event_schema_version": None,
             "message_resource": None,
-            "pending": [asdict(item) for item in model.pending
+            "pending": [_record(item) for item in model.pending
                         if item.path.startswith(("diagnostics.", "event.", "provider."))],
             "fields": _rows(model, ("catalogue.C.",))},
     }
@@ -237,12 +245,16 @@ def _equal(actual: object, expected: object, depth: int = 0) -> bool:
     """Compare exact JSON types, identities and multiplicity, including bool/int."""
     if depth > 16 or type(actual) is not type(expected):
         return False
-    if type(expected) is dict:
-        return actual.keys() == expected.keys() and all(
-            _equal(actual[key], value, depth + 1) for key, value in expected.items())
-    if type(expected) is list:
-        return len(actual) == len(expected) and all(
-            _equal(a, b, depth + 1) for a, b in zip(actual, expected))
+    if type(expected) is dict and type(actual) is dict:
+        expected_members: dict[str, object] = expected
+        actual_members: dict[str, object] = actual
+        return actual_members.keys() == expected_members.keys() and all(
+            _equal(actual_members[key], value, depth + 1) for key, value in expected_members.items())
+    if type(expected) is list and type(actual) is list:
+        expected_items: list[object] = expected
+        actual_items: list[object] = actual
+        return len(actual_items) == len(expected_items) and all(
+            _equal(a, b, depth + 1) for a, b in zip(actual_items, expected_items))
     return actual == expected
 
 
@@ -259,7 +271,8 @@ def _json(raw: bytes) -> object:
     def constant(_: str) -> None:
         raise MetadataError("delivery-nonfinite-json")
 
-    return json.loads(raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=constant)
+    decoded: object = json.loads(raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=constant)
+    return decoded
 
 
 def _literal(text: str, *, resource: bool) -> str:
@@ -272,10 +285,10 @@ def _literal(text: str, *, resource: bool) -> str:
         elif text[index] == "\\":
             match = None if resource else re.match(r"\\u\{([0-9a-fA-F]{1,6})\}", text[index:])
             if match:
-                value = int(match[1], 16)
-                if value > 0x10FFFF or 0xD800 <= value <= 0xDFFF:
+                codepoint = int(match[1], 16)
+                if codepoint > 0x10FFFF or 0xD800 <= codepoint <= 0xDFFF:
                     raise MetadataError("delivery-invalid-rust-scalar")
-                result.append(chr(value)); index += len(match[0])
+                result.append(chr(codepoint)); index += len(match[0])
             else:
                 index += 1
                 escapes = {"\\": "\\", "n": "\n", "r": "\r", "t": "\t", "0": "\0"}
@@ -304,6 +317,7 @@ def _rust(raw: bytes) -> dict[str, object]:
                       "// Source projection; native/package qualification remains separate."]
             or len(lines) % 2):
         raise MetadataError("delivery-unparsed-rust-preamble")
+    value: str | list[int]
     for index in range(2, len(lines), 2):
         comment, line = lines[index:index + 2]
         string = re.fullmatch(r'pub const ([A-Z_]+): &str = "((?:[^"\\]|\\.)*)";', line)
@@ -446,7 +460,7 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
         for name, expected in expected_json.items():
             if not _equal(_json(outputs[name]), expected):
                 raise MetadataError("delivery-json-facts")
-        expected_rust = {"PRODUCT_NAME": model.product.name, "PUBLISHER": model.product.publisher,
+        expected_rust: dict[str, object] = {"PRODUCT_NAME": model.product.name, "PUBLISHER": model.product.publisher,
             "PRODUCT_DESCRIPTION": model.product.description, "REPOSITORY": model.product.repository,
             "TARGET": model.target, "CPU_FLOOR": model.cpu_floor,
             **{constant: values[key] for key, constant in _PUBLIC_FACTS if key in values}}
@@ -455,6 +469,7 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
         for component in model.components:
             if not component.emittable:
                 continue
+            assert component.binary_name is not None and component.file_version is not None
             filename = component.binary_name if component.binary_name.endswith(".exe") else component.binary_name + ".exe"
             expected_rust = {"COMPONENT_ID": component.id, "ROLE": component.role,
                 "DISPLAY_NAME": component.display_name, "DESCRIPTION": component.description,
@@ -476,15 +491,19 @@ def verify_delivery(model: Metadata, outputs: dict[str, bytes]) -> None:
                      "PRODUCTVERSION": list(component.file_version)}):
                 raise MetadataError("delivery-component-resource")
         expected_xml = {"schema-version": "1", "stage": model.stage,
-            "product": {field: getattr(model.product, field) for field in ("name", "publisher", "description", "repository")},
+            "product": {"name": model.product.name, "publisher": model.product.publisher,
+                        "description": model.product.description, "repository": model.product.repository},
             "components": [{"id": item.id, "role": item.role, "state": item.state,
                             "name": item.display_name, "description": item.description}
                            for item in model.components]}
         if not _equal(_xml(outputs["authoring/display.xml"]), expected_xml):
             raise MetadataError("delivery-display-xml")
         expected_csv = [["field", "value", "status"]]
+        product_values = {"name": model.product.name, "publisher": model.product.publisher,
+                          "description": model.product.description, "repository": model.product.repository,
+                          "homepage": model.product.homepage}
         for key in ("name", "publisher", "description", "repository", "homepage"):
-            value = getattr(model.product, key)
+            value = product_values[key]
             if value is not None:
                 expected_csv.append(["product." + key, value, "derived"])
         expected_csv.extend([item.path, "", "pending"] for item in model.pending)

@@ -14,6 +14,7 @@ import re
 import stat
 import tomllib
 import unicodedata
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -131,6 +132,13 @@ class Metadata:
     fields: tuple[FieldValue, ...] = ()
 
 
+def _string(value: object) -> str:
+    """Retain exact string values before constructing the revalidated model."""
+    if type(value) is not str:
+        raise MetadataError("metadata: expected string")
+    return value
+
+
 def _table(value: object, field: str) -> dict[str, object]:
     """Require a literal string-keyed TOML table, without implicit conversion."""
     if type(value) is not dict or any(type(key) is not str for key in value):
@@ -208,7 +216,8 @@ def _version(value: object, field: str) -> tuple[str, tuple[int, int, int, int]]
     match = re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?", text)
     if match is None:
         raise MetadataError(f"{field}: invalid Cargo semantic version")
-    if match[4] and any(item.isdigit() and len(item) > 1 and item.startswith("0") for item in match[4].split(".")):
+    prerelease: str | None = match.group(4)
+    if prerelease and any(item.isdigit() and len(item) > 1 and item.startswith("0") for item in prerelease.split(".")):
         raise MetadataError(f"{field}: invalid numeric prerelease identifier")
     numbers = tuple(int(match[index]) for index in (1, 2, 3))
     if any(number > 65535 for number in numbers):
@@ -297,12 +306,14 @@ def _identity(info: os.stat_result) -> tuple[int, ...]:
 
 def _open_root(root: Path) -> int:
     """Open every absolute root component without following directory links."""
-    if os.name != "posix" or not hasattr(os, "O_NOFOLLOW") or os.open not in os.supports_dir_fd:
+    supported_directory_operations: Collection[object] = os.supports_dir_fd
+    if os.name != "posix" or not hasattr(os, "O_NOFOLLOW") or os.open not in supported_directory_operations:
         raise MetadataError("input custody requires a qualified POSIX directory-descriptor host")
     absolute = root.absolute()
     if any(part in {".", ".."} for part in absolute.parts):
         raise MetadataError("root: noncanonical path")
-    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+    cloexec: int = getattr(os, "O_CLOEXEC", 0)
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | cloexec
     descriptor = os.open("/", flags)
     try:
         for part in absolute.parts[1:]:
@@ -318,17 +329,18 @@ def _open_root(root: Path) -> int:
 def _read(root_fd: int, relative: str) -> bytes:
     """Read one single-linked regular file within a fixed descriptor root."""
     _relative(relative, "input path")
+    cloexec: int = getattr(os, "O_CLOEXEC", 0)
     directory = os.dup(root_fd)
     stream: int | None = None
     try:
         parts = relative.split("/")
         for part in parts[:-1]:
             child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
-                            | getattr(os, "O_CLOEXEC", 0), dir_fd=directory)
+                            | cloexec, dir_fd=directory)
             os.close(directory)
             directory = child
         stream = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
-                         | getattr(os, "O_CLOEXEC", 0), dir_fd=directory)
+                         | cloexec, dir_fd=directory)
         before = os.fstat(stream)
         if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or before.st_size > MAX_FILE_BYTES:
             raise MetadataError(f"{relative}: requires a bounded single-linked regular file")
@@ -354,7 +366,7 @@ def _decode(raw: bytes, field: str) -> dict[str, object]:
     """Decode bounded TOML; parser failure never becomes a partial document."""
     text = _preflight(raw, field)
     try:
-        result = tomllib.loads(text)
+        result: dict[str, object] = tomllib.loads(text)
     except (ValueError, RecursionError) as error:
         raise MetadataError(f"{field}: malformed TOML") from error
     _structure(result, field)
@@ -612,7 +624,7 @@ def validate_model(metadata: Metadata) -> None:
         _text(component.description, "component.description", 1024)
         if component.emittable:
             version, numbers = _version(component.version, "component.version")
-            expected_numbers = (*numbers[:3], metadata.file_version_revision)
+            expected_numbers = (numbers[0], numbers[1], numbers[2], metadata.file_version_revision)
             if (type(component.file_version) is not tuple or len(component.file_version) != 4
                     or any(type(number) is not int for number in component.file_version)
                     or component.file_version != expected_numbers or version != component.version):
@@ -647,6 +659,16 @@ def validate_model(metadata: Metadata) -> None:
     _validate_fields(metadata)
     if metadata.stage == "release":
         raise MetadataError("release: metadata obligations and prototype exclusions remain open; no release output is admitted")
+
+
+def _pending_path(item: PendingField) -> str:
+    """Order pending records by the unchanged admitted path."""
+    return str(item.path)
+
+
+def _field_key(item: FieldValue) -> str:
+    """Order field records by their stable identity."""
+    return item.key
 
 
 def load_metadata(root: Path, source: Path | None = None, *, stage: str = "source") -> Metadata:
@@ -713,7 +735,7 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
             raise MetadataError("Cargo.workspace.package: source authority differs from admission")
         members = workspace.get("members")
         if (type(members) is not list or any(type(item) is not str for item in members)
-                or not {"crates/nevrotick-ui", "crates/nevrotick-engine"} <= set(members)):
+                or not {"crates/nevrotick-ui", "crates/nevrotick-engine"} <= set(_string(item) for item in members)):
             raise MetadataError("Cargo.workspace.members: required actual components are absent")
         components = _table(source_table["components"], "components")
         if set(components) != set(_COMPONENTS):
@@ -739,25 +761,26 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
                     raise MetadataError("Cargo.package.name: wrong component source")
                 observed_license = component_package.get("license")
                 if type(observed_license) is dict:
-                    if (set(observed_license) != {"workspace"}
-                            or type(observed_license["workspace"]) is not bool
-                            or observed_license["workspace"] is not True):
+                    inherited_license: dict[str, object] = observed_license
+                    if (set(inherited_license) != {"workspace"}
+                            or type(inherited_license["workspace"]) is not bool
+                            or inherited_license["workspace"] is not True):
                         raise MetadataError("Cargo.package.license: unsupported inheritance")
                     observed_license = package["license"]
                 if observed_license != license_name:
                     raise MetadataError("Cargo.package.license: component licence differs from admission")
                 version, numbers = _version(component_package.get("version"), "Cargo.package.version")
-                numbers = (*numbers[:3], revision)
+                numbers = (numbers[0], numbers[1], numbers[2], revision)
                 if identifier == "observe":
                     bins = cargo.get("bin")
-                    if (type(bins) is not list or sum(type(item) is dict and item.get("name") == binary
-                                                     and item.get("path") == "src/bin/nevrotick-observe.rs"
+                    if (type(bins) is not list or sum(type(item) is dict and _table(item, "Cargo.bin").get("name") == binary
+                                                     and _table(item, "Cargo.bin").get("path") == "src/bin/nevrotick-observe.rs"
                                                      for item in bins) != 1):
                         raise MetadataError("Cargo.bin: actual observe entry is absent")
                 elif component_package.get("autobins", True) is not True or "bin" in cargo:
                     raise MetadataError("Cargo.bin: UI implicit binary contract changed")
-            admitted.append(Component(identifier, role, state, binary, entry["description"], version,
-                                      numbers, license_name, manifest, entry["display_name"]))
+            admitted.append(Component(identifier, role, state, binary, _string(entry["description"]), version,
+                                      numbers, license_name, manifest, _string(entry["display_name"])))
         pending = source_table["pending"]
         if type(pending) is not list or len(pending) != len(_PENDING):
             raise MetadataError("pending: all code-owned release obligations are required")
@@ -765,8 +788,8 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
         for raw in pending:
             entry = _table(raw, "pending")
             _keys(entry, {"path", "owner", "reason", "required_stage", "next_action"}, set(), "pending")
-            pending_fields.append(PendingField(entry["path"], entry["owner"], entry["reason"],
-                                               entry["required_stage"], entry["next_action"]))
+            pending_fields.append(PendingField(_string(entry["path"]), _string(entry["owner"]), _string(entry["reason"]),
+                                               _string(entry["required_stage"]), _string(entry["next_action"])))
         raw_fields = _table(source_table["fields"], "fields")
         if set(raw_fields) != set(FIELD_BY_KEY):
             raise MetadataError("fields: all code-owned fields must have a disposition")
@@ -776,15 +799,15 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
             _keys(entry, {"value", "status", "source", "reason"}, set(), "field")
             if FIELD_BY_KEY[key].derivation and entry["value"] != "":
                 raise MetadataError("fields: derived authority cannot be duplicated in authored input")
-            authored_fields.append(FieldValue(key, entry["value"], entry["status"], FIELD_BY_KEY[key].owner,
-                                             entry["source"], entry["reason"]))
+            authored_fields.append(FieldValue(key, _string(entry["value"]), _string(entry["status"]), FIELD_BY_KEY[key].owner,
+                                             _string(entry["source"]), _string(entry["reason"])))
         homepage = product.get("homepage")
         if type(homepage) is str and homepage == "":
             homepage = None
-        value = Metadata(1, stage, Product(product["name"], product["publisher"], product["description"],
-                                          package["repository"], homepage),
-                         platform["target"], platform["cpu_floor"], tuple(admitted),
-                         tuple(sorted(pending_fields, key=lambda item: str(item.path))),
+        value = Metadata(1, stage, Product(_string(product["name"]), _string(product["publisher"]), _string(product["description"]),
+                                          _string(package["repository"]), None if homepage is None else _string(homepage)),
+                         _string(platform["target"]), _string(platform["cpu_floor"]), tuple(admitted),
+                         tuple(sorted(pending_fields, key=_pending_path)),
                          tuple(records[path][1] for path in sorted(records)), revision)
         # Resolve immutable aliases after base source facts are available. The
         # source file remains the only authoring location; derived facts are not
@@ -810,7 +833,7 @@ def load_metadata(root: Path, source: Path | None = None, *, stage: str = "sourc
 
         resolved = tuple(FieldValue(field.key, resolve(field.key), field.status,
                                     field.owner, field.source, field.reason)
-                         for field in sorted(authored_fields, key=lambda item: item.key))
+                         for field in sorted(authored_fields, key=_field_key))
         value = Metadata(value.schema_version, value.stage, value.product, value.target,
                          value.cpu_floor, value.components, value.pending, value.inputs,
                          value.file_version_revision, resolved)

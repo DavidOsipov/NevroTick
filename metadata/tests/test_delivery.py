@@ -44,10 +44,10 @@ class ProducerDeliveryCliTests(SourceFixture):
                          "{urn:nevrotick:metadata:authoring:1}metadata")
         producer = self.root / "metadata/pipeline/generate.py"
         text = producer.read_text()
-        old = 'return ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\\n"'
+        old = 'rendered: bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)'
         self.assertEqual(text.count(old), 1)
-        changed = ('return (ET.tostring(root, encoding="utf-8", xml_declaration=True) '
-                   '+ b"\\n").replace(b"encoding=\'utf-8\'", b"encoding=\'utf-16\'", 1)')
+        changed = ('rendered: bytes = ET.tostring(root, encoding="utf-8", xml_declaration=True)'
+                   '.replace(b"encoding=\'utf-8\'", b"encoding=\'utf-16\'", 1)')
         producer.write_text(text.replace(old, changed))
         invalid = self.base / "invalid-xml"
         self.require_rejection(self.cli("generate", output=invalid))

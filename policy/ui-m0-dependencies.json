@@ -1,15 +1,16 @@
 {
   "schema_version": 3,
-  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows.",
-  "lockfile_sha256": "6f4e6575d8fec495cd56a2f994fa7a6a297915dda68f7fca089bfe1dc69f8085",
+  "scope": "Merged Slint 1.18.1 fixture GUI and controlled-loopback experimental engine measurement cohort; Windows Winit/software/accessibility and Linux public custom-platform tests. Exact local spin_on, accesskit_windows and accesskit_consumer source derivatives remain separately pinned. Adds only the main engine normal local time-domain dependency; all other registry identities, primary grants, archive-file exceptions and non-engine scopes retain their reviewed boundaries. No production sample eligibility, clock authority, Windows/native execution or distribution clearance is established by this policy. Existing pinned Garde0.23.0 derive/defaults-off is now also a direct engine validation edge; registry packages, features, patches and grants remain fixed. Execution qualification is separate. Owner-requested 6 November refresh changes seven transitive patch releases; engine Tokio macros now use the separately reviewed Syn3 host closure while Garde retains Syn2. Existing feature/backend, grant, patch and native holds remain. The local consumer substitution retains its upstream MIT/Apache grants and adds original GPL3 regression tests; no feature or target-role expansion follows. The 7 November shared windows-platform owner adds only a local Garde-backed portable service lifecycle; existing registry packages, external target/host features, patches, grants and all native holds remain unchanged.",
+  "lockfile_sha256": "fa9103e455e401c39f349c04b10a2d7058408d25210763321f56b7dad9c1afba",
   "manifests_sha256": {
-    "Cargo.toml": "cc12e8ed99fb2d2655e0955f021690894b3b814f1b3d8d968625e02bc39dbf2f",
+    "Cargo.toml": "ed63de18dbcaa3dcb8dc0ac3142bb4c868373a6d21171e6181b3f5d754b5d84e",
     "crates/nevrotick-ui/Cargo.toml": "3548bb4a5793a54c2da94e71aa95eb4336849702b93a455f70262a4bde2819b2",
     "crates/ntp-wire/Cargo.toml": "dc75f8a638a956217d3ecfa666a840b2ecef99c0a06dac7443ab5cf775032579",
     "crates/time-domain/Cargo.toml": "e0cb947e288754b7a85d3ca059f048d931bfca6d1264b7dd472fdb62569163ac",
     "crates/ntp-exchange/Cargo.toml": "ddcfb2276783c3583a5c69b1e9027a7f342612fe15ad177a8c05339e6333e18f",
     "crates/time-core/Cargo.toml": "8b51f9fdfb2b65c757a7ad9e9c592340e2873719db14a19fddeb6747b69bcea6",
-    "crates/nevrotick-engine/Cargo.toml": "a0b65ce3d53d4c37348ddc5546a2b8d9f5f266cbf2cd342d29990efa3adfe725"
+    "crates/nevrotick-engine/Cargo.toml": "a0b65ce3d53d4c37348ddc5546a2b8d9f5f266cbf2cd342d29990efa3adfe725",
+    "crates/windows-platform/Cargo.toml": "0c19f455c8e186291414359f815228a2568cd49bd01bc48ed1dcebb33b654066"
   },
   "first_party_build_scripts": {
     "crates/nevrotick-ui/build.rs": "52bc9b540e36beca77e7586e09449aaf013e035d8137ced2c949b9af0ee50431"
@@ -7901,6 +7902,11 @@
           "target": [
             []
           ]
+        },
+        "windows-platform@0.0.0": {
+          "target": [
+            []
+          ]
         }
       },
       "metadata_features": {
@@ -12044,6 +12050,105 @@
               ]
             }
           }
+        },
+        "windows-platform": {
+          "features": {
+            "castaway@0.2.4": {
+              "target": [
+                [
+                  "alloc"
+                ]
+              ]
+            },
+            "cfg-if@1.0.5": {
+              "target": [
+                []
+              ]
+            },
+            "compact_str@0.9.1": {
+              "target": [
+                []
+              ]
+            },
+            "garde@0.23.0": {
+              "target": [
+                [
+                  "derive"
+                ]
+              ]
+            },
+            "garde_derive@0.23.0": {
+              "host": [
+                []
+              ]
+            },
+            "itoa@1.0.18": {
+              "target": [
+                []
+              ]
+            },
+            "proc-macro2@1.0.107": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "quote@1.0.47": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "rustversion@1.0.23": {
+              "host": [
+                []
+              ]
+            },
+            "ryu@1.0.23": {
+              "target": [
+                []
+              ]
+            },
+            "smallvec@1.16.4": {
+              "target": [
+                []
+              ]
+            },
+            "static_assertions@1.1.0": {
+              "target": [
+                []
+              ]
+            },
+            "syn@2.0.119": {
+              "host": [
+                [
+                  "clone-impls",
+                  "default",
+                  "derive",
+                  "full",
+                  "parsing",
+                  "printing",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "unicode-ident@1.0.27": {
+              "host": [
+                []
+              ]
+            }
+          },
+          "local_features": {
+            "windows-platform@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
         }
       }
     },
@@ -13999,6 +14104,11 @@
           ]
         },
         "time-domain@0.0.0": {
+          "target": [
+            []
+          ]
+        },
+        "windows-platform@0.0.0": {
           "target": [
             []
           ]
@@ -18035,6 +18145,105 @@
           },
           "local_features": {
             "time-domain@0.0.0": {
+              "target": [
+                []
+              ]
+            }
+          }
+        },
+        "windows-platform": {
+          "features": {
+            "castaway@0.2.4": {
+              "target": [
+                [
+                  "alloc"
+                ]
+              ]
+            },
+            "cfg-if@1.0.5": {
+              "target": [
+                []
+              ]
+            },
+            "compact_str@0.9.1": {
+              "target": [
+                []
+              ]
+            },
+            "garde@0.23.0": {
+              "target": [
+                [
+                  "derive"
+                ]
+              ]
+            },
+            "garde_derive@0.23.0": {
+              "host": [
+                []
+              ]
+            },
+            "itoa@1.0.18": {
+              "target": [
+                []
+              ]
+            },
+            "proc-macro2@1.0.107": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "quote@1.0.47": {
+              "host": [
+                [
+                  "default",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "rustversion@1.0.23": {
+              "host": [
+                []
+              ]
+            },
+            "ryu@1.0.23": {
+              "target": [
+                []
+              ]
+            },
+            "smallvec@1.16.4": {
+              "target": [
+                []
+              ]
+            },
+            "static_assertions@1.1.0": {
+              "target": [
+                []
+              ]
+            },
+            "syn@2.0.119": {
+              "host": [
+                [
+                  "clone-impls",
+                  "default",
+                  "derive",
+                  "full",
+                  "parsing",
+                  "printing",
+                  "proc-macro"
+                ]
+              ]
+            },
+            "unicode-ident@1.0.27": {
+              "host": [
+                []
+              ]
+            }
+          },
+          "local_features": {
+            "windows-platform@0.0.0": {
               "target": [
                 []
               ]

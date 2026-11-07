@@ -857,6 +857,37 @@ fault-sensitivity outcomes in the existing W11-W10 task. A bounded seeded trial
 is not a per-file mutation score or a full release coverage result. MD-P4–MD-P5,
 the current Core queue, required v3/hardening policy and all execution holds remain.
 
+### 13.7 Full portable source-tool qualification — 7 November 2026
+
+David requested the remaining full qualification after the bounded source-tool
+audit. The existing MD-P1–MD-P3/W11-W10 owner now adopts
+[the explicit Python scope](../../metadata/qualification/manifest.json) and
+[repeatable qualification commands](../../metadata/qualification/README.md).
+This adds no runtime dependency or compiled/native execution authority.
+
+Strict checking covers all eight production modules and their immediate typed
+consumer, preserving mandatory runtime construction and postcondition checks.
+The legal consumer and intended wrong-field/value, incompatible-interface,
+unhandled-outcome and frozen-model controls must discriminate through the
+admitted checker. An annotation or a wrong import alone supplies no pass.
+
+The metadata-specific manifest classifies admission, delivery, publication,
+text policy and CLI outcomes as security modules; each requires at least 90%
+executable-line coverage. These five modules and the field registry are six
+critical files, each with the retained 95% adjusted viable-mutation threshold.
+Line coverage includes actual isolated CLI interpreters; branch counts remain
+separate evidence. Package markers have no invented nonempty denominator.
+Registry/Unicode data and requirement-bearing functions remain explicitly
+reconciled with generated mutants and independent alternative evidence.
+
+The coordinator records exact integrated identity, all outcomes and unresolved
+findings in the existing W11-W10 task. Per-module line evidence, per-file
+mutation evidence, source field dispositions and native/package readback are
+different claims. Failed, skipped, timed-out, partial or stale required checks
+remain incomplete. Qualification-helper controls must reject missing scope,
+weakened thresholds, wrong identities and absent subprocess observations.
+Retain the existing MD-P4–MD-P5 owners, current Core queue and all execution holds.
+
 ## Primary sources
 
 Microsoft Learn schemas and Windows Installer references were retrieved using

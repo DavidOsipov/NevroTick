@@ -91,6 +91,10 @@ DOMAIN_LEAP_ERROR_VALUE = (
 )
 DOMAIN_LEAP_ERROR_SUBJECTS = ("leap_bundled",)
 ENGINE_CONTRACT_SUBJECTS = (("library", "crates/nevrotick-engine/src/lib.rs"),)
+SERVICE_LIFECYCLE_SUBJECTS = (("lifecycle", "crates/windows-platform/src/service.rs"),)
+SERVICE_SCM_SUBJECTS = (*SERVICE_LIFECYCLE_SUBJECTS, ("scm", "crates/windows-platform/src/scm.rs"))
+SERVICE_PRIVILEGE_SUBJECTS = (*SERVICE_SCM_SUBJECTS,
+                            ("privilege", "crates/windows-platform/src/privilege_observation.rs"))
 
 def load_module(name: str, path: Path):
     """Load reviewed repository tooling without running its CLI entry point."""
@@ -1338,6 +1342,36 @@ def admission_profile(args, scope, policy):
         raise Incomplete("Unknown analysis admission profile.")
     if policy.get("tool_admission_profile", "full") != profile:
         raise Incomplete("Analysis admission profile differs from the current policy.")
+    if (scope.package == "windows-platform" or scope.policy == "policy/service-analysis.json"
+            or scope.subjects in (SERVICE_LIFECYCLE_SUBJECTS, SERVICE_SCM_SUBJECTS, SERVICE_PRIVILEGE_SUBJECTS)
+            or policy.get("package") == "windows-platform"):
+        # This exact portable owner uses the complete admitted stable payload.
+        # No nightly, proof tool or unrelated analyzer is executed or borrowed.
+        # Preserve the exact historical rows. Schema 5 adds only the checked
+        # privilege owner to schema 4's four-worker, mutation-only 512-task row.
+        schema = policy.get("schema_version")
+        if type(schema) is not int or schema not in {1, 2, 3, 4, 5}:
+            raise Incomplete("Unknown exact service analysis schema.")
+        workers, process_limit = {1: (4, 128), 2: (4, 128), 3: (1, 128), 4: (4, 512), 5: (4, 512)}[schema]
+        subjects = (SERVICE_LIFECYCLE_SUBJECTS if schema == 1 else
+                    SERVICE_PRIVILEGE_SUBJECTS if schema == 5 else SERVICE_SCM_SUBJECTS)
+        facts = {
+            "schema_version": schema, "package": "windows-platform", "subjects": dict(subjects),
+            "critical_files": list(dict(subjects).values()), "tool_admission_profile": "stable-core",
+            "coverage_minimum_line_percent": 90, "mutation_minimum_viable_killed_percent": 95,
+            "coverage_wall_seconds": 300, "enumeration_wall_seconds": 120,
+            "mutation_wall_seconds": 1200, "mutation_build_seconds": 90, "mutation_test_seconds": 60,
+            "jobs": 6, "test_threads": 1, "coverage_test_threads": 1, "mutation_jobs": workers,
+            "mutation_process_limit": process_limit, "mutation_message_format": "json", "maximum_mutants": 512,
+            "mutation_equivalences": [],
+        }
+        if (profile != "stable-core" or args.lane not in {"coverage", "mutation", "all"}
+                or type(scope) is not Scope or scope.package != "windows-platform"
+                or scope.policy != "policy/service-analysis.json" or scope.subjects != subjects
+                or type(policy) is not dict or set(policy) != set(facts) | {"binding", "mutation_inventories"}
+                or any(type(policy.get(key)) is not type(value) or policy[key] != value for key, value in facts.items())):
+            raise Incomplete("Service analysis requires its exact stable-only lifecycle role, gates and budgets.")
+        return profile
     if (scope.subjects == ENGINE_CONTRACT_SUBJECTS
             or policy.get("admission_status") == "admitted-engine-external-contracts-only"):
         if profile != "stable-core" or args.lane != "contracts":
