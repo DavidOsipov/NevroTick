@@ -1,10 +1,10 @@
 # NevroTick roadmap
 
-**Updated:** 5 November 2026
+**Updated:** 7 November 2026
 
-**First follow-up:** Khronos/Ananke evaluation after the current Windows plan, before Android
+**First post-V1 TODO:** [MT-0, multithreading and concurrent NTS acquisition](#mt-0--post-v1-multithreading-and-concurrent-acquisition), immediately after V1 is released and before Khronos/Ananke
 
-**Next experiment:** [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering), after Khronos/Ananke and before Android
+**Post-V1 order:** MT-0 → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
 
 **Later owner-selected sequence:** [Roughtime bootstrap for a badly wrong clock](#rgt-0--roughtime-bootstrap-for-a-badly-wrong-clock) → [independent replacement of Chrony-derived implementations](#chr-0--independently-replace-chrony-derived-implementations); future public licence undecided
 
@@ -13,8 +13,10 @@
 
 ## 1. Direction and authority
 
-Finish the current Windows development and acceptance plan first. The first
-follow-up is the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking),
+Finish the current Windows development and acceptance plan and actually release
+V1 first. Under [OD-16](docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1),
+the first post-V1 job is [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition),
+then the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking),
 then the [GEO-0 experiment and disposition](#geo-0--evaluate-geography-assisted-source-ordering)
 requested on 5 November 2026. Then pursue the Android application
 David requested: a local time server that redirects Android's existing NTP client
@@ -33,7 +35,8 @@ applying time to its own clock.
 | Complete hardened MSIX and Microsoft Store | [Owner-selected plan](docs/plans/windows-msix-store.md), [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate) and [current W11-W10 assignment](tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): prepare one complete MSIX with explicit integrity enforcement, protected executable content, Store-compatible CIG and verified per-process protections. David will try Store submission with services and reconsider delivery if refused. Preparation needs no speculative preapproval; supported least-privilege provisioning, W32Time/recovery lifetime and actual Store-artifact qualification still gate release. Retain MSI as an alternative for a later decision. The [release policy](docs/release-policy.md) adds proposed support terms and operational withdrawal/recovery work at the same release gates; support approval and rehearsals remain open. Current Core/KHR-0 ordering and execution holds remain. |
 | Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, resource use, diagnostics and deferred UI integration. The follow-up adds concrete callback, COM, MSI permission, ETW and partial-replacement cases. Research is recorded; implementation/native evidence and conditional choices remain open at their existing phases. Current priorities and execution holds remain; this is no new predecessor to KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
-| Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): first follow-up after completing the Windows plan; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks before Android work. |
+| Post-V1 multithreading | [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition) and [NV-MT-001](docs/plans/post-v1-multithreading.md): first TODO immediately after actual V1 release, before Khronos. Qualify independent acquisition, bounded native workers and any justified scheduler/capacity change; existing V1 correctness duties remain. |
+| Khronos/Ananke reserve | [KHR-0](#khr-0--evaluate-independent-time-cross-checking): after V1 release and MT-C01, before GEO-0/Android; evaluate the owner-selected conditional initial-date reserve and coordinated-false-agreement risks. |
 | Geography-assisted acquisition | [GEO-0](#geo-0--evaluate-geography-assisted-source-ordering): bounded comparison after KHR-C01; the [existing catalogue task](tasks/server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) owns GEO-C01. Evaluation and disposition precede Android; GeoIP adoption is optional. |
 | Android local SNTP bridge | This document, stages AND-0–AND-5, after KHR-C01 and GEO-C01. Future work with device-specific feasibility gates. |
 | Android-to-Windows time service | AND-6 below. Retains the original companion-to-NevroTick idea as a separately gated future server extension. |
@@ -56,13 +59,51 @@ provenance and GPL-2.0-only obligations. Admit any Android/JNI, TLS, AEAD, runti
 and build dependencies separately. The Windows x64 CPU policy in OD-07 does not
 apply to Android ABIs or impose x86 compiler flags on shared portable code.
 
+### MT-0 — post-V1 multithreading and concurrent acquisition
+
+**Status:** planned; first post-V1 TODO by David's instruction of 7 November
+2026, recorded in [OD-16](docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1).
+Implementation, measurements and native qualification remain open.
+
+**Order:** actual V1 release → MT-C01 → KHR-C01 → GEO-C01 → AND-0.
+Finishing a build or P0–P7 paperwork alone does not activate MT-0.
+
+**Plan and evidence:** [NV-MT-001](docs/plans/post-v1-multithreading.md) owns the
+bounded work packages, contracts, comparison and MT-C01 exit. Reuse the
+[existing engine task](tasks/engine-transport-pilot.md#post-v1-multithreading--mt-0-7-november-2026)
+for implementation/evidence; engine, platform, protocol and performance owners
+work with an independent reviewer.
+
+- [ ] **First post-V1 job:** run MT-W01 against the actual released source/artifact;
+  identify existing concurrency, blocking boundaries, limits and a concrete useful
+  progress/responsiveness question.
+- [ ] Freeze and implement the smallest justified concurrency change through
+  MT-W02–MT-W04: independent complete NTS pipelines, bounded native work, private
+  candidates, serialized acceptance and responsive control.
+- [ ] Compare explicit capacity and, when justified, scheduler alternatives under
+  MT-W05; preserve trust/quorum/timestamps, actual native completion, policy-issue
+  checks and aggregate resource bounds. No worker count/runtime is selected here.
+- [ ] Complete independent review and the applicable qualification through MT-W06,
+  recording MT-C01 before Khronos begins.
+
+**Exit MT-C01:** qualified implementation or evidence-supported retention of the
+released baseline, under the [plan's exit rule](docs/plans/post-v1-multithreading.md#8-exit-mt-c01-and-onward-scheduling).
+Blocked/inconclusive work stays incomplete; a deliberate deferral or reordered
+priority needs an explicit owner decision. Do not count planning as completion.
+
+This schedules an enhancement after V1. Existing V1 blocking-work isolation,
+native custody, current-authority and lifecycle requirements remain mandatory.
+The current Windows/fuzz/storage/UI holds and pre-release development order
+remain. OD-10's post-V1 formal eligibility does not place the whole proof backlog
+ahead of MT-0.
+
 ### KHR-0 — evaluate independent time cross-checking
 
 **Status:** planned research and bounded experiment; later on 3 November 2026
 the owner selected a conditional bootstrap-reserve role. No implementation,
 source roster or recovery envelope is qualified.
 
-**Order:** after the current Windows P0–P7 plan, before GEO-0 and AND-0.
+**Order:** after actual V1 release and [MT-C01](#mt-0--post-v1-multithreading-and-concurrent-acquisition), before GEO-0 and AND-0.
 
 **Owners:** numerical/protocol implementer, with independent security/test review.
 
@@ -149,7 +190,7 @@ delivered client.
 [OD-12](docs/nevrotick-owner-decisions.md#16-od-12--geoip-experiment-after-khronos).
 No GeoIP database, dependency, provider or production selection rule is adopted.
 
-**Order:** Windows P0–P7 → KHR-C01 → GEO-C01 → AND-0. A documented
+**Order:** V1 released → MT-C01 → KHR-C01 → GEO-C01 → AND-0. A documented
 `ADOPT_LIMITED`, `DEFER` or `REJECT` disposition closes this experiment; GeoIP
 deployment is not an Android prerequisite. RGT-0 → CHR-0 remains separate.
 
@@ -228,7 +269,7 @@ on 3 November 2026. No Roughtime implementation, provider selection or Windows
 qualification is established. This stage is distinct from KHR-0.
 
 **Order:** RGT-0 → CHR-0. This later sequence preserves the current
-Windows → KHR-0 → GEO-0 → Android prerequisites. Its scheduling against later Android
+V1 released → MT-0 → KHR-0 → GEO-0 → Android prerequisites. Its scheduling against later Android
 and DNS work remains open; it creates no new active Windows prerequisite.
 
 **Owners:** protocol implementer, NTS/trust-policy owner, independent security
@@ -384,7 +425,7 @@ verifier, UI and independent security/QA review at their dependent boundaries.
 Reuse the current engine task; do not start a parallel proxy project or database.
 Schedule the stage when a real supported use case and maintenance capacity justify
 it, after Windows delivery. Its place among other future work remains undecided;
-the Windows → KHR → GEO → Android and RGT → CHR ordering remains intact.
+the V1 released → MT → KHR → GEO → Android and RGT → CHR ordering remains intact.
 
 **First future profile:** the canonical
 [limited SOCKS5 profile](docs/windows-time-architecture.md#limited-socks5-profile--deferred)
@@ -499,7 +540,7 @@ label; it must not be entered automatically on NTS failure.
 
 ## 4. Ordered Android stages
 
-Begin these stages only after KHR-C01, any adopted cross-check implementation and
+Begin these stages only after V1 release, MT-C01, KHR-C01, any adopted cross-check implementation and
 the GEO-C01 experiment disposition have been completed. GeoIP implementation is
 separately scoped if selected; it is not an Android prerequisite. This ordering
 leaves the current Windows plan intact.
@@ -744,7 +785,7 @@ dependencies, demand aggregates, hot/warm/cold/frozen classes, optional seasonal
 heatmap, bounded proactive refresh, encrypted statistics, privacy controls,
 resource accounting, comparison experiment and DNS-C01–DNS-C18 acceptance cases.
 Its engineering parameters are proposals pending qualification. This future
-workstream does not reorder the current Windows plan or the KHR-0 follow-up.
+workstream does not reorder the current Windows plan or the post-V1 MT-0 → KHR-0 follow-ups.
 
 The [source-attributed DNS upstream lessons](docs/plans/dns-upstream-lessons.md)
 record mechanisms from Unbound, AdGuard Home/dnsproxy, Pi-hole FTL and
@@ -923,8 +964,9 @@ UDP tunnel; this design uses local UDP and the companion's own remote transport.
 
 ## 7. Decision points and evidence discipline
 
-Current implementation follows the Windows development plan. Its first roadmap
-follow-up is **KHR-0**, then **GEO-0**; KHR-C01 and GEO-C01 precede Android work.
+Current implementation follows the Windows development plan until actual V1
+release. Its first post-V1 TODO is **MT-0**, then **KHR-0**, then **GEO-0**;
+MT-C01, KHR-C01 and GEO-C01 precede Android work.
 The first Android stage is then **AND-0**, starting with device identification and
 read-only capability discovery. Dates for later stages are intentionally not promised before those
 results.
@@ -963,7 +1005,7 @@ Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+MT-C01, KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.

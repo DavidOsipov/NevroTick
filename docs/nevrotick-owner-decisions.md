@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.18<br>
+**Document:** NV-DEC-001, revision 1.19<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -8,6 +8,8 @@
 **Research baseline:** [NevroTick at db53dda222739b9b076b1b47a81ace7761b1596b](https://github.com/DavidOsipov/NevroTick/tree/db53dda222739b9b076b1b47a81ace7761b1596b)  
 **Repository integration base:** [77ad8c416db32d5edfdc9e6a538d76637eaf44f0](https://github.com/DavidOsipov/NevroTick/tree/77ad8c416db32d5edfdc9e6a538d76637eaf44f0); later tooling, SBOM and dependency-refresh changes are preserved.  
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
+
+**7 November scheduling decision:** [OD-16](#20-od-16--multithreading-first-after-v1) makes multithreading the first TODO after actual V1 release and before Khronos/Ananke.
 
 **4 November release-operations addition:** section 7.4 records authorized
 research/documentation and a proposed support baseline, not a new accepted
@@ -46,6 +48,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-14 | Limit initial intended OS scope to Windows 11 26H2 and a corresponding Windows Server; delegate the other parameters | **Accepted scope direction, 5 November 2026; researched counterpart and engineering fixtures recorded in §18** | Windows Server 2025 Desktop Experience is the selected current counterpart; exact OS/CPU/protection profiles, suitable available environments, complete MSIX delivery and native results remain open. This is not first-stable support approval |
 
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
+| OD-16 | Create a multithreading plan under docs and make it the first TODO immediately after V1 release, before Khronos | **Accepted scheduling direction, 7 November 2026** | MT-0/MT-C01 qualification against the released baseline; exact runtime, worker counts and performance remain unselected. Existing V1 correctness and native lifecycle duties are not deferred |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -506,8 +509,8 @@ material dependent choices when evidence makes them concrete.
 
 **Delivery:** the [roadmap DNS workstream](../ROADMAP.md#5-planned-dns-over-quic-and-certificate-pinning)
 links this plan. The current Windows time-client execution plan, UI-M0 limits,
-existing privilege boundaries and first KHR-0 follow-up retain their order and
-authority. No DNS implementation, host configuration change, benchmark, native
+existing privilege boundaries retain their authority. The post-V1 order is now
+MT-0 then KHR-0 under [OD-16](#20-od-16--multithreading-first-after-v1). No DNS implementation, host configuration change, benchmark, native
 Windows result or new release qualification is established by this amendment.
 
 ## 13. OD-09 — leap policy and silent servers
@@ -1029,3 +1032,32 @@ locale; all files reject atomically on a character violation, retaining admitted
 state. The merged fixture implements pinned inventories, tables, budgets and
 receiver enforcement; S0.5 binds its portable results. This clarification adopts
 no extra locale or native result, and never supplies critical-text approval.
+
+## 20. OD-16 — multithreading first after V1
+
+**Direct owner instruction, 7 November 2026:** create the multithreading plan
+under docs and place this work first in ROADMAP.md immediately after release of
+the first software version (V1), before Khronos.
+
+**Accepted order:** actual V1 release → MT-0 / MT-C01 → KHR-0 / KHR-C01 →
+GEO-0 / GEO-C01 → Android. This supersedes older descriptions of Khronos as the
+first Windows follow-up. OD-12's relative Khronos → GeoIP → Android order and the
+separate later RGT-0 → CHR-0 direction remain.
+
+[NV-MT-001](plans/post-v1-multithreading.md) records the phased plan, resource/
+ownership contracts, independent healthy/fault observations and MT-C01 exit.
+The [roadmap entry](../ROADMAP.md#mt-0--post-v1-multithreading-and-concurrent-acquisition)
+sets priority; the existing engine task owns implementation and evidence.
+
+This schedules the enhancement; it does not select four workers, a multithread
+Tokio runtime, a provider or new production constants. Re-inspect the actual
+released implementation and qualify justified changes. An incomplete or blocked
+attempt is not completion and cannot silently advance the queue.
+
+Current V1 correctness, blocking-native-work isolation, permit/cookie custody,
+policy checks, responsive control and release gates remain required. MT-0 adds no
+pre-V1 enhancement prerequisite and lifts no Windows/fuzz/storage/UI hold.
+OD-10 still defers formal work until after V1; that eligibility does not put the
+whole formal backlog ahead of the explicitly first MT-0 job. This decision
+establishes no measured improvement or implementation/native qualification.
+

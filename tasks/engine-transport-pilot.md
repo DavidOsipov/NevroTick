@@ -6195,3 +6195,24 @@ The coordinator leaves Git and AccessKit/CNG changes to their other owner and
 does not stage, commit or push. Windows/S134, AES fuzz, optional storage, UI D1–D3
 and the post-V1 formal deferral remain unchanged. No Windows command, solver,
 compression, system clock/service action or release action occurred.
+
+## Post-V1 multithreading — MT-0, 7 November 2026
+
+**Status:** deferred until actual V1 release; first post-V1 TODO before Khronos
+under [OD-16](../docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1).
+[NV-MT-001](../docs/plans/post-v1-multithreading.md) owns the bounded plan,
+MT-W01–MT-W06, acceptance matrix and MT-C01 exit; this existing task retains the
+implementation/evidence record. No new runtime, worker count, provider, benchmark
+or native result is selected or executed.
+
+**Next at activation:** start MT-W01 by re-inspecting the actual V1
+source/artifact, current graph, holds and acquisition/consumer path. Freeze one
+useful progress/responsiveness question and its finite comparison before changing
+capacity or scheduler. Record the selected candidate and real outcomes here.
+
+Current S2.1/S2.2 work, V1 blocking-work isolation, native completion/permit
+custody, policy issue/acceptance checks and control responsiveness retain their
+existing requirements. This enhancement is not a pre-V1 prerequisite and does not
+defer those correctness duties or release current execution holds. Do not restart
+the prototype or silently advance to KHR-0 while MT-C01 is blocked/incomplete.
+
