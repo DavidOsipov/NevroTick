@@ -330,10 +330,36 @@ The Store's Published by label comes from the account's publisher display name;
 the optional Developed by field is separate. Listing languages can exceed
 package languages, but must not misrepresent actual UI translation. Privacy,
 support, licenses and website belong in their designated fields. Cargo metadata,
-a future WinGet manifest and an SBOM have their own schemas and consumers; reuse
-appropriate values if those channels are admitted, without silently adding a
-distribution channel or making every fact a PE custom string.
+WinGet descriptions and an SBOM have their own schemas and consumers.
+[OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1) now
+places [WinGet capability](winget-distribution.md) before V1. Reuse appropriate
+values through the existing authority; a conditional Community projection remains
+distinct from Store-source identity and from every PE custom string.
 [STORE-ADDITIONAL] [STORE-PROPERTIES]
+
+### 9.1 WinGet projection and identity — 7 November 2026
+
+W11-W10/P6 owns the [source/field map](winget-distribution.md#4-metadata-and-artifact-contract).
+Keep Store ProductId, MSIX PackageFamilyName and any Community PackageIdentifier
+separate. Derive display descriptions/rights from the existing record and release
+facts, artifact URLs/hashes from final approved distributables, and detection/
+scope/dependency behavior from actual package and installed observations.
+No pending Store identity, support/privacy URL, license mapping or release version
+may be invented to make a manifest valid.
+
+The current source generator has no qualified WinGet output. Add a bounded
+projection only when the corresponding route and inputs are admitted; extend its
+code-owned schema/readback and public allowlist instead of creating a competing
+product record. WinGetCreate may infer fields, but independent reconciliation
+must catch wrong identity, unsupported field loss and version normalization.
+The WinGet client/tool/schema combination must be tested together.
+
+Use only supported icon formats and truthful locales. `Architecture: x64` cannot
+express x86-64-v3, and a numeric OS minimum cannot encode the complete two-family
+policy; [the actual admission owner](../../tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026)
+retains those checks. Signing/Store processing precedes hashes for the distributed
+form. Source projection, native package qualification and live catalog availability
+remain separate evidence. See [NV-WGT-001](winget-distribution.md) for primary sources.
 
 ## 10. Generation, verification and existing task handoff
 

@@ -31,6 +31,15 @@ provisioning/recovery, one-product lifecycle and submission/delivered provenance
 there. Complete CHECK-20/26, SBOM and non-Cargo payload reconciliation belong to
 that exit; MSI is an alternative for a later David decision, not a prerequisite.
 
+**WinGet is pre-V1 work:** [OD-17](../docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+adds [WGT-0](../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1) to that
+P6/P7 owner, with [WGT-W01–WGT-W06](../docs/plans/winget-distribution.md#8-ordered-implementation-packages)
+and [the existing Windows task](windows11-integration.md#433-winget-distribution-before-v1--7-november-2026).
+WGT-C01 requires implemented/qualified preparation and applicable native delivery
+evidence before V1; WGT-C02 separately records actual external catalog availability.
+Do not put this work after V1 or infer public availability from the plan.
+The complete Store-MSIX direction and execution holds remain.
+
 [Enhanced source-to-Store proof](../docs/plans/release-provenance.md) is optional
 under [OD-05 §7.5](../docs/nevrotick-owner-decisions.md#75-optional-enhanced-build-provenance--4-november-2026).
 Attestations, independent rebuilds and a public proof bundle add no P6/P7
@@ -819,7 +828,8 @@ status and real read-only UI observations, not on separate child reports.
 | S-6 exact release | Existing P6 owner + P7: complete hardened MSIX preparation, David's Store outcome, actual delivered/installed trust and full applicable acceptance before public release. |
 
 Later [roadmap handoffs](../docs/plans/development-plan.md#86-handoff-after-the-windows-plan)
-are Windows P0–P7 → KHR-C01 disposition → GEO-C01 disposition → Android, with later RGT-0 → CHR-0
+are Windows P0–P7 including WGT-C01 → actual V1 release → MT-C01 → KHR-C01
+disposition → GEO-C01 disposition → Android, with later RGT-0 → CHR-0
 and the [shared time-assurance task](time-assurance-integration.md) retaining
 their distinct exits. Future DNS retains its own DoQ-only/DNS-C owners; do not
 invent ordering between DNS and Android or add either as a current Core gate.
@@ -835,8 +845,9 @@ ordering between DNS and Android. KHR/RGT stay in the existing time-assurance ta
 
 | Future parent / role owner | Entry and first bounded child | Existing exit / controls |
 | --- | --- | --- |
+| MT-0 / engine/platform/protocol/performance/QA | First after actual V1 release, before Khronos. [The maintained plan](../docs/plans/post-v1-multithreading.md) and existing engine task own inspection of the released baseline, bounded pipeline/worker contracts, implementation and matched qualification. | MT-C01 records qualified improvement or evidence-supported baseline retention. Existing V1 correctness remains mandatory; no worker/runtime count or speedup is preselected. |
 | GEO-0 / catalogue/release/engine/QA/security | After KHR-C01, before Android. The [existing catalogue task](server-catalogue-and-statistics.md#deferred-geoip-experiment--after-khronos) freezes a bounded comparison of ordinary acquisition with optional geography ordering, reusing C/R/Q ownership. | GEO-C01 records actual evidence/gaps and `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs measured benefit within unchanged constraints. No changed reserve sampler, trust vote, mandatory client-IP lookup, parallel database or dependency on deferred Roughtime/SOCKS5 runtime. Any GeoIP implementation is separately scoped. |
-| AND-0–AND-6 / Android/platform/protocol/ADB/QA | Windows P0–P7, then KHR-C01 disposition and qualified Khronos implementation if adopted, then GEO-C01 disposition before Android. GeoIP implementation is not required. Start AND-0 read-only device/build discovery, then an ordinary-UID loopback fixture under explicit device/restore bounds. | AND-C01–06 retain device/APK, local responder/NTS, reversible ADB setup/restoration, lifecycle and signed-preview evidence. No generic Android clock-write privilege is assumed. AND-6/AND-C07 server scope remains separately conditional. |
+| AND-0–AND-6 / Android/platform/protocol/ADB/QA | Windows P0–P7 including pre-V1 WinGet capability, actual V1 release, then MT-C01 and KHR-C01 disposition and qualified Khronos implementation if adopted, then GEO-C01 disposition before Android. GeoIP implementation is not required. Start AND-0 read-only device/build discovery, then an ordinary-UID loopback fixture under explicit device/restore bounds. | AND-C01–06 retain device/APK, local responder/NTS, reversible ADB setup/restoration, lifecycle and signed-preview evidence. No generic Android clock-write privilege is assumed. AND-6/AND-C07 server scope remains separately conditional. |
 | CHR-0 / numerical/protocol/provenance/rights | Immediately after RGT-C01 in the existing RGT-0 → CHR-0 sequence; freeze the source/material ledger, consumer boundary and independent contract before replacement work. | CHR-C01 requires independently checked behavior, complete material/dependency provenance and reviewed rights. Current Chrony GPL obligations remain until an actual qualified replacement; public licence and Microsoft permission decisions stay with David. |
 | SOCKS-0 / engine/protocol/Windows/security/QA/UI | Beyond first Windows P0–P7 delivery, when a real use case and maintenance capacity justify it; placement among future work remains open without reordering KHR/Android or RGT/CHR. Reuse the [existing engine task](engine-transport-pilot.md#socks5-feasibility-and-deferral--5-november-2026) to freeze the manual loopback/no-auth/local-DNS subset and qualified relay/provider envelope. | SOCKS-C01 and applicable PATH/AC/CHECK cases: actual CONNECT plus UDP, strict no-escape/recovery, endpoint identity, service lifetime, DNS/verifier routing, timing and bounded resource evidence. Remote/auth/proxy-DNS extensions are separate later admissions, not first-subset requirements. |
 | DNS-0–DNS-6 / DNS/platform/security/resources | At its future phase, start [DNS-0 contract freeze](../docs/plans/system-dns-cache-design.md#12-staged-delivery-and-next-action), then the plan's baseline → DNSSEC → native integration → shadow demand → bounded refresh sequence; DNS-6 remains conditional. | DNS-C01–18/DOQ-C01, DoQ-only upstream and leaf/intermediate pinning; qualify actual application routing rather than configuration readback. Apply [source-derived ownership/publication/retained-memory/async controls](../docs/plans/dns-upstream-lessons.md) at DNS-1/2 and demand/forget/privacy/persistence controls at DNS-4/5. W11/ST refinements and optional-storage pause retain their scope. |

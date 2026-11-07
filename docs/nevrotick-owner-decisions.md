@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.19<br>
+**Document:** NV-DEC-001, revision 1.20<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -10,6 +10,8 @@
 **Status:** Records owner instructions, engineering recommendations and unresolved research separately. This is documentation, not implementation or release qualification.
 
 **7 November scheduling decision:** [OD-16](#20-od-16--multithreading-first-after-v1) makes multithreading the first TODO after actual V1 release and before Khronos/Ananke.
+
+**Later 7 November distribution decision:** [OD-17](#21-od-17--winget-capability-before-v1) requires WinGet capability before V1, preserving OD-05's complete Store-MSIX target and OD-16's post-V1 order.
 
 **4 November release-operations addition:** section 7.4 records authorized
 research/documentation and a proposed support baseline, not a new accepted
@@ -49,6 +51,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 
 | OD-15 | Make the UI easy to translate through separate string catalogs; prefer binary delivery such as CBOR | **Accepted localization requirement and binary-format preference, 5 November 2026** | Readable authoring → validated CBOR resource design; typed Rust/Slint/tray/notification bridge, codec/formatter and package profile, actual catalog/runtime/native evidence. English remains the adopted locale; independently imported user language packs remain a separate scope choice |
 | OD-16 | Create a multithreading plan under docs and make it the first TODO immediately after V1 release, before Khronos | **Accepted scheduling direction, 7 November 2026** | MT-0/MT-C01 qualification against the released baseline; exact runtime, worker counts and performance remain unselected. Existing V1 correctness and native lifecycle duties are not deferred |
+| OD-17 | Add WinGet distribution capability before V1, after comprehensive verification of the supplied AI proposal, and record the plan/roadmap | **Accepted capability and scheduling requirement, 7 November 2026** | WGT-0 within P6/P7: real source/identity, metadata/release preparation and native qualification; WGT-C01 readiness remains distinct from WGT-C02 external catalog availability. Preserve Store-first complete MSIX; no automatic MSI selection, publication or update guarantee |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -1061,3 +1064,36 @@ OD-10 still defers formal work until after V1; that eligibility does not put the
 whole formal backlog ahead of the explicitly first MT-0 job. This decision
 establishes no measured improvement or implementation/native qualification.
 
+## 21. OD-17 — WinGet capability before V1
+
+**Owner instruction, 7 November 2026:** David requested WinGet distribution
+capability before the first software release, and comprehensive verification of
+the supplied AI proposal before creating the document and adjusting the roadmap.
+This places the capability in existing P6/P7 work; it does not move MT-0 from its
+first post-V1 position before Khronos.
+
+The [WinGet plan](plans/winget-distribution.md) records the researched engineering
+approach, primary sources, metadata/installer/automation contracts and native
+acceptance cases. [WGT-0](../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1)
+and [W11-W10 with W11-W05](../tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026)
+own scheduling and evidence.
+
+Preserve OD-05's one complete hardened MSIX and actual Store attempt. Qualify
+WinGet acquisition of the real Store product through `msstore` first. The
+Community `winget` repository is a different source; preparing or activating
+that path requires a compatible authorized public trusted artifact. This
+instruction selects neither MSI, a new signing provider, a split installer nor
+a service self-updater. Existing platform/CPU, privilege, lifecycle, recovery
+and release gates remain.
+
+**WGT-C01** records implemented and appropriately qualified pre-V1 preparation
+and delivery capability. **WGT-C02** records actual public source availability
+after external acceptance/propagation. Neither a document, generated YAML, PR
+nor merge proves a functioning public installation. No fixed review deadline,
+universal automatic customer update or public availability before a legitimate
+release artifact exists is promised. Missing mandatory native evidence remains
+open; concrete external blockers use the existing owner-decision process.
+
+David retains actual account, credential, signing, submission, visibility and
+release actions under OD-05. This research/documentation instruction creates
+no external PR or release and lifts no current Core/native/fuzz/storage/UI hold.

@@ -573,6 +573,17 @@ native result.
 
 ## 6. Delivery, controlled audiences and alternatives
 
+**Pre-V1 WinGet addition, 7 November 2026:** [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+requires distribution capability before V1. The [WinGet plan](winget-distribution.md)
+first qualifies this selected complete Store product through `msstore`, using its
+real ProductId, package identity and exact client/platform. WinGet's Community
+`winget` source is separate and needs an authorized trusted public installer;
+it does not supply signing or select the retained MSI alternative. Preserve
+controlled Store visibility, final-byte trust, service provisioning and recovery.
+W11-W10/W11-W05 own WGT-C01 pre-V1 preparation/native qualification and the
+separate WGT-C02 actual source-availability receipt. Current evidence and holds
+remain; no working WinGet route is established by this paragraph.
+
 The **Store Web Installer** supports website/GitHub-first acquisition: a Store
 badge's Direct mode invokes a Microsoft-provided small EXE that obtains the
 published application from Store infrastructure. Free packaged MSIX is supported.

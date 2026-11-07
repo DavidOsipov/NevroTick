@@ -886,6 +886,19 @@ Qualify bad-version, partial and skipped migration states, actual corrective
 delivery and useful authorized recovery beside refusal. The operational document
 is written; its support commitment and actual rehearsals remain open.
 
+**Pre-V1 WinGet capability, 7 November 2026:** [OD-17](../nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+adds [WGT-0](../../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1)
+to this existing delivery work. Follow [NV-WGT-001](winget-distribution.md) and
+[W11-W10/W11-W05](../../tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026):
+qualify Store-source acquisition of the selected complete MSIX first, with
+source-specific identity, metadata, actual WinGet/native lifecycle and bounded
+release preparation. Community manifests require an authorized public trusted
+installer; no alternate MSI or custom service updater follows. WGT-C01 is due
+before V1; WGT-C02 separately records public source visibility after external
+publication. Planned commands, a PR or catalog merge supply no native pass.
+Keep OS/CPU admission and package/recovery gates even when YAML cannot express
+them. Current Core order and execution holds remain.
+
 P6 exit: CHECK-13/16/18/20/23, applicable CHECK-5/15/26/27 and AC-15/20, with
 profile-specific signing/lifecycle evidence on supported clean Windows machines
 and the applicable [operational evidence](../release-policy.md#9-qualification-matrix-and-remaining-decisions)
@@ -921,7 +934,10 @@ licensing and David's approval for the exact candidate.
 
 That approval includes the actual supported platform/version and transition
 matrix, the recorded maintenance commitment, operational rehearsal results and
-corrective recovery limits. The release-policy proposal is not itself that
+corrective recovery limits. Reconcile WGT-C01 pre-V1 capability evidence and
+the separate WGT-C02 source-availability status; publish only observed working
+WinGet instructions. External moderation/propagation is not local qualification
+and carries no promised deadline. The release-policy proposal is not itself that
 decision. Store containment, publishing-authority recovery and installed-case
 restoration require distinct observations; unobserved/offline devices remain
 explicit residual populations.

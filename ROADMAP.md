@@ -2,6 +2,8 @@
 
 **Updated:** 7 November 2026
 
+**Pre-V1 distribution requirement:** [WGT-0, WinGet capability](#wgt-0--winget-distribution-capability-before-v1), prepared and qualified within P6/P7 before V1; actual public catalog availability is tracked separately.
+
 **First post-V1 TODO:** [MT-0, multithreading and concurrent NTS acquisition](#mt-0--post-v1-multithreading-and-concurrent-acquisition), immediately after V1 is released and before Khronos/Ananke
 
 **Post-V1 order:** MT-0 → [Khronos/Ananke](#khr-0--evaluate-independent-time-cross-checking) → [GEO-0, geography-assisted source ordering](#geo-0--evaluate-geography-assisted-source-ordering) → Android
@@ -13,8 +15,10 @@
 
 ## 1. Direction and authority
 
-Finish the current Windows development and acceptance plan and actually release
-V1 first. Under [OD-16](docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1),
+Finish the current Windows development and acceptance plan, including
+[WGT-0 WinGet capability](#wgt-0--winget-distribution-capability-before-v1) under
+[OD-17](docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1),
+and actually release V1 first. Under [OD-16](docs/nevrotick-owner-decisions.md#20-od-16--multithreading-first-after-v1),
 the first post-V1 job is [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition),
 then the [Khronos/Ananke evaluation](#khr-0--evaluate-independent-time-cross-checking),
 then the [GEO-0 experiment and disposition](#geo-0--evaluate-geography-assisted-source-ordering)
@@ -32,7 +36,8 @@ applying time to its own clock.
 | --- | --- |
 | Slint UI default | [OD-13](docs/nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit) selects Slint with Winit/software and Fluent-style widgets. The checked-in fixture now selects Slint; [S0.5](tasks/s0.5-ui-comparison.md) and the [current GUI handoff](tasks/slint-gui-handoff.md) own its source, graph/licence controls and candidate-specific evidence. The old Win32 reference is historical. Generated-code safety retains its exact graph/source scope; native Windows, production backend, process/package hardening and release qualification remain open. UI-M0 D1–D3 deferrals and the current development-plan order remain. |
 | Windows NTP/NTS client | [Development execution plan](docs/plans/development-plan.md): current work, P0–P7, prerequisites and acceptance. [OD-14's matrix](tasks/windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026) targets Windows 11 26H2 x64 and Server 2025 x64 Desktop Experience; qualification remains open. This roadmap neither duplicates nor reorders that plan. |
-| Complete hardened MSIX and Microsoft Store | [Owner-selected plan](docs/plans/windows-msix-store.md), [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate) and [current W11-W10 assignment](tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): prepare one complete MSIX with explicit integrity enforcement, protected executable content, Store-compatible CIG and verified per-process protections. David will try Store submission with services and reconsider delivery if refused. Preparation needs no speculative preapproval; supported least-privilege provisioning, W32Time/recovery lifetime and actual Store-artifact qualification still gate release. Retain MSI as an alternative for a later decision. The [release policy](docs/release-policy.md) adds proposed support terms and operational withdrawal/recovery work at the same release gates; support approval and rehearsals remain open. Current Core/KHR-0 ordering and execution holds remain. |
+| Complete hardened MSIX and Microsoft Store | [Owner-selected plan](docs/plans/windows-msix-store.md), [architecture §19.4](docs/windows-time-architecture.md#194-future-complete-msix-gate) and [current W11-W10 assignment](tasks/windows11-integration.md#48-owner-selected-hardened-msix--3-november-2026): prepare one complete MSIX with explicit integrity enforcement, protected executable content, Store-compatible CIG and verified per-process protections. David will try Store submission with services and reconsider delivery if refused. Preparation needs no speculative preapproval; supported least-privilege provisioning, W32Time/recovery lifetime and actual Store-artifact qualification still gate release. Retain MSI as an alternative for a later decision. The [release policy](docs/release-policy.md) adds proposed support terms and operational withdrawal/recovery work at the same release gates; support approval and rehearsals remain open. Current Core priority, post-V1 order and execution holds remain. |
+| WinGet distribution before V1 | [WGT-0](#wgt-0--winget-distribution-capability-before-v1), [NV-WGT-001](docs/plans/winget-distribution.md) and [W11-W10](tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026): implement and qualify the source-specific delivery capability within P6/P7. Preserve the selected Store MSIX and qualify `msstore` first; Community YAML requires an authorized trusted public installer. WGT-C01 readiness and WGT-C02 actual catalog availability are separate; no publication or native result is claimed. |
 | Windows 11 native integration | [Microsoft source review](docs/plans/windows11-integration.md), [Learn MCP follow-up](docs/plans/windows11-integration-follow-up.md), [existing-phase workstream](docs/plans/development-plan.md#85-windows-11-integration-research-and-qualification) and [agent assignments](tasks/windows11-integration.md): timestamp/power/lifecycle refinements, DNS and service-network candidates, resource use, diagnostics and deferred UI integration. The follow-up adds concrete callback, COM, MSI permission, ETW and partial-replacement cases. Research is recorded; implementation/native evidence and conditional choices remain open at their existing phases. Current priorities and execution holds remain; this is no new predecessor to KHR-0. |
 | Protected optional Windows storage | [Architecture §12.1.2](docs/windows-time-architecture.md#1212-protected-optional-storage-and-explicit-fallback), [storage plan](docs/plans/windows-protected-storage.md), completed [first](docs/plans/windows-protected-storage-upstream-lessons.md) and [second](docs/plans/windows-protected-storage-upstream-lessons-2.md) source reviews, and [agent task](tasks/windows-protected-storage.md): VBS/TPM/fresh-state fallback, truthful UI, bounded storage/adapter contracts and distinguishing checks. S2.3/P3/P5/P6 work; design freeze/native qualification remain open, experiments paused, current priority and Khronos ordering unchanged. |
 | Post-V1 multithreading | [MT-0](#mt-0--post-v1-multithreading-and-concurrent-acquisition) and [NV-MT-001](docs/plans/post-v1-multithreading.md): first TODO immediately after actual V1 release, before Khronos. Qualify independent acquisition, bounded native workers and any justified scheduler/capacity change; existing V1 correctness duties remain. |
@@ -58,6 +63,41 @@ candidates, not a production Android or NTS engine. Preserve Chrony-derived
 provenance and GPL-2.0-only obligations. Admit any Android/JNI, TLS, AEAD, runtime
 and build dependencies separately. The Windows x64 CPU policy in OD-07 does not
 apply to Android ABIs or impose x86 compiler flags on shared portable code.
+
+### WGT-0 — WinGet distribution capability before V1
+
+**Status:** required pre-V1 delivery capability by David's instruction of
+7 November 2026, recorded in [OD-17](docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1).
+Research and planning are recorded; implementation, native qualification and
+public availability remain open.
+
+**Placement:** existing P6/P7 packaging and release work, before actual V1 release.
+Current Core continuation and native execution holds retain their scope. After
+V1, MT-0 remains first, before Khronos/Ananke.
+
+**Plan / owner:** [WinGet distribution plan](docs/plans/winget-distribution.md)
+and existing [W11-W10/W11-W05](tasks/windows11-integration.md#433-winget-distribution-before-v1--7-november-2026),
+with metadata, release/security and independent package QA. Keep one complete
+Store-first MSIX. A separate Community listing is conditional on an authorized,
+trusted publicly downloadable full-product installer; it does not select MSI.
+
+- [ ] Establish the real source/identity/package contract and pending inputs in
+  WGT-W01; distinguish `msstore` Store IDs from Community package identifiers.
+- [ ] Implement the reached metadata/release preparation and qualify actual
+  install, upgrade, service/user registration and removal through WGT-W02–WGT-W03,
+  retaining exact OS/CPU admission, signature trust and W32Time recovery.
+- [ ] Prepare and dry-run bounded release automation where applicable; review
+  exact tools, artifact hashes, credentials, trigger and retry behavior in WGT-W04.
+- [ ] Record **WGT-C01** through WGT-W05 before V1 approval. Plans or placeholder
+  manifests cannot close implemented/native capability.
+- [ ] At authorized publication, record **WGT-C02**: actual source-specific
+  discovery and acquisition of the approved version. External review/propagation
+  can remain pending; never claim availability from a PR, merge or tag alone.
+
+The [plan's completion rules](docs/plans/winget-distribution.md#10-completion-maintenance-and-next-agent-record)
+separate pre-V1 readiness from external public availability. Missing required
+local/native evidence remains open; no merge-time guarantee, automatic customer
+upgrade promise, extra service updater or weakened installer protection is added.
 
 ### MT-0 — post-V1 multithreading and concurrent acquisition
 
@@ -964,8 +1004,9 @@ UDP tunnel; this design uses local UDP and the companion's own remote transport.
 
 ## 7. Decision points and evidence discipline
 
-Current implementation follows the Windows development plan until actual V1
-release. Its first post-V1 TODO is **MT-0**, then **KHR-0**, then **GEO-0**;
+Current implementation follows the Windows development plan, including WGT-0
+capability at P6/P7 before actual V1 release. WGT-C02 separately records externally
+observed catalog availability. Its first post-V1 TODO is **MT-0**, then **KHR-0**, then **GEO-0**;
 MT-C01, KHR-C01 and GEO-C01 precede Android work.
 The first Android stage is then **AND-0**, starting with device identification and
 read-only capability discovery. Dates for later stages are intentionally not promised before those
@@ -1005,7 +1046,7 @@ Do not let an unresolved later choice block read-only discovery or a controlled
 earlier fixture. Do not silently resolve a security-policy exception while
 implementing an earlier stage.
 
-MT-C01, KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
+WGT-C01/WGT-C02, MT-C01, KHR-C01, GEO-C01, RGT-C01, CHR-C01, SOCKS-C01, AND-C01–AND-C07 and DOQ-C01 are local roadmap exit IDs, not replacements for existing
 REQ/BND/DEC/THR/CHECK IDs. Apply the relevant canonical protocol, trust,
 input-contract, provenance, diagnostics and resource obligations; do not claim
 Windows-native checks qualify Android behavior.

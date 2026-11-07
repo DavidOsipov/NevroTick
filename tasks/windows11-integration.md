@@ -649,6 +649,14 @@ UI-M0 D1/D2/D3 remain Deferred; this task activates none of them.
 
 ### W11-W10 Re-enter conditional mechanisms only for a concrete need
 
+**Pre-V1 WinGet assignment, 7 November 2026:** [OD-17](../docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+adds [WGT-0](../ROADMAP.md#wgt-0--winget-distribution-capability-before-v1) to the
+existing P6/P7 delivery work. Use [the plan](../docs/plans/winget-distribution.md)
+and [§4.33](#433-winget-distribution-before-v1--7-november-2026) for the bounded
+source/metadata, native lifecycle and release-operation sequence. Capability is
+due before V1; external public-source availability is a separate observed result.
+Store-first complete MSIX, current Core priority and execution holds remain.
+
 **Adopted metadata delivery controls, 7 November 2026:** David authorized the
 reviewed website-pipeline techniques under [metadata §13.5](../docs/plans/windows-package-metadata.md#135-adopted-metadata-delivery-controls--7-november-2026).
 This extends the existing source-tool assignment, without importing website
@@ -3329,3 +3337,38 @@ change, stable-support approval or release qualification follows from this work.
 > ## One permitted next action
 >
 > Retain both raw reviews separately and verbatim in existing W11 §4.32, then carry the reconciled documentation handoff forward under its existing gates.
+
+### 4.33 WinGet distribution before V1 — 7 November 2026
+
+**Status:** researched/planned, not implemented or natively qualified.
+[OD-17](../docs/nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+and [NV-WGT-001](../docs/plans/winget-distribution.md) place this capability before
+V1 under existing W11-W10/P6/P7, with W11-W05 for service/lifecycle effects and
+the existing metadata/release/security/independent-QA owners.
+
+First execute WGT-W01 source/identity preparation: re-read actual release/package
+state, source-specific IDs, metadata pending fields, current tools and holds.
+Qualify the selected complete Store MSIX through `msstore` first; a Community
+manifest route requires an authorized public trusted complete artifact. No MSI
+selection, external service prerequisite, new signing entitlement, reserved
+identifier or public download URL follows from this assignment.
+
+WGT-W02 owns reached metadata generation/readback; WGT-W03 owns actual
+client/package/platform lifecycle; WGT-W04 owns bounded release preparation and
+applicable automation dry runs. WGT-W05 independently reconciles **WGT-C01**
+before V1 approval. WGT-W06 records **WGT-C02** only after authorized external
+publication and actual source-specific discovery/acquisition. Review delays
+remain external, while missing mandatory native evidence remains open work.
+
+Use the plan's WGT-T01–WGT-T12 with existing CHECK owners. In particular retain
+the two-family matrix and baseline-safe v3 admission, actual elevation/agreements,
+multiuser services/UI, one clock controller, final-byte trust, interrupted
+maintenance and W32Time restoration. A WinGet exit code, YAML validator or
+Community sandbox does not close the whole product lifecycle.
+
+Record exact source/diff, artifacts/manifests, client/generator/schema, OS/CPU,
+source/identity/scope, commands, independent observed outcomes, raw redacted
+evidence, unexecuted rows and next action here. Keep documentation review in
+the linked plan. This entry executes no Windows/package/signing/credential/Store
+or Community operation and lifts none of the current holds. Post-V1 work still
+starts with MT-0, then Khronos.

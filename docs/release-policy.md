@@ -202,6 +202,35 @@ checks retain their required scope. A detected violation of those requirements
 is handled under its existing gate even if found during optional work. This
 decision does not approve the proposed first-stable support terms in §2.
 
+### 3.4 WinGet capability and publication — 7 November 2026
+
+[OD-17](nevrotick-owner-decisions.md#21-od-17--winget-capability-before-v1)
+requires [WinGet delivery capability](plans/winget-distribution.md) before V1
+within P6/P7. Preserve the complete Store MSIX and qualify `msstore` first;
+Community publication is conditional on an authorized public trusted complete
+installer. W11-W10/W11-W05 own the existing implementation and evidence chain.
+
+Record WGT-C01 pre-V1 capability independently from WGT-C02 externally observed
+catalog availability. Bind source/identifier/version/scope to the approved exact
+package and supported platform. A generated manifest, successful submission job,
+PR merge or source tag is not a working public install or customer upgrade.
+External acceptance/propagation carries no promised completion time.
+
+For an activated Community route, prepare reviewed manifest bytes without a
+publishing credential, then use the authorized release operation for the
+specific version. Final artifact/signature hashes follow all transformations;
+re-download and compare before submission. Never replace released bytes in place
+or silently adopt changed hashes. Qualify actual release-event propagation,
+supported least-privilege credential behavior, duplicate/conflict handling and
+source readback. Current GitHub token behavior and transitive tool pinning are
+covered in the [automation contract](plans/winget-distribution.md#6-release-automation-design).
+
+David retains account, credential, submission and visibility actions under §1.
+No WinGet invocation in the time service, automatic customer update promise or
+second installer is added. Removing a catalog entry, withdrawing a Store listing
+or changing GitHub availability does not repair/recall installed copies; include
+every admitted channel in the existing incident and corrective-release record.
+
 ## 4. Distribution containment: choose the actual Store operation
 
 Microsoft's documented controls affect different populations. Recheck the real
